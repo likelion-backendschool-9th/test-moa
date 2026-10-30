@@ -1,10 +1,16 @@
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { CHATS_PATH, type ChatQuery } from "../query";
-import type { ChatInboxData } from "../types";
+import { CHATS_PATH, toChatsHref, type ChatQuery } from "../query";
+import { CHAT_ROLE_LABEL, type ChatInboxData, type ChatRole } from "../types";
 import { ChatCard } from "./ChatCard";
 import { ChatFilters } from "./ChatFilters";
+
+/** 역할 탭에 채팅방이 없을 때의 안내 */
+const ROLE_EMPTY_DESCRIPTION: Record<ChatRole, string> = {
+  tester: "구독 모집에 선정되면 개발자와 나눈 채팅이 여기에 모여요.",
+  developer: "내 프로젝트에서 선정한 테스터와 나눈 채팅이 여기에 모여요.",
+};
 
 /** 채팅함 본문. 채팅방이 없으면 빈 상태, 있으면 검색 영역과 카드 목록을 그린다 */
 export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInboxData }) {
@@ -25,7 +31,7 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
   const now = new Date(inbox.now);
   return (
     <div className="flex flex-col gap-6">
-      <ChatFilters query={query} projects={inbox.projects} total={inbox.total} />
+      <ChatFilters query={query} counts={inbox.counts} />
       <p aria-live="polite" className="text-sm font-semibold text-text-muted">
         채팅방 {inbox.rooms.length}개
       </p>
@@ -38,10 +44,20 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
             </li>
           ))}
         </ul>
+      ) : query.role && !query.q ? (
+        <EmptyState
+          title={`${CHAT_ROLE_LABEL[query.role]}로 나눈 채팅이 없어요`}
+          description={ROLE_EMPTY_DESCRIPTION[query.role]}
+          action={
+            <LinkButton href={toChatsHref({ ...query, role: null })} scroll={false} variant="secondary">
+              전체 보기
+            </LinkButton>
+          }
+        />
       ) : (
         <EmptyState
           title="조건에 맞는 채팅방이 없어요"
-          description="검색어를 바꾸거나 프로젝트 선택을 풀어 보세요."
+          description="검색어를 바꾸거나 역할 탭을 전체로 바꿔 보세요."
           action={
             <LinkButton href={CHATS_PATH} scroll={false} variant="secondary">
               조건 초기화
@@ -57,11 +73,11 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
 export function ChatInboxSkeleton() {
   return (
     <div aria-busy="true" aria-label="채팅함 불러오는 중" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <Skeleton className="h-12 w-full rounded-full sm:max-w-sm" />
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-12 w-full rounded-full" />
+        <div className="flex items-center justify-between gap-6">
           <Skeleton className="h-5 w-28" />
-          <Skeleton className="h-9 w-28 rounded-full" />
+          <Skeleton className="h-10 w-56 rounded-full" />
         </div>
       </div>
       <div className="flex flex-col gap-4">
@@ -70,7 +86,7 @@ export function ChatInboxSkeleton() {
             <Skeleton className="size-14 shrink-0 rounded-xl md:size-16" />
             <div className="flex flex-1 flex-col gap-3 pt-0.5">
               <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-full max-w-md" />
             </div>
           </div>

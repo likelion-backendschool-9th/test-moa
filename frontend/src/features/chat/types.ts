@@ -1,30 +1,35 @@
-/** 채팅방 하나. 구독 모집 건의 개발자(요청자)와 선정된 테스터(응답자)의 1대1 대화 */
+/** 채팅방에서의 역할. 개발자는 프로젝트 주인(채팅 요청자), 테스터는 선정된 테스터(채팅 응답자)다. 탭 순서이기도 하다 */
+export const CHAT_ROLES = ["tester", "developer"] as const;
+export type ChatRole = (typeof CHAT_ROLES)[number];
+
+export const CHAT_ROLE_LABEL: Record<ChatRole, string> = {
+  tester: "테스터",
+  developer: "개발자",
+};
+
+/** 채팅방 하나. 구독 모집 건의 개발자와 선정된 테스터의 1대1 대화를 보는 사람 기준으로 정리했다 */
 export type ChatRoom = {
   roomKey: string;
-  /** 모집 건 slug. 프로젝트별 보기와 모집 글 링크에 쓴다 */
+  /** 모집 건 slug. 모집 글 링크에 쓴다 */
   recruitmentSlug: string;
   projectName: string;
-  /** 채팅 요청자. 프로젝트 주인(개발자)의 닉네임 */
-  requester: string;
-  /** 채팅 응답자. 선정된 테스터의 닉네임 */
-  responder: string;
+  /** 이 방에서 나의 역할. 내 프로젝트의 채팅이면 개발자, 테스터로 참여한 채팅이면 테스터 */
+  myRole: ChatRole;
+  /** 대화 상대 */
+  partner: { nickname: string; role: ChatRole };
   lastMessage: string;
   lastMessageAt: string;
 };
 
-/** 프로젝트별 드롭다운의 항목 하나 */
-export type ChatProjectOption = {
-  slug: string;
-  name: string;
-  count: number;
-};
+/** 역할 탭에 붙는 채팅방 수. 검색어를 적용한 뒤, 역할을 적용하기 전의 수다 */
+export type ChatRoleCounts = Record<"all" | ChatRole, number>;
 
 export type ChatInboxData = {
   /** 검색 조건을 적용한 채팅방 */
   rooms: ChatRoom[];
   /** 조건과 관계없이 내가 들어가 있는 채팅방 수 */
   total: number;
-  projects: ChatProjectOption[];
+  counts: ChatRoleCounts;
   /** 일시 표시의 기준 시각 */
   now: string;
 };

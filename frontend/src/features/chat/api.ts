@@ -5,7 +5,7 @@ import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
 import { buildChatRooms } from "./mock";
 import { CHATS_PATH, type ChatQuery } from "./query";
-import type { ChatInboxData, ChatProjectOption, ChatRoom } from "./types";
+import type { ChatInboxData, ChatRoom } from "./types";
 
 /*
  * 채팅 데이터 접근. 지금은 목업을 돌려준다.
@@ -28,19 +28,18 @@ export async function getChatInbox(query: ChatQuery): Promise<ChatInboxData> {
   const now = new Date();
   const all = mode === "empty" ? [] : buildChatRooms(session.role, now);
   const keyword = query.q.toLowerCase();
-  const rooms = all
-    .filter((room) => !query.project || room.recruitmentSlug === query.project)
-    .filter((room) => !keyword || [room.projectName, room.requester, room.responder].some((text) => text.toLowerCase().includes(keyword)))
-    .sort(query.sort === "oldest" ? byOldest : byLatest);
-  return { rooms, total: all.length, projects: toProjectOptions(all), now: now.toISOString() };
-}
-
-/** 프로젝트별 드롭다운 항목. 프로젝트 이름 가나다순이고 프로젝트마다 채팅방 수를 센다 */
-function toProjectOptions(rooms: ChatRoom[]): ChatProjectOption[] {
-  const options = new Map<string, ChatProjectOption>();
-  for (const room of rooms) {
-    const option = options.get(room.recruitmentSlug) ?? { slug: room.recruitmentSlug, name: room.projectName, count: 0 };
-    options.set(room.recruitmentSlug, { ...option, count: option.count + 1 });
-  }
-  return [...options.values()].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  const searched = all.filter(
+    (room) => !keyword || [room.projectName, room.partner.nickname].some((text) => text.toLowerCase().includes(keyword)),
+  );
+  const rooms = searched.filter((room) => !query.role || room.myRole === query.role).sort(query.sort === "oldest" ? byOldest : byLatest);
+  return {
+    rooms,
+    total: all.length,
+    counts: {
+      all: searched.length,
+      tester: searched.filter((room) => room.myRole === "tester").length,
+      developer: searched.filter((room) => room.myRole === "developer").length,
+    },
+    now: now.toISOString(),
+  };
 }

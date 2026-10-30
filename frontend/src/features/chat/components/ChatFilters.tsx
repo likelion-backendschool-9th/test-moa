@@ -5,20 +5,12 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "../query";
-import type { ChatProjectOption } from "../types";
-import { ProjectSelect } from "./ProjectSelect";
+import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from "../types";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-type ChatFiltersProps = {
-  query: ChatQuery;
-  projects: ChatProjectOption[];
-  /** 조건과 관계없는 전체 채팅방 수 */
-  total: number;
-};
-
-/** 채팅함 위쪽의 채팅방 검색, 정렬, 프로젝트별 보기. 상태는 URL에만 둔다 */
-export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
+/** 채팅함 위쪽. 첫 줄은 채팅방 검색, 둘째 줄은 왼쪽 정렬과 오른쪽 역할 탭. 상태는 URL에만 둔다 */
+export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatRoleCounts }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [value, setValue] = useState(query.q);
@@ -46,9 +38,14 @@ export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
     }, SEARCH_DEBOUNCE_MS);
   }
 
+  const roleTabs: Array<{ value: ChatRole | null; label: string; count: number }> = [
+    { value: null, label: "전체", count: counts.all },
+    ...CHAT_ROLES.map((role) => ({ value: role, label: CHAT_ROLE_LABEL[role], count: counts[role] })),
+  ];
+
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <label className="flex w-full items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent sm:max-w-sm">
+    <div className="flex flex-col gap-4">
+      <label className="flex w-full items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent">
         <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="shrink-0 text-text-muted" />
         <input
           type="search"
@@ -59,7 +56,7 @@ export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
           className="w-full min-w-0 bg-transparent outline-none"
         />
       </label>
-      <div className="flex items-center justify-between gap-4 sm:justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div role="group" aria-label="정렬" className="flex gap-4 text-sm">
           {(Object.keys(CHAT_SORT_LABEL) as ChatSort[]).map((sort) => (
             <button
@@ -76,8 +73,27 @@ export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
             </button>
           ))}
         </div>
-        <span aria-hidden className="hidden h-4 w-px bg-line sm:block" />
-        <ProjectSelect projects={projects} total={total} value={query.project} onChange={(project) => navigate({ project })} />
+        {/* 역할 탭. 칩 회색 홈 안에서 고른 탭만 교정지 면으로 올라오고, 고른 탭의 수는 강조색이다 */}
+        <div role="group" aria-label="역할별 보기" className="flex rounded-full bg-surface-strong p-1">
+          {roleTabs.map((tab) => {
+            const active = query.role === tab.value;
+            return (
+              <button
+                key={tab.label}
+                type="button"
+                aria-pressed={active}
+                onClick={() => navigate({ role: tab.value })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors duration-300 ease-brand sm:px-4",
+                  active ? "bg-surface-muted text-text" : "text-text-muted hover:text-text",
+                )}
+              >
+                {tab.label}{" "}
+                <span className={cn("font-semibold tabular-nums", active ? "text-accent" : "opacity-60")}>{tab.count}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

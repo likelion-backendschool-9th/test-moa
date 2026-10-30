@@ -10,7 +10,16 @@ import type { ChatRoom } from "./types";
 const MINUTE_MS = 60 * 1000;
 const DAY_MINUTES = 24 * 60;
 
-type Seed = Omit<ChatRoom, "lastMessageAt"> & { minutesAgo: number };
+/** 저장된 채팅방 한 건. 요청자는 프로젝트 주인(개발자), 응답자는 선정된 테스터다 */
+type Seed = {
+  roomKey: string;
+  recruitmentSlug: string;
+  projectName: string;
+  requester: string;
+  responder: string;
+  lastMessage: string;
+  minutesAgo: number;
+};
 
 const ROOMS: Seed[] = [
   {
@@ -85,12 +94,19 @@ const MEMBER_NICKNAME: Record<Exclude<Role, "guest">, string | null> = {
   admin: null,
 };
 
-/** 회원이 요청자나 응답자로 들어가 있는 채팅방 */
+/** 회원이 요청자나 응답자로 들어가 있는 채팅방을, 회원 기준(나의 역할, 대화 상대)으로 바꿔 돌려준다 */
 export function buildChatRooms(role: Exclude<Role, "guest">, now: Date): ChatRoom[] {
   const nickname = MEMBER_NICKNAME[role];
   if (!nickname) return [];
-  return ROOMS.filter((room) => room.requester === nickname || room.responder === nickname).map(({ minutesAgo, ...room }) => ({
-    ...room,
-    lastMessageAt: new Date(now.getTime() - minutesAgo * MINUTE_MS).toISOString(),
-  }));
+  return ROOMS.filter((room) => room.requester === nickname || room.responder === nickname).map(
+    ({ requester, responder, minutesAgo, ...room }): ChatRoom => {
+      const isDeveloper = requester === nickname;
+      return {
+        ...room,
+        myRole: isDeveloper ? "developer" : "tester",
+        partner: isDeveloper ? { nickname: responder, role: "tester" } : { nickname: requester, role: "developer" },
+        lastMessageAt: new Date(now.getTime() - minutesAgo * MINUTE_MS).toISOString(),
+      };
+    },
+  );
 }

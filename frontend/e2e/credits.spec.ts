@@ -254,6 +254,19 @@ test.describe("R5 출금 신청", () => {
     await expect(page.getByLabel("예금주")).toHaveValue("");
   });
 
+  test("S185 신청한 뒤 다시 신청해 실패해도 입력이 남는다", async ({ page }) => {
+    await fill(page);
+    await page.getByRole("button", { name: "출금 신청" }).click();
+    await expect(page.getByRole("status")).toBeVisible();
+    await fill(page, { amount: "10000" });
+    await page.getByRole("button", { name: "출금 신청" }).click();
+    await expect(page.getByText("출금 가능한 크레딧(9,480)보다 많아요")).toBeVisible();
+    await expect(page.getByLabel("금액(크레딧)")).toHaveValue("10000");
+    await expect(page.getByLabel("은행")).toHaveValue("토스뱅크");
+    await expect(page.getByLabel("계좌번호")).toHaveValue("100012345678");
+    await expect(page.getByLabel("예금주")).toHaveValue("한서윤");
+  });
+
   test("S151 출금 가능 금액보다 많으면 알려 준다", async ({ page }) => {
     await fill(page, { amount: "10000" });
     await page.getByRole("button", { name: "출금 신청" }).click();

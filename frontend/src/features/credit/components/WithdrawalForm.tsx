@@ -23,6 +23,17 @@ export function WithdrawalForm({ cashable }: { cashable: number }) {
   const [state, formAction, pending] = useActionState(requestWithdrawal, initialState);
   const disabled = cashable <= 0;
 
+  /*
+   * 칸을 비우는 기준. 성공 응답이 올 때만 바뀌고 뒤이은 오류에서는 그대로라서, 성공 뒤 실패해도 입력이 남는다.
+   * 렌더 중에 이전 응답과 비교해 갱신한다 (effect를 쓰면 한 번 비운 칸이 깜박인다)
+   */
+  const [resetKey, setResetKey] = useState(0);
+  const [lastState, setLastState] = useState(state);
+  if (state !== lastState) {
+    setLastState(state);
+    if (state.status === "success") setResetKey(state.submittedAt);
+  }
+
   /* React가 폼 액션 뒤 칸을 자동으로 비우지 않게 직접 제출한다. 오류가 나도 입력이 남는다 */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +63,7 @@ export function WithdrawalForm({ cashable }: { cashable: number }) {
       <form onSubmit={handleSubmit} noValidate>
         {/* 성공할 때마다 새로 그려 입력을 비운다 */}
         <Fields
-          key={state.status === "success" ? state.submittedAt : "fields"}
+          key={resetKey}
           cashable={cashable}
           disabled={disabled}
           pending={pending}

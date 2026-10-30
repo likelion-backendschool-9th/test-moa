@@ -74,6 +74,11 @@ S172 성공
 - Then  "비밀번호를 바꿨어요"가 보인다 (`role="status"`)
 - Then  세 칸이 비어 있다
 
+S183 성공 뒤 다시 실패 (고침 10-30: 리뷰 — 성공 뒤 실패하면 폼이 다시 그려져 입력이 비워졌음)
+- Given S172처럼 한 번 바꿨다
+- When  현재 `test1234`, 새 `moa2026pw`, 확인 `moa2026px`를 넣고 제출한다
+- Then  "새 비밀번호가 서로 달라요"가 보이고 세 칸에 입력한 값이 그대로 있다
+
 S173 현재 비밀번호 틀림
 - When  현재 `wrong123`을 넣고 나머지는 S172와 같게 제출한다
 - Then  "현재 비밀번호가 맞지 않아요"가 현재 비밀번호 칸 아래에 보인다
@@ -111,6 +116,9 @@ S182 넓은 화면 배치 (고침 10-30: 칸이 카드 너비로 늘어나 빈 �
 - Then  "기본 정보", "비밀번호 변경" 각 줄에서 칸이 모두 제목보다 오른쪽에 있다
 - Then  한 줄의 칸들은 왼쪽 끝과 너비가 같고 위에서 아래로 쌓인다
 
+S184 주 버튼 하나 (고침 10-30: 리뷰 — DESIGN.md The One Green Rule)
+- Then  "저장"은 주 버튼(강조색)이고 "비밀번호 변경"은 보조 버튼이다
+
 ## 6. 기존 테스트와 구조 (R6)
 
 S180 준비 중 목록
@@ -143,7 +151,7 @@ S181 구조 (기존 S78)
    - 칸 공통: `features/my/components/FormField.tsx`(`FormField` 라벨·안내·오류·`aria-describedby`, `FormMessage` 성공·실패 문구)를 두 폼이 함께 씀
    - 먼저 `node_modules/next/dist/docs/`에서 Server Actions·`useActionState` 확인
 4. 비밀번호 변경 — S172~S177
-   - 파일: `actions.ts`에 `changePassword`, `src/features/my/components/PasswordForm.tsx` (`"use client"`, 성공 시 `key`로 칸 비움)
+   - 파일: `actions.ts`에 `changePassword`, `src/features/my/components/PasswordForm.tsx` (`"use client"`, 성공 응답에서만 `form.reset()`으로 칸 비움) (고침 10-30: `key`로 비우면 성공 뒤 오류에서도 칸이 비워졌음)
 5. 테스트·문서 — S179, S180, S181
    - 파일: `e2e/profile.spec.ts` 새로 만듦 (테스트 이름은 S번호로 시작), `e2e/links.spec.ts`, `docs/frontend-home.md` S26·S78, `docs/2026-10-30-frontend-my.md` 범위 밖에서 "개인정보 수정" 제거
    - 확인: `cd frontend && npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px·다크 모드 눈으로 확인
@@ -164,7 +172,7 @@ S181 구조 (기존 S78)
 - 저장은 목업이라 데이터는 바뀌지 않는다. 기본 정보는 성공 뒤 입력한 값이 칸에 남고, 새로고침하면 원래 값이다.
 - 운영자도 같은 화면을 쓴다.
 - 오류 문구는 칸 바로 아래, 경고 아이콘과 함께, 글자 크기는 입력과 같은 위치에서 시작한다 (출금 폼과 같은 방식).
-- S번호는 S163~S182를 쓴다. 다른 문서·열린 PR의 최대 번호(S162)와 겹치지 않게 다음 번호부터.
+- S번호는 S163~S184를 쓴다. 다른 문서·열린 PR의 최대 번호(S162)와 겹치지 않게 다음 번호부터.
 
 ## 참고 (2026-10-30 확인)
 - 페이지 URL: `docs/page-urls.md` 55행 "개인정보 수정 `/my/profile/edit` 확정"

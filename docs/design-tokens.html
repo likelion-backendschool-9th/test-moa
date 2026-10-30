@@ -127,14 +127,11 @@
   .icobtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 9999px; background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color 300ms var(--ease-brand), color 300ms var(--ease-brand); }
   .icobtn:hover { background: var(--surface-strong); color: var(--text); }
   .icobtn.on { background: var(--accent-soft); color: var(--accent); }
-  .selectbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 9999px; background: var(--surface-strong); color: var(--text); padding: 8px 16px; font-size: 14px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
-  .selectbtn.on { background: var(--accent-soft); color: var(--accent); }
-  .selectbtn svg { width: 14px; height: 14px; }
-  .options { display: inline-flex; flex-direction: column; width: 220px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); margin-top: 8px; }
-  .options span { display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
-  .options span b { flex: 1; font-weight: 600; }
-  .options span em { font-style: normal; opacity: 0.6; font-variant-numeric: tabular-nums; }
-  .options span.on { background: var(--accent-soft); color: var(--accent); }
+  .seg { display: inline-flex; padding: 4px; border-radius: 9999px; background: var(--surface-strong); }
+  .seg span { display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px; padding: 6px 16px; font-size: 14px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+  .seg span.on { background: var(--surface-muted); color: var(--text); }
+  .seg em { font-style: normal; font-weight: 600; opacity: 0.6; font-variant-numeric: tabular-nums; }
+  .seg span.on em { opacity: 1; color: var(--accent); }
   .icobtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .menu { display: inline-flex; flex-direction: column; min-width: 160px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); }
   .menu span { border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 600; white-space: nowrap; }
@@ -142,25 +139,26 @@
 
   /* 05 채팅 요소 */
   .chat-list { display: grid; gap: 12px; }
-  .chatcard { position: relative; display: flex; align-items: flex-start; gap: 20px; border-radius: 16px; background: var(--surface-muted); padding: 24px; }
+  .chatcard { position: relative; display: flex; border-radius: 16px; background: var(--surface-muted); }
   .sheet.page-bg { background: var(--surface); }
-  .cthumb { position: relative; flex: none; display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid var(--line); border-radius: 12px; background: var(--thumb); color: var(--on-thumb); font-size: 24px; font-weight: 800; letter-spacing: -0.04em; transition: transform 500ms var(--ease-brand); }
-  .chatcard:hover .cthumb { transform: translateY(-4px); }
-  .cthumb i { position: absolute; width: 8px; height: 8px; opacity: 0.3; border-color: currentColor; border-style: solid; }
-  .cthumb .a { top: 6px; left: 6px; border-width: 1px 0 0 1px; }
-  .cthumb .b { right: 6px; bottom: 6px; border-width: 0 1px 1px 0; }
-  .chatcard .body { flex: 1; min-width: 0; display: grid; gap: 8px; padding-top: 2px; }
+  .cthumb { position: relative; flex: none; align-self: stretch; display: grid; place-items: center; width: 160px; min-height: 115px; overflow: hidden; border-right: 1px solid var(--line); border-radius: 16px 0 0 16px; background: var(--thumb); color: var(--on-thumb); font-size: 54px; font-weight: 800; letter-spacing: -0.04em; }
+  .cthumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease-brand); }
+  .chatcard:hover .cthumb img { transform: scale(1.05); }
+  .cthumb i { position: absolute; width: 12px; height: 12px; opacity: 0.3; border-color: currentColor; border-style: solid; }
+  .cthumb .a { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+  .cthumb .b { right: 10px; bottom: 10px; border-width: 0 1px 1px 0; }
+  .chatcard .body { flex: 1; min-width: 0; display: grid; gap: 6px; padding: 16px 24px; }
   .chatcard .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .chatcard .row b { font-size: 18px; font-weight: 800; transition: color 300ms var(--ease-brand); }
+  .chatcard .row b { font-size: 20px; font-weight: 800; transition: color 300ms var(--ease-brand); }
   .chatcard:hover .row b { color: var(--accent); }
   .chatcard time { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .chatcard time.today { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; }
   .chatcard time.today::before { content: ""; width: 6px; height: 6px; border-radius: 9999px; background: var(--accent); }
-  .chatcard .who { font-size: 14px; font-weight: 600; display: flex; gap: 8px; }
-  .chatcard .who i { font-style: normal; color: var(--text-muted); opacity: 0.5; }
-  .chatcard .msg { margin-top: 4px; font-size: 14px; line-height: 1.625; color: var(--text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .chatcard .icobtn { margin: -6px -6px 0 0; }
-  .chatcard .menu { position: absolute; right: 18px; top: 58px; z-index: 1; }
+  .chatcard .who { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .chatcard .who .badge { border-radius: 6px; background: var(--surface-strong); padding: 2px 8px; font-size: 12px; font-weight: 500; }
+  .chatcard .msg { font-size: 14px; line-height: 1.625; color: var(--text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .chatcard > .icobtn { margin: 12px 14px 0 0; flex: none; }
+  .chatcard .menu { position: absolute; right: 14px; top: 54px; z-index: 1; }
   .anatomy { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 
   /* 06 규칙 */
@@ -200,8 +198,8 @@
       <div>
         <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트 · 교정쇄</p>
         <div class="swatches">
-          <div class="sw"><div class="chip" style="background:#0f7c4a"></div><p>강조<em>#0F7C4A</em></p><small>주 버튼 · 순위 · 추가 보상 · 도장 · 오늘 온 대화 · 고른 필터 · 포커스</small><code>--accent</code></div>
-          <div class="sw"><div class="chip" style="background:#def7eb"></div><p>연한 강조<em>#DEF7EB</em></p><small>현재 메뉴 항목 · 고른 필터 · 열린 더보기</small><code>--accent-soft</code></div>
+          <div class="sw"><div class="chip" style="background:#0f7c4a"></div><p>강조<em>#0F7C4A</em></p><small>주 버튼 · 순위 · 추가 보상 · 도장 · 오늘 온 대화 · 고른 탭 수 · 포커스</small><code>--accent</code></div>
+          <div class="sw"><div class="chip" style="background:#def7eb"></div><p>연한 강조<em>#DEF7EB</em></p><small>현재 메뉴 항목 · 열린 더보기</small><code>--accent-soft</code></div>
           <div class="sw"><div class="chip" style="background:#1a1a1a"></div><p>글씨<em>#1A1A1A</em></p><small>제목 · 본문 · 먹 · 15.1:1</small><code>--text</code></div>
           <div class="sw"><div class="chip" style="background:#5c5c58"></div><p>보조 글씨<em>#5C5C58</em></p><small>설명 · 메타 · 5.8:1</small><code>--text-muted</code></div>
           <div class="sw"><div class="chip" style="background:#efefec"></div><p>바탕<em>#EFEFEC</em></p><small>페이지 · 작업대 회색</small><code>--surface</code></div>
@@ -212,7 +210,7 @@
         <p class="mode-label"><i style="background:#000"></i>다크 · uibowl 바탕</p>
         <div class="swatches">
           <div class="sw"><div class="chip" style="background:#129357"></div><p>강조<em>#129357</em></p><small>버튼 글씨는 검정 · 5.3:1</small><code>--accent</code></div>
-          <div class="sw"><div class="chip" style="background:#123625"></div><p>연한 강조<em>#123625</em></p><small>현재 메뉴 항목 · 고른 필터 · 열린 더보기</small><code>--accent-soft</code></div>
+          <div class="sw"><div class="chip" style="background:#123625"></div><p>연한 강조<em>#123625</em></p><small>현재 메뉴 항목 · 열린 더보기</small><code>--accent-soft</code></div>
           <div class="sw"><div class="chip" style="background:#ffffff"></div><p>글씨<em>#FFFFFF</em></p><small>제목 · 본문</small><code>--text</code></div>
           <div class="sw"><div class="chip" style="background:#a3aab5"></div><p>보조 글씨<em>#A3AAB5</em></p><small>패널 위 7.6:1</small><code>--text-muted</code></div>
           <div class="sw"><div class="chip" style="background:#000000"></div><p>바탕<em>#000000</em></p><small>페이지</small><code>--surface</code></div>
@@ -278,7 +276,7 @@
           <div class="ctl" style="grid-column:span 2"><b>검색창 포커스</b><div class="search focus"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 가계부</div><small>패널 바탕 + 강조색 2px 링</small></div>
           <div class="ctl"><b>아이콘 버튼 / Icon</b><button class="icobtn" aria-label="더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button> <button class="icobtn on" aria-label="더보기 열림"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button><small>36px 원형. 평소 흐린 글씨, hover는 칩 바탕, 열림은 연한 강조</small></div>
           <div class="ctl"><b>더보기 메뉴 / Menu</b><div class="menu"><span class="on">채팅방 열기</span><span>모집 글 보기</span></div><small>패널 바탕 + 1px 경계, 모서리 12 · 항목 8. 겹침 <code>--z-popover</code></small></div>
-          <div class="ctl" style="grid-column:span 2"><b>드롭다운 / Select</b><span class="selectbtn">프로젝트별 <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="m216.49 104.49-80 80a12 12 0 0 1-17 0l-80-80a12 12 0 0 1 17-17L128 159l71.51-71.52a12 12 0 0 1 17 17Z"/></svg></span> <span class="selectbtn on">가계부 노트 <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="m216.49 104.49-80 80a12 12 0 0 1-17 0l-80-80a12 12 0 0 1 17-17L128 159l71.51-71.52a12 12 0 0 1 17 17Z"/></svg></span><div class="options"><span><b>전체 프로젝트</b><em>4</em></span><span class="on"><b>가계부 노트</b><em>2</em> ✓</span><span><b>북로그</b><em>1</em></span></div><small>칩 줄 대신 쓰는 필터. 고르면 버튼과 항목이 연한 강조. 목록은 최대 18rem에서 스크롤</small></div>
+          <div class="ctl" style="grid-column:span 2"><b>세그먼트 탭 / Segmented</b><span class="seg"><span class="on">전체 <em>4</em></span><span>테스터 <em>1</em></span><span>개발자 <em>3</em></span></span><small>한 목록을 갈래로 나눠 봐요. 고른 탭만 패널 면으로 올라오고 수는 강조색</small></div>
         </div>
       </div>
       <div class="sheet dark">
@@ -296,7 +294,7 @@
           <div class="ctl" style="grid-column:span 2"><b>검색창 포커스</b><div class="search focus"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 가계부</div><small>패널 바탕 + 강조색 2px 링</small></div>
           <div class="ctl"><b>아이콘 버튼 / Icon</b><button class="icobtn" aria-label="더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button> <button class="icobtn on" aria-label="더보기 열림"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button><small>열림은 연한 강조 + 강조 아이콘</small></div>
           <div class="ctl"><b>더보기 메뉴 / Menu</b><div class="menu"><span class="on">채팅방 열기</span><span>모집 글 보기</span></div><small>1px 경계로 아래 카드와 나눠요</small></div>
-          <div class="ctl" style="grid-column:span 2"><b>드롭다운 / Select</b><span class="selectbtn">프로젝트별 <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="m216.49 104.49-80 80a12 12 0 0 1-17 0l-80-80a12 12 0 0 1 17-17L128 159l71.51-71.52a12 12 0 0 1 17 17Z"/></svg></span> <span class="selectbtn on">가계부 노트 <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="m216.49 104.49-80 80a12 12 0 0 1-17 0l-80-80a12 12 0 0 1 17-17L128 159l71.51-71.52a12 12 0 0 1 17 17Z"/></svg></span><div class="options"><span><b>전체 프로젝트</b><em>4</em></span><span class="on"><b>가계부 노트</b><em>2</em> ✓</span><span><b>북로그</b><em>1</em></span></div><small>고른 값은 다크에서도 연한 강조 바탕</small></div>
+          <div class="ctl" style="grid-column:span 2"><b>세그먼트 탭 / Segmented</b><span class="seg"><span class="on">전체 <em>4</em></span><span>테스터 <em>1</em></span><span>개발자 <em>3</em></span></span><small>고른 탭은 패널 면, 수는 강조색</small></div>
         </div>
       </div>
     </div>
@@ -328,26 +326,26 @@
   <!-- 05 -->
   <section>
     <h2><span>05</span>채팅 요소</h2>
-    <p class="desc">채팅함(<code>/my/chats</code>)에서 처음 쓴 요소예요. 새 색은 없고, 활자 썸네일을 작게 줄이고 카드·메뉴를 기존 면과 모서리 규칙으로 만들었어요. 코드는 <code>frontend/src/features/chat/components</code>에 있어요.</p>
+    <p class="desc">채팅함(<code>/my/chats</code>)에서 처음 쓴 요소예요. 새 색은 없고, 카드 왼쪽 이미지 칸·역할 탭·역할 배지·더보기 메뉴를 기존 면과 모서리 규칙으로 만들었어요. 예시 이미지는 <code>frontend/public/sample/projects</code>의 시연용 웹·앱 화면이에요. 코드는 <code>frontend/src/features/chat/components</code>에 있어요.</p>
     <div class="pair">
       <div class="sheet page-bg">
         <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트</p>
         <div class="chat-list">
           <div class="chatcard">
-            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>북</div>
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>북<img src="../frontend/public/sample/projects/booklog.svg" alt=""></div>
             <div class="body">
               <div class="row"><b>북로그</b><time class="today">오후 3:12</time></div>
-              <div class="who">서재지기 <i aria-hidden="true">|</i> 윤슬</div>
+              <div class="who">서재지기 <span class="badge">개발자</span></div>
               <p class="msg">피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.</p>
             </div>
             <button class="icobtn on" aria-label="북로그 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
             <div class="menu"><span class="on">채팅방 열기</span><span>모집 글 보기</span></div>
           </div>
           <div class="chatcard">
-            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>가</div>
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>가<img src="../frontend/public/sample/projects/ledger-note.svg" alt=""></div>
             <div class="body">
               <div class="row"><b>가계부 노트</b><time>10월 26일</time></div>
-              <div class="who">도현랩 <i aria-hidden="true">|</i> 윤슬</div>
+              <div class="who">도현랩 <span class="badge">개발자</span></div>
               <p class="msg">보내 주신 분류 오류 확인했어요. 다음 버전에서 고칠게요.</p>
             </div>
             <button class="icobtn" aria-label="가계부 노트 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
@@ -358,19 +356,19 @@
         <p class="mode-label" style="margin-top:0"><i style="background:#000"></i>다크</p>
         <div class="chat-list">
           <div class="chatcard">
-            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>가</div>
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>가<img src="../frontend/public/sample/projects/ledger-note.svg" alt=""></div>
             <div class="body">
               <div class="row"><b>가계부 노트</b><time class="today">오후 6:27</time></div>
-              <div class="who">도현랩 <i aria-hidden="true">|</i> 새벽코더</div>
+              <div class="who">새벽코더 <span class="badge">테스터</span></div>
               <p class="msg">영수증 사진이 흐리면 금액을 못 읽는 것 같아요.</p>
             </div>
             <button class="icobtn" aria-label="가계부 노트 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
           </div>
           <div class="chatcard">
-            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>북</div>
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>북<img src="../frontend/public/sample/projects/booklog.svg" alt=""></div>
             <div class="body">
               <div class="row"><b>북로그</b><time>10월 24일</time></div>
-              <div class="who">서재지기 <i aria-hidden="true">|</i> 도현랩</div>
+              <div class="who">서재지기 <span class="badge">개발자</span></div>
               <p class="msg">피드백 잘 받았어요. 참여해 주셔서 감사해요.</p>
             </div>
             <button class="icobtn" aria-label="북로그 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
@@ -379,11 +377,11 @@
       </div>
     </div>
     <div class="anatomy">
-      <div class="rule"><b>채팅 카드 · ChatCard</b>패널 바탕, 모서리 16, 안쪽 20(md 24), 카드 사이 16, 줄 사이 8. 위에서부터 프로젝트명 18px 800과 최근 일시 12px · "요청자 | 응답자" 닉네임 14px 600(역할 이름은 화면 낭독기에만) · 미리보기 한 줄. 오늘 온 대화는 일시가 강조색 + 점. hover 때 썸네일 4px 상승, 프로젝트명 강조색. 카드 전체가 채팅방 링크이고 더보기는 링크 밖이에요.</div>
-      <div class="rule"><b>작은 활자 썸네일 · ChatThumb</b>활자 썸네일을 56px(md 64px) 정사각형으로 줄이고 이름 첫 글자만 폭의 44%로 앉혀요. 썸네일 면·1px 경계·흐린 두 모서리 재단선(8px)은 그대로, 모서리는 12. 프로젝트 사진이 생기면 이 자리에 넣어요.</div>
-      <div class="rule"><b>더보기 메뉴 · 프로젝트별 드롭다운</b>둘 다 버튼 오른쪽 끝에 맞춰 열리고, 고른 항목(없으면 첫 항목)에 포커스, 화살표로 이동, Esc·Tab·바깥 클릭으로 닫혀요. 열린 더보기 버튼과 고른 필터는 연한 강조 바탕이에요. 드롭다운은 프로젝트가 늘어도 한 자리만 차지하고 목록 안에서 스크롤해요. 겹침 <code>--z-popover 20</code>은 카드 위, 헤더 아래예요.</div>
+      <div class="rule"><b>채팅 카드 · ChatCard</b>패널 바탕, 모서리 16. 왼쪽 이미지 칸 | 1px 세로선 | 내용. 내용은 위아래 16 · 좌우 20(md 24), 줄 사이 6, 카드 사이 16. 프로젝트명 20px 800과 최근 일시 12px · 상대 닉네임 14px 600 + 역할 배지(내 닉네임은 쓰지 않아요) · 미리보기 한 줄. 오늘 온 대화는 일시가 강조색 + 점. hover 때 이미지 105%, 프로젝트명 강조색. 카드 전체가 채팅방 링크이고 더보기는 링크 밖이에요.</div>
+      <div class="rule"><b>카드 이미지 · ChatThumb</b>카드 높이를 다 채우는 칸, 폭 96(sm 128, md 160). 넓은 화면에서 약 160×115로 이미지 원본 4:3에 가까워요. 이미지는 가운데 기준으로 잘라 채우고, 이름이 옆 제목에 있으니 대체 텍스트는 비워요. 이미지가 없으면 썸네일 면에 재단선 두 모서리와 이름 첫 글자를 앉혀요. 지금 이미지는 실제 서비스 화면이 아닌 시연용이에요.</div>
+      <div class="rule"><b>더보기 메뉴 · 역할 탭</b>더보기 메뉴는 버튼 오른쪽 끝에 맞춰 열리고 첫 항목에 포커스, 화살표로 이동, Esc·Tab·바깥 클릭으로 닫혀요. 열린 더보기 버튼은 연한 강조 바탕이에요. 역할 탭(전체 / 테스터 / 개발자)은 검색창 아래 줄 왼쪽, 정렬은 같은 줄 오른쪽이에요. 내 프로젝트의 채팅은 개발자, 테스터로 참여한 채팅은 테스터에 모여요. 겹침 <code>--z-popover 20</code>은 카드 위, 헤더 아래예요.</div>
     </div>
-    <p class="gap-note">강조색은 이 화면에서 네 자리에만 써요: 오늘 온 대화의 일시와 점, hover 때 프로젝트명, 고른 필터, 열린 더보기. 닉네임이나 썸네일처럼 카드마다 반복되는 곳에는 쓰지 않아서 강조가 드물게 남아요.</p>
+    <p class="gap-note">강조색은 이 화면에서 네 자리에만 써요: 오늘 온 대화의 일시와 점, hover 때 프로젝트명, 고른 역할 탭의 수, 열린 더보기. 닉네임·역할 배지·이미지처럼 카드마다 반복되는 곳에는 쓰지 않아서 강조가 드물게 남아요.</p>
   </section>
 
   <!-- 06 -->
@@ -395,7 +393,7 @@
         <ul>
           <li>색·모션 값은 <code>globals.css</code> 토큰으로만 써요</li>
           <li>간격·글자 크기·모서리는 Tailwind 기본 단계를 써요</li>
-          <li>강조색은 주 버튼, 순위 숫자, 추가 보상, 도장, 새로 생긴 것(오늘 온 대화), 포커스·고른 필터에만 써요</li>
+          <li>강조색은 주 버튼, 순위 숫자, 추가 보상, 도장, 새로 생긴 것(오늘 온 대화), 포커스·고른 탭에만 써요</li>
           <li>강조는 굵기와 크기로 하고, 숫자는 <code>tabular-nums</code>를 써요</li>
           <li>모집 글에는 마감일·인원·보상을 같은 자리에 보여 줘요</li>
           <li>공통 요소는 <code>components/ui</code>에서 가져다 써요</li>
@@ -407,7 +405,7 @@
           <li>컴포넌트에 hex 값이나 <code>[13px]</code> 같은 임의 값을 쓰지 않아요</li>
           <li>제목 위 작은 라벨(kicker)을 달지 않아요</li>
           <li>그라데이션 글자, 그림자, 유리 효과를 쓰지 않아요</li>
-          <li>가짜 스크린샷이나 지어낸 후기·수치를 넣지 않아요</li>
+          <li>모집 카드에 가짜 스크린샷을, 어디에도 지어낸 후기·수치를 넣지 않아요 (채팅 카드의 시연용 프로젝트 이미지는 예외)</li>
           <li>재단선과 색 막대를 히어로 밖에 쓰지 않아요</li>
           <li>한 화면에 주요 버튼을 둘 이상 두지 않아요</li>
         </ul>

@@ -165,21 +165,25 @@ components:
   icon-button-open:
     backgroundColor: "{colors.accent-soft}"
     textColor: "{colors.accent}"
-  select-button:
+  segmented-tabs:
     backgroundColor: "{colors.surface-strong}"
+    rounded: "{rounded.full}"
+    padding: "4px"
+  segmented-tab:
+    textColor: "{colors.text-muted}"
+    rounded: "{rounded.full}"
+    padding: "6px 16px"
+  segmented-tab-active:
+    backgroundColor: "{colors.surface-muted}"
     textColor: "{colors.text}"
     rounded: "{rounded.full}"
-    padding: "8px 16px"
-  select-button-active:
-    backgroundColor: "{colors.accent-soft}"
-    textColor: "{colors.accent}"
-    rounded: "{rounded.full}"
-    padding: "8px 16px"
-  select-option-selected:
-    backgroundColor: "{colors.accent-soft}"
-    textColor: "{colors.accent}"
-    rounded: "{rounded.lg}"
-    padding: "8px 12px"
+    padding: "6px 16px"
+  role-badge:
+    backgroundColor: "{colors.surface-strong}"
+    textColor: "{colors.text}"
+    typography: "{typography.label}"
+    rounded: "{rounded.md}"
+    padding: "2px 8px"
   menu-popover:
     backgroundColor: "{colors.surface-muted}"
     borderColor: "{colors.line}"
@@ -193,15 +197,15 @@ components:
     backgroundColor: "{colors.surface-muted}"
     textColor: "{colors.text}"
     rounded: "{rounded.2xl}"
-    padding: "20px"
+    padding: "16px 24px"
   chat-time-today:
     textColor: "{colors.accent}"
     typography: "{typography.label}"
   chat-thumb:
     backgroundColor: "{colors.thumb}"
     textColor: "{colors.on-thumb}"
-    rounded: "{rounded.xl}"
-    size: "56px"
+    rounded: "{rounded.2xl} 0 0 {rounded.2xl}"
+    width: "160px"
 ---
 
 # Design System: Test Moa
@@ -226,8 +230,8 @@ components:
 교정지와 먹, 에메랄드 하나로 된 절제된 팔레트이며, 다크에서는 uibowl 바탕 위에 같은 에메랄드 계열이 같은 역할을 맡는다. 모든 값은 `src/app/globals.css`의 CSS 변수에만 있고, `-dark` 키는 `prefers-color-scheme: dark`에서 같은 이름의 변수를 덮어쓴 값이다(컴포넌트는 `-dark`를 따로 부르지 않는다).
 
 ### Primary
-- **에메랄드 (라이트 / 다크)** (accent, accent-dark): 주 행동 버튼(테스트 둘러보기, 회원가입), 마감 임박 순위 숫자, 카드의 '추가 보상' 줄, '모집 완료' 교정 도장, 소개 배너 제목의 강조 구절 한 곳. 상호작용 상태(포커스 링, 텍스트 선택, 캐럿, 검색창 포커스 링, 모바일 메뉴의 현재 항목)도 이 색을 쓴다. 채팅함에서는 오늘 온 대화의 일시와 점, hover 때 프로젝트명, 고른 필터·열린 더보기에 쓴다.
-- **연한 에메랄드** (accent-soft): 모바일 메뉴 현재 항목, 고른 필터(프로젝트별 드롭다운 버튼과 고른 항목), 열린 더보기 버튼의 바탕. 강조색 글씨 아래에만 깐다.
+- **에메랄드 (라이트 / 다크)** (accent, accent-dark): 주 행동 버튼(테스트 둘러보기, 회원가입), 마감 임박 순위 숫자, 카드의 '추가 보상' 줄, '모집 완료' 교정 도장, 소개 배너 제목의 강조 구절 한 곳. 상호작용 상태(포커스 링, 텍스트 선택, 캐럿, 검색창 포커스 링, 모바일 메뉴의 현재 항목)도 이 색을 쓴다. 채팅함에서는 오늘 온 대화의 일시와 점, hover 때 프로젝트명, 고른 역할 탭의 수, 열린 더보기 버튼에 쓴다.
+- **연한 에메랄드** (accent-soft): 모바일 메뉴 현재 항목, 열린 더보기 버튼의 바탕. 강조색 글씨·아이콘 아래에만 깐다.
 - **강조 위 글씨** (on-accent): 주 버튼과 선택 영역의 글씨. 라이트는 흰색, 다크는 검정.
 
 ### Neutral
@@ -294,11 +298,11 @@ components:
 그림자가 없다. 깊이는 명도 세 단계, 작업대(surface) → 교정지(surface-muted) → 칩(surface-strong)으로만 나뉘고, 썸네일만 1px 재단 회색 테두리로 바탕과 분리된다. 유일한 반투명 면은 모바일 메뉴(surface 95% + 강한 배경 흐림)다.
 
 ### Named Rules
-**The Flat Sheet Rule.** 면은 그림자 없이 평평하다. 들뜸은 hover 때 썸네일이 4px 위로 움직이는 것으로만 표현한다.
+**The Flat Sheet Rule.** 면은 그림자 없이 평평하다. 들뜸은 hover 때 썸네일이 4px 위로 움직이는 것으로만 표현한다. 카드에 붙은 채팅 카드 이미지는 움직일 자리가 없어서 대신 105%로 살짝 커진다.
 
 ## Shapes
 
-두 가지 형태 언어를 쓴다. 누르는 것(버튼, 칩, 탭, 검색창, 아이콘 버튼)은 완전 둥근 알약(9999px), 담는 것(배너, 패널, 썸네일, 빈 상태, 채팅 카드)은 16px 둥근 면. 그 사이 값은 작은 요소에만 쓴다: 순위 행 hover·더보기 메뉴 면·작은 활자 썸네일 12px, 모바일 메뉴 버튼·항목, 더보기 메뉴 항목과 스켈레톤 8px.
+두 가지 형태 언어를 쓴다. 누르는 것(버튼, 칩, 탭, 검색창, 아이콘 버튼)은 완전 둥근 알약(9999px), 담는 것(배너, 패널, 썸네일, 빈 상태, 채팅 카드)은 16px 둥근 면. 그 사이 값은 작은 요소에만 쓴다: 순위 행 hover·더보기 메뉴 면 12px, 모바일 메뉴 버튼·항목, 더보기 메뉴 항목과 스켈레톤 8px.
 
 재단선은 이 세계의 고유 형태다. 히어로에는 네 모서리 16px 재단선(1px 먹선)과 CMYK 막대가 있고, 활자 썸네일에는 왼쪽 위·오른쪽 아래 두 모서리에 12px 재단선이 30% 투명도로 들어간다. 교정 도장은 두 줄 테두리의 둥근 사각형으로 -12° 기울어 이름 위에 겹친다.
 
@@ -351,14 +355,14 @@ components:
 ### 더보기 메뉴 (ChatCardMenu)
 아이콘 버튼 아래 오른쪽 끝에 맞춰 여는 작은 면. 교정지(surface-muted) 바탕에 1px 재단 회색 테두리, 12px 모서리, 안쪽 6px. 그림자 대신 테두리로 아래 카드와 나눈다. 항목은 8px 모서리, 8px 12px, 0.875rem 600이고 hover·포커스 때 칩 회색. 열면 `rise-in`으로 떠오르고 첫 항목에 포커스가 간다. 위아래 화살표로 옮기고 Esc·Tab·바깥 클릭으로 닫는다. 겹침은 `--z-popover`. 메뉴에는 이미 있는 페이지로 가는 항목만 둔다.
 
-### 프로젝트별 드롭다운 (ProjectSelect)
-필터 값이 많아질 수 있는 곳에서 칩 줄 대신 쓰는 알약 버튼 + 목록. 버튼은 칩과 같은 크기(8px 16px, 0.875rem 700)에 아래 꺾쇠(열리면 180° 회전)이고, 평소에는 칩 회색, 값을 고르면 연한 강조 바탕 + 강조 글씨로 바뀌어 필터가 걸려 있음을 알린다(버튼에는 고른 값 이름이 보인다). 목록은 더보기 메뉴와 같은 면(교정지, 1px 재단 회색, 12px)에 폭 16rem, 최대 높이 18rem에서 안쪽 스크롤. 항목은 이름 + 개수(tabular-nums, 60%) + 체크 표시이고, 고른 항목은 연한 강조 바탕 + 강조 글씨. 여닫기·키보드는 더보기 메뉴와 같고, 열면 고른 항목에 포커스, 고르면 닫히고 버튼으로 돌아온다. 역할은 `listbox`/`option`.
+### 역할 탭 (ChatFilters)
+한 목록을 두세 갈래로 나눠 보는 세그먼트 탭. 칩 회색 알약 홈(안쪽 4px) 안에 탭을 나란히 두고, 고른 탭만 교정지 면으로 올라온다(먹 글씨). 나머지 탭은 바탕 없이 흐린 먹, hover 때 먹. 탭은 0.875rem 700, 6px 16px(좁은 화면 6px 12px)이고 이름 뒤에 개수(600, tabular-nums)를 붙인다. 개수는 평소 60% 불투명도, 고른 탭에서는 강조색이다. 헤더 탭(현재 탭이 칩 회색)과 헷갈리지 않도록 홈 안에서 밝은 면이 움직이는 모양을 쓴다. 상태는 `aria-pressed`. 채팅함에서는 "전체 / 테스터 / 개발자"이고 검색창 아래 줄 왼쪽에, 정렬은 같은 줄 오른쪽에 둔다.
 
 ### 채팅 카드 (ChatCard)
-채팅방 하나를 담는 교정지 면(16px, 안쪽 20px / md 24px). 왼쪽에 작은 활자 썸네일, 가운데에 위에서부터 [프로젝트명 Title(1.125rem 800) … 최근 일시 0.75rem 흐린 먹 tabular-nums], [요청자 닉네임 | 응답자 닉네임, 600, 사이는 흐린 세로선], [최근 메시지 미리보기 한 줄, 흐린 먹, 행간 넉넉히, 넘치면 말줄임], 오른쪽에 더보기 아이콘 버튼. 줄 사이 8px. "요청자"·"응답자" 글자는 화면에 쓰지 않고 보조 기술에만 읽힌다. 오늘 온 대화는 일시가 강조색 700이 되고 앞에 6px 강조색 점이 붙는다. 카드 전체가 채팅방 링크(링크의 `::after`가 카드를 덮는다)이고, 더보기 버튼은 링크 밖에 둬서 따로 누른다. 키보드 포커스는 카드 전체에 강조색 2px 테두리로 보인다. hover 때 썸네일이 4px 올라가고 프로젝트명이 강조색이 된다. 목록은 카드 사이 16px, 60ms 순차 등장.
+채팅방 하나를 담는 교정지 면(16px 모서리). 왼쪽 이미지 칸 | 1px 재단 회색 세로선 | 오른쪽 내용 구조다. 이미지 칸은 카드 높이를 다 채우고 폭 96px(sm 128px, md 160px). 내용은 안쪽 위아래 16px·좌우 20px(md 24px)이고, 위에서부터 [프로젝트명 1.25rem 800 … 최근 일시 0.75rem 흐린 먹 tabular-nums·더보기 아이콘 버튼], [대화 상대 닉네임 600 + 역할 배지], [최근 메시지 미리보기 한 줄, 흐린 먹, 행간 넉넉히, 넘치면 말줄임]. 줄 사이 6px. 내 닉네임은 쓰지 않는다. 역할 배지는 `Badge` 기본 모양(칩 회색, 6px 모서리, 0.75rem, 2px 8px)으로 상대가 "개발자"인지 "테스터"인지 알리고, 카드마다 반복되므로 강조색을 쓰지 않는다. 오늘 온 대화는 일시가 강조색 700이 되고 앞에 6px 강조색 점이 붙는다. 카드 전체가 채팅방 링크(링크의 `::after`가 카드를 덮는다)이고, 더보기 버튼은 링크 밖에 둬서 따로 누른다. 키보드 포커스는 카드 전체에 강조색 2px 테두리로 보인다. hover 때 프로젝트명이 강조색이 되고 이미지가 105%로 살짝 커진다. 더보기 메뉴가 카드 밖으로 나와야 해서 카드에 `overflow: hidden`을 쓰지 않고, 이미지 칸이 왼쪽 두 모서리를 직접 둥글린다. 목록은 카드 사이 16px, 60ms 순차 등장.
 
-### 작은 활자 썸네일 (ChatThumb)
-활자 썸네일을 56px(md 64px) 정사각형으로 줄인 것. 같은 썸네일 면(thumb)·1px 재단 회색 테두리·두 모서리 재단선(8px, 30%)을 쓰고, 이름 전체 대신 프로젝트 이름 첫 글자를 썸네일 폭의 44%(800, 자간 -0.04em)로 가운데 앉힌다. 이름은 옆 제목에 있으니 보조 기술에는 숨긴다. 프로젝트 사진이 생기면 이 자리에 넣는다.
+### 채팅 카드 이미지 (ChatThumb)
+채팅 카드 왼쪽 이미지 칸. 프로젝트 이미지가 있으면 칸을 꽉 채우고(가운데 기준으로 잘라 채움), 이름이 바로 옆 제목에 있으니 장식으로 두고 대체 텍스트를 비운다. 이미지가 없으면 썸네일 면(thumb) 위에 두 모서리 재단선(12px, 30%)과 프로젝트 이름 첫 글자(칸 폭의 34%, 800, 자간 -0.04em)를 앉힌 활자 썸네일로 돌아가고, hover 때 글자가 4px 올라간다. 지금은 시연용 웹·앱 화면 이미지(`public/sample/projects/*.svg`, 원본 4:3)를 쓴다. 웹 서비스는 브라우저 창, 앱은 휴대폰 화면 모양이고 실제 서비스 화면이 아니다. 실제 이미지는 API를 붙일 때 프로젝트 대표 이미지로 바꾼다.
 
 ### Motion
 이징은 하나, `--ease-brand`(cubic-bezier(0.22, 1, 0.36, 1)). 상태 전환 300ms, 이동 500ms, 등장 `rise-in` 500ms, 순차 등장은 60ms씩 최대 340ms. 스켈레톤은 2초 `soft-pulse`. `prefers-reduced-motion`이면 모두 1ms로 줄인다.
@@ -369,7 +373,7 @@ components:
 - **Do** 색은 `bg-surface`, `text-text-muted`, `bg-accent` 같은 토큰 유틸리티로만 쓴다. 새 색이 필요하면 `globals.css`에 라이트·다크 값을 함께 추가한다.
 - **Do** 조작 요소는 알약, 담는 면은 16px로 둔다.
 - **Do** 층은 surface → surface-muted → surface-strong 명도로 나눈다.
-- **Do** 모집 글 이미지는 활자 썸네일을 쓴다.
+- **Do** 모집 글 이미지는 활자 썸네일을 쓴다. 채팅 카드는 프로젝트 이미지를 쓰고, 없을 때만 활자 썸네일로 돌아간다.
 - **Do** 마감일, 인원, 보상 숫자는 `tabular-nums`로 같은 자리에 둔다.
 - **Do** 모션은 `--ease-brand`와 300/500ms만 쓰고 reduced motion을 지킨다.
 
@@ -378,6 +382,6 @@ components:
 - **Don't** 제목 위에 kicker·eyebrow를 두지 않는다.
 - **Don't** 그라데이션 글자를 쓰지 않는다.
 - **Don't** 강조색을 주 행동, 순위 숫자, 추가 보상, 교정 도장, 새로 생긴 것, 상호작용 상태 밖에서 쓰지 않는다.
-- **Don't** 가짜 스크린샷이나 목업 이미지를 썸네일에 넣지 않는다.
+- **Don't** 모집 카드 썸네일에 가짜 스크린샷이나 목업 이미지를 넣지 않는다. (채팅 카드의 시연용 프로젝트 화면 이미지는 예외로, 2026-10-30 요청으로 넣었다. 시연용임을 코드와 문서에 적어 둔다)
 - **Don't** `ProofMarks`(네 모서리 재단선 + CMYK 막대)를 히어로 밖에 두지 않고, CMYK 막대를 다크에서 보이지 않는다.
 - **Don't** 면에 그림자를 넣지 않는다.

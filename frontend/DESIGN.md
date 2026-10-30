@@ -155,6 +155,32 @@ components:
     backgroundColor: "{colors.surface-strong}"
     rounded: "{rounded.xl}"
     padding: "8px"
+  icon-button:
+    textColor: "{colors.text-muted}"
+    rounded: "{rounded.full}"
+    size: "36px"
+  icon-button-hover:
+    backgroundColor: "{colors.surface-strong}"
+    textColor: "{colors.text}"
+  menu-popover:
+    backgroundColor: "{colors.surface-muted}"
+    borderColor: "{colors.line}"
+    rounded: "{rounded.xl}"
+    padding: "6px"
+  menu-item-hover:
+    backgroundColor: "{colors.surface-strong}"
+    rounded: "{rounded.lg}"
+    padding: "8px 12px"
+  chat-card:
+    backgroundColor: "{colors.surface-muted}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.2xl}"
+    padding: "16px"
+  chat-thumb:
+    backgroundColor: "{colors.thumb}"
+    textColor: "{colors.on-thumb}"
+    rounded: "{rounded.xl}"
+    size: "56px"
 ---
 
 # Design System: Test Moa
@@ -238,7 +264,9 @@ components:
 
 헤더는 sticky 한 줄이다. xl 이상은 로고·탭·검색·계정이 한 줄, md~xl은 탭이 두 번째 줄로 내려가고, md 미만은 검색과 탭이 전체 화면 메뉴로 들어간다.
 
-겹침 순서는 토큰으로만 쓴다: `--z-menu`(30), `--z-header`(40), `--z-skip`(50).
+채팅함처럼 목록 하나에 집중하는 페이지는 본문을 가운데 최대 폭 768px(max-w-3xl) 한 열로 둔다.
+
+겹침 순서는 토큰으로만 쓴다: `--z-popover`(20, 카드 위 더보기 메뉴), `--z-menu`(30), `--z-header`(40), `--z-skip`(50). 메뉴는 다음 카드 위에 오되 sticky 헤더 아래로 지나간다.
 
 ## Elevation & Depth
 
@@ -249,7 +277,7 @@ components:
 
 ## Shapes
 
-두 가지 형태 언어를 쓴다. 누르는 것(버튼, 칩, 탭, 검색창)은 완전 둥근 알약(9999px), 담는 것(배너, 패널, 썸네일, 빈 상태)은 16px 둥근 면. 그 사이 값은 작은 요소에만 쓴다: 순위 행 hover 12px, 모바일 메뉴 버튼·항목과 스켈레톤 8px.
+두 가지 형태 언어를 쓴다. 누르는 것(버튼, 칩, 탭, 검색창, 아이콘 버튼)은 완전 둥근 알약(9999px), 담는 것(배너, 패널, 썸네일, 빈 상태, 채팅 카드)은 16px 둥근 면. 그 사이 값은 작은 요소에만 쓴다: 순위 행 hover·더보기 메뉴 면·작은 활자 썸네일 12px, 모바일 메뉴 버튼·항목, 더보기 메뉴 항목과 스켈레톤 8px.
 
 재단선은 이 세계의 고유 형태다. 히어로에는 네 모서리 16px 재단선(1px 먹선)과 CMYK 막대가 있고, 활자 썸네일에는 왼쪽 위·오른쪽 아래 두 모서리에 12px 재단선이 30% 투명도로 들어간다. 교정 도장은 두 줄 테두리의 둥근 사각형으로 -12° 기울어 이름 위에 겹친다.
 
@@ -295,6 +323,18 @@ components:
 
 ### 순위 패널 (ClosingSoonPanel)
 교정지 패널에 1~5 순위 목록. 순위 숫자만 강조색 800, 이름은 600, D-day는 흐린 먹 0.75rem. 행 hover는 12px 둥근 칩 회색.
+
+### 아이콘 버튼
+글자 없이 아이콘 하나만 있는 36px 원형 버튼. 평소에는 바탕 없이 흐린 먹 아이콘(Phosphor bold 20px), hover와 열린 상태(`aria-expanded`)에서는 칩 회색 바탕 + 먹 아이콘. 이름은 `aria-label`로 무엇을 하는지까지 쓴다("북로그 채팅 더보기"). 지금은 채팅 카드의 더보기에 쓴다.
+
+### 더보기 메뉴 (ChatCardMenu)
+아이콘 버튼 아래 오른쪽 끝에 맞춰 여는 작은 면. 교정지(surface-muted) 바탕에 1px 재단 회색 테두리, 12px 모서리, 안쪽 6px. 그림자 대신 테두리로 아래 카드와 나눈다. 항목은 8px 모서리, 8px 12px, 0.875rem 600이고 hover·포커스 때 칩 회색. 열면 `rise-in`으로 떠오르고 첫 항목에 포커스가 간다. 위아래 화살표로 옮기고 Esc·Tab·바깥 클릭으로 닫는다. 겹침은 `--z-popover`. 메뉴에는 이미 있는 페이지로 가는 항목만 둔다.
+
+### 채팅 카드 (ChatCard)
+채팅방 하나를 담는 교정지 면(16px, 안쪽 16px / md 20px). 왼쪽에 작은 활자 썸네일, 가운데에 위에서부터 [프로젝트명 800 1rem … 최근 일시 0.75rem 흐린 먹 tabular-nums], [요청자·응답자: 흐린 먹 이름표 + 600 닉네임], [최근 메시지 미리보기 한 줄, 흐린 먹, 넘치면 말줄임], 오른쪽에 더보기 아이콘 버튼. 카드 전체가 채팅방 링크(링크의 `::after`가 카드를 덮는다)이고, 더보기 버튼은 링크 밖에 둬서 따로 누른다. 키보드 포커스는 카드 전체에 강조색 2px 테두리로 보인다. hover는 썸네일만 4px 올라간다. 목록은 카드 사이 12px, 60ms 순차 등장.
+
+### 작은 활자 썸네일 (ChatThumb)
+활자 썸네일을 56px(md 64px) 정사각형으로 줄인 것. 같은 썸네일 면(thumb)·1px 재단 회색 테두리·두 모서리 재단선(8px, 30%)을 쓰고, 이름 전체 대신 프로젝트 이름 첫 글자를 썸네일 폭의 44%(800, 자간 -0.04em)로 가운데 앉힌다. 이름은 옆 제목에 있으니 보조 기술에는 숨긴다. 프로젝트 사진이 생기면 이 자리에 넣는다.
 
 ### Motion
 이징은 하나, `--ease-brand`(cubic-bezier(0.22, 1, 0.36, 1)). 상태 전환 300ms, 이동 500ms, 등장 `rise-in` 500ms, 순차 등장은 60ms씩 최대 340ms. 스켈레톤은 2초 `soft-pulse`. `prefers-reduced-motion`이면 모두 1ms로 줄인다.

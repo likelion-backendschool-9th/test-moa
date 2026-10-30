@@ -123,7 +123,36 @@
   .sig small { display: block; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
   .sig b { display: block; margin-top: 12px; font-size: 13px; font-weight: 800; }
 
-  /* 05 규칙 */
+  /* 아이콘 버튼 · 더보기 메뉴 */
+  .icobtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 9999px; background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color 300ms var(--ease-brand), color 300ms var(--ease-brand); }
+  .icobtn:hover, .icobtn.on { background: var(--surface-strong); color: var(--text); }
+  .icobtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .menu { display: inline-flex; flex-direction: column; min-width: 160px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); }
+  .menu span { border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .menu span.on { background: var(--surface-strong); }
+
+  /* 05 채팅 요소 */
+  .chat-list { display: grid; gap: 12px; }
+  .chatcard { position: relative; display: flex; align-items: flex-start; gap: 16px; border-radius: 16px; background: var(--surface-muted); padding: 16px; }
+  .sheet.page-bg { background: var(--surface); }
+  .cthumb { position: relative; flex: none; display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid var(--line); border-radius: 12px; background: var(--thumb); color: var(--on-thumb); font-size: 24px; font-weight: 800; letter-spacing: -0.04em; transition: transform 500ms var(--ease-brand); }
+  .chatcard:hover .cthumb { transform: translateY(-4px); }
+  .cthumb i { position: absolute; width: 8px; height: 8px; opacity: 0.3; border-color: currentColor; border-style: solid; }
+  .cthumb .a { top: 6px; left: 6px; border-width: 1px 0 0 1px; }
+  .cthumb .b { right: 6px; bottom: 6px; border-width: 0 1px 1px 0; }
+  .chatcard .body { flex: 1; min-width: 0; display: grid; gap: 4px; }
+  .chatcard .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .chatcard .row b { font-size: 16px; font-weight: 800; }
+  .chatcard time { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chatcard .who { font-size: 14px; display: flex; gap: 12px; }
+  .chatcard .who em { font-style: normal; color: var(--text-muted); margin-right: 6px; }
+  .chatcard .who strong { font-weight: 600; }
+  .chatcard .msg { margin-top: 4px; font-size: 14px; color: var(--text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .chatcard .icobtn { margin: -4px -4px 0 0; }
+  .chatcard .menu { position: absolute; right: 12px; top: 52px; z-index: 1; }
+  .anatomy { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+  /* 06 규칙 */
   .dodont { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
   .dodont ul { margin-top: 10px; padding-left: 18px; font-size: 14px; display: grid; gap: 6px; }
   .dodont .sheet { margin-top: 0; }
@@ -132,7 +161,7 @@
   @media (max-width: 860px) {
     .brand, .pair, .dodont { grid-template-columns: 1fr; }
     .swatches, .controls { grid-template-columns: repeat(2, 1fr); }
-    .sig, .rules { grid-template-columns: 1fr; }
+    .sig, .rules, .anatomy { grid-template-columns: 1fr; }
     .type-row { grid-template-columns: 1fr; gap: 8px; }
   }
 </style>
@@ -213,7 +242,7 @@
       <div class="rule"><b>모션 · 깊이 · 겹침</b>
         <p>이징 <code>--ease-brand</code> cubic-bezier(0.22, 1, 0.36, 1)</p>
         <p class="muted">상태 변화 300ms · 이동 500ms · 순차 등장 60ms 간격, 최대 340ms · reduced motion이면 1ms</p>
-        <p class="muted" style="margin-top:6px">그림자 없음. 바탕 → 칩 → 패널 밝기 세 단계로 층을 나눠요. 겹침 <code>--z-menu 30 · --z-header 40 · --z-skip 50</code></p>
+        <p class="muted" style="margin-top:6px">그림자 없음. 바탕 → 칩 → 패널 밝기 세 단계로 층을 나눠요. 겹침 <code>--z-popover 20 · --z-menu 30 · --z-header 40 · --z-skip 50</code></p>
       </div>
     </div>
   </section>
@@ -236,6 +265,8 @@
           <div class="ctl"><b>탭 / Tab</b><span class="tab on">홈</span><span class="tab">테스트 모집</span><small>헤더 카테고리. 현재 탭은 칩 바탕</small></div>
           <div class="ctl" style="grid-column:span 2"><b>검색창 / Search</b><div class="search"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 테스트를 검색해 주세요</div><small>기본 · 칩 바탕</small></div>
           <div class="ctl" style="grid-column:span 2"><b>검색창 포커스</b><div class="search focus"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 가계부</div><small>패널 바탕 + 강조색 2px 링</small></div>
+          <div class="ctl"><b>아이콘 버튼 / Icon</b><button class="icobtn" aria-label="더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button> <button class="icobtn on" aria-label="더보기 열림"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button><small>36px 원형. 평소 흐린 글씨, hover·열림은 칩 바탕</small></div>
+          <div class="ctl" style="grid-column:span 3"><b>더보기 메뉴 / Menu</b><div class="menu"><span class="on">채팅방 열기</span><span>모집 글 보기</span></div><small>패널 바탕 + 1px 경계, 모서리 12 · 항목 8. 그림자 없음. 겹침 <code>--z-popover</code></small></div>
         </div>
       </div>
       <div class="sheet dark">
@@ -251,10 +282,12 @@
           <div class="ctl"><b>탭 / Tab</b><span class="tab on">홈</span><span class="tab">테스트 모집</span><small>현재 탭은 칩 바탕</small></div>
           <div class="ctl" style="grid-column:span 2"><b>검색창 / Search</b><div class="search"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 테스트를 검색해 주세요</div><small>기본 · 칩 바탕</small></div>
           <div class="ctl" style="grid-column:span 2"><b>검색창 포커스</b><div class="search focus"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 가계부</div><small>패널 바탕 + 강조색 2px 링</small></div>
+          <div class="ctl"><b>아이콘 버튼 / Icon</b><button class="icobtn" aria-label="더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button> <button class="icobtn on" aria-label="더보기 열림"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button><small>열림은 칩 바탕 + 흰 글씨</small></div>
+          <div class="ctl" style="grid-column:span 3"><b>더보기 메뉴 / Menu</b><div class="menu"><span class="on">채팅방 열기</span><span>모집 글 보기</span></div><small>패널 바탕 + 1px 경계로 아래 카드와 나눠요</small></div>
         </div>
       </div>
     </div>
-    <p class="gap-note">아직 없는 것: 위험(삭제) 버튼, 로딩 버튼, 아이콘 버튼 규격, 입력 폼 오류 상태. 필요해지면 토큰과 <code>components/ui</code>에 먼저 추가해요. 아이콘은 Phosphor를 굵은(bold) 두께로 써요. 검색은 <code>MagnifyingGlass</code>예요.</p>
+    <p class="gap-note">아직 없는 것: 위험(삭제) 버튼, 로딩 버튼, 입력 폼 오류 상태. 필요해지면 토큰과 <code>components/ui</code>에 먼저 추가해요. 아이콘은 Phosphor를 굵은(bold) 두께로 써요. 검색은 <code>MagnifyingGlass</code>, 더보기는 <code>DotsThree</code>예요.</p>
   </section>
 
   <!-- 04 -->
@@ -281,7 +314,58 @@
 
   <!-- 05 -->
   <section>
-    <h2><span>05</span>지켜야 할 규칙</h2>
+    <h2><span>05</span>채팅 요소</h2>
+    <p class="desc">채팅함(<code>/my/chats</code>)에서 처음 쓴 요소예요. 새 색은 없고, 활자 썸네일을 작게 줄이고 카드·메뉴를 기존 면과 모서리 규칙으로 만들었어요. 코드는 <code>frontend/src/features/chat/components</code>에 있어요.</p>
+    <div class="pair">
+      <div class="sheet page-bg">
+        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트</p>
+        <div class="chat-list">
+          <div class="chatcard">
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>북</div>
+            <div class="body">
+              <div class="row"><b>북로그</b><time>오후 3:12</time></div>
+              <div class="who"><span><em>요청자</em><strong>서재지기</strong></span><span><em>응답자</em><strong>윤슬</strong></span></div>
+              <p class="msg">피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.</p>
+            </div>
+            <button class="icobtn on" aria-label="북로그 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
+            <div class="menu"><span class="on">채팅방 열기</span><span>모집 글 보기</span></div>
+          </div>
+          <div class="chatcard">
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>가</div>
+            <div class="body">
+              <div class="row"><b>가계부 노트</b><time>10월 26일</time></div>
+              <div class="who"><span><em>요청자</em><strong>도현랩</strong></span><span><em>응답자</em><strong>윤슬</strong></span></div>
+              <p class="msg">보내 주신 분류 오류 확인했어요. 다음 버전에서 고칠게요.</p>
+            </div>
+            <button class="icobtn" aria-label="가계부 노트 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="sheet dark">
+        <p class="mode-label" style="margin-top:0"><i style="background:#000"></i>다크</p>
+        <div class="chat-list">
+          <div class="chatcard">
+            <div class="cthumb" aria-hidden="true"><i class="a"></i><i class="b"></i>북</div>
+            <div class="body">
+              <div class="row"><b>북로그</b><time>10월 24일</time></div>
+              <div class="who"><span><em>요청자</em><strong>서재지기</strong></span><span><em>응답자</em><strong>도현랩</strong></span></div>
+              <p class="msg">피드백 잘 받았어요. 참여해 주셔서 감사해요.</p>
+            </div>
+            <button class="icobtn" aria-label="북로그 채팅 더보기"><svg width="20" height="20" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anatomy">
+      <div class="rule"><b>채팅 카드 · ChatCard</b>패널 바탕, 모서리 16, 안쪽 16(md 20), 카드 사이 12. 위에서부터 프로젝트명 16px 800과 최근 일시 12px · 요청자·응답자 14px · 미리보기 한 줄. 카드 전체가 채팅방 링크이고 더보기는 링크 밖이에요. 그림자 없이 hover 때 썸네일만 4px 올라가요.</div>
+      <div class="rule"><b>작은 활자 썸네일 · ChatThumb</b>활자 썸네일을 56px(md 64px) 정사각형으로 줄이고 이름 첫 글자만 폭의 44%로 앉혀요. 썸네일 면·1px 경계·흐린 두 모서리 재단선(8px)은 그대로, 모서리는 12. 프로젝트 사진이 생기면 이 자리에 넣어요.</div>
+      <div class="rule"><b>아이콘 버튼 · 더보기 메뉴</b>36px 원형 버튼, 이름은 <code>aria-label</code>로 "북로그 채팅 더보기"처럼 써요. 메뉴는 버튼 오른쪽 끝에 맞춰 열리고 첫 항목에 포커스, 화살표로 이동, Esc·Tab·바깥 클릭으로 닫혀요. 겹침 <code>--z-popover 20</code>은 카드 위, 헤더 아래예요.</div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section>
+    <h2><span>06</span>지켜야 할 규칙</h2>
     <div class="dodont">
       <div class="sheet">
         <h3 class="do">이렇게 해요</h3>

@@ -261,6 +261,10 @@
     ],
     "zIndex": [
       {
+        "name": "--z-popover",
+        "value": "20"
+      },
+      {
         "name": "--z-menu",
         "value": "30"
       },
@@ -334,6 +338,30 @@
       "description": "헤더 알약 탭. 현재 탭만 칩 회색 바탕.",
       "html": "<nav class=\"ds-nav\"><a class=\"on\" href=\"#\">홈</a><a href=\"#\">테스트 모집</a><a href=\"#\">참여 테스트</a></nav>",
       "css": ".ds-nav { display:flex; gap:4px; font-family:'Wanted Sans Variable',system-ui,sans-serif; } .ds-nav a { border-radius:9999px; padding:8px 12px; font-size:0.875rem; font-weight:600; color:#5c5c58; text-decoration:none; transition:color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-nav a:hover { color:#1a1a1a; } .ds-nav a.on { background:#e4e4e0; color:#1a1a1a; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "아이콘 하나만 있는 36px 원형 버튼. 평소 흐린 먹, hover·열린 상태는 칩 회색 바탕. 이름은 aria-label로.",
+      "html": "<button class=\"ds-icobtn\" aria-label=\"북로그 채팅 더보기\" aria-expanded=\"false\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z\"/></svg></button>",
+      "css": ".ds-icobtn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:none; border-radius:9999px; background:transparent; color:#5c5c58; cursor:pointer; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1), color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-icobtn:hover, .ds-icobtn[aria-expanded=\"true\"] { background:#e4e4e0; color:#1a1a1a; } .ds-icobtn:focus-visible { outline:2px solid #0f7c4a; outline-offset:2px; }"
+    },
+    {
+      "name": "More Menu",
+      "kind": "custom",
+      "refersTo": "menu-popover",
+      "description": "더보기 버튼 아래 작은 면. 교정지 바탕 + 1px 재단 회색 테두리, 그림자 없음. 항목은 hover·포커스 때 칩 회색. 겹침은 --z-popover.",
+      "html": "<ul class=\"ds-menu\" role=\"menu\"><li role=\"none\"><a role=\"menuitem\" class=\"on\" href=\"#\">채팅방 열기</a></li><li role=\"none\"><a role=\"menuitem\" href=\"#\">모집 글 보기</a></li></ul>",
+      "css": ".ds-menu { display:flex; flex-direction:column; min-width:10rem; margin:0; padding:6px; list-style:none; border:1px solid #d6d6d1; border-radius:12px; background:#fbfbfa; font-family:'Wanted Sans Variable',system-ui,sans-serif; } .ds-menu a { display:flex; border-radius:8px; padding:8px 12px; font-size:0.875rem; font-weight:600; color:#1a1a1a; text-decoration:none; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-menu a:hover, .ds-menu a:focus, .ds-menu a.on { background:#e4e4e0; }"
+    },
+    {
+      "name": "Chat Card",
+      "kind": "card",
+      "refersTo": "chat-card",
+      "description": "채팅방 하나. 작은 활자 썸네일(첫 글자) + 프로젝트명·최근 일시 / 요청자·응답자 / 미리보기 한 줄 + 더보기 아이콘 버튼. 카드 전체가 채팅방 링크.",
+      "html": "<article class=\"ds-chat\"><div class=\"ds-cthumb\"><i class=\"tl\"></i><i class=\"br\"></i>북</div><div class=\"ds-chat-body\"><p class=\"top\"><b>북로그</b><time>오후 3:12</time></p><p class=\"who\"><span>요청자</span> 서재지기 <span>응답자</span> 윤슬</p><p class=\"msg\">피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.</p></div></article>",
+      "css": ".ds-chat { display:flex; align-items:flex-start; gap:16px; max-width:40rem; border-radius:16px; background:#fbfbfa; padding:16px; font-family:'Wanted Sans Variable',system-ui,sans-serif; color:#1a1a1a; } .ds-cthumb { position:relative; flex:none; display:grid; place-items:center; width:56px; height:56px; border:1px solid #d6d6d1; border-radius:12px; background:#ffffff; color:#1a1a1a; font-size:24px; font-weight:800; letter-spacing:-0.04em; transition:transform 500ms cubic-bezier(0.22,1,0.36,1); } .ds-chat:hover .ds-cthumb { transform:translateY(-4px); } .ds-cthumb i { position:absolute; width:8px; height:8px; border-color:currentColor; border-style:solid; opacity:0.3; } .ds-cthumb .tl { top:6px; left:6px; border-width:1px 0 0 1px; } .ds-cthumb .br { right:6px; bottom:6px; border-width:0 1px 1px 0; } .ds-chat-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; } .ds-chat p { margin:0; } .top { display:flex; justify-content:space-between; gap:12px; } .top b { font-weight:800; } .top time { font-size:0.75rem; color:#5c5c58; font-variant-numeric:tabular-nums; } .who { font-size:0.875rem; font-weight:600; } .who span { color:#5c5c58; font-weight:400; } .msg { margin-top:4px !important; font-size:0.875rem; color:#5c5c58; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }"
     }
   ],
   "narrative": {

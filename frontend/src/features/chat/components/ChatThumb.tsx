@@ -10,14 +10,14 @@ export function ChatThumb({ projectName, imageUrl }: { projectName: string; imag
     <div
       aria-hidden
       data-thumb
-      className="@container relative grid w-24 shrink-0 place-items-center self-stretch overflow-hidden rounded-l-2xl border-r border-line bg-thumb text-on-thumb sm:w-36 md:w-44"
+      className="@container relative grid w-24 shrink-0 place-items-center self-stretch overflow-hidden rounded-l-2xl border-r border-line bg-thumb text-on-thumb sm:w-32 md:w-40"
     >
       {imageUrl ? (
         <Image
           src={imageUrl}
           alt=""
           fill
-          sizes="(min-width: 768px) 11rem, (min-width: 640px) 9rem, 6rem"
+          sizes="(min-width: 768px) 10rem, (min-width: 640px) 8rem, 6rem"
           className="object-cover transition-transform duration-500 ease-brand group-hover:scale-105"
         />
       ) : (

@@ -19,8 +19,8 @@ export function ChatCard({ room, now }: { room: ChatRoom; now: Date }) {
   return (
     <article className="group relative flex rounded-2xl bg-surface-muted">
       <ChatThumb projectName={room.projectName} imageUrl={room.projectImage} />
-      <div className="flex min-w-0 flex-1 items-start gap-3 p-5 md:p-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 items-start gap-3 px-5 py-4 md:px-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="min-w-0 truncate text-xl font-extrabold transition-colors duration-300 ease-brand group-hover:text-accent">
               <Link
@@ -49,7 +49,7 @@ export function ChatCard({ room, now }: { room: ChatRoom; now: Date }) {
               {CHAT_ROLE_LABEL[room.partner.role]}
             </Badge>
           </p>
-          <p data-preview className="mt-1 line-clamp-1 text-sm leading-relaxed text-text-muted">
+          <p data-preview className="line-clamp-1 text-sm leading-relaxed text-text-muted">
             {room.lastMessage}
           </p>
         </div>

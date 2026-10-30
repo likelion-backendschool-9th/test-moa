@@ -83,8 +83,8 @@ export function ChatInboxSkeleton() {
       <div className="flex flex-col gap-4">
         {Array.from({ length: 4 }, (_, index) => (
           <div key={index} className="flex rounded-2xl bg-surface-muted">
-            <Skeleton className="w-24 shrink-0 self-stretch rounded-none rounded-l-2xl sm:w-36 md:w-44" />
-            <div className="flex flex-1 flex-col gap-3 p-5 md:p-6">
+            <Skeleton className="w-24 shrink-0 self-stretch rounded-none rounded-l-2xl sm:w-32 md:w-40" />
+            <div className="flex flex-1 flex-col gap-2.5 px-5 py-4 md:px-6">
               <Skeleton className="h-6 w-36" />
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-full max-w-md" />

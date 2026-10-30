@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatCredits, formatDate } from "@/lib/format";
-import { SOFTWARE_TYPE_LABEL, type Recruitment } from "../types";
+import { isFull, SOFTWARE_TYPE_LABEL, type Recruitment } from "../types";
 import { RecruitmentThumb } from "./RecruitmentThumb";
 
 /** 갤러리 카드. 썸네일 아래 이름, 유형·보상, 모집 마감과 인원을 같은 자리에 둔다 */
@@ -12,7 +12,7 @@ export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
       className="group flex flex-col gap-3 rounded-2xl outline-offset-4"
     >
       <div className="transition-transform duration-500 ease-brand group-hover:-translate-y-1">
-        <RecruitmentThumb recruitment={recruitment} />
+        <RecruitmentThumb recruitment={recruitment} stamp={isFull(recruitment) ? "모집 완료" : undefined} />
       </div>
       <div className="flex flex-col gap-1 px-1">
         <p className="line-clamp-2 text-sm font-semibold">{recruitment.request}</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, startTransition, useActionState } from "react";
+import { type FormEvent, startTransition, useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { changePassword, type FormState, type PasswordField } from "../actions";
 import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "./card-styles";
@@ -11,6 +11,12 @@ const initialState: FormState<PasswordField> = { status: "idle" };
 /** 비밀번호 변경. 오류가 나면 입력이 남고, 성공하면 세 칸을 비운다 */
 export function PasswordForm() {
   const [state, formAction, pending] = useActionState(changePassword, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /* 성공한 제출마다 한 번만 칸을 비운다. 오류 응답에서는 폼을 건드리지 않아 입력이 남는다 */
+  useEffect(() => {
+    if (state.status === "success") formRef.current?.reset();
+  }, [state]);
 
   /* React가 폼 액션 뒤 칸을 자동으로 비우지 않게 직접 제출한다 */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -30,8 +36,7 @@ export function PasswordForm() {
       </div>
       <div className={settingsBodyClass}>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
-        {/* 성공할 때마다 새로 그려 입력을 비운다 */}
-        <form key={state.status === "success" ? state.submittedAt : "fields"} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
           <div className="flex flex-col gap-5">
             <FormField
               id="password-current"
@@ -60,7 +65,8 @@ export function PasswordForm() {
             />
           </div>
           <div className="flex md:justify-end">
-            <Button type="submit" disabled={pending} className="w-full md:w-auto">
+            {/* 주 버튼은 기본 정보 "저장" 하나다 (DESIGN.md The One Green Rule) */}
+          <Button type="submit" variant="secondary" disabled={pending} className="w-full md:w-auto">
               {pending ? "바꾸는 중…" : "비밀번호 변경"}
             </Button>
           </div>

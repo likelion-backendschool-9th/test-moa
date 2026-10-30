@@ -150,7 +150,7 @@ test.describe("R104 프로젝트 상세", () => {
     const items = page.getByRole("main").getByRole("listitem");
     await expect(items).toHaveCount(2);
     await expect(items.nth(0)).toContainText("모집 완료");
-    await expect(items.nth(0)).toContainText("확정 5 / 정원 5명");
+    await expect(items.nth(0)).toContainText("확정 5명 · 정원 5명");
     await expect(items.nth(1)).toContainText("모집 중");
     await expect(items.nth(1)).toContainText("구독 모집");
     await expect(items.nth(1).getByRole("link", { name: "공개 페이지 보기" })).toHaveAttribute("href", "/recruitments/booklog");
@@ -217,7 +217,11 @@ test.describe("R106 테스트 모집 관리와 탭", () => {
   test("S119 요약이 보인다", async ({ page }) => {
     await page.goto(BOOKLOG_MANAGE);
     await expect(page.getByRole("heading", { level: 1, name: "책 등록부터 독서 기록 작성까지 한 번 써 보기" })).toBeVisible();
-    await expect(page.getByText("13 / 정원 20명", { exact: true })).toBeVisible();
+    const summary = page.getByRole("definition");
+    await expect(page.getByRole("term").filter({ hasText: /^확정 인원$/ })).toBeVisible();
+    await expect(summary.filter({ hasText: /^13명$/ })).toBeVisible();
+    await expect(summary.filter({ hasText: /^20명$/ })).toBeVisible();
+    await expect(page.getByText(/\d+ \/ /)).toHaveCount(0);
     await expect(page.getByRole("link", { name: "프로젝트로 돌아가기" })).toHaveAttribute("href", BOOKLOG);
   });
 
@@ -253,7 +257,7 @@ test.describe("R107 테스터 관리 탭", () => {
     const first = pending.first();
     const nickname = (await first.locator("span").first().textContent()) ?? "";
     await first.getByRole("button", { name: "확정" }).click();
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 14 / 정원 20명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 14명 · 정원 20명");
     await expect(pending).toHaveCount(2);
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: `${nickname}님을 확정했어요` })).toHaveCount(1);
   });

@@ -190,4 +190,23 @@ test.describe("R5 로딩과 화면", () => {
       expect(Math.abs((await card.getByRole("button", { name: button }).boundingBox())!.width - width)).toBeLessThan(1);
     }
   });
+
+  test("S182 넓은 화면에서는 설명이 왼쪽, 칸이 오른쪽 한 열이다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto(PATH);
+    for (const [card, title, fields] of [
+      [profileCard(page), "기본 정보", ["이름", "닉네임", "이메일"]],
+      [passwordCard(page), "비밀번호 변경", ["현재 비밀번호", "새 비밀번호", "새 비밀번호 확인"]],
+    ] as const) {
+      const heading = (await card.getByRole("heading", { name: title }).boundingBox())!;
+      const boxes = await Promise.all(fields.map(async (label) => (await card.getByLabel(label, { exact: true }).boundingBox())!));
+      for (const box of boxes) {
+        expect(box.x).toBeGreaterThan(heading.x + heading.width);
+        expect(Math.abs(box.x - boxes[0].x)).toBeLessThan(1);
+        expect(Math.abs(box.width - boxes[0].width)).toBeLessThan(1);
+      }
+      expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
+      expect(boxes[2].y).toBeGreaterThan(boxes[1].y);
+    }
+  });
 });

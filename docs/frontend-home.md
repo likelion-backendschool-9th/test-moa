@@ -191,7 +191,7 @@ S75
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
 
 S26 준비 중 페이지와 내부 링크
-- Given `/recruitments`, `/recruitments/:slug`, `/my`, `/my/participations`, `/my/projects`, `/my/chats`, `/my/credits`, `/my/profile/edit`, `/my/subscription`, `/admin`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
+- Given `/recruitments`, `/recruitments/:slug`, `/my/participations`, `/my/projects`, `/my/chats`, `/my/credits`, `/my/credits/withdrawals`, `/my/profile/edit`, `/my/subscription`, `/admin`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
@@ -222,7 +222,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개만 나온다
+- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters, AccountNav 7개만 나온다 (AccountNav는 마이페이지 메뉴, `docs/2026-10-30-frontend-my.md`)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`
@@ -236,7 +236,7 @@ S78
 - 카테고리 중 웹서비스 외에는 모집 글이 없어서 빈 상태가 보인다.
 
 ## 범위 밖
-- 홈 외 페이지의 실제 내용 (준비 중 화면만 있다)
+- 홈 외 페이지의 실제 내용 (준비 중 화면만 있다. 마이페이지 `/my`는 `docs/2026-10-30-frontend-my.md`)
 - 실제 로그인, API, 결제 연동
 - 페이지 나누기·무한 스크롤
 - 실제 서비스 스크린샷 썸네일

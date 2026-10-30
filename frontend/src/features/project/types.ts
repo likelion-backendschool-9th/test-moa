@@ -75,6 +75,31 @@ export const EXTRA_REWARD = 300;
 /** 무료·구독별 최대 모집 인원 */
 export const MAX_CAPACITY = { free: 10, subscription: 30 } as const;
 
+/** AI 분석 항목 하나. 근거가 된 피드백 수를 함께 둔다 */
+export type AiFinding = {
+  text: string;
+  feedbackCount: number;
+};
+
+/** 모집 건 피드백을 AI가 정리한 결과. 지금은 시연용 샘플이다 */
+export type AiSummary = {
+  /** 한 줄 요약 */
+  headline: string;
+  /** 자주 나온 문제 (버그·사용성) */
+  issues: AiFinding[];
+  /** 좋았던 점 */
+  strengths: AiFinding[];
+  /** 개선 제안 */
+  suggestions: string[];
+  /** 정리한 시각 */
+  generatedAt: string;
+  /** 시연용 샘플이면 true. 실제 AI를 붙이면 false */
+  isSample: boolean;
+};
+
+/** AI 분석을 시작하는 최소 피드백 수. 기획에서 미정이라 임시값이다 */
+export const AI_MIN_FEEDBACKS = 3;
+
 /** 폼 제출 결과. 오류가 있으면 입력값을 그대로 돌려줘 다시 채운다 */
 export type FormState = {
   values: Record<string, string>;

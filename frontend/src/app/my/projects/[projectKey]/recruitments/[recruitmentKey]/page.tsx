@@ -10,7 +10,8 @@ import {
   RecruitmentSummary,
   RecruitmentTabs,
 } from "@/features/project/components/RecruitmentManage";
-import { getRecruitmentDetail } from "@/features/project/service";
+import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/features/project/components/AiAnalysisPanel";
+import { getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
 
 /* 테스트 모집 관리 (/my/projects/:projectKey/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
 
@@ -53,6 +54,16 @@ async function ManageSlot({ params, searchParams }: Props) {
       )}
       {current === "feedback" && <FeedbackList feedbacks={feedbacks} />}
       {current === "analytics" && <AnalyticsPanel isSubscription={recruitment.isSubscription} analytics={analytics} />}
+      {/* AI 분석은 느릴 수 있어서 숫자 카드와 따로 기다린다. 구독 모집에서만 보인다 */}
+      {current === "analytics" && recruitment.isSubscription && (
+        <Suspense fallback={<AiAnalysisSkeleton />}>
+          <AiSlot basePath={basePath} projectKey={projectKey} recruitmentKey={recruitmentKey} />
+        </Suspense>
+      )}
     </div>
   );
+}
+
+async function AiSlot({ basePath, projectKey, recruitmentKey }: { basePath: string; projectKey: string; recruitmentKey: string }) {
+  return <AiAnalysisPanel analysis={await getAiAnalysis(basePath, projectKey, recruitmentKey)} />;
 }

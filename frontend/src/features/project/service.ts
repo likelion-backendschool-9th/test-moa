@@ -2,12 +2,14 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { isFull, type Recruitment } from "@/features/recruitment/types";
-import { findApplications, findFeedbacks, findIsSubscribed, findProjects } from "./api";
+import { findAiSummary, findApplications, findFeedbacks, findIsSubscribed, findProjects } from "./api";
 import {
+  AI_MIN_FEEDBACKS,
   BASE_REWARD,
   EXTRA_REWARD,
   MAX_CAPACITY,
   REPORT_WINDOW_HOURS,
+  type AiSummary,
   type Application,
   type Feedback,
   type FormState,
@@ -121,6 +123,22 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
       .map((item) => ({ ...item, hoursUntilPaid: getHoursUntilPaid(item, now) })),
     analytics: getAnalytics(applications, feedbacks),
   };
+}
+
+/** AI 분석 영역의 상태: 결과 있음, 피드백 부족, 아직 정리 전 */
+export type AiAnalysis =
+  | { state: "ready"; summary: AiSummary }
+  | { state: "notEnough"; feedbackCount: number; minFeedbacks: number }
+  | { state: "empty" };
+
+/** AI 분석 결과. 피드백이 최소 수보다 적으면 분석하지 않는다 */
+export async function getAiAnalysis(path: string, projectKey: string, recruitmentKey: string): Promise<AiAnalysis> {
+  const { feedbacks } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  if (feedbacks.length < AI_MIN_FEEDBACKS) {
+    return { state: "notEnough", feedbackCount: feedbacks.length, minFeedbacks: AI_MIN_FEEDBACKS };
+  }
+  const summary = await findAiSummary(await requireRole(path), recruitmentKey);
+  return summary ? { state: "ready", summary } : { state: "empty" };
 }
 
 /** 모집 작성 폼에 보여 줄 보상과 인원 한도. 구독 여부는 작성 시점 기준이다 */

@@ -4,7 +4,7 @@
  * 북로그와 포트폴리오 빌더 모집 건은 홈의 샘플(recruitment/mock.ts)을 그대로 받아 쓴다.
  */
 import type { Recruitment } from "@/features/recruitment/types";
-import type { Application, ApplicationStatus, Feedback, FeedbackStatus, Project } from "./types";
+import type { AiSummary, Application, ApplicationStatus, Feedback, FeedbackStatus, Project } from "./types";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -51,6 +51,8 @@ export type ProjectSeedData = {
   applications: Record<string, Application[]>;
   /** recruitmentKey별 피드백 목록 */
   feedbacks: Record<string, Feedback[]>;
+  /** recruitmentKey별 AI 분석 결과 */
+  aiSummaries: Record<string, AiSummary>;
 };
 
 /**
@@ -98,6 +100,24 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     ]),
   };
 
+  /* 북로그 피드백 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
+  const aiSummaries: Record<string, AiSummary> = {
+    booklog: {
+      headline: "기록 기능은 편하다는 반응이지만, 책을 찾고 저장한 문장을 다시 찾는 흐름에서 헷갈린다는 의견이 있어요.",
+      issues: [
+        { text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요", feedbackCount: 1 },
+        { text: "저장한 문장을 다시 찾는 메뉴가 잘 안 보여요", feedbackCount: 1 },
+      ],
+      strengths: [{ text: "밑줄 문장 저장이 편해요", feedbackCount: 1 }],
+      suggestions: [
+        "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
+        "저장한 문장 모아 보기 메뉴를 눈에 띄는 곳에 두기",
+      ],
+      generatedAt: hoursAgo(now, 2),
+      isSample: true,
+    },
+  };
+
   const projects: Project[] = [
     {
       key: "booklog",
@@ -129,5 +149,5 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     },
   ];
 
-  return { projects, applications, feedbacks };
+  return { projects, applications, feedbacks, aiSummaries };
 }

@@ -31,7 +31,8 @@ type SummaryProps = {
 /** 모집 건 요약. 탭 위에 늘 보인다 */
 export function RecruitmentSummary({ project, recruitment, analytics }: SummaryProps) {
   const facts = [
-    ["확정", `${recruitment.confirmedCount} / 정원 ${recruitment.capacity}명`],
+    ["확정 인원", `${recruitment.confirmedCount}명`],
+    ["정원", `${recruitment.capacity}명`],
     ["지원", `${analytics.applicationCount}명`],
     ["피드백 제출", `${analytics.feedbackCount}건`],
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
@@ -48,7 +49,7 @@ export function RecruitmentSummary({ project, recruitment, analytics }: SummaryP
         {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
       </div>
       <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{recruitment.request}</h1>
-      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-3 lg:grid-cols-6">
         {facts.map(([term, value]) => (
           <div key={term} className="flex flex-col gap-1">
             <dt className="text-xs text-text-muted">{term}</dt>

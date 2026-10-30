@@ -46,7 +46,7 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <p className="font-bold" data-testid="confirmed-count">
-          확정 {confirmedCount} / 정원 {capacity}명
+          확정 {confirmedCount}명 · 정원 {capacity}명
         </p>
         {!isSubscription && <p className="text-text-muted">선착순 모집이라 지원 순서대로 자동 확정돼요</p>}
         {canSelect && full && <p className="text-text-muted">정원이 다 찼어요</p>}

@@ -1,0 +1,409 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-30T15:10:00+09:00",
+  "title": "Design System: Test Moa",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "에메랄드",
+        "canonical": "#0f7c4a",
+        "tonalRamp": [
+          "#def7eb",
+          "#0f7c4a"
+        ]
+      },
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "에메랄드 (다크)",
+        "canonical": "#129357",
+        "tonalRamp": [
+          "#123625",
+          "#129357"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "연한 에메랄드",
+        "canonical": "#def7eb"
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "강조 위 글씨",
+        "canonical": "#ffffff"
+      },
+      "proof-c": {
+        "role": "tertiary",
+        "displayName": "교정 시안",
+        "canonical": "#00a0e0"
+      },
+      "proof-m": {
+        "role": "tertiary",
+        "displayName": "교정 마젠타",
+        "canonical": "#e4007f"
+      },
+      "proof-y": {
+        "role": "tertiary",
+        "displayName": "교정 옐로",
+        "canonical": "#ffe600"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "작업대 회색",
+        "canonical": "#efefec",
+        "tonalRamp": [
+          "#fbfbfa",
+          "#efefec",
+          "#e4e4e0",
+          "#d6d6d1"
+        ]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "교정지",
+        "canonical": "#fbfbfa"
+      },
+      "surface-strong": {
+        "role": "neutral",
+        "displayName": "칩 회색",
+        "canonical": "#e4e4e0"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "재단 회색",
+        "canonical": "#d6d6d1"
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "먹",
+        "canonical": "#1a1a1a"
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "흐린 먹",
+        "canonical": "#5c5c58"
+      },
+      "thumb": {
+        "role": "neutral",
+        "displayName": "썸네일 면",
+        "canonical": "#ffffff"
+      },
+      "on-thumb": {
+        "role": "neutral",
+        "displayName": "썸네일 글씨",
+        "canonical": "#1a1a1a"
+      },
+      "mark": {
+        "role": "neutral",
+        "displayName": "재단선 먹",
+        "canonical": "#1a1a1a"
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "uibowl 검정",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#000000",
+          "#16181d",
+          "#1f222a",
+          "#2a3037"
+        ]
+      },
+      "surface-muted-dark": {
+        "role": "neutral",
+        "displayName": "uibowl 패널",
+        "canonical": "#16181d"
+      },
+      "surface-strong-dark": {
+        "role": "neutral",
+        "displayName": "uibowl 칩",
+        "canonical": "#1f222a"
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "uibowl 선",
+        "canonical": "#2a3037"
+      },
+      "text-dark": {
+        "role": "neutral",
+        "displayName": "흰 글씨",
+        "canonical": "#ffffff"
+      },
+      "text-muted-dark": {
+        "role": "neutral",
+        "displayName": "uibowl 보조",
+        "canonical": "#a3aab5"
+      },
+      "accent-soft-dark": {
+        "role": "primary",
+        "displayName": "연한 에메랄드 다크",
+        "canonical": "#123625"
+      },
+      "on-accent-dark": {
+        "role": "primary",
+        "displayName": "강조 위 글씨(다크)",
+        "canonical": "#000000"
+      },
+      "thumb-dark": {
+        "role": "neutral",
+        "displayName": "썸네일 면(다크)",
+        "canonical": "#e9ecf0"
+      },
+      "on-thumb-dark": {
+        "role": "neutral",
+        "displayName": "썸네일 글씨(다크)",
+        "canonical": "#16181d"
+      },
+      "mark-dark": {
+        "role": "neutral",
+        "displayName": "재단선(다크)",
+        "canonical": "#3d434b"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "히어로 배너 제목(DisplayHeading), md 이상. 이벤트·공지 슬라이드는 2.25rem."
+      },
+      "display-mobile": {
+        "displayName": "Display (모바일)",
+        "purpose": "md 미만 히어로 제목."
+      },
+      "thumb-name": {
+        "displayName": "Thumb Name",
+        "purpose": "활자 썸네일의 서비스 이름. 카드 폭 비례(cqw)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "섹션 제목(구독 모집, 전체 테스트)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "패널 제목(마감 임박 테스트)."
+      },
+      "body-lead": {
+        "displayName": "Body Lead",
+        "purpose": "히어로 설명 문단, 흐린 먹, 최대 폭 36rem."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "카드 문구·메타 정보·작은 버튼과 칩."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "카드 항목 이름(모집 마감, 인원), D-day."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-brand",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "모든 전환과 애니메이션의 유일한 이징."
+      },
+      {
+        "name": "duration-state",
+        "value": "300ms",
+        "purpose": "색·배경 상태 전환(버튼, 칩, 탭, 검색창, 순위 행)."
+      },
+      {
+        "name": "duration-move",
+        "value": "500ms",
+        "purpose": "이동: 썸네일 hover 4px 상승, 햄버거 회전."
+      },
+      {
+        "name": "rise-in",
+        "value": "500ms ease-brand, opacity 0 + translateY(8px)에서 시작",
+        "purpose": "슬라이드와 모바일 메뉴 항목 등장."
+      },
+      {
+        "name": "stagger-children",
+        "value": "60ms 간격, 최대 340ms",
+        "purpose": "모바일 메뉴 항목 순차 등장."
+      },
+      {
+        "name": "soft-pulse",
+        "value": "2s ease-brand infinite, 50%에서 opacity 0.5",
+        "purpose": "스켈레톤."
+      },
+      {
+        "name": "carousel-interval",
+        "value": "5000ms",
+        "purpose": "히어로 자동 순환. hover·focus·reduced motion이면 멈춤."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation/transition 1ms",
+        "purpose": "prefers-reduced-motion: reduce에서 전역 적용."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      }
+    ],
+    "zIndex": [
+      {
+        "name": "--z-menu",
+        "value": "30"
+      },
+      {
+        "name": "--z-header",
+        "value": "40"
+      },
+      {
+        "name": "--z-skip",
+        "value": "50"
+      }
+    ],
+    "focus": {
+      "value": "outline: 2px solid var(--color-accent); outline-offset: 2px",
+      "purpose": "모든 :focus-visible. 검색창은 focus-within 2px 강조색 링."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "한 화면의 주 행동 하나. 강조색 알약.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">테스트 둘러보기</button>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; gap:8px; border:none; border-radius:9999px; font-family:'Wanted Sans Variable',system-ui,sans-serif; font-weight:700; font-size:1rem; padding:12px 20px; cursor:pointer; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1), transform 300ms cubic-bezier(0.22,1,0.36,1); } .ds-btn:active { transform:scale(0.98); } .ds-btn-primary { background:#0f7c4a; color:#ffffff; } .ds-btn-primary:hover { opacity:0.9; } .ds-btn:focus-visible { outline:2px solid #0f7c4a; outline-offset:2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "보조 행동(자세히 보기, 크레딧 잔액). 칩 회색 알약.",
+      "html": "<button class=\"ds-btn2\">자세히 보기</button>",
+      "css": ".ds-btn2 { border:none; border-radius:9999px; background:#e4e4e0; color:#1a1a1a; font-family:'Wanted Sans Variable',system-ui,sans-serif; font-weight:700; font-size:1rem; padding:12px 20px; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-btn2:hover { background:#d6d6d1; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "카테고리·필터 토글. 선택되면 먹 바탕으로 반전, 강조색 없음.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-chip is-on\" aria-pressed=\"true\">전체</button><button class=\"ds-chip\" aria-pressed=\"false\">웹서비스</button></div>",
+      "css": ".ds-chip { border:none; border-radius:9999px; background:#e4e4e0; color:#1a1a1a; font-family:'Wanted Sans Variable',system-ui,sans-serif; font-weight:700; font-size:0.875rem; padding:8px 16px; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-chip:hover { background:#d6d6d1; } .ds-chip.is-on { background:#1a1a1a; color:#efefec; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "알약 검색창. 포커스 때 교정지로 밝아지고 강조색 링.",
+      "html": "<label class=\"ds-search\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-4-4\"/></svg><input type=\"search\" placeholder=\"서비스 이름이나 해 볼 일로 찾아보세요\"></label>",
+      "css": ".ds-search { display:flex; align-items:center; gap:8px; max-width:36rem; border-radius:9999px; background:#e4e4e0; padding:12px 20px; color:#5c5c58; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-search:focus-within { background:#fbfbfa; box-shadow:0 0 0 2px #0f7c4a; } .ds-search input { flex:1; border:none; background:transparent; outline:none; font:1rem 'Wanted Sans Variable',system-ui,sans-serif; color:#1a1a1a; } .ds-search input::placeholder { color:#5c5c58; }"
+    },
+    {
+      "name": "Recruitment Card",
+      "kind": "card",
+      "refersTo": "recruitment-thumb",
+      "description": "활자 썸네일 + 고정 순서 메타. 정원이 차면 교정 도장.",
+      "html": "<a class=\"ds-card\" href=\"#\"><div class=\"ds-thumb\"><i class=\"tl\"></i><i class=\"br\"></i><h3>북로그</h3></div><div class=\"ds-meta\"><p class=\"req\">책 등록부터 독서 기록 작성까지 한 번 써 보기</p><p class=\"mut\">웹서비스 · 1,350 크레딧</p><p class=\"extra\">추가 보상 +450 크레딧</p></div></a>",
+      "css": ".ds-card { display:flex; flex-direction:column; gap:12px; width:280px; text-decoration:none; color:#1a1a1a; font-family:'Wanted Sans Variable',system-ui,sans-serif; } .ds-thumb { position:relative; aspect-ratio:16/10; display:flex; align-items:flex-end; overflow:hidden; border:1px solid #d6d6d1; border-radius:16px; background:#ffffff; color:#1a1a1a; padding:20px; container-type:inline-size; transition:transform 500ms cubic-bezier(0.22,1,0.36,1); } .ds-card:hover .ds-thumb { transform:translateY(-4px); } .ds-thumb h3 { margin:0; font-size:15cqw; line-height:1.02; font-weight:800; letter-spacing:-0.04em; } .ds-thumb i { position:absolute; width:12px; height:12px; border-color:currentColor; border-style:solid; opacity:0.3; } .ds-thumb .tl { top:10px; left:10px; border-width:1px 0 0 1px; } .ds-thumb .br { right:10px; bottom:10px; border-width:0 1px 1px 0; } .ds-meta { display:flex; flex-direction:column; gap:4px; padding:0 4px; font-size:0.875rem; } .ds-meta p { margin:0; } .req { font-weight:600; } .mut { color:#5c5c58; } .extra { color:#0f7c4a; font-weight:700; }"
+    },
+    {
+      "name": "Hero Frame with Proof Marks",
+      "kind": "custom",
+      "refersTo": "hero-frame",
+      "description": "히어로 전용 교정지 면. 네 모서리 재단선과 CMYK 막대(라이트만).",
+      "html": "<div class=\"ds-hero\"><span class=\"c tl\"></span><span class=\"c tr\"></span><span class=\"c bl\"></span><span class=\"c br\"></span><span class=\"bar\"><b style=\"background:#00a0e0\"></b><b style=\"background:#e4007f\"></b><b style=\"background:#ffe600\"></b><b style=\"background:#1a1a1a\"></b></span><h2>새 서비스를 먼저 <em>써 보고</em> 크레딧을 받으세요</h2></div>",
+      "css": ".ds-hero { position:relative; border-radius:16px; background:#fbfbfa; padding:48px; font-family:'Wanted Sans Variable',system-ui,sans-serif; color:#1a1a1a; } .ds-hero h2 { margin:0; max-width:42rem; font-size:3rem; line-height:1; font-weight:800; letter-spacing:-0.035em; } .ds-hero em { font-style:normal; color:#0f7c4a; } .ds-hero .c { position:absolute; width:16px; height:16px; border:0 solid #1a1a1a; } .tl { top:12px; left:12px; border-top-width:1px !important; border-left-width:1px !important; } .tr { top:12px; right:12px; border-top-width:1px !important; border-right-width:1px !important; } .bl { bottom:12px; left:12px; border-bottom-width:1px !important; border-left-width:1px !important; } .br { bottom:12px; right:12px; border-bottom-width:1px !important; border-right-width:1px !important; } .bar { position:absolute; top:32px; right:32px; display:flex; } .bar b { width:20px; height:10px; }"
+    },
+    {
+      "name": "Nav Tabs",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "헤더 알약 탭. 현재 탭만 칩 회색 바탕.",
+      "html": "<nav class=\"ds-nav\"><a class=\"on\" href=\"#\">홈</a><a href=\"#\">테스트 모집</a><a href=\"#\">참여 테스트</a></nav>",
+      "css": ".ds-nav { display:flex; gap:4px; font-family:'Wanted Sans Variable',system-ui,sans-serif; } .ds-nav a { border-radius:9999px; padding:8px 12px; font-size:0.875rem; font-weight:600; color:#5c5c58; text-decoration:none; transition:color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-nav a:hover { color:#1a1a1a; } .ds-nav a.on { background:#e4e4e0; color:#1a1a1a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "교정쇄 위의 갤러리",
+    "overview": "구조와 밀도는 uibowl 갤러리 문법(한 줄 헤더와 큰 알약 검색창, 순환 배너 옆 순위 패널, 알약 칩, 16px 썸네일 카드, 굵은 Wanted Sans 제목)을 따르고, 라이트 모드에서는 이를 교정쇄로 번역했다. 작업대 회색 위 교정지 패널, 먹색 글씨, 에메랄드 하나, 히어로의 재단선과 CMYK 막대, 정원이 찬 모집의 에메랄드 교정 도장. 다크 모드는 uibowl 원래 색을 그대로 쓴다. 화면은 그림자 없이 명도 세 단계로만 층을 나누고, 썸네일은 서비스 이름 자체를 그림으로 쓰는 활자 썸네일이다.",
+    "keyCharacteristics": [
+      "라이트 교정쇄 / 다크 uibowl, prefers-color-scheme로만 전환",
+      "강조색 하나, 쓰는 자리가 정해져 있다",
+      "그림자 없는 평면, 명도 세 단계",
+      "알약 조작 요소 + 16px 둥근 면",
+      "활자 썸네일과 재단선이 고유 장치"
+    ],
+    "rules": [
+      {
+        "name": "The Token-Only Rule",
+        "body": "색·모션 값은 globals.css 토큰에서만 정의한다. src/components, src/features에는 hex도 임의 px도 쓰지 않는다.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Green Rule",
+        "body": "강조색은 주 행동, 순위 숫자, 추가 보상, 교정 도장, 포커스·선택 같은 상호작용 상태에만 쓴다. 한 화면에 주 버튼은 하나.",
+        "section": "colors"
+      },
+      {
+        "name": "The Proof Ink Rule",
+        "body": "CMYK 색은 장식 막대에만 쓰고 글씨나 상태 표시에는 쓰지 않는다.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight-Not-Paint Rule",
+        "body": "강조는 굵기와 크기로만 한다. 그라데이션 글자는 쓰지 않는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Kicker Rule",
+        "body": "제목 위에 kicker·eyebrow를 두지 않는다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Scale Rule",
+        "body": "크기와 간격은 Tailwind 기본 스케일에서 고른다. 예외는 제목 자간과 썸네일 cqw 크기뿐이다.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "면은 그림자 없이 평평하다. 들뜸은 hover 때 썸네일 4px 상승으로만 표현한다.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Proof Mark Rule",
+        "body": "네 모서리 재단선 + CMYK 막대 세트는 히어로에만 두고, CMYK 막대는 라이트에서만 보인다. 썸네일의 흐린 두 모서리 재단선은 썸네일 고유 장치다.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 색은 토큰 유틸리티로만 쓰고, 새 색은 globals.css에 라이트·다크 값을 함께 추가한다.",
+      "Do 조작 요소는 알약, 담는 면은 16px로 둔다.",
+      "Do 층은 surface → surface-muted → surface-strong 명도로 나눈다.",
+      "Do 모집 글 이미지는 활자 썸네일을 쓴다.",
+      "Do 날짜·인원·보상 숫자는 tabular-nums로 같은 자리에 둔다.",
+      "Do 모션은 --ease-brand와 300/500ms만 쓰고 reduced motion을 지킨다."
+    ],
+    "donts": [
+      "Don't src/components, src/features에 hex나 임의 px를 쓰지 않는다.",
+      "Don't 제목 위에 kicker·eyebrow를 두지 않는다.",
+      "Don't 그라데이션 글자를 쓰지 않는다.",
+      "Don't 강조색을 정해진 자리 밖에서 쓰지 않는다.",
+      "Don't 가짜 스크린샷이나 목업 이미지를 썸네일에 넣지 않는다.",
+      "Don't ProofMarks를 히어로 밖에 두지 않고, CMYK 막대를 다크에서 보이지 않는다.",
+      "Don't 면에 그림자를 넣지 않는다."
+    ]
+  }
+}

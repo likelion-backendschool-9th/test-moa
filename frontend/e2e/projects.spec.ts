@@ -336,9 +336,42 @@ test.describe("R109 분석 탭", () => {
     await expect(page.getByText("23%")).toBeVisible();
   });
 
-  test("S131 무료 모집은 구독 안내를 보여 준다", async ({ page }) => {
+  test("S131 S138 무료 모집은 구독 안내만 보여 주고 AI 분석이 없다", async ({ page }) => {
     await page.goto(`${FOLIO_MANAGE}?tab=analytics`);
     await expect(page.getByText("구독 모집에서 분석을 볼 수 있어요")).toBeVisible();
     await expect(page.getByRole("link", { name: "구독 알아보기" })).toHaveAttribute("href", "/my/subscription");
+    await expect(page.getByRole("heading", { name: "AI 분석" })).toHaveCount(0);
+  });
+});
+
+test.describe("R112 AI 분석", () => {
+  test("S135 피드백을 정리한 결과와 근거 수를 보여 준다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`);
+    const ai = page.getByRole("region", { name: "AI 분석" });
+    await expect(ai).toBeVisible();
+    await expect(ai.getByText("시연용 샘플")).toBeVisible();
+    for (const title of ["자주 나온 문제", "좋았던 점", "개선 제안"]) {
+      await expect(ai.getByRole("heading", { name: title })).toBeVisible();
+    }
+    await expect(ai.getByText(/피드백 \d+건/).first()).toBeVisible();
+    await expect(ai.getByText(/AI가 정리한 내용이라 틀릴 수 있어요 · .+ 정리/)).toBeVisible();
+  });
+
+  test("S136 피드백이 부족하면 안내를 보여 준다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${BETA_MANAGE}?tab=analytics`);
+    const ai = page.getByRole("region", { name: "AI 분석" });
+    await expect(ai.getByText("피드백이 3건 이상 모이면 AI가 정리해 드려요")).toBeVisible();
+    await expect(ai.getByText("지금 피드백 0건")).toBeVisible();
+  });
+
+  test("S137 분석을 기다리는 동안 스켈레톤이 먼저 보인다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer", data: "slow" });
+    await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`, { waitUntil: "commit" });
+    await expect(page.getByRole("term").filter({ hasText: /^제출률$/ })).toBeVisible();
+    await expect(page.getByTestId("ai-skeleton")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "자주 나온 문제" })).toBeVisible();
+    await expect(page.getByTestId("ai-skeleton")).toHaveCount(0);
   });
 });

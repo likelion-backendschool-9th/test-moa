@@ -121,6 +121,17 @@ test.describe("R4 비밀번호 변경", () => {
     await expect(card.getByLabel("새 비밀번호 확인")).toHaveValue("");
   });
 
+  test("S183 바꾼 뒤 다시 제출해 실패해도 입력이 남는다", async ({ page }) => {
+    await fillPassword(page, { current: "test1234", next: "moa2026pw", confirm: "moa2026pw" });
+    const card = passwordCard(page);
+    await expect(card.getByRole("status")).toHaveText("비밀번호를 바꿨어요");
+    await fillPassword(page, { current: "test1234", next: "moa2026pw", confirm: "moa2026px" });
+    await expect(page.locator("#password-confirm-error")).toContainText("새 비밀번호가 서로 달라요");
+    await expect(card.getByLabel("현재 비밀번호")).toHaveValue("test1234");
+    await expect(card.getByLabel("새 비밀번호", { exact: true })).toHaveValue("moa2026pw");
+    await expect(card.getByLabel("새 비밀번호 확인")).toHaveValue("moa2026px");
+  });
+
   test("S173 현재 비밀번호 틀림", async ({ page }) => {
     await fillPassword(page, { current: "wrong123", next: "moa2026pw", confirm: "moa2026pw" });
     const current = passwordCard(page).getByLabel("현재 비밀번호");
@@ -208,5 +219,15 @@ test.describe("R5 로딩과 화면", () => {
       expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
       expect(boxes[2].y).toBeGreaterThan(boxes[1].y);
     }
+  });
+
+  test("S184 주 버튼은 저장 하나다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto(PATH);
+    const background = (name: string) =>
+      page.getByRole("button", { name, exact: true }).evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(await background("저장")).not.toBe(await background("비밀번호 변경"));
+    await expect(page.getByRole("button", { name: "비밀번호 변경" })).not.toHaveClass(/bg-accent/);
+    await expect(page.getByRole("button", { name: "저장" })).toHaveClass(/bg-accent/);
   });
 });

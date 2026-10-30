@@ -11,7 +11,7 @@ const DAY_MS = 24 * HOUR_MS;
 
 const NICKNAMES = [
   "김하늘", "이도윤", "박서아", "최지호", "정예린", "강민준", "조하은", "윤시우", "장유나", "임건우",
-  "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안",
+  "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안", "문서진", "배하린",
 ];
 
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
@@ -81,7 +81,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
   };
 
   const applications: Record<string, Application[]> = {
-    booklog: buildApplications("booklog", now, { confirmed: booklog.confirmedCount, rejected: 1, applied: 3 }),
+    booklog: buildApplications("booklog", now, { confirmed: booklog.confirmedCount, rejected: 1, applied: 8 }),
     "booklog-beta": buildApplications("booklog-beta", now, { confirmed: 5, rejected: 0, applied: 1 }),
     /* 무료 모집은 선착순 자동 확정이라 대기·거절이 없다 */
     "folio-builder": buildApplications("folio-builder", now, { confirmed: folio.confirmedCount, rejected: 0, applied: 0 }),

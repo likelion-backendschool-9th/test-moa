@@ -22,18 +22,47 @@ export const REPORT_TARGET_LABEL: Record<ReportTarget, string> = {
   user: "회원",
 };
 
-/** 검토 전 신고 */
+/** 운영자의 신고 처리 결과. 기각은 문제없음, 인정은 제재 이력에 반영 */
+export type ReportDecision = "dismissed" | "upheld";
+
+export const REPORT_DECISION_LABEL: Record<ReportDecision, string> = {
+  dismissed: "기각",
+  upheld: "인정",
+};
+
+export function isReportDecision(value: unknown): value is ReportDecision {
+  return value === "dismissed" || value === "upheld";
+}
+
+/** 신고 처리 기록. 처리 전 신고에는 없다 */
+export type ReportReview = {
+  decision: ReportDecision;
+  memo: string;
+  processedAt: string;
+};
+
+/** 신고. id가 상세 주소의 reportKey다 */
 export type Report = {
   id: string;
   targetType: ReportTarget;
-  /** 신고가 걸린 모집 건 이름 */
+  /** 신고가 걸린 모집 건 */
   recruitmentName: string;
+  recruitmentSlug: string;
   /** 사유 한 줄 */
   reason: string;
+  /** 신고한 개발자 */
+  reporterNickname: string;
+  /** 신고 대상 테스터·회원. 모집 글 신고에는 없다 */
+  targetNickname?: string;
+  /** 신고된 피드백 원문. 피드백 신고에만 있고 상세에서만 보여 준다 */
+  feedback?: string;
   createdAt: string;
   /** 72시간 지급 대기 중에 접수되어 크레딧 지급을 멈춘 신고 */
   holdsReward: boolean;
+  review?: ReportReview;
 };
+
+export type ReportTab = "pending" | "done";
 
 /** 처리 전 출금 요청 */
 export type WithdrawalRequest = {

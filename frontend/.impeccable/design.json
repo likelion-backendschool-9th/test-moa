@@ -343,9 +343,9 @@
       "name": "Icon Button",
       "kind": "button",
       "refersTo": "icon-button",
-      "description": "아이콘 하나만 있는 36px 원형 버튼. 평소 흐린 먹, hover·열린 상태는 칩 회색 바탕. 이름은 aria-label로.",
+      "description": "아이콘 하나만 있는 36px 원형 버튼. 평소 흐린 먹, hover는 칩 회색 바탕, 열린 상태는 연한 강조 바탕 + 강조 아이콘. 이름은 aria-label로.",
       "html": "<button class=\"ds-icobtn\" aria-label=\"북로그 채팅 더보기\" aria-expanded=\"false\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M144 128a16 16 0 1 1-16-16 16 16 0 0 1 16 16Zm-84-16a16 16 0 1 0 16 16 16 16 0 0 0-16-16Zm136 0a16 16 0 1 0 16 16 16 16 0 0 0-16-16Z\"/></svg></button>",
-      "css": ".ds-icobtn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:none; border-radius:9999px; background:transparent; color:#5c5c58; cursor:pointer; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1), color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-icobtn:hover, .ds-icobtn[aria-expanded=\"true\"] { background:#e4e4e0; color:#1a1a1a; } .ds-icobtn:focus-visible { outline:2px solid #0f7c4a; outline-offset:2px; }"
+      "css": ".ds-icobtn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:none; border-radius:9999px; background:transparent; color:#5c5c58; cursor:pointer; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1), color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-icobtn:hover { background:#e4e4e0; color:#1a1a1a; } .ds-icobtn[aria-expanded=\"true\"] { background:#def7eb; color:#0f7c4a; } .ds-icobtn:focus-visible { outline:2px solid #0f7c4a; outline-offset:2px; }"
     },
     {
       "name": "More Menu",
@@ -359,9 +359,17 @@
       "name": "Chat Card",
       "kind": "card",
       "refersTo": "chat-card",
-      "description": "채팅방 하나. 작은 활자 썸네일(첫 글자) + 프로젝트명·최근 일시 / 요청자·응답자 / 미리보기 한 줄 + 더보기 아이콘 버튼. 카드 전체가 채팅방 링크.",
-      "html": "<article class=\"ds-chat\"><div class=\"ds-cthumb\"><i class=\"tl\"></i><i class=\"br\"></i>북</div><div class=\"ds-chat-body\"><p class=\"top\"><b>북로그</b><time>오후 3:12</time></p><p class=\"who\"><span>요청자</span> 서재지기 <span>응답자</span> 윤슬</p><p class=\"msg\">피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.</p></div></article>",
-      "css": ".ds-chat { display:flex; align-items:flex-start; gap:16px; max-width:40rem; border-radius:16px; background:#fbfbfa; padding:16px; font-family:'Wanted Sans Variable',system-ui,sans-serif; color:#1a1a1a; } .ds-cthumb { position:relative; flex:none; display:grid; place-items:center; width:56px; height:56px; border:1px solid #d6d6d1; border-radius:12px; background:#ffffff; color:#1a1a1a; font-size:24px; font-weight:800; letter-spacing:-0.04em; transition:transform 500ms cubic-bezier(0.22,1,0.36,1); } .ds-chat:hover .ds-cthumb { transform:translateY(-4px); } .ds-cthumb i { position:absolute; width:8px; height:8px; border-color:currentColor; border-style:solid; opacity:0.3; } .ds-cthumb .tl { top:6px; left:6px; border-width:1px 0 0 1px; } .ds-cthumb .br { right:6px; bottom:6px; border-width:0 1px 1px 0; } .ds-chat-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; } .ds-chat p { margin:0; } .top { display:flex; justify-content:space-between; gap:12px; } .top b { font-weight:800; } .top time { font-size:0.75rem; color:#5c5c58; font-variant-numeric:tabular-nums; } .who { font-size:0.875rem; font-weight:600; } .who span { color:#5c5c58; font-weight:400; } .msg { margin-top:4px !important; font-size:0.875rem; color:#5c5c58; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }"
+      "description": "채팅방 하나. 작은 활자 썸네일(첫 글자) + 프로젝트명·최근 일시 / 요청자 닉네임 | 응답자 닉네임 / 미리보기 한 줄 + 더보기 아이콘 버튼. 안쪽 20px(md 24px), 줄 사이 8px. 오늘 온 대화는 일시가 강조색과 점. hover 때 썸네일 4px 상승 + 프로젝트명 강조색. 카드 전체가 채팅방 링크.",
+      "html": "<article class=\"ds-chat\"><div class=\"ds-cthumb\"><i class=\"tl\"></i><i class=\"br\"></i>북</div><div class=\"ds-chat-body\"><p class=\"top\"><b>북로그</b><time class=\"today\">오후 3:12</time></p><p class=\"who\">서재지기 <span aria-hidden=\"true\">|</span> 윤슬</p><p class=\"msg\">피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.</p></div></article>",
+      "css": ".ds-chat { display:flex; align-items:flex-start; gap:20px; max-width:40rem; border-radius:16px; background:#fbfbfa; padding:24px; font-family:'Wanted Sans Variable',system-ui,sans-serif; color:#1a1a1a; } .ds-chat:hover .top b { color:#0f7c4a; } .top time.today { display:flex; align-items:center; gap:6px; color:#0f7c4a; font-weight:700; } .top time.today::before { content:''; width:6px; height:6px; border-radius:9999px; background:#0f7c4a; } .ds-cthumb { position:relative; flex:none; display:grid; place-items:center; width:56px; height:56px; border:1px solid #d6d6d1; border-radius:12px; background:#ffffff; color:#1a1a1a; font-size:24px; font-weight:800; letter-spacing:-0.04em; transition:transform 500ms cubic-bezier(0.22,1,0.36,1); } .ds-chat:hover .ds-cthumb { transform:translateY(-4px); } .ds-cthumb i { position:absolute; width:8px; height:8px; border-color:currentColor; border-style:solid; opacity:0.3; } .ds-cthumb .tl { top:6px; left:6px; border-width:1px 0 0 1px; } .ds-cthumb .br { right:6px; bottom:6px; border-width:0 1px 1px 0; } .ds-chat-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; } .ds-chat p { margin:0; } .top { display:flex; justify-content:space-between; align-items:center; gap:12px; } .top b { font-size:1.125rem; font-weight:800; transition:color 300ms cubic-bezier(0.22,1,0.36,1); } .top time { font-size:0.75rem; color:#5c5c58; font-variant-numeric:tabular-nums; } .who { display:flex; gap:8px; font-size:0.875rem; font-weight:600; } .who span { color:#5c5c58; opacity:0.5; } .msg { margin-top:4px !important; font-size:0.875rem; line-height:1.625; color:#5c5c58; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }"
+    },
+    {
+      "name": "Project Select",
+      "kind": "input",
+      "refersTo": "select-button",
+      "description": "값이 많아질 수 있는 필터를 칩 줄 대신 알약 버튼 + 목록으로. 고르면 버튼이 연한 강조 바탕 + 강조 글씨(고른 이름 표시). 목록은 더보기 메뉴와 같은 면, 폭 16rem, 최대 18rem 높이에서 스크롤. 고른 항목은 연한 강조 바탕 + 강조 글씨 + 체크.",
+      "html": "<div style=\"display:flex;flex-direction:column;align-items:flex-end;gap:8px;width:16rem\"><button class=\"ds-select is-on\" aria-haspopup=\"listbox\" aria-expanded=\"true\">가계부 노트 <span aria-hidden=\"true\">▴</span></button><div class=\"ds-options\" role=\"listbox\"><button role=\"option\" aria-selected=\"false\">전체 프로젝트 <em>4</em></button><button role=\"option\" aria-selected=\"true\" class=\"on\">가계부 노트 <em>2</em></button><button role=\"option\" aria-selected=\"false\">북로그 <em>1</em></button></div></div>",
+      "css": ".ds-select { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:9999px; background:#e4e4e0; color:#1a1a1a; font-family:'Wanted Sans Variable',system-ui,sans-serif; font-weight:700; font-size:0.875rem; padding:8px 16px; transition:background-color 300ms cubic-bezier(0.22,1,0.36,1); } .ds-select:hover { background:#d6d6d1; } .ds-select.is-on { background:#def7eb; color:#0f7c4a; } .ds-options { display:flex; flex-direction:column; width:16rem; max-height:18rem; overflow-y:auto; padding:6px; border:1px solid #d6d6d1; border-radius:12px; background:#fbfbfa; } .ds-options button { display:flex; justify-content:space-between; border:none; border-radius:8px; background:transparent; padding:8px 12px; font:600 0.875rem 'Wanted Sans Variable',system-ui,sans-serif; color:#1a1a1a; text-align:left; } .ds-options button:hover { background:#e4e4e0; } .ds-options button.on { background:#def7eb; color:#0f7c4a; } .ds-options em { font-style:normal; opacity:0.6; font-variant-numeric:tabular-nums; }"
     }
   ],
   "narrative": {
@@ -382,7 +390,7 @@
       },
       {
         "name": "The One Green Rule",
-        "body": "강조색은 주 행동, 순위 숫자, 추가 보상, 교정 도장, 포커스·선택 같은 상호작용 상태에만 쓴다. 한 화면에 주 버튼은 하나.",
+        "body": "강조색은 주 행동, 순위 숫자, 추가 보상, 교정 도장, 새로 생긴 것(채팅함의 오늘 온 대화), 포커스·선택·hover·지금 걸린 필터 같은 상호작용 상태에만 쓴다. 카드마다 반복되는 정보에는 쓰지 않아 강조가 드물게 남는다. 한 화면에 주 버튼은 하나.",
         "section": "colors"
       },
       {

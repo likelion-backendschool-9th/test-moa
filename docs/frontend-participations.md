@@ -170,8 +170,8 @@ S101
 홈과 같은 규칙을 지킨다. 탭은 서버에서 URL로 처리해 새 클라이언트 컴포넌트를 만들지 않는다.
 
 S102
-- When  `grep -rl '"use client"' src`
-- Then  홈의 6개(S78)와 다음 할 일의 `TodoScroller`(이전·다음 버튼) 1개, 모두 7개만 나온다
+- When  `grep -rl '"use client"' src/features/participation`
+- Then  다음 할 일의 `TodoScroller`(이전·다음 버튼) 1개만 나온다 (탭은 링크라 서버 컴포넌트다)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

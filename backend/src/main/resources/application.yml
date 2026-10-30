@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: backend
+
+  profiles:
+    # 실행 환경. local이면 application-local.yml 설정을 함께 읽음
+    active: local
+
+  jpa:
+    hibernate:
+      naming:
+        # 필드명(camelCase)을 컬럼명(snake_case)으로 자동 변환. 예) imageUrl -> image_url
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+

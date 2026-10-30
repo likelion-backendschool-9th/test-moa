@@ -32,3 +32,35 @@ export function formatDday(iso: string, now: Date) {
   const days = Math.ceil((new Date(iso).getTime() - now.getTime()) / DAY_MS);
   return days <= 0 ? "D-day" : `D-${days}`;
 }
+
+const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Seoul",
+});
+
+const fullDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  timeZone: "Asia/Seoul",
+});
+
+/** 서울 기준 날짜를 "2026-10-30" 꼴로. 같은 날·어제·같은 해 비교에 쓴다 */
+const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Seoul",
+});
+
+/** 채팅 목록의 최근 일시. 오늘 "오후 3:12", 어제 "어제", 올해 "10월 28일", 그 전 "2025. 12. 3." */
+export function formatChatTime(iso: string, now: Date) {
+  const date = new Date(iso);
+  const day = dayKeyFormatter.format(date);
+  const today = dayKeyFormatter.format(now);
+  if (day === today) return timeFormatter.format(date);
+  if (day === dayKeyFormatter.format(new Date(now.getTime() - DAY_MS))) return "어제";
+  if (day.slice(0, 4) === today.slice(0, 4)) return dateFormatter.format(date);
+  return fullDateFormatter.format(date);
+}

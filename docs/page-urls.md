@@ -71,5 +71,7 @@
 | 관리자 진입 | `/admin` | 후보 |
 | 회원 관리 | `/admin/users` | 후보 |
 | 신고·제재 관리 | `/admin/reports` | 후보 |
+| 처리 완료 신고 탭 | `/admin/reports?tab=done` | 후보 |
+| 신고 상세 | `/admin/reports/:reportKey` | 후보 |
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
 | 모집 취소 요청 관리 | `/admin/cancellations` | 후보 |

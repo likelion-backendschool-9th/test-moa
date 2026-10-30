@@ -2,6 +2,8 @@ import "server-only";
 import { connection } from "next/server";
 import { requireMember } from "@/lib/auth";
 import { waitIfSlow } from "@/lib/demo";
+import type { Role } from "@/lib/session";
+import { getDemoWithdrawals } from "./demo-requests";
 import { buildCreditData, type CreditData } from "./mock";
 import type { CreditBalance, CreditEntry, LedgerType, Withdrawal } from "./types";
 
@@ -16,7 +18,22 @@ async function load(next: string): Promise<CreditData> {
   await waitIfSlow();
   /* 날짜는 요청 시각 기준이라 미리 렌더링하지 않는다 */
   await connection();
-  return buildCreditData(session.role, new Date());
+  return creditDataFor(session.role, new Date());
+}
+
+/**
+ * 목업에 이 브라우저의 시연용 출금 신청을 더한 값. 신청 금액은 처리 중이라 잠긴다.
+ * 마이페이지 대시보드도 같은 값을 보여 주려고 이 함수를 쓴다 (세션 확인은 부르는 쪽에서)
+ */
+export async function creditDataFor(role: Exclude<Role, "guest">, now: Date): Promise<CreditData> {
+  const data = buildCreditData(role, now);
+  const requested = await getDemoWithdrawals(role);
+  const locked = requested.reduce((sum, item) => sum + item.amount, 0);
+  return {
+    ...data,
+    balance: { ...data.balance, pendingWithdrawal: data.balance.pendingWithdrawal + locked },
+    withdrawals: [...requested, ...data.withdrawals],
+  };
 }
 
 export async function getCreditBalance(next: string): Promise<CreditBalance> {

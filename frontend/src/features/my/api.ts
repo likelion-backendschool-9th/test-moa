@@ -1,6 +1,6 @@
 import "server-only";
 import { connection } from "next/server";
-import { buildCreditData } from "@/features/credit/mock";
+import { creditDataFor } from "@/features/credit/api";
 import { requireMember } from "@/lib/auth";
 import { waitIfSlow } from "@/lib/demo";
 import { formatDday } from "@/lib/format";
@@ -22,7 +22,7 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
   await connection();
   const now = new Date();
   const summary = buildMyPageSummary(session.role, now);
-  const credit = buildCreditData(session.role, now);
+  const credit = await creditDataFor(session.role, now);
   return {
     ...summary,
     todos: sortTodos(summary.todos, now),

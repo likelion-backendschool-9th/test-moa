@@ -6,7 +6,7 @@ import { ADMIN_REQUEST_LABEL, ADMIN_REQUEST_PATH, type PendingItem } from "../ty
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 
-/** 세 종류 요청을 합친 순위 패널. 홈의 마감 임박 패널과 같은 모양이다 */
+/** 세 종류 요청을 합친 순위 패널. 홈의 마감 임박 패널과 같은 모양이다. 신고는 상세로, 나머지는 목록으로 간다 */
 export function OldestPendingPanel({ items, now }: { items: PendingItem[]; now: Date }) {
   return (
     <section aria-labelledby="oldest-heading" className={panelClass}>
@@ -20,7 +20,7 @@ export function OldestPendingPanel({ items, now }: { items: PendingItem[]; now: 
           {items.map((item, index) => (
             <li key={item.id}>
               <Link
-                href={ADMIN_REQUEST_PATH[item.kind]}
+                href={item.kind === "report" ? `/admin/reports/${item.id}` : ADMIN_REQUEST_PATH[item.kind]}
                 className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-300 ease-brand hover:bg-surface-strong"
               >
                 <span className="w-4 text-sm font-extrabold text-accent tabular-nums">{index + 1}</span>

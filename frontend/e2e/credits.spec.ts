@@ -260,7 +260,7 @@ test.describe("R5 출금 신청", () => {
     await expect(page.getByRole("status")).toBeVisible();
     await fill(page, { amount: "10000" });
     await page.getByRole("button", { name: "출금 신청" }).click();
-    await expect(page.getByText("출금 가능한 크레딧(9,480)보다 많아요")).toBeVisible();
+    await expect(page.getByText("출금 가능한 크레딧(4,480)보다 많아요")).toBeVisible();
     await expect(page.getByLabel("금액(크레딧)")).toHaveValue("10000");
     await expect(page.getByLabel("은행")).toHaveValue("토스뱅크");
     await expect(page.getByLabel("계좌번호")).toHaveValue("100012345678");
@@ -304,4 +304,70 @@ test("S154 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같�
   const recentRows = region(page, "최근 크레딧 내역").getByRole("listitem");
   await expect(recentRows).toHaveCount(5);
   expect(await recentRows.allInnerTexts()).toEqual(full);
+});
+
+test.describe("R7 신청 기록", () => {
+  const PATH = "/my/credits/withdrawals";
+
+  async function request(page: Page, amount: string) {
+    await page.getByLabel("금액(크레딧)").fill(amount);
+    await page.getByLabel("은행").selectOption("토스뱅크");
+    await page.getByLabel("계좌번호").fill("100012345678");
+    await page.getByLabel("예금주").fill("한서윤");
+    await page.getByRole("button", { name: "출금 신청" }).click();
+  }
+
+  test.beforeEach(async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto(PATH);
+    await request(page, "5000");
+    await expect(page.getByRole("status")).toBeVisible();
+  });
+
+  test("S186 신청하면 출금 내역 맨 위에 처리 중으로 남는다", async ({ page }) => {
+    const rows = historyRows(page);
+    await expect(rows).toHaveCount(3);
+    await expect(rows.first()).toContainText("5,000원");
+    await expect(rows.first()).toContainText("처리 중");
+    await expect(rows.first()).toContainText("토스뱅크 ****5678");
+  });
+
+  test("S187 출금 가능은 줄고 처리 중은 늘며 총 잔액은 그대로다", async ({ page }) => {
+    await expect(region(page, "출금 신청").getByText(/출금 가능\s*4,480 크레딧/)).toBeVisible();
+
+    await page.goto("/my/credits");
+    await expect(region(page, "잔액").getByText("12,480 크레딧", { exact: true })).toBeVisible();
+    await expect(balanceRow(page, "현금화 가능")).toContainText("4,480 크레딧");
+    await expect(balanceRow(page, "출금 처리 중")).toContainText("5,000 크레딧");
+
+    await page.goto("/my");
+    const card = region(page, "크레딧");
+    await expect(card.locator("dl > div").filter({ hasText: "현금화 가능" })).toContainText("4,480 크레딧");
+    await expect(card.locator("dl > div").filter({ hasText: "출금 처리 중" })).toContainText("5,000 크레딧");
+  });
+
+  test("S188 새로고침해도 남는다", async ({ page }) => {
+    await page.reload();
+    await expect(historyRows(page)).toHaveCount(3);
+    await expect(historyRows(page).first()).toContainText("5,000원");
+  });
+
+  test("S189 잠긴 만큼 이어서 신청할 수 없다", async ({ page }) => {
+    await request(page, "5000");
+    await expect(page.getByText("출금 가능한 크레딧(4,480)보다 많아요")).toBeVisible();
+    await expect(historyRows(page)).toHaveCount(3);
+  });
+
+  test("S190 다른 브라우저와 다른 회원에게는 보이지 않는다", async ({ page, context, browser }) => {
+    const other = await browser.newContext();
+    await setDemo(other, { role: "tester" });
+    const otherPage = await other.newPage();
+    await otherPage.goto(PATH);
+    await expect(historyRows(otherPage)).toHaveCount(2);
+    await other.close();
+
+    await setDemo(context, { role: "developer" });
+    await page.goto(PATH);
+    await expect(historyRows(page)).toHaveCount(1);
+  });
 });

@@ -244,7 +244,7 @@ test.describe("R107 테스터 관리 탭", () => {
   test("S121 지원자가 지원 순서대로 보이고 개인정보는 없다", async ({ page }) => {
     await page.goto(BOOKLOG_MANAGE);
     const rows = page.getByTestId("applicant");
-    await expect(rows).toHaveCount(17);
+    await expect(rows).toHaveCount(22);
     await expect(rows.nth(0)).toContainText("김하늘");
     await expect(rows.nth(0)).toContainText("확정");
     await expect(page.getByText("@")).toHaveCount(0);
@@ -253,13 +253,41 @@ test.describe("R107 테스터 관리 탭", () => {
   test("S122 S133 구독 모집은 지원자를 확정할 수 있고 결과를 알린다", async ({ page }) => {
     await page.goto(BOOKLOG_MANAGE);
     const pending = page.getByTestId("applicant").filter({ has: page.getByRole("button", { name: "확정" }) });
-    await expect(pending).toHaveCount(3);
+    await expect(pending).toHaveCount(8);
     const first = pending.first();
     const nickname = (await first.locator("span").first().textContent()) ?? "";
-    await first.getByRole("button", { name: "확정" }).click();
+    await first.getByRole("button", { name: "확정", exact: true }).click();
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 14명 · 정원 20명");
-    await expect(pending).toHaveCount(2);
+    await expect(pending).toHaveCount(7);
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: `${nickname}님을 확정했어요` })).toHaveCount(1);
+  });
+
+  test("S139 여러 명을 골라 한 번에 확정한다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const bulkButton = page.getByRole("button", { name: /^선택한 \d+명 확정$/ });
+    await expect(bulkButton).toHaveText("선택한 0명 확정");
+    await expect(bulkButton).toBeDisabled();
+
+    await page.getByRole("checkbox", { name: "전체 선택" }).check();
+    await expect(bulkButton).toHaveText("선택한 8명 확정");
+    await expect(bulkButton).toBeDisabled();
+    await expect(page.getByText("남은 자리는 7명이에요")).toBeVisible();
+
+    await page.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
+    await expect(bulkButton).toHaveText("선택한 7명 확정");
+    await bulkButton.click();
+
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명 · 정원 20명");
+    await expect(page.locator('[aria-live="polite"]').filter({ hasText: "7명을 확정했어요" })).toHaveCount(1);
+    await expect(page.getByText("정원이 다 찼어요")).toBeVisible();
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+  });
+
+  test("S139 정원이 찬 모집과 무료 모집에는 일괄 확정이 없다", async ({ page }) => {
+    for (const path of [BETA_MANAGE, FOLIO_MANAGE]) {
+      await page.goto(path);
+      await expect(page.getByRole("checkbox")).toHaveCount(0);
+    }
   });
 
   test("S123 정원이 차면 확정 버튼이 비활성이다", async ({ page }) => {

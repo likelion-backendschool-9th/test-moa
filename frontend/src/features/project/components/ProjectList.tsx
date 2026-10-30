@@ -29,7 +29,7 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
           >
             <Card className="flex h-full flex-col gap-3 bg-transparent">
               <p className="text-xs text-text-muted">{SOFTWARE_TYPE_LABEL[project.softwareType]}</p>
-              <h2 className="text-lg font-extrabold">{project.name}</h2>
+              <h3 className="text-lg font-extrabold">{project.name}</h3>
               <p className="text-sm text-text-muted">{project.summary}</p>
               <p className="mt-auto text-sm font-semibold">
                 모집 {project.recruitmentCount}건 · 모집 중 {project.openRecruitmentCount}건

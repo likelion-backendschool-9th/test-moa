@@ -4,7 +4,8 @@ import { Container } from "@/components/ui/Container";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { ProjectList, ProjectListSkeleton } from "@/features/project/components/ProjectList";
 import { SavedNotice } from "@/features/project/components/SavedNotice";
-import { getMyProjects } from "@/features/project/service";
+import { OverviewStats, TodoList } from "@/features/project/components/ProjectDashboard";
+import { getMyDashboard } from "@/features/project/service";
 
 /* 내 프로젝트 목록 (/my/projects) */
 
@@ -24,12 +25,22 @@ export default function MyProjectsPage({ searchParams }: PageProps<"/my/projects
   );
 }
 
+/* 위에서부터 지금 확인할 일 → 전체 현황 → 프로젝트 카드. 프로젝트가 없으면 빈 상태만 보여 준다 */
 async function ProjectsSlot({ searchParams }: Pick<PageProps<"/my/projects">, "searchParams">) {
-  const [projects, { notice }] = await Promise.all([getMyProjects("/my/projects"), searchParams]);
+  const [{ projects, todos, overview }, { notice }] = await Promise.all([getMyDashboard("/my/projects"), searchParams]);
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       <SavedNotice show={notice === "saved"} />
-      <ProjectList projects={projects} />
+      {projects.length > 0 && <TodoList todos={todos} />}
+      {projects.length > 0 && <OverviewStats overview={overview} />}
+      <section aria-labelledby="projects-heading" className="flex flex-col gap-3">
+        {projects.length > 0 && (
+          <h2 id="projects-heading" className="text-xl font-extrabold tracking-[-0.03em]">
+            프로젝트 {projects.length}개
+          </h2>
+        )}
+        <ProjectList projects={projects} />
+      </section>
     </div>
   );
 }

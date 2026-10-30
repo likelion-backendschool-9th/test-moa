@@ -92,6 +92,82 @@ export async function getMyProjects(path: string): Promise<ProjectSummary[]> {
   }));
 }
 
+/** 내 프로젝트 화면 맨 위 "지금 확인할 일" 한 줄 */
+export type TodoItem = {
+  kind: "applicants" | "feedback";
+  projectName: string;
+  /** 이동할 모집 관리 탭 주소 */
+  href: string;
+  text: string;
+};
+
+/** 모든 프로젝트를 합친 숫자 */
+export type ProjectOverview = {
+  openRecruitments: number;
+  confirmedTesters: number;
+  feedbacks: number;
+  waitingReports: number;
+};
+
+/**
+ * 내 프로젝트 화면 전체: 할 일, 전체 현황, 프로젝트 카드.
+ * 할 일은 지원자 확정 대기(구독·모집 마감 전·정원 남음)가 먼저, 신고 대기 피드백은 자동 지급이 가까운 순서다.
+ */
+export async function getMyDashboard(path: string) {
+  const projects = await getMyProjects(path);
+  const role = await requireRole(path);
+  const now = new Date();
+
+  const applicantTodos: TodoItem[] = [];
+  const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
+  const overview: ProjectOverview = { openRecruitments: 0, confirmedTesters: 0, feedbacks: 0, waitingReports: 0 };
+
+  for (const project of projects) {
+    for (const recruitment of project.recruitments) {
+      const [applications, feedbacks] = await Promise.all([
+        findApplications(role, recruitment.slug),
+        findFeedbacks(role, recruitment.slug),
+      ]);
+      const status = getRecruitmentStatus(recruitment, now);
+      const base = `/my/projects/${project.key}/recruitments/${recruitment.slug}`;
+      const confirmed = applications.filter((item) => item.status === "confirmed").length;
+      const pending = applications.filter((item) => item.status === "applied").length;
+      const waitingHours = feedbacks.map((item) => getHoursUntilPaid(item, now)).filter((hours) => hours > 0);
+
+      if (status === "recruiting") overview.openRecruitments += 1;
+      overview.confirmedTesters += confirmed;
+      overview.feedbacks += feedbacks.length;
+      overview.waitingReports += waitingHours.length;
+
+      /* 지금 확정할 수 있는 지원자만 할 일로 본다. 무료 모집은 자동 확정이라 뺀다 */
+      if (recruitment.isSubscription && status === "recruiting" && pending > 0) {
+        applicantTodos.push({
+          kind: "applicants",
+          projectName: project.name,
+          href: `${base}?tab=testers`,
+          text: `지원자 ${pending}명이 확정을 기다려요 · 남은 자리 ${recruitment.capacity - confirmed}명`,
+        });
+      }
+      if (waitingHours.length > 0) {
+        const hours = Math.min(...waitingHours);
+        feedbackTodos.push({
+          item: {
+            kind: "feedback",
+            projectName: project.name,
+            href: `${base}?tab=feedback`,
+            text: `신고 대기 피드백 ${waitingHours.length}건 · ${hours}시간 뒤 자동 지급`,
+          },
+          hours,
+        });
+      }
+    }
+  }
+
+  feedbackTodos.sort((a, b) => a.hours - b.hours);
+  const todos: TodoItem[] = [...applicantTodos, ...feedbackTodos.map(({ item }) => item)];
+  return { projects, todos, overview };
+}
+
 /** 내 프로젝트 하나와 모집 건(최신순). 없거나 남의 프로젝트면 404 */
 export async function getMyProject(path: string, projectKey: string) {
   const role = await requireRole(path);

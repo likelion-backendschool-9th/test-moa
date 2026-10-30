@@ -13,6 +13,8 @@ export type ChatRoom = {
   /** 모집 건 slug. 모집 글 링크에 쓴다 */
   recruitmentSlug: string;
   projectName: string;
+  /** 프로젝트 대표 이미지 주소. 없으면 프로젝트 이름 첫 글자 썸네일을 보여 준다 */
+  projectImage?: string;
   /** 이 방에서 나의 역할. 내 프로젝트의 채팅이면 개발자, 테스터로 참여한 채팅이면 테스터 */
   myRole: ChatRole;
   /** 대화 상대 */

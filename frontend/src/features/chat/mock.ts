@@ -87,6 +87,15 @@ const ROOMS: Seed[] = [
   },
 ];
 
+/** 시연용 프로젝트 화면 이미지(public/sample/projects). 웹 서비스는 브라우저 창, 앱은 휴대폰 화면 모양이며 실제 서비스 화면이 아니다 */
+const PROJECT_IMAGES: Record<string, string> = {
+  booklog: "/sample/projects/booklog.svg",
+  moaplan: "/sample/projects/moaplan.svg",
+  recipefit: "/sample/projects/recipefit.svg",
+  "ledger-note": "/sample/projects/ledger-note.svg",
+  "meeting-notes": "/sample/projects/meeting-notes.svg",
+};
+
 /** 시연용 회원의 닉네임. 운영자는 서비스 이용 회원이 아니라서 채팅방이 없다 */
 const MEMBER_NICKNAME: Record<Exclude<Role, "guest">, string | null> = {
   tester: "윤슬",
@@ -103,6 +112,7 @@ export function buildChatRooms(role: Exclude<Role, "guest">, now: Date): ChatRoo
       const isDeveloper = requester === nickname;
       return {
         ...room,
+        projectImage: PROJECT_IMAGES[room.recruitmentSlug],
         myRole: isDeveloper ? "developer" : "tester",
         partner: isDeveloper ? { nickname: responder, role: "tester" } : { nickname: requester, role: "developer" },
         lastMessageAt: new Date(now.getTime() - minutesAgo * MINUTE_MS).toISOString(),

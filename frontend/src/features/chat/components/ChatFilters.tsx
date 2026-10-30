@@ -9,7 +9,7 @@ import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from 
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-/** 채팅함 위쪽. 첫 줄은 채팅방 검색, 둘째 줄은 왼쪽 정렬과 오른쪽 역할 탭. 상태는 URL에만 둔다 */
+/** 채팅함 위쪽. 첫 줄은 채팅방 검색, 둘째 줄은 왼쪽 역할 탭과 오른쪽 정렬. 상태는 URL에만 둔다 */
 export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatRoleCounts }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -57,23 +57,7 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
         />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div role="group" aria-label="정렬" className="flex gap-4 text-sm">
-          {(Object.keys(CHAT_SORT_LABEL) as ChatSort[]).map((sort) => (
-            <button
-              key={sort}
-              type="button"
-              aria-pressed={query.sort === sort}
-              onClick={() => navigate({ sort })}
-              className={cn(
-                "font-bold transition-colors duration-300 ease-brand",
-                query.sort === sort ? "text-text" : "text-text-muted hover:text-text",
-              )}
-            >
-              {CHAT_SORT_LABEL[sort]}
-            </button>
-          ))}
-        </div>
-        {/* 역할 탭. 칩 회색 홈 안에서 고른 탭만 교정지 면으로 올라오고, 고른 탭의 수는 강조색이다 */}
+        {/* 역할 탭(왼쪽). 칩 회색 홈 안에서 고른 탭만 교정지 면으로 올라오고, 고른 탭의 수는 강조색이다 */}
         <div role="group" aria-label="역할별 보기" className="flex rounded-full bg-surface-strong p-1">
           {roleTabs.map((tab) => {
             const active = query.role === tab.value;
@@ -93,6 +77,23 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
               </button>
             );
           })}
+        </div>
+        {/* 정렬(오른쪽) */}
+        <div role="group" aria-label="정렬" className="flex gap-4 text-sm">
+          {(Object.keys(CHAT_SORT_LABEL) as ChatSort[]).map((sort) => (
+            <button
+              key={sort}
+              type="button"
+              aria-pressed={query.sort === sort}
+              onClick={() => navigate({ sort })}
+              className={cn(
+                "font-bold transition-colors duration-300 ease-brand",
+                query.sort === sort ? "text-text" : "text-text-muted hover:text-text",
+              )}
+            >
+              {CHAT_SORT_LABEL[sort]}
+            </button>
+          ))}
         </div>
       </div>
     </div>

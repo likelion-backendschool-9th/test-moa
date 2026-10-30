@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- 시연용 샘플: 모아플랜 웹 화면. 실제 서비스 화면이 아니다 -->
+  <rect width="480" height="360" fill="#dfe4fb"/>
+  <g transform="translate(28 30)">
+    <rect width="424" height="300" rx="12" fill="#ffffff"/>
+    <path d="M0 12a12 12 0 0 1 12-12h400a12 12 0 0 1 12 12v18H0z" fill="#e7eaf6"/>
+    <circle cx="16" cy="15" r="4" fill="#e0675f"/>
+    <circle cx="30" cy="15" r="4" fill="#e6b649"/>
+    <circle cx="44" cy="15" r="4" fill="#6dae73"/>
+    <rect x="116" y="8" width="192" height="14" rx="7" fill="#f3f5fc"/>
+    <path d="M0 30h96v270H12a12 12 0 0 1-12-12z" fill="#f4f6fd"/>
+    <text x="14" y="58" font-family="'Wanted Sans Variable','Malgun Gothic',system-ui,sans-serif" font-size="15" font-weight="800" fill="#2f2a8f">모아플랜</text>
+    <rect x="14" y="76" width="68" height="20" rx="10" fill="#4f46e5"/>
+    <circle cx="22" cy="118" r="7" fill="#f59e9e"/>
+    <rect x="34" y="114" width="44" height="7" rx="3.5" fill="#c5cbe6"/>
+    <circle cx="22" cy="140" r="7" fill="#8fd3b6"/>
+    <rect x="34" y="136" width="38" height="7" rx="3.5" fill="#c5cbe6"/>
+    <circle cx="22" cy="162" r="7" fill="#f6c97a"/>
+    <rect x="34" y="158" width="46" height="7" rx="3.5" fill="#c5cbe6"/>
+    <circle cx="22" cy="184" r="7" fill="#a5b4fc"/>
+    <rect x="34" y="180" width="34" height="7" rx="3.5" fill="#c5cbe6"/>
+    <g transform="translate(112 44)">
+      <rect width="92" height="10" rx="5" fill="#1e1b4b"/>
+      <rect x="236" y="0" width="64" height="12" rx="6" fill="#e7eaf6"/>
+      <g fill="#c5cbe6">
+        <rect x="0" y="24" width="28" height="6" rx="3"/>
+        <rect x="44" y="24" width="28" height="6" rx="3"/>
+        <rect x="88" y="24" width="28" height="6" rx="3"/>
+        <rect x="132" y="24" width="28" height="6" rx="3"/>
+        <rect x="176" y="24" width="28" height="6" rx="3"/>
+        <rect x="220" y="24" width="28" height="6" rx="3"/>
+        <rect x="264" y="24" width="28" height="6" rx="3"/>
+      </g>
+      <g stroke="#e7eaf6" stroke-width="1.5" fill="none">
+        <rect x="0" y="38" width="300" height="200" rx="8"/>
+        <path d="M43 38v200M86 38v200M129 38v200M172 38v200M215 38v200M258 38v200M0 88h300M0 138h300M0 188h300"/>
+      </g>
+      <rect x="4" y="46" width="78" height="14" rx="4" fill="#4f46e5"/>
+      <rect x="133" y="46" width="34" height="14" rx="4" fill="#f59e9e"/>
+      <rect x="90" y="96" width="120" height="14" rx="4" fill="#8fd3b6"/>
+      <rect x="219" y="114" width="36" height="14" rx="4" fill="#4f46e5"/>
+      <rect x="4" y="146" width="34" height="14" rx="4" fill="#f6c97a"/>
+      <rect x="176" y="146" width="78" height="14" rx="4" fill="#a5b4fc"/>
+      <rect x="47" y="196" width="78" height="14" rx="4" fill="#f59e9e"/>
+      <rect x="262" y="196" width="34" height="14" rx="4" fill="#8fd3b6"/>
+      <rect x="133" y="214" width="34" height="14" rx="4" fill="#4f46e5"/>
+    </g>
+  </g>
+</svg>

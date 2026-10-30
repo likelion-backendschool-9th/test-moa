@@ -5,15 +5,20 @@ const chatList = (page: Page) => page.getByRole("list", { name: "채팅 목록" 
 const cards = (page: Page) => chatList(page).getByRole("listitem");
 const cardLinks = (page: Page) => chatList(page).getByRole("link");
 const searchBox = (page: Page) => page.getByRole("searchbox", { name: "채팅방 검색" });
-const projectChips = (page: Page) => page.getByRole("group", { name: "프로젝트" }).getByRole("button");
 const sortButton = (page: Page, name: string) => page.getByRole("group", { name: "정렬" }).getByRole("button", { name });
+const projectButton = (page: Page) => page.getByRole("button", { name: /^프로젝트별/ });
+const projectOptions = (page: Page) => page.getByRole("listbox", { name: "프로젝트별 보기" }).getByRole("option");
+const projectOption = (page: Page, name: string) => projectOptions(page).filter({ hasText: name });
 
-/** 카드의 요청자·응답자 닉네임 (dt 이름 바로 뒤의 dd) */
-const participant = (card: Locator, label: "요청자" | "응답자") => card.locator("dt", { hasText: label }).locator("xpath=following-sibling::dd");
+/** 카드의 요청자·응답자. 화면에는 닉네임만 보이고, 보조 기술에는 "요청자 서재지기"처럼 역할과 함께 읽힌다 */
+const requester = (card: Locator) => card.locator('[data-role="requester"]');
+const responder = (card: Locator) => card.locator('[data-role="responder"]');
+const preview = (card: Locator) => card.locator("[data-preview]");
 
 /** 카드 링크 이름은 "프로젝트명 채팅방"이다 */
 const roomNames = (projects: string[]) => projects.map((project) => `${project} 채팅방`);
 
+const ACCENT_LIGHT = "rgb(15, 124, 74)";
 const TIME_TODAY = /^(오전|오후) \d{1,2}:\d{2}$/;
 /* 연초 며칠은 작년 날짜가 되므로 두 형식을 모두 받는다 */
 const DATE = /^(\d{1,2}월 \d{1,2}일|\d{4}\. \d{1,2}\. \d{1,2}\.)$/;
@@ -43,13 +48,14 @@ test.describe("R2 채팅 카드", () => {
     await setDemo(context, { role: "tester" });
   });
 
-  test("S116 카드에 프로젝트명, 요청자, 응답자, 미리보기, 일시, 더보기가 있다", async ({ page }) => {
+  test("S116 카드에 프로젝트명, 요청자 | 응답자, 미리보기, 일시, 더보기가 있다", async ({ page }) => {
     await page.goto("/my/chats");
     const card = cards(page).first();
     await expect(card.getByRole("heading", { level: 2 })).toHaveText("북로그 채팅방");
-    await expect(participant(card, "요청자")).toHaveText("서재지기");
-    await expect(participant(card, "응답자")).toHaveText("윤슬");
-    await expect(card.getByText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.")).toBeVisible();
+    await expect(requester(card)).toHaveText("요청자 서재지기");
+    await expect(responder(card)).toHaveText("응답자 윤슬");
+    await expect(card.getByText("|", { exact: true })).toBeVisible();
+    await expect(preview(card)).toHaveText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.");
     await expect(card.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
     await expect(card.getByRole("button", { name: "북로그 채팅 더보기" })).toBeVisible();
   });
@@ -63,13 +69,12 @@ test.describe("R2 채팅 카드", () => {
   test("S118 미리보기는 한 줄로 줄인다", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/my/chats");
-    const preview = cards(page).first().locator("p");
-    expect(await preview.evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("1");
+    expect(await preview(cards(page).first()).evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("1");
   });
 
   test("S119 카드 어디를 눌러도 채팅방으로 간다", async ({ page }) => {
     await page.goto("/my/chats");
-    const box = await cards(page).first().getByText("피드백 마감이").boundingBox();
+    const box = await preview(cards(page).first()).boundingBox();
     await page.mouse.click(box!.x + 8, box!.y + box!.height / 2);
     await expect(page).toHaveURL("/my/chats/booklog-yunseul");
     await expect(page.getByRole("heading", { level: 1, name: /준비 중/ })).toBeVisible();
@@ -91,21 +96,31 @@ test.describe("R3 순서와 일시", () => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/chats");
     await expect(cardLinks(page)).toHaveText(roomNames(["가계부 노트", "가계부 노트", "북로그", "회의록 정리"]));
-    await expect(participant(cards(page).nth(0), "응답자")).toHaveText("새벽코더");
-    await expect(participant(cards(page).nth(1), "응답자")).toHaveText("윤슬");
-    await expect(participant(cards(page).nth(2), "요청자")).toHaveText("서재지기");
-    await expect(participant(cards(page).nth(2), "응답자")).toHaveText("도현랩");
+    await expect(responder(cards(page).nth(0))).toHaveText("응답자 새벽코더");
+    await expect(responder(cards(page).nth(1))).toHaveText("응답자 윤슬");
+    await expect(requester(cards(page).nth(2))).toHaveText("요청자 서재지기");
+    await expect(responder(cards(page).nth(2))).toHaveText("응답자 도현랩");
     await expect(cardLinks(page).nth(1)).toHaveAttribute("href", "/my/chats/ledger-yunseul");
-    const preview = await cards(page).nth(1).locator("p").textContent();
+    const developerPreview = await preview(cards(page).nth(1)).textContent();
 
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
     const testerCard = cards(page).filter({ has: page.locator('a[href="/my/chats/ledger-yunseul"]') });
-    await expect(testerCard.locator("p")).toHaveText(preview!);
+    await expect(preview(testerCard)).toHaveText(developerPreview!);
+  });
+
+  test("S136 오늘 온 대화의 일시만 강조색과 점으로 표시한다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats");
+    const times = chatList(page).locator("time");
+    await expect(times.nth(0)).toHaveAttribute("data-today", "true");
+    await expect(times.nth(0)).toHaveCSS("color", ACCENT_LIGHT);
+    await expect(times.nth(1)).not.toHaveAttribute("data-today");
+    await expect(times.nth(1)).not.toHaveCSS("color", ACCENT_LIGHT);
   });
 });
 
-test.describe("R4 검색·프로젝트·정렬", () => {
+test.describe("R4 검색·정렬·프로젝트별", () => {
   test("S122 채팅방을 닉네임으로 검색한다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -115,15 +130,20 @@ test.describe("R4 검색·프로젝트·정렬", () => {
     await expect(page.getByText("채팅방 2개")).toHaveAttribute("aria-live", "polite");
   });
 
-  test("S123 프로젝트 칩으로 한 프로젝트의 채팅방만 본다", async ({ page, context }) => {
+  test("S123 프로젝트별 드롭다운으로 한 프로젝트의 채팅방만 본다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/chats");
-    await expect(projectChips(page)).toHaveText(["전체 4", "가계부 노트 2", "북로그 1", "회의록 정리 1"]);
-    await projectChips(page).filter({ hasText: "가계부 노트" }).click();
+    await projectButton(page).click();
+    await expect(projectButton(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(projectOptions(page)).toHaveText(["전체 프로젝트 4", "가계부 노트 2", "북로그 1", "회의록 정리 1"]);
+    await expect(projectOption(page, "전체 프로젝트")).toHaveAttribute("aria-selected", "true");
+    await projectOption(page, "가계부 노트").click();
     await expect(page).toHaveURL(/[?&]project=ledger-note/);
     await expect(cards(page)).toHaveCount(2);
-    await expect(projectChips(page).filter({ hasText: "가계부 노트" })).toHaveAttribute("aria-pressed", "true");
-    await projectChips(page).filter({ hasText: "전체" }).click();
+    await expect(projectButton(page)).toHaveAccessibleName("프로젝트별: 가계부 노트");
+    await projectButton(page).click();
+    await expect(projectOption(page, "가계부 노트")).toHaveAttribute("aria-selected", "true");
+    await projectOption(page, "전체 프로젝트").click();
     await expect(page).toHaveURL("/my/chats");
     await expect(cards(page)).toHaveCount(4);
   });
@@ -151,9 +171,27 @@ test.describe("R4 검색·프로젝트·정렬", () => {
   test("S126 URL로 연 조건이 그대로 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/chats?project=ledger-note&sort=oldest");
-    await expect(projectChips(page).filter({ hasText: "가계부 노트" })).toHaveAttribute("aria-pressed", "true");
+    await expect(projectButton(page)).toHaveAccessibleName("프로젝트별: 가계부 노트");
     await expect(sortButton(page, "오래된순")).toHaveAttribute("aria-pressed", "true");
-    await expect(participant(cards(page).first(), "응답자")).toHaveText("윤슬");
+    await expect(responder(cards(page).first())).toHaveText("응답자 윤슬");
+  });
+
+  test("S137 프로젝트별 드롭다운은 키보드로 고르고 Esc로 닫는다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/chats");
+    await projectButton(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(projectOption(page, "전체 프로젝트")).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(projectOption(page, "가계부 노트")).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/[?&]project=ledger-note/);
+    await expect(projectButton(page)).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(projectOption(page, "가계부 노트")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(projectButton(page)).toBeFocused();
   });
 });
 
@@ -199,6 +237,7 @@ test.describe("R6 빈 상태", () => {
     await expect(page.getByText("채팅은 구독 모집 건의 개발자와 선정된 테스터가 1대1로 나눠요.")).toBeVisible();
     await expect(page.getByRole("main").getByRole("link", { name: "테스트 둘러보기" })).toHaveAttribute("href", "/recruitments");
     await expect(searchBox(page)).toHaveCount(0);
+    await expect(projectButton(page)).toHaveCount(0);
   });
 
   test("S130 데이터가 없으면 같은 빈 상태다", async ({ page, context }) => {
@@ -222,14 +261,14 @@ test.describe("R7 로딩", () => {
 });
 
 test.describe("R8 모바일", () => {
-  test("S132 좁은 화면에서도 가로 스크롤 없이 카드 요소가 보인다", async ({ page, context }) => {
+  test("S132 좁은 화면에서도 가로 스크롤 없이 카드 요소와 드롭다운이 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/my/chats");
     await expect(cards(page)).toHaveCount(5);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
     const card = cards(page).first();
-    for (const element of [card.locator("[data-thumb]"), card.getByRole("link"), card.locator("time"), card.getByRole("button")]) {
+    for (const element of [card.locator("[data-thumb]"), card.getByRole("link"), card.locator("time"), card.getByRole("button"), projectButton(page)]) {
       const box = await element.boundingBox();
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(375);

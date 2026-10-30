@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getProfile } from "@/features/my/api";
-import { cardClass } from "@/features/my/components/card-styles";
+import { settingsCardClass, settingsSectionClass } from "@/features/my/components/card-styles";
 import { PasswordForm } from "@/features/my/components/PasswordForm";
 import { ProfileForm } from "@/features/my/components/ProfileForm";
 
@@ -25,7 +25,7 @@ export default function ProfileEditPage() {
 async function ProfileEdit() {
   const profile = await getProfile(PATH);
   return (
-    <div className="flex flex-col gap-4">
+    <div className={settingsCardClass}>
       <ProfileForm profile={profile} />
       <PasswordForm />
     </div>
@@ -34,12 +34,15 @@ async function ProfileEdit() {
 
 function ProfileEditSkeleton() {
   return (
-    <div aria-busy="true" aria-label="개인정보 불러오는 중" className="flex flex-col gap-4">
+    <div aria-busy="true" aria-label="개인정보 불러오는 중" className={settingsCardClass}>
       {Array.from({ length: 2 }, (_, index) => (
-        <div key={index} className={cardClass}>
+        <div key={index} className={settingsSectionClass}>
           <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+          <div className="flex flex-col gap-5 lg:col-span-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
         </div>
       ))}
     </div>

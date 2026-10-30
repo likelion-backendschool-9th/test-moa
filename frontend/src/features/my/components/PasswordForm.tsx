@@ -3,7 +3,7 @@
 import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { changePassword, type FormState, type PasswordField } from "../actions";
-import { cardClass, cardTitleClass } from "./card-styles";
+import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "./card-styles";
 import { FormField, FormMessage } from "./FormField";
 
 const initialState: FormState<PasswordField> = { status: "idle" };
@@ -21,24 +21,26 @@ export function PasswordForm() {
 
   const errors = state.status === "error" ? state.errors : {};
   return (
-    <section aria-labelledby="password-form-heading" className={cardClass}>
-      <h2 id="password-form-heading" className={cardTitleClass}>
-        비밀번호 변경
-      </h2>
-      {state.status === "success" && <FormMessage status="success" message={state.message} />}
-      {/* 성공할 때마다 새로 그려 입력을 비운다 */}
-      <form key={state.status === "success" ? state.submittedAt : "fields"} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-        <div className="grid gap-x-4 gap-y-5 md:grid-cols-2">
-          <FormField
-            id="password-current"
-            name="current"
-            type="password"
-            label="현재 비밀번호"
-            autoComplete="current-password"
-            error={errors.current}
-          />
-          {/* 새 비밀번호 두 칸은 다음 줄에 나란히 둔다 */}
-          <div className="md:col-start-1">
+    <section aria-labelledby="password-form-heading" className={settingsSectionClass}>
+      <div className="flex flex-col gap-1">
+        <h2 id="password-form-heading" className={cardTitleClass}>
+          비밀번호 변경
+        </h2>
+        <p className="text-sm text-text-muted">현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요.</p>
+      </div>
+      <div className={settingsBodyClass}>
+        {state.status === "success" && <FormMessage status="success" message={state.message} />}
+        {/* 성공할 때마다 새로 그려 입력을 비운다 */}
+        <form key={state.status === "success" ? state.submittedAt : "fields"} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
+            <FormField
+              id="password-current"
+              name="current"
+              type="password"
+              label="현재 비밀번호"
+              autoComplete="current-password"
+              error={errors.current}
+            />
             <FormField
               id="password-next"
               name="next"
@@ -48,22 +50,22 @@ export function PasswordForm() {
               hint="영문과 숫자를 섞어 8자 이상"
               error={errors.next}
             />
+            <FormField
+              id="password-confirm"
+              name="confirm"
+              type="password"
+              label="새 비밀번호 확인"
+              autoComplete="new-password"
+              error={errors.confirm}
+            />
           </div>
-          <FormField
-            id="password-confirm"
-            name="confirm"
-            type="password"
-            label="새 비밀번호 확인"
-            autoComplete="new-password"
-            error={errors.confirm}
-          />
-        </div>
-        <div className="flex md:justify-end">
-          <Button type="submit" disabled={pending} className="w-full md:w-auto">
-            {pending ? "바꾸는 중…" : "비밀번호 변경"}
-          </Button>
-        </div>
-      </form>
+          <div className="flex md:justify-end">
+            <Button type="submit" disabled={pending} className="w-full md:w-auto">
+              {pending ? "바꾸는 중…" : "비밀번호 변경"}
+            </Button>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }

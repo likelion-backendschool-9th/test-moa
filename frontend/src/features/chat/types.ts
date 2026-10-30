@@ -12,7 +12,7 @@ export type ChatRoom = {
   lastMessageAt: string;
 };
 
-/** 프로젝트별 보기 칩 하나 */
+/** 프로젝트별 드롭다운의 항목 하나 */
 export type ChatProjectOption = {
   slug: string;
   name: string;

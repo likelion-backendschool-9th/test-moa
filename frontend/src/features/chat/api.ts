@@ -35,7 +35,7 @@ export async function getChatInbox(query: ChatQuery): Promise<ChatInboxData> {
   return { rooms, total: all.length, projects: toProjectOptions(all), now: now.toISOString() };
 }
 
-/** 프로젝트별 보기 칩. 프로젝트 이름 가나다순이고 프로젝트마다 채팅방 수를 센다 */
+/** 프로젝트별 드롭다운 항목. 프로젝트 이름 가나다순이고 프로젝트마다 채팅방 수를 센다 */
 function toProjectOptions(rooms: ChatRoom[]): ChatProjectOption[] {
   const options = new Map<string, ChatProjectOption>();
   for (const room of rooms) {

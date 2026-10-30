@@ -6,23 +6,18 @@ import { useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "../query";
 import type { ChatProjectOption } from "../types";
+import { ProjectSelect } from "./ProjectSelect";
 
 const SEARCH_DEBOUNCE_MS = 300;
-
-const chipClass = (active: boolean) =>
-  cn(
-    "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-    active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
-  );
 
 type ChatFiltersProps = {
   query: ChatQuery;
   projects: ChatProjectOption[];
-  /** 조건과 관계없는 전체 채팅방 수. "전체" 칩에 붙는다 */
+  /** 조건과 관계없는 전체 채팅방 수 */
   total: number;
 };
 
-/** 채팅함 위쪽의 채팅방 검색, 프로젝트별 보기, 정렬. 상태는 URL에만 둔다 */
+/** 채팅함 위쪽의 채팅방 검색, 정렬, 프로젝트별 보기. 상태는 URL에만 둔다 */
 export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -51,26 +46,21 @@ export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
     }, SEARCH_DEBOUNCE_MS);
   }
 
-  const chips: Array<{ value: string | null; label: string; count: number }> = [
-    { value: null, label: "전체", count: total },
-    ...projects.map((project) => ({ value: project.slug, label: project.name, count: project.count })),
-  ];
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <label className="flex w-full items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent sm:max-w-md">
-          <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="shrink-0 text-text-muted" />
-          <input
-            type="search"
-            aria-label="채팅방 검색"
-            placeholder="프로젝트명이나 닉네임으로 찾아보세요"
-            value={value}
-            onChange={(event) => onSearch(event.target.value)}
-            className="w-full min-w-0 bg-transparent outline-none"
-          />
-        </label>
-        <div role="group" aria-label="정렬" className="flex shrink-0 gap-4 text-sm">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <label className="flex w-full items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent sm:max-w-sm">
+        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="shrink-0 text-text-muted" />
+        <input
+          type="search"
+          aria-label="채팅방 검색"
+          placeholder="프로젝트명이나 닉네임으로 찾아보세요"
+          value={value}
+          onChange={(event) => onSearch(event.target.value)}
+          className="w-full min-w-0 bg-transparent outline-none"
+        />
+      </label>
+      <div className="flex items-center justify-between gap-4 sm:justify-end">
+        <div role="group" aria-label="정렬" className="flex gap-4 text-sm">
           {(Object.keys(CHAT_SORT_LABEL) as ChatSort[]).map((sort) => (
             <button
               key={sort}
@@ -86,18 +76,8 @@ export function ChatFilters({ query, projects, total }: ChatFiltersProps) {
             </button>
           ))}
         </div>
-      </div>
-      <div role="group" aria-label="프로젝트" className="flex flex-wrap gap-2">
-        {chips.map((chip) => {
-          const active = query.project === chip.value;
-          return (
-            <button key={chip.label} type="button" aria-pressed={active} onClick={() => navigate({ project: chip.value })} className={chipClass(active)}>
-              {/* 공백은 화면에 보이지 않고 "전체 4"처럼 띄어 읽게 한다 */}
-              {chip.label}{" "}
-              <span className="font-semibold tabular-nums opacity-60">{chip.count}</span>
-            </button>
-          );
-        })}
+        <span aria-hidden className="hidden h-4 w-px bg-line sm:block" />
+        <ProjectSelect projects={projects} total={total} value={query.project} onChange={(project) => navigate({ project })} />
       </div>
     </div>
   );

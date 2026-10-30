@@ -30,7 +30,7 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
         채팅방 {inbox.rooms.length}개
       </p>
       {inbox.rooms.length > 0 ? (
-        <ul aria-label="채팅 목록" className="stagger-children flex flex-col gap-3">
+        <ul aria-label="채팅 목록" className="stagger-children flex flex-col gap-4">
           {inbox.rooms.map((room) => (
             /* 더보기 메뉴가 열린 카드는 다음 카드 위로 올라온다 */
             <li key={room.roomKey} className="relative animate-rise-in has-[[aria-expanded=true]]:z-(--z-popover)">
@@ -57,21 +57,20 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
 export function ChatInboxSkeleton() {
   return (
     <div aria-busy="true" aria-label="채팅함 불러오는 중" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-12 w-full rounded-full sm:max-w-md" />
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-16 rounded-full" />
-          <Skeleton className="h-9 w-24 rounded-full" />
-          <Skeleton className="h-9 w-20 rounded-full" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <Skeleton className="h-12 w-full rounded-full sm:max-w-sm" />
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-9 w-28 rounded-full" />
         </div>
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="flex items-start gap-4 rounded-2xl bg-surface-muted p-4 md:p-5">
+          <div key={index} className="flex items-start gap-4 rounded-2xl bg-surface-muted p-5 sm:gap-5 md:p-6">
             <Skeleton className="size-14 shrink-0 rounded-xl md:size-16" />
-            <div className="flex flex-1 flex-col gap-2">
+            <div className="flex flex-1 flex-col gap-3 pt-0.5">
               <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-36" />
               <Skeleton className="h-4 w-full max-w-md" />
             </div>
           </div>

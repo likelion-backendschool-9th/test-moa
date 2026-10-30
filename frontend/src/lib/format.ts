@@ -54,6 +54,11 @@ const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Seoul",
 });
 
+/** 서울 시간으로 기준 시각과 같은 날인지 */
+export function isTodayInSeoul(iso: string, now: Date) {
+  return dayKeyFormatter.format(new Date(iso)) === dayKeyFormatter.format(now);
+}
+
 /** 채팅 목록의 최근 일시. 오늘 "오후 3:12", 어제 "어제", 올해 "10월 28일", 그 전 "2025. 12. 3." */
 export function formatChatTime(iso: string, now: Date) {
   const date = new Date(iso);

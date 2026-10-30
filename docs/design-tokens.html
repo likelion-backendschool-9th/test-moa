@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Moa · 디자인 토큰</title>
+<style>
+  /* 저장소에서 열면 프로젝트에 설치된 Wanted Sans를 쓰고, 없으면 시스템 글꼴로 보인다 */
+  @font-face {
+    font-family: "Wanted Sans Variable";
+    src: url("../frontend/node_modules/wanted-sans/fonts/webfonts/variable/complete/woff2/WantedSansVariable.woff2") format("woff2");
+    font-weight: 400 1000;
+    font-display: swap;
+  }
+  :root {
+    --surface: #efefec; --surface-muted: #fbfbfa; --surface-strong: #e4e4e0; --line: #d6d6d1;
+    --text: #1a1a1a; --text-muted: #5c5c58; --accent: #0f7c4a; --accent-soft: #def7eb; --on-accent: #ffffff;
+    --thumb: #ffffff; --on-thumb: #1a1a1a; --mark: #1a1a1a;
+    --proof-c: #00a0e0; --proof-m: #e4007f; --proof-y: #ffe600;
+    --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .dark {
+    --surface: #000000; --surface-muted: #16181d; --surface-strong: #1f222a; --line: #2a3037;
+    --text: #ffffff; --text-muted: #a3aab5; --accent: #129357; --accent-soft: #123625; --on-accent: #000000;
+    --thumb: #e9ecf0; --on-thumb: #16181d; --mark: #3d434b;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--surface); color: var(--text); font-family: "Wanted Sans Variable", Pretendard, system-ui, sans-serif; line-height: 1.5; word-break: keep-all; }
+  ::selection { background: var(--accent); color: var(--on-accent); }
+  .page { max-width: 1120px; margin: 0 auto; padding: 48px 32px 80px; }
+  code { font: 600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-muted); }
+  .muted { color: var(--text-muted); }
+
+  /* 머리 */
+  .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+  h1 { margin-top: 12px; font-size: 40px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; }
+  .lead { margin-top: 12px; font-size: 15px; color: var(--text-muted); max-width: 640px; }
+
+  /* 섹션 */
+  section { margin-top: 64px; padding-top: 32px; border-top: 1px solid var(--line); }
+  h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
+  h2 span { color: var(--accent); margin-right: 8px; font-variant-numeric: tabular-nums; }
+  .desc { margin-top: 6px; font-size: 14px; color: var(--text-muted); }
+  .sheet { margin-top: 20px; background: var(--surface-muted); border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+  h3 { font-size: 15px; font-weight: 800; }
+
+  /* 01 로고와 색 */
+  .brand { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 20px; }
+  .logo-card { background: var(--thumb); border: 1px solid var(--line); border-radius: 16px; min-height: 180px; display: grid; place-items: center; position: relative; }
+  .logo { display: flex; align-items: center; gap: 12px; font-size: 32px; font-weight: 800; letter-spacing: -0.04em; color: var(--on-thumb); }
+  .logo svg { width: 44px; height: 44px; }
+  .logo-note { margin-top: 12px; font-size: 13px; }
+  .logo-note b { display: block; font-size: 14px; }
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .sw .chip { height: 56px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); }
+  .sw p { margin-top: 8px; font-size: 13px; font-weight: 800; }
+  .sw p em { font-style: normal; font-weight: 600; color: var(--text-muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .sw small { display: block; font-size: 12px; color: var(--text-muted); }
+  .mode-label { margin: 28px 0 12px; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .mode-label i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--line); }
+  .proofbar { display: flex; gap: 0; margin-top: 18px; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+  .proofbar span { display: flex; }
+  .proofbar span i { width: 22px; height: 11px; }
+
+  /* 02 글꼴 */
+  .type-row { display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .type-row:last-child { border-bottom: 0; }
+  .type-row b { display: block; font-size: 14px; font-weight: 800; }
+  .type-row small { display: block; font-size: 12px; color: var(--text-muted); }
+  .rules { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .rule { background: var(--surface-muted); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; font-size: 13px; }
+  .rule b { display: block; font-size: 13px; font-weight: 800; margin-bottom: 8px; }
+  .scale { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; }
+  .scale span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .scale span i { display: block; background: var(--accent); border-radius: 2px; width: 10px; }
+  .radii { display: flex; gap: 10px; }
+  .radii span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+  .radii span i { width: 40px; height: 40px; border: 2px solid var(--text); border-right: 0; border-bottom: 0; }
+
+  /* 03 버튼과 컨트롤 */
+  .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 18px; }
+  .ctl b { display: block; font-size: 13px; font-weight: 800; margin-bottom: 10px; }
+  .ctl small { display: block; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+  .btn { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9999px; font: 700 16px/1.5 inherit; font-family: inherit; padding: 12px 20px; cursor: pointer; transition: background-color 300ms var(--ease-brand), transform 300ms var(--ease-brand); }
+  .btn:active { transform: scale(0.98); }
+  .btn.sm { font-size: 14px; padding: 8px 16px; }
+  .btn.primary { background: var(--accent); color: var(--on-accent); }
+  .btn.primary:hover { opacity: 0.9; }
+  .btn.secondary { background: var(--surface-strong); color: var(--text); }
+  .btn.secondary:hover { background: var(--line); }
+  .btn.ghost { background: transparent; color: var(--text); }
+  .btn.ghost:hover { background: var(--surface-strong); }
+  .btn[disabled] { opacity: 0.5; pointer-events: none; }
+  .btn.focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chipc { white-space: nowrap; display: inline-flex; border-radius: 9999px; padding: 8px 16px; font-size: 14px; font-weight: 700; background: var(--surface-strong); color: var(--text); }
+  .chipc.on { background: var(--text); color: var(--surface); }
+  .search { display: flex; align-items: center; gap: 8px; border-radius: 9999px; background: var(--surface-strong); padding: 12px 20px; font-size: 14px; color: var(--text-muted); }
+  .search.focus { background: var(--surface-muted); box-shadow: 0 0 0 2px var(--accent); }
+  .tab { display: inline-flex; border-radius: 9999px; padding: 8px 12px; font-size: 14px; font-weight: 600; color: var(--text-muted); }
+  .tab.on { background: var(--surface-strong); color: var(--text); }
+  .pair { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
+  .pair .sheet { margin-top: 0; }
+  .pair .sheet.dark { background: var(--surface); color: var(--text); }
+  .gap-note { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+
+  /* 04 서명 요소 */
+  .sig { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .thumb { position: relative; aspect-ratio: 16 / 10; border: 1px solid var(--line); border-radius: 16px; background: var(--thumb); color: var(--on-thumb); padding: 20px; display: flex; align-items: flex-end; overflow: hidden; container-type: inline-size; }
+  .thumb h4 { font-size: 15cqw; line-height: 1.02; font-weight: 800; letter-spacing: -0.04em; text-wrap: balance; }
+  .thumb .tick { position: absolute; width: 12px; height: 12px; opacity: 0.3; border-color: currentColor; border-style: solid; }
+  .thumb .tick.a { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+  .thumb .tick.b { right: 10px; bottom: 10px; border-width: 0 1px 1px 0; }
+  .thumb svg.stamp { position: absolute; right: 6%; top: 50%; width: 42%; transform: translateY(-50%) rotate(-12deg); color: var(--accent); mix-blend-mode: multiply; }
+  .dark .thumb svg.stamp { mix-blend-mode: normal; }
+  .hero-mini { position: relative; border-radius: 16px; background: var(--surface-muted); border: 1px solid var(--line); padding: 28px; min-height: 160px; }
+  .hero-mini .c { position: absolute; width: 16px; height: 16px; border-color: var(--mark); border-style: solid; }
+  .hero-mini .c1 { top: 12px; left: 12px; border-width: 1px 0 0 1px; } .hero-mini .c2 { top: 12px; right: 12px; border-width: 1px 1px 0 0; }
+  .hero-mini .c3 { bottom: 12px; left: 12px; border-width: 0 0 1px 1px; } .hero-mini .c4 { bottom: 12px; right: 12px; border-width: 0 1px 1px 0; }
+  .hero-mini .bar { position: absolute; top: 28px; right: 28px; display: flex; } .hero-mini .bar i { width: 18px; height: 9px; }
+  .hero-mini h4 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; max-width: 70%; }
+  .hero-mini h4 em { font-style: normal; color: var(--accent); }
+  .sig small { display: block; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+  .sig b { display: block; margin-top: 12px; font-size: 13px; font-weight: 800; }
+
+  /* 05 규칙 */
+  .dodont { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .dodont ul { margin-top: 10px; padding-left: 18px; font-size: 14px; display: grid; gap: 6px; }
+  .dodont .sheet { margin-top: 0; }
+  .dodont h3.do { color: var(--accent); }
+  footer { margin-top: 64px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--line); padding-top: 20px; }
+  @media (max-width: 860px) {
+    .brand, .pair, .dodont { grid-template-columns: 1fr; }
+    .swatches, .controls { grid-template-columns: repeat(2, 1fr); }
+    .sig, .rules { grid-template-columns: 1fr; }
+    .type-row { grid-template-columns: 1fr; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top"><span>TEST MOA / CORE SYSTEM</span><span>디자인 토큰 · 2026-10-30</span></div>
+  <h1>써 보고 고르는 곳의 일관된 기준.</h1>
+  <p class="lead">uibowl 갤러리 문법에 교정쇄 소재를 입힌 Test Moa의 토큰이에요. 값은 모두 <code>frontend/src/app/globals.css</code>와 <code>frontend/DESIGN.md</code>에서 가져왔어요. 화면을 만들 때 이 값만 쓰고, 새 값이 필요하면 토큰부터 추가해요.</p>
+
+  <!-- 01 -->
+  <section>
+    <h2><span>01</span>로고와 색</h2>
+    <p class="desc">바탕은 차분하게, 강조는 에메랄드 하나. 라이트는 교정쇄, 다크는 uibowl 바탕이고 강조는 두 모드 모두 같은 에메랄드 계열이에요.</p>
+    <div class="brand">
+      <div>
+        <div class="logo-card">
+          <div class="logo">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f7c4a"/><path d="M9 22V10l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            test moa
+          </div>
+        </div>
+        <p class="logo-note"><b>워드마크 · 파비콘</b><span class="muted">워드마크는 소문자 "test moa", Wanted Sans 800, 자간 -0.04em. 화면 낭독기에는 "Test Moa"로 읽혀요. 파비콘은 에메랄드 칸에 흰 M이에요. 임시 자산이라 정식 로고가 생기면 바꿔요.</span></p>
+      </div>
+      <div>
+        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트 · 교정쇄</p>
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#0f7c4a"></div><p>강조<em>#0F7C4A</em></p><small>주 버튼 · 순위 · 추가 보상 · 도장 · 포커스</small><code>--accent</code></div>
+          <div class="sw"><div class="chip" style="background:#def7eb"></div><p>연한 강조<em>#DEF7EB</em></p><small>모바일 메뉴 현재 항목</small><code>--accent-soft</code></div>
+          <div class="sw"><div class="chip" style="background:#1a1a1a"></div><p>글씨<em>#1A1A1A</em></p><small>제목 · 본문 · 먹 · 15.1:1</small><code>--text</code></div>
+          <div class="sw"><div class="chip" style="background:#5c5c58"></div><p>보조 글씨<em>#5C5C58</em></p><small>설명 · 메타 · 5.8:1</small><code>--text-muted</code></div>
+          <div class="sw"><div class="chip" style="background:#efefec"></div><p>바탕<em>#EFEFEC</em></p><small>페이지 · 작업대 회색</small><code>--surface</code></div>
+          <div class="sw"><div class="chip" style="background:#fbfbfa"></div><p>패널<em>#FBFBFA</em></p><small>배너 · 패널 · 빈 상태 · 교정지</small><code>--surface-muted</code></div>
+          <div class="sw"><div class="chip" style="background:#e4e4e0"></div><p>칩<em>#E4E4E0</em></p><small>칩 · 검색창 · 보조 버튼</small><code>--surface-strong</code></div>
+          <div class="sw"><div class="chip" style="background:#d6d6d1"></div><p>경계<em>#D6D6D1</em></p><small>구분선 · 썸네일 테두리</small><code>--line</code></div>
+        </div>
+        <p class="mode-label"><i style="background:#000"></i>다크 · uibowl 바탕</p>
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#129357"></div><p>강조<em>#129357</em></p><small>버튼 글씨는 검정 · 5.3:1</small><code>--accent</code></div>
+          <div class="sw"><div class="chip" style="background:#123625"></div><p>연한 강조<em>#123625</em></p><small>모바일 메뉴 현재 항목</small><code>--accent-soft</code></div>
+          <div class="sw"><div class="chip" style="background:#ffffff"></div><p>글씨<em>#FFFFFF</em></p><small>제목 · 본문</small><code>--text</code></div>
+          <div class="sw"><div class="chip" style="background:#a3aab5"></div><p>보조 글씨<em>#A3AAB5</em></p><small>패널 위 7.6:1</small><code>--text-muted</code></div>
+          <div class="sw"><div class="chip" style="background:#000000"></div><p>바탕<em>#000000</em></p><small>페이지</small><code>--surface</code></div>
+          <div class="sw"><div class="chip" style="background:#16181d"></div><p>패널<em>#16181D</em></p><small>배너 · 패널</small><code>--surface-muted</code></div>
+          <div class="sw"><div class="chip" style="background:#1f222a"></div><p>칩<em>#1F222A</em></p><small>칩 · 검색창 · 보조 버튼</small><code>--surface-strong</code></div>
+          <div class="sw"><div class="chip" style="background:#2a3037"></div><p>경계<em>#2A3037</em></p><small>구분선 · 썸네일 테두리</small><code>--line</code></div>
+        </div>
+        <div class="proofbar"><span><i style="background:#00a0e0"></i><i style="background:#e4007f"></i><i style="background:#ffe600"></i><i style="background:#1a1a1a"></i></span>교정쇄 색 막대 <code>--proof-c/m/y</code> · 히어로 장식에만, 라이트에만, 글씨에는 금지</div>
+        <p class="gap-note">활자 썸네일 면 <code>--thumb</code> #FFFFFF / #E9ECF0 · 썸네일 글씨 <code>--on-thumb</code> #1A1A1A / #16181D · 재단선 <code>--mark</code> #1A1A1A / #3D434B · 버튼 글씨 <code>--on-accent</code> #FFFFFF / #000000</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <h2><span>02</span>글꼴과 공통 규격</h2>
+    <p class="desc">글꼴은 Wanted Sans Variable 하나예요. 제목은 800, 본문 400, 숫자는 항상 <code>tabular-nums</code>. 크기는 Tailwind 기본 단계만 써요.</p>
+    <div class="sheet">
+      <div class="type-row"><div><b>Display</b><small>48px(모바일 36px) · 800 · 행간 1 · -0.035em<br>배너 제목</small></div><div style="font-size:48px;font-weight:800;letter-spacing:-0.035em;line-height:1">새 서비스를 먼저 <span style="color:var(--accent)">써 보고</span></div></div>
+      <div class="type-row"><div><b>Headline</b><small>24px · 800 · 행간 32 · -0.03em<br>섹션 제목</small></div><div style="font-size:24px;font-weight:800;letter-spacing:-0.03em;line-height:1.333">구독 모집 · 전체 테스트</div></div>
+      <div class="type-row"><div><b>Title</b><small>18px · 800 · 행간 28<br>패널 제목</small></div><div style="font-size:18px;font-weight:800">마감 임박 테스트</div></div>
+      <div class="type-row"><div><b>Body Lead</b><small>18px · 400 · 행간 28<br>배너 설명</small></div><div style="font-size:18px;color:var(--text-muted)">개발자가 올린 웹서비스를 직접 써 보고 피드백을 남기는 곳이에요.</div></div>
+      <div class="type-row"><div><b>Body</b><small>14px · 400 · 행간 20<br>카드 정보 · 설명</small></div><div style="font-size:14px">책 등록부터 독서 기록 작성까지 한 번 써 보기 · 웹서비스 · 1,350 크레딧</div></div>
+      <div class="type-row"><div><b>Label</b><small>12px · 400 · 행간 16<br>항목 이름</small></div><div style="font-size:12px;color:var(--text-muted)">모집 마감 · 인원 · D-1</div></div>
+      <div class="type-row"><div><b>Thumb Name</b><small>썸네일 폭의 15% · 800 · 행간 1.02 · -0.04em<br>활자 썸네일 이름</small></div><div style="font-size:32px;font-weight:800;letter-spacing:-0.04em;line-height:1.02">포트폴리오 빌더</div></div>
+    </div>
+    <div class="rules">
+      <div class="rule"><b>간격 (Tailwind 단계)</b>
+        <div class="scale">
+          <span><i style="height:4px"></i>4</span><span><i style="height:8px"></i>8</span><span><i style="height:12px"></i>12</span><span><i style="height:16px"></i>16</span><span><i style="height:24px"></i>24</span><span><i style="height:32px"></i>32</span><span><i style="height:40px"></i>40</span><span><i style="height:48px"></i>48</span><span><i style="height:80px"></i>80</span>
+        </div>
+        <p class="muted" style="margin-top:8px">섹션 사이 80 · 섹션 안 24 · 카드 안 12</p>
+      </div>
+      <div class="rule"><b>모서리</b>
+        <div class="radii"><span><i style="border-top-left-radius:6px"></i>6</span><span><i style="border-top-left-radius:8px"></i>8</span><span><i style="border-top-left-radius:12px"></i>12</span><span><i style="border-top-left-radius:16px"></i>16</span><span><i style="border-top-left-radius:20px"></i>full</span></div>
+        <p class="muted" style="margin-top:8px">버튼·칩·탭·검색창은 full · 배너·패널·썸네일은 16 · 순위 줄은 12</p>
+      </div>
+      <div class="rule"><b>모션 · 깊이 · 겹침</b>
+        <p>이징 <code>--ease-brand</code> cubic-bezier(0.22, 1, 0.36, 1)</p>
+        <p class="muted">상태 변화 300ms · 이동 500ms · 순차 등장 60ms 간격, 최대 340ms · reduced motion이면 1ms</p>
+        <p class="muted" style="margin-top:6px">그림자 없음. 바탕 → 칩 → 패널 밝기 세 단계로 층을 나눠요. 겹침 <code>--z-menu 30 · --z-header 40 · --z-skip 50</code></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <h2><span>03</span>버튼과 컨트롤</h2>
+    <p class="desc">모든 버튼은 알약 모양(full). 기본 크기는 16px 굵게 · 위아래 12 · 좌우 20, 작은 크기는 14px · 8 · 16. 누르면 0.98로 줄고, 포커스는 강조색 2px 테두리예요.</p>
+    <div class="pair">
+      <div class="sheet">
+        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트</p>
+        <div class="controls">
+          <div class="ctl"><b>주요 / Primary</b><button class="btn primary">테스트 둘러보기</button><small>화면의 핵심 행동 1개</small></div>
+          <div class="ctl"><b>보조 / Secondary</b><button class="btn secondary">자세히 보기</button><small>보조 행동 · 빈 상태 행동</small></div>
+          <div class="ctl"><b>텍스트 / Ghost</b><button class="btn ghost sm">로그인</button><small>헤더 계정 링크</small></div>
+          <div class="ctl"><b>작은 크기 / Small</b><button class="btn primary sm">회원가입</button><small>헤더 · 좁은 자리</small></div>
+          <div class="ctl"><b>비활성 / Disabled</b><button class="btn primary" disabled>테스트 둘러보기</button><small>불투명도 50%</small></div>
+          <div class="ctl"><b>포커스 / Focus</b><button class="btn primary focus">테스트 둘러보기</button><small>키보드 탐색 위치</small></div>
+          <div class="ctl"><b>칩 / Chip</b><span class="chipc">웹서비스</span> <span class="chipc on">전체</span><small>카테고리 · 필터. 선택은 글씨색 반전</small></div>
+          <div class="ctl"><b>탭 / Tab</b><span class="tab on">홈</span><span class="tab">테스트 모집</span><small>헤더 카테고리. 현재 탭은 칩 바탕</small></div>
+          <div class="ctl" style="grid-column:span 2"><b>검색창 / Search</b><div class="search"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 테스트를 검색해 주세요</div><small>기본 · 칩 바탕</small></div>
+          <div class="ctl" style="grid-column:span 2"><b>검색창 포커스</b><div class="search focus"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 가계부</div><small>패널 바탕 + 강조색 2px 링</small></div>
+        </div>
+      </div>
+      <div class="sheet dark">
+        <p class="mode-label" style="margin-top:0"><i style="background:#000"></i>다크</p>
+        <div class="controls">
+          <div class="ctl"><b>주요 / Primary</b><button class="btn primary">테스트 둘러보기</button><small>버튼 글씨는 검정</small></div>
+          <div class="ctl"><b>보조 / Secondary</b><button class="btn secondary">자세히 보기</button><small>칩 바탕</small></div>
+          <div class="ctl"><b>텍스트 / Ghost</b><button class="btn ghost sm">로그인</button><small>헤더 계정 링크</small></div>
+          <div class="ctl"><b>작은 크기 / Small</b><button class="btn primary sm">회원가입</button><small>헤더 · 좁은 자리</small></div>
+          <div class="ctl"><b>비활성 / Disabled</b><button class="btn primary" disabled>테스트 둘러보기</button><small>불투명도 50%</small></div>
+          <div class="ctl"><b>포커스 / Focus</b><button class="btn primary focus">테스트 둘러보기</button><small>키보드 탐색 위치</small></div>
+          <div class="ctl"><b>칩 / Chip</b><span class="chipc">웹서비스</span> <span class="chipc on">전체</span><small>선택은 글씨색 반전</small></div>
+          <div class="ctl"><b>탭 / Tab</b><span class="tab on">홈</span><span class="tab">테스트 모집</span><small>현재 탭은 칩 바탕</small></div>
+          <div class="ctl" style="grid-column:span 2"><b>검색창 / Search</b><div class="search"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 테스트를 검색해 주세요</div><small>기본 · 칩 바탕</small></div>
+          <div class="ctl" style="grid-column:span 2"><b>검색창 포커스</b><div class="search focus"><svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" fill="currentColor"><path d="M232.49 215.51 185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68 68.07 68.07 0 0 1-68-68Z"/></svg> 가계부</div><small>패널 바탕 + 강조색 2px 링</small></div>
+        </div>
+      </div>
+    </div>
+    <p class="gap-note">아직 없는 것: 위험(삭제) 버튼, 로딩 버튼, 아이콘 버튼 규격, 입력 폼 오류 상태. 필요해지면 토큰과 <code>components/ui</code>에 먼저 추가해요. 아이콘은 Phosphor를 굵은(bold) 두께로 써요. 검색은 <code>MagnifyingGlass</code>예요.</p>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <h2><span>04</span>Test Moa만의 요소</h2>
+    <p class="desc">다른 서비스와 구별되는 세 가지. 가짜 스크린샷 대신 활자를 그림으로 쓰고, 교정쇄의 표식을 정해진 곳에만 둬요.</p>
+    <div class="pair">
+      <div class="sheet">
+        <div class="sig">
+          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>가계부 노트</h4></div><b>활자 썸네일</b><small>교정지 면 위 서비스 이름. 16:10, 구독 모집 3열은 2:1</small></div>
+          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>포트폴리오 빌더</h4><svg class="stamp" viewBox="0 0 160 64" role="img" aria-label="모집 완료"><rect x="3" y="3" width="154" height="58" rx="10" fill="none" stroke="currentColor" stroke-width="4"/><rect x="10" y="10" width="140" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="80" y="40" text-anchor="middle" fill="currentColor" font-size="22" font-weight="800" letter-spacing="2" font-family="inherit">모집 완료</text></svg></div><b>교정 도장</b><small>정원이 찬 모집만. 두 줄 테두리, -12° 회전, 이름 위에 겹침</small></div>
+          <div><div class="hero-mini"><i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i><span class="bar"><i style="background:#00a0e0"></i><i style="background:#e4007f"></i><i style="background:#ffe600"></i><i style="background:#1a1a1a"></i></span><h4>새 서비스를 먼저 <em>써 보고</em></h4></div><b>재단선 히어로</b><small>네 귀퉁이 재단선 + 색 막대. 홈 배너에만</small></div>
+        </div>
+      </div>
+      <div class="sheet dark">
+        <div class="sig">
+          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>가계부 노트</h4></div><b>활자 썸네일</b><small>다크에서도 밝은 교정지 면</small></div>
+          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>포트폴리오 빌더</h4><svg class="stamp" viewBox="0 0 160 64" role="img" aria-label="모집 완료"><rect x="3" y="3" width="154" height="58" rx="10" fill="none" stroke="currentColor" stroke-width="4"/><rect x="10" y="10" width="140" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="80" y="40" text-anchor="middle" fill="currentColor" font-size="22" font-weight="800" letter-spacing="2" font-family="inherit">모집 완료</text></svg></div><b>교정 도장</b><small>다크 에메랄드, 겹침 효과 없음</small></div>
+          <div><div class="hero-mini"><i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i><h4>새 서비스를 먼저 <em>써 보고</em></h4></div><b>재단선 히어로</b><small>다크는 색 막대 없이 재단선만</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section>
+    <h2><span>05</span>지켜야 할 규칙</h2>
+    <div class="dodont">
+      <div class="sheet">
+        <h3 class="do">이렇게 해요</h3>
+        <ul>
+          <li>색·모션 값은 <code>globals.css</code> 토큰으로만 써요</li>
+          <li>간격·글자 크기·모서리는 Tailwind 기본 단계를 써요</li>
+          <li>강조색은 주 버튼, 순위 숫자, 추가 보상, 도장, 포커스에만 써요</li>
+          <li>강조는 굵기와 크기로 하고, 숫자는 <code>tabular-nums</code>를 써요</li>
+          <li>모집 글에는 마감일·인원·보상을 같은 자리에 보여 줘요</li>
+          <li>공통 요소는 <code>components/ui</code>에서 가져다 써요</li>
+        </ul>
+      </div>
+      <div class="sheet">
+        <h3>이렇게 하지 않아요</h3>
+        <ul>
+          <li>컴포넌트에 hex 값이나 <code>[13px]</code> 같은 임의 값을 쓰지 않아요</li>
+          <li>제목 위 작은 라벨(kicker)을 달지 않아요</li>
+          <li>그라데이션 글자, 그림자, 유리 효과를 쓰지 않아요</li>
+          <li>가짜 스크린샷이나 지어낸 후기·수치를 넣지 않아요</li>
+          <li>재단선과 색 막대를 히어로 밖에 쓰지 않아요</li>
+          <li>한 화면에 주요 버튼을 둘 이상 두지 않아요</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>출처: <code>frontend/src/app/globals.css</code> · <code>frontend/DESIGN.md</code> · <code>frontend/.impeccable/design.json</code>. 토큰을 바꾸면 이 문서도 함께 고쳐요. 대비 수치는 WCAG 기준으로 계산했어요.</footer>
+</div>
+</body>
+</html>

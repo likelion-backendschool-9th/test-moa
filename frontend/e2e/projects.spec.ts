@@ -45,7 +45,7 @@ test.describe("R102 내 프로젝트 목록", () => {
     await page.goto("/my/projects");
     await expect(page.getByRole("heading", { level: 1, name: "내 프로젝트" })).toBeVisible();
     await expect(page.getByRole("main").getByRole("link", { name: "프로젝트 등록" })).toHaveAttribute("href", "/my/projects/new");
-    const cards = page.getByRole("main").getByRole("listitem");
+    const cards = page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem");
     await expect(cards).toHaveCount(3);
     await expect(cards.nth(0)).toContainText("할 일 메모");
     await expect(cards.nth(1)).toContainText("포트폴리오 빌더");
@@ -60,14 +60,53 @@ test.describe("R102 내 프로젝트 목록", () => {
       await setDemo(context, demo);
       await page.goto("/my/projects");
       await expect(page.getByText("아직 등록한 프로젝트가 없어요")).toBeVisible();
+      /* 프로젝트가 없으면 할 일과 전체 현황도 없다 */
+      await expect(page.getByRole("heading", { name: /지금 확인할 일|전체 현황/ })).toHaveCount(0);
     });
   }
+
+  test("S140 지금 확인할 일이 맨 위에 있고 해당 탭으로 보낸다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects");
+    await expect(page.getByRole("heading", { name: "지금 확인할 일 3건" })).toBeVisible();
+    const todos = page.getByTestId("todo");
+    await expect(todos).toHaveCount(3);
+    await expect(todos.nth(0)).toContainText("북로그");
+    await expect(todos.nth(0)).toContainText("지원자 8명이 확정을 기다려요 · 남은 자리 7명");
+    await expect(todos.nth(0)).toHaveAttribute("href", `${BOOKLOG_MANAGE}?tab=testers`);
+    /* 피드백은 자동 지급이 가까운 순서: 포트폴리오 빌더(20시간 전 제출) → 북로그(10시간 전 제출) */
+    await expect(todos.nth(1)).toContainText("포트폴리오 빌더");
+    await expect(todos.nth(1)).toContainText(/신고 대기 피드백 1건 · \d+시간 뒤 자동 지급/);
+    await expect(todos.nth(1)).toHaveAttribute("href", `${FOLIO_MANAGE}?tab=feedback`);
+    await expect(todos.nth(2)).toHaveAttribute("href", `${BOOKLOG_MANAGE}?tab=feedback`);
+    /* 정원이 찬 베타 모집의 대기 지원자는 할 일이 아니다 */
+    await expect(page.locator(`a[href^="${BETA_MANAGE}"]`)).toHaveCount(0);
+
+    await todos.nth(0).click();
+    await expect(page).toHaveURL(`${BOOKLOG_MANAGE}?tab=testers`);
+  });
+
+  test("S141 전체 현황은 모든 프로젝트를 합친 숫자다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects");
+    const overview = page.getByRole("region", { name: "전체 현황" });
+    for (const [term, value] of [["모집 중", "1건"], ["확정된 테스터", "30명"], ["받은 피드백", "5건"], ["신고 대기", "2건"]]) {
+      const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) }) });
+      await expect(tile.getByRole("definition")).toHaveText(value);
+    }
+  });
+
+  test("S142 할 일 → 전체 현황 → 프로젝트 순서다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects");
+    await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(["지금 확인할 일 3건", "전체 현황", "프로젝트 3개"]);
+  });
 
   test("S106 느린 응답에서는 스켈레톤이 먼저 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "developer", data: "slow" });
     await page.goto("/my/projects", { waitUntil: "commit" });
     await expect(page.getByTestId("project-skeleton")).toBeVisible();
-    await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(3);
+    await expect(page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem")).toHaveCount(3);
     await expect(page.getByTestId("project-skeleton")).toHaveCount(0);
   });
 });

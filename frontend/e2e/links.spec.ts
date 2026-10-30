@@ -5,7 +5,6 @@ const COMING_SOON_PATHS = [
   "/recruitments",
   "/recruitments/booklog",
   "/my/participations",
-  "/my/projects",
   "/my/chats",
   "/my/credits",
   "/my/credits/withdrawals",

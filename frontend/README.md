@@ -61,4 +61,4 @@ e2e/                   시나리오(S번호)와 1:1로 맞춘 Playwright 테스�
 - 새 도메인(참여 테스트, 프로젝트, 채팅, 관리자)도 `features/<도메인>/` 구조로 추가한다.
 - 페이지 URL은 [`../docs/page-urls.md`](../docs/page-urls.md)를 따른다.
 
-요구사항과 시나리오: [`../docs/frontend-home.md`](../docs/frontend-home.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)
+요구사항과 시나리오: [`../docs/frontend-home.md`](../docs/frontend-home.md) · [`../docs/frontend-admin-home.md`](../docs/frontend-admin-home.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)

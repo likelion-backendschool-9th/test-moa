@@ -6,7 +6,7 @@ const COMING_SOON_PATHS = [
   "/recruitments/booklog",
   "/my/participations",
   "/my/projects",
-  "/my/chats",
+  "/my/chats/booklog-yunseul",
   "/my/credits",
   "/my/credits/withdrawals",
   "/my/profile/edit",

@@ -61,10 +61,20 @@ test.describe("R2 채팅 카드", () => {
     await expect(card.getByRole("button", { name: "북로그 채팅 더보기" })).toBeVisible();
   });
 
-  test("S117 프로젝트 사진 자리는 이미지 파일이 아니라 활자 썸네일이다", async ({ page }) => {
+  test("S117 프로젝트 이미지는 카드 왼쪽에 붙어 높이를 다 채운다", async ({ page }) => {
     await page.goto("/my/chats");
-    await expect(chatList(page).locator("img")).toHaveCount(0);
-    await expect(cards(page).first().locator("[data-thumb]")).toHaveText("북");
+    const card = cards(page).first().locator("article");
+    const thumb = card.locator("[data-thumb]");
+    const image = thumb.locator("img");
+    await expect(image).toHaveAttribute("src", "/sample/projects/booklog.svg");
+    await expect(image).toHaveAttribute("alt", "");
+    expect(await image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
+    const cardBox = (await card.boundingBox())!;
+    const thumbBox = (await thumb.boundingBox())!;
+    expect(Math.abs(thumbBox.x - cardBox.x)).toBeLessThan(1);
+    expect(Math.abs(thumbBox.height - cardBox.height)).toBeLessThan(1);
+    const headingBox = (await card.getByRole("heading", { level: 2 }).boundingBox())!;
+    expect(headingBox.x).toBeGreaterThan(thumbBox.x + thumbBox.width);
   });
 
   test("S118 미리보기는 한 줄로 줄인다", async ({ page }) => {
@@ -202,14 +212,14 @@ test.describe("R4 검색·정렬·역할 탭", () => {
   });
 
   for (const width of [1440, 375]) {
-    test(`S138 너비 ${width}px에서 정렬은 왼쪽, 역할 탭은 같은 줄 오른쪽이다`, async ({ page, context }) => {
+    test(`S138 너비 ${width}px에서 역할 탭은 왼쪽, 정렬은 같은 줄 오른쪽이다`, async ({ page, context }) => {
       await setDemo(context, { role: "tester" });
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/my/chats");
       const sort = (await sortGroup(page).boundingBox())!;
       const tabs = (await roleTabGroup(page).boundingBox())!;
       const search = (await searchBox(page).boundingBox())!;
-      expect(sort.x + sort.width).toBeLessThan(tabs.x);
+      expect(tabs.x + tabs.width).toBeLessThan(sort.x);
       expect(Math.abs(sort.y + sort.height / 2 - (tabs.y + tabs.height / 2))).toBeLessThan(8);
       expect(search.y).toBeLessThan(tabs.y);
     });

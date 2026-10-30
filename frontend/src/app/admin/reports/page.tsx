@@ -26,7 +26,7 @@ async function Reports({ searchParams }: { searchParams: PageProps<"/admin/repor
   return (
     <AdminShell path="/admin/reports" title="신고·제재 관리">
       <Container className="flex flex-col gap-6 pt-10">
-        {processed && <ProcessedNotice decision={processed} />}
+        {processed && <ProcessedNotice decision={processed} held={params.held === "1"} />}
         <ReportTabs current={tab} />
         <Suspense key={tab} fallback={<ReportListSkeleton />}>
           <ReportListSlot tab={tab} />

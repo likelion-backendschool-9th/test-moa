@@ -34,6 +34,12 @@ export function isReportDecision(value: unknown): value is ReportDecision {
   return value === "dismissed" || value === "upheld";
 }
 
+/**
+ * 처리 메모 최대 글자 수. 시연용 기록은 쿠키에 담기는데, 한글은 인코딩하면 한 글자가 9바이트라
+ * 검토 대기 4건을 모두 이 길이로 처리해도 쿠키 한도(4096바이트) 안에 들어가게 정했다.
+ */
+export const REVIEW_MEMO_MAX_LENGTH = 80;
+
 /** 신고 처리 기록. 처리 전 신고에는 없다 */
 export type ReportReview = {
   decision: ReportDecision;
@@ -50,7 +56,7 @@ export type Report = {
   recruitmentSlug: string;
   /** 사유 한 줄 */
   reason: string;
-  /** 신고한 개발자 */
+  /** 신고한 사람. 피드백은 개발자가, 모집 글은 테스터가, 회원은 누구나 신고한다 */
   reporterNickname: string;
   /** 신고 대상 테스터·회원. 모집 글 신고에는 없다 */
   targetNickname?: string;

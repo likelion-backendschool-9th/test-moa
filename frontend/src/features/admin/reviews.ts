@@ -10,6 +10,8 @@ import { isReportDecision, type ReportReview } from "./types";
 export const DEMO_REPORTS_COOKIE = "demo-reports";
 
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+/* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
+const COOKIE_MAX_BYTES = 4000;
 
 type StoredReviews = Record<string, ReportReview>;
 
@@ -32,12 +34,18 @@ export async function readReviews(): Promise<StoredReviews> {
   }
 }
 
-/** Server Action에서만 부른다. 쿠키는 렌더링 중에 쓸 수 없다 */
-export async function saveReview(reportKey: string, review: ReportReview) {
+/**
+ * Server Action에서만 부른다. 쿠키는 렌더링 중에 쓸 수 없다.
+ * Next는 쿠키 값을 encodeURIComponent로 인코딩하므로 인코딩한 길이로 한도를 확인하고, 넘으면 저장하지 않고 false를 돌려준다.
+ */
+export async function saveReview(reportKey: string, review: ReportReview): Promise<boolean> {
   const reviews = await readReviews();
-  (await cookies()).set(DEMO_REPORTS_COOKIE, JSON.stringify({ ...reviews, [reportKey]: review }), {
+  const value = JSON.stringify({ ...reviews, [reportKey]: review });
+  if (DEMO_REPORTS_COOKIE.length + 1 + encodeURIComponent(value).length > COOKIE_MAX_BYTES) return false;
+  (await cookies()).set(DEMO_REPORTS_COOKIE, value, {
     path: "/",
     maxAge: MAX_AGE_SECONDS,
     sameSite: "lax",
   });
+  return true;
 }

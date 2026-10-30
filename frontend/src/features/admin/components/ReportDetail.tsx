@@ -6,7 +6,14 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatElapsed } from "@/lib/format";
 import { processReport } from "../actions";
-import { isOverdue, REPORT_DECISION_LABEL, REPORT_TARGET_LABEL, type Report } from "../types";
+import { isOverdue, REPORT_DECISION_LABEL, REPORT_TARGET_LABEL, REVIEW_MEMO_MAX_LENGTH, type Report } from "../types";
+
+export type ReviewFormError = "decision" | "memo";
+
+const ERROR_MESSAGE: Record<ReviewFormError, string> = {
+  decision: "처리 결과를 골라 주세요.",
+  memo: "시연용 저장 공간이 모자라 처리하지 못했어요. 메모를 줄이거나 demo-reports 쿠키를 지운 뒤 다시 시도해 주세요.",
+};
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 
@@ -70,8 +77,8 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** 처리 양식. 서버 양식이라 결과 확인도 서버에서 하고, 고르지 않으면 error로 돌아온다 */
-export function ReviewForm({ report, showError }: { report: Report; showError: boolean }) {
+/** 처리 양식. 서버 양식이라 확인도 서버에서 하고, 문제가 있으면 error와 함께 돌아온다 */
+export function ReviewForm({ report, error }: { report: Report; error: ReviewFormError | null }) {
   const upheldDetail =
     report.targetType === "feedback" ? "제재 이력에 반영되고, 이 피드백의 보상은 지급하지 않아요." : "제재 이력에 반영돼요.";
   return (
@@ -80,14 +87,14 @@ export function ReviewForm({ report, showError }: { report: Report; showError: b
         처리하기
       </h3>
       <input type="hidden" name="reportKey" value={report.id} />
-      <fieldset className="flex flex-col gap-3" aria-describedby={showError ? "decision-error" : undefined}>
+      <fieldset className="flex flex-col gap-3" aria-describedby={error === "decision" ? "review-error" : undefined}>
         <legend className="mb-3 text-sm font-semibold">처리 결과</legend>
         <Choice value="dismissed" label="기각" detail={report.holdsReward ? "문제가 없어요. 보류된 보상이 지급돼요." : "문제가 없어요."} />
         <Choice value="upheld" label="인정" detail={upheldDetail} />
       </fieldset>
-      {showError && (
-        <p id="decision-error" role="alert" className="text-sm font-semibold">
-          처리 결과를 골라 주세요.
+      {error && (
+        <p id="review-error" role="alert" className="text-sm font-semibold">
+          {ERROR_MESSAGE[error]}
         </p>
       )}
       <label className="flex flex-col gap-2 text-sm font-semibold">
@@ -95,8 +102,9 @@ export function ReviewForm({ report, showError }: { report: Report; showError: b
         <textarea
           name="memo"
           rows={3}
-          maxLength={500}
-          placeholder="판단 근거를 남겨 주세요 (선택)"
+          maxLength={REVIEW_MEMO_MAX_LENGTH}
+          aria-describedby={error === "memo" ? "review-error" : undefined}
+          placeholder={`판단 근거를 남겨 주세요 (선택, ${REVIEW_MEMO_MAX_LENGTH}자까지)`}
           className="rounded-2xl bg-surface-strong px-4 py-3 font-normal text-text placeholder:text-text-muted focus:outline-2 focus:outline-accent"
         />
       </label>

@@ -45,16 +45,16 @@ export function ReportTabs({ current }: { current: ReportTab }) {
   );
 }
 
-const PROCESSED_MESSAGE: Record<ReportDecision, string> = {
-  dismissed: "신고를 기각했어요. 보류된 보상이 지급돼요.",
-  upheld: "신고를 인정했어요. 제재 이력에 반영돼요.",
-};
+function processedMessage(decision: ReportDecision, held: boolean) {
+  if (decision === "upheld") return "신고를 인정했어요. 제재 이력에 반영돼요.";
+  return held ? "신고를 기각했어요. 보류된 보상이 지급돼요." : "신고를 기각했어요.";
+}
 
-/** 처리 직후 목록에서 한 번 보여 주는 결과 문구 */
-export function ProcessedNotice({ decision }: { decision: ReportDecision }) {
+/** 처리 직후 목록에서 한 번 보여 주는 결과 문구. 보상 보류가 없던 신고는 지급 문구를 뺀다 */
+export function ProcessedNotice({ decision, held }: { decision: ReportDecision; held: boolean }) {
   return (
     <p role="status" className="rounded-2xl bg-surface-muted px-6 py-4 text-sm font-semibold">
-      {PROCESSED_MESSAGE[decision]}
+      {processedMessage(decision, held)}
     </p>
   );
 }

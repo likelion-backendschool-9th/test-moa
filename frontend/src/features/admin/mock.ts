@@ -9,9 +9,6 @@ import type { CancellationRequest, Report, WithdrawalRequest } from "./types";
 const HOUR_MS = 60 * 60 * 1000;
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
 
-/** 신고 키 목록. 상세 주소가 없는 신고인지 데이터를 읽기 전에 알 수 있게 따로 둔다 */
-export const REPORT_KEYS = ["report-1", "report-2", "report-3", "report-4", "report-5", "report-6"];
-
 /** 검토 대기 4건과 이미 처리한 2건 */
 export function buildReports(now: Date): Report[] {
   return [
@@ -88,6 +85,9 @@ export function buildReports(now: Date): Report[] {
     },
   ];
 }
+
+/** 신고 키 목록. 없는 신고인지 쿠키를 읽기 전에 알 수 있게 목업에서 키만 뽑아 둔다 */
+export const REPORT_KEYS = buildReports(new Date(0)).map((report) => report.id);
 
 export function buildWithdrawals(now: Date): WithdrawalRequest[] {
   return [

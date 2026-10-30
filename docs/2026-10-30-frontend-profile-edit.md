@@ -96,7 +96,7 @@ S177 입력 속성
 - Then  세 칸은 `type="password"`이고, 현재 칸은 `autocomplete="current-password"`, 새·확인 칸은 `autocomplete="new-password"`다
 
 ## 5. 로딩과 화면 (R5)
-제목과 메뉴는 바로 보이고, 데이터를 받는 동안 카드 스켈레톤을 보여 준다. 두 카드는 위아래로 놓는다.
+제목과 메뉴는 바로 보이고, 데이터를 받는 동안 스켈레톤을 보여 준다. 기본 정보와 비밀번호 변경은 한 장의 면을 줄로 나눠 위아래로 놓고, 넓은 화면(1024px 이상)에서는 각 줄의 제목·설명을 왼쪽 1/3, 칸을 오른쪽 2/3에 한 열로 둔다. (고침 10-30: 두 카드에 칸 2열 → 설정 화면 패턴)
 
 S178 지연
 - Given `demo-data=slow`
@@ -105,6 +105,11 @@ S178 지연
 S179 모바일
 - Given 너비 375px
 - Then  모든 입력 칸과 "저장", "비밀번호 변경" 버튼 너비가 카드 안쪽 너비와 같다
+
+S182 넓은 화면 배치 (고침 10-30: 칸이 카드 너비로 늘어나 빈 공간이 많다는 피드백)
+- Given 너비 1440px
+- Then  "기본 정보", "비밀번호 변경" 각 줄에서 칸이 모두 제목보다 오른쪽에 있다
+- Then  한 줄의 칸들은 왼쪽 끝과 너비가 같고 위에서 아래로 쌓인다
 
 ## 6. 기존 테스트와 구조 (R6)
 
@@ -151,7 +156,7 @@ S181 구조 (기존 S78)
   - `Docs: 개인정보 수정 계획 문서, 홈 문서 S26·S78 갱신` — 문서
 
 ## 가정
-- 화면: h1 아래 "기본 정보" 카드, 그 아래 "비밀번호 변경" 카드. 폼이 둘이고 버튼도 각자 있다 (한쪽 오류가 다른 쪽 저장을 막지 않게).
+- 화면: h1 아래 한 장의 면에 "기본 정보" 줄, 그 아래 "비밀번호 변경" 줄. 폼이 둘이고 버튼도 각자 있다 (한쪽 오류가 다른 쪽 저장을 막지 않게). 넓은 화면은 Tailwind Plus 설정 화면처럼 제목·한 줄 설명 왼쪽, 칸 오른쪽이다. (고침 10-30: 빈 공간 피드백)
 - 모양: 금액 폼이 아니므로 DESIGN.md 기본 규칙(누르는 것은 알약)을 따른다. 입력 칸도 검색창과 같은 알약, 높이 48px. 새 hex·px 값은 넣지 않는다.
 - 이름: 필수, 앞뒤 공백 제거 후 1~20자.
 - 닉네임: 필수, 한글·영문·숫자 2~12자 (`/^[가-힣a-zA-Z0-9]{2,12}$/`). 다른 시연 회원의 닉네임("윤슬", "도현랩", 운영자 닉네임)은 사용 중으로 본다. 자기 닉네임은 그대로 둘 수 있다.
@@ -159,7 +164,7 @@ S181 구조 (기존 S78)
 - 저장은 목업이라 데이터는 바뀌지 않는다. 기본 정보는 성공 뒤 입력한 값이 칸에 남고, 새로고침하면 원래 값이다.
 - 운영자도 같은 화면을 쓴다.
 - 오류 문구는 칸 바로 아래, 경고 아이콘과 함께, 글자 크기는 입력과 같은 위치에서 시작한다 (출금 폼과 같은 방식).
-- S번호는 S163~S181을 쓴다. 다른 문서·열린 PR의 최대 번호(S162)와 겹치지 않게 다음 번호부터.
+- S번호는 S163~S182를 쓴다. 다른 문서·열린 PR의 최대 번호(S162)와 겹치지 않게 다음 번호부터.
 
 ## 참고 (2026-10-30 확인)
 - 페이지 URL: `docs/page-urls.md` 55행 "개인정보 수정 `/my/profile/edit` 확정"
@@ -167,4 +172,5 @@ S181 구조 (기존 S78)
 - 세션·접근 제어: `frontend/src/lib/session.ts`, `frontend/src/features/my/api.ts` `requireMember`
 - 폼 패턴: `feature/frontend-credits`의 `features/credit/actions.ts`, `components/WithdrawalForm.tsx` (PR #9, 아직 develop에 없음)
 - 모양 규칙: `frontend/DESIGN.md` 260~265행 (알약 / The Money Field Rule)
+- 설정 화면 레퍼런스 (10-30 확인): Tailwind Plus 설정 화면 https://tailwindcss.com/plus/ui-blocks/application-ui/page-examples/settings-screens , SaaS 설정 페이지 패턴 https://www.saasui.design/blog/saas-settings-page-ux-patterns
 - 기존 링크 테스트: `e2e/header.spec.ts`, `e2e/mobile-menu.spec.ts`, `e2e/my.spec.ts`, `e2e/links.spec.ts`

@@ -68,7 +68,8 @@ export type Report = {
   review?: ReportReview;
 };
 
-export type ReportTab = "pending" | "done";
+/** 관리 목록의 탭. 신고·출금(나중에 모집 취소도)이 같은 두 탭을 쓴다 */
+export type ListTab = "pending" | "done";
 
 /** 처리 전 출금 요청 */
 export type WithdrawalRequest = {

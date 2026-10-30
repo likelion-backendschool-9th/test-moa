@@ -9,9 +9,9 @@ import {
   isOverdue,
   type AdminSummary,
   type CancellationRequest,
+  type ListTab,
   type PendingItem,
   type Report,
-  type ReportTab,
   type WithdrawalRequest,
 } from "./types";
 
@@ -120,7 +120,7 @@ export function getReportKeys() {
 }
 
 /** 검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
-export async function getReports(tab: ReportTab): Promise<{ now: Date; reports: Report[] }> {
+export async function getReports(tab: ListTab): Promise<{ now: Date; reports: Report[] }> {
   const { now, reports } = await loadAll();
   if (tab === "pending") return { now, reports: reports.filter((report) => !report.review).sort(byOldest) };
   const done = reports.filter((report) => report.review);

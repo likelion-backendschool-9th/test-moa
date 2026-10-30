@@ -1,14 +1,21 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { isReportDecision, type ReportReview } from "./types";
+import {
+  isRejectReason,
+  isReportDecision,
+  isWithdrawalDecision,
+  type ReportReview,
+  type WithdrawalReview,
+} from "./types";
 
 /*
  * 시연용 처리 기록. 실제 저장소가 없어서 쿠키에 { 요청 키: 처리 기록 }을 JSON으로 둔다.
- * 신고는 demo-reports다. 읽기·쓰기와 크기 확인은 요청 종류와 관계없이 같아서 함께 쓴다.
+ * 신고는 demo-reports, 출금은 demo-admin-withdrawals다. 출금 쪽은 테스터 신청 기록(demo-withdrawals-<role>)과 이름이 겹치지 않게 했다.
  * 같은 브라우저 안에서만 유지되고, 쿠키를 지우면 처음 상태로 돌아간다. 실제 API를 붙이면 이 파일을 지운다.
  */
 
 export const DEMO_REPORTS_COOKIE = "demo-reports";
+export const DEMO_ADMIN_WITHDRAWALS_COOKIE = "demo-admin-withdrawals";
 
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 /* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
@@ -20,6 +27,13 @@ function isReview(value: unknown): value is ReportReview {
   if (typeof value !== "object" || value === null) return false;
   const review = value as Record<string, unknown>;
   return isReportDecision(review.decision) && typeof review.memo === "string" && typeof review.processedAt === "string";
+}
+
+function isWithdrawalReview(value: unknown): value is WithdrawalReview {
+  if (typeof value !== "object" || value === null) return false;
+  const review = value as Record<string, unknown>;
+  if (!isWithdrawalDecision(review.decision) || typeof review.memo !== "string" || typeof review.processedAt !== "string") return false;
+  return review.decision === "paid" ? review.reason === undefined : isRejectReason(review.reason);
 }
 
 /** 깨진 값은 버리고 올바른 기록만 돌려준다 */
@@ -55,3 +69,8 @@ export const readReviews = () => readStore(DEMO_REPORTS_COOKIE, isReview);
 
 export const saveReview = (reportKey: string, review: ReportReview) =>
   saveToStore(DEMO_REPORTS_COOKIE, isReview, reportKey, review);
+
+export const readWithdrawalReviews = () => readStore(DEMO_ADMIN_WITHDRAWALS_COOKIE, isWithdrawalReview);
+
+export const saveWithdrawalReview = (withdrawalKey: string, review: WithdrawalReview) =>
+  saveToStore(DEMO_ADMIN_WITHDRAWALS_COOKIE, isWithdrawalReview, withdrawalKey, review);

@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
-import { buildCancellations, buildReports, buildWithdrawals, REPORT_KEYS } from "./mock";
-import { readReviews } from "./reviews";
+import { buildCancellations, buildReports, buildWithdrawals, REPORT_KEYS, WITHDRAWAL_KEYS } from "./mock";
+import { readReviews, readWithdrawalReviews } from "./reviews";
 import {
   isOverdue,
   type AdminSummary,
@@ -49,15 +49,22 @@ async function loadAll() {
     return { now, reports: [] as Report[], withdrawals: [] as WithdrawalRequest[], cancellations: [] as CancellationRequest[] };
   }
   /* 시연 중 처리한 결과를 목업 위에 덮는다 */
-  const reviews = await readReviews();
+  const [reviews, withdrawalReviews] = await Promise.all([readReviews(), readWithdrawalReviews()]);
   const reports = buildReports(now).map((report) => (report.review ? report : { ...report, review: reviews[report.id] }));
-  return { now, reports, withdrawals: buildWithdrawals(now), cancellations: buildCancellations(now) };
+  const withdrawals = buildWithdrawals(now).map((request) =>
+    request.review ? request : { ...request, review: withdrawalReviews[request.id] },
+  );
+  return { now, reports, withdrawals, cancellations: buildCancellations(now) };
 }
 
 /** 운영자 홈이 다루는 처리 전 요청 */
 async function loadPending() {
   const all = await loadAll();
-  return { ...all, reports: all.reports.filter((report) => !report.review) };
+  return {
+    ...all,
+    reports: all.reports.filter((report) => !report.review),
+    withdrawals: all.withdrawals.filter((request) => !request.review),
+  };
 }
 
 const byLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
@@ -130,4 +137,26 @@ export async function getReports(tab: ListTab): Promise<{ now: Date; reports: Re
 export async function getReport(reportKey: string): Promise<{ now: Date; report: Report | null }> {
   const { now, reports } = await loadAll();
   return { now, report: reports.find((report) => report.id === reportKey) ?? null };
+}
+
+/** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
+export function isWithdrawalKey(withdrawalKey: string) {
+  return WITHDRAWAL_KEYS.includes(withdrawalKey);
+}
+
+export function getWithdrawalKeys() {
+  return [...WITHDRAWAL_KEYS];
+}
+
+/** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
+export async function getWithdrawals(tab: ListTab): Promise<{ now: Date; withdrawals: WithdrawalRequest[] }> {
+  const { now, withdrawals } = await loadAll();
+  if (tab === "pending") return { now, withdrawals: withdrawals.filter((request) => !request.review).sort(byOldest) };
+  const done = withdrawals.filter((request) => request.review);
+  return { now, withdrawals: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };
+}
+
+export async function getWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null }> {
+  const { now, withdrawals } = await loadAll();
+  return { now, withdrawal: withdrawals.find((request) => request.id === withdrawalKey) ?? null };
 }

@@ -158,6 +158,9 @@ test.describe("R27 처리", () => {
     await expect(rows(page)).toHaveCount(3);
     await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
     await expect(rows(page).filter({ hasText: "회의록 정리" })).toContainText("기각");
+    /* 보상 보류가 없던 신고는 지급 문구가 없다 */
+    await decide(page, "report-3", "기각");
+    await expect(page.getByRole("status")).toHaveText("신고를 기각했어요.");
   });
 
   test("S129 인정하면 제재 이력에 반영된다는 문구가 보인다", async ({ page }) => {
@@ -175,6 +178,24 @@ test.describe("R27 처리", () => {
     await expect(result).toContainText("인정");
     await expect(result).toContainText("같은 문장만 반복했어요");
     await expect(result).toContainText("처리");
+  });
+
+  test("S137 기록을 저장할 공간이 모자라면 처리하지 않고 알린다", async ({ page, context }) => {
+    /* 메모가 긴 처리 기록 3건이 이미 있어서, 80자 메모를 하나 더 담으면 쿠키 한도를 넘는 상태 */
+    const review = (memo: string) => ({ decision: "dismissed", memo, processedAt: new Date().toISOString() });
+    const stored = Object.fromEntries(["report-2", "report-3", "report-4"].map((key) => [key, review("가".repeat(120))]));
+    await context.addCookies([
+      { name: "demo-reports", value: encodeURIComponent(JSON.stringify(stored)), url: "http://localhost:3100" },
+    ]);
+    await page.goto("/admin/reports/report-1");
+    await page.getByRole("radio", { name: /^기각/ }).check();
+    await page.getByRole("textbox", { name: "처리 메모" }).fill("나".repeat(80));
+    await page.getByRole("button", { name: "처리하기" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports\/report-1\?error=memo$/);
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("시연용 저장 공간이 모자라 처리하지 못했어요");
+    await page.goto("/admin/reports");
+    await expect(rows(page)).toHaveCount(1);
+    await expect(rows(page).first()).toContainText("회의록 정리");
   });
 
   test("S131 처리 결과가 운영자 홈 건수에 반영된다", async ({ page }) => {
@@ -211,7 +232,7 @@ test.describe("R29 로딩과 접근성", () => {
     await expect(group.getByRole("radio")).toHaveCount(2);
     await expect(group.getByRole("radio", { name: /^기각/ })).toBeVisible();
     await expect(group.getByRole("radio", { name: /^인정/ })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "처리 메모" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "처리 메모" })).toHaveAttribute("maxlength", "80");
   });
 
   test("S135 좁은 화면에서 가로로 넘치지 않는다", async ({ page }) => {

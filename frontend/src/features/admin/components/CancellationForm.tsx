@@ -2,6 +2,7 @@
 
 import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { processCancellation } from "../actions";
 import {
   CANCELLATION_REJECT_REASONS,
@@ -37,7 +38,7 @@ export function CancellationForm({ cancellationKey, confirmedCount }: Cancellati
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} aria-labelledby="cancellation-review-heading" className={panelClass}>
+    <form action={formAction} onSubmit={handleSubmit} aria-labelledby="cancellation-review-heading" className={cn(panelClass, "group/cancel")}>
       <h3 id="cancellation-review-heading" className="text-lg font-extrabold">
         처리하기
       </h3>
@@ -52,29 +53,35 @@ export function CancellationForm({ cancellationKey, confirmedCount }: Cancellati
         />
         <Choice name="decision" value="rejected" label="반려" detail="모집은 그대로 진행돼요." />
       </fieldset>
-      <fieldset className="flex flex-col gap-3" aria-describedby={state.error === "reason" ? errorId : undefined}>
-        <legend className="mb-3 text-sm font-semibold">반려 사유</legend>
-        {(Object.keys(CANCELLATION_REJECT_REASONS) as CancellationRejectReason[]).map((reason) => (
-          <Choice key={reason} name="reason" value={reason} label={CANCELLATION_REJECT_REASONS[reason]} />
-        ))}
-      </fieldset>
-      <div className="flex flex-col gap-2 text-sm">
-        <label htmlFor="cancellation-memo" className="font-semibold">
-          반려 메모
-        </label>
-        {/* placeholder는 입력하면 사라져서 안내는 늘 보이게 둔다 */}
-        <p id="cancellation-memo-hint" className="text-text-muted">
-          반려할 때 운영자 기록으로 남아요. 사유가 &ldquo;기타&rdquo;이면 이 메모가 개발자에게 보이는 사유가 돼요.
-        </p>
-        <textarea
-          id="cancellation-memo"
-          name="memo"
-          rows={3}
-          maxLength={REVIEW_MEMO_MAX_LENGTH}
-          aria-describedby={state.error === "note" || state.error === "memo" ? `cancellation-memo-hint ${errorId}` : "cancellation-memo-hint"}
-          placeholder={`${REVIEW_MEMO_MAX_LENGTH}자까지`}
-          className="rounded-2xl bg-surface-strong px-4 py-3 text-text placeholder:text-text-muted focus:outline-2 focus:outline-accent"
-        />
+      {/*
+       * 반려 사유와 메모는 "반려"를 골랐을 때만 보인다. 상태 대신 CSS(:has)로 숨겨서 서버에서 그린 첫 화면부터 맞고,
+       * 자바스크립트가 없어도 반려할 수 있다. 숨겨도 고른 값은 남고, 승인이면 서버가 사유·메모를 쓰지 않는다.
+       */}
+      <div className="hidden flex-col gap-4 group-has-[input[name=decision][value=rejected]:checked]/cancel:flex">
+        <fieldset className="flex flex-col gap-3" aria-describedby={state.error === "reason" ? errorId : undefined}>
+          <legend className="mb-3 text-sm font-semibold">반려 사유</legend>
+          {(Object.keys(CANCELLATION_REJECT_REASONS) as CancellationRejectReason[]).map((reason) => (
+            <Choice key={reason} name="reason" value={reason} label={CANCELLATION_REJECT_REASONS[reason]} />
+          ))}
+        </fieldset>
+        <div className="flex flex-col gap-2 text-sm">
+          <label htmlFor="cancellation-memo" className="font-semibold">
+            반려 메모
+          </label>
+          {/* placeholder는 입력하면 사라져서 안내는 늘 보이게 둔다 */}
+          <p id="cancellation-memo-hint" className="text-text-muted">
+            반려할 때 운영자 기록으로 남아요. 사유가 &ldquo;기타&rdquo;이면 이 메모가 개발자에게 보이는 사유가 돼요.
+          </p>
+          <textarea
+            id="cancellation-memo"
+            name="memo"
+            rows={3}
+            maxLength={REVIEW_MEMO_MAX_LENGTH}
+            aria-describedby={state.error === "note" || state.error === "memo" ? `cancellation-memo-hint ${errorId}` : "cancellation-memo-hint"}
+            placeholder={`${REVIEW_MEMO_MAX_LENGTH}자까지`}
+            className="rounded-2xl bg-surface-strong px-4 py-3 text-text placeholder:text-text-muted focus:outline-2 focus:outline-accent"
+          />
+        </div>
       </div>
       {state.error && (
         <p id="cancellation-error" role="alert" className="text-sm font-semibold">

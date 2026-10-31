@@ -150,21 +150,53 @@ export function buildWithdrawals(now: Date): WithdrawalRequest[] {
 /** 출금 요청 키 목록. 신고 키와 같은 이유로 목업에서 뽑아 둔다 */
 export const WITHDRAWAL_KEYS = buildWithdrawals(new Date(0)).map((request) => request.id);
 
+/** 처리 대기 2건과 이미 처리한 2건. 반려식물 일지는 테스트가 이미 시작돼 반려됐다 */
 export function buildCancellations(now: Date): CancellationRequest[] {
   return [
     {
       id: "cancellation-1",
       recruitmentName: "레시피핏",
+      recruitmentSlug: "recipefit",
       developerNickname: "박도현",
+      reason: "서비스 출시 일정이 미뤄져서 테스트를 할 수 없어요",
       confirmedCount: 3,
+      submittedFeedbackCount: 0,
       createdAt: hoursAgo(now, 40),
     },
     {
       id: "cancellation-2",
       recruitmentName: "동네 러닝 크루",
+      recruitmentSlug: "run-crew",
       developerNickname: "최유나",
+      reason: "모집 글에 테스트할 주소를 잘못 적었어요",
       confirmedCount: 0,
+      submittedFeedbackCount: 0,
       createdAt: hoursAgo(now, 10),
+    },
+    {
+      id: "cancellation-3",
+      recruitmentName: "모아플랜",
+      recruitmentSlug: "moaplan",
+      developerNickname: "정하린",
+      reason: "같은 기능을 다시 만들기로 했어요",
+      confirmedCount: 2,
+      submittedFeedbackCount: 0,
+      createdAt: hoursAgo(now, 70),
+      review: { decision: "approved", memo: "", processedAt: hoursAgo(now, 48) },
+    },
+    {
+      id: "cancellation-4",
+      recruitmentName: "반려식물 일지",
+      recruitmentSlug: "plant-diary",
+      developerNickname: "박도현",
+      reason: "지원자가 적어서 다시 모집하고 싶어요",
+      confirmedCount: 2,
+      submittedFeedbackCount: 1,
+      createdAt: hoursAgo(now, 120),
+      review: { decision: "rejected", reason: "testing", memo: "", processedAt: hoursAgo(now, 96) },
     },
   ];
 }
+
+/** 모집 취소 요청 키 목록. 신고·출금 키와 같은 이유로 목업에서 뽑아 둔다 */
+export const CANCELLATION_KEYS = buildCancellations(new Date(0)).map((request) => request.id);

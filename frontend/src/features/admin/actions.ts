@@ -1,13 +1,17 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { assertAdmin, getReport, getWithdrawal, isReportKey, isWithdrawalKey } from "./api";
-import { saveReview, saveWithdrawalReview } from "./reviews";
+import { assertAdmin, getCancellation, getReport, getWithdrawal, isCancellationKey, isReportKey, isWithdrawalKey } from "./api";
+import { saveCancellationReview, saveReview, saveWithdrawalReview } from "./reviews";
 import {
+  isCancellationDecision,
+  isCancellationRejectReason,
   isRejectReason,
   isReportDecision,
   isWithdrawalDecision,
   REVIEW_MEMO_MAX_LENGTH,
+  type CancellationFormState,
+  type CancellationReview,
   type WithdrawalFormState,
   type WithdrawalReview,
 } from "./types";
@@ -65,4 +69,32 @@ export async function processWithdrawal(_prev: WithdrawalFormState, formData: Fo
 
   if (!(await saveWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
   redirect(`/admin/withdrawals?processed=${withdrawalKey}`);
+}
+
+/**
+ * 모집 취소 처리. 출금 처리와 같은 구조다. 반려는 사유가 있어야 하고, "기타"는 메모가 개발자에게 보이는 사유가 된다.
+ * 막히면 오류만 돌려줘 고른 값과 메모가 화면에 남고, 처리하면 목록에 요청 키를 넘긴다.
+ */
+export async function processCancellation(_prev: CancellationFormState, formData: FormData): Promise<CancellationFormState> {
+  await assertAdmin();
+  const cancellationKey = String(formData.get("cancellationKey") ?? "");
+  if (!isCancellationKey(cancellationKey)) redirect("/admin/cancellations");
+
+  const decision = formData.get("decision");
+  if (!isCancellationDecision(decision)) return { error: "decision" };
+  let review: CancellationReview = { decision, memo: "", processedAt: new Date().toISOString() };
+  if (decision === "rejected") {
+    const reason = formData.get("reason");
+    if (!isCancellationRejectReason(reason)) return { error: "reason" };
+    const memo = String(formData.get("memo") ?? "").trim().slice(0, REVIEW_MEMO_MAX_LENGTH);
+    if (reason === "other" && !memo) return { error: "note" };
+    review = { ...review, reason, memo };
+  }
+
+  /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 처리 결과를 보여 준다 */
+  const { cancellation } = await getCancellation(cancellationKey);
+  if (!cancellation || cancellation.review) redirect(`/admin/cancellations/${cancellationKey}`);
+
+  if (!(await saveCancellationReview(cancellationKey, review))) return { error: "memo" };
+  redirect(`/admin/cancellations?processed=${cancellationKey}`);
 }

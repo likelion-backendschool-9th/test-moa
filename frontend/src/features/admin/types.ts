@@ -60,6 +60,8 @@ export type Report = {
   reporterNickname: string;
   /** 신고 대상 테스터·회원. 모집 글 신고에는 없다 */
   targetNickname?: string;
+  /** 신고 대상 회원의 키(`user-<번호>`). 회원 관리에서 제재 이력과 받은 신고를 모을 때 쓴다 */
+  targetUserKey?: string;
   /** 신고된 피드백 원문. 피드백 신고에만 있고 상세에서만 보여 준다 */
   feedback?: string;
   createdAt: string;

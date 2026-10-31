@@ -38,7 +38,11 @@ export async function assertAdmin() {
   if ((await getSession()).role !== "admin") throw new Error("운영자만 볼 수 있는 데이터예요");
 }
 
-async function loadAll() {
+/**
+ * 권한·시연 모드를 확인하고 처리 기록을 덮은 요청 목록을 돌려준다.
+ * 회원 관리(users.ts)도 이 함수로 신고를 읽어서, 신고 쪽 규칙이 바뀌어도 두 화면이 같은 결과를 보여 준다.
+ */
+export async function loadAll() {
   await assertAdmin();
   const mode = await getDemoDataMode();
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));

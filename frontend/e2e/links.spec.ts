@@ -18,7 +18,7 @@ const COMING_SOON_PATHS = [
   "/notices",
 ];
 
-const ADMIN_COMING_SOON_PATHS = ["/admin/users", "/admin/cancellations"];
+const ADMIN_COMING_SOON_PATHS = ["/admin/users"];
 
 test.describe("R11 빈 링크와 404", () => {
   for (const path of COMING_SOON_PATHS) {

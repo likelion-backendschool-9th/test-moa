@@ -42,7 +42,16 @@ export function ReportDetail({ report, now }: { report: Report; now: Date }) {
           <Info label="모집 건">{report.recruitmentName}</Info>
           <Info label="신고한 사람">{report.reporterNickname}</Info>
           {report.targetNickname && (
-            <Info label={report.targetType === "user" ? "대상 회원" : "대상 테스터"}>{report.targetNickname}</Info>
+            <Info label={report.targetType === "user" ? "대상 회원" : "대상 테스터"}>
+              {/* 대상 회원의 제재 이력과 다른 신고를 회원 관리에서 이어 본다 */}
+              {report.targetUserKey ? (
+                <Link href={`/admin/users/${report.targetUserKey}`} className="underline underline-offset-4 hover:text-text-muted">
+                  {report.targetNickname}
+                </Link>
+              ) : (
+                report.targetNickname
+              )}
+            </Info>
           )}
           <Info label="접수">
             {formatDate(report.createdAt)} · {formatElapsed(report.createdAt, now)}

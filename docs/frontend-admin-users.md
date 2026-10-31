@@ -187,7 +187,7 @@ S248
 - Then  지금 개수(11개) 그대로다 (PR #12 병합 뒤에는 PR #12가 더한 2개를 포함해 13개)
 
 ## 기존 시나리오·문서 변경
-- `e2e/links.spec.ts` S26: `/admin/users`를 운영자 준비 중 목록에서 뺀다.
+- `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
 - `frontend-admin-home.md` S93: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
 - `frontend-admin-reports.md`
   - 상세의 대상 테스터·대상 회원 닉네임이 회원 상세 링크가 된다(S244). 기존 S123·S125의 문구 확인은 그대로 통과한다.
@@ -261,7 +261,7 @@ S248
 
 ## PR #12 병합 뒤 할 일
 PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31).
-- 충돌: `e2e/links.spec.ts`의 `ADMIN_COMING_SOON_PATHS` 한 줄. 두 브랜치가 각자 자기 페이지를 뺐다. `["/admin/cancellations"]`만 남긴다.
+- 충돌: 없음. 처음에는 `e2e/links.spec.ts`의 준비 중 목록(`ADMIN_COMING_SOON_PATHS`)을 두 브랜치가 각자 다르게 고쳐 충돌했다. 세 관리자 PR이 이 부분을 똑같이 바꿔(운영자 하위 페이지가 열리는지만 본다) 충돌을 없앴다(2026-10-31).
 - 텍스트 충돌은 아니지만 병합하면 틀려지는 곳:
   - S248: `"use client"` 파일이 13개가 된다(PR #12의 `CopyAccountButton`, `WithdrawalForm`). 문서 숫자를 고친다.
   - `UserFilters`와 PR #12의 `StatusTabs`는 모양이 같다. `StatusTabs`가 세 탭도 받게 넓혀 합칠지 정한다. `StatusTabs`는 지금 두 탭(`ListTab`) 전용이다.

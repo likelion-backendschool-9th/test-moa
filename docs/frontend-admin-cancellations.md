@@ -187,6 +187,11 @@ S276 좁은 화면
 - When  `/admin/cancellations`와 `/admin/cancellations/cancellation-1`에 접속한다
 - Then  페이지에 가로 스크롤이 없다 (하위 탭 줄 안의 스크롤만 예외)
 
+S283 긴 메모
+- Given `cancellation-1`을 "기타"와 공백 없는 80자 메모로, `cancellation-2`를 "취소 사유가 부족해요"와 긴 URL 메모로 반려했다
+- When  너비 375px에서 두 요청의 상세에 접속한다
+- Then  처리 결과에 메모 전체가 보이고, 페이지에 가로 스크롤이 없다 (메모는 칸 안에서 줄을 바꾼다)
+
 ## 8. 구조 (R54)
 권한은 페이지, 데이터 함수, 처리 Server Action에서 각각 확인한다. 처리 양식은 막혀도 입력이 남도록 `useActionState`를 쓰는 클라이언트 컴포넌트다.
 
@@ -205,7 +210,7 @@ S277
   - 모집 취소 목업에 요청 사유·모집 건 키를 더하고 처리 완료 2건을 더한다. 처리 대기 2건과 순서는 그대로라 S94~S97은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·회원(PR #13) PR과 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/cancellations?tab=done`(처리 완료 탭)과 `/admin/cancellations/:cancellationKey`(모집 취소 요청 상세)를 "후보"로 추가한다.
-- `frontend-admin-reports.md` "번호 사용 현황": S250~S279를 이 문서로 적는다(PR #12·#13 병합 뒤).
+- `frontend-admin-reports.md` "번호 사용 현황": S250~S279와 S283을 이 문서로 적는다(PR #12·#13 병합 뒤).
 - `frontend/README.md` 시연용 쿠키 표에 `demo-admin-cancellations`를 더한다.
 - PR #13(회원 관리)과는 충돌하지 않는다. 처음에는 `e2e/links.spec.ts`의 준비 중 목록(`ADMIN_COMING_SOON_PATHS`)을 세 PR이 각자 다르게 고쳐 충돌했으나, 세 PR이 그 부분을 똑같이 바꿔 없앴다(2026-10-31).
 
@@ -251,7 +256,7 @@ S277
 3. 상세 — S254, S260~S263, S278
 4. 처리 — S264~S272 (Server Action, `useActionState` 양식)
 5. 운영자 홈 연결과 정리 — S273, S277, 기존 문서 변경
-6. 테스트 — S250~S276, S278, S279
+6. 테스트 — S250~S276, S278, S279, S283
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 ## 브랜치·커밋
@@ -271,6 +276,7 @@ S277
   - 처리 양식(`CancellationForm`)은 출금 처리 양식(`WithdrawalForm`)과 거의 같다. PR #12가 리뷰 중이라 그 파일을 고치지 않고 따로 만들었다. 두 PR이 병합된 뒤 공용 처리 양식 하나로 합친다.
   - S번호를 S250부터 매겼다. 열린 PR까지 포함해 가장 큰 번호가 회원 관리 문서의 S249다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아, PR #12의 신고·출금 상세와 같이 Suspense 안에서 읽게 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S254)을 확인했다.
+  - 공백 없는 긴 반려 메모나 URL이 375px 화면에서 385px 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, PR #12를 다시 병합하고 상세의 정보 칸(`Info`)에 같은 `wrap-anywhere`를 줬다(S283, `frontend-admin-withdrawals.md` S281). 번호는 PR #12의 S281·S282 다음이다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S94 처리 대기 카드, S97 오래 기다린 요청)

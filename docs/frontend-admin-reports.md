@@ -153,6 +153,11 @@ S135 좁은 화면
 - When  `/admin/reports`와 `/admin/reports/report-1`에 접속한다
 - Then  페이지에 가로 스크롤이 없다 (하위 탭 줄 안의 스크롤만 예외)
 
+S282 긴 메모
+- Given `report-1`을 공백 없는 80자 메모로 기각했다
+- When  너비 375px에서 `/admin/reports/report-1`에 접속한다
+- Then  처리 결과에 메모 전체가 보이고, 페이지에 가로 스크롤이 없다
+
 ## 8. 구조 (R30)
 권한은 페이지, 데이터 함수, 처리 Server Action에서 각각 확인한다. Server Action은 화면 밖에서도 불릴 수 있어서 따로 확인해야 한다(Next 문서 `02-guides/authentication.md`). 처리 양식은 서버 양식으로 만들어 `"use client"`를 늘리지 않는다.
 
@@ -242,6 +247,7 @@ R번호도 운영자 문서는 R14부터 이어서 쓰고, 마이페이지 문�
   - S번호를 S114부터 매겼다. 운영자 홈(S83~S104)과 마이페이지(S83~S113) 문서의 번호가 겹쳐 있어서, 두 문서 모두와 겹치지 않는 번호로 시작했다. 겹친 번호는 확인할 때 필요해서 바꾸지 않고 "번호 사용 현황"에 함께 적었다.
 - 2026-10-31
   - 상세가 `params`를 Suspense 밖에서 읽어, 목록에서 상세로 이동할 때 개발 서버에 `instant-shell-url-data` 진단이 떴다(회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 함께 고쳤다). `generateStaticParams`로 키를 알려 둬도 `params`는 주소마다 달라서 Suspense 안에서 읽어야 한다(Next 문서 `02-guides/optimizing-prefetching.md`). 페이지는 `params`를 그대로 넘기고 Suspense 안에서 키를 읽고 검사한다. S118 참고의 "응답 상태는 200"을 실제로 확인한 값으로 고쳤다.
+  - 공백 없는 긴 처리 메모가 375px 화면에서 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, 상세의 정보 칸에 `wrap-anywhere`를 줘서 함께 고쳤다(S282, `frontend-admin-withdrawals.md` S281).
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, R22 구조, S97 오래 기다린 요청)

@@ -189,6 +189,11 @@ S215 좁은 화면
 - Then  페이지에 가로 스크롤이 없다 (하위 탭 줄 안의 스크롤만 예외)
 - Then  계좌번호가 한 줄에 보인다
 
+S281 긴 메모
+- Given `withdrawal-1`을 "기타"와 공백 없는 80자 메모로, `withdrawal-2`를 "계좌번호를 확인할 수 없어요"와 긴 URL 메모로 반려했다
+- When  너비 375px에서 두 요청의 상세에 접속한다
+- Then  처리 결과에 메모 전체가 보이고, 페이지에 가로 스크롤이 없다 (메모는 칸 안에서 줄을 바꾼다)
+
 ## 8. 구조 (R38)
 권한은 페이지, 데이터 함수, 처리 Server Action에서 각각 확인한다. 처리 양식은 막혀도 입력이 남도록 `useActionState`를 쓰는 클라이언트 컴포넌트다(크레딧 출금 신청 폼과 같은 방식). 그 밖에는 "계좌번호 복사" 버튼만 클라이언트 컴포넌트로 둔다.
 
@@ -256,7 +261,7 @@ S216
    - 파일: `src/features/admin/actions.ts` (출금 처리 Server Action, `assertAdmin`, 크기 확인), `src/features/admin/components/WithdrawalForm.tsx` (`"use client"`, `useActionState`)
 5. 운영자 홈 연결과 정리 — S212, S216, 기존 문서 변경
    - 파일: 운영자 홈 링크, `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend-admin-home.md`, `docs/frontend-admin-reports.md`
-6. 테스트 — S191~S219 (S216 제외)
+6. 테스트 — S191~S219 (S216 제외), S281
    - 파일: `e2e/admin-withdrawals.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
@@ -279,6 +284,7 @@ S216
     - 신고 처리 양식도 막혀서 돌아오면 고른 값이 사라진다. 이번에는 출금만 고쳤다.
   - 막혔을 때 값을 주소(`decision`, `reason`, `memo`)에 실어 다시 채우던 방식을 `useActionState` 클라이언트 양식으로 바꿨다. 주소에 실으면 메모가 방문 기록에 남기 때문이다. `?error=` 주소는 더 쓰지 않는다. `"use client"` 파일은 13개가 된다(S216).
 - 2026-10-31
+  - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`frontend-admin-reports.md` S282). 번호는 회원 관리(PR #13)의 S280 다음이다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 신고 상세와 함께 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S195)을 확인했다.
 
 ## 참고

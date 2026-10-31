@@ -11,22 +11,23 @@ import { WithdrawalForm } from "@/features/admin/components/WithdrawalForm";
 
 export const metadata: Metadata = { title: "출금 요청 상세" };
 
-/* 신고 상세와 같은 이유로 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다 */
+/* 신고 상세와 같이 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다 */
 export function generateStaticParams() {
   return getWithdrawalKeys().map((withdrawalKey) => ({ withdrawalKey }));
 }
 
-export default async function WithdrawalDetailPage({ params }: PageProps<"/admin/withdrawals/[withdrawalKey]">) {
-  const { withdrawalKey } = await params;
-  if (!isWithdrawalKey(withdrawalKey)) notFound();
+/* 신고 상세와 같은 이유로 params는 Suspense 안에서 읽는다(instant-shell-url-data) */
+export default function WithdrawalDetailPage({ params }: PageProps<"/admin/withdrawals/[withdrawalKey]">) {
   return (
     <Suspense fallback={<AdminShellSkeleton />}>
-      <Detail withdrawalKey={withdrawalKey} />
+      <Detail params={params} />
     </Suspense>
   );
 }
 
-async function Detail({ withdrawalKey }: { withdrawalKey: string }) {
+async function Detail({ params }: { params: PageProps<"/admin/withdrawals/[withdrawalKey]">["params"] }) {
+  const { withdrawalKey } = await params;
+  if (!isWithdrawalKey(withdrawalKey)) notFound();
   if (!(await requireAdmin(`/admin/withdrawals/${withdrawalKey}`))) return <AccessDenied pageName="출금 요청 관리" />;
   return (
     <AdminShell path="/admin/withdrawals" title="출금 요청 관리">

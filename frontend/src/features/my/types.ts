@@ -15,7 +15,7 @@ export type CreditBalance = {
   pendingReward: number;
 };
 
-export type Subscription = { status: "none" } | { status: "active"; expiresAt: string };
+export type Subscription = { status: "none" } | { status: "active"; planId: string; expiresAt: string };
 
 export type Profile = {
   name: string;
@@ -71,11 +71,69 @@ export type MyPageSummary = {
   recentCredits: CreditEntry[];
 };
 
+export type SubscriptionOverview = {
+  /** 운영자처럼 구독 대상이 아니면 null */
+  subscription: Subscription | null;
+  freePlan: PlanTerms;
+  plans: SubscriptionPlan[];
+  recruitQuota: RecruitQuota;
+  payableCredits: number;
+  /** 남은 날 계산 기준 시각 */
+  now: string;
+};
+
 export function totalCredits({ earned, signup }: CreditBalance) {
   return earned + signup;
+}
+
+/** 구독 결제에 쓸 수 있는 크레딧. 가입 크레딧은 포함하고, 출금 처리 중인 크레딧과 승인 대기 보상은 뺀다 */
+export function payableCredits({ earned, signup, pendingWithdrawal }: CreditBalance) {
+  return earned - pendingWithdrawal + signup;
 }
 
 /** 지금 출금 신청할 수 있는 크레딧 */
 export function cashableCredits({ earned, pendingWithdrawal }: CreditBalance) {
   return earned - pendingWithdrawal;
 }
+
+/** 켜고 끄는 혜택. 문구로 비교한다 (spec.md 2장) */
+export type BenefitKey = "selection" | "reward" | "chat" | "exposure";
+
+/** 혜택 비교의 행. 월간 모집 인원만 숫자 한도로 비교한다 */
+export const BENEFIT_ROWS: { key: BenefitKey | "monthlyLimit"; label: string }[] = [
+  { key: "selection", label: "참여 확정 방식" },
+  { key: "monthlyLimit", label: "월간 모집 인원" },
+  { key: "reward", label: "테스터 보상" },
+  { key: "chat", label: "1대1 채팅" },
+  { key: "exposure", label: "모집 목록 노출" },
+];
+
+/** 무료와 구독 상품이 함께 갖는 혜택 조건 */
+export type PlanTerms = {
+  /** 한 달 동안 모집 글에 걸 수 있는 인원 합계 */
+  monthlyLimit: number;
+  benefits: Record<BenefitKey, string>;
+};
+
+/** 구독 상품. 지금은 하나지만 늘어날 수 있어 화면은 목록을 그린다 */
+export type SubscriptionPlan = PlanTerms & {
+  id: string;
+  name: string;
+  periodDays: number;
+  /** 원 */
+  cashPrice: number;
+  /** 크레딧. 현금보다 우대 가격이다 */
+  creditPrice: number;
+};
+
+/** 이번 달 모집 인원 사용량 */
+export type RecruitQuota = {
+  used: number;
+  limit: number;
+  /** 다시 채워지는 시각 (다음 달 1일) */
+  resetsAt: string;
+};
+
+/** 구독이 만료되면 남는 것과 멈추는 것 (spec.md 4장 구독 만료) */
+export const EXPIRY_KEEPS = ["받은 피드백과 채팅 기록 보기", "이미 참여가 확정된 테스터의 보상", "모집 글 등록과 지원 현황 확인"];
+export const EXPIRY_STOPS = ["새 테스터 직접 선정", "채팅 메시지 보내기", "상단 구독 영역 노출", "분석"];

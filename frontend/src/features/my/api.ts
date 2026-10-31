@@ -4,8 +4,8 @@ import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
 import { formatDday } from "@/lib/format";
 import { getSession } from "@/lib/session";
-import { buildMyPageSummary } from "./mock";
-import type { MyPageSummary, Todo } from "./types";
+import { buildMyPageSummary, FREE_PLAN, monthlyRecruitUsed, SUBSCRIPTION_PLANS } from "./mock";
+import { payableCredits, type MyPageSummary, type SubscriptionOverview, type Todo } from "./types";
 
 /*
  * 마이페이지 데이터 접근. 지금은 목업을 돌려준다.
@@ -35,4 +35,35 @@ function sortTodos(todos: Todo[], now: Date): Todo[] {
   return [...withDue, ...rest]
     .slice(0, TODO_LIMIT)
     .map((todo) => (todo.dueAt ? { ...todo, detail: formatDday(todo.dueAt, now) } : todo));
+}
+
+/** 구독 관리 화면 데이터. 운영자는 구독 대상이 아니라 subscription이 null이다 */
+export async function getSubscriptionOverview(): Promise<SubscriptionOverview> {
+  const session = await getSession();
+  if (session.role === "guest") redirect(`/login?next=${encodeURIComponent("/my/subscription")}`);
+  if ((await getDemoDataMode()) === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+  await connection();
+  const now = new Date();
+  const { subscription, credits } = buildMyPageSummary(session.role, now);
+  const plan = subscription?.status === "active" ? SUBSCRIPTION_PLANS.find(({ id }) => id === subscription.planId) : undefined;
+  return {
+    subscription,
+    freePlan: FREE_PLAN,
+    plans: SUBSCRIPTION_PLANS,
+    recruitQuota: {
+      used: monthlyRecruitUsed(session.role),
+      limit: (plan ?? FREE_PLAN).monthlyLimit,
+      resetsAt: startOfNextMonthInSeoul(now),
+    },
+    payableCredits: payableCredits(credits),
+    now: now.toISOString(),
+  };
+}
+
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/** 한국 시간 기준 다음 달 1일 0시 */
+function startOfNextMonthInSeoul(now: Date) {
+  const seoul = new Date(now.getTime() + SEOUL_OFFSET_MS);
+  return new Date(Date.UTC(seoul.getUTCFullYear(), seoul.getUTCMonth() + 1, 1) - SEOUL_OFFSET_MS).toISOString();
 }

@@ -1,5 +1,5 @@
 import type { Role } from "@/lib/session";
-import type { CreditEntry, MyPageSummary, Todo } from "./types";
+import type { CreditEntry, MyPageSummary, PlanTerms, SubscriptionPlan, Todo } from "./types";
 
 /*
  * 시연용 샘플 데이터. 실제 사용자와 관계없다.
@@ -11,6 +11,40 @@ import type { CreditEntry, MyPageSummary, Todo } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SUBSCRIPTION_DAYS_LEFT = 30;
+
+/** 무료 조건. 한도는 기획에서 미정이라 임시값이다 */
+export const FREE_PLAN: PlanTerms = {
+  monthlyLimit: 10,
+  benefits: {
+    selection: "선착순 자동 확정",
+    reward: "기본 보상",
+    chat: "없음",
+    exposure: "일반 목록",
+  },
+};
+
+/** 구독 상품. 가격·기간·한도는 기획에서 미정이라 임시값이다 (가격은 spec.md 3장의 예시 값) */
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+  {
+    id: "basic",
+    name: "구독",
+    periodDays: SUBSCRIPTION_DAYS_LEFT,
+    cashPrice: 10000,
+    creditPrice: 9000,
+    monthlyLimit: 30,
+    benefits: {
+      selection: "지원자 중 직접 선정",
+      reward: "기본 + 추가 보상",
+      chat: "선정한 테스터와 가능",
+      exposure: "상단 구독 영역",
+    },
+  },
+];
+
+/** 이번 달 모집 글에 건 인원 합계. 구독 중인 시연 회원만 모집 중인 글이 있다 */
+export function monthlyRecruitUsed(role: Role) {
+  return role === "developer" ? 12 : 0;
+}
 
 const daysFrom = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
 
@@ -68,7 +102,7 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
           email: "dohyun@example.com",
         },
         credits: { earned: 2260, signup: 1000, pendingWithdrawal: 1000, pendingReward: 0 },
-        subscription: { status: "active", expiresAt: daysFrom(now, SUBSCRIPTION_DAYS_LEFT) },
+        subscription: { status: "active", planId: "basic", expiresAt: daysFrom(now, SUBSCRIPTION_DAYS_LEFT) },
         todos: [
           { id: "feedback-minutes", category: "project", title: "회의록 정리 새 피드백 확인", detail: "3건", href: "/my/projects" },
           {

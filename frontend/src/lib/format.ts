@@ -16,6 +16,11 @@ export function formatCredits(amount: number) {
   return `${numberFormatter.format(amount)} 크레딧`;
 }
 
+/** "10,000원" */
+export function formatWon(amount: number) {
+  return `${numberFormatter.format(amount)}원`;
+}
+
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 

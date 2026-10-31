@@ -152,6 +152,22 @@ test.describe("R42 검색과 필터", () => {
     await expectNicknames(page, ["강민서", "김민준", "오태민"]);
   });
 
+  test("S280 뒤로 가면 검색창도 주소의 검색어로 돌아온다", async ({ page }) => {
+    await page.goto("/admin/users");
+    const search = page.getByRole("searchbox", { name: "닉네임 검색" });
+    await search.fill("민");
+    await search.press("Enter");
+    await expect(page).toHaveURL(/\/admin\/users\?q=%EB%AF%BC$/);
+    await search.fill("준");
+    await search.press("Enter");
+    await expect(page).toHaveURL(/\/admin\/users\?q=%EC%A4%80$/);
+    await expectNicknames(page, ["김민준", "서준호"]);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/admin\/users\?q=%EB%AF%BC$/);
+    await expectNicknames(page, ["강민서", "김민준", "오태민"]);
+    await expect(search).toHaveValue("민");
+  });
+
   test("S249 검색과 필터를 함께 써서 결과가 없으면 둘 다 말해 준다", async ({ page }) => {
     await page.goto(`/admin/users?filter=sanctioned&q=${encodeURIComponent("민")}`);
     await expect(page.getByText("'민' 검색과 '제재 이력 있음' 필터에 함께 맞는 회원이 없어요")).toBeVisible();

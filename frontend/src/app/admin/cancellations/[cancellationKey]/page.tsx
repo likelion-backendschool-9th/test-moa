@@ -11,22 +11,23 @@ import { CancellationForm } from "@/features/admin/components/CancellationForm";
 
 export const metadata: Metadata = { title: "모집 취소 요청 상세" };
 
-/* 신고 상세와 같은 이유로 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다 */
+/* 신고 상세와 같이 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다 */
 export function generateStaticParams() {
   return getCancellationKeys().map((cancellationKey) => ({ cancellationKey }));
 }
 
-export default async function CancellationDetailPage({ params }: PageProps<"/admin/cancellations/[cancellationKey]">) {
-  const { cancellationKey } = await params;
-  if (!isCancellationKey(cancellationKey)) notFound();
+/* 신고 상세와 같은 이유로 params는 Suspense 안에서 읽는다(instant-shell-url-data) */
+export default function CancellationDetailPage({ params }: PageProps<"/admin/cancellations/[cancellationKey]">) {
   return (
     <Suspense fallback={<AdminShellSkeleton />}>
-      <Detail cancellationKey={cancellationKey} />
+      <Detail params={params} />
     </Suspense>
   );
 }
 
-async function Detail({ cancellationKey }: { cancellationKey: string }) {
+async function Detail({ params }: { params: PageProps<"/admin/cancellations/[cancellationKey]">["params"] }) {
+  const { cancellationKey } = await params;
+  if (!isCancellationKey(cancellationKey)) notFound();
   if (!(await requireAdmin(`/admin/cancellations/${cancellationKey}`))) return <AccessDenied pageName="모집 취소 요청 관리" />;
   return (
     <AdminShell path="/admin/cancellations" title="모집 취소 요청 관리">

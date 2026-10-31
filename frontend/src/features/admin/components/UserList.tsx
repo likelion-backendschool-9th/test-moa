@@ -20,12 +20,15 @@ function usersHref(filter: UserFilter, query: string) {
 /**
  * 닉네임 검색. GET 양식이라 검색어가 주소(q)에 남고, next/form이 페이지를 새로 받지 않고 이동한다.
  * 고른 필터는 숨은 칸으로 함께 보낸다.
+ * 같은 페이지 이동에서는 입력칸이 그대로 남아 defaultValue가 다시 적용되지 않으므로,
+ * 뒤로 가기처럼 주소의 검색어가 바뀌면 key로 입력칸을 새로 그린다.
  */
 export function UserSearch({ filter, query }: { filter: UserFilter; query: string }) {
   return (
     <Form action="/admin/users" role="search" className="flex max-w-md gap-2">
       {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
       <input
+        key={query}
         type="search"
         name="q"
         defaultValue={query}

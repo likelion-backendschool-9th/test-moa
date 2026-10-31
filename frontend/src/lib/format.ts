@@ -49,3 +49,8 @@ export function formatDday(iso: string, now: Date) {
   const days = daysUntil(iso, now);
   return days <= 0 ? "D-day" : `D-${days}`;
 }
+
+/** "5,000원". 1크레딧 = 1원이라 출금 금액에 쓴다 */
+export function formatWon(amount: number) {
+  return `${numberFormatter.format(amount)}원`;
+}

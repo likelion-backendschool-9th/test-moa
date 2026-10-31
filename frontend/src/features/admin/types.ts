@@ -143,15 +143,74 @@ export function maskAccount(accountNumber: string) {
   return `****${accountNumber.slice(-4)}`;
 }
 
-/** 처리 전 모집 취소 요청 */
+/** 운영자의 모집 취소 처리 결과 */
+export type CancellationDecision = "approved" | "rejected";
+
+export const CANCELLATION_DECISION_LABEL: Record<CancellationDecision, string> = {
+  approved: "승인",
+  rejected: "반려",
+};
+
+export function isCancellationDecision(value: unknown): value is CancellationDecision {
+  return value === "approved" || value === "rejected";
+}
+
+/** 모집 취소 반려 사유. 문구는 개발자에게 보인다. "기타"는 메모가 사유가 된다 */
+export const CANCELLATION_REJECT_REASONS = {
+  testing: "이미 테스트가 진행 중이에요",
+  reason: "취소 사유가 부족해요",
+  other: "기타",
+} as const;
+
+export type CancellationRejectReason = keyof typeof CANCELLATION_REJECT_REASONS;
+
+export function isCancellationRejectReason(value: unknown): value is CancellationRejectReason {
+  return typeof value === "string" && Object.hasOwn(CANCELLATION_REJECT_REASONS, value);
+}
+
+/** 모집 취소 처리 기록. 반려에만 reason이 있다. 메모는 운영자 기록이고 "기타"일 때만 개발자에게 사유로 보인다 */
+export type CancellationReview = {
+  decision: CancellationDecision;
+  reason?: CancellationRejectReason;
+  memo: string;
+  processedAt: string;
+};
+
+/** 개발자에게 보이는 반려 사유 */
+export function cancellationRejectText(review: CancellationReview) {
+  if (!review.reason) return "";
+  return review.reason === "other" ? review.memo : CANCELLATION_REJECT_REASONS[review.reason];
+}
+
+/** 모집 취소 처리 양식이 막힌 이유. 출금 처리 양식과 같다 */
+export type CancellationFormError = WithdrawalFormError;
+export type CancellationFormState = WithdrawalFormState;
+
+/**
+ * 모집 취소 요청. id가 상세 주소의 cancellationKey다.
+ * 확정 테스터 수와 제출된 피드백 수는 요청할 때의 값이다. 보상은 테스트를 완료해야 지급되고
+ * 취소는 테스트 전에 요청하므로, 승인해도 지급할 보상이 없다(docs/frontend-admin-cancellations.md).
+ */
 export type CancellationRequest = {
   id: string;
   recruitmentName: string;
+  /** 모집 글 주소 /recruitments/:slug */
+  recruitmentSlug: string;
   developerNickname: string;
-  /** 이미 참여가 확정된 테스터 수. 이들의 보상은 취소돼도 유지한다 */
+  /** 개발자가 적은 취소 사유 */
+  reason: string;
+  /** 이미 참여가 확정된 테스터 수. 승인하면 이들의 참여도 함께 취소된다 */
   confirmedCount: number;
+  /** 제출된 피드백 수. 1건 이상이면 테스트가 이미 시작된 것이다 */
+  submittedFeedbackCount: number;
   createdAt: string;
+  review?: CancellationReview;
 };
+
+/** 피드백이 제출됐으면 테스트가 이미 시작된 모집 건이다 */
+export function hasTestingStarted(request: CancellationRequest) {
+  return request.submittedFeedbackCount > 0;
+}
 
 /** 세 종류를 합친 대기열 항목 */
 export type PendingItem = {

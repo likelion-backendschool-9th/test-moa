@@ -316,4 +316,21 @@ test.describe("R37 로딩과 접근성", () => {
     }));
     expect(height).toBeLessThanOrEqual(lineHeight * 1.5);
   });
+
+  test("S281 공백 없는 긴 메모나 URL도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
+    const longWord = "a".repeat(80);
+    const longUrl = `https://example.com/${"b".repeat(60)}`;
+    await decide(page, "withdrawal-1", { decision: "반려", reason: "기타", memo: longWord });
+    await decide(page, "withdrawal-2", { decision: "반려", reason: "계좌번호를 확인할 수 없어요", memo: longUrl });
+    await page.setViewportSize({ width: 375, height: 812 });
+    for (const [key, text] of [
+      ["withdrawal-1", longWord],
+      ["withdrawal-2", longUrl],
+    ]) {
+      await page.goto(`/admin/withdrawals/${key}`);
+      await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(text);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow, key).toBeLessThanOrEqual(0);
+    }
+  });
 });

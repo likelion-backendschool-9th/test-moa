@@ -245,4 +245,14 @@ test.describe("R29 로딩과 접근성", () => {
       expect(overflow, path).toBeLessThanOrEqual(0);
     }
   });
+
+  test("S282 공백 없는 긴 메모도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
+    const longWord = "a".repeat(80);
+    await decide(page, "report-1", "기각", longWord);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/admin/reports/report-1");
+    await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(longWord);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
 });

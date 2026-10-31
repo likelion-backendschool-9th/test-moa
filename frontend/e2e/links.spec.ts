@@ -9,7 +9,6 @@ const COMING_SOON_PATHS = [
   "/my/credits",
   "/my/credits/withdrawals",
   "/my/profile/edit",
-  "/my/subscription",
   "/login",
   "/signup",
   "/terms",

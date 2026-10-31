@@ -67,7 +67,16 @@ export type Participation = {
   reviewedAt?: string;
   /** 받은 크레딧. 지급 완료가 아니면 0 */
   earnedCredits: number;
+  /** 제출한 피드백 내용. 제출 전이거나 미제출이면 없다 */
+  feedback?: string;
 };
+
+export const FEEDBACK_MIN_LENGTH = 20;
+/**
+ * 피드백 최대 글자 수. 기획에서 미정이라 시연용 저장(쿠키) 한도에 맞췄다.
+ * 한글 한 글자가 저장할 때 4바이트라, 제출 전 참여를 모두 이 길이로 내도 요청 헤더가 넉넉하다.
+ */
+export const FEEDBACK_MAX_LENGTH = 500;
 
 /** 화면에 그릴 참여. 모집 마감일·제출 마감일·보상은 가리키는 모집 글의 값을 쓴다 */
 export type ParticipationItem = Participation & { recruitment: Recruitment };

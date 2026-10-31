@@ -266,10 +266,34 @@ test.describe("R53 로딩과 접근성", () => {
     await expect(decision.getByRole("radio")).toHaveCount(2);
     await expect(decision.getByRole("radio", { name: /^승인/ })).toBeVisible();
     await expect(decision.getByRole("radio", { name: /^반려/ })).toBeVisible();
+    await decision.getByRole("radio", { name: /^반려/ }).check();
     await expect(page.getByRole("group", { name: "반려 사유" }).getByRole("radio")).toHaveCount(3);
     const memo = page.getByRole("textbox", { name: "반려 메모" });
     await expect(memo).toHaveAttribute("maxlength", "80");
     await expect(memo).toHaveAccessibleDescription(/반려할 때 운영자 기록으로 남아요/);
+  });
+
+  test("S279 반려 사유와 메모는 반려를 골라야 보인다", async ({ page }) => {
+    await page.goto("/admin/cancellations/cancellation-1");
+    const decision = page.getByRole("group", { name: "처리 결과" });
+    const reasons = page.getByRole("group", { name: "반려 사유" });
+    const memo = page.getByRole("textbox", { name: "반려 메모" });
+    await expect(decision).toBeVisible();
+    await expect(reasons).toBeHidden();
+    await expect(memo).toBeHidden();
+    await decision.getByRole("radio", { name: /^승인/ }).check();
+    await expect(reasons).toBeHidden();
+    await decision.getByRole("radio", { name: /^반려/ }).check();
+    await expect(reasons).toBeVisible();
+    await expect(memo).toBeVisible();
+    /* 다시 승인으로 바꾸면 숨지만, 반려로 돌아오면 고른 사유와 메모가 남아 있다 */
+    await reasons.getByRole("radio", { name: "기타" }).check();
+    await memo.fill("다음 달에 다시 요청해 주세요");
+    await decision.getByRole("radio", { name: /^승인/ }).check();
+    await expect(reasons).toBeHidden();
+    await decision.getByRole("radio", { name: /^반려/ }).check();
+    await expect(reasons.getByRole("radio", { name: "기타" })).toBeChecked();
+    await expect(memo).toHaveValue("다음 달에 다시 요청해 주세요");
   });
 
   test("S276 좁은 화면에서 가로로 넘치지 않는다", async ({ page }) => {

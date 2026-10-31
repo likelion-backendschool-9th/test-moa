@@ -155,6 +155,14 @@ components:
     backgroundColor: "{colors.surface-strong}"
     rounded: "{rounded.xl}"
     padding: "8px"
+  money-field:
+    backgroundColor: "{colors.surface-strong}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.xl}"
+    height: "48px"
+    padding: "0 16px"
+  money-field-focus:
+    backgroundColor: "{colors.surface-muted}"
 ---
 
 # Design System: Test Moa
@@ -249,11 +257,13 @@ components:
 
 ## Shapes
 
-두 가지 형태 언어를 쓴다. 누르는 것(버튼, 칩, 탭, 검색창)은 완전 둥근 알약(9999px), 담는 것(배너, 패널, 썸네일, 빈 상태)은 16px 둥근 면. 그 사이 값은 작은 요소에만 쓴다: 순위 행 hover 12px, 모바일 메뉴 버튼·항목과 스켈레톤 8px.
+두 가지 형태 언어를 쓴다. 누르는 것(버튼, 칩, 탭, 검색창)은 완전 둥근 알약(9999px), 담는 것(배너, 패널, 썸네일, 빈 상태)은 16px 둥근 면. 그 사이 값은 작은 요소에만 쓴다: 순위 행 hover 12px, 모바일 메뉴 버튼·항목과 스켈레톤 8px. 예외는 금액·계좌를 다루는 폼 하나다(아래 The Money Field Rule).
 
 재단선은 이 세계의 고유 형태다. 히어로에는 네 모서리 16px 재단선(1px 먹선)과 CMYK 막대가 있고, 활자 썸네일에는 왼쪽 위·오른쪽 아래 두 모서리에 12px 재단선이 30% 투명도로 들어간다. 교정 도장은 두 줄 테두리의 둥근 사각형으로 -12° 기울어 이름 위에 겹친다.
 
 ### Named Rules
+**The Money Field Rule.** 금액·계좌를 입력하는 폼(출금 신청, 앞으로의 구독 결제)은 알약 대신 12px 모서리를 쓴다. 폼 안의 입력란, 선택 상자, 버튼을 모두 같은 모서리·높이(48px)로 맞추고, 버튼은 `shape="field"`로 고른다. 선택 상자는 `.select-field`(globals.css)를 붙여, 지원 브라우저에서 펼친 목록을 칸 바로 아래에 같은 너비·12px 모서리로 맞춘다. 숫자를 다루는 곳에서 가벼운 인상을 줄이기 위해서다. 폼 밖의 버튼·칩·검색창은 알약을 유지한다.
+
 **The Proof Mark Rule.** 재단선 네 모서리와 CMYK 막대 세트(`ProofMarks`)는 히어로에만 둔다. CMYK 막대는 라이트에서만 보인다. 썸네일의 흐린 두 모서리 재단선은 썸네일 고유 장치로, 다른 면에 옮기지 않는다.
 
 ## Components
@@ -264,7 +274,7 @@ components:
 - **Hover / Active:** primary는 불투명도 90%, secondary는 칩 회색 → 재단 회색, ghost는 투명 → 칩 회색. 누르면 98%로 줄어든다. 전환은 300ms `--ease-brand`.
 - **Secondary:** 칩 회색 바탕, 먹 글씨. '자세히 보기', 헤더의 크레딧 잔액.
 - **Ghost:** 바탕 없음. 로그인, 내 정보, 슬라이드 이전·다음.
-- `Button`과 `LinkButton`은 같은 `buttonClass`를 쓴다. 새 버튼 스타일을 만들지 말고 variant를 고른다.
+- `Button`과 `LinkButton`은 같은 `buttonClass`를 쓴다. 새 버튼 스타일을 만들지 말고 variant를 고른다. 모양은 기본 알약(`shape="pill"`)이고, 금액 폼 안에서만 `shape="field"`(12px)를 쓴다.
 
 ### Chips
 - **Style:** 칩 회색 알약, 8px 16px, 0.875rem 700.

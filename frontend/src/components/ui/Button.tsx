@@ -1,11 +1,12 @@
 import type { ComponentProps } from "react";
-import { buttonClass, type ButtonSize, type ButtonVariant } from "./button-styles";
+import { buttonClass, type ButtonShape, type ButtonSize, type ButtonVariant } from "./button-styles";
 
 type ButtonProps = ComponentProps<"button"> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  shape?: ButtonShape;
 };
 
-export function Button({ variant, size, className, type = "button", ...props }: ButtonProps) {
-  return <button type={type} className={buttonClass(variant, size, className)} {...props} />;
+export function Button({ variant, size, shape, className, type = "button", ...props }: ButtonProps) {
+  return <button type={type} className={buttonClass(variant, size, className, shape)} {...props} />;
 }

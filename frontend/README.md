@@ -37,6 +37,7 @@ pyftsubset node_modules/wanted-sans/fonts/ttf/WantedSans-Bold.ttf \
 | --- | --- | --- |
 | `demo-role` | `guest` · `tester`(기본) · `developer` · `admin` | 로그인 상태와 역할 |
 | `demo-data` | `normal`(기본) · `single` · `empty` · `slow` | 구독 모집 1개, 모집 글 없음, 1.5초 지연 |
+| `demo-reports` | 처리한 신고 기록(JSON) | 운영자가 신고를 처리하면 생긴다. 지우면 신고가 처음 상태로 돌아간다 |
 
 ## 폴더 구조와 규칙
 
@@ -61,4 +62,4 @@ e2e/                   시나리오(S번호)와 1:1로 맞춘 Playwright 테스�
 - 새 도메인(참여 테스트, 프로젝트, 채팅, 관리자)도 `features/<도메인>/` 구조로 추가한다.
 - 페이지 URL은 [`../docs/page-urls.md`](../docs/page-urls.md)를 따른다.
 
-요구사항과 시나리오: [`../docs/frontend-home.md`](../docs/frontend-home.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)
+요구사항과 시나리오: [`../docs/frontend-home.md`](../docs/frontend-home.md) · [`../docs/frontend-admin-home.md`](../docs/frontend-admin-home.md) · [`../docs/frontend-admin-reports.md`](../docs/frontend-admin-reports.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)

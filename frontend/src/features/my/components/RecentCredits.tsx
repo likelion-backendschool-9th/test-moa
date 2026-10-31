@@ -1,0 +1,29 @@
+import Link from "next/link";
+import { LedgerRow } from "@/features/credit/components/LedgerRow";
+import type { CreditEntry } from "@/features/credit/types";
+import { cardClass, cardTitleClass } from "./card-styles";
+
+/** 최근 크레딧 변동. 최신순 */
+export function RecentCredits({ entries }: { entries: CreditEntry[] }) {
+  return (
+    <section aria-labelledby="my-recent-credits-heading" className={cardClass}>
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 id="my-recent-credits-heading" className={cardTitleClass}>
+          최근 크레딧 내역
+        </h2>
+        <Link href="/my/credits" className="text-sm font-semibold text-text-muted hover:text-text">
+          전체 보기
+        </Link>
+      </div>
+      {entries.length === 0 ? (
+        <p className="text-sm text-text-muted">아직 크레딧 내역이 없어요</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-line">
+          {entries.map((entry) => (
+            <LedgerRow key={entry.id} entry={entry} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

@@ -273,3 +273,36 @@ test.describe("R9 접근성", () => {
     expect(await target.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe("none");
   });
 });
+
+test.describe("R3 다음 할 일 · 화면 폭과 모션", () => {
+  test("S191 좁은 화면에서 넘긴 뒤 넓히면 보던 카드가 왼쪽 끝에 맞는다", async ({ page }) => {
+    await page.setViewportSize({ width: 500, height: 900 });
+    await page.goto("/my/participations");
+    await nextTodo(page).getByRole("button", { name: "다음 할 일" }).click();
+    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
+
+    await page.setViewportSize({ width: 900, height: 900 });
+    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
+    await expect(todoCards(page).nth(2)).toBeInViewport({ ratio: 1 });
+    await expect(todoCards(page).nth(0)).not.toBeInViewport();
+    const stripLeft = async () => (await nextTodo(page).locator("ul").boundingBox())?.x;
+    const cardLeft = async () => (await todoCards(page).nth(1).boundingBox())?.x;
+    expect(await cardLeft()).toBe(await stripLeft());
+
+    await page.setViewportSize({ width: 500, height: 900 });
+    await expect.poll(async () => (await cardLeft()) === (await stripLeft())).toBe(true);
+    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
+  });
+
+  test("S192 모션 줄이기 설정이면 애니메이션 없이 바로 넘긴다", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/my/participations");
+    const strip = nextTodo(page).locator("ul");
+    await nextTodo(page).getByRole("button", { name: "다음 할 일" }).click();
+    const [left, expected] = await strip.evaluate((element) => {
+      const gap = parseFloat(getComputedStyle(element).columnGap);
+      return [element.scrollLeft, element.clientWidth + gap];
+    });
+    expect(left).toBe(expected);
+  });
+});

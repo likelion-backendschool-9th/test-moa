@@ -16,30 +16,29 @@ import {
 
 export const metadata: Metadata = { title: "신고 상세" };
 
-/*
- * 신고 키를 미리 알려 두면 params를 Suspense 밖에서 읽을 수 있다. 그래서 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다.
- * Partial Prefetching이 켜져 있어 미리 만든 틀이 먼저 나가므로 응답 상태는 200이다(docs/frontend-admin-reports.md S118).
- */
+/* 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다(docs/frontend-admin-reports.md S118) */
 export function generateStaticParams() {
   return getReportKeys().map((reportKey) => ({ reportKey }));
 }
 
-export default async function ReportDetailPage({ params, searchParams }: PageProps<"/admin/reports/[reportKey]">) {
-  const { reportKey } = await params;
-  if (!isReportKey(reportKey)) notFound();
+/*
+ * params는 주소마다 달라서, generateStaticParams로 키를 알려 둬도 Suspense 안에서 읽는다.
+ * 밖에서 읽으면 링크마다 같이 쓰는 앱 셸이 주소에 묶여 instant-shell-url-data 진단이 나온다
+ * (Next 문서 02-guides/optimizing-prefetching.md, adopting-partial-prefetching.md).
+ */
+export default function ReportDetailPage({ params, searchParams }: PageProps<"/admin/reports/[reportKey]">) {
   return (
     <Suspense fallback={<AdminShellSkeleton />}>
-      <Detail reportKey={reportKey} searchParams={searchParams} />
+      <Detail params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-type DetailProps = {
-  reportKey: string;
-  searchParams: PageProps<"/admin/reports/[reportKey]">["searchParams"];
-};
+type DetailProps = Pick<PageProps<"/admin/reports/[reportKey]">, "params" | "searchParams">;
 
-async function Detail({ reportKey, searchParams }: DetailProps) {
+async function Detail({ params, searchParams }: DetailProps) {
+  const { reportKey } = await params;
+  if (!isReportKey(reportKey)) notFound();
   if (!(await requireAdmin(`/admin/reports/${reportKey}`))) return <AccessDenied pageName="신고·제재 관리" />;
   const { error: errorParam } = await searchParams;
   const error: ReviewFormError | null = errorParam === "decision" || errorParam === "memo" ? errorParam : null;

@@ -89,13 +89,66 @@ export function buildReports(now: Date): Report[] {
 /** 신고 키 목록. 없는 신고인지 쿠키를 읽기 전에 알 수 있게 목업에서 키만 뽑아 둔다 */
 export const REPORT_KEYS = buildReports(new Date(0)).map((report) => report.id);
 
+/** 처리 대기 3건과 이미 처리한 2건. 김민준은 예금주가 회원 이름과 다르다 */
 export function buildWithdrawals(now: Date): WithdrawalRequest[] {
   return [
-    { id: "withdrawal-1", nickname: "이지우", amount: 5000, createdAt: hoursAgo(now, 60) },
-    { id: "withdrawal-2", nickname: "김민준", amount: 8200, createdAt: hoursAgo(now, 26) },
-    { id: "withdrawal-3", nickname: "한서윤", amount: 12000, createdAt: hoursAgo(now, 3) },
+    {
+      id: "withdrawal-1",
+      nickname: "이지우",
+      memberName: "이지우",
+      amount: 5000,
+      bank: "국민",
+      accountNumber: "123456789012",
+      accountHolder: "이지우",
+      createdAt: hoursAgo(now, 60),
+    },
+    {
+      id: "withdrawal-2",
+      nickname: "김민준",
+      memberName: "김민준",
+      amount: 8200,
+      bank: "신한",
+      accountNumber: "110234567890",
+      accountHolder: "김민지",
+      createdAt: hoursAgo(now, 26),
+    },
+    {
+      id: "withdrawal-3",
+      nickname: "한서윤",
+      memberName: "한서윤",
+      amount: 12000,
+      bank: "토스뱅크",
+      accountNumber: "100012345678",
+      accountHolder: "한서윤",
+      createdAt: hoursAgo(now, 3),
+    },
+    {
+      id: "withdrawal-4",
+      nickname: "박도현",
+      memberName: "박도현",
+      amount: 3000,
+      bank: "카카오뱅크",
+      accountNumber: "3333015678",
+      accountHolder: "박도현",
+      createdAt: hoursAgo(now, 80),
+      review: { decision: "paid", memo: "", processedAt: hoursAgo(now, 50) },
+    },
+    {
+      id: "withdrawal-5",
+      nickname: "최유나",
+      memberName: "최유나",
+      amount: 2000,
+      bank: "우리",
+      accountNumber: "1002345670",
+      accountHolder: "최유나",
+      createdAt: hoursAgo(now, 120),
+      review: { decision: "rejected", reason: "account", memo: "", processedAt: hoursAgo(now, 98) },
+    },
   ];
 }
+
+/** 출금 요청 키 목록. 신고 키와 같은 이유로 목업에서 뽑아 둔다 */
+export const WITHDRAWAL_KEYS = buildWithdrawals(new Date(0)).map((request) => request.id);
 
 export function buildCancellations(now: Date): CancellationRequest[] {
   return [

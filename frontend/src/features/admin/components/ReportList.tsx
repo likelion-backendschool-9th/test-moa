@@ -4,45 +4,24 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatElapsed } from "@/lib/format";
+import { StatusTabs } from "./StatusTabs";
 import {
   isOverdue,
   REPORT_DECISION_LABEL,
   REPORT_TARGET_LABEL,
   type Report,
   type ReportDecision,
-  type ReportTab,
+  type ListTab,
 } from "../types";
 
-const TABS: { tab: ReportTab; label: string; href: string }[] = [
+const TABS: { tab: ListTab; label: string; href: string }[] = [
   { tab: "pending", label: "검토 대기", href: "/admin/reports" },
   { tab: "done", label: "처리 완료", href: "/admin/reports?tab=done" },
 ];
 
-/** 검토 대기·처리 완료 탭. 상태는 URL(tab)에 남는다 */
-export function ReportTabs({ current }: { current: ReportTab }) {
-  return (
-    <nav aria-label="신고 상태">
-      <ul className="flex gap-2">
-        {TABS.map((item) => {
-          const active = item.tab === current;
-          return (
-            <li key={item.tab}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-                  active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
-                )}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+/** 검토 대기·처리 완료 탭 */
+export function ReportTabs({ current }: { current: ListTab }) {
+  return <StatusTabs label="신고 상태" tabs={TABS} current={current} />;
 }
 
 function processedMessage(decision: ReportDecision, held: boolean) {
@@ -62,7 +41,7 @@ export function ProcessedNotice({ decision, held }: { decision: ReportDecision; 
 const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-row md:items-center md:gap-4 md:p-6";
 
 /** 신고 목록. 피드백 원문은 상세에서만 보여 준다 */
-export function ReportList({ reports, tab, now }: { reports: Report[]; tab: ReportTab; now: Date }) {
+export function ReportList({ reports, tab, now }: { reports: Report[]; tab: ListTab; now: Date }) {
   if (reports.length === 0) {
     return <EmptyState title={tab === "pending" ? "검토할 신고가 없어요" : "처리한 신고가 없어요"} />;
   }

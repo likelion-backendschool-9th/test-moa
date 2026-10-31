@@ -64,13 +64,16 @@ export function CancellationDetail({ cancellation, now }: { cancellation: Cancel
   );
 }
 
-/** 승인하면 함께 일어나는 일. 보상은 테스트를 완료해야 지급되므로 테스트 전 취소에는 지급할 보상이 없다 */
+/**
+ * 승인하면 함께 일어나는 일. 보상은 테스트를 완료해야 지급되므로 테스트 전 취소에는 지급할 보상이 없다.
+ * 테스트 중 취소의 보상은 기획에서 아직 정하지 않아서, 운영자가 헷갈리지 않게 그렇다고 알린다.
+ */
 function ApprovalImpact({ cancellation, testingStarted }: { cancellation: CancellationRequest; testingStarted: boolean }) {
   if (cancellation.confirmedCount === 0) return <p className="text-sm text-text-muted">확정된 테스터가 없어요.</p>;
   return (
     <p className="text-sm text-text-muted">
       승인하면 확정 테스터 {cancellation.confirmedCount}명의 참여도 함께 취소돼요.
-      {!testingStarted && " 테스트 전이라 지급할 보상은 없어요."}
+      {testingStarted ? " 테스트 중 취소의 보상은 아직 정해지지 않았어요." : " 테스트 전이라 지급할 보상은 없어요."}
     </p>
   );
 }

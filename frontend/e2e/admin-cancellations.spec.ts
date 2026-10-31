@@ -305,4 +305,21 @@ test.describe("R53 로딩과 접근성", () => {
       expect(overflow, path).toBeLessThanOrEqual(0);
     }
   });
+
+  test("S283 공백 없는 긴 메모나 URL도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
+    const longWord = "a".repeat(80);
+    const longUrl = `https://example.com/${"b".repeat(60)}`;
+    await decide(page, "cancellation-1", { decision: "반려", reason: "기타", memo: longWord });
+    await decide(page, "cancellation-2", { decision: "반려", reason: "취소 사유가 부족해요", memo: longUrl });
+    await page.setViewportSize({ width: 375, height: 812 });
+    for (const [key, text] of [
+      ["cancellation-1", longWord],
+      ["cancellation-2", longUrl],
+    ]) {
+      await page.goto(`/admin/cancellations/${key}`);
+      await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(text);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow, key).toBeLessThanOrEqual(0);
+    }
+  });
 });

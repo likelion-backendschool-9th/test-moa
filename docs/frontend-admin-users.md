@@ -290,6 +290,7 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
     - 실명·이메일 원문이 든 타입에, 클라이언트 컴포넌트에 넘기지 말라는 주석을 달았다.
   - S번호를 S220부터 매겼다. 열린 PR까지 포함해 가장 큰 번호가 출금 요청 관리 문서의 S219다.
   - PR 리뷰 반영: 검색을 두 번 한 뒤 뒤로 가면 주소와 목록은 앞 검색어로 돌아오는데 검색창에는 뒤 검색어가 남았다. `next/form`의 같은 페이지 이동은 입력칸을 그대로 두어 `defaultValue`가 다시 적용되지 않아서다. 입력칸에 `key={query}`를 달아 주소의 검색어가 바뀌면 새로 그리게 했다(S280). 번호는 모집 취소 요청 관리(PR #14)의 S250~S279 다음이다.
+  - PR 리뷰 반영: 회원 상세가 `params`를 Suspense 밖에서 읽어, 목록에서 상세로 이동할 때 개발 서버에 `instant-shell-url-data` 진단이 떴다. `generateStaticParams`로 키를 알려 둬도 `params`는 주소마다 달라서 Suspense 안에서 읽어야 한다(Next 문서 `02-guides/optimizing-prefetching.md`). 페이지는 `params`를 그대로 넘기고, Suspense 안의 자식이 키를 읽고 검사한다. 개발 서버에서 진단이 사라진 것과, 없는 회원 주소에서 맞춤 404가 나오는 것(S224)을 확인했다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S93 탭 이동)

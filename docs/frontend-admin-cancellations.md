@@ -277,6 +277,7 @@ S277
   - S번호를 S250부터 매겼다. 열린 PR까지 포함해 가장 큰 번호가 회원 관리 문서의 S249다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아, PR #12의 신고·출금 상세와 같이 Suspense 안에서 읽게 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S254)을 확인했다.
   - 공백 없는 긴 반려 메모나 URL이 375px 화면에서 385px 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, PR #12를 다시 병합하고 상세의 정보 칸(`Info`)에 같은 `wrap-anywhere`를 줬다(S283, `frontend-admin-withdrawals.md` S281). 번호는 PR #12의 S281·S282 다음이다.
+  - PR #12를 다시 병합했다. 출금 처리 양식도 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 바뀌어(`frontend-admin-withdrawals.md` S284), 두 양식의 동작이 같아졌다. 공용 처리 양식으로 합치는 일은 그대로 남는다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S94 처리 대기 카드, S97 오래 기다린 요청)

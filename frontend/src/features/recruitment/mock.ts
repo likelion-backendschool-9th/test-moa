@@ -85,7 +85,7 @@ const GENERAL: Seed[] = [
     capacity: 12,
     confirmedCount: 7,
     baseReward: 940,
-    createdDaysAgo: 1,
+    createdDaysAgo: 4,
     recruitInDays: 5,
     submitInDays: 12,
   },
@@ -161,6 +161,53 @@ const GENERAL: Seed[] = [
   },
 ];
 
+/* 끝난 모집 글. 홈 목록에는 나오지 않고 참여 내역에서만 가리킨다 */
+const PAST: Seed[] = [
+  {
+    slug: "memo-garden",
+    projectName: "메모 정원",
+    summary: "흩어진 메모를 주제별 화단으로 묶어 주는 메모 앱",
+    request: "메모 작성과 주제 묶기가 자연스러운지 보기",
+    softwareType: "web",
+    isSubscription: false,
+    capacity: 10,
+    confirmedCount: 10,
+    baseReward: 850,
+    createdDaysAgo: 30,
+    recruitInDays: -23,
+    submitInDays: -16,
+  },
+  {
+    slug: "parking-alert",
+    projectName: "주차 알리미",
+    summary: "주차 위치를 기록하고 출차 시간을 알려 주는 서비스",
+    request: "주차 위치 저장과 알림 설정 흐름 써 보기",
+    softwareType: "web",
+    isSubscription: true,
+    capacity: 20,
+    confirmedCount: 18,
+    baseReward: 1100,
+    extraReward: 300,
+    createdDaysAgo: 45,
+    recruitInDays: -38,
+    submitInDays: -31,
+  },
+  {
+    slug: "cafe-map",
+    projectName: "카페 지도",
+    summary: "콘센트와 좌석 정보로 작업하기 좋은 카페를 찾는 지도",
+    request: "카페 검색과 후기 남기기 해 보기",
+    softwareType: "web",
+    isSubscription: false,
+    capacity: 12,
+    confirmedCount: 12,
+    baseReward: 780,
+    createdDaysAgo: 35,
+    recruitInDays: -28,
+    submitInDays: -21,
+  },
+];
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function toRecruitment(seed: Seed, now: Date): Recruitment {
@@ -180,4 +227,8 @@ export function buildPromotedRecruitments(now: Date) {
 
 export function buildGeneralRecruitments(now: Date) {
   return GENERAL.map((seed) => toRecruitment(seed, now));
+}
+
+export function buildPastRecruitments(now: Date) {
+  return PAST.map((seed) => toRecruitment(seed, now));
 }

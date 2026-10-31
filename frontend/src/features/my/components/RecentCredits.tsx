@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { formatCredits, formatDate } from "@/lib/format";
-import type { CreditEntry } from "../types";
+import { LedgerRow } from "@/features/credit/components/LedgerRow";
+import type { CreditEntry } from "@/features/credit/types";
 import { cardClass, cardTitleClass } from "./card-styles";
 
 /** 최근 크레딧 변동. 최신순 */
@@ -20,14 +20,7 @@ export function RecentCredits({ entries }: { entries: CreditEntry[] }) {
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {entries.map((entry) => (
-            <li key={entry.id} className="flex items-center gap-4 py-3 text-sm">
-              <span className="w-16 shrink-0 text-xs text-text-muted tabular-nums">{formatDate(entry.occurredAt)}</span>
-              <span className="flex-1 truncate">{entry.label}</span>
-              <span className={entry.amount > 0 ? "font-semibold text-accent tabular-nums" : "font-semibold tabular-nums"}>
-                {entry.amount > 0 ? "+" : ""}
-                {formatCredits(entry.amount)}
-              </span>
-            </li>
+            <LedgerRow key={entry.id} entry={entry} />
           ))}
         </ul>
       )}

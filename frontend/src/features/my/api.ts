@@ -1,29 +1,35 @@
 import "server-only";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { getDemoDataMode } from "@/lib/demo";
+import { creditDataFor } from "@/features/credit/api";
+import { payableCredits } from "@/features/credit/types";
+import { requireMember } from "@/lib/auth";
+import { waitIfSlow } from "@/lib/demo";
 import { formatDday } from "@/lib/format";
-import { getSession } from "@/lib/session";
 import { buildMyPageSummary, FREE_PLAN, monthlyRecruitUsed, SUBSCRIPTION_PLANS } from "./mock";
-import { payableCredits, type MyPageSummary, type SubscriptionOverview, type Todo } from "./types";
+import type { MyPageSummary, SubscriptionOverview, Todo } from "./types";
 
 /*
  * 마이페이지 데이터 접근. 지금은 목업을 돌려준다.
  * 실제 API를 붙일 때는 이 파일의 함수 본문만 바꾸고 시그니처는 유지한다.
  */
 
-const SLOW_DELAY_MS = 1500;
+const RECENT_CREDITS = 5;
 
 /** 로그인한 회원의 마이페이지 요약. 비로그인이면 로그인으로 보낸다 */
 export async function getMyPageSummary(): Promise<MyPageSummary> {
-  const session = await getSession();
-  if (session.role === "guest") redirect(`/login?next=${encodeURIComponent("/my")}`);
-  if ((await getDemoDataMode()) === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+  const session = await requireMember("/my");
+  await waitIfSlow();
   /* 구독 만료일은 요청 시각 기준이라 미리 렌더링하지 않는다 */
   await connection();
   const now = new Date();
   const summary = buildMyPageSummary(session.role, now);
-  return { ...summary, todos: sortTodos(summary.todos, now) };
+  const credit = await creditDataFor(session.role, now);
+  return {
+    ...summary,
+    todos: sortTodos(summary.todos, now),
+    credits: credit.balance,
+    recentCredits: credit.ledger.slice(0, RECENT_CREDITS),
+  };
 }
 
 const TODO_LIMIT = 5;
@@ -39,12 +45,12 @@ function sortTodos(todos: Todo[], now: Date): Todo[] {
 
 /** 구독 관리 화면 데이터. 운영자는 구독 대상이 아니라 subscription이 null이다 */
 export async function getSubscriptionOverview(): Promise<SubscriptionOverview> {
-  const session = await getSession();
-  if (session.role === "guest") redirect(`/login?next=${encodeURIComponent("/my/subscription")}`);
-  if ((await getDemoDataMode()) === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+  const session = await requireMember("/my/subscription");
+  await waitIfSlow();
   await connection();
   const now = new Date();
-  const { subscription, credits } = buildMyPageSummary(session.role, now);
+  const { subscription } = buildMyPageSummary(session.role, now);
+  const { balance } = await creditDataFor(session.role, now);
   const plan = subscription?.status === "active" ? SUBSCRIPTION_PLANS.find(({ id }) => id === subscription.planId) : undefined;
   return {
     subscription,
@@ -55,7 +61,7 @@ export async function getSubscriptionOverview(): Promise<SubscriptionOverview> {
       limit: (plan ?? FREE_PLAN).monthlyLimit,
       resetsAt: startOfNextMonthInSeoul(now),
     },
-    payableCredits: payableCredits(credits),
+    payableCredits: payableCredits(balance),
     now: now.toISOString(),
   };
 }

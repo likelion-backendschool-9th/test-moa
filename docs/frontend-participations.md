@@ -1,6 +1,6 @@
 # 프론트엔드 참여 테스트 (`/my/participations`)
 
-테스터가 지원하고 참여한 테스트를 한곳에서 관리하는 화면이 지켜야 하는 요구사항(R)과 시나리오(S)를 모았다. S번호는 홈(S2~S82)과 겹치지 않게 S83부터 매기고(S103·S104는 나중에 더했다. 리뷰 반영으로 더한 S191·S192는 다른 문서와 겹치지 않게 비어 있는 다음 번호를 썼다), `frontend/e2e/participations.spec.ts`의 테스트 이름과 1:1로 맞는다(S102는 grep으로 확인). 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
+테스터가 지원하고 참여한 테스트를 한곳에서 관리하는 화면이 지켜야 하는 요구사항(R)과 시나리오(S)를 모았다. S번호는 홈(S2~S82)과 겹치지 않게 S83부터 매기고(S103·S104는 나중에 더했다. 리뷰 반영으로 더한 S191·S192는 다른 문서와 겹치지 않게 비어 있는 다음 번호를 썼다), `frontend/e2e/participations.spec.ts`(상세는 `participation-detail.spec.ts`)의 테스트 이름과 1:1로 맞는다(S102는 grep으로 확인). 상세 시나리오 S193~S202도 비어 있는 다음 번호를 썼다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
 
 ## 한눈에
 - 누가: 로그인한 테스터. 비로그인은 로그인으로 보낸다.
@@ -11,7 +11,8 @@
   3. 다음 할 일: 피드백 제출 전 테스트를 마감 순으로 모은 카드 띠. 넓은 화면 2개, 좁은 화면 1개씩 보이고 위쪽 이전·다음 버튼으로 넘긴다. 주 버튼은 맨 앞 카드에만
   4. 탭 3개: 지원한 테스트 / 참여 중인 테스트 / 참여했던 테스트 (개수 표시)
   5. 선택한 탭의 참여 목록(행 카드)
-- URL: `page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/my/participations/:participationKey`(후보, 이번 범위에서는 준비 중 화면).
+  6. 상세(`/my/participations/:participationKey`): 진행 상황, 피드백 작성 또는 제출한 피드백, 테스트 정보
+- URL: `page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/my/participations/:participationKey`(`page-urls.md`에서는 아직 후보).
 - 디자인: `frontend/DESIGN.md`와 `docs/design-tokens.html`의 토큰·컴포넌트를 그대로 쓴다. 새 색이나 새 버튼 스타일을 만들지 않는다.
 - 데이터: 목업이다. `demo-role`, `demo-data` 쿠키로 상태를 바꾼다(홈과 같은 장치).
 
@@ -161,12 +162,10 @@ S99 좁은 화면
 - Then  카드의 버튼이 카드 전체 폭이다
 
 ## 8. 링크와 404 (R8)
-이 화면의 모든 링크는 404 없이 열린다. 아직 없는 상세는 "준비 중" 화면이다.
+이 화면의 모든 링크는 404 없이 열린다.
 
 S100
-- Given `/my/participations/:participationKey`에 접속한다
-- Then  HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
-- Then  이 화면의 내부 링크는 모두 200으로 열린다
+- Then  세 탭의 내부 링크(모집 글, 상세 포함)는 모두 200으로 열린다
 
 ## 9. 접근성 (R9)
 키보드만으로 탭을 바꾸고 행 동작을 쓸 수 있다.
@@ -183,22 +182,96 @@ S101
 
 S102
 - When  `grep -rl '"use client"' src/features/participation`
-- Then  다음 할 일의 `TodoScroller`(이전·다음 버튼) 1개만 나온다 (탭은 링크라 서버 컴포넌트다)
+- Then  다음 할 일의 `TodoScroller`(이전·다음 버튼)와 상세의 `FeedbackForm`(피드백 작성) 2개만 나온다 (탭은 링크라 서버 컴포넌트다)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`
 - Then  결과가 없다
 
+## 11. 상세 접근 (R11)
+내 참여 상세 `/my/participations/:participationKey`는 그 참여의 테스터만 본다. 시나리오 S193~S202는 `frontend/e2e/participation-detail.spec.ts`에 있다.
+
+S193 비로그인
+- Given `demo-role=guest`
+- When  `/my/participations/p-meeting-notes`에 접속한다
+- Then  URL이 `/login?next=%2Fmy%2Fparticipations%2Fp-meeting-notes`이다
+
+S194 없거나 내 참여가 아님
+- When  테스터가 `/my/participations/nope`에, 개발자가 테스터의 참여 주소에 접속한다
+- Then  맞춤 404("찾는 페이지가 없어요")가 보인다 (개발자 프로젝트 S103과 같은 방식)
+
+## 12. 제출 전 상세와 피드백 작성 (R12)
+제출 전이면 상세 안에서 피드백을 쓴다. 목록의 "피드백 쓰기"가 이 화면을 가리키므로 따로 URL을 만들지 않는다. 이 화면의 주 버튼은 "피드백 제출" 하나다.
+
+S195 제출 전 상세
+- Then  제목(h1)이 서비스 이름이고, 헤더의 "참여 테스트" 탭이 현재 탭이다
+- Then  "참여 중인 테스트"(`/my/participations?tab=ongoing`)로 돌아가는 링크가 있다
+- Then  진행 상황에 "11월 n일까지 피드백을 제출해 주세요 (D-8)"이 보이고 상태 배지는 "피드백 제출 전"이다
+- Then  "내용" 칸과 "0 / 500자"가 있고, 강조색 바탕 버튼은 "피드백 제출" 하나다
+
+S196 입력 검사
+- When  비운 채 제출한다
+- Then  "피드백을 적어 주세요"가 보이고 포커스가 칸으로 간다 (`aria-invalid="true"`)
+- When  20자보다 짧게 적고 제출한다
+- Then  "20자 이상 적어 주세요"가 보이고 적은 내용은 그대로 남는다
+
+S197 제출
+- When  20자 이상 적고 제출한다
+- Then  URL에 `?notice=submitted`가 붙고 "피드백을 제출했어요" 안내(`role="status"`)가 보인다
+- Then  상태가 "지급 대기"로 바뀌고, 작성 칸 대신 "제출한 피드백"에 적은 내용이 보인다
+- Then  목록에서 다음 할 일이 3개로 줄고 "회의록 정리" 행이 "지급 대기"다 (시연용이라 이 브라우저에만 남는다)
+
+## 13. 상태별 상세 (R13)
+상태마다 지금 단계와 다음에 일어날 일을 진행 상황에 한 줄로 알리고, 제목 바로 아래 "테스트 정보"에 마감일·보상·진행 날짜를 둔다. 운영 용어(신고 사유, 제재)는 쓰지 않는다.
+
+| 상태 | 진행 상황 제목 | 더 보이는 것 |
+| --- | --- | --- |
+| 선정 대기 | 선정 결과를 기다리고 있어요 | 모집 마감 뒤 결과 안내 |
+| 미선정 | 이번 모집에는 선정되지 않았어요 | "테스트 둘러보기" |
+| 제출 전 | n월 n일까지 피드백을 제출해 주세요 (D-n) | 피드백 작성 |
+| 지급 대기 | n월 n일 오전/오후 n시에 자동으로 지급돼요 | 제출한 피드백, 지급 예정 |
+| 운영자 검토 중 | 운영자가 제출 내용을 확인하고 있어요 | 제출한 피드백 |
+| 지급 완료 | n 크레딧을 받았어요 | 제출한 피드백, 지급일, "지급 완료" 도장 |
+| 기한 내 미제출 | 기한 안에 제출하지 않아 보상 없이 끝났어요 | 제출 마감일 |
+| 보상 제외 | 이번 참여는 보상에서 제외됐어요 | "운영자 검토 결과예요"와 검토 완료일. 사유는 보여 주지 않는다 |
+
+S198 지급 대기
+- Given `p-study-match`
+- Then  "n월 n일 오전/오후 n시에 자동으로 지급돼요", "지급 예정", 제출한 피드백이 보이고 작성 칸은 없다
+
+S199 지급 완료
+- Given `p-memo-garden`
+- Then  "850 크레딧을 받았어요", "지급일", 썸네일의 "지급 완료" 도장이 보인다
+- Then  돌아가는 링크가 "참여했던 테스트"(`?tab=history`)다
+
+S200 선정 대기
+- Given `p-booklog`
+- Then  "선정 결과를 기다리고 있어요", "구독 모집" 배지, "추가 보상"이 보이고 "모집 글 보기"가 `/recruitments/booklog`를 가리킨다
+
+S201 기한 내 미제출
+- Given `p-cafe-map`
+- Then  "기한 안에 제출하지 않아 보상 없이 끝났어요"가 보이고 "제출한 피드백"은 없다
+
+## 14. 상세 반응형과 링크 (R14)
+상세는 가운데 한 칸(`max-w-4xl`, 넓은 화면에서도 가운데 정렬)이다. 맨 위 줄은 돌아가기 링크다. 그 아래는 md 이상에서 썸네일 | 제목과 그 옆 상태·구독 모집 배지, 요청, 테스트 정보(목록 행과 같은 항목 이름 + 값 줄, 넘치면 줄바꿈)이고, 그 아래 진행 상황과 피드백이 같은 폭으로 온다. "모집 글 보기"는 md 이상에서 진행 상황 설명 문장과 같은 줄 오른쪽(세로 가운데 맞춤), 그보다 좁으면 설명 문장 아래에 둔다. md 미만에서는 썸네일 아래로 쌓인다.
+
+S202
+- Given 너비 375px
+- Then  가로 스크롤이 없고 "피드백 제출" 버튼이 작성 칸과 같은 폭이다
+- Then  상세의 내부 링크는 모두 200으로 열린다
+
 ## 구현
 - `src/app/my/participations/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·다음 할 일·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
-- `src/app/my/participations/[participationKey]/page.tsx`: 준비 중 화면(`ComingSoon`)
+- `src/app/my/participations/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
 - `src/features/participation/`
-  - `types.ts`: `Participation`(key, 모집 건 slug, 상태, 지원일, 제출일, 지급일, 받은 크레딧), 상태 상수, 탭↔상태 묶음
+  - `types.ts`: `Participation`(key, 모집 건 slug, 상태, 지원일, 제출일, 지급일, 받은 크레딧, 제출한 피드백), 상태 상수, 탭↔상태 묶음, 피드백 글자 수(20~500자)
   - `mock.ts`: 아래 샘플. 날짜는 홈처럼 접속 시각 기준 상대값
-  - `api.ts`: `getParticipations(tab)`, `getParticipationCounts()`, `getParticipationSummary()`, `getNextTodos()`. 시그니처는 실제 API를 붙여도 유지. 한 요청 안에서는 React `cache`로 한 번만 읽는다
-  - `components/`: `ParticipationTabs`, `ParticipationRow`, `ParticipationList`(빈 상태·받은 크레딧 합계 포함), `NextTodoPanel`, `TodoScroller`(유일한 클라이언트 컴포넌트, 띠를 버튼으로 넘긴다), `ParticipationSkeleton`
+  - `api.ts`: `getParticipations(tab)`, `getParticipationCounts()`, `getParticipationSummary()`, `getNextTodos()`, `getParticipation(key)`. 시그니처는 실제 API를 붙여도 유지. 한 요청 안에서는 React `cache`로 한 번만 읽는다
+  - `actions.ts`: `submitFeedback(key)` 서버 액션. 글자 수·상태·마감을 검사하고 시연용 기록에 남긴 뒤 상세로 돌아간다
+  - `demo-feedback.ts`: 시연용 제출 기록. 참여마다 쿠키 `demo-feedback-<키>`에 "제출 시각.내용(base64url)"을 둔다. 쿠키 한도(4,000바이트)를 넘으면 저장하지 않고 오류를 알린다. `api.ts`가 읽어서 그 참여를 제출 전 → 지급 대기로 바꾼다
+  - `components/`: `ParticipationTabs`, `ParticipationRow`, `ParticipationList`(빈 상태·받은 크레딧 합계 포함), `NextTodoPanel`, `TodoScroller`(클라이언트, 띠를 버튼으로 넘긴다), `ParticipationSkeleton`, `ParticipationDetail`(상세), `FeedbackForm`(클라이언트, 피드백 작성)
 - 모집 쪽 변경: 지난 모집 글 3개를 `recruitment/mock.ts`의 `PAST`에 두고(홈 목록에는 안 나온다), `recruitment/api.ts`에 `getRecruitmentsBySlugs(slugs)`를 더했다. 이 함수는 목록용 시연 상황(`demo-data`)을 따르지 않는다.
-- 재사용: `Container`, `Card`, `Badge`, `LinkButton`, `EmptyState`, `Skeleton`, `RecruitmentThumb`, `ProofStamp`, `lib/format.ts`
+- 재사용: `Container`, `Card`, `Badge`, `LinkButton`, `EmptyState`, `Skeleton`, `RecruitmentThumb`, `ProofStamp`, `lib/format.ts`, `lib/auth.ts`의 `requireMember`, 프로젝트 폼의 입력 칸 모양(`TextField`의 `inputClass`)
 - 도장: `RecruitmentThumb`이 `stamp` prop을 받게 바꿨다(`RecruitmentCard`는 정원이 차면 "모집 완료"를 넘긴다). 참여 기능은 썸네일만 가져다 쓰고 `ProofStamp`를 직접 쓰지 않아서 `features/recruitment`에 그대로 두었다.
 
 ## 디자인 메모
@@ -207,6 +280,7 @@ S102
 - 탭: 헤더 탭과 같은 알약 탭 모양(현재 탭은 칩 회색 바탕). 개수는 `tabular-nums`, 흐린 먹.
 - 행 카드: 교정지(surface-muted) 16px 면, 안쪽 24px. 썸네일은 lg에서 폭 고정의 16:10.
 - 다음 할 일: 교정지 카드 띠(바탕 없는 섹션 안에 카드). 이전·다음은 보조 버튼(칩 회색 알약, 아이콘만)이고 끝에 닿으면 비활성이다. 한 번에 한 화면의 카드 수만큼 넘기고, 위치를 카드 번호로 계산해 카드가 항상 왼쪽 끝에 맞는다. 이징은 브라우저 기본 부드러운 스크롤이고, 모션 줄이기에서는 바로 이동한다. 재단선·CMYK 막대(`ProofMarks`)는 히어로 전용이라 쓰지 않는다.
+- 상세: 썸네일은 제목과 이름이 겹쳐 보조 기술에서 숨기고, 상태는 배지 글자로 읽힌다. 테스트 정보는 모집 글에 대한 정보라 제목 바로 아래에 목록 행과 같은 모양(작은 항목 이름 + 굵은 값)으로 둔다(10-31: 오른쪽 카드는 따로 떨어져 보인다는 피드백으로 옮김). 진행 상황은 바탕 없이 제목·본문, 피드백 작성·제출한 피드백은 교정지 카드다. 피드백 칸은 프로젝트 폼과 같은 12px 모서리 입력 칸(`inputClass`)이고, 제출 버튼은 알약 주 버튼이다(금액 폼이 아니라 The Money Field Rule 대상이 아니다).
 - 그림자 없음, 이징은 `--ease-brand` 하나.
 
 ## 데모 데이터와 가정
@@ -220,18 +294,25 @@ S102
 - 미선정은 "지원한 테스트"에 남긴다(참여하지 않았으므로 "참여했던"이 아니다).
 - 기본 탭은 할 일이 있는 "참여 중"으로 정했다.
 - 스터디 매칭은 지급까지 약 30시간(제출 42시간 전)이라, 제출이 모집 글 등록보다 앞서지 않게 홈 목업의 등록일을 1일 전에서 4일 전으로 옮겼다. 홈 시나리오 결과는 바뀌지 않는다.
+- 피드백 글자 수는 기획에서 미정이라 20~500자로 정했다. 최대 길이는 시연용 저장(쿠키) 한도에 맞춘 값이다.
+- 샘플 중 지급 대기·운영자 검토 중·지급 완료 4건에는 시연용 피드백 원문을 넣었다. "보상 제외" 샘플은 없어서 그 상태의 상세는 E2E로 확인하지 않는다.
 - D-3 이하가 아니면 D-day는 600 굵기 흐린 먹이다. 끝난 상태(미선정, 기한 내 미제출, 보상 제외) 배지는 흐린 배지(`Badge tone="muted"`)다.
 
+## 정한 것
+- 피드백 작성 위치: 상세 페이지 안에서 쓴다. 별도 URL을 만들지 않는다 (10-31)
+- "보상 제외": "운영자 검토 결과 이번 참여는 보상에서 제외됐어요"와 검토 완료일만 보여 주고 사유는 보여 주지 않는다 (10-31)
+
 ## 정해야 할 것
+- `page-urls.md`의 "내 참여 상세"를 후보에서 확정으로 바꿀지
+- 피드백 제출 화면 담당: 개발자 프로젝트 문서는 "피드백 제출 화면은 다른 담당"이라고 적고 있다. 이 문서에서 상세 안에 만들었으니 그 문구를 맞출지
 - 기본 탭: "참여 중"(이 문서의 가정) vs 첫 번째 탭 "지원한"
 - 미선정 건을 "지원한"에 계속 둘지, 일정 기간 뒤 숨길지
 - 지원 취소: 선정 대기 중 취소를 허용할지. 허용하면 행 동작과 확인 대화상자가 필요하다
-- 피드백 작성 위치: 상세 페이지(`/my/participations/:participationKey`) 안인지, 별도 URL인지 (`page-urls.md`에 없다)
 - 채팅 진입: 구독 모집에 선정된 테스터에게 행에서 채팅방(`/my/chats/:roomKey`) 링크를 줄지
-- "보상 제외" 상태를 테스터에게 어떤 문구로, 이유를 어디까지 보여 줄지
 
 ## 범위 밖
-- 참여 상세, 피드백 작성·수정, 지원 취소 (상세는 준비 중 화면만 둔다)
+- 피드백 수정·삭제, 첨부 파일, 지원 취소
+- 제출한 피드백을 개발자 프로젝트 피드백 탭과 잇는 것 (지금은 목업이 따로다)
 - 실제 로그인, API, 크레딧 지급 연동
 - 탭 안 검색·필터·정렬 바꾸기, 페이지 나누기
 - 알림(마감 임박, 선정 결과)
@@ -248,6 +329,10 @@ S102
 - 2026-10-31
   - PR 리뷰를 반영했다. 다음 할 일 넘기기가 모션 줄이기 설정을 따르고, 화면 폭이 바뀌면 보던 카드 기준으로 위치를 다시 맞춘다. S191·S192를 더했다.
   - 최신 `develop`(크레딧·출금, 신고·제재 관리)을 합쳤다. 홈 문서 S26·S78 충돌을 양쪽 변경을 살려 정리했다.
+  - 내 참여 상세를 만들었다(브랜치 `feature/frontend-participation-detail`). 피드백은 상세 안에서 쓰고, 보상 제외는 사유 없이 사실만 보여 준다. R11~R14, S193~S202를 더하고 S100·S102를 고쳤다.
+  - 상세의 테스트 정보를 오른쪽 카드에서 제목 아래 한 줄 정보로 옮기고, 본문을 한 칸으로 바꿨다(따로 떨어져 보인다는 피드백).
+  - 상세 전체를 가운데 한 칸(`max-w-4xl`)으로 모았다(넓은 화면에서 왼쪽으로 쏠린다는 피드백).
+  - 상세의 상태 배지를 제목 옆으로 옮기고, "모집 글 보기"를 진행 상황 설명 문장과 같은 줄 오른쪽으로 옮겼다.
 
 ## 참고
 - 홈 요구사항: `docs/frontend-home.md` (헤더·탭·준비 중 화면 규칙 R2, R3, R11)

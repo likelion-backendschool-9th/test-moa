@@ -222,7 +222,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 7개, 모두 13개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller(`docs/frontend-participations.md` S102)
+- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 8개, 모두 14개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

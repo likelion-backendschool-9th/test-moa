@@ -68,11 +68,12 @@ export function ReportDetail({ report, now }: { report: Report; now: Date }) {
   );
 }
 
+/* 메모는 공백 없는 긴 문자열이나 URL일 수 있어서, 좁은 화면에서도 칸 안에서 줄을 바꾼다 */
 function Info({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
       <dt className="text-text-muted">{label}</dt>
-      <dd className="font-semibold">{children}</dd>
+      <dd className="font-semibold wrap-anywhere">{children}</dd>
     </>
   );
 }

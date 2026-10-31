@@ -245,6 +245,7 @@ test.describe("R35 처리", () => {
 
   test("S218 기타가 아닌 반려의 메모는 운영자 메모로 남는다", async ({ page }) => {
     await page.goto("/admin/withdrawals/withdrawal-1");
+    await page.getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: /^반려/ }).check();
     await expect(page.getByText("반려할 때 운영자 기록으로 남아요.", { exact: false })).toBeVisible();
     await decide(page, "withdrawal-1", { decision: "반려", reason: "계좌번호를 확인할 수 없어요", memo: "은행 조회 결과 없음" });
     await page.goto("/admin/withdrawals/withdrawal-1");
@@ -290,12 +291,37 @@ test.describe("R37 로딩과 접근성", () => {
     await expect(page.locator("[data-skeleton]")).toHaveCount(0);
   });
 
+  test("S284 반려 사유와 메모는 반려를 골라야 보인다", async ({ page }) => {
+    await page.goto("/admin/withdrawals/withdrawal-1");
+    const decision = page.getByRole("group", { name: "처리 결과" });
+    const reasons = page.getByRole("group", { name: "반려 사유" });
+    const memo = page.getByRole("textbox", { name: "반려 메모" });
+    await expect(decision).toBeVisible();
+    await expect(reasons).toBeHidden();
+    await expect(memo).toBeHidden();
+    await decision.getByRole("radio", { name: /^지급 완료/ }).check();
+    await expect(reasons).toBeHidden();
+    await decision.getByRole("radio", { name: /^반려/ }).check();
+    await expect(reasons).toBeVisible();
+    await expect(memo).toBeVisible();
+    /* 다시 지급 완료로 바꾸면 숨지만, 반려로 돌아오면 고른 사유와 메모가 남아 있다 */
+    await reasons.getByRole("radio", { name: "기타" }).check();
+    await memo.fill("계좌가 해지됐다고 은행에서 알려 왔어요");
+    await decision.getByRole("radio", { name: /^지급 완료/ }).check();
+    await expect(reasons).toBeHidden();
+    await decision.getByRole("radio", { name: /^반려/ }).check();
+    await expect(reasons.getByRole("radio", { name: "기타" })).toBeChecked();
+    await expect(memo).toHaveValue("계좌가 해지됐다고 은행에서 알려 왔어요");
+  });
+
   test("S214 처리 양식은 이름 붙은 라디오 그룹과 메모 입력창이다", async ({ page }) => {
     await page.goto("/admin/withdrawals/withdrawal-1");
     const decision = page.getByRole("group", { name: "처리 결과" });
     await expect(decision.getByRole("radio")).toHaveCount(2);
     await expect(decision.getByRole("radio", { name: /^지급 완료/ })).toBeVisible();
     await expect(decision.getByRole("radio", { name: /^반려/ })).toBeVisible();
+    /* 반려 사유와 메모는 반려를 골라야 보인다(S284) */
+    await decision.getByRole("radio", { name: /^반려/ }).check();
     await expect(page.getByRole("group", { name: "반려 사유" }).getByRole("radio")).toHaveCount(3);
     await expect(page.getByRole("textbox", { name: "반려 메모" })).toHaveAttribute("maxlength", "80");
   });

@@ -147,8 +147,8 @@ S217 막혀도 고른 값이 남는다
 - Then  처리된다
 
 S218 기타가 아닌 반려의 메모
-- When  `/admin/withdrawals/withdrawal-1`에 접속한다
-- Then  메모 입력창 위에 "반려할 때 운영자 기록으로 남아요. 사유가 "기타"이면 이 메모가 회원에게 보이는 사유가 돼요."가 늘 보인다
+- When  `/admin/withdrawals/withdrawal-1`에 접속해 "반려"를 고른다
+- Then  메모 입력창 위에 "반려할 때 운영자 기록으로 남아요. 사유가 "기타"이면 이 메모가 회원에게 보이는 사유가 돼요."가 보인다 (placeholder가 아니라 입력해도 남는 설명이다)
 - When  "반려", 사유 "계좌번호를 확인할 수 없어요", 메모 "은행 조회 결과 없음"으로 처리한다
 - Then  상세의 처리 결과에 반려 사유와 "운영자 메모" "은행 조회 결과 없음"이 보인다
 
@@ -180,8 +180,18 @@ S213 로딩
 S214 처리 양식
 - When  `/admin/withdrawals/withdrawal-1`에 접속한다
 - Then  "처리 결과" 이름의 라디오 그룹에 "지급 완료", "반려"가 있다
+- When  "반려"를 고른다 (S284)
 - Then  "반려 사유" 이름의 라디오 그룹에 사유 3개가 있다
 - Then  메모 입력창의 이름이 "반려 메모"이고 최대 80자다
+
+S284 반려 사유와 메모는 반려를 골라야 보인다
+- When  `/admin/withdrawals/withdrawal-1`에 접속한다
+- Then  "반려 사유"와 "반려 메모"가 보이지 않는다 ("지급 완료"를 골라도 같다)
+- When  "반려"를 고른다
+- Then  "반려 사유"와 "반려 메모"가 보인다
+- When  사유 "기타"와 메모를 적고 "지급 완료"로 바꿨다가 다시 "반려"를 고른다
+- Then  고른 사유와 메모가 그대로 있다
+- 참고: 모집 취소 처리 양식(S279)과 같이 상태 대신 CSS `:has()`로 숨긴다. 서버에서 그린 첫 화면부터 맞고, 자바스크립트가 없어도 반려할 수 있다.
 
 S215 좁은 화면
 - Given 너비 375px
@@ -261,7 +271,7 @@ S216
    - 파일: `src/features/admin/actions.ts` (출금 처리 Server Action, `assertAdmin`, 크기 확인), `src/features/admin/components/WithdrawalForm.tsx` (`"use client"`, `useActionState`)
 5. 운영자 홈 연결과 정리 — S212, S216, 기존 문서 변경
    - 파일: 운영자 홈 링크, `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend-admin-home.md`, `docs/frontend-admin-reports.md`
-6. 테스트 — S191~S219 (S216 제외), S281
+6. 테스트 — S191~S219 (S216 제외), S281, S284
    - 파일: `e2e/admin-withdrawals.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
@@ -284,6 +294,7 @@ S216
     - 신고 처리 양식도 막혀서 돌아오면 고른 값이 사라진다. 이번에는 출금만 고쳤다.
   - 막혔을 때 값을 주소(`decision`, `reason`, `memo`)에 실어 다시 채우던 방식을 `useActionState` 클라이언트 양식으로 바꿨다. 주소에 실으면 메모가 방문 기록에 남기 때문이다. `?error=` 주소는 더 쓰지 않는다. `"use client"` 파일은 13개가 된다(S216).
 - 2026-10-31
+  - 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 했다(S284). 모집 취소 처리 양식(PR #14, S279)에 먼저 넣은 방식을 출금에도 맞췄다. S214·S218은 "반려"를 고른 뒤 확인하게 고쳤다. 번호는 PR #14의 S283 다음이다.
   - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`frontend-admin-reports.md` S282). 번호는 회원 관리(PR #13)의 S280 다음이다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 신고 상세와 함께 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S195)을 확인했다.
 

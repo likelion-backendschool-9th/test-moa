@@ -163,7 +163,8 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
         {item.feedback && (
           <Card className="flex flex-col gap-3 md:p-8">
             <h2 className="text-lg font-extrabold">제출한 피드백</h2>
-            <p className="text-sm whitespace-pre-wrap">{item.feedback}</p>
+            {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
+            <p className="text-sm whitespace-pre-wrap wrap-anywhere">{item.feedback}</p>
           </Card>
         )}
       </div>

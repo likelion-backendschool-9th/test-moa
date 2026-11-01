@@ -85,7 +85,7 @@ export function ChatInboxSkeleton() {
           <div key={index} className="flex rounded-2xl bg-surface-muted">
             <Skeleton className="w-24 shrink-0 self-stretch rounded-none rounded-l-2xl sm:w-32 md:w-40" />
             <div className="flex flex-1 flex-col gap-2.5 px-5 py-4 md:px-6">
-              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-4 w-32" />
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-full max-w-md" />
             </div>

@@ -26,10 +26,8 @@ test.describe("R1 접근 제어", () => {
     const response = await page.goto("/my");
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1, name: "마이페이지" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "마이페이지" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    /* 마이페이지는 탭이 아니라 헤더 오른쪽에 있다 (docs/2026-11-01-frontend-header.md S320) */
+    await expect(page.getByRole("banner").getByRole("link", { name: "마이페이지" })).toHaveAttribute("aria-current", "page");
   });
 });
 

@@ -1,36 +1,109 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
+const header = (page: Page) => page.getByRole("banner");
+
 test.describe("R2 헤더와 계정", () => {
-  test("S2 로그인 상태는 내 정보와 보유 크레딧을 보여 준다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/");
-    const header = page.getByRole("banner");
-    await expect(header.getByRole("link", { name: "Test Moa" })).toHaveAttribute("href", "/");
-    await expect(header.getByRole("link", { name: "내 정보" })).toHaveAttribute("href", "/my/profile/edit");
-    await expect(header.getByRole("link", { name: "12,480 크레딧" })).toHaveAttribute("href", "/my/credits");
-    await expect(header.getByRole("link", { name: "로그인" })).toHaveCount(0);
-  });
-
-  test("S3 비로그인 상태는 로그인과 회원가입을 보여 준다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/");
-    const header = page.getByRole("banner");
-    await expect(header.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
-    await expect(header.getByRole("link", { name: "회원가입" })).toHaveAttribute("href", "/signup");
-    await expect(header.getByRole("link", { name: "내 정보" })).toHaveCount(0);
-    await expect(header.getByRole("link", { name: /크레딧/ })).toHaveCount(0);
-  });
-
   test("S4 쿠키가 없으면 테스터로 본다", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("banner").getByRole("link", { name: "12,480 크레딧" })).toBeVisible();
+    await expect(header(page).getByRole("link", { name: "보유 크레딧 12,480" })).toBeVisible();
   });
 
   test("S5 알 수 없는 역할 값도 테스터로 본다", async ({ page, context }) => {
     await setDemo(context, { role: "foo" });
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole("banner").getByRole("link", { name: "12,480 크레딧" })).toBeVisible();
+    await expect(header(page).getByRole("link", { name: "보유 크레딧 12,480" })).toBeVisible();
+  });
+});
+
+test.describe("R1 오른쪽 계정 영역", () => {
+  test("S317 로그인하면 보유 크레딧, 마이페이지, 로그아웃이 이 순서로 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/");
+    const banner = header(page);
+    await expect(banner.getByRole("link", { name: "Test Moa" })).toHaveAttribute("href", "/");
+    const myPage = banner.getByRole("link", { name: "마이페이지" });
+    const credits = banner.getByRole("link", { name: "보유 크레딧 12,480" });
+    const logout = banner.getByRole("button", { name: "로그아웃" });
+    await expect(myPage).toHaveAttribute("href", "/my");
+    await expect(credits).toHaveAttribute("href", "/my/credits");
+    await expect(credits).toHaveAttribute("title", "보유 크레딧 12,480");
+    await expect(credits).toHaveText("12,480");
+    await expect(logout).toBeVisible();
+    const [a, b, c] = await Promise.all([credits, myPage, logout].map(async (item) => (await item.boundingBox())!.x));
+    expect(a).toBeLessThan(b);
+    expect(b).toBeLessThan(c);
+    await expect(banner.getByRole("link", { name: "내 정보" })).toHaveCount(0);
+  });
+
+  test("S318 비로그인은 로그인과 회원가입만 본다", async ({ page, context }) => {
+    await setDemo(context, { role: "guest" });
+    await page.goto("/");
+    const banner = header(page);
+    await expect(banner.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
+    await expect(banner.getByRole("link", { name: "회원가입" })).toHaveAttribute("href", "/signup");
+    await expect(banner.getByRole("link", { name: "마이페이지" })).toHaveCount(0);
+    await expect(banner.getByRole("link", { name: /보유 크레딧/ })).toHaveCount(0);
+    await expect(banner.getByRole("button", { name: "로그아웃" })).toHaveCount(0);
+  });
+
+  for (const [role, credits] of [
+    ["developer", "3,260"],
+    ["admin", "0"],
+  ] as const) {
+    test(`S319 ${role}도 보유 크레딧, 마이페이지, 로그아웃을 본다`, async ({ page, context }) => {
+      await setDemo(context, { role });
+      await page.goto("/");
+      const banner = header(page);
+      await expect(banner.getByRole("link", { name: "마이페이지" })).toBeVisible();
+      await expect(banner.getByRole("link", { name: `보유 크레딧 ${credits}` })).toBeVisible();
+      await expect(banner.getByRole("button", { name: "로그아웃" })).toBeVisible();
+    });
+  }
+
+  test("S320 마이페이지 현재 위치", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    const myPage = header(page).getByRole("link", { name: "마이페이지" });
+    await page.goto("/my");
+    await expect(myPage).toHaveAttribute("aria-current", "page");
+    await page.goto("/my/profile/edit");
+    await expect(myPage).toHaveAttribute("aria-current", "page");
+    await page.goto("/my/credits");
+    await expect(myPage).not.toHaveAttribute("aria-current");
+    await page.goto("/my/projects");
+    await expect(myPage).not.toHaveAttribute("aria-current");
+  });
+});
+
+test.describe("R2 로그아웃", () => {
+  test("S321 로그아웃하면 비로그인이 되고 홈으로 간다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/credits");
+    await header(page).getByRole("button", { name: "로그아웃" }).click();
+    await expect(page).toHaveURL("/");
+    await expect(header(page).getByRole("link", { name: "로그인" })).toBeVisible();
+    await expect(header(page).getByRole("link", { name: "회원가입" })).toBeVisible();
+    const role = (await context.cookies()).find((cookie) => cookie.name === "demo-role");
+    expect(role?.value).toBe("guest");
+  });
+
+  test("S322 로그아웃 뒤 보호 페이지는 로그인으로 보낸다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/");
+    await header(page).getByRole("button", { name: "로그아웃" }).click();
+    await expect(header(page).getByRole("link", { name: "로그인" })).toBeVisible();
+    await page.goto("/my");
+    await expect(page).toHaveURL("/login?next=%2Fmy");
+  });
+});
+
+test.describe("R4 검색 진입점 정리", () => {
+  test("S326 헤더에는 검색창이 없고 홈 검색창은 그리드의 1개뿐이다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/");
+    await expect(header(page).getByRole("searchbox")).toHaveCount(0);
+    await expect(page.getByRole("searchbox", { name: "테스트 검색" })).toHaveCount(1);
+    await expect(page.locator("#all-tests").getByRole("searchbox", { name: "테스트 검색" })).toBeVisible();
   });
 });

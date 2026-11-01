@@ -123,6 +123,8 @@ export function formatChatTime(iso: string, now: Date) {
   if (day === dayKeyFormatter.format(new Date(now.getTime() - DAY_MS))) return "어제";
   if (day.slice(0, 4) === today.slice(0, 4)) return dateFormatter.format(date);
   return fullDateFormatter.format(date);
+}
+
 /** "5,000원". 1크레딧 = 1원이라 출금 금액에 쓴다 */
 export function formatWon(amount: number) {
   return `${numberFormatter.format(amount)}원`;

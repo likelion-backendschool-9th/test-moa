@@ -213,8 +213,7 @@ S216
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  출금 처리 Server Action 안에서도 부른다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식) 2개만 나온다
-- 참고(2026-11-01): 처음에는 `src` 전체의 `"use client"` 개수를 적었는데, 다른 페이지가 클라이언트 컴포넌트를 더할 때마다 틀려져서 운영자 폴더만 센다.
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (`CopyAccountButton`과 `RequestReviewForm`이 출금 요청 관리에서 쓰는 것이다)
 
 ## 기존 시나리오·문서 변경
 - `frontend-admin-home.md`

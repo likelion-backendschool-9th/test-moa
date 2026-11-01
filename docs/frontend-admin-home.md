@@ -146,8 +146,7 @@ S104
 - When  `grep -L "requireAdmin" src/app/admin/page.tsx src/app/admin/*/page.tsx`
 - Then  결과가 없다 (모든 운영자 페이지가 권한을 확인한다)
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식) 2개만 나온다 (운영자 홈은 더하지 않는다)
-- 참고(2026-11-01): 처음에는 `src` 전체의 `"use client"` 개수를 적었는데, 다른 페이지가 클라이언트 컴포넌트를 더할 때마다 틀려져서 운영자 폴더만 센다.
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (운영자 홈은 더하지 않는다)
 
 ## 기존 시나리오 변경
 - S26: `/admin`은 더 이상 "준비 중"이 아니므로 목록에서 뺀다. 하위 4개 주소는 tester로 열면 안내 화면이 나오므로 `demo-role=admin`으로 따로 확인한다.

@@ -190,8 +190,7 @@ S248
 - When  `grep -L "requireAdmin" src/app/admin/users/page.tsx src/app/admin/users/*/page.tsx`
 - Then  결과가 없다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식) 2개만 나온다 (회원 관리는 더하지 않는다)
-- 참고(2026-11-01): 처음에는 `src` 전체의 `"use client"` 개수를 적었는데, 다른 페이지가 클라이언트 컴포넌트를 더할 때마다 틀려져서 운영자 폴더만 센다.
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (회원 관리는 더하지 않는다)
 
 ## 기존 시나리오·문서 변경
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.

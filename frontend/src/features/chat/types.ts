@@ -7,12 +7,17 @@ export const CHAT_ROLE_LABEL: Record<ChatRole, string> = {
   developer: "개발자",
 };
 
+/** 대화방 이름 변경에서 받는 최대 글자 수 */
+export const CHAT_ROOM_NAME_MAX = 30;
+
 /** 채팅방 하나. 구독 모집 건의 개발자와 선정된 테스터의 1대1 대화를 보는 사람 기준으로 정리했다 */
 export type ChatRoom = {
   roomKey: string;
-  /** 모집 건 slug. 모집 글 링크에 쓴다 */
+  /** 모집 건 slug */
   recruitmentSlug: string;
   projectName: string;
+  /** 회원이 바꾼 대화방 이름. 없으면 프로젝트명을 이름으로 쓴다 */
+  roomName?: string;
   /** 프로젝트 대표 이미지 주소. 없으면 프로젝트 이름 첫 글자 썸네일을 보여 준다 */
   projectImage?: string;
   /** 이 방에서 나의 역할. 내 프로젝트의 채팅이면 개발자, 테스터로 참여한 채팅이면 테스터 */

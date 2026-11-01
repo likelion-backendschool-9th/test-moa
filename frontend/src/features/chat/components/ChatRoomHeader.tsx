@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/Badge";
-import { CHAT_ROLE_LABEL, type ChatRoom } from "../types";
+import type { ChatRoom } from "../types";
 import { ChatCardMenu } from "./ChatCardMenu";
+import { ChatRoleBadge } from "./ChatRoleBadge";
 import { ChatThumb } from "./ChatThumb";
 
 /**
@@ -18,9 +18,7 @@ export function ChatRoomHeader({ room }: { room: ChatRoom }) {
         <h1 className="truncate text-2xl font-extrabold tracking-[-0.03em]">{title}</h1>
         <p className="flex min-w-0 items-center gap-2 text-sm">
           <span className="sr-only">대화 상대 </span>
-          <Badge data-partner-role className="shrink-0">
-            {CHAT_ROLE_LABEL[room.partner.role]}
-          </Badge>{" "}
+          <ChatRoleBadge role={room.partner.role} />{" "}
           <span data-partner className="truncate">
             {room.partner.nickname}
           </span>

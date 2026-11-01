@@ -2,7 +2,7 @@
 
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "../query";
 import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from "../types";
@@ -17,6 +17,8 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
   const [syncedQ, setSyncedQ] = useState(query.q);
   const [pushedQ, setPushedQ] = useState(query.q);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  /* 마지막으로 보낸 조건. 새 주소로 화면이 다시 그려지기 전에 탭·정렬·검색이 이어져도 앞의 선택을 덮어쓰지 않게 여기에 합친다 */
+  const latest = useRef(query);
 
   /* 조건 초기화처럼 바깥에서 q가 바뀌면 입력값을 맞춘다. 내가 보낸 값이면 입력 중인 글자를 지키려고 그대로 둔다 */
   if (query.q !== syncedQ) {
@@ -24,18 +26,62 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
     if (query.q !== pushedQ) setValue(query.q);
   }
 
+  useEffect(() => {
+    latest.current = query;
+  }, [query]);
+
+  /*
+   * 화면을 떠나면 기다리던 검색을 버린다. 늦게 실행된 검색이 다른 페이지로 가던 이동을 덮어써 채팅함으로 되돌아오지 않게 한다.
+   * 이동이 끝나 화면이 숨겨질 때(effect 정리)만으로는 늦어서, 링크를 누르는 순간과 뒤로·앞으로 가기에서도 버린다.
+   */
+  useEffect(() => {
+    const cancel = () => {
+      clearTimeout(timer.current);
+      timer.current = undefined;
+    };
+    const cancelOnLink = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest("a[href]")) cancel();
+    };
+    document.addEventListener("click", cancelOnLink, true);
+    window.addEventListener("popstate", cancel);
+    return () => {
+      document.removeEventListener("click", cancelOnLink, true);
+      window.removeEventListener("popstate", cancel);
+      cancel();
+    };
+  }, []);
+
   function navigate(next: Partial<ChatQuery>) {
-    startTransition(() => router.replace(toChatsHref({ ...query, ...next }), { scroll: false }));
+    latest.current = { ...latest.current, ...next };
+    const href = toChatsHref(latest.current);
+    startTransition(() => router.replace(href, { scroll: false }));
+  }
+
+  function cancelSearch() {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+  }
+
+  function pushSearch(text: string) {
+    const q = text.trim();
+    setPushedQ(q);
+    return q;
   }
 
   function onSearch(text: string) {
     setValue(text);
-    clearTimeout(timer.current);
+    cancelSearch();
     timer.current = setTimeout(() => {
-      const q = text.trim();
-      setPushedQ(q);
-      navigate({ q });
+      timer.current = undefined;
+      navigate({ q: pushSearch(text) });
     }, SEARCH_DEBOUNCE_MS);
+  }
+
+  /** 탭·정렬을 바꿀 때 기다리던 검색어가 있으면 같이 보낸다 */
+  function navigateWithPendingSearch(next: Partial<ChatQuery>) {
+    if (timer.current === undefined) return navigate(next);
+    cancelSearch();
+    navigate({ ...next, q: pushSearch(value) });
   }
 
   const roleTabs: Array<{ value: ChatRole | null; label: string; count: number }> = [
@@ -66,7 +112,7 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
                 key={tab.label}
                 type="button"
                 aria-pressed={active}
-                onClick={() => navigate({ role: tab.value })}
+                onClick={() => navigateWithPendingSearch({ role: tab.value })}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors duration-300 ease-brand sm:px-4",
                   active ? "bg-surface-muted text-text" : "text-text-muted hover:text-text",
@@ -85,7 +131,7 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
               key={sort}
               type="button"
               aria-pressed={query.sort === sort}
-              onClick={() => navigate({ sort })}
+              onClick={() => navigateWithPendingSearch({ sort })}
               className={cn(
                 "font-bold transition-colors duration-300 ease-brand",
                 query.sort === sort ? "text-text" : "text-text-muted hover:text-text",

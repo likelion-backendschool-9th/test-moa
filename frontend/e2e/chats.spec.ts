@@ -57,12 +57,29 @@ test.describe("R2 채팅 카드", () => {
     await expect(partnerRole(card)).toHaveText("개발자");
     expect((await partnerRole(card).boundingBox())!.x).toBeLessThan((await partner(card).boundingBox())!.x);
     await expect(card).not.toContainText("윤슬");
+
+    /* 글자는 모두 최근 메시지와 같은 크기·보통 굵기이고, 이름·닉네임은 먹, 메시지는 흐린 먹으로 색만 다르다 */
+    const style = (locator: Locator) =>
+      locator.evaluate((element) => {
+        const { fontSize, fontWeight, color } = getComputedStyle(element);
+        return { fontSize, fontWeight, color };
+      });
+    const [title, nickname, message] = await Promise.all([
+      style(card.getByRole("heading", { level: 2 })),
+      style(partner(card)),
+      style(preview(card)),
+    ]);
+    expect(title.fontSize).toBe(message.fontSize);
+    expect(nickname.fontSize).toBe(message.fontSize);
+    expect([title.fontWeight, nickname.fontWeight, message.fontWeight]).toEqual(["400", "400", "400"]);
+    expect(nickname.color).toBe(title.color);
+    expect(title.color).not.toBe(message.color);
     await expect(preview(card)).toHaveText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.");
     await expect(card.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
     await expect(card.getByRole("button", { name: "북로그 채팅 더보기" })).toBeVisible();
   });
 
-  test("S117 프로젝트 이미지는 카드 왼쪽에 붙어 높이를 다 채우고, 선 없이 그라데이션으로 사라진다", async ({ page }) => {
+  test("S117 프로젝트 이미지는 카드 왼쪽에 붙어 높이를 다 채우고, 선이나 그라데이션 없이 바로 정보로 이어진다", async ({ page }) => {
     await page.goto("/my/chats");
     const card = cards(page).first().locator("article");
     const thumb = card.locator("[data-thumb]");
@@ -71,7 +88,7 @@ test.describe("R2 채팅 카드", () => {
     await expect(image).toHaveAttribute("alt", "");
     expect(await image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
     await expect(thumb).toHaveCSS("border-right-width", "0px");
-    await expect(thumb.locator("[data-thumb-fade]")).toHaveCSS("background-image", /linear-gradient/);
+    expect(await thumb.evaluate((element) => [...element.querySelectorAll("*")].some((child) => getComputedStyle(child).backgroundImage.includes("gradient")))).toBe(false);
     const cardBox = (await card.boundingBox())!;
     const thumbBox = (await thumb.boundingBox())!;
     expect(Math.abs(thumbBox.x - cardBox.x)).toBeLessThan(1);

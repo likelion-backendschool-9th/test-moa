@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import type { ListTab } from "../types";
 
-type StatusTabsProps = {
-  /** 탭 묶음 이름. "신고 상태", "출금 요청 상태" */
+type LinkTabsProps = {
+  /** 탭 묶음 이름. "신고 상태", "회원 필터" */
   label: string;
-  tabs: { tab: ListTab; label: string; href: string }[];
-  current: ListTab;
+  tabs: { tab: string; label: string; href: string }[];
+  current: string;
 };
 
-/** 처리 대기·처리 완료 같은 목록 탭. 상태는 URL(tab)에 남는다 */
-export function StatusTabs({ label, tabs, current }: StatusTabsProps) {
+/**
+ * 처리 대기·처리 완료 탭이나 회원 필터처럼 링크로 고르는 탭. 고른 값은 URL(tab, filter)에 남는다.
+ * 탭이 많아 좁은 화면을 넘치면 페이지 대신 이 줄만 가로로 스크롤한다.
+ */
+export function LinkTabs({ label, tabs, current }: LinkTabsProps) {
   return (
-    <nav aria-label={label}>
-      <ul className="flex gap-2">
+    <nav aria-label={label} className="overflow-x-auto">
+      <ul className="flex gap-2 whitespace-nowrap">
         {tabs.map((item) => {
           const active = item.tab === current;
           return (

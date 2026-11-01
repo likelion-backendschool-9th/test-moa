@@ -32,6 +32,12 @@ export function findRoleByCredentials(email: string, password: string): MemberRo
   return entry && password === DEMO_PASSWORD ? entry[0] : null;
 }
 
+/** 이미 가입한 이메일인지. 대소문자를 가리지 않는다 */
+export function isEmailTaken(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  return Object.values(DEMO_PROFILES).some((profile) => profile.email === normalized);
+}
+
 export type DemoAccount = { role: MemberRole; email: string };
 
 /** 로그인 화면에 안내할 시연 계정과 공통 비밀번호 */

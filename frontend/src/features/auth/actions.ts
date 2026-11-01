@@ -2,15 +2,15 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { findRoleByCredentials } from "@/features/member/api";
+import { findRoleByCredentials, isEmailTaken, isNicknameTaken } from "@/features/member/api";
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/lib/session";
-import { validateEmail } from "@/lib/validation";
-import { type LoginField, SOCIAL_PROVIDERS } from "./types";
+import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/lib/validation";
+import { type LoginField, type SignupField, SOCIAL_PROVIDERS, withNext } from "./types";
 
 /*
- * 로그인. 목업이라 시연 회원 역할로 demo-role 쿠키를 바꾸는 것이 곧 로그인이다.
+ * 로그인·회원가입. 목업이라 시연 회원 역할로 demo-role 쿠키를 바꾸는 것이 곧 로그인이다.
  * 실제 인증을 붙일 때는 signIn과 계정 확인 부분만 바꾼다.
  */
 
@@ -45,4 +45,33 @@ export async function socialLogin(formData: FormData): Promise<void> {
   const provider = formData.get("provider");
   if (!SOCIAL_PROVIDERS.some(({ id }) => id === provider)) redirect("/login");
   await signIn("tester", formData.get("next"));
+}
+
+/** 회원가입. 목업이라 데이터는 만들지 않고, 성공하면 로그인 화면으로 보낸다 */
+export async function signup(_prev: FormState<SignupField>, formData: FormData): Promise<FormState<SignupField>> {
+  const name = text(formData, "name").trim();
+  const nickname = text(formData, "nickname").trim();
+  const email = text(formData, "email").trim();
+  const password = text(formData, "password");
+  const confirm = text(formData, "confirm");
+
+  const errors: Partial<Record<SignupField, string>> = {};
+  const nameError = validateName(name);
+  if (nameError) errors.name = nameError;
+  const nicknameError = validateNickname(nickname);
+  if (nicknameError) errors.nickname = nicknameError;
+  else if (isNicknameTaken(nickname)) errors.nickname = "이미 쓰고 있는 닉네임이에요";
+  const emailError = validateEmail(email);
+  if (emailError) errors.email = emailError;
+  else if (isEmailTaken(email)) errors.email = "이미 가입한 이메일이에요";
+  const passwordError = validateNewPassword(password, "비밀번호를 입력해 주세요");
+  if (passwordError) errors.password = passwordError;
+  if (!confirm) errors.confirm = "비밀번호를 한 번 더 입력해 주세요";
+  else if (password && confirm !== password) errors.confirm = "비밀번호가 서로 달라요";
+  if (formData.get("terms") !== "on" || formData.get("privacy") !== "on") {
+    errors.agreements = "이용약관과 개인정보처리방침에 동의해 주세요";
+  }
+  if (Object.keys(errors).length > 0) return { status: "error", errors };
+
+  redirect(withNext("/login", safeNextPath(formData.get("next")), { joined: "1" }));
 }

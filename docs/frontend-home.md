@@ -223,12 +223,11 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters, AccountNav, ChatFilters, ChatCardMenu, ChatComposer, WithdrawalForm, ProjectForm, RecruitmentForm, ApplicantList, FeedbackList, TodoScroller, ProfileForm, PasswordForm, ApplicationStatusTabs 19개만 나온다 (AccountNav는 마이페이지 메뉴, `docs/2026-10-30-frontend-my.md`. ChatFilters·ChatCardMenu는 채팅함, `docs/2026-10-30-frontend-chats.md`. ChatComposer는 채팅방, `docs/2026-11-01-frontend-chat-room.md`. WithdrawalForm은 `docs/2026-10-30-frontend-credits.md`. ProjectForm·RecruitmentForm·ApplicantList·FeedbackList는 `docs/frontend-projects.md` S134. TodoScroller는 `docs/frontend-participations.md` S102. ProfileForm·PasswordForm은 `docs/2026-10-30-frontend-profile-edit.md` S181)
+- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 16개, 모두 22개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·WithdrawalForm(`docs/frontend-admin-withdrawals.md`), CancellationForm(`docs/frontend-admin-cancellations.md`), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), ApplicationStatusTabs
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`
 - Then  결과가 없다 (`mock.ts`는 각 `api.ts`만 불러온다)
-
 
 ## 데모 데이터와 가정
 - 모집 글 10개(구독 3, 일반 7)와 이벤트·공지 각 1개는 시연용 샘플이다. 날짜는 접속 시각 기준으로 계산해서, 언제 열어도 마감 전으로 보인다.

@@ -4,12 +4,6 @@ import { setDemo } from "./helpers";
 const COMING_SOON_PATHS = [
   "/recruitments",
   "/recruitments/booklog",
-  "/my/participations",
-  "/my/projects",
-  "/my/credits",
-  "/my/credits/withdrawals",
-  "/my/profile/edit",
-  "/my/subscription",
   "/login",
   "/signup",
   "/terms",

@@ -3,6 +3,7 @@
 import { DotsThreeIcon } from "@phosphor-icons/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { deleteChatRoomAction, renameChatRoomAction } from "../actions";
 import { CHAT_ROOM_NAME_MAX } from "../types";
 import { ChatRoomDialog } from "./ChatRoomDialog";
@@ -11,6 +12,10 @@ type ChatCardMenuProps = {
   roomKey: string;
   /** 카드에 보이는 대화방 이름 */
   title: string;
+  /** 채팅방 안에서 쓸 때 true. 삭제하면 채팅함으로 돌아간다 */
+  leaveOnDelete?: boolean;
+  /** 놓이는 자리에 맞춘 바깥 여백 */
+  className?: string;
 };
 
 type DialogKind = "rename" | "delete";
@@ -23,11 +28,11 @@ function menuItems(root: HTMLElement | null) {
 }
 
 /**
- * 채팅 카드의 더보기 메뉴. "대화방 이름 변경", 구분선, "대화방 삭제" 순서이고 삭제는 맨 아래다.
+ * 채팅 카드와 채팅방 머리의 더보기 메뉴. "대화방 이름 변경", 구분선, "대화방 삭제" 순서이고 삭제는 맨 아래다.
  * 열면 첫 항목으로 포커스가 가고, 위아래 화살표·Home·End로 옮기며, Esc는 닫고 버튼으로 돌아가고, Tab·바깥 클릭은 닫기만 한다.
  * 항목을 고르면 대화상자를 열고, 저장·삭제는 서버 액션으로 보낸다.
  */
-export function ChatCardMenu({ roomKey, title }: ChatCardMenuProps) {
+export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className }: ChatCardMenuProps) {
   const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<DialogKind | null>(null);
   const [pending, startTransition] = useTransition();
@@ -88,13 +93,13 @@ export function ChatCardMenu({ roomKey, title }: ChatCardMenuProps) {
 
   function onDelete() {
     startTransition(async () => {
-      await deleteChatRoomAction(roomKey);
+      await deleteChatRoomAction(roomKey, leaveOnDelete);
       setDialog(null);
     });
   }
 
   return (
-    <div ref={rootRef} onKeyDown={onKeyDown} className="relative -mt-1.5 -mr-1.5 shrink-0">
+    <div ref={rootRef} onKeyDown={onKeyDown} className={cn("relative shrink-0", className)}>
       <button
         ref={buttonRef}
         type="button"
@@ -128,7 +133,7 @@ export function ChatCardMenu({ roomKey, title }: ChatCardMenuProps) {
         </ul>
       )}
       {dialog === "rename" && (
-        <ChatRoomDialog title="대화방 이름 변경" description="채팅함 목록에 보이는 이름을 바꿔요." onClose={closeDialog}>
+        <ChatRoomDialog title="대화방 이름 변경" description="채팅함과 채팅방에 보이는 이름을 바꿔요." onClose={closeDialog}>
           <form onSubmit={onRename} className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <label htmlFor={inputId} className="text-sm font-semibold">

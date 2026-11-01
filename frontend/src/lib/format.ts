@@ -59,6 +59,42 @@ export function isTodayInSeoul(iso: string, now: Date) {
   return dayKeyFormatter.format(new Date(iso)) === dayKeyFormatter.format(now);
 }
 
+/** 서울 기준 날짜 열쇠 "2026-10-30". 같은 날끼리 묶을 때 쓴다 */
+export function seoulDayKey(iso: string) {
+  return dayKeyFormatter.format(new Date(iso));
+}
+
+/** 메시지 시각. "오후 3:12" */
+export function formatClock(iso: string) {
+  return timeFormatter.format(new Date(iso));
+}
+
+const weekdayDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+  timeZone: "Asia/Seoul",
+});
+
+const fullWeekdayDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+  timeZone: "Asia/Seoul",
+});
+
+/** 채팅방의 날짜 구분. 오늘 "오늘", 어제 "어제", 올해 "10월 29일 목요일", 그 전 "2025년 12월 3일 수요일" */
+export function formatChatDay(iso: string, now: Date) {
+  const date = new Date(iso);
+  const day = dayKeyFormatter.format(date);
+  const today = dayKeyFormatter.format(now);
+  if (day === today) return "오늘";
+  if (day === dayKeyFormatter.format(new Date(now.getTime() - DAY_MS))) return "어제";
+  if (day.slice(0, 4) === today.slice(0, 4)) return weekdayDateFormatter.format(date);
+  return fullWeekdayDateFormatter.format(date);
+}
+
 /** 채팅 목록의 최근 일시. 오늘 "오후 3:12", 어제 "어제", 올해 "10월 28일", 그 전 "2025. 12. 3." */
 export function formatChatTime(iso: string, now: Date) {
   const date = new Date(iso);

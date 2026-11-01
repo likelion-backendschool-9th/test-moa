@@ -57,7 +57,7 @@ export function ChatCard({ room, now }: { room: ChatRoom; now: Date }) {
             {room.lastMessage}
           </p>
         </div>
-        <ChatCardMenu roomKey={room.roomKey} title={title} />
+        <ChatCardMenu roomKey={room.roomKey} title={title} className="-mt-1.5 -mr-1.5" />
       </div>
     </article>
   );

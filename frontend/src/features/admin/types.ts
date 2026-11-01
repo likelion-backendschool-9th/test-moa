@@ -98,11 +98,11 @@ export function isRejectReason(value: unknown): value is RejectReason {
   return typeof value === "string" && Object.hasOwn(REJECT_REASONS, value);
 }
 
-/** 출금 처리 양식이 막힌 이유. 저장 공간 부족은 memo, 기타에 메모가 없으면 note */
-export type WithdrawalFormError = "decision" | "reason" | "note" | "memo";
+/** 출금·모집 취소 처리 양식이 막힌 이유. 저장 공간 부족은 memo, 기타에 메모가 없으면 note */
+export type RequestFormError = "decision" | "reason" | "note" | "memo";
 
-/** 출금 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
-export type WithdrawalFormState = { error: WithdrawalFormError | null };
+/** 출금·모집 취소 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
+export type RequestFormState = { error: RequestFormError | null };
 
 /** 출금 처리 기록. 처리 전 요청에는 없다. 반려에만 reason이 있다 */
 export type WithdrawalReview = {
@@ -183,10 +183,6 @@ export function cancellationRejectText(review: CancellationReview) {
   if (!review.reason) return "";
   return review.reason === "other" ? review.memo : CANCELLATION_REJECT_REASONS[review.reason];
 }
-
-/** 모집 취소 처리 양식이 막힌 이유. 출금 처리 양식과 같다 */
-export type CancellationFormError = WithdrawalFormError;
-export type CancellationFormState = WithdrawalFormState;
 
 /**
  * 모집 취소 요청. id가 상세 주소의 cancellationKey다.

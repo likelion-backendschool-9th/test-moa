@@ -14,7 +14,7 @@ const sendButton = (page: Page) => page.getByRole("button", { name: "보내기" 
 const inboxCards = (page: Page) => page.getByRole("list", { name: "채팅 목록" }).getByRole("listitem");
 
 const ACCENT_LIGHT = "rgb(15, 124, 74)";
-const INK_LIGHT = "rgb(26, 26, 26)";
+const ON_ACCENT_LIGHT = "rgb(255, 255, 255)";
 const SHEET_LIGHT = "rgb(251, 251, 250)";
 const CLOCK = /^(오전|오후) \d{1,2}:\d{2}$/;
 /* 연초 며칠은 작년 날짜가 되므로 두 형식을 모두 받는다 */
@@ -99,7 +99,7 @@ test.describe("R3 대화 내용", () => {
     await expect(messages(page).last()).toContainText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.");
   });
 
-  test("S147 내 메시지는 오른쪽 먹 말풍선, 상대 메시지는 왼쪽 교정지 말풍선이고 보낸 사람이 읽힌다", async ({ page }) => {
+  test("S147 내 메시지는 오른쪽 강조색 말풍선, 상대 메시지는 왼쪽 교정지 말풍선이고 보낸 사람이 읽힌다", async ({ page }) => {
     const log = (await chatLog(page).boundingBox())!;
     const mine = message(page, "감사합니다! 오늘 저녁에 설치해서 써 볼게요.");
     const theirs = message(page, "피드백 마감이 이틀 남았어요.");
@@ -110,7 +110,8 @@ test.describe("R3 대화 내용", () => {
     const theirsBox = (await bubble(theirs).boundingBox())!;
     expect(Math.abs(mineBox.x + mineBox.width - (log.x + log.width))).toBeLessThanOrEqual(1);
     expect(Math.abs(theirsBox.x - log.x)).toBeLessThanOrEqual(1);
-    expect(await bubble(mine).evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(INK_LIGHT);
+    expect(await bubble(mine).evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(ACCENT_LIGHT);
+    expect(await bubble(mine).evaluate((element) => getComputedStyle(element).color)).toBe(ON_ACCENT_LIGHT);
     expect(await bubble(theirs).evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(SHEET_LIGHT);
 
     expect(await spoken(mine)).toBe("나: 감사합니다! 오늘 저녁에 설치해서 써 볼게요.");

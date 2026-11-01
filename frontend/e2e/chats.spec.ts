@@ -58,7 +58,7 @@ test.describe("R2 채팅 카드", () => {
     expect((await partnerRole(card).boundingBox())!.x).toBeLessThan((await partner(card).boundingBox())!.x);
     await expect(card).not.toContainText("윤슬");
 
-    /* 글자는 모두 최근 메시지와 같은 크기·보통 굵기이고, 이름·닉네임은 먹, 메시지는 흐린 먹으로 색만 다르다 */
+    /* 글자는 모두 최근 메시지와 같은 크기이고, 대화방 이름만 역할 탭처럼 굵다. 이름·닉네임은 먹, 메시지는 흐린 먹 */
     const style = (locator: Locator) =>
       locator.evaluate((element) => {
         const { fontSize, fontWeight, color } = getComputedStyle(element);
@@ -71,7 +71,9 @@ test.describe("R2 채팅 카드", () => {
     ]);
     expect(title.fontSize).toBe(message.fontSize);
     expect(nickname.fontSize).toBe(message.fontSize);
-    expect([title.fontWeight, nickname.fontWeight, message.fontWeight]).toEqual(["400", "400", "400"]);
+    expect([title.fontWeight, nickname.fontWeight, message.fontWeight]).toEqual(["700", "400", "400"]);
+    const tab = await style(roleTab(page, "전체"));
+    expect([title.fontSize, title.fontWeight]).toEqual([tab.fontSize, tab.fontWeight]);
     expect(nickname.color).toBe(title.color);
     expect(title.color).not.toBe(message.color);
     await expect(preview(card)).toHaveText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.");

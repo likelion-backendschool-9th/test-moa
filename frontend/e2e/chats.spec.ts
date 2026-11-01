@@ -110,7 +110,7 @@ test.describe("R2 채팅 카드", () => {
     const box = await preview(cards(page).first()).boundingBox();
     await page.mouse.click(box!.x + 8, box!.y + box!.height / 2);
     await expect(page).toHaveURL("/my/chats/booklog-yunseul");
-    await expect(page.getByRole("heading", { level: 1, name: /준비 중/ })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "북로그" })).toBeVisible();
   });
 });
 

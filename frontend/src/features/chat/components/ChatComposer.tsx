@@ -74,7 +74,8 @@ export function ChatComposer({ roomKey, lastMessageId }: ChatComposerProps) {
           ))}
         </ol>
       )}
-      <div className="sticky bottom-0 bg-surface pt-4 pb-4 md:pb-6">
+      {/* 대화가 짧으면 mt-auto로 화면 아래까지 내려가고, 길면 화면 아래에 붙는다 */}
+      <div className="sticky bottom-0 mt-auto bg-surface pt-4 pb-4 md:pb-6">
         {failed && (
           <p role="alert" className="mb-2 px-5 text-sm font-semibold">
             보내지 못했어요. 다시 보내 주세요.

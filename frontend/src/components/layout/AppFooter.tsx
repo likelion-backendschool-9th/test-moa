@@ -5,9 +5,10 @@ import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
 import { DemoSwitcher } from "./DemoSwitcher";
 
+/** 사이트 푸터. 채팅처럼 data-no-footer를 둔 페이지에서는 숨긴다(globals.css의 no-footer) */
 export function AppFooter() {
   return (
-    <footer className="mt-24 bg-surface-muted">
+    <footer className="mt-24 bg-surface-muted no-footer:hidden">
       <Container className="flex flex-col gap-6 py-10 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-2">
           <p className="font-semibold">Test Moa</p>

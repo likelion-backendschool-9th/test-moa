@@ -15,11 +15,14 @@ export async function generateMetadata({ params }: RoomPageProps): Promise<Metad
   return { title: title ? `${title} 채팅방` : "채팅방" };
 }
 
-/* "채팅함" 링크는 정적 셸에 두고, 세션과 대화 기록을 읽는 대화방만 Suspense 안에서 스트리밍한다 */
+/*
+ * "채팅함" 링크는 정적 셸에 두고, 세션과 대화 기록을 읽는 대화방만 Suspense 안에서 스트리밍한다.
+ * 푸터를 빼고 본문이 화면 아래까지 채워서, 대화가 짧아도 입력창이 화면 아래에 온다.
+ */
 export default function ChatRoomPage({ params }: RoomPageProps) {
   return (
-    <Container className="pt-6 pb-8 md:pt-8">
-      <div className="mx-auto flex max-w-3xl flex-col">
+    <Container data-no-footer className="flex flex-1 flex-col pt-6 md:pt-8">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
         <Link
           href={CHATS_PATH}
           className="mb-5 -ml-1.5 inline-flex items-center gap-1 self-start rounded-full py-1.5 pr-3 pl-1.5 text-sm font-semibold text-text-muted transition-colors duration-300 ease-brand hover:bg-surface-strong hover:text-text"

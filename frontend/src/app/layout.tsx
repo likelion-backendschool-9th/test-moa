@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           본문으로 건너뛰기
         </a>
         <AppHeader />
-        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
+        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none no-footer:flex no-footer:flex-col">
           {children}
         </main>
         <AppFooter />

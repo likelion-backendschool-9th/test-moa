@@ -69,6 +69,12 @@
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/*
+ * 푸터를 빼는 페이지. 페이지 맨 바깥 요소에 data-no-footer를 두면 푸터를 숨기고, 본문(main)이 화면 아래까지 채운다.
+ * 채팅함·채팅방이 쓴다. 표시가 정적 셸에 있어서 푸터가 잠깐 보였다 사라지지 않는다.
+ */
+@custom-variant no-footer (body:has([data-no-footer]) &);
+
 @layer base {
   html {
     color-scheme: light dark;

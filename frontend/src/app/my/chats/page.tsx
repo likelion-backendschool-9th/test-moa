@@ -7,10 +7,10 @@ import { parseChatQuery } from "@/features/chat/query";
 
 export const metadata: Metadata = { title: "채팅함" };
 
-/* 제목은 정적 셸에 두고, 세션과 검색 조건을 읽는 목록만 Suspense 안에서 스트리밍한다 */
+/* 제목은 정적 셸에 두고, 세션과 검색 조건을 읽는 목록만 Suspense 안에서 스트리밍한다. 채팅 화면이라 푸터는 뺀다 */
 export default function ChatsPage({ searchParams }: PageProps<"/my/chats">) {
   return (
-    <Container className="py-8">
+    <Container data-no-footer className="py-8">
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-extrabold tracking-[-0.03em]">채팅함</h1>

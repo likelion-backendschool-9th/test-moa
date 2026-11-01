@@ -3,15 +3,15 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
-import { buildCancellations, buildReports, buildWithdrawals, REPORT_KEYS } from "./mock";
-import { readReviews } from "./reviews";
+import { buildCancellations, buildReports, buildWithdrawals, CANCELLATION_KEYS, REPORT_KEYS, WITHDRAWAL_KEYS } from "./mock";
+import { readCancellationReviews, readReviews, readWithdrawalReviews } from "./reviews";
 import {
   isOverdue,
   type AdminSummary,
   type CancellationRequest,
+  type ListTab,
   type PendingItem,
   type Report,
-  type ReportTab,
   type WithdrawalRequest,
 } from "./types";
 
@@ -38,7 +38,11 @@ export async function assertAdmin() {
   if ((await getSession()).role !== "admin") throw new Error("운영자만 볼 수 있는 데이터예요");
 }
 
-async function loadAll() {
+/**
+ * 권한·시연 모드를 확인하고 처리 기록을 덮은 요청 목록을 돌려준다.
+ * 회원 관리(users.ts)도 이 함수로 신고를 읽어서, 신고 쪽 규칙이 바뀌어도 두 화면이 같은 결과를 보여 준다.
+ */
+export async function loadAll() {
   await assertAdmin();
   const mode = await getDemoDataMode();
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
@@ -49,15 +53,30 @@ async function loadAll() {
     return { now, reports: [] as Report[], withdrawals: [] as WithdrawalRequest[], cancellations: [] as CancellationRequest[] };
   }
   /* 시연 중 처리한 결과를 목업 위에 덮는다 */
-  const reviews = await readReviews();
+  const [reviews, withdrawalReviews, cancellationReviews] = await Promise.all([
+    readReviews(),
+    readWithdrawalReviews(),
+    readCancellationReviews(),
+  ]);
   const reports = buildReports(now).map((report) => (report.review ? report : { ...report, review: reviews[report.id] }));
-  return { now, reports, withdrawals: buildWithdrawals(now), cancellations: buildCancellations(now) };
+  const withdrawals = buildWithdrawals(now).map((request) =>
+    request.review ? request : { ...request, review: withdrawalReviews[request.id] },
+  );
+  const cancellations = buildCancellations(now).map((request) =>
+    request.review ? request : { ...request, review: cancellationReviews[request.id] },
+  );
+  return { now, reports, withdrawals, cancellations };
 }
 
 /** 운영자 홈이 다루는 처리 전 요청 */
 async function loadPending() {
   const all = await loadAll();
-  return { ...all, reports: all.reports.filter((report) => !report.review) };
+  return {
+    ...all,
+    reports: all.reports.filter((report) => !report.review),
+    withdrawals: all.withdrawals.filter((request) => !request.review),
+    cancellations: all.cancellations.filter((request) => !request.review),
+  };
 }
 
 const byLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
@@ -120,7 +139,7 @@ export function getReportKeys() {
 }
 
 /** 검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
-export async function getReports(tab: ReportTab): Promise<{ now: Date; reports: Report[] }> {
+export async function getReports(tab: ListTab): Promise<{ now: Date; reports: Report[] }> {
   const { now, reports } = await loadAll();
   if (tab === "pending") return { now, reports: reports.filter((report) => !report.review).sort(byOldest) };
   const done = reports.filter((report) => report.review);
@@ -130,4 +149,50 @@ export async function getReports(tab: ReportTab): Promise<{ now: Date; reports: 
 export async function getReport(reportKey: string): Promise<{ now: Date; report: Report | null }> {
   const { now, reports } = await loadAll();
   return { now, report: reports.find((report) => report.id === reportKey) ?? null };
+}
+
+/** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
+export function isWithdrawalKey(withdrawalKey: string) {
+  return WITHDRAWAL_KEYS.includes(withdrawalKey);
+}
+
+export function getWithdrawalKeys() {
+  return [...WITHDRAWAL_KEYS];
+}
+
+/** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
+export async function getWithdrawals(tab: ListTab): Promise<{ now: Date; withdrawals: WithdrawalRequest[] }> {
+  const { now, withdrawals } = await loadAll();
+  if (tab === "pending") return { now, withdrawals: withdrawals.filter((request) => !request.review).sort(byOldest) };
+  const done = withdrawals.filter((request) => request.review);
+  return { now, withdrawals: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };
+}
+
+export async function getWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null }> {
+  const { now, withdrawals } = await loadAll();
+  return { now, withdrawal: withdrawals.find((request) => request.id === withdrawalKey) ?? null };
+}
+
+/** 상세 주소의 모집 취소 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
+export function isCancellationKey(cancellationKey: string) {
+  return CANCELLATION_KEYS.includes(cancellationKey);
+}
+
+export function getCancellationKeys() {
+  return [...CANCELLATION_KEYS];
+}
+
+/** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
+export async function getCancellations(tab: ListTab): Promise<{ now: Date; cancellations: CancellationRequest[] }> {
+  const { now, cancellations } = await loadAll();
+  if (tab === "pending") return { now, cancellations: cancellations.filter((request) => !request.review).sort(byOldest) };
+  const done = cancellations.filter((request) => request.review);
+  return { now, cancellations: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };
+}
+
+export async function getCancellation(
+  cancellationKey: string,
+): Promise<{ now: Date; cancellation: CancellationRequest | null }> {
+  const { now, cancellations } = await loadAll();
+  return { now, cancellation: cancellations.find((request) => request.id === cancellationKey) ?? null };
 }

@@ -191,7 +191,7 @@ S75
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
 
 S26 준비 중 페이지와 내부 링크
-- Given `/recruitments`, `/recruitments/:slug`, `/my/projects`, `/my/chats`, `/my/profile/edit`, `/my/subscription`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
+- Given `/recruitments`, `/recruitments/:slug`, `/my/projects`, `/my/chats`, `/my/subscription`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
@@ -222,7 +222,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 8개, 모두 14개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102)
+- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 13개, 모두 19개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), 운영자 CopyAccountButton·WithdrawalForm(`docs/frontend-admin-withdrawals.md`), CancellationForm(`docs/frontend-admin-cancellations.md`)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

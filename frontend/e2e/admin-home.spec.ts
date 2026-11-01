@@ -110,13 +110,14 @@ test.describe("R16 하위 탭", () => {
     await expect(tabs.nth(0)).toHaveAttribute("aria-current", "page");
   });
 
-  test("S93 탭을 누르면 이동하고 준비 중 화면이 나온다", async ({ page }) => {
+  test("S93 탭을 누르면 그 관리 페이지로 이동한다", async ({ page }) => {
     await page.goto("/admin");
     const nav = page.getByRole("navigation", { name: "운영자 메뉴" });
-    await nav.getByRole("link", { name: "출금 요청" }).click();
-    await expect(page).toHaveURL(/\/admin\/withdrawals$/);
-    await expect(nav.getByRole("link", { name: "출금 요청" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { level: 1, name: /준비 중/ })).toBeVisible();
+    await nav.getByRole("link", { name: "모집 취소" }).click();
+    await expect(page).toHaveURL(/\/admin\/cancellations$/);
+    await expect(nav.getByRole("link", { name: "모집 취소" })).toHaveAttribute("aria-current", "page");
+    /* 하위 페이지가 모두 생겨서 "준비 중" 대신 그 페이지 제목을 본다 */
+    await expect(page.getByRole("heading", { level: 1, name: "모집 취소 요청 관리" })).toBeVisible();
   });
 });
 

@@ -191,8 +191,8 @@ S75
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
 
 S26 준비 중 페이지와 내부 링크
-- Given `/recruitments`, `/recruitments/:slug`, `/my/participations`, `/my/projects`, `/my/chats/:roomKey`, `/my/credits`, `/my/credits/withdrawals`, `/my/profile/edit`, `/my/subscription`, `/admin`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
-- Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
+- Given `/recruitments`, `/recruitments/:slug`, `/my/participations`, `/my/projects`, `/my/credits`, `/my/credits/withdrawals`, `/my/profile/edit`, `/my/subscription`, `/admin`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
+- Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다 (채팅함·채팅방은 만들어서 빠졌다: `docs/2026-10-30-frontend-chats.md`, `docs/2026-11-01-frontend-chat-room.md`)
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
 S27 없는 주소
@@ -222,7 +222,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters, AccountNav, ChatFilters, ChatCardMenu 9개만 나온다 (AccountNav는 마이페이지 메뉴, `docs/2026-10-30-frontend-my.md`. ChatFilters·ChatCardMenu는 채팅함, `docs/2026-10-30-frontend-chats.md`)
+- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters, AccountNav, ChatFilters, ChatCardMenu, ChatComposer 10개만 나온다 (AccountNav는 마이페이지 메뉴, `docs/2026-10-30-frontend-my.md`. ChatFilters·ChatCardMenu는 채팅함, `docs/2026-10-30-frontend-chats.md`. ChatComposer는 채팅방, `docs/2026-11-01-frontend-chat-room.md`)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

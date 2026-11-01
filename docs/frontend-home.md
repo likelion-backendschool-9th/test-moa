@@ -191,7 +191,7 @@ S75
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
 
 S26 준비 중 페이지와 내부 링크
-- Given `/recruitments`, `/recruitments/:slug`, `/my/projects`, `/my/chats`, `/my/subscription`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
+- Given `/recruitments`, `/recruitments/:slug`, `/my/projects`, `/my/chats`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 

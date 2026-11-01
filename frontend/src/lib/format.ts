@@ -4,10 +4,10 @@ const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeZone: "Asia/Seoul",
 });
 
-const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
-  month: "long",
-  day: "numeric",
+/* 오전·오후 표기는 ICU 버전마다 달라서(Node 24는 "AM/PM") 24시간 값만 받아 직접 붙인다 */
+const hourFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "numeric",
+  hourCycle: "h23",
   timeZone: "Asia/Seoul",
 });
 
@@ -20,7 +20,9 @@ export function formatDate(iso: string) {
 
 /** "11월 6일 오후 3시" */
 export function formatDateTime(iso: string) {
-  return dateTimeFormatter.format(new Date(iso));
+  const date = new Date(iso);
+  const hour = Number(hourFormatter.formatToParts(date).find((part) => part.type === "hour")?.value);
+  return `${dateFormatter.format(date)} ${hour < 12 ? "오전" : "오후"} ${hour % 12 || 12}시`;
 }
 
 /** "12,480 크레딧" */

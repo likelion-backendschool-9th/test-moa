@@ -18,6 +18,11 @@ export function totalCredits({ earned, signup }: CreditBalance) {
   return earned + signup;
 }
 
+/** 구독 결제에 쓸 수 있는 크레딧. 가입 크레딧은 포함하고, 출금 처리 중인 크레딧과 승인 대기 보상은 뺀다 */
+export function payableCredits({ earned, signup, pendingWithdrawal }: CreditBalance) {
+  return earned - pendingWithdrawal + signup;
+}
+
 /** 지금 출금 신청할 수 있는 크레딧 */
 export function cashableCredits({ earned, pendingWithdrawal }: CreditBalance) {
   return earned - pendingWithdrawal;

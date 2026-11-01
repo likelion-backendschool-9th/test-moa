@@ -2,9 +2,12 @@
 
 import { type FormEvent, startTransition, useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { changePassword, type FormState, type PasswordField } from "../actions";
+import { FormField, FormMessage } from "@/components/ui/FormField";
+import type { FormState } from "@/lib/form";
+import { PASSWORD_HINT } from "@/lib/validation";
+import { changePassword, type PasswordField } from "../actions";
 import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "./card-styles";
-import { FormField, FormMessage } from "./FormField";
+
 
 const initialState: FormState<PasswordField> = { status: "idle" };
 
@@ -52,7 +55,7 @@ export function PasswordForm() {
               type="password"
               label="새 비밀번호"
               autoComplete="new-password"
-              hint="영문과 숫자를 섞어 8자 이상"
+              hint={PASSWORD_HINT}
               error={errors.next}
             />
             <FormField

@@ -2,7 +2,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react/ssr";
 import type { ComponentProps } from "react";
 
 /*
- * 개인정보 수정 폼의 칸. 금액 폼이 아니라 검색창과 같은 알약 모양이고 높이는 3rem이다.
+ * 회원 정보 폼(로그인·회원가입·개인정보 수정)의 칸. 금액 폼이 아니라 검색창과 같은 알약 모양이고 높이는 3rem이다.
  * 라벨·안내·오류는 입력 글자와 같은 안쪽 여백(1rem)에서 시작한다
  */
 const inputClass =

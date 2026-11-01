@@ -5,8 +5,10 @@ import { payableCredits } from "@/features/credit/types";
 import { requireMember } from "@/lib/auth";
 import { waitIfSlow } from "@/lib/demo";
 import { formatDday } from "@/lib/format";
-import { buildMyPageSummary, DEMO_PASSWORD, DEMO_PROFILES, FREE_PLAN, monthlyRecruitUsed, SUBSCRIPTION_PLANS } from "./mock";
-import type { MyPageSummary, Profile, SubscriptionOverview, Todo } from "./types";
+import { getMemberProfile } from "@/features/member/api";
+import type { Profile } from "@/features/member/types";
+import { buildMyPageSummary, FREE_PLAN, monthlyRecruitUsed, SUBSCRIPTION_PLANS } from "./mock";
+import type { MyPageSummary, SubscriptionOverview, Todo } from "./types";
 
 /*
  * 마이페이지 데이터 접근. 지금은 목업을 돌려준다.
@@ -26,6 +28,7 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
   const credit = await creditDataFor(session.role, now);
   return {
     ...summary,
+    profile: getMemberProfile(session.role),
     todos: sortTodos(summary.todos, now),
     credits: credit.balance,
     recentCredits: credit.ledger.slice(0, RECENT_CREDITS),
@@ -36,17 +39,7 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
 export async function getProfile(next: string): Promise<Profile> {
   const session = await requireMember(next);
   await waitIfSlow();
-  return DEMO_PROFILES[session.role];
-}
-
-/** 다른 회원이 쓰고 있는 닉네임인지. 자기 닉네임은 쓸 수 있다 */
-export function isNicknameTaken(nickname: string, own: string): boolean {
-  return nickname !== own && Object.values(DEMO_PROFILES).some((profile) => profile.nickname === nickname);
-}
-
-/** 현재 비밀번호가 맞는지. 목업이라 시연 회원 모두 같은 값과 비교한다 */
-export function isCurrentPassword(password: string): boolean {
-  return password === DEMO_PASSWORD;
+  return getMemberProfile(session.role);
 }
 
 const TODO_LIMIT = 5;

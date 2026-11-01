@@ -10,7 +10,7 @@ import {
   type WithdrawalRequest,
   type ListTab,
 } from "../types";
-import { StatusTabs } from "./StatusTabs";
+import { LinkTabs } from "./LinkTabs";
 
 const TABS: { tab: ListTab; label: string; href: string }[] = [
   { tab: "pending", label: "처리 대기", href: "/admin/withdrawals" },
@@ -19,7 +19,7 @@ const TABS: { tab: ListTab; label: string; href: string }[] = [
 
 /** 처리 대기·처리 완료 탭 */
 export function WithdrawalTabs({ current }: { current: ListTab }) {
-  return <StatusTabs label="출금 요청 상태" tabs={TABS} current={current} />;
+  return <LinkTabs label="출금 요청 상태" tabs={TABS} current={current} />;
 }
 
 /**

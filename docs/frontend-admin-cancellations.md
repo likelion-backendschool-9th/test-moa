@@ -200,8 +200,8 @@ S277
 - Then  결과가 없다
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  모집 취소 처리 Server Action 안에서도 부른다
-- When  `grep -rl '"use client"' src`
-- Then  PR #12까지의 13개에 `CancellationForm` 1개만 더해져 14개다
+- When  `grep -rl '"use client"' src/app/admin src/features/admin`
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (`RequestReviewForm`을 출금 요청 관리와 함께 쓴다)
 
 ## 기존 시나리오·문서 변경
 - `frontend-admin-home.md`
@@ -278,6 +278,10 @@ S277
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아, PR #12의 신고·출금 상세와 같이 Suspense 안에서 읽게 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S254)을 확인했다.
   - 공백 없는 긴 반려 메모나 URL이 375px 화면에서 385px 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, PR #12를 다시 병합하고 상세의 정보 칸(`Info`)에 같은 `wrap-anywhere`를 줬다(S283, `frontend-admin-withdrawals.md` S281). 번호는 PR #12의 S281·S282 다음이다.
   - PR #12를 다시 병합했다. 출금 처리 양식도 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 바뀌어(`frontend-admin-withdrawals.md` S284), 두 양식의 동작이 같아졌다. 공용 처리 양식으로 합치는 일은 그대로 남는다.
+- 2026-11-01
+  - 처리 양식을 출금과 함께 `RequestReviewForm` 하나로 합쳤다(위 "공용 처리 양식으로 합친다"). `CancellationForm`은 문구·사유·서버 함수만 넘기는 서버 컴포넌트가 됐다. 목록 탭도 `LinkTabs`로 바꿨다.
+  - 알려진 한계(처음부터 처리 완료인 목업 요청은 `?processed=`만으로 결과 문구가 뜬다)는 양식이 아니라 목록 쪽 문제라 이번에 고치지 않았다.
+  - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S94 처리 대기 카드, S97 오래 기다린 요청)

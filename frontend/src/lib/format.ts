@@ -25,6 +25,11 @@ export function formatDateTime(iso: string) {
   return `${dateFormatter.format(date)} ${hour < 12 ? "오전" : "오후"} ${hour % 12 || 12}시`;
 }
 
+/** "12,480". 단위를 따로 보여 줄 때 쓴다 */
+export function formatNumber(amount: number) {
+  return numberFormatter.format(amount);
+}
+
 /** "12,480 크레딧" */
 export function formatCredits(amount: number) {
   return `${numberFormatter.format(amount)} 크레딧`;

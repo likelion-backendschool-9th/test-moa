@@ -3,10 +3,9 @@ import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getNavItems } from "@/lib/nav";
-import { getSession, type Session } from "@/lib/session";
-import { HeaderSearch } from "./HeaderSearch";
+import { getSession } from "@/lib/session";
 import { MainNav } from "./MainNav";
-import { MobileMenu, type AccountLink } from "./MobileMenu";
+import { MobileMenu } from "./MobileMenu";
 import { NavList } from "./NavList";
 import { UserMenu } from "./UserMenu";
 
@@ -24,8 +23,7 @@ export function AppHeader() {
         <Suspense fallback={<NavList items={getNavItems(null)} />}>
           <MainNavSlot />
         </Suspense>
-        <HeaderSearch className="hidden md:block xl:ml-auto" />
-        <div className="ml-auto flex items-center gap-2 xl:ml-0">
+        <div className="ml-auto flex items-center gap-2">
           <Suspense fallback={<Skeleton className="h-9 w-32" />}>
             <UserMenuSlot />
           </Suspense>
@@ -48,11 +46,5 @@ async function MainNavSlot() {
 
 async function MobileMenuSlot() {
   const session = await getSession();
-  return <MobileMenu items={getNavItems(session)} accountLinks={getAccountLinks(session)} />;
-}
-
-/** 모바일 헤더에서 숨긴 계정 링크를 메뉴 패널에 넣는다 */
-function getAccountLinks(session: Session): AccountLink[] {
-  if (session.user === null) return [];
-  return [{ label: "내 정보", href: "/my/profile/edit" }];
+  return <MobileMenu items={getNavItems(session)} isMember={session.user !== null} />;
 }

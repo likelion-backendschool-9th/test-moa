@@ -1,0 +1,44 @@
+"use client";
+
+import { type FormEvent, startTransition, useActionState } from "react";
+import { Button } from "@/components/ui/Button";
+import { FormField, FormMessage } from "@/components/ui/FormField";
+import type { FormState } from "@/lib/form";
+import { login } from "../actions";
+import type { LoginField } from "../types";
+
+const initialState: FormState<LoginField> = { status: "idle" };
+
+/** 이메일 로그인. 성공하면 서버 액션이 next로 보내고, 실패하면 입력이 남는다 */
+export function LoginForm({ next }: { next: string }) {
+  const [state, formAction, pending] = useActionState(login, initialState);
+
+  /* React가 폼 액션 뒤 칸을 자동으로 비우지 않게 직접 제출한다 */
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  }
+
+  const errors = state.status === "error" ? state.errors : {};
+  return (
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+      {errors.form && <FormMessage status="error" message={errors.form} />}
+      <input type="hidden" name="next" value={next} />
+      <div className="flex flex-col gap-5">
+        <FormField id="login-email" name="email" type="email" label="이메일" autoComplete="email" error={errors.email} />
+        <FormField
+          id="login-password"
+          name="password"
+          type="password"
+          label="비밀번호"
+          autoComplete="current-password"
+          error={errors.password}
+        />
+      </div>
+      <Button type="submit" disabled={pending} className="w-full">
+        {pending ? "로그인하는 중…" : "로그인"}
+      </Button>
+    </form>
+  );
+}

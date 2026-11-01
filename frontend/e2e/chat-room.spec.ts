@@ -272,46 +272,42 @@ test.describe("R7 모바일", () => {
   });
 });
 
-test.describe("R10 푸터 없는 채팅 화면", () => {
+test.describe("R10 푸터 없는 채팅방", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
 
-  test("S157 채팅함과 채팅방에는 푸터가 없고, 다른 페이지에는 있다", async ({ page }) => {
-    for (const path of ["/my/chats", "/my/chats/booklog-yunseul"]) {
+  test("S157 채팅방에만 푸터가 없고, 채팅함과 다른 페이지에는 있다", async ({ page }) => {
+    await page.goto("/my/chats/booklog-yunseul");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(siteFooter(page)).toBeHidden();
+    for (const path of ["/my/chats", "/my/chats/nope", "/my"]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(siteFooter(page)).toBeHidden();
+      await expect(siteFooter(page)).toBeVisible();
     }
-    await page.goto("/my");
-    await expect(siteFooter(page)).toBeVisible();
   });
 
-  test("S321 링크로 오가도 지금 보이는 화면을 따라 푸터가 숨거나 보인다", async ({ page }) => {
-    const nav = page.getByRole("navigation", { name: "주요 메뉴" });
+  test("S321 채팅방을 나오면 채팅함과 다른 페이지에 푸터가 다시 보인다", async ({ page }) => {
     await page.goto("/my/chats");
-    await expect(siteFooter(page)).toBeHidden();
-
-    /* 떠난 채팅함은 숨겨진 채 문서에 남지만 홈의 푸터를 숨기지 않는다 */
-    await nav.getByRole("link", { name: "홈" }).click();
-    await expect(page).toHaveURL("/");
     await expect(siteFooter(page)).toBeVisible();
-
-    await nav.getByRole("link", { name: "채팅" }).click();
-    await expect(page).toHaveURL("/my/chats");
-    await expect(siteFooter(page)).toBeHidden();
 
     await inboxCards(page).first().getByRole("link", { name: "북로그 채팅방" }).click();
     await expect(page).toHaveURL("/my/chats/booklog-yunseul");
     await expect(siteFooter(page)).toBeHidden();
 
-    await nav.getByRole("link", { name: "홈" }).click();
-    await expect(page).toHaveURL("/");
+    /* 떠난 채팅방은 숨겨진 채 문서에 남지만 채팅함의 푸터를 숨기지 않는다 */
+    await backLink(page).click();
+    await expect(page).toHaveURL("/my/chats");
     await expect(siteFooter(page)).toBeVisible();
 
     await page.goBack();
     await expect(page).toHaveURL("/my/chats/booklog-yunseul");
     await expect(siteFooter(page)).toBeHidden();
+
+    await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "홈" }).click();
+    await expect(page).toHaveURL("/");
+    await expect(siteFooter(page)).toBeVisible();
   });
 
   test("S158 대화가 짧아도 입력창은 화면 아래에 있다", async ({ page, context }) => {

@@ -270,6 +270,33 @@ test.describe("R7 모바일", () => {
   });
 });
 
+test.describe("R10 푸터 없는 채팅 화면", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "tester" });
+  });
+
+  test("S157 채팅함과 채팅방에는 푸터가 없고, 다른 페이지에는 있다", async ({ page }) => {
+    for (const path of ["/my/chats", "/my/chats/booklog-yunseul"]) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.locator("footer")).toBeHidden();
+    }
+    await page.goto("/my");
+    await expect(page.locator("footer")).toBeVisible();
+  });
+
+  test("S158 대화가 짧아도 입력창은 화면 아래에 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/chats/ledger-yunseul");
+    await expect(messages(page)).toHaveCount(3);
+    const size = page.viewportSize()!;
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(size.height);
+    const form = (await page.locator("form").filter({ has: messageInput(page) }).boundingBox())!;
+    expect(form.y + form.height).toBeGreaterThan(size.height - 80);
+    expect(form.y + form.height).toBeLessThanOrEqual(size.height);
+  });
+});
+
 test.describe("R8 접근성", () => {
   test("S156 대화 기록, 입력창, 보내기 버튼의 이름과 순서", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });

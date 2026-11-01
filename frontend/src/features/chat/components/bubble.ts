@@ -3,8 +3,8 @@ import type { ChatMessage } from "../types";
 
 /*
  * 말풍선 모양. 대화 내용(ChatMessageList)과 보내는 중 말풍선(ChatComposer)이 같이 쓴다.
- * 내 메시지는 먹 바탕 + 작업대 글씨(활성 칩과 같은 반전), 상대 메시지는 교정지 바탕 + 먹 글씨.
- * 메시지마다 반복되는 요소라 강조색을 쓰지 않는다.
+ * 내 메시지는 강조색 바탕 + 강조 위 글씨(메인 색, 11-01 요청), 상대 메시지는 교정지 바탕 + 먹 글씨.
+ * 내 말풍선은 바탕이 강조색이라 글을 선택하면 선택 색을 뒤집어 보이게 한다.
  */
 
 /** 말풍선 한 줄. 내 메시지는 오른쪽, 상대 메시지는 왼쪽에 붙고 시각은 말풍선 바깥쪽에 온다 */
@@ -16,7 +16,9 @@ export function bubbleRowClass(from: ChatMessage["from"]) {
 export function bubbleClass(from: ChatMessage["from"], endsRun: boolean) {
   return cn(
     "max-w-4/5 rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word",
-    from === "me" ? "bg-text text-surface" : "bg-surface-muted text-text",
+    from === "me"
+      ? "bg-accent text-on-accent selection:bg-on-accent selection:text-accent"
+      : "bg-surface-muted text-text",
     endsRun && (from === "me" ? "rounded-br-md" : "rounded-bl-md"),
   );
 }

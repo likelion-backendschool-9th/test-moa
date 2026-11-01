@@ -166,3 +166,62 @@
     scroll-behavior: auto;
   }
 }
+
+/*
+ * 금액 폼의 선택 상자 (DESIGN.md The Money Field Rule).
+ * appearance: base-select를 지원하는 브라우저(Chrome·Edge 135+)는 펼친 목록을 칸 바로 아래에 같은 너비·모서리로 붙인다.
+ * 지원하지 않는 브라우저는 운영체제 기본 목록을 그대로 쓴다.
+ */
+@layer components {
+  .select-field {
+    appearance: none;
+  }
+
+  @supports (appearance: base-select) {
+    .select-field,
+    .select-field::picker(select) {
+      appearance: base-select;
+    }
+
+    /* base-select는 선택값을 위쪽에 둔다. 높이 3rem 안에서 위아래 여백으로 가운데에 맞춘다 */
+    .select-field {
+      padding-block: 0.75rem;
+      line-height: 1.5rem;
+    }
+
+    .select-field::picker-icon {
+      display: none;
+    }
+
+    .select-field::picker(select) {
+      width: anchor-size(width);
+      margin-top: 0.25rem;
+      padding: 0.25rem;
+      border: 1px solid var(--line);
+      border-radius: 0.75rem;
+      background: var(--surface-muted);
+      color: var(--text);
+    }
+
+    .select-field option {
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+    }
+
+    .select-field option::checkmark {
+      display: none;
+    }
+
+    .select-field option:hover,
+    .select-field option:focus-visible {
+      background: var(--surface-strong);
+      outline: none;
+    }
+
+    .select-field option:checked {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+  }
+}

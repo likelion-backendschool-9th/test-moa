@@ -70,6 +70,14 @@
 | --- | --- | --- |
 | 관리자 진입 | `/admin` | 후보 |
 | 회원 관리 | `/admin/users` | 후보 |
+| 회원 검색·필터 | `/admin/users?filter=sanctioned\|reported&q=:nickname` | 후보 |
+| 회원 상세 | `/admin/users/:userKey` | 후보 |
 | 신고·제재 관리 | `/admin/reports` | 후보 |
+| 처리 완료 신고 탭 | `/admin/reports?tab=done` | 후보 |
+| 신고 상세 | `/admin/reports/:reportKey` | 후보 |
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
+| 처리 완료 출금 탭 | `/admin/withdrawals?tab=done` | 후보 |
+| 출금 요청 상세 | `/admin/withdrawals/:withdrawalKey` | 후보 |
 | 모집 취소 요청 관리 | `/admin/cancellations` | 후보 |
+| 처리 완료 모집 취소 탭 | `/admin/cancellations?tab=done` | 후보 |
+| 모집 취소 요청 상세 | `/admin/cancellations/:cancellationKey` | 후보 |

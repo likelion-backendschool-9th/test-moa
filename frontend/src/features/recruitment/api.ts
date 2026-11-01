@@ -1,7 +1,7 @@
 import "server-only";
 import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
-import { buildGeneralRecruitments, buildPromotedRecruitments } from "./mock";
+import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "./mock";
 import type { RecruitmentQuery } from "./query";
 import { isFull, type Recruitment } from "./types";
 
@@ -56,4 +56,13 @@ export async function searchRecruitments(query: RecruitmentQuery): Promise<Recru
     .filter((item) => !query.open || !isFull(item))
     .filter((item) => !keyword || [item.projectName, item.summary, item.request].some((text) => text.toLowerCase().includes(keyword)))
     .sort(sorter);
+}
+
+/** slug로 모집 건을 찾는다. 끝난 모집 건도 포함하고, 목록용 시연 상황(demo-data)은 따르지 않는다 */
+export async function getRecruitmentsBySlugs(slugs: string[]): Promise<Recruitment[]> {
+  await connection();
+  const now = new Date();
+  return [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now), ...buildPastRecruitments(now)].filter((item) =>
+    slugs.includes(item.slug),
+  );
 }

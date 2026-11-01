@@ -15,3 +15,10 @@ export async function getDemoDataMode(): Promise<DemoDataMode> {
   const value = (await cookies()).get(DEMO_DATA_COOKIE)?.value;
   return DEMO_DATA_MODES.find((mode) => mode === value) ?? "normal";
 }
+
+const SLOW_DELAY_MS = 1500;
+
+/** demo-data=slow이면 응답을 1.5초 늦춘다 */
+export async function waitIfSlow() {
+  if ((await getDemoDataMode()) === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+}

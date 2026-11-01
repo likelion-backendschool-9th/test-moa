@@ -189,7 +189,8 @@
   .brow.new { margin-top: 8px; }
   .brow.me { flex-direction: row-reverse; }
   .bub { max-width: 80%; border-radius: 16px; padding: 10px 16px; font-size: 14px; line-height: 1.625; background: var(--surface-muted); color: var(--text); }
-  .brow.me .bub { background: var(--text); color: var(--surface); }
+  .brow.me .bub { background: var(--accent); color: var(--on-accent); }
+  .brow.me .bub::selection { background: var(--on-accent); color: var(--accent); }
   .brow.you .bub.end { border-bottom-left-radius: 6px; }
   .brow.me .bub.end { border-bottom-right-radius: 6px; }
   .brow time { flex: none; padding-bottom: 2px; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
@@ -476,10 +477,10 @@
     </div>
     <div class="anatomy">
       <div class="rule"><b>채팅방 머리 · ChatRoomHeader</b>위에 "채팅함"으로 돌아가는 링크. 작은 프로젝트 이미지 64×48(4:3, 모서리 12), 대화방 이름 24px 800, 그 아래 역할 배지 + 상대 닉네임 · 모집 글 링크(흐린 먹), 오른쪽 더보기. 더보기에서 삭제하면 채팅함으로 돌아가요. 앱 헤더 높이가 화면마다 달라 위에 붙이지 않아요.</div>
-      <div class="rule"><b>날짜 구분 · 말풍선 · ChatMessageList</b>날짜는 가운데 12px 600 흐린 먹 + 양옆 1px 재단 회색 선. 내 말풍선은 오른쪽 먹 바탕, 상대는 왼쪽 교정지 바탕, 모서리 16, 안쪽 10 · 16, 최대 폭 80%. 같은 사람이 이어 보내면 4, 사람이 바뀌면 12 띄워요. 같은 분 묶음의 마지막만 꼬리 모서리 6과 시각이 붙어요.</div>
+      <div class="rule"><b>날짜 구분 · 말풍선 · ChatMessageList</b>날짜는 가운데 12px 600 흐린 먹 + 양옆 1px 재단 회색 선. 내 말풍선은 오른쪽 강조색 바탕(메인 색), 상대는 왼쪽 교정지 바탕, 모서리 16, 안쪽 10 · 16, 최대 폭 80%. 같은 사람이 이어 보내면 4, 사람이 바뀌면 12 띄워요. 같은 분 묶음의 마지막만 꼬리 모서리 6과 시각이 붙어요.</div>
       <div class="rule"><b>메시지 입력창 · ChatComposer</b>화면 아래에 붙는 작업대 띠 안의 교정지 면(모서리 16). 여러 줄로 늘어나서 알약 대신 담는 면 모서리를 써요. 입력란은 내용만큼 늘고 최대 128. 보내기는 40 원형 강조색(이 화면의 주 버튼), 빈 글이면 40% 비활성. 포커스 때 2px 강조색 링. Enter 보내기, Shift+Enter 줄바꿈.</div>
     </div>
-    <p class="gap-note">채팅방에서 강조색은 두 자리에만 써요: 보내기 버튼과 입력창 포커스 링. 말풍선·날짜·닉네임은 메시지마다 반복되니 먹과 교정지로만 나눠요. 대화는 따로 높이가 정해진 상자에서 스크롤하지 않고 페이지가 스크롤돼요. 채팅함·채팅방에는 사이트 푸터가 없고, 대화가 짧아도 입력창은 화면 아래에 있어요.</p>
+    <p class="gap-note">채팅방에서 강조색은 세 자리에 써요: 보내기 버튼, 내 말풍선, 입력창 포커스 링. 내 말풍선은 내가 보낸 말을 한눈에 가르도록 둔 예외예요(대비 라이트 5.25:1, 다크 5.34:1). 상대 말풍선·날짜·닉네임에는 쓰지 않아요. 대화는 따로 높이가 정해진 상자에서 스크롤하지 않고 페이지가 스크롤돼요. 채팅함·채팅방에는 사이트 푸터가 없고, 대화가 짧아도 입력창은 화면 아래에 있어요.</p>
   </section>
 
   <!-- 06 -->
@@ -491,7 +492,7 @@
         <ul>
           <li>색·모션 값은 <code>globals.css</code> 토큰으로만 써요</li>
           <li>간격·글자 크기·모서리는 Tailwind 기본 단계를 써요</li>
-          <li>강조색은 주 버튼(채팅방의 보내기 포함), 순위 숫자, 추가 보상, 도장, 새로 생긴 것(오늘 온 대화), 포커스·고른 탭에만 써요</li>
+          <li>강조색은 주 버튼(채팅방의 보내기 포함), 내 말풍선, 순위 숫자, 추가 보상, 도장, 새로 생긴 것(오늘 온 대화), 포커스·고른 탭에만 써요</li>
           <li>강조는 굵기와 크기로 하고, 숫자는 <code>tabular-nums</code>를 써요</li>
           <li>모집 글에는 마감일·인원·보상을 같은 자리에 보여 줘요</li>
           <li>공통 요소는 <code>components/ui</code>에서 가져다 써요</li>

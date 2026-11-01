@@ -12,6 +12,7 @@ const dayHeadings = (page: Page) => chatLog(page).getByRole("heading", { level: 
 const messageInput = (page: Page) => page.getByRole("textbox", { name: "메시지 입력" });
 const sendButton = (page: Page) => page.getByRole("button", { name: "보내기" });
 const inboxCards = (page: Page) => page.getByRole("list", { name: "채팅 목록" }).getByRole("listitem");
+const siteFooter = (page: Page) => page.locator("[data-site-footer]");
 
 const ACCENT_LIGHT = "rgb(15, 124, 74)";
 const ON_ACCENT_LIGHT = "rgb(255, 255, 255)";
@@ -280,10 +281,37 @@ test.describe("R10 푸터 없는 채팅 화면", () => {
     for (const path of ["/my/chats", "/my/chats/booklog-yunseul"]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.locator("footer")).toBeHidden();
+      await expect(siteFooter(page)).toBeHidden();
     }
     await page.goto("/my");
-    await expect(page.locator("footer")).toBeVisible();
+    await expect(siteFooter(page)).toBeVisible();
+  });
+
+  test("S321 링크로 오가도 지금 보이는 화면을 따라 푸터가 숨거나 보인다", async ({ page }) => {
+    const nav = page.getByRole("navigation", { name: "주요 메뉴" });
+    await page.goto("/my/chats");
+    await expect(siteFooter(page)).toBeHidden();
+
+    /* 떠난 채팅함은 숨겨진 채 문서에 남지만 홈의 푸터를 숨기지 않는다 */
+    await nav.getByRole("link", { name: "홈" }).click();
+    await expect(page).toHaveURL("/");
+    await expect(siteFooter(page)).toBeVisible();
+
+    await nav.getByRole("link", { name: "채팅" }).click();
+    await expect(page).toHaveURL("/my/chats");
+    await expect(siteFooter(page)).toBeHidden();
+
+    await inboxCards(page).first().getByRole("link", { name: "북로그 채팅방" }).click();
+    await expect(page).toHaveURL("/my/chats/booklog-yunseul");
+    await expect(siteFooter(page)).toBeHidden();
+
+    await nav.getByRole("link", { name: "홈" }).click();
+    await expect(page).toHaveURL("/");
+    await expect(siteFooter(page)).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL("/my/chats/booklog-yunseul");
+    await expect(siteFooter(page)).toBeHidden();
   });
 
   test("S158 대화가 짧아도 입력창은 화면 아래에 있다", async ({ page, context }) => {
@@ -295,6 +323,66 @@ test.describe("R10 푸터 없는 채팅 화면", () => {
     const form = (await page.locator("form").filter({ has: messageInput(page) }).boundingBox())!;
     expect(form.y + form.height).toBeGreaterThan(size.height - 80);
     expect(form.y + form.height).toBeLessThanOrEqual(size.height);
+  });
+});
+
+test.describe("R11 시연 회원 전환", () => {
+  test("S317 보낸 메시지는 보낸 회원 기준으로 나와 상대가 나뉜다", async ({ page, context }) => {
+    const text = "분류 고친 버전도 확인해 볼게요.";
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats/ledger-yunseul");
+    await messageInput(page).fill(text);
+    await messageInput(page).press("Enter");
+    await expect(messages(page).last()).toContainText(text);
+    /* 보내는 중 말풍선에는 data-message가 없어서, 저장된 뒤에야 마지막 메시지가 된다 */
+    await expect(messages(page).last()).toHaveAttribute("data-from", "me");
+
+    /* 같은 방의 개발자에게는 상대(윤슬)가 보낸 메시지다 */
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/chats/ledger-yunseul");
+    const last = messages(page).last();
+    await expect(last).toHaveAttribute("data-from", "partner");
+    expect(await spoken(last)).toBe(`윤슬: ${text}`);
+    const log = (await chatLog(page).boundingBox())!;
+    expect(Math.abs((await bubble(last).boundingBox())!.x - log.x)).toBeLessThanOrEqual(1);
+
+    await page.goto("/my/chats");
+    const first = inboxCards(page).first();
+    await expect(first.getByRole("link")).toHaveText("가계부 노트 채팅방");
+    await expect(first.locator("[data-partner]")).toHaveText("윤슬");
+    await expect(first.locator("[data-preview]")).toHaveText(text);
+
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats/ledger-yunseul");
+    await expect(messages(page).last()).toHaveAttribute("data-from", "me");
+    expect(await spoken(messages(page).last())).toBe(`나: ${text}`);
+  });
+
+  test("S318 대화방 이름 변경과 삭제는 바꾼 회원의 채팅함에만 적용된다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats/ledger-yunseul");
+    await page.getByRole("button", { name: "가계부 노트 채팅 더보기" }).click();
+    await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
+    const dialog = page.getByRole("dialog", { name: "대화방 이름 변경" });
+    await dialog.getByRole("textbox", { name: "대화방 이름" }).fill("가계부 문의");
+    await dialog.getByRole("button", { name: "저장" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("가계부 문의");
+
+    await page.goto("/my/chats/meeting-yunseul");
+    await page.getByRole("button", { name: "회의록 정리 채팅 더보기" }).click();
+    await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
+    await page.getByRole("dialog", { name: "대화방을 삭제할까요?" }).getByRole("button", { name: "삭제", exact: true }).click();
+    await expect(page).toHaveURL("/my/chats");
+    await expect(inboxCards(page)).toHaveCount(4);
+
+    /* 같은 두 방에 들어가 있는 개발자의 채팅함은 그대로다 */
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/chats");
+    await expect(inboxCards(page)).toHaveCount(4);
+    await expect(page.getByRole("list", { name: "채팅 목록" })).toContainText("회의록 정리");
+    await expect(page.getByRole("list", { name: "채팅 목록" })).not.toContainText("가계부 문의");
+    await page.goto("/my/chats/ledger-yunseul");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("가계부 노트");
   });
 });
 

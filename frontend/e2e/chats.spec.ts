@@ -20,6 +20,8 @@ const preview = (card: Locator) => card.locator("[data-preview]");
 const roomNames = (projects: string[]) => projects.map((project) => `${project} 채팅방`);
 
 const ACCENT_LIGHT = "rgb(15, 124, 74)";
+const CHIP_LIGHT = "rgb(228, 228, 224)";
+const LINE_LIGHT = "rgb(214, 214, 209)";
 const TIME_TODAY = /^(오전|오후) \d{1,2}:\d{2}$/;
 /* 연초 며칠은 작년 날짜가 되므로 두 형식을 모두 받는다 */
 const DATE = /^(\d{1,2}월 \d{1,2}일|\d{4}\. \d{1,2}\. \d{1,2}\.)$/;
@@ -97,6 +99,37 @@ test.describe("R2 채팅 카드", () => {
     expect(Math.abs(thumbBox.height - cardBox.height)).toBeLessThan(1);
     const headingBox = (await card.getByRole("heading", { level: 2 }).boundingBox())!;
     expect(headingBox.x).toBeGreaterThan(thumbBox.x + thumbBox.width);
+  });
+
+  test("S322 역할 배지는 강조색 없이 테스터는 칩 회색 바탕, 개발자는 바탕 없이 재단 회색 테두리이고 채팅방 머리도 같다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    const look = (locator: Locator) =>
+      locator.evaluate((element) => {
+        const { backgroundColor, boxShadow, color, height } = getComputedStyle(element);
+        return { backgroundColor, boxShadow, color, height };
+      });
+    const expectTester = (style: Awaited<ReturnType<typeof look>>) => {
+      expect(style.backgroundColor).toBe(CHIP_LIGHT);
+      expect(style.boxShadow).toBe("none");
+    };
+    const expectDeveloper = (style: Awaited<ReturnType<typeof look>>) => {
+      expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+      expect(style.boxShadow).toContain(`${LINE_LIGHT} 0px 0px 0px 1px inset`);
+    };
+
+    await page.goto("/my/chats");
+    const tester = await look(chatList(page).locator('[data-partner-role="tester"]').first());
+    const developer = await look(chatList(page).locator('[data-partner-role="developer"]').first());
+    expectTester(tester);
+    expectDeveloper(developer);
+    expect(developer.color).toBe(tester.color);
+    expect(developer.color).not.toBe(ACCENT_LIGHT);
+    expect(developer.height).toBe(tester.height);
+
+    await page.goto("/my/chats/ledger-yunseul");
+    expectTester(await look(page.getByRole("main").locator("header [data-partner-role]")));
+    await page.goto("/my/chats/booklog-dohyeon");
+    expectDeveloper(await look(page.getByRole("main").locator("header [data-partner-role]")));
   });
 
   test("S118 미리보기는 한 줄로 줄인다", async ({ page }) => {
@@ -231,6 +264,41 @@ test.describe("R4 검색·정렬·역할 탭", () => {
     await page.getByRole("link", { name: "전체 보기" }).click();
     await expect(page).toHaveURL("/my/chats");
     await expect(cards(page)).toHaveCount(5);
+  });
+
+  test("S319 검색어를 쓰고 곧바로 역할 탭이나 정렬을 눌러도 검색어와 고른 조건이 함께 남는다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/chats");
+    const params = () => {
+      const search = new URL(page.url()).searchParams;
+      return [search.get("q"), search.get("role"), search.get("sort")];
+    };
+
+    await searchBox(page).fill("윤슬");
+    await roleTab(page, "개발자").click();
+    await expect(cardLinks(page)).toHaveText(roomNames(["가계부 노트", "회의록 정리"]));
+    /* 검색 대기 시간(300ms)이 지나도 늦은 검색이 탭을 되돌리지 않는다 */
+    await page.waitForTimeout(600);
+    expect(params()).toEqual(["윤슬", "developer", null]);
+    await expect(roleTab(page, "개발자")).toHaveAttribute("aria-pressed", "true");
+
+    await searchBox(page).fill("가계부");
+    await sortButton(page, "오래된순").click();
+    await expect(cards(page).locator("[data-partner]")).toHaveText(["윤슬", "새벽코더"]);
+    await page.waitForTimeout(600);
+    expect(params()).toEqual(["가계부", "developer", "oldest"]);
+    await expect(sortButton(page, "오래된순")).toHaveAttribute("aria-pressed", "true");
+    await expect(searchBox(page)).toHaveValue("가계부");
+  });
+
+  test("S320 검색어를 쓰고 곧바로 다른 페이지로 가면 기다리던 검색은 버린다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats");
+    await searchBox(page).fill("북로그");
+    await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "홈" }).click();
+    await expect(page).toHaveURL("/");
+    await page.waitForTimeout(600);
+    await expect(page).toHaveURL("/");
   });
 
   for (const width of [1440, 375]) {

@@ -4,12 +4,12 @@
  */
 
 export const NAME_MAX = 20;
-const NICKNAME_PATTERN = /^[가-힣a-zA-Z0-9]{2,12}$/;
+const NICKNAME_PATTERN = /^[가-힣a-zA-Z0-9]{1,39}$/;
 const PASSWORD_PATTERN = /^(?=.*[a-zA-Z])(?=.*\d).{8,64}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** 닉네임 칸 아래 안내 문구 */
-export const NICKNAME_HINT = "한글·영문·숫자 2~12자";
+export const NICKNAME_HINT = "한글·영문·숫자 1~39자";
 /** 비밀번호 칸 아래 안내 문구 */
 export const PASSWORD_HINT = "영문과 숫자를 섞어 8자 이상";
 
@@ -19,7 +19,7 @@ export function validateName(name: string): string | undefined {
   if (name.length > NAME_MAX) return `이름은 ${NAME_MAX}자까지 쓸 수 있어요`;
 }
 
-/** 닉네임: 필수, 한글·영문·숫자 */
+/** 닉네임: 필수, 한글·영문·숫자. 길이는 깃허브 사용자명과 같은 1~39자 */
 export function validateNickname(nickname: string): string | undefined {
   if (!nickname) return "닉네임을 입력해 주세요";
   if (!NICKNAME_PATTERN.test(nickname)) return `닉네임은 ${NICKNAME_HINT}예요`;

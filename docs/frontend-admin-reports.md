@@ -166,8 +166,9 @@ S136
 - Then  결과가 없다
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  처리 Server Action 안에서 부른다
-- When  `grep -rl '"use client"' src`
-- Then  `frontend-home.md` S78의 7개 그대로다
+- When  `grep -rl '"use client"' src/app/admin src/features/admin`
+- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식) 2개만 나온다 (신고 처리 양식은 서버 양식이라 더하지 않는다)
+- 참고(2026-11-01): 처음에는 `src` 전체의 `"use client"` 개수를 적었는데, 다른 페이지가 클라이언트 컴포넌트를 더할 때마다 틀려져서 운영자 폴더만 센다.
 
 ## 번호 사용 현황
 S83~S113은 운영자 홈과 마이페이지 문서가 같은 번호를 함께 쓴다. 두 문서 모두 테스트 이름에 이 번호를 쓰고 있어서 바꾸지 않고 그대로 둔다. 확인할 때는 문서와 테스트 파일로 구분한다. 새 번호는 S114부터 쓴다.
@@ -205,8 +206,12 @@ S83~S113은 운영자 홈과 마이페이지 문서가 같은 번호를 함께 �
 | S111 | - | R11 섹션 순서 |
 | S112 | - | R4 둘 다 비었을 때 |
 | S113 | - | R12 카드 머리말 |
-| S114~S137 | 이 문서 (신고·제재 관리, R23~R30) | |
-| S191~S219 | 출금 요청 관리 (`frontend-admin-withdrawals.md`, R31~R38) | |
+| S114~S137, S282 | 이 문서 (신고·제재 관리, R23~R30) | |
+| S191~S219, S281, S284 | 출금 요청 관리 (`frontend-admin-withdrawals.md`, R31~R38) | |
+| S220~S249, S280 | 회원 관리 (`frontend-admin-users.md`, R39~R46) | |
+| S250~S279, S283 | 모집 취소 요청 관리 (`frontend-admin-cancellations.md`, R47~R54) | |
+
+리뷰를 반영하며 나중에 더한 시나리오(S280~S284)는 문서마다 그때 비어 있던 다음 번호를 썼다. 2026-11-01 기준 가장 큰 번호는 S284다.
 
 R번호도 운영자 문서는 R14부터 이어서 쓰고, 마이페이지 문서는 R1부터 따로 쓴다. 홈 문서(R1~R13)와는 문서 이름으로 구분한다.
 
@@ -248,6 +253,9 @@ R번호도 운영자 문서는 R14부터 이어서 쓰고, 마이페이지 문�
 - 2026-10-31
   - 상세가 `params`를 Suspense 밖에서 읽어, 목록에서 상세로 이동할 때 개발 서버에 `instant-shell-url-data` 진단이 떴다(회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 함께 고쳤다). `generateStaticParams`로 키를 알려 둬도 `params`는 주소마다 달라서 Suspense 안에서 읽어야 한다(Next 문서 `02-guides/optimizing-prefetching.md`). 페이지는 `params`를 그대로 넘기고 Suspense 안에서 키를 읽고 검사한다. S118 참고의 "응답 상태는 200"을 실제로 확인한 값으로 고쳤다.
   - 공백 없는 긴 처리 메모가 375px 화면에서 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, 상세의 정보 칸에 `wrap-anywhere`를 줘서 함께 고쳤다(S282, `frontend-admin-withdrawals.md` S281).
+- 2026-11-01
+  - "번호 사용 현황"에 운영자 하위 페이지 문서(출금 요청·회원·모집 취소)와 리뷰 반영 번호(S280~S284)를 더했다. 세 PR(#12~#14)이 같은 표를 고치면 충돌해서 병합 뒤로 미뤄 둔 일이다.
+  - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, R22 구조, S97 오래 기다린 요청)

@@ -145,8 +145,9 @@ S104
 - Then  `layout.tsx`가 없다
 - When  `grep -L "requireAdmin" src/app/admin/page.tsx src/app/admin/*/page.tsx`
 - Then  결과가 없다 (모든 운영자 페이지가 권한을 확인한다)
-- When  `grep -rl '"use client"' src`
-- Then  S78의 6개 그대로다
+- When  `grep -rl '"use client"' src/app/admin src/features/admin`
+- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식) 2개만 나온다 (운영자 홈은 더하지 않는다)
+- 참고(2026-11-01): 처음에는 `src` 전체의 `"use client"` 개수를 적었는데, 다른 페이지가 클라이언트 컴포넌트를 더할 때마다 틀려져서 운영자 폴더만 센다.
 
 ## 기존 시나리오 변경
 - S26: `/admin`은 더 이상 "준비 중"이 아니므로 목록에서 뺀다. 하위 4개 주소는 tester로 열면 안내 화면이 나오므로 `demo-role=admin`으로 따로 확인한다.
@@ -178,6 +179,8 @@ S104
   - 출금 요청 관리를 만들면서 출금 목업을 출금 페이지와 함께 쓰게 했다. 처리한 출금은 처리 대기에서 빠지고, 오래 기다린 요청의 출금 항목은 상세로 간다. S93의 탭 이동 확인은 아직 준비 중인 "모집 취소"로 바꿨다(`frontend-admin-withdrawals.md`).
   - 모집 취소 요청 관리를 만들면서 모집 취소 목업을 모집 취소 페이지와 함께 쓰게 했다. 처리한 요청은 처리 대기에서 빠지고, 오래 기다린 요청의 모집 취소 항목은 상세로 간다. S93은 "준비 중" 대신 그 페이지 제목을 본다(`frontend-admin-cancellations.md`).
   - 운영자 홈과 하위 페이지 4개를 구현했다. S83~S103은 `e2e/admin-home.spec.ts`, S26 변경은 `e2e/links.spec.ts`에 있고 S104는 grep으로 확인한다.
+- 2026-11-01
+  - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
 - 제품 기록: `frontend/PRODUCT.md`

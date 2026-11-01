@@ -5,7 +5,7 @@ import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
 import { DemoSwitcher } from "./DemoSwitcher";
 
-/** 사이트 푸터. 채팅처럼 HideFooter를 둔 화면이 보이는 동안에는 숨는다 */
+/** 사이트 푸터. 채팅방처럼 HideFooter를 둔 화면이 보이는 동안에는 숨는다 */
 export function AppFooter() {
   return (
     <footer data-site-footer className="mt-24 bg-surface-muted">

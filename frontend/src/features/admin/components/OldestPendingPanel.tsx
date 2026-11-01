@@ -20,7 +20,7 @@ export function OldestPendingPanel({ items, now }: { items: PendingItem[]; now: 
           {items.map((item, index) => (
             <li key={item.id}>
               <Link
-                href={item.kind === "report" ? `/admin/reports/${item.id}` : ADMIN_REQUEST_PATH[item.kind]}
+                href={`${ADMIN_REQUEST_PATH[item.kind]}/${item.id}`}
                 className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-300 ease-brand hover:bg-surface-strong"
               >
                 <span className="w-4 text-sm font-extrabold text-accent tabular-nums">{index + 1}</span>

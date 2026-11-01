@@ -68,7 +68,8 @@ test.describe("R24 접근 권한", () => {
   test("S118 없는 신고는 맞춤 404 화면을 보여 준다", async ({ page }) => {
     await page.goto("/admin/reports/nope");
     await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
-    await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+    /* 스트리밍 순서에 따라 Next가 noindex 메타를 두 번 넣기도 해서 개수가 아니라 있는지만 본다 */
+    await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached();
   });
 });
 
@@ -243,5 +244,15 @@ test.describe("R29 로딩과 접근성", () => {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, path).toBeLessThanOrEqual(0);
     }
+  });
+
+  test("S282 공백 없는 긴 메모도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
+    const longWord = "a".repeat(80);
+    await decide(page, "report-1", "기각", longWord);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/admin/reports/report-1");
+    await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(longWord);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 });

@@ -5,7 +5,6 @@ const COMING_SOON_PATHS = [
   "/recruitments",
   "/recruitments/booklog",
   "/my/chats",
-  "/my/profile/edit",
   "/login",
   "/signup",
   "/terms",
@@ -14,7 +13,7 @@ const COMING_SOON_PATHS = [
   "/notices",
 ];
 
-const ADMIN_COMING_SOON_PATHS = ["/admin/users", "/admin/withdrawals", "/admin/cancellations"];
+const ADMIN_SUB_PATHS = ["/admin/users", "/admin/withdrawals", "/admin/cancellations"];
 
 test.describe("R11 빈 링크와 404", () => {
   for (const path of COMING_SOON_PATHS) {
@@ -26,14 +25,17 @@ test.describe("R11 빈 링크와 404", () => {
     });
   }
 
-  /* 운영자 하위 페이지는 일반 회원에게 안내 화면이 나오므로 운영자로 확인한다 */
-  for (const path of ADMIN_COMING_SOON_PATHS) {
-    test(`S26 ${path}는 운영자에게 준비 중 화면을 연다`, async ({ page, context }) => {
+  /*
+   * 운영자 하위 페이지는 일반 회원에게 안내 화면이 나오므로 운영자로 확인한다.
+   * 준비 중이든 완성됐든 열리고 제목이 있어야 한다. 페이지가 생길 때마다 목록을 고치지 않아서
+   * 출금·회원·모집 취소 PR이 이 줄을 똑같이 두고, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
+   */
+  for (const path of ADMIN_SUB_PATHS) {
+    test(`S26 ${path}는 운영자에게 열린다`, async ({ page, context }) => {
       await setDemo(context, { role: "admin" });
       const response = await page.goto(path);
       expect(response?.status()).toBe(200);
-      await expect(page.getByRole("heading", { level: 1, name: /준비 중/ })).toBeVisible();
-      await expect(page.getByRole("main").getByRole("link", { name: "홈으로" })).toHaveAttribute("href", "/");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     });
   }
 

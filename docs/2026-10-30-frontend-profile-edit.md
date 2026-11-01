@@ -10,7 +10,7 @@
 - 회원 정보는 이름·닉네임·이메일 세 가지다 (`features/my/types.ts`의 `Profile`). 기획서에 수정 규칙은 없다.
 - 개발자와 테스터는 한 계정이다. 화면을 역할로 나누지 않는다.
 - 백엔드는 고려하지 않는다. 데이터와 제출은 모두 목업이다.
-- `develop`에는 크레딧 PR(#9)이 아직 없다. 출금 폼의 `Field` 패턴, `Button shape="field"`, `.select-field`는 쓸 수 없고 쓸 필요도 없다 (금액 폼이 아니므로 알약 규칙).
+- 크레딧 PR(#9)의 출금 폼 `Field` 패턴, `Button shape="field"`, `.select-field`는 쓰지 않는다 (금액 폼이 아니므로 알약 규칙). (고침 11-01: PR #9가 develop에 병합됨)
 
 ## 1. 접근 제어 (R1)
 비로그인 사용자는 개인정보 수정을 볼 수 없고 로그인으로 이동한다.
@@ -140,7 +140,7 @@ S181 구조 (기존 S78)
 ## 작업 순서
 0. 브랜치 — `git switch -c feature/frontend-profile origin/develop && git branch --unset-upstream`, 이 계획을 `docs/2026-10-30-frontend-profile-edit.md`로 저장
 1. 데이터 계층 — S165, S166의 데이터
-   - 파일: `src/features/my/api.ts`에 `getProfile(next)` 추가 (`getMyPageSummary`의 세션 확인·시연 지연을 `requireMember`로 빼서 함께 씀) (고침 10-30: `lib/auth.ts`·`waitIfSlow`는 크레딧 PR에만 있어 develop에 없음)
+   - 파일: `src/features/my/api.ts`에 `getProfile(next)` 추가 (세션 확인은 `lib/auth.ts`의 `requireMember`, 시연 지연은 `lib/demo.ts`의 `waitIfSlow`를 씀) (고침 11-01: develop 병합 후 공용 함수로 바꿈)
    - 파일: `src/features/my/mock.ts`에 `DEMO_PROFILES`(시연 회원 프로필, 닉네임 중복 검사에도 씀), `DEMO_PASSWORD = "test1234"` 추가. 검사 함수 `isNicknameTaken`·`isCurrentPassword`는 `api.ts`에 둔다 (`mock.ts`는 `api.ts`만 불러온다)
    - 확인: `npx tsc --noEmit`
 2. 페이지와 보기 — S163, S164, S165, S166, S178
@@ -177,8 +177,8 @@ S181 구조 (기존 S78)
 ## 참고 (2026-10-30 확인)
 - 페이지 URL: `docs/page-urls.md` 55행 "개인정보 수정 `/my/profile/edit` 확정"
 - 프로필 데이터: `frontend/src/features/my/types.ts` `Profile`, `mock.ts` `buildMyPageSummary`
-- 세션·접근 제어: `frontend/src/lib/session.ts`, `frontend/src/features/my/api.ts` `requireMember`
-- 폼 패턴: `feature/frontend-credits`의 `features/credit/actions.ts`, `components/WithdrawalForm.tsx` (PR #9, 아직 develop에 없음)
+- 세션·접근 제어: `frontend/src/lib/session.ts`, `frontend/src/lib/auth.ts` `requireMember`
+- 폼 패턴: `frontend/src/features/credit/actions.ts`, `components/WithdrawalForm.tsx` (PR #9)
 - 모양 규칙: `frontend/DESIGN.md` 260~265행 (알약 / The Money Field Rule)
 - 설정 화면 레퍼런스 (10-30 확인): Tailwind Plus 설정 화면 https://tailwindcss.com/plus/ui-blocks/application-ui/page-examples/settings-screens , SaaS 설정 페이지 패턴 https://www.saasui.design/blog/saas-settings-page-ux-patterns
 - 기존 링크 테스트: `e2e/header.spec.ts`, `e2e/mobile-menu.spec.ts`, `e2e/my.spec.ts`, `e2e/links.spec.ts`

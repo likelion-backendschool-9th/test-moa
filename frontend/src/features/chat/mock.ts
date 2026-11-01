@@ -175,6 +175,11 @@ const MEMBER_NICKNAME: Record<Exclude<Role, "guest">, string | null> = {
   admin: null,
 };
 
+/** 시연용 회원의 닉네임. 보낸 메시지에 보낸 회원으로 담는다. 운영자는 null */
+export function chatMemberNickname(role: Exclude<Role, "guest">) {
+  return MEMBER_NICKNAME[role];
+}
+
 export type ChatThreadSeed = { room: ChatRoom; messages: ChatMessage[] };
 
 /**

@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
-import { getSession } from "@/lib/session";
-import { buildChatThreads, type ChatThreadSeed } from "./mock";
+import { getSession, type Role } from "@/lib/session";
+import { buildChatThreads, chatMemberNickname, type ChatThreadSeed } from "./mock";
 import { CHATS_PATH, type ChatQuery } from "./query";
 import {
   CHAT_MESSAGE_MAX,
@@ -22,7 +22,11 @@ import {
 
 const SLOW_DELAY_MS = 1500;
 
-/* 시연용으로 대화방 이름 변경·삭제와 보낸 메시지를 브라우저 세션 쿠키에 저장한다. 브라우저를 닫으면 처음 상태로 돌아간다 */
+/*
+ * 시연용으로 대화방 이름 변경·삭제와 보낸 메시지를 브라우저 세션 쿠키에 저장한다. 브라우저를 닫으면 처음 상태로 돌아간다.
+ * 이름 변경·삭제는 내 채팅함에만 적용되므로 회원마다 쿠키를 따로 둔다("demo-chat-tester" 꼴).
+ * 보낸 메시지는 같은 방의 두 회원이 함께 보므로 쿠키 하나에 두고, 보낸 회원을 같이 담아 보는 회원 기준으로 나·상대를 나눈다.
+ */
 const CHAT_STATE_COOKIE = "demo-chat";
 const CHAT_SENT_COOKIE = "demo-chat-sent";
 /* 쿠키 한 개는 약 4KB까지라, 보낸 메시지 쿠키 값이 이 길이를 넘으면 오래된 것부터 지운다 */
@@ -37,14 +41,19 @@ type ChatOverrides = {
   names: Record<string, string>;
 };
 
-/** 회원이 보낸 메시지 한 건 */
-type SentMessage = { roomKey: string; text: string; sentAt: string };
+/** 회원이 보낸 메시지 한 건. sender는 보낸 회원의 닉네임이다 */
+type SentMessage = { roomKey: string; sender: string; text: string; sentAt: string };
+
+/** 채팅방이 있을 수 있는 로그인 회원 */
+type Member = Exclude<Role, "guest">;
 
 const byLatest = (a: ChatRoom, b: ChatRoom) => b.lastMessageAt.localeCompare(a.lastMessageAt);
 const byOldest = (a: ChatRoom, b: ChatRoom) => a.lastMessageAt.localeCompare(b.lastMessageAt);
 
-async function readOverrides(): Promise<ChatOverrides> {
-  const raw = (await cookies()).get(CHAT_STATE_COOKIE)?.value;
+const stateCookieName = (member: Member) => `${CHAT_STATE_COOKIE}-${member}`;
+
+async function readOverrides(member: Member): Promise<ChatOverrides> {
+  const raw = (await cookies()).get(stateCookieName(member))?.value;
   if (!raw) return { hidden: [], names: {} };
   try {
     const parsed: unknown = JSON.parse(decodeURIComponent(raw));
@@ -61,14 +70,16 @@ async function readOverrides(): Promise<ChatOverrides> {
   }
 }
 
-async function writeOverrides(overrides: ChatOverrides) {
-  (await cookies()).set(CHAT_STATE_COOKIE, encodeURIComponent(JSON.stringify(overrides)), COOKIE_OPTIONS);
+async function writeOverrides(member: Member, overrides: ChatOverrides) {
+  (await cookies()).set(stateCookieName(member), encodeURIComponent(JSON.stringify(overrides)), COOKIE_OPTIONS);
 }
 
+/* 보낸 회원이 없는 예전 형식의 메시지는 누가 보냈는지 알 수 없어 버린다 */
 function isSentMessage(value: unknown): value is SentMessage {
   const item = value as Partial<Record<keyof SentMessage, unknown>> | null;
   return (
     typeof item?.roomKey === "string" &&
+    typeof item.sender === "string" &&
     typeof item.text === "string" &&
     typeof item.sentAt === "string" &&
     !Number.isNaN(Date.parse(item.sentAt))
@@ -102,17 +113,27 @@ function firstSentAt(sent: SentMessage[]) {
   return anchors;
 }
 
-/** 목업 대화방에 바꾼 이름, 보낸 메시지를 입힌다. 삭제한 방은 뺀다 */
-function applyMemberState(threads: ChatThreadSeed[], overrides: ChatOverrides, sent: SentMessage[]): ChatThreadSeed[] {
+/** 목업 대화방에 바꾼 이름, 보낸 메시지를 입힌다. 보낸 메시지는 보는 회원(me)이 보냈으면 나, 아니면 상대다. 삭제한 방은 뺀다 */
+function applyMemberState(
+  threads: ChatThreadSeed[],
+  overrides: ChatOverrides,
+  sent: SentMessage[],
+  me: string | null,
+): ChatThreadSeed[] {
   return threads
     .filter(({ room }) => !overrides.hidden.includes(room.roomKey))
     .map(({ room, messages }) => {
-      const mine = sent
+      const added = sent
         .filter((message) => message.roomKey === room.roomKey)
         .map(
-          ({ text, sentAt }, index): ChatMessage => ({ id: `${room.roomKey}-sent-${index + 1}`, from: "me", text, sentAt }),
+          ({ sender, text, sentAt }, index): ChatMessage => ({
+            id: `${room.roomKey}-sent-${index + 1}`,
+            from: sender === me ? "me" : "partner",
+            text,
+            sentAt,
+          }),
         );
-      const all = [...messages, ...mine];
+      const all = [...messages, ...added];
       const last = all[all.length - 1];
       const name = overrides.names[room.roomKey];
       return {
@@ -130,21 +151,22 @@ async function loadMemberThreads(nextPath: string) {
   const session = await getSession();
   if (session.role === "guest") redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   const mode = await getDemoDataMode();
-  const [overrides, sent] = await Promise.all([readOverrides(), readSent()]);
+  const [overrides, sent] = await Promise.all([readOverrides(session.role), readSent()]);
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
   /* 일시는 요청 시각 기준이라 미리 렌더링하지 않는다 */
   await connection();
   const now = new Date();
   const threads = mode === "empty" ? [] : buildChatThreads(session.role, now, firstSentAt(sent));
-  return { threads: applyMemberState(threads, overrides, sent), now };
+  return { threads: applyMemberState(threads, overrides, sent, chatMemberNickname(session.role)), now };
 }
 
-/** 로그인한 회원이 들어가 있고 삭제하지 않은 대화방이면 true */
-async function isMemberRoom(roomKey: string) {
-  const session = await getSession();
-  if (session.role === "guest") return false;
-  const { hidden } = await readOverrides();
-  return !hidden.includes(roomKey) && buildChatThreads(session.role, new Date()).some(({ room }) => room.roomKey === roomKey);
+/** 로그인한 회원이 들어가 있고 삭제하지 않은 대화방이면 그 회원, 아니면 null */
+async function roomMember(roomKey: string): Promise<Member | null> {
+  const { role } = await getSession();
+  if (role === "guest") return null;
+  const { hidden } = await readOverrides(role);
+  const joined = !hidden.includes(roomKey) && buildChatThreads(role, new Date()).some(({ room }) => room.roomKey === roomKey);
+  return joined ? role : null;
 }
 
 /** 로그인한 회원이 들어가 있는 채팅방을 검색 조건으로 거른다. 비로그인이면 로그인으로 보낸다 */
@@ -182,7 +204,7 @@ export async function getChatRoom(roomKey: string): Promise<ChatRoomData> {
 export async function getChatRoomTitle(roomKey: string): Promise<string | null> {
   const session = await getSession();
   if (session.role === "guest" || (await getDemoDataMode()) === "empty") return null;
-  const { hidden, names } = await readOverrides();
+  const { hidden, names } = await readOverrides(session.role);
   if (hidden.includes(roomKey)) return null;
   await connection();
   const thread = buildChatThreads(session.role, new Date()).find(({ room }) => room.roomKey === roomKey);
@@ -192,22 +214,26 @@ export async function getChatRoomTitle(roomKey: string): Promise<string | null> 
 /** 대화방 이름을 바꾼다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며, 빈 이름은 무시한다 */
 export async function renameChatRoom(roomKey: string, name: string) {
   const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
-  if (!trimmed || !(await isMemberRoom(roomKey))) return;
-  const overrides = await readOverrides();
-  await writeOverrides({ ...overrides, names: { ...overrides.names, [roomKey]: trimmed } });
+  const member = trimmed ? await roomMember(roomKey) : null;
+  if (!member) return;
+  const overrides = await readOverrides(member);
+  await writeOverrides(member, { ...overrides, names: { ...overrides.names, [roomKey]: trimmed } });
 }
 
-/** 대화방을 채팅함에서 지운다 */
+/** 대화방을 내 채팅함에서 지운다. 상대의 채팅함에는 그대로 있다 */
 export async function deleteChatRoom(roomKey: string) {
-  if (!(await isMemberRoom(roomKey))) return;
-  const overrides = await readOverrides();
-  await writeOverrides({ ...overrides, hidden: [...new Set([...overrides.hidden, roomKey])] });
+  const member = await roomMember(roomKey);
+  if (!member) return;
+  const overrides = await readOverrides(member);
+  await writeOverrides(member, { ...overrides, hidden: [...new Set([...overrides.hidden, roomKey])] });
 }
 
 /** 메시지를 보낸다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며(가운데 줄바꿈은 둔다), 빈 메시지는 무시한다 */
 export async function sendChatMessage(roomKey: string, text: string) {
   const trimmed = text.trim().slice(0, CHAT_MESSAGE_MAX);
-  if (!trimmed || !(await isMemberRoom(roomKey))) return;
+  const member = trimmed ? await roomMember(roomKey) : null;
+  const sender = member && chatMemberNickname(member);
+  if (!sender) return;
   const sent = await readSent();
-  await writeSent([...sent, { roomKey, text: trimmed, sentAt: new Date().toISOString() }]);
+  await writeSent([...sent, { roomKey, sender, text: trimmed, sentAt: new Date().toISOString() }]);
 }

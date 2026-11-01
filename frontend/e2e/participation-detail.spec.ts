@@ -137,3 +137,24 @@ test.describe("R14 상세 반응형과 링크", () => {
     }
   });
 });
+
+test.describe("R14 상세 반응형 · 제출한 피드백", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test("S285 긴 URL이나 공백 없는 문자열을 제출해도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
+    const url = `https://example.com/books/trade/requests?${"query=used-books-trade-request&".repeat(6)}end=1`;
+    const error = `TypeError:${"CannotReadPropertiesOfUndefined".repeat(4)}`;
+    await page.goto(DETAIL);
+    await field(page).fill(`거래 요청에서 오류가 났어요. ${url} ${error}`);
+    await submit(page).click();
+    await expect(page.getByRole("heading", { name: "제출한 피드백" })).toBeVisible();
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBe(0);
+    const card = page.getByRole("heading", { name: "제출한 피드백" }).locator("..");
+    const box = await card.boundingBox();
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);
+    const text = card.locator("p");
+    expect(await text.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  });
+});

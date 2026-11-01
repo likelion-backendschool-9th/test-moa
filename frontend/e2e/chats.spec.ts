@@ -55,13 +55,14 @@ test.describe("R2 채팅 카드", () => {
     await expect(card.getByRole("heading", { level: 2 })).toHaveText("북로그 채팅방");
     await expect(partner(card)).toHaveText("서재지기");
     await expect(partnerRole(card)).toHaveText("개발자");
+    expect((await partnerRole(card).boundingBox())!.x).toBeLessThan((await partner(card).boundingBox())!.x);
     await expect(card).not.toContainText("윤슬");
     await expect(preview(card)).toHaveText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.");
     await expect(card.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
     await expect(card.getByRole("button", { name: "북로그 채팅 더보기" })).toBeVisible();
   });
 
-  test("S117 프로젝트 이미지는 카드 왼쪽에 붙어 높이를 다 채운다", async ({ page }) => {
+  test("S117 프로젝트 이미지는 카드 왼쪽에 붙어 높이를 다 채우고, 선 없이 그라데이션으로 사라진다", async ({ page }) => {
     await page.goto("/my/chats");
     const card = cards(page).first().locator("article");
     const thumb = card.locator("[data-thumb]");
@@ -69,6 +70,8 @@ test.describe("R2 채팅 카드", () => {
     await expect(image).toHaveAttribute("src", "/sample/projects/booklog.svg");
     await expect(image).toHaveAttribute("alt", "");
     expect(await image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
+    await expect(thumb).toHaveCSS("border-right-width", "0px");
+    await expect(thumb.locator("[data-thumb-fade]")).toHaveCSS("background-image", /linear-gradient/);
     const cardBox = (await card.boundingBox())!;
     const thumbBox = (await thumb.boundingBox())!;
     expect(Math.abs(thumbBox.x - cardBox.x)).toBeLessThan(1);
@@ -231,15 +234,15 @@ test.describe("R5 더보기", () => {
     await setDemo(context, { role: "tester" });
   });
 
-  test("S127 더보기를 누르면 메뉴가 열리고 첫 항목에 포커스가 간다", async ({ page }) => {
+  test("S127 더보기를 누르면 이름 변경과 맨 아래 삭제 메뉴가 열리고 첫 항목에 포커스가 간다", async ({ page }) => {
     await page.goto("/my/chats");
     const button = page.getByRole("button", { name: "북로그 채팅 더보기" });
     await button.click();
     await expect(button).toHaveAttribute("aria-expanded", "true");
     const menu = page.getByRole("menu", { name: "북로그 채팅 메뉴" });
-    await expect(menu.getByRole("menuitem", { name: "채팅방 열기" })).toHaveAttribute("href", "/my/chats/booklog-yunseul");
-    await expect(menu.getByRole("menuitem", { name: "모집 글 보기" })).toHaveAttribute("href", "/recruitments/booklog");
-    await expect(menu.getByRole("menuitem", { name: "채팅방 열기" })).toBeFocused();
+    await expect(menu.getByRole("menuitem")).toHaveText(["대화방 이름 변경", "대화방 삭제"]);
+    await expect(menu.getByRole("separator")).toHaveCount(1);
+    await expect(menu.getByRole("menuitem", { name: "대화방 이름 변경" })).toBeFocused();
   });
 
   test("S128 화살표로 옮기고 Esc와 바깥 클릭으로 닫는다", async ({ page }) => {
@@ -247,9 +250,9 @@ test.describe("R5 더보기", () => {
     const button = page.getByRole("button", { name: "북로그 채팅 더보기" });
     const menu = page.getByRole("menu", { name: "북로그 채팅 메뉴" });
     await button.click();
-    await expect(menu.getByRole("menuitem", { name: "채팅방 열기" })).toBeFocused();
+    await expect(menu.getByRole("menuitem", { name: "대화방 이름 변경" })).toBeFocused();
     await page.keyboard.press("ArrowDown");
-    await expect(menu.getByRole("menuitem", { name: "모집 글 보기" })).toBeFocused();
+    await expect(menu.getByRole("menuitem", { name: "대화방 삭제" })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(menu).toHaveCount(0);
     await expect(button).toBeFocused();
@@ -257,6 +260,59 @@ test.describe("R5 더보기", () => {
     await expect(menu).toBeVisible();
     await page.getByRole("heading", { level: 1, name: "채팅함" }).click();
     await expect(menu).toHaveCount(0);
+  });
+
+  test("S139 대화방 이름을 바꾸면 카드·검색에 반영되고 새로고침해도 남는다", async ({ page }) => {
+    await page.goto("/my/chats");
+    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
+    const dialog = page.getByRole("dialog", { name: "대화방 이름 변경" });
+    const input = dialog.getByRole("textbox", { name: "대화방 이름" });
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue("북로그");
+
+    await dialog.getByRole("button", { name: "취소" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "북로그 채팅 더보기" })).toBeFocused();
+
+    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
+    await input.fill("북로그 피드백 문의");
+    await dialog.getByRole("button", { name: "저장" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(cardLinks(page).first()).toHaveText("북로그 피드백 문의 채팅방");
+    await expect(page.getByRole("button", { name: "북로그 피드백 문의 채팅 더보기" })).toBeVisible();
+
+    await page.reload();
+    await expect(cardLinks(page).first()).toHaveText("북로그 피드백 문의 채팅방");
+    await searchBox(page).fill("피드백 문의");
+    await expect(cardLinks(page)).toHaveText(roomNames(["북로그 피드백 문의"]));
+  });
+
+  test("S140 대화방을 삭제하면 확인 뒤 목록·탭 수에서 빠지고 새로고침해도 남는다", async ({ page }) => {
+    await page.goto("/my/chats");
+    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
+    const dialog = page.getByRole("dialog", { name: "대화방을 삭제할까요?" });
+    await expect(dialog).toContainText('"모아플랜" 대화방이 채팅함 목록에서 사라져요.');
+    await expect(dialog.getByRole("button", { name: "취소" })).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(cards(page)).toHaveCount(5);
+
+    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
+    await dialog.getByRole("button", { name: "삭제", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(cards(page)).toHaveCount(4);
+    await expect(chatList(page)).not.toContainText("모아플랜");
+    await expect(page.getByText("채팅방 4개")).toBeVisible();
+    await expect(roleTabs(page)).toHaveText(["전체 4", "테스터 4", "개발자 0"]);
+
+    await page.reload();
+    await expect(cards(page)).toHaveCount(4);
+    await expect(chatList(page)).not.toContainText("모아플랜");
   });
 });
 

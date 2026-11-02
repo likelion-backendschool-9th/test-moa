@@ -291,14 +291,30 @@ test.describe("R4 검색·정렬·역할 탭", () => {
     await expect(searchBox(page)).toHaveValue("가계부");
   });
 
-  test("S320 검색어를 쓰고 곧바로 다른 페이지로 가면 기다리던 검색은 버린다", async ({ page, context }) => {
+  test("S320 검색어를 쓰고 곧바로 다른 페이지로 가면 기다리던 검색은 버리고, 돌아오면 입력창과 목록이 맞는다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
+    const nav = page.getByRole("navigation", { name: "주요 메뉴" });
     await page.goto("/my/chats");
+
+    /* 헤더의 채팅 링크로 돌아오기 */
     await searchBox(page).fill("북로그");
-    await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "홈" }).click();
+    await nav.getByRole("link", { name: "홈" }).click();
     await expect(page).toHaveURL("/");
     await page.waitForTimeout(600);
     await expect(page).toHaveURL("/");
+    await nav.getByRole("link", { name: "채팅" }).click();
+    await expect(page).toHaveURL("/my/chats");
+    await expect(searchBox(page)).toHaveValue("");
+    await expect(cards(page)).toHaveCount(5);
+
+    /* 브라우저 뒤로 가기로 돌아오기 */
+    await searchBox(page).fill("모아");
+    await nav.getByRole("link", { name: "홈" }).click();
+    await expect(page).toHaveURL("/");
+    await page.goBack();
+    await expect(page).toHaveURL("/my/chats");
+    await expect(searchBox(page)).toHaveValue("");
+    await expect(cards(page)).toHaveCount(5);
   });
 
   for (const width of [1440, 375]) {

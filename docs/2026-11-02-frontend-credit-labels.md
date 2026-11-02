@@ -30,14 +30,14 @@ S201 구독 결제 안내 (고침 11-02: 크레딧 구분 이름 변경)
 - Given `demo-role=tester`, `/my/subscription`
 - Then  "이벤트 크레딧도 구독 결제에 쓸 수 있어요"가 보인다
 
-## 2. 크레딧 내역 시각 (R2) (고침 11-02: 날짜 칸 아래 시각 → 날짜별 묶음과 왼쪽 시각 열. 시각을 날짜 옆에 붙이면 375px에서 이름이 두세 글자만 남았고, 배치 후보 6개 중 E안을 골랐음)
-`/my/credits` 크레딧 내역을 서울 기준 날짜별로 묶는다. 날짜는 묶음 소제목으로 한 번만 보여 주고, 각 행은 왼쪽 24시간 시각 열, 이름, 금액 순이다. 같은 날 행 사이에는 구분선을 둔다.
+## 2. 크레딧 내역 시각 (R2) (고침 11-02: 날짜 칸 아래 시각 → 날짜별 묶음과 받음·나감 원(C안). 시각을 날짜 옆에 붙이면 375px에서 이름이 두세 글자만 남았고, 배치 후보 6개를 비교해 C안을 골랐음)
+`/my/credits` 크레딧 내역을 서울 기준 날짜별로 묶는다. 소제목은 오늘·어제, 그 전은 "N월 N일"이다. 각 행은 받음(+ 초록)·나감(− 회색) 원, 이름과 그 아래 시각("오후 3:12"), 금액 순이다.
 
 S341 크레딧 내역 날짜 묶음
 - Given `demo-role=tester`, `/my/credits`
-- Then  12개 행 모두 왼쪽에 "HH:MM" 시각이 보인다
-- Then  시각은 `<time>`이고 `dateTime`이 ISO 시각이다
-- Then  묶음마다 "N월 N일" 소제목(h3)이 있고, 묶음 목록의 이름이 그 소제목이다
+- Then  12개 행 모두 이름 아래에 "오전|오후 H:MM"이 보이고, 시각은 `<time dateTime>`(ISO)이다
+- Then  묶음마다 "오늘|어제|N월 N일" 소제목(h3)이 있고, 묶음 목록의 이름이 그 소제목이다
+- Then  첫 소제목은 "어제"다
 
 S342 마이페이지 홈 최근 내역
 - Given `demo-role=tester`, `/my`
@@ -48,16 +48,18 @@ S345 좁은 화면 (R2·R3)
 - Then  첫 행의 "레시피핏 테스트 보상"이 잘리지 않고 다 보인다
 
 ## 3. 출금 내역 시각 (R3) (고침 11-02: R2와 같은 이유로 날짜별 묶음)
-`/my/credits/withdrawals` 출금 내역을 신청 날짜별로 묶는다. 각 행은 왼쪽 시각 열, 금액과 그 아래 은행 계좌, 상태 순이다.
+`/my/credits/withdrawals` 출금 내역을 신청 날짜별로 묶는다. 각 행은 나감 원, 금액과 그 아래 "시각 · 은행 계좌", 상태 순이다.
 
 S343 출금 내역 날짜 묶음
 - Given `demo-role=tester`, `/my/credits/withdrawals`
-- Then  2개 행 모두 왼쪽에 "HH:MM" 시각이 보이고 `<time dateTime>`이 ISO 시각이다
-- Then  묶음마다 "N월 N일" 소제목이 있다
+- Then  2개 행 모두 금액 아래에 "오전|오후 H:MM"이 보이고, 묶음마다 날짜 소제목이 있다
 
 S344 신청 직후 행
 - When  5,000 크레딧 출금을 신청한다
-- Then  3개 행이 되고, 새 행에도 시각이 보인다
+- Then  3개 행이 되고, 첫 소제목은 "오늘"이며 새 행에도 시각이 보인다
+
+## 테스트 정리 (고침 11-02: 테스트가 너무 많다는 요청)
+- `e2e/credits.spec.ts`는 같은 준비(역할·페이지)를 쓰는 시나리오를 테스트 하나로 묶어 39개에서 15개로 줄였다. 시나리오 번호와 확인하는 내용은 그대로이고, 테스트 이름에 묶은 번호를 모두 적는다.
 
 ## 범위 밖
 - 코드의 필드·함수 이름(`earned`, `signup`, `cashableCredits`)은 바꾸지 않는다. 화면 문구만 바꾼다.
@@ -71,7 +73,7 @@ S344 신청 직후 행
    - 파일: `frontend/e2e/my.spec.ts`, `frontend/e2e/credits.spec.ts`, `frontend/e2e/subscription.spec.ts`
    - 확인: `npm run test:e2e -- my.spec.ts credits.spec.ts subscription.spec.ts`
 2. 내역 시각 — S341~S345
-   - 파일: `frontend/src/features/credit/mock.ts`(시각 고정, 같은 날 여러 건), `frontend/src/features/credit/components/DayGroups.tsx` 새로 만듦(날짜별 묶음), `LedgerRow.tsx`, `LedgerList.tsx`, `WithdrawalHistory.tsx`, `frontend/src/features/my/components/RecentCredits.tsx` (`formatTime24` 추가, 기존 `formatDate`, `seoulDayKey` 재사용)
+   - 파일: `frontend/src/features/credit/mock.ts`(시각 고정, 같은 날 여러 건), `frontend/src/features/credit/components/DayGroups.tsx` 새로 만듦(날짜별 묶음), `LedgerRow.tsx`, `LedgerList.tsx`, `WithdrawalHistory.tsx`, `frontend/src/features/my/components/RecentCredits.tsx` `FlowIcon.tsx` 새로 만듦(받음·나감 원). 기존 `formatDate`, `formatClock`, `seoulDayKey` 재사용. 기준 시각은 페이지에서 `now={new Date()}`로 넘긴다(다른 화면과 같은 방식)
    - 파일: `frontend/e2e/credits.spec.ts`, `frontend/e2e/my.spec.ts`
    - 확인: `npm run test:e2e -- my.spec.ts credits.spec.ts`
 3. 전체 확인과 문서
@@ -92,7 +94,8 @@ S344 신청 직후 행
 
 ## 가정
 - "이벤트 크레딧"은 지금의 가입 크레딧 자리다. 출금할 수 없고 구독 결제에만 쓴다는 규칙은 그대로다.
-- 시각은 열로 줄 세우기 좋게 24시간 "09:40"(`formatTime24`, 새로 추가)으로 쓴다. 채팅의 "오후 3:12"와 형식이 다르다. 날짜는 묶음 소제목 "11월 2일"(`formatDate`)로만 보여 준다. (고침 11-02: 처음에는 행마다 날짜 칸 아래 줄에 "오후 3:12"를 두었음)
+- 시각은 채팅과 같은 "오후 3:12"(`formatClock`)를 쓴다. 날짜는 묶음 소제목으로만 보여 주고, 오늘·어제는 말로 쓴다. (고침 11-02: 처음에는 행마다 날짜 칸 아래 줄에 시각을 두었고, 시각 열(E안)도 거쳤음)
+- 받음·나감 원은 금액 부호와 뜻이 같아 보조 기술에는 숨긴다(`aria-hidden`). 출금 내역은 모두 나감 원이다.
 - 목업 데이터는 "며칠 전 + 서울 시각"으로 만든다. tester는 12건이 8개 날짜에, developer는 4건이 3개 날짜에 묶이고, 하루에 여러 건인 날이 있어 구분선과 시각 차이가 보인다. 내역 순서, 금액, 합계는 그대로다. (고침 11-02: 처음에는 일 단위로만 빼서 모든 행의 시각이 같았음)
 - S번호는 S341부터 쓴다 (기존 최대 S340).
 

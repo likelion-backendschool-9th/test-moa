@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { unstable_rethrow, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -33,8 +33,24 @@ const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
 
 /** 응답을 받지 못했고 서버 목록을 다시 받은 뒤의 안내 */
 const UNCERTAIN_ERROR = "연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요";
-/** 오프라인이라 서버 목록을 다시 받지 못하고 연결을 기다리는 동안의 안내 */
-const OFFLINE_ERROR = "인터넷 연결이 끊겨 결과를 확인하지 못했어요. 연결되면 지원자 목록을 다시 불러올게요";
+/** 서버에 닿지 않아 목록을 다시 받지 못하고 연결을 기다리는 동안의 안내 */
+const DISCONNECTED_ERROR = "서버에 연결되지 않아 결과를 확인하지 못했어요. 연결되면 지원자 목록을 다시 불러올게요";
+/** 서버에 다시 닿는지 확인하는 간격. 그 사이 online 이벤트가 오면 바로 확인한다 */
+const RETRY_MS = 3_000;
+
+/**
+ * 현재 페이지에 가벼운 요청을 보내 서버에 닿는지 확인한다.
+ * router.refresh()는 재조회가 실패해도 잡을 수 없어 페이지 전체 오류 화면으로 넘어가므로, 부르기 전에 먼저 확인한다.
+ * navigator.onLine은 와이파이만 연결되고 인터넷이나 서버가 안 되는 경우를 구분하지 못해서 쓰지 않는다.
+ */
+async function canReachServer() {
+  try {
+    const response = await fetch(window.location.href, { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(RETRY_MS) });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
 export function ApplicantList({ applications, capacity, canSelect, isSubscription, projectKey, recruitmentKey }: ApplicantListProps) {
@@ -44,8 +60,10 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
   const [error, setError] = useState("");
-  /** 오프라인이라 서버 목록을 다시 받지 못하고 연결을 기다리는 중이면 true */
-  const [waitingForOnline, setWaitingForOnline] = useState(false);
+  /** 서버에 닿지 않아 연결을 기다리는 중이면, 목록을 다시 받은 뒤 보여 줄 안내. 기다리지 않으면 null */
+  const [waitingMessage, setWaitingMessage] = useState<string | null>(null);
+  /** 확정·거절을 누를 때마다 1 늘린다. 늦게 끝난 앞선 확인이 이번 결과를 덮지 않게 한다 */
+  const attempt = useRef(0);
 
   const rows = applications.map((item) => ({ ...item, status: statuses[item.id] ?? item.status }));
   const confirmedCount = rows.filter((item) => item.status === "confirmed").length;
@@ -57,30 +75,43 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
   const selected = pendingIds.filter((id) => checked.has(id));
   const overCapacity = selected.length > remaining;
 
-  /*
-   * 오프라인일 때 router.refresh()를 부르면 재조회도 실패해 페이지 전체 오류 화면으로 넘어간다.
-   * 그래서 연결이 끊긴 동안에는 화면과 안내를 그대로 두고, 연결이 돌아오면 그때 서버 목록을 다시 받는다.
+  /**
+   * 서버에 닿으면 최신 지원자 목록을 다시 받고 message를 보여 준다.
+   * 닿지 않으면 화면과 안내를 그대로 두고, 연결이 돌아올 때까지 기다린다.
    */
+  const syncWithServer = useCallback(
+    async (message: string, current: number) => {
+      const reachable = await canReachServer();
+      if (current !== attempt.current) return;
+      if (reachable) {
+        setWaitingMessage(null);
+        setError(message);
+        router.refresh();
+        return;
+      }
+      setError(DISCONNECTED_ERROR);
+      setWaitingMessage(message);
+    },
+    [router],
+  );
+
+  /* 연결을 기다리는 동안 online 이벤트와 일정 간격으로 서버에 다시 닿는지 확인한다. 서버만 내려간 경우는 online 이벤트가 오지 않는다 */
   useEffect(() => {
-    if (!waitingForOnline) return;
-    const onOnline = () => {
-      setWaitingForOnline(false);
-      setError(UNCERTAIN_ERROR);
-      router.refresh();
+    if (waitingMessage === null) return;
+    const current = attempt.current;
+    const retry = () => void syncWithServer(waitingMessage, current);
+    const timer = window.setInterval(retry, RETRY_MS);
+    window.addEventListener("online", retry);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("online", retry);
     };
-    /* 실패를 처리한 뒤 구독을 시작하기 전에 연결이 이미 돌아왔으면 이벤트를 놓치므로 바로 다시 받는다 */
-    if (navigator.onLine) {
-      onOnline();
-      return;
-    }
-    window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
-  }, [waitingForOnline, router]);
+  }, [waitingMessage, syncWithServer]);
 
   /**
    * 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다.
-   * 서버가 거절하면 되돌린다. 응답을 받지 못하면 저장됐는지 알 수 없어서, 서버의 최신 목록을 다시 받아 화면을 맞춘다.
-   * 오프라인이면 재조회도 실패하므로 연결이 돌아올 때까지 미룬다.
+   * 서버가 거절하면 그사이 정원이나 모집 상태가 바뀌었을 수 있어서, 표시를 되돌리고 서버의 최신 목록을 다시 받는다.
+   * 응답을 받지 못하면 저장됐는지 알 수 없어서 역시 최신 목록을 다시 받는다. 서버에 닿지 않으면 연결될 때까지 미룬다.
    */
   function decide(targets: Application[], status: "confirmed" | "rejected") {
     const ids = targets.map((item) => item.id);
@@ -89,8 +120,9 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
     setStatuses((prev) => ({ ...prev, ...Object.fromEntries(ids.map((id) => [id, status])) }));
     setChecked((prev) => new Set([...prev].filter((id) => !ids.includes(id))));
     setError("");
-    /* 앞선 오프라인 실패의 대기를 끝내, 이번 확정 뒤에 늦게 온 online 이벤트가 목록을 다시 받지 않게 한다 */
-    setWaitingForOnline(false);
+    /* 앞선 실패의 연결 대기를 끝내, 이번 확정 뒤에 늦게 끝난 확인이 목록을 다시 받지 않게 한다 */
+    const current = ++attempt.current;
+    setWaitingMessage(null);
     const label = APPLICATION_STATUS_LABEL[status];
     setAnnouncement(targets.length === 1 ? `${targets[0].testerNickname}님을 ${label}했어요` : `${targets.length}명을 ${label}했어요`);
     startTransition(async () => {
@@ -99,17 +131,13 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
         if (ok) return;
         undo();
         setAnnouncement("");
-        setError(`${label}하지 못했어요. 다시 시도해 주세요`);
-      } catch {
+        await syncWithServer(`${label}하지 못했어요. 그사이 정원이 찼거나 모집이 끝났을 수 있어 지원자 목록을 다시 불러왔어요`, current);
+      } catch (caught) {
+        /* 로그인 이동(redirect)·notFound는 연결 문제가 아니므로 Next가 처리하게 다시 던진다 */
+        unstable_rethrow(caught);
         undo();
         setAnnouncement("");
-        if (!navigator.onLine) {
-          setError(OFFLINE_ERROR);
-          setWaitingForOnline(true);
-          return;
-        }
-        setError(UNCERTAIN_ERROR);
-        router.refresh();
+        await syncWithServer(UNCERTAIN_ERROR, current);
       }
     });
   }

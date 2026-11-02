@@ -352,7 +352,7 @@ test.describe("R107 테스터 관리 탭", () => {
     await page.goto(BOOKLOG_MANAGE);
     /* 확정 요청(서버 액션 POST)만 끊는다. 화면을 다시 불러오는 GET은 통과한다 */
     await page.route(`**${BOOKLOG_MANAGE}`, (route) => (route.request().method() === "POST" ? route.abort() : route.fallback()));
-    const refetch = page.waitForRequest((request) => request.method() === "GET" && request.headers()["rsc"] === "1");
+    const refetch = page.waitForRequest((request) => request.method() === "GET" && request.headers()["rsc"] === "1" && !request.headers()["next-router-prefetch"]);
     await page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true }).click();
 
     await expect(page.getByRole("main").getByRole("alert")).toHaveText("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
@@ -361,6 +361,29 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
     await expect(page.getByTestId("applicant").filter({ hasText: "권나연" })).toContainText("지원");
     await expect(page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true })).toBeVisible();
+  });
+
+  test("S144 오프라인이면 화면과 안내를 유지하고, 연결되면 서버 목록으로 맞춘다", async ({ page, context }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const row = page.getByTestId("applicant").filter({ hasText: "권나연" });
+    /* 확정 요청뿐 아니라 목록 재조회까지 모두 끊긴 실제 오프라인 상태 */
+    await context.setOffline(true);
+    await row.getByRole("button", { name: "확정", exact: true }).click();
+
+    const alert = page.getByRole("main").getByRole("alert");
+    await expect(alert).toHaveText("인터넷 연결이 끊겨 결과를 확인하지 못했어요. 연결되면 지원자 목록을 다시 불러올게요");
+    /* 잠시 기다려도 오류 화면으로 넘어가지 않고 목록과 안내가 그대로 남는다 */
+    await page.waitForTimeout(1_000);
+    await expect(alert).toBeVisible();
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+    await expect(row).toContainText("지원");
+
+    const refetch = page.waitForRequest((request) => request.method() === "GET" && request.headers()["rsc"] === "1" && !request.headers()["next-router-prefetch"]);
+    await context.setOffline(false);
+    await refetch;
+    await expect(alert).toHaveText("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+    await expect(row.getByRole("button", { name: "확정", exact: true })).toBeVisible();
   });
 
   test("S143 확정 결과는 요약·분석·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {

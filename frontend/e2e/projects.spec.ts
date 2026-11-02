@@ -8,6 +8,8 @@ const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
 const FIRST_MANAGE = `${BOOKLOG}/recruitments/booklog-first`;
 const FOLIO_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder";
+const UNCERTAIN_ERROR = "연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요";
+const DISCONNECTED_ERROR = "서버에 연결되지 않아 결과를 확인하지 못했어요. 연결되면 지원자 목록을 다시 불러올게요";
 
 test.describe("R101 접근", () => {
   for (const path of ["/my/projects", "/my/projects/new", BOOKLOG, `${BOOKLOG}/edit`, `${BOOKLOG}/recruitments/new`, BOOKLOG_MANAGE]) {
@@ -332,11 +334,12 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByRole("checkbox")).toHaveCount(0);
   });
 
-  test("S139 모집이 끝난 모집과 무료 모집에는 일괄 확정이 없다", async ({ page }) => {
-    for (const path of [FIRST_MANAGE, FOLIO_MANAGE]) {
-      await page.goto(path);
-      await expect(page.getByRole("checkbox")).toHaveCount(0);
-    }
+  test("S139 모집이 끝난 모집에는 대기 지원자가 있어도 일괄 확정이 없다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    /* 대기 지원자가 없으면 조건과 관계없이 체크박스가 숨으므로, 대기 지원자가 있는 것부터 확인한다 */
+    await expect(page.getByTestId("applicant").filter({ hasText: "조하은" }).getByText("지원", { exact: true })).toBeVisible();
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(확정|거절)$/ })).toHaveCount(0);
   });
 
   test("S123 정원이 차면 확정 버튼이 비활성이다", async ({ page }) => {
@@ -371,7 +374,7 @@ test.describe("R107 테스터 관리 탭", () => {
     await row.getByRole("button", { name: "확정", exact: true }).click();
 
     const alert = page.getByRole("main").getByRole("alert");
-    await expect(alert).toHaveText("인터넷 연결이 끊겨 결과를 확인하지 못했어요. 연결되면 지원자 목록을 다시 불러올게요");
+    await expect(alert).toHaveText(DISCONNECTED_ERROR);
     /* 잠시 기다려도 오류 화면으로 넘어가지 않고 목록과 안내가 그대로 남는다 */
     await page.waitForTimeout(1_000);
     await expect(alert).toBeVisible();
@@ -384,6 +387,79 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(alert).toHaveText("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
     await expect(row.getByRole("button", { name: "확정", exact: true })).toBeVisible();
+  });
+
+  test("S144 온라인이지만 서버에 닿지 않으면 화면과 안내를 유지하고, 닿으면 서버 목록으로 맞춘다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const row = page.getByTestId("applicant").filter({ hasText: "권나연" });
+    /* 브라우저는 온라인인 채로, 이 페이지로 가는 요청(확정 POST, 연결 확인 HEAD, 재조회 GET)을 모두 끊는다. 서버가 내려간 경우와 같다 */
+    const blocked = (url: URL) => url.pathname === BOOKLOG_MANAGE;
+    await page.route(blocked, (route) => route.abort());
+    await row.getByRole("button", { name: "확정", exact: true }).click();
+
+    const alert = page.getByRole("main").getByRole("alert");
+    await expect(alert).toHaveText(DISCONNECTED_ERROR);
+    /* 다시 확인하는 간격(3초)이 지나도 오류 화면으로 넘어가지 않고 목록과 안내가 그대로 남는다 */
+    await page.waitForTimeout(3_500);
+    await expect(alert).toHaveText(DISCONNECTED_ERROR);
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+    await expect(row.getByRole("button", { name: "확정", exact: true })).toBeVisible();
+
+    /* 서버에 다시 닿으면 online 이벤트가 없어도 다음 확인 때 목록을 다시 받는다 */
+    await page.unroute(blocked);
+    await expect(alert).toHaveText(UNCERTAIN_ERROR, { timeout: 10_000 });
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+  });
+
+  test("S144 다른 탭에서 정원이 차 서버가 거절하면, 안내와 함께 최신 목록으로 맞춘다", async ({ page, context }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    /* 같은 브라우저의 다른 탭에서 7명을 확정해 정원을 채운다 */
+    const other = await context.newPage();
+    await other.goto(BOOKLOG_MANAGE);
+    await other.getByRole("checkbox", { name: "전체 선택" }).check();
+    await other.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
+    const saved = other.waitForResponse((response) => response.request().method() === "POST");
+    await other.getByRole("button", { name: "선택한 7명 확정" }).click();
+    await saved;
+
+    /* 이 탭은 아직 13명이라 확정 버튼이 눌린다. 서버는 정원 초과로 거절한다 */
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+    await page.getByTestId("applicant").filter({ hasText: "배하린" }).getByRole("button", { name: "확정", exact: true }).click();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText("확정하지 못했어요. 그사이 정원이 찼거나 모집이 끝났을 수 있어 지원자 목록을 다시 불러왔어요");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명 · 정원 20명");
+    await expect(page.getByText("정원이 다 찼어요")).toBeVisible();
+    await expect(page.getByRole("button", { name: "확정", exact: true })).toBeDisabled();
+  });
+
+  test("S144 확정 중 로그아웃됐으면 연결 안내 없이 로그인으로 간다", async ({ page, context }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    /* 다른 탭에서 시연 역할을 비로그인으로 바꾼 것과 같다 */
+    await setDemo(context, { role: "guest" });
+    await page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true }).click();
+    await expect(page).toHaveURL(`/login?next=${encodeURIComponent(BOOKLOG_MANAGE)}`);
+    await expect(page.getByText(UNCERTAIN_ERROR)).toHaveCount(0);
+  });
+
+  test("S143 모집이 끝난 모집은 서버도 확정·거절을 저장하지 않는다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    /*
+     * 화면으로는 보낼 수 없는 요청을 만든다: 북로그 확정 요청을 모집이 끝난 1차 모집의 대기 지원자(조하은) 거절로 바꾼다.
+     * 1차 모집은 정원이 차 있어 확정은 정원 검사에도 걸리므로, 정원 검사가 없는 거절로 마감 검사만 확인한다.
+     */
+    await page.route(`**${BOOKLOG_MANAGE}`, async (route) => {
+      const request = route.request();
+      if (request.method() !== "POST") return route.fallback();
+      const body = request.postData() ?? "";
+      const forged = body.replace('"booklog",["booklog-a15"],"confirmed"', '"booklog-first",["booklog-first-a7"],"rejected"');
+      expect(forged).not.toBe(body);
+      await route.continue({ postData: forged });
+    });
+    await page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true }).click();
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("확정하지 못했어요");
+
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByTestId("applicant").filter({ hasText: "조하은" }).getByText("지원", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명 · 정원 5명");
   });
 
   test("S143 확정 결과는 요약·분석·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {
@@ -424,11 +500,12 @@ test.describe("R108 피드백 탭", () => {
   test("S126 S128 피드백이 최신순이고 신고 대기만 신고할 수 있다", async ({ page }) => {
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     const rows = page.getByTestId("feedback");
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(4);
     await expect(rows.nth(0)).toContainText("신고 대기");
     await expect(rows.nth(0)).toContainText(/\d+시간 뒤 자동 지급/);
     await expect(rows.nth(1)).toContainText("신고됨");
     await expect(rows.nth(2)).toContainText("지급 완료");
+    await expect(rows.nth(3)).toContainText("지급 완료");
     await expect(rows.nth(0).getByRole("button", { name: "신고" })).toBeVisible();
     await expect(rows.nth(1).getByRole("button", { name: "신고" })).toHaveCount(0);
     await expect(rows.nth(2).getByRole("button", { name: "신고" })).toHaveCount(0);
@@ -474,8 +551,8 @@ test.describe("R109 분석 탭", () => {
     for (const term of ["지원 수", "확정 수", "피드백 제출 수", "제출률", "신고 수"]) {
       await expect(page.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) })).toBeVisible();
     }
-    /* 피드백 3건 ÷ 확정 5명 = 60% */
-    await expect(page.getByText("60%")).toBeVisible();
+    /* 피드백 4건 ÷ 확정 5명 = 80%. 제출률은 신고된 피드백도 센다 */
+    await expect(page.getByText("80%")).toBeVisible();
   });
 
   test("S131 S138 무료 모집은 구독 안내만 보여 주고 AI 분석이 없다", async ({ page }) => {
@@ -497,7 +574,7 @@ test.describe("R112 AI 분석", () => {
     await expect(ai.getByRole("heading", { name: "좋았던 점 1" })).toBeVisible();
     /* 문제마다 근거 수와 해결 제안이 같은 항목 안에 붙어 있다 */
     const issue = ai.getByRole("listitem").filter({ hasText: "표지가 늦게 떠서" });
-    await expect(issue.getByText("피드백 1건")).toBeVisible();
+    await expect(issue.getByText("피드백 2건")).toBeVisible();
     await expect(issue).toContainText("제안 검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기");
     await expect(ai.getByText(/AI가 정리한 내용이라 틀릴 수 있어요 · .+ 정리/)).toBeVisible();
   });

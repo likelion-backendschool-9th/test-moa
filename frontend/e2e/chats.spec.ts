@@ -26,7 +26,7 @@ const TIME_TODAY = /^(오전|오후) \d{1,2}:\d{2}$/;
 /* 연초 며칠은 작년 날짜가 되므로 두 형식을 모두 받는다 */
 const DATE = /^(\d{1,2}월 \d{1,2}일|\d{4}\. \d{1,2}\. \d{1,2}\.)$/;
 
-test.describe("R1 접근 제어", () => {
+test.describe("R113 접근 제어", () => {
   test("S114 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/chats");
@@ -45,7 +45,7 @@ test.describe("R1 접근 제어", () => {
   });
 });
 
-test.describe("R2 채팅 카드", () => {
+test.describe("R114 채팅 카드", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -146,7 +146,7 @@ test.describe("R2 채팅 카드", () => {
   });
 });
 
-test.describe("R3 순서와 일시", () => {
+test.describe("R115 순서와 일시", () => {
   test("S120 테스터는 최근 메시지 순서이고 일시는 시각, 어제, 날짜로 쓴다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -192,7 +192,7 @@ test.describe("R3 순서와 일시", () => {
   });
 });
 
-test.describe("R4 검색·정렬·역할 탭", () => {
+test.describe("R116 검색·정렬·역할 탭", () => {
   test("S122 채팅방을 상대 닉네임으로 검색하면 탭의 수도 바뀐다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -331,7 +331,7 @@ test.describe("R4 검색·정렬·역할 탭", () => {
   }
 });
 
-test.describe("R5 더보기", () => {
+test.describe("R117 더보기", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -432,7 +432,7 @@ test.describe("R5 더보기", () => {
   });
 });
 
-test.describe("R6 빈 상태", () => {
+test.describe("R118 빈 상태", () => {
   test("S129 운영자는 채팅방이 없고 검색 영역도 없다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/chats");
@@ -451,7 +451,7 @@ test.describe("R6 빈 상태", () => {
   });
 });
 
-test.describe("R7 로딩", () => {
+test.describe("R119 로딩", () => {
   test("S131 제목은 바로, 목록은 스켈레톤 먼저", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto("/my/chats", { waitUntil: "commit" });
@@ -463,7 +463,7 @@ test.describe("R7 로딩", () => {
   });
 });
 
-test.describe("R8 모바일", () => {
+test.describe("R120 모바일", () => {
   test("S132 좁은 화면에서도 가로 스크롤 없이 카드 요소와 역할 탭이 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.setViewportSize({ width: 375, height: 812 });
@@ -486,7 +486,7 @@ test.describe("R8 모바일", () => {
   });
 });
 
-test.describe("R9 접근성", () => {
+test.describe("R121 접근성", () => {
   test("S133 목록 구조와 카드 이름, 카드 링크 다음은 더보기 버튼이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");

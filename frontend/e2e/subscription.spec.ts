@@ -22,7 +22,7 @@ const priceRow = (page: Page, label: string) =>
 const planHeader = (page: Page, name: string) =>
   region(page, "혜택 비교").getByRole("columnheader").filter({ hasText: name });
 
-test.describe("R1 접근 제어", () => {
+test.describe("R148 접근 제어", () => {
   test("S382 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/subscription");
@@ -39,7 +39,7 @@ test.describe("R1 접근 제어", () => {
   });
 });
 
-test.describe("R2 내 구독 상태", () => {
+test.describe("R149 내 구독 상태", () => {
   test("S384 미구독", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
@@ -79,7 +79,7 @@ const nextMonthFirst = () => {
   return `${((seoul.getUTCMonth() + 1) % 12) + 1}월 1일`;
 };
 
-test.describe("R2 이번 달 모집 인원", () => {
+test.describe("R149 이번 달 모집 인원", () => {
   test("S399 구독 중이면 구독 한도로 남은 인원을 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
@@ -102,7 +102,7 @@ test.describe("R2 이번 달 모집 인원", () => {
   });
 });
 
-test.describe("R3 혜택 비교", () => {
+test.describe("R150 혜택 비교", () => {
   test("S387 비교표의 열과 행", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
@@ -128,7 +128,7 @@ test.describe("R3 혜택 비교", () => {
 
 });
 
-test.describe("R4 결제 안내", () => {
+test.describe("R151 결제 안내", () => {
   test("S390 상품 가격과 쓸 수 있는 크레딧", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
@@ -162,7 +162,7 @@ test.describe("R4 결제 안내", () => {
   });
 });
 
-test.describe("R5 만료 뒤 바뀌는 점", () => {
+test.describe("R152 만료 뒤 바뀌는 점", () => {
   test("S392 구독 중이면 남는 것과 멈추는 것을 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
@@ -188,7 +188,7 @@ test.describe("R5 만료 뒤 바뀌는 점", () => {
   });
 });
 
-test.describe("R6 로딩과 화면", () => {
+test.describe("R153 로딩과 화면", () => {
   test("S394 느린 응답이면 제목과 스켈레톤이 먼저 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto("/my/subscription", { waitUntil: "commit" });

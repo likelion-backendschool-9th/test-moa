@@ -14,7 +14,7 @@ const ACCOUNT_LINKS = [
   ["구독", "/my/subscription"],
 ] as const;
 
-test.describe("R1 접근 제어", () => {
+test.describe("R130 접근 제어", () => {
   test("S83 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my");
@@ -30,7 +30,7 @@ test.describe("R1 접근 제어", () => {
   });
 });
 
-test.describe("R2 마이페이지 메뉴", () => {
+test.describe("R131 마이페이지 메뉴", () => {
   test("S95 메뉴 5개와 현재 페이지", async ({ page }) => {
     await page.goto("/my");
     const links = page.getByRole("navigation", { name: "마이페이지 메뉴" }).getByRole("link");
@@ -66,7 +66,7 @@ test.describe("R2 마이페이지 메뉴", () => {
   });
 });
 
-test.describe("R3 프로필", () => {
+test.describe("R132 프로필", () => {
   test("S85 이름·닉네임·이메일과 개인정보 수정, 회원 유형은 없다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -83,7 +83,7 @@ test.describe("R3 프로필", () => {
   });
 });
 
-test.describe("R4 지금 할 일", () => {
+test.describe("R133 지금 할 일", () => {
   test("S100 테스트 참여 할 일을 마감이 가까운 순서로", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -129,7 +129,7 @@ test.describe("R4 지금 할 일", () => {
   });
 });
 
-test.describe("R5 크레딧", () => {
+test.describe("R134 크레딧", () => {
   test("S86 총 잔액과 구성, 내역·출금 링크", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -166,7 +166,7 @@ test.describe("R5 크레딧", () => {
   });
 });
 
-test.describe("R6 구독", () => {
+test.describe("R135 구독", () => {
   test("S89 미구독", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -192,7 +192,7 @@ test.describe("R6 구독", () => {
   });
 });
 
-test.describe("R7 활동 요약", () => {
+test.describe("R136 활동 요약", () => {
   test("S104 테스트 참여 숫자는 참여 테스트 탭으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -227,7 +227,7 @@ test.describe("R7 활동 요약", () => {
   });
 });
 
-test.describe("R8 최근 크레딧 내역", () => {
+test.describe("R137 최근 크레딧 내역", () => {
   test("S106 최근 5건을 최신순으로", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -246,7 +246,7 @@ test.describe("R8 최근 크레딧 내역", () => {
   });
 });
 
-test.describe("R11 섹션 순서", () => {
+test.describe("R140 섹션 순서", () => {
   test("S111 지금 할 일 → 활동 요약 → 크레딧 순서다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -256,7 +256,7 @@ test.describe("R11 섹션 순서", () => {
   });
 });
 
-test.describe("R12 카드 머리말", () => {
+test.describe("R141 카드 머리말", () => {
   test("S113 크레딧·구독 버튼은 제목과 같은 줄에 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
@@ -272,7 +272,7 @@ test.describe("R12 카드 머리말", () => {
   });
 });
 
-test.describe("R9 로딩", () => {
+test.describe("R138 로딩", () => {
   test("S92 메뉴와 제목은 바로, 대시보드는 스켈레톤 먼저", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto("/my", { waitUntil: "commit" });

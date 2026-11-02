@@ -7,7 +7,7 @@ const field = (page: Page) => page.getByRole("textbox", { name: "내용" });
 const submit = (page: Page) => page.getByRole("button", { name: "피드백 제출" });
 const FEEDBACK = "회의록을 두 번 써 봤어요. 할 일 목록은 맞게 나왔고 담당자 지정이 빠졌어요.";
 
-test.describe("R11 상세 접근", () => {
+test.describe("R192 상세 접근", () => {
   test("S472 비로그인은 상세 주소를 기억해 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto(DETAIL);
@@ -26,7 +26,7 @@ test.describe("R11 상세 접근", () => {
   }
 });
 
-test.describe("R12 제출 전 상세와 피드백 작성", () => {
+test.describe("R193 제출 전 상세와 피드백 작성", () => {
   test("S474 마감까지 남은 날과 작성 칸, 주 버튼 하나", async ({ page }) => {
     await page.goto(DETAIL);
     await expect(page.getByRole("heading", { level: 1, name: "회의록 정리" })).toBeVisible();
@@ -79,7 +79,7 @@ test.describe("R12 제출 전 상세와 피드백 작성", () => {
   });
 });
 
-test.describe("R13 상태별 상세", () => {
+test.describe("R194 상태별 상세", () => {
   test("S477 지급 대기는 지급 예정 일시와 제출한 피드백을 보여 준다", async ({ page }) => {
     await page.goto("/my/participations/p-study-match");
     await expect(status(page)).toContainText(/\d+월 \d+일 (오전|오후) \d+시에 자동으로 지급돼요/);
@@ -115,7 +115,7 @@ test.describe("R13 상태별 상세", () => {
   });
 });
 
-test.describe("R14 상세 반응형과 링크", () => {
+test.describe("R195 상세 반응형과 링크", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("S481 좁은 화면에서 가로 스크롤이 없고 제출 버튼이 전체 폭이며 링크는 모두 열린다", async ({ page, request }) => {
@@ -137,7 +137,7 @@ test.describe("R14 상세 반응형과 링크", () => {
   });
 });
 
-test.describe("R14 상세 반응형 · 제출한 피드백", () => {
+test.describe("R195 상세 반응형 · 제출한 피드백", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("S482 긴 URL이나 공백 없는 문자열을 제출해도 좁은 화면에서 넘치지 않는다", async ({ page }) => {

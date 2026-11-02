@@ -7,7 +7,7 @@ const historyRows = (page: Page) => region(page, "출금 내역").getByRole("lis
 const balanceRow = (page: Page, label: string) => region(page, "잔액").locator("dl > div").filter({ hasText: label });
 const filter = (page: Page, name: string) => page.getByRole("navigation", { name: "내역 필터" }).getByRole("link", { name });
 
-test.describe("R1 접근 제어", () => {
+test.describe("R123 접근 제어", () => {
   test("S348 비로그인은 크레딧 관리에서 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/credits");
@@ -19,7 +19,7 @@ test.describe("R1 접근 제어", () => {
   });
 });
 
-test.describe("R2 잔액", () => {
+test.describe("R124 잔액", () => {
   test("S350 총 잔액과 구성, 승인 대기", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
@@ -43,7 +43,7 @@ test.describe("R2 잔액", () => {
   });
 });
 
-test.describe("R3 크레딧 내역", () => {
+test.describe("R125 크레딧 내역", () => {
   test("S352 전체 내역을 최신순으로", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
@@ -97,7 +97,7 @@ test.describe("R3 크레딧 내역", () => {
   });
 });
 
-test.describe("R4 출금 내역", () => {
+test.describe("R126 출금 내역", () => {
   test("S358 지급 완료와 반려 이유", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits/withdrawals");
@@ -124,7 +124,7 @@ test.describe("R4 출금 내역", () => {
   });
 });
 
-test.describe("R4 출금 상태 표시", () => {
+test.describe("R126 출금 상태 표시", () => {
   for (const scheme of ["light", "dark"] as const) {
     test(`S370 ${scheme} 모드에서 상태는 14px 이상이고 대비가 4.5 이상이다`, async ({ page, context }) => {
       await setDemo(context, { role: "tester" });
@@ -152,7 +152,7 @@ test.describe("R4 출금 상태 표시", () => {
   }
 });
 
-test.describe("R5 출금 신청", () => {
+test.describe("R127 출금 신청", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits/withdrawals");
@@ -304,7 +304,7 @@ test("S367 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같�
   expect(await recentRows.allInnerTexts()).toEqual(full);
 });
 
-test.describe("R7 신청 기록", () => {
+test.describe("R129 신청 기록", () => {
   const PATH = "/my/credits/withdrawals";
 
   async function request(page: Page, amount: string) {

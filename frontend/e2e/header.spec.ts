@@ -3,7 +3,7 @@ import { expectLoginRedirect, setDemo } from "./helpers";
 
 const header = (page: Page) => page.getByRole("banner");
 
-test.describe("R2 헤더와 계정", () => {
+test.describe("R176 헤더와 계정", () => {
   test("S4 쿠키가 없으면 테스터로 본다", async ({ page }) => {
     await page.goto("/");
     await expect(header(page).getByRole("link", { name: "보유 크레딧 12,480" })).toBeVisible();
@@ -17,7 +17,7 @@ test.describe("R2 헤더와 계정", () => {
   });
 });
 
-test.describe("R1 오른쪽 계정 영역", () => {
+test.describe("R175 오른쪽 계정 영역", () => {
   test("S341 로그인하면 보유 크레딧, 마이페이지, 로그아웃이 이 순서로 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/");
@@ -76,7 +76,7 @@ test.describe("R1 오른쪽 계정 영역", () => {
   });
 });
 
-test.describe("R2 로그아웃", () => {
+test.describe("R176 로그아웃", () => {
   test("S345 로그아웃하면 비로그인이 되고 홈으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
@@ -97,7 +97,7 @@ test.describe("R2 로그아웃", () => {
   });
 });
 
-test.describe("R4 검색 진입점 정리", () => {
+test.describe("R178 검색 진입점 정리", () => {
   test("S326 헤더에는 검색창이 없고 홈 검색창은 그리드의 1개뿐이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/");

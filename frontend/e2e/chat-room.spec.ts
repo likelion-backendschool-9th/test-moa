@@ -24,7 +24,7 @@ const DAY = /^(\d{1,2}월 \d{1,2}일|\d{4}년 \d{1,2}월 \d{1,2}일) [월화수�
 /** 보조 기술이 읽는 말풍선 글. 숨긴 보낸 사람이 앞에 붙고, 줄바꿈은 그대로다 */
 const spoken = (item: Locator) => bubble(item).evaluate((element) => element.textContent);
 
-test.describe("R1 접근 제어", () => {
+test.describe("R163 접근 제어", () => {
   test("S141 비로그인은 이 채팅방으로 돌아오는 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/chats/booklog-yunseul");
@@ -57,7 +57,7 @@ test.describe("R1 접근 제어", () => {
   }
 });
 
-test.describe("R2 대화방 머리", () => {
+test.describe("R164 대화방 머리", () => {
   test("S144 테스터는 프로젝트 이미지, 대화방 이름, 상대와 역할 배지, 모집 글 링크, 더보기를 본다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats/booklog-yunseul");
@@ -85,7 +85,7 @@ test.describe("R2 대화방 머리", () => {
   });
 });
 
-test.describe("R3 대화 내용", () => {
+test.describe("R165 대화 내용", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats/booklog-yunseul");
@@ -126,7 +126,7 @@ test.describe("R3 대화 내용", () => {
   });
 });
 
-test.describe("R4 메시지 보내기", () => {
+test.describe("R166 메시지 보내기", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -216,7 +216,7 @@ test.describe("R4 메시지 보내기", () => {
   });
 });
 
-test.describe("R4 메시지 보내기 · 휴대폰", () => {
+test.describe("R166 메시지 보내기 · 휴대폰", () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 
   test("S340 휴대폰에서는 Enter가 줄바꿈이고, 보내기 버튼으로만 보낸다", async ({ page, context }) => {
@@ -241,7 +241,7 @@ test.describe("R4 메시지 보내기 · 휴대폰", () => {
   });
 });
 
-test.describe("R5 더보기", () => {
+test.describe("R167 더보기", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -277,7 +277,7 @@ test.describe("R5 더보기", () => {
   });
 });
 
-test.describe("R6 로딩", () => {
+test.describe("R168 로딩", () => {
   test("S154 채팅함 링크는 바로, 대화방은 스켈레톤 먼저", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto("/my/chats/booklog-yunseul", { waitUntil: "commit" });
@@ -290,7 +290,7 @@ test.describe("R6 로딩", () => {
   });
 });
 
-test.describe("R7 모바일", () => {
+test.describe("R169 모바일", () => {
   test("S155 좁은 화면에서 가로 스크롤이 없고, 최근 메시지가 입력창 바로 위에 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.setViewportSize({ width: 375, height: 812 });
@@ -316,7 +316,7 @@ test.describe("R7 모바일", () => {
   });
 });
 
-test.describe("R10 푸터 없는 채팅방", () => {
+test.describe("R172 푸터 없는 채팅방", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -366,7 +366,7 @@ test.describe("R10 푸터 없는 채팅방", () => {
   });
 });
 
-test.describe("R11 시연 회원 전환", () => {
+test.describe("R173 시연 회원 전환", () => {
   test("S317 보낸 메시지는 보낸 회원 기준으로 나와 상대가 나뉜다", async ({ page, context }) => {
     const text = "분류 고친 버전도 확인해 볼게요.";
     await setDemo(context, { role: "tester" });
@@ -426,7 +426,7 @@ test.describe("R11 시연 회원 전환", () => {
   });
 });
 
-test.describe("R12 오가는 흐름", () => {
+test.describe("R174 오가는 흐름", () => {
   test("S335 채팅함에서 고른 조건은 채팅방의 채팅함 링크로 돌아와도 그대로다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/chats?role=developer&sort=oldest");
@@ -531,7 +531,7 @@ test.describe("R12 오가는 흐름", () => {
   });
 });
 
-test.describe("R8 접근성", () => {
+test.describe("R170 접근성", () => {
   test("S156 대화 기록, 입력창, 보내기 버튼의 이름과 순서", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats/booklog-yunseul");

@@ -8,7 +8,7 @@ const rowNames = (page: Page) => rows(page).locator("h3").allTextContents();
 const nextTodo = (page: Page) => page.getByRole("region", { name: /^다음 할 일/ });
 const todoCards = (page: Page) => page.getByTestId("next-todo");
 
-test.describe("R1 접근과 역할", () => {
+test.describe("R182 접근과 역할", () => {
   test("S448 비로그인은 탭까지 기억해 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/my/participations?tab=history");
@@ -34,7 +34,7 @@ test.describe("R1 접근과 역할", () => {
   });
 });
 
-test.describe("R2 탭", () => {
+test.describe("R183 탭", () => {
   test("S451 기본 탭은 참여 중이고 탭 3개가 순서대로 있다", async ({ page }) => {
     await page.goto("/my/participations");
     await expect(tab(page, "참여 중인 테스트")).toHaveAttribute("aria-current", "page");
@@ -74,7 +74,7 @@ test.describe("R2 탭", () => {
   });
 });
 
-test.describe("R3 다음 할 일 패널", () => {
+test.describe("R184 다음 할 일 패널", () => {
   test("S455 마감이 가장 가까운 제출 전 참여와 주 버튼", async ({ page }) => {
     await page.goto("/my/participations");
     const first = todoCards(page).first();
@@ -103,7 +103,7 @@ test.describe("R3 다음 할 일 패널", () => {
   });
 });
 
-test.describe("R3 다음 할 일 · 2개보다 많을 때", () => {
+test.describe("R184 다음 할 일 · 2개보다 많을 때", () => {
   test("S469 모두 마감 순으로 띠에 담기고 위쪽 이전·다음 버튼으로만 넘긴다", async ({ page }) => {
     await page.goto("/my/participations");
     await expect(nextTodo(page).getByRole("heading")).toHaveText("다음 할 일 4");
@@ -134,7 +134,7 @@ test.describe("R3 다음 할 일 · 2개보다 많을 때", () => {
   });
 });
 
-test.describe("R4 참여 목록", () => {
+test.describe("R185 참여 목록", () => {
   test("S457 참여 중은 할 일 순서다", async ({ page }) => {
     await page.goto("/my/participations");
     expect(await rowNames(page)).toEqual(["회의록 정리", "중고책 장터", "가계부 노트", "모아플랜", "스터디 매칭", "동네 러닝 크루"]);
@@ -180,7 +180,7 @@ test.describe("R4 참여 목록", () => {
   });
 });
 
-test.describe("R5 빈 상태", () => {
+test.describe("R186 빈 상태", () => {
   test("S462 탭마다 다른 빈 상태와 둘러보기 버튼", async ({ page, context }) => {
     await setDemo(context, { data: "empty" });
     const cases = [
@@ -199,7 +199,7 @@ test.describe("R5 빈 상태", () => {
   });
 });
 
-test.describe("R6 로딩", () => {
+test.describe("R187 로딩", () => {
   test("S463 제목과 탭은 바로 보이고 목록은 스켈레톤이다", async ({ page, context }) => {
     await setDemo(context, { data: "slow" });
     await page.goto("/my/participations", { waitUntil: "commit" });
@@ -211,7 +211,7 @@ test.describe("R6 로딩", () => {
   });
 });
 
-test.describe("R7 반응형", () => {
+test.describe("R188 반응형", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("S464 좁은 화면에서 가로 스크롤 없이 쌓인다", async ({ page }) => {
@@ -235,7 +235,7 @@ test.describe("R7 반응형", () => {
   });
 });
 
-test.describe("R8 링크와 404", () => {
+test.describe("R189 링크와 404", () => {
   test("S465 화면의 내부 링크는 모두 열린다", async ({ page, request }) => {
     for (const value of ["applied", "ongoing", "history"]) {
       await page.goto(`/my/participations?tab=${value}`);
@@ -252,7 +252,7 @@ test.describe("R8 링크와 404", () => {
   });
 });
 
-test.describe("R9 접근성", () => {
+test.describe("R190 접근성", () => {
   test("S466 탭은 링크 묶음이고 상태는 글자로, 동작 이름에 서비스 이름이 있다", async ({ page }) => {
     await page.goto("/my/participations");
     await expect(page.getByRole("tab")).toHaveCount(0);
@@ -268,7 +268,7 @@ test.describe("R9 접근성", () => {
   });
 });
 
-test.describe("R3 다음 할 일 · 화면 폭과 모션", () => {
+test.describe("R184 다음 할 일 · 화면 폭과 모션", () => {
   test("S470 좁은 화면에서 넘긴 뒤 넓히면 보던 카드가 왼쪽 끝에 맞는다", async ({ page }) => {
     await page.setViewportSize({ width: 500, height: 900 });
     await page.goto("/my/participations");

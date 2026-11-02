@@ -34,7 +34,7 @@
 ## 1. 로그인 보기 (R1)
 비로그인 사용자에게 이메일 로그인 폼과 소셜 버튼을 보여 준다. 이미 로그인했으면 보지 않고 돌아간다.
 
-S285 비로그인
+S335 비로그인 (고침 11-02: S285는 develop의 참여 상세와 겹쳐 비어 있는 다음 번호로 옮김)
 - Given `demo-role=guest`
 - When  `/login`에 접속한다
 - Then  h1 "로그인"이 있다
@@ -250,7 +250,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
    - 확인: `npx tsc --noEmit`, `npx playwright test e2e/profile.spec.ts e2e/my.spec.ts`
 2. 닉네임 길이 변경 — S314
    - `lib/validation.ts`의 닉네임 규칙을 `/^[가-힣a-zA-Z0-9]{1,39}$/`로, `e2e/profile.spec.ts` S169, `docs/2026-10-30-frontend-profile-edit.md` S169·가정을 고침 (고침 11-01)
-3. 로그인 — S285~S296, S316
+3. 로그인 — S335, S286~S296, S316
    - 먼저 `node_modules/next/dist/docs/01-app/02-guides/authentication.md`, `forms.md`에서 서버 액션의 `cookies().set`·`redirect` 확인
    - `lib/next-path.ts` `safeNextPath`
    - `features/member/api.ts`에 `findRoleByCredentials`, `isEmailTaken`
@@ -289,7 +289,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 - 로그인 오류는 칸이 아니라 폼 전체 문구로 보여 준다 (이메일이 있는지 알리지 않기 위해).
 - 오류 뒤 비밀번호 칸도 입력이 남는다 (개인정보 수정과 같음).
 - `next`가 없거나 안전하지 않으면 `/`로 간다.
-- S번호는 S285~S316을 쓴다. develop과 열린 브랜치의 최대 번호(S284) 다음부터.
+- S번호는 S286~S316과 S335를 쓴다. 처음에는 S285부터 매겼지만 develop의 참여 상세가 S285를 먼저 써서, 로그인 화면 보기만 열린 PR(#20 채팅 ~S322, #22 헤더 ~S334)과도 겹치지 않는 S335로 옮겼다 (고침 11-02: PR #21 리뷰).
 
 ## 참고 (2026-11-01 확인)
 - 페이지 URL: `docs/page-urls.md` "로그인 `/login` 확정", "회원가입 `/signup` 확정"

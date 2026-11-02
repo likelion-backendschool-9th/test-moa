@@ -2,12 +2,21 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { isFull, type Recruitment } from "@/features/recruitment/types";
-import { findApplications, findFeedbacks, findIsSubscribed, findProjects } from "./api";
 import {
+  findAiSummary,
+  findApplications,
+  findFeedbacks,
+  findIsSubscribed,
+  findProjects,
+  saveApplicationDecisions,
+} from "./api";
+import {
+  AI_MIN_FEEDBACKS,
   BASE_REWARD,
   EXTRA_REWARD,
   MAX_CAPACITY,
   REPORT_WINDOW_HOURS,
+  type AiSummary,
   type Application,
   type Feedback,
   type FormState,
@@ -90,6 +99,75 @@ export async function getMyProjects(path: string): Promise<ProjectSummary[]> {
   }));
 }
 
+/** 내 프로젝트 화면 맨 위 "지금 확인할 일" 한 줄 */
+export type TodoItem = {
+  kind: "applicants" | "feedback";
+  projectName: string;
+  /** 이동할 모집 관리 탭 주소 */
+  href: string;
+  text: string;
+};
+
+/** 모든 프로젝트를 합친 숫자. 모집 건은 상태별로 센다 */
+export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed">, number> & { waitingReports: number };
+
+/**
+ * 내 프로젝트 화면 전체: 할 일, 전체 현황, 프로젝트 카드.
+ * 할 일은 지원자 확정 대기(구독·모집 마감 전·정원 남음)가 먼저, 신고 대기 피드백은 자동 지급이 가까운 순서다.
+ */
+export async function getMyDashboard(path: string) {
+  const projects = await getMyProjects(path);
+  const role = await requireRole(path);
+  const now = new Date();
+
+  const applicantTodos: TodoItem[] = [];
+  const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
+  const overview: ProjectOverview = { recruiting: 0, full: 0, testing: 0, waitingReports: 0 };
+
+  for (const project of projects) {
+    for (const recruitment of project.recruitments) {
+      const [applications, feedbacks] = await Promise.all([
+        findApplications(role, recruitment.slug),
+        findFeedbacks(role, recruitment.slug),
+      ]);
+      const status = getRecruitmentStatus(recruitment, now);
+      const base = `/my/projects/${project.key}/recruitments/${recruitment.slug}`;
+      const confirmed = applications.filter((item) => item.status === "confirmed").length;
+      const pending = applications.filter((item) => item.status === "applied").length;
+      const waitingHours = feedbacks.map((item) => getHoursUntilPaid(item, now)).filter((hours) => hours > 0);
+
+      if (status !== "closed") overview[status] += 1;
+      overview.waitingReports += waitingHours.length;
+
+      /* 지금 확정할 수 있는 지원자만 할 일로 본다. 무료 모집은 자동 확정이라 뺀다 */
+      if (recruitment.isSubscription && status === "recruiting" && pending > 0) {
+        applicantTodos.push({
+          kind: "applicants",
+          projectName: project.name,
+          href: `${base}?tab=testers`,
+          text: `지원자 ${pending}명이 확정을 기다려요 · 남은 자리 ${recruitment.capacity - confirmed}명`,
+        });
+      }
+      if (waitingHours.length > 0) {
+        const hours = Math.min(...waitingHours);
+        feedbackTodos.push({
+          item: {
+            kind: "feedback",
+            projectName: project.name,
+            href: `${base}?tab=feedback`,
+            text: `신고 대기 피드백 ${waitingHours.length}건 · ${hours}시간 뒤 자동 지급`,
+          },
+          hours,
+        });
+      }
+    }
+  }
+
+  feedbackTodos.sort((a, b) => a.hours - b.hours);
+  const todos: TodoItem[] = [...applicantTodos, ...feedbackTodos.map(({ item }) => item)];
+  return { projects, todos, overview };
+}
+
 /** 내 프로젝트 하나와 모집 건(최신순). 없거나 남의 프로젝트면 404 */
 export async function getMyProject(path: string, projectKey: string) {
   const role = await requireRole(path);
@@ -121,6 +199,48 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
       .map((item) => ({ ...item, hoursUntilPaid: getHoursUntilPaid(item, now) })),
     analytics: getAnalytics(applications, feedbacks),
   };
+}
+
+/** 구독 모집이고 모집 마감 전이면 지원자를 직접 확정·거절할 수 있다 */
+export function canSelectApplicants(recruitment: RecruitmentView) {
+  return recruitment.isSubscription && (recruitment.status === "recruiting" || recruitment.status === "full");
+}
+
+/**
+ * 지원자 여러 명을 확정 또는 거절한다. 화면에서 막아도 요청은 조작될 수 있어서 여기서 다시 확인한다.
+ * 이 모집 건의 대기 지원만 바꿀 수 있고, 확정은 남은 자리까지만 된다.
+ */
+export async function decideApplicants(
+  projectKey: string,
+  recruitmentKey: string,
+  ids: string[],
+  status: "confirmed" | "rejected",
+): Promise<{ ok: boolean }> {
+  const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
+  const { recruitment, applications } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const pendingIds = new Set(applications.filter((item) => item.status === "applied").map((item) => item.id));
+  const unique = [...new Set(ids)];
+  if (!canSelectApplicants(recruitment) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
+  const confirmed = applications.filter((item) => item.status === "confirmed").length;
+  if (status === "confirmed" && confirmed + unique.length > recruitment.capacity) return { ok: false };
+  return { ok: await saveApplicationDecisions(unique, status) };
+}
+
+/** AI 분석 영역의 상태: 결과 있음, 피드백 부족, 아직 정리 전 */
+export type AiAnalysis =
+  | { state: "ready"; summary: AiSummary }
+  | { state: "notEnough"; feedbackCount: number; minFeedbacks: number }
+  | { state: "empty" };
+
+/** AI 분석 결과. 신고된 피드백을 뺀 피드백이 최소 수보다 적으면 분석하지 않는다 */
+export async function getAiAnalysis(path: string, projectKey: string, recruitmentKey: string): Promise<AiAnalysis> {
+  const { feedbacks } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const feedbackCount = feedbacks.filter((item) => item.status !== "reported").length;
+  if (feedbackCount < AI_MIN_FEEDBACKS) {
+    return { state: "notEnough", feedbackCount, minFeedbacks: AI_MIN_FEEDBACKS };
+  }
+  const summary = await findAiSummary(await requireRole(path), recruitmentKey);
+  return summary ? { state: "ready", summary } : { state: "empty" };
 }
 
 /** 모집 작성 폼에 보여 줄 보상과 인원 한도. 구독 여부는 작성 시점 기준이다 */

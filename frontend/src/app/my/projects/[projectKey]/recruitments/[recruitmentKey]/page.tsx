@@ -10,7 +10,8 @@ import {
   RecruitmentSummary,
   RecruitmentTabs,
 } from "@/features/project/components/RecruitmentManage";
-import { getRecruitmentDetail } from "@/features/project/service";
+import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/features/project/components/AiAnalysisPanel";
+import { canSelectApplicants, getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
 
 /* 테스트 모집 관리 (/my/projects/:projectKey/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
 
@@ -36,8 +37,6 @@ async function ManageSlot({ params, searchParams }: Props) {
     searchParams,
   ]);
   const current = parseManageTab(tab);
-  /* 구독 모집이고 모집 마감 전이면 지원자를 직접 고를 수 있다 */
-  const canSelect = recruitment.isSubscription && (recruitment.status === "recruiting" || recruitment.status === "full");
 
   return (
     <div className="flex flex-col gap-8">
@@ -47,12 +46,24 @@ async function ManageSlot({ params, searchParams }: Props) {
         <ApplicantList
           applications={applications}
           capacity={recruitment.capacity}
-          canSelect={canSelect}
+          canSelect={canSelectApplicants(recruitment)}
+          projectKey={projectKey}
+          recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
         />
       )}
       {current === "feedback" && <FeedbackList feedbacks={feedbacks} />}
       {current === "analytics" && <AnalyticsPanel isSubscription={recruitment.isSubscription} analytics={analytics} />}
+      {/* AI 분석은 느릴 수 있어서 숫자 카드와 따로 기다린다. 구독 모집에서만 보인다 */}
+      {current === "analytics" && recruitment.isSubscription && (
+        <Suspense fallback={<AiAnalysisSkeleton />}>
+          <AiSlot basePath={basePath} projectKey={projectKey} recruitmentKey={recruitmentKey} />
+        </Suspense>
+      )}
     </div>
   );
+}
+
+async function AiSlot({ basePath, projectKey, recruitmentKey }: { basePath: string; projectKey: string; recruitmentKey: string }) {
+  return <AiAnalysisPanel analysis={await getAiAnalysis(basePath, projectKey, recruitmentKey)} />;
 }

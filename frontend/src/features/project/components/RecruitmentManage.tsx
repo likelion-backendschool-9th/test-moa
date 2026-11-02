@@ -31,7 +31,8 @@ type SummaryProps = {
 /** 모집 건 요약. 탭 위에 늘 보인다 */
 export function RecruitmentSummary({ project, recruitment, analytics }: SummaryProps) {
   const facts = [
-    ["확정", `${recruitment.confirmedCount} / 정원 ${recruitment.capacity}명`],
+    ["확정 인원", `${recruitment.confirmedCount}명`],
+    ["정원", `${recruitment.capacity}명`],
     ["지원", `${analytics.applicationCount}명`],
     ["피드백 제출", `${analytics.feedbackCount}건`],
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
@@ -39,16 +40,28 @@ export function RecruitmentSummary({ project, recruitment, analytics }: SummaryP
   ];
   return (
     <div className="flex flex-col gap-4">
-      <Link href={`/my/projects/${project.key}`} className="w-fit text-sm font-semibold text-text-muted hover:text-text">
-        프로젝트로 돌아가기
-      </Link>
-      <p className="text-sm text-text-muted">{project.name}</p>
+      {/* 할 일에서 바로 들어와도 목록까지 한 번에 돌아갈 수 있게 경로를 보여 준다 */}
+      <nav aria-label="현재 위치">
+        <ol className="flex flex-wrap items-center gap-2 text-sm font-semibold text-text-muted">
+          <li>
+            <Link href="/my/projects" className="hover:text-text">
+              내 프로젝트
+            </Link>
+          </li>
+          <li aria-hidden="true">›</li>
+          <li>
+            <Link href={`/my/projects/${project.key}`} className="hover:text-text">
+              {project.name}
+            </Link>
+          </li>
+        </ol>
+      </nav>
       <div className="flex flex-wrap items-center gap-2">
         <RecruitmentStatusBadge status={recruitment.status} />
         {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
       </div>
       <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{recruitment.request}</h1>
-      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-3 lg:grid-cols-6">
         {facts.map(([term, value]) => (
           <div key={term} className="flex flex-col gap-1">
             <dt className="text-xs text-text-muted">{term}</dt>

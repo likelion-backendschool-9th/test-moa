@@ -1,35 +1,42 @@
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
  * 날짜는 기준 시각에서 상대적으로 만들어 언제 시연해도 같은 상태로 보인다.
- * 북로그와 포트폴리오 빌더 모집 건은 홈의 샘플(recruitment/mock.ts)을 그대로 받아 쓴다.
+ * 북로그와 포트폴리오 빌더 모집 건은 홈의 샘플(recruitment/mock.ts)을 그대로 받아 쓴다. 둘 다 아직 모집 마감 전이라 피드백이 없다.
+ * 날짜 순서는 항상 모집 생성 → 지원 → 모집 마감 → 피드백 제출이다. 피드백은 테스트 중인 북로그 1차 모집에만 있다.
  */
 import type { Recruitment } from "@/features/recruitment/types";
-import type { Application, ApplicationStatus, Feedback, FeedbackStatus, Project } from "./types";
+import type { AiSummary, Application, ApplicationStatus, Feedback, FeedbackStatus, Project } from "./types";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
 const NICKNAMES = [
   "김하늘", "이도윤", "박서아", "최지호", "정예린", "강민준", "조하은", "윤시우", "장유나", "임건우",
-  "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안",
+  "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안", "문서진", "배하린",
 ];
 
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
 const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
 const inDays = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
 
-/** 상태별 인원 수로 지원 목록을 만든다. 먼저 지원한 사람부터 확정, 거절, 대기 순이다 */
-function buildApplications(slug: string, now: Date, counts: Record<ApplicationStatus, number>): Application[] {
+/**
+ * 상태별 인원 수로 지원 목록을 만든다. 먼저 지원한 사람부터 확정, 거절, 대기 순이다.
+ * 지원 시각은 모집 생성 뒤부터 지금(모집이 끝났으면 모집 마감)까지 고르게 나눈다.
+ */
+function buildApplications(recruitment: Recruitment, now: Date, counts: Record<ApplicationStatus, number>): Application[] {
   const statuses: ApplicationStatus[] = [
     ...Array<ApplicationStatus>(counts.confirmed).fill("confirmed"),
     ...Array<ApplicationStatus>(counts.rejected).fill("rejected"),
     ...Array<ApplicationStatus>(counts.applied).fill("applied"),
   ];
+  const from = new Date(recruitment.createdAt).getTime();
+  const to = Math.min(now.getTime(), new Date(recruitment.recruitDeadline).getTime());
+  const step = (to - from) / (statuses.length + 1);
   return statuses.map((status, index) => ({
-    id: `${slug}-a${index + 1}`,
+    id: `${recruitment.slug}-a${index + 1}`,
     testerNickname: NICKNAMES[index % NICKNAMES.length],
     status,
-    appliedAt: hoursAgo(now, (statuses.length - index) * 3),
+    appliedAt: new Date(from + step * (index + 1)).toISOString(),
   }));
 }
 
@@ -51,6 +58,8 @@ export type ProjectSeedData = {
   applications: Record<string, Application[]>;
   /** recruitmentKey별 피드백 목록 */
   feedbacks: Record<string, Feedback[]>;
+  /** recruitmentKey별 AI 분석 결과 */
+  aiSummaries: Record<string, AiSummary>;
 };
 
 /**
@@ -66,36 +75,59 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
   const booklog = pick("booklog");
   const folio = pick("folio-builder");
 
-  /* 정원이 찼지만 아직 모집 마감 전인 구독 모집. 확정 버튼 비활성 상태를 보여 준다 */
-  const booklogBeta: Recruitment = {
+  /* 모집이 끝나고 테스트 중인 지난 구독 모집. 피드백·신고·AI 분석을 보여 준다 */
+  const booklogFirst: Recruitment = {
     ...booklog,
-    slug: "booklog-beta",
-    request: "새로 만든 독서 통계 화면을 보고 헷갈리는 곳 알려 주기",
-    createdAt: daysAgo(now, 1),
-    recruitDeadline: inDays(now, 3),
-    submitDeadline: inDays(now, 10),
+    slug: "booklog-first",
+    request: "베타 버전 밑줄 저장과 문장 모아 보기 써 보기",
+    createdAt: daysAgo(now, 12),
+    recruitDeadline: daysAgo(now, 5),
+    submitDeadline: inDays(now, 2),
     capacity: 5,
     confirmedCount: 5,
   };
 
   const applications: Record<string, Application[]> = {
-    booklog: buildApplications("booklog", now, { confirmed: booklog.confirmedCount, rejected: 1, applied: 3 }),
-    "booklog-beta": buildApplications("booklog-beta", now, { confirmed: 5, rejected: 0, applied: 1 }),
+    /* 모집 중. 대기 지원자 8명이 남은 자리 7명보다 많아 일괄 확정의 정원 안내를 보여 준다 */
+    booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, applied: 8 }),
+    /* 모집이 끝나 남은 대기 지원자 1명은 더 확정할 수 없다(일괄 확정이 없는 것을 보여 준다) */
+    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, applied: 1 }),
     /* 무료 모집은 선착순 자동 확정이라 대기·거절이 없다 */
-    "folio-builder": buildApplications("folio-builder", now, { confirmed: folio.confirmedCount, rejected: 0, applied: 0 }),
+    "folio-builder": buildApplications(folio, now, { confirmed: folio.confirmedCount, rejected: 0, applied: 0 }),
   };
 
   const feedbacks: Record<string, Feedback[]> = {
-    booklog: buildFeedbacks("booklog", now, [
+    booklog: [],
+    /* 확정된 테스터(앞의 5명)가 모집 마감(5일 전) 뒤에 낸 피드백 */
+    "booklog-first": buildFeedbacks("booklog-first", now, [
       { nickname: "김하늘", content: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 두 번 눌렀어요.", submittedHoursAgo: 10, status: "waiting" },
       { nickname: "이도윤", content: "좋아요.", submittedHoursAgo: 30, status: "reported" },
       { nickname: "박서아", content: "밑줄 문장 저장은 편했는데, 저장한 문장을 다시 찾는 메뉴가 안 보였어요.", submittedHoursAgo: 96, status: "paid" },
+      { nickname: "최지호", content: "책을 검색하면 표지가 한참 비어 있어서 맞는 책인지 헷갈렸어요.", submittedHoursAgo: 110, status: "paid" },
     ]),
-    "booklog-beta": [],
-    "folio-builder": buildFeedbacks("folio-builder", now, [
-      { nickname: "최지호", content: "템플릿을 바꾸면 입력한 경력이 사라져요.", submittedHoursAgo: 20, status: "waiting" },
-      { nickname: "정예린", content: "PDF로 내보낼 때 한글 글꼴이 깨졌어요.", submittedHoursAgo: 80, status: "paid" },
-    ]),
+    "folio-builder": [],
+  };
+
+  /* 북로그 1차 모집 피드백 중 신고된 1건을 뺀 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
+  const aiSummaries: Record<string, AiSummary> = {
+    "booklog-first": {
+      headline: "기록 기능은 편하다는 반응이지만, 책을 찾고 저장한 문장을 다시 찾는 흐름에서 헷갈린다는 의견이 있어요.",
+      issues: [
+        {
+          text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요",
+          feedbackCount: 2,
+          suggestion: "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
+        },
+        {
+          text: "저장한 문장을 다시 찾는 메뉴가 잘 안 보여요",
+          feedbackCount: 1,
+          suggestion: "저장한 문장 모아 보기 메뉴를 눈에 띄는 곳에 두기",
+        },
+      ],
+      strengths: [{ text: "밑줄 문장 저장이 편해요", feedbackCount: 1 }],
+      generatedAt: hoursAgo(now, 2),
+      isSample: true,
+    },
   };
 
   const projects: Project[] = [
@@ -106,7 +138,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       softwareType: booklog.softwareType,
       accessUrl: "https://booklog.example.com",
       createdAt: daysAgo(now, 30),
-      recruitments: [booklogBeta, booklog],
+      recruitments: [booklog, booklogFirst],
     },
     {
       key: "folio-builder",
@@ -129,5 +161,5 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     },
   ];
 
-  return { projects, applications, feedbacks };
+  return { projects, applications, feedbacks, aiSummaries };
 }

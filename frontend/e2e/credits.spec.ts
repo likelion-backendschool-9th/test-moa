@@ -2,7 +2,8 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
-const ledgerRows = (page: Page) => region(page, "크레딧 내역").locator(":scope > ul > li");
+/* 날짜 묶음마다 목록이 하나씩 있고, 목록 이름은 그 날짜 소제목이다 */
+const ledgerRows = (page: Page) => region(page, "크레딧 내역").locator("ul[aria-labelledby] > li");
 const historyRows = (page: Page) => region(page, "출금 내역").getByRole("listitem");
 const balanceRow = (page: Page, label: string) => region(page, "잔액").locator("dl > div").filter({ hasText: label });
 const filter = (page: Page, name: string) => page.getByRole("navigation", { name: "내역 필터" }).getByRole("link", { name });
@@ -373,37 +374,45 @@ test.describe("R7 신청 기록", () => {
 });
 
 test.describe("내역 시각", () => {
-  const DATE_TIME = /^\d{1,2}월 \d{1,2}일\s*오[전후] \d{1,2}:\d{2}$/;
+  const DATE = /^\d{1,2}월 \d{1,2}일$/;
+  const CLOCK = /^오[전후] \d{1,2}:\d{2}$/;
   const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
-  async function expectDateTimes(rows: Locator, count: number) {
-    await expect(rows).toHaveCount(count);
-    for (let index = 0; index < count; index++) {
+  /** 날짜는 묶음 소제목에, 각 행에는 시각만 있다 */
+  async function expectGroupedTimes(section: Locator, rowCount: number) {
+    const rows = section.locator("ul[aria-labelledby] > li");
+    await expect(rows).toHaveCount(rowCount);
+    for (let index = 0; index < rowCount; index++) {
       const time = rows.nth(index).locator("time");
-      await expect(time).toHaveText(DATE_TIME);
+      await expect(time).toHaveText(CLOCK);
       await expect(time).toHaveAttribute("datetime", ISO);
     }
+    const headings = section.getByRole("heading", { level: 3 });
+    const lists = section.locator("ul[aria-labelledby]");
+    await expect(headings).toHaveCount(await lists.count());
+    for (const heading of await headings.all()) await expect(heading).toHaveText(DATE);
+    await expect(lists.first()).toHaveAccessibleName(DATE);
   }
 
-  test("S341 크레딧 내역의 모든 행에 날짜와 시각이 있다", async ({ page, context }) => {
+  test("S341 크레딧 내역은 날짜별로 묶이고 행마다 시각이 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
-    await expectDateTimes(ledgerRows(page), 12);
+    await expectGroupedTimes(region(page, "크레딧 내역"), 12);
   });
 
-  test("S342 마이페이지 최근 크레딧 내역에도 시각이 있다", async ({ page, context }) => {
+  test("S342 마이페이지 최근 크레딧 내역도 같은 모양이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my");
-    await expectDateTimes(region(page, "최근 크레딧 내역").getByRole("listitem"), 5);
+    await expectGroupedTimes(region(page, "최근 크레딧 내역"), 5);
   });
 
-  test("S343 출금 내역의 모든 행에 날짜와 시각이 있다", async ({ page, context }) => {
+  test("S343 출금 내역은 날짜별로 묶이고 행마다 시각이 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits/withdrawals");
-    await expectDateTimes(historyRows(page), 2);
+    await expectGroupedTimes(region(page, "출금 내역"), 2);
   });
 
-  test("S344 방금 신청한 출금에도 시각이 있다", async ({ page, context }) => {
+  test("S344 방금 신청한 출금은 오늘 묶음 맨 위에 시각과 함께 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits/withdrawals");
     await page.getByLabel("금액(크레딧)").fill("5000");
@@ -412,6 +421,14 @@ test.describe("내역 시각", () => {
     await page.getByLabel("예금주").fill("한서윤");
     await page.getByRole("button", { name: "출금 신청" }).click();
     await expect(page.getByRole("status")).toBeVisible();
-    await expectDateTimes(historyRows(page), 3);
+    await expectGroupedTimes(region(page, "출금 내역"), 3);
+  });
+
+  test("S345 좁은 화면에서도 내역 이름이 잘리지 않는다", async ({ page, context }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/credits");
+    const label = ledgerRows(page).first().getByText("레시피핏 테스트 보상", { exact: true });
+    expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   });
 });

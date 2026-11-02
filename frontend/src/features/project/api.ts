@@ -4,6 +4,7 @@ import { cache } from "react";
 import { getDemoDataMode } from "@/lib/demo";
 import type { Role } from "@/lib/session";
 import { buildGeneralRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
+import { readDecisions, saveDecisions, type Decision } from "./demo-decisions";
 import { buildDeveloperProjects, type ProjectSeedData } from "./mock";
 import type { AiSummary, Application, Feedback, Project } from "./types";
 
@@ -25,8 +26,32 @@ const load = cache(async (role: Role): Promise<ProjectSeedData> => {
   /* 시연에서는 개발자 역할만 프로젝트를 가진다 */
   if (mode === "empty" || role !== "developer") return EMPTY;
   const now = new Date();
-  return buildDeveloperProjects(now, [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)]);
+  const seed = buildDeveloperProjects(now, [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)]);
+  return applyDecisions(seed, await readDecisions());
 });
+
+/** 시연 중 확정·거절한 결과를 덮어쓰고, 모집 건의 확정 인원을 지원 목록에서 다시 센다 */
+function applyDecisions(seed: ProjectSeedData, decisions: Record<string, Decision>): ProjectSeedData {
+  const applications = Object.fromEntries(
+    Object.entries(seed.applications).map(([key, list]) => [
+      key,
+      list.map((item) => (item.status === "applied" && decisions[item.id] ? { ...item, status: decisions[item.id] } : item)),
+    ]),
+  );
+  const projects = seed.projects.map((project) => ({
+    ...project,
+    recruitments: project.recruitments.map((recruitment) => {
+      const list = applications[recruitment.slug];
+      return list ? { ...recruitment, confirmedCount: list.filter((item) => item.status === "confirmed").length } : recruitment;
+    }),
+  }));
+  return { ...seed, applications, projects };
+}
+
+/** 지원자 확정·거절을 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
+export async function saveApplicationDecisions(ids: string[], status: Decision): Promise<boolean> {
+  return saveDecisions(ids, status);
+}
 
 /** 회원의 프로젝트 전체 */
 export async function findProjects(role: Role): Promise<Project[]> {

@@ -11,7 +11,7 @@ import {
   RecruitmentTabs,
 } from "@/features/project/components/RecruitmentManage";
 import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/features/project/components/AiAnalysisPanel";
-import { getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
+import { canSelectApplicants, getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
 
 /* 테스트 모집 관리 (/my/projects/:projectKey/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
 
@@ -37,8 +37,6 @@ async function ManageSlot({ params, searchParams }: Props) {
     searchParams,
   ]);
   const current = parseManageTab(tab);
-  /* 구독 모집이고 모집 마감 전이면 지원자를 직접 고를 수 있다 */
-  const canSelect = recruitment.isSubscription && (recruitment.status === "recruiting" || recruitment.status === "full");
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,7 +46,9 @@ async function ManageSlot({ params, searchParams }: Props) {
         <ApplicantList
           applications={applications}
           capacity={recruitment.capacity}
-          canSelect={canSelect}
+          canSelect={canSelectApplicants(recruitment)}
+          projectKey={projectKey}
+          recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
         />
       )}

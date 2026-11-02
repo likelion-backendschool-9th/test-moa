@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/format";
+import { decideApplicants } from "../actions";
 import { APPLICATION_STATUS_LABEL, type Application, type ApplicationStatus } from "../types";
 
 /*
  * 테스터 관리 탭. 구독 모집은 지원자를 직접 확정·거절하고, 무료 모집은 보기만 한다.
  * 구독 모집은 체크박스로 여러 명을 골라 한 번에 확정할 수도 있다.
- * 목업이라 확정·거절은 화면에서만 바뀌고 새로고침하면 돌아온다.
+ * 확정·거절은 화면에 바로 반영하고 서버에 저장한다. 저장하면 요약·분석·내 프로젝트 화면도 같이 바뀐다.
  */
 
 type ApplicantListProps = {
@@ -19,6 +20,8 @@ type ApplicantListProps = {
   /** 구독 모집이고 모집 마감 전이면 true */
   canSelect: boolean;
   isSubscription: boolean;
+  projectKey: string;
+  recruitmentKey: string;
 };
 
 const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
@@ -28,7 +31,8 @@ const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
 };
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
-export function ApplicantList({ applications, capacity, canSelect, isSubscription }: ApplicantListProps) {
+export function ApplicantList({ applications, capacity, canSelect, isSubscription, projectKey, recruitmentKey }: ApplicantListProps) {
+  const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
@@ -43,12 +47,19 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
   const selected = pendingIds.filter((id) => checked.has(id));
   const overCapacity = selected.length > remaining;
 
-  /** 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다 */
-  function decide(targets: Application[], status: ApplicationStatus) {
-    setStatuses((prev) => ({ ...prev, ...Object.fromEntries(targets.map((item) => [item.id, status])) }));
-    setChecked((prev) => new Set([...prev].filter((id) => !targets.some((item) => item.id === id))));
+  /** 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다. 저장에 실패하면 되돌린다 */
+  function decide(targets: Application[], status: "confirmed" | "rejected") {
+    const ids = targets.map((item) => item.id);
+    setStatuses((prev) => ({ ...prev, ...Object.fromEntries(ids.map((id) => [id, status])) }));
+    setChecked((prev) => new Set([...prev].filter((id) => !ids.includes(id))));
     const label = APPLICATION_STATUS_LABEL[status];
     setAnnouncement(targets.length === 1 ? `${targets[0].testerNickname}님을 ${label}했어요` : `${targets.length}명을 ${label}했어요`);
+    startTransition(async () => {
+      const { ok } = await decideApplicants(projectKey, recruitmentKey, ids, status);
+      if (ok) return;
+      setStatuses((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => !ids.includes(id))));
+      setAnnouncement(`${label}하지 못했어요. 다시 시도해 주세요`);
+    });
   }
 
   function toggle(id: string) {

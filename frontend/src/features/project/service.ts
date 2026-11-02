@@ -2,7 +2,14 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { isFull, type Recruitment } from "@/features/recruitment/types";
-import { findAiSummary, findApplications, findFeedbacks, findIsSubscribed, findProjects } from "./api";
+import {
+  findAiSummary,
+  findApplications,
+  findFeedbacks,
+  findIsSubscribed,
+  findProjects,
+  saveApplicationDecisions,
+} from "./api";
 import {
   AI_MIN_FEEDBACKS,
   BASE_REWARD,
@@ -192,6 +199,31 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
       .map((item) => ({ ...item, hoursUntilPaid: getHoursUntilPaid(item, now) })),
     analytics: getAnalytics(applications, feedbacks),
   };
+}
+
+/** 구독 모집이고 모집 마감 전이면 지원자를 직접 확정·거절할 수 있다 */
+export function canSelectApplicants(recruitment: RecruitmentView) {
+  return recruitment.isSubscription && (recruitment.status === "recruiting" || recruitment.status === "full");
+}
+
+/**
+ * 지원자 여러 명을 확정 또는 거절한다. 화면에서 막아도 요청은 조작될 수 있어서 여기서 다시 확인한다.
+ * 이 모집 건의 대기 지원만 바꿀 수 있고, 확정은 남은 자리까지만 된다.
+ */
+export async function decideApplicants(
+  projectKey: string,
+  recruitmentKey: string,
+  ids: string[],
+  status: "confirmed" | "rejected",
+): Promise<{ ok: boolean }> {
+  const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
+  const { recruitment, applications } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const pendingIds = new Set(applications.filter((item) => item.status === "applied").map((item) => item.id));
+  const unique = [...new Set(ids)];
+  if (!canSelectApplicants(recruitment) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
+  const confirmed = applications.filter((item) => item.status === "confirmed").length;
+  if (status === "confirmed" && confirmed + unique.length > recruitment.capacity) return { ok: false };
+  return { ok: await saveApplicationDecisions(unique, status) };
 }
 
 /** AI 분석 영역의 상태: 결과 있음, 피드백 부족, 아직 정리 전 */

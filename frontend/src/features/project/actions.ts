@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import {
+  decideApplicants as decide,
   getMyProject,
   getRecruitmentFormInfo,
   requireRole,
@@ -32,4 +33,15 @@ export async function createRecruitment(projectKey: string, _prev: FormState, fo
   const result = validateRecruitmentForm(formData, maxCapacity, new Date());
   if (Object.keys(result.errors).length > 0) return result;
   redirect(`/my/projects/${projectKey}?notice=saved`);
+}
+
+/** 지원자 확정·거절. 시연용이라 결과는 브라우저 쿠키에 남고, 요약·분석·내 프로젝트 화면에도 반영된다 */
+export async function decideApplicants(
+  projectKey: string,
+  recruitmentKey: string,
+  ids: string[],
+  status: "confirmed" | "rejected",
+): Promise<{ ok: boolean }> {
+  if (status !== "confirmed" && status !== "rejected") return { ok: false };
+  return decide(projectKey, recruitmentKey, ids, status);
 }

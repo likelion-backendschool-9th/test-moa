@@ -37,6 +37,15 @@ function menuItems(root: HTMLElement | null) {
 }
 
 /**
+ * 지운 카드가 목록에서 빠지면(서버가 다시 그린 목록이 반영되면) 이웃 카드로 포커스를 옮긴다.
+ * 그 전에 옮기면 아직 열린 대화상자나 사라질 카드 때문에 포커스가 문서 처음으로 돌아간다. 약 2초가 지나도 남아 있으면 그만둔다.
+ */
+function focusAfterRemoval(item: Element, target: HTMLElement, frames = 120) {
+  if (!item.isConnected) target.focus();
+  else if (frames > 0) requestAnimationFrame(() => focusAfterRemoval(item, target, frames - 1));
+}
+
+/**
  * 채팅 카드와 채팅방 머리의 더보기 메뉴. "대화방 이름 변경", 구분선, "대화방 삭제" 순서이고 삭제는 맨 아래다.
  * 열면 첫 항목으로 포커스가 가고, 위아래 화살표·Home·End로 옮기며, Esc는 닫고 버튼으로 돌아가고, Tab·바깥 클릭은 닫기만 한다.
  * 항목을 고르면 대화상자를 열고, 저장·삭제는 서버 액션으로 보낸다.
@@ -118,7 +127,7 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
     startTransition(async () => {
       await deleteChatRoomAction(roomKey, leaveOnDelete);
       setDialog(null);
-      requestAnimationFrame(() => neighbor?.focus());
+      if (item && neighbor) focusAfterRemoval(item, neighbor);
     });
   }
 

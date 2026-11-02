@@ -1,10 +1,9 @@
 import type { Role } from "@/lib/session";
-import type { MyPageSummary, PlanTerms, Profile, SubscriptionPlan, Todo } from "./types";
+import type { MyPageSummary, PlanTerms, SubscriptionPlan, Todo } from "./types";
 
 /*
  * 시연용 샘플 데이터. 실제 사용자와 관계없다.
  * tester·developer는 계정 종류가 아니라 시연용 회원 두 명이다 (미구독 회원, 구독 중인 회원).
- * 이메일은 예시용 도메인(example.com)만 쓴다.
  * 날짜는 기준 시각에서 상대적으로 만들어 언제 시연해도 같은 상태로 보인다.
  */
 
@@ -47,23 +46,13 @@ export function monthlyRecruitUsed(role: Role) {
 
 const daysFrom = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
 
-export const DEMO_PROFILES: Record<Exclude<Role, "guest">, Profile> = {
-  tester: { name: "한서윤", nickname: "윤슬", email: "seoyun@example.com" },
-  developer: { name: "박도현", nickname: "도현랩", email: "dohyun@example.com" },
-  admin: { name: "운영자", nickname: "운영자", email: "admin@example.com" },
-};
-
-/** 시연 회원 모두 같은 비밀번호를 쓴다. 실제 비밀번호와 관계없다 */
-export const DEMO_PASSWORD = "test1234";
-
-/** 크레딧 잔액·최근 내역은 features/credit 목업에서 가져온다 */
-export type MyPageSeed = Omit<MyPageSummary, "credits" | "recentCredits">;
+/** 크레딧 잔액·최근 내역은 features/credit 목업에서, 프로필은 features/member에서 가져온다 */
+export type MyPageSeed = Omit<MyPageSummary, "credits" | "recentCredits" | "profile">;
 
 export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyPageSeed {
   switch (role) {
     case "tester":
       return {
-        profile: DEMO_PROFILES.tester,
         subscription: { status: "none" },
         todos: [
           {
@@ -90,7 +79,6 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
       };
     case "developer":
       return {
-        profile: DEMO_PROFILES.developer,
         subscription: { status: "active", planId: "basic", expiresAt: daysFrom(now, SUBSCRIPTION_DAYS_LEFT) },
         todos: [
           { id: "feedback-minutes", category: "project", title: "회의록 정리 새 피드백 확인", detail: "3건", href: "/my/projects" },
@@ -110,7 +98,6 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
       };
     case "admin":
       return {
-        profile: DEMO_PROFILES.admin,
         subscription: null,
         todos: [],
         activity: null,

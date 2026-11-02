@@ -2,10 +2,13 @@
 
 import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
-import { type FormState, type ProfileField, updateProfile } from "../actions";
-import type { Profile } from "../types";
+import { FormField, FormMessage } from "@/components/ui/FormField";
+import type { FormState } from "@/lib/form";
+import { NICKNAME_HINT } from "@/lib/validation";
+import { type ProfileField, updateProfile } from "../actions";
+import type { Profile } from "@/features/member/types";
 import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "./card-styles";
-import { FormField, FormMessage } from "./FormField";
+
 
 const initialState: FormState<ProfileField> = { status: "idle" };
 
@@ -32,7 +35,8 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       <div className={settingsBodyClass}>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
         {errors.form && <FormMessage status="error" message={errors.form} />}
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        {/* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */}
+        <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
           <div className="flex flex-col gap-5">
             <FormField id="profile-name" name="name" label="이름" autoComplete="name" defaultValue={profile.name} error={errors.name} />
             <FormField
@@ -41,7 +45,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
               label="닉네임"
               autoComplete="nickname"
               defaultValue={profile.nickname}
-              hint="한글·영문·숫자 2~12자"
+              hint={NICKNAME_HINT}
               error={errors.nickname}
             />
             <FormField id="profile-email" label="이메일" type="email" value={profile.email} readOnly hint="이메일은 바꿀 수 없어요" />

@@ -191,9 +191,8 @@ S75
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
 
 S26 준비 중 페이지와 내부 링크
-
-- Given `/recruitments`, `/recruitments/:slug`, `/my/participations`, `/my/projects`, `/my/credits`, `/my/credits/withdrawals`, `/my/profile/edit`, `/my/subscription`, `/admin`, `/login`, `/signup`, `/terms`, `/privacy`, `/events`, `/notices`
-- Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다 
+- Given `/recruitments`, `/recruitments/:slug`, `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/2026-11-01-frontend-auth.md`에서, `/my/chats`는 `docs/2026-10-30-frontend-chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
+- Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
 S27 없는 주소
@@ -223,7 +222,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 18개, 모두 24개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), ApplicationStatusTabs
+- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 20개, 모두 26개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313), ApplicationStatusTabs
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

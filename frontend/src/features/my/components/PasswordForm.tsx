@@ -2,9 +2,12 @@
 
 import { type FormEvent, startTransition, useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { changePassword, type FormState, type PasswordField } from "../actions";
+import { FormField, FormMessage } from "@/components/ui/FormField";
+import type { FormState } from "@/lib/form";
+import { PASSWORD_HINT } from "@/lib/validation";
+import { changePassword, type PasswordField } from "../actions";
 import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "./card-styles";
-import { FormField, FormMessage } from "./FormField";
+
 
 const initialState: FormState<PasswordField> = { status: "idle" };
 
@@ -36,7 +39,8 @@ export function PasswordForm() {
       </div>
       <div className={settingsBodyClass}>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
-        <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        {/* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */}
+        <form ref={formRef} action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
           <div className="flex flex-col gap-5">
             <FormField
               id="password-current"
@@ -52,7 +56,7 @@ export function PasswordForm() {
               type="password"
               label="새 비밀번호"
               autoComplete="new-password"
-              hint="영문과 숫자를 섞어 8자 이상"
+              hint={PASSWORD_HINT}
               error={errors.next}
             />
             <FormField

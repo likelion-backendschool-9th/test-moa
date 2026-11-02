@@ -1,5 +1,5 @@
 import { LinkButton } from "@/components/ui/LinkButton";
-import type { Profile } from "../types";
+import type { Profile } from "@/features/member/types";
 import { cardClass } from "./card-styles";
 
 /** 이름·닉네임·이메일. 개발자와 테스터는 한 계정이라 회원 유형은 표시하지 않는다 */

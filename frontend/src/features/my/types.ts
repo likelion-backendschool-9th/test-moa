@@ -1,4 +1,5 @@
 import type { CreditBalance, CreditEntry } from "@/features/credit/types";
+import type { Profile } from "@/features/member/types";
 
 /*
  * 마이페이지 요약. 개발자와 테스터는 한 계정이라 역할로 나누지 않는다.
@@ -6,12 +7,6 @@ import type { CreditBalance, CreditEntry } from "@/features/credit/types";
  */
 
 export type Subscription = { status: "none" } | { status: "active"; planId: string; expiresAt: string };
-
-export type Profile = {
-  name: string;
-  nickname: string;
-  email: string;
-};
 
 /** 지금 할 일은 테스트 참여와 내 프로젝트에서만 나온다 */
 export type TodoCategory = "participation" | "project";

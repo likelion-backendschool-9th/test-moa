@@ -82,16 +82,26 @@ test.describe("R3 기본 정보 저장", () => {
   test("S169 형식", async ({ page }) => {
     const card = profileCard(page);
     await card.getByLabel("이름").fill("가".repeat(21));
-    await card.getByLabel("닉네임").fill("a");
+    await card.getByLabel("닉네임").fill("a".repeat(40));
     await save(page);
     await expect(card.getByText("이름은 20자까지 쓸 수 있어요")).toBeVisible();
-    await expect(card.getByText("닉네임은 한글·영문·숫자 2~12자예요")).toBeVisible();
+    await expect(card.getByText("닉네임은 한글·영문·숫자 1~39자예요")).toBeVisible();
 
     await card.getByLabel("이름").fill("한서윤");
     await card.getByLabel("닉네임").fill("윤슬!!");
     await save(page);
-    await expect(card.getByText("닉네임은 한글·영문·숫자 2~12자예요")).toBeVisible();
+    await expect(card.getByText("닉네임은 한글·영문·숫자 1~39자예요")).toBeVisible();
     await expect(card.getByLabel("닉네임")).toHaveValue("윤슬!!");
+  });
+
+  test("S314 닉네임은 1자와 39자까지 쓸 수 있다", async ({ page }) => {
+    const card = profileCard(page);
+    for (const nickname of ["a", "a".repeat(39)]) {
+      await card.getByLabel("닉네임").fill(nickname);
+      await save(page);
+      await expect(card.getByRole("status")).toHaveText("개인정보를 저장했어요");
+      await expect(card.getByLabel("닉네임")).not.toHaveAttribute("aria-invalid", "true");
+    }
   });
 
   test("S170 사용 중인 닉네임", async ({ page }) => {
@@ -195,7 +205,7 @@ test.describe("R5 로딩과 화면", () => {
       [passwordCard(page), "비밀번호 변경"],
     ] as const) {
       const width = (await card.locator("form").boundingBox())!.width;
-      for (const input of await card.locator("input").all()) {
+      for (const input of await card.locator('input:not([type="hidden"])').all()) {
         expect(Math.abs((await input.boundingBox())!.width - width)).toBeLessThan(1);
       }
       expect(Math.abs((await card.getByRole("button", { name: button }).boundingBox())!.width - width)).toBeLessThan(1);

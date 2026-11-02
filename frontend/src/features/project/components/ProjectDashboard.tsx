@@ -23,7 +23,7 @@ export function TodoList({ todos }: { todos: TodoItem[] }) {
               >
                 <span className="w-32 shrink-0 text-sm font-bold text-text-muted">{todo.projectName}</span>
                 <span className="min-w-0 flex-1">{todo.text}</span>
-                <span className="text-sm font-bold text-accent">{todo.kind === "applicants" ? "테스터 관리" : "피드백"}</span>
+                <span className="text-sm font-semibold text-text-muted">{todo.kind === "applicants" ? "테스터 관리" : "피드백"}</span>
               </Link>
             </li>
           ))}
@@ -36,9 +36,9 @@ export function TodoList({ todos }: { todos: TodoItem[] }) {
 /** 모든 프로젝트를 합친 숫자 네 개 */
 export function OverviewStats({ overview }: { overview: ProjectOverview }) {
   const tiles = [
-    ["모집 중", `${overview.openRecruitments}건`],
-    ["확정된 테스터", `${overview.confirmedTesters}명`],
-    ["받은 피드백", `${overview.feedbacks}건`],
+    ["모집 중", `${overview.recruiting}건`],
+    ["모집 완료", `${overview.full}건`],
+    ["테스트 중", `${overview.testing}건`],
     ["신고 대기", `${overview.waitingReports}건`],
   ];
   return (

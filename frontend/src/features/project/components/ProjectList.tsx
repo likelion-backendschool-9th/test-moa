@@ -25,9 +25,9 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
         <li key={project.key}>
           <Link
             href={`/my/projects/${project.key}`}
-            className="block h-full rounded-2xl transition-colors duration-300 ease-brand hover:bg-surface-strong"
+            className="group block h-full rounded-2xl"
           >
-            <Card className="flex h-full flex-col gap-3 bg-transparent">
+            <Card className="flex h-full flex-col gap-3 border border-line transition-colors duration-300 ease-brand group-hover:bg-surface-strong">
               <p className="text-xs text-text-muted">{SOFTWARE_TYPE_LABEL[project.softwareType]}</p>
               <h3 className="text-lg font-extrabold">{project.name}</h3>
               <p className="text-sm text-text-muted">{project.summary}</p>

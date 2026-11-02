@@ -101,13 +101,8 @@ export type TodoItem = {
   text: string;
 };
 
-/** 모든 프로젝트를 합친 숫자 */
-export type ProjectOverview = {
-  openRecruitments: number;
-  confirmedTesters: number;
-  feedbacks: number;
-  waitingReports: number;
-};
+/** 모든 프로젝트를 합친 숫자. 모집 건은 상태별로 센다 */
+export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed">, number> & { waitingReports: number };
 
 /**
  * 내 프로젝트 화면 전체: 할 일, 전체 현황, 프로젝트 카드.
@@ -120,7 +115,7 @@ export async function getMyDashboard(path: string) {
 
   const applicantTodos: TodoItem[] = [];
   const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
-  const overview: ProjectOverview = { openRecruitments: 0, confirmedTesters: 0, feedbacks: 0, waitingReports: 0 };
+  const overview: ProjectOverview = { recruiting: 0, full: 0, testing: 0, waitingReports: 0 };
 
   for (const project of projects) {
     for (const recruitment of project.recruitments) {
@@ -134,9 +129,7 @@ export async function getMyDashboard(path: string) {
       const pending = applications.filter((item) => item.status === "applied").length;
       const waitingHours = feedbacks.map((item) => getHoursUntilPaid(item, now)).filter((hours) => hours > 0);
 
-      if (status === "recruiting") overview.openRecruitments += 1;
-      overview.confirmedTesters += confirmed;
-      overview.feedbacks += feedbacks.length;
+      if (status !== "closed") overview[status] += 1;
       overview.waitingReports += waitingHours.length;
 
       /* 지금 확정할 수 있는 지원자만 할 일로 본다. 무료 모집은 자동 확정이라 뺀다 */

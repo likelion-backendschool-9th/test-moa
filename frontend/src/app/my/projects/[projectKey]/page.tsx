@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/features/project/components/ProjectDetail";
@@ -29,6 +30,9 @@ async function ProjectSlot({ params, searchParams }: Props) {
   ]);
   return (
     <div className="flex flex-col gap-10">
+      <Link href="/my/projects" className="w-fit text-sm font-semibold text-text-muted hover:text-text">
+        내 프로젝트로 돌아가기
+      </Link>
       <SavedNotice show={notice === "saved"} />
       <ProjectInfo project={project} />
       <section aria-labelledby="recruitments-heading" className="flex flex-col gap-4">

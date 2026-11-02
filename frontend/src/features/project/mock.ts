@@ -90,7 +90,8 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
   const applications: Record<string, Application[]> = {
     /* 모집 중. 대기 지원자 8명이 남은 자리 7명보다 많아 일괄 확정의 정원 안내를 보여 준다 */
     booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, applied: 8 }),
-    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, applied: 0 }),
+    /* 모집이 끝나 남은 대기 지원자 1명은 더 확정할 수 없다(일괄 확정이 없는 것을 보여 준다) */
+    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, applied: 1 }),
     /* 무료 모집은 선착순 자동 확정이라 대기·거절이 없다 */
     "folio-builder": buildApplications(folio, now, { confirmed: folio.confirmedCount, rejected: 0, applied: 0 }),
   };
@@ -102,18 +103,19 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       { nickname: "김하늘", content: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 두 번 눌렀어요.", submittedHoursAgo: 10, status: "waiting" },
       { nickname: "이도윤", content: "좋아요.", submittedHoursAgo: 30, status: "reported" },
       { nickname: "박서아", content: "밑줄 문장 저장은 편했는데, 저장한 문장을 다시 찾는 메뉴가 안 보였어요.", submittedHoursAgo: 96, status: "paid" },
+      { nickname: "최지호", content: "책을 검색하면 표지가 한참 비어 있어서 맞는 책인지 헷갈렸어요.", submittedHoursAgo: 110, status: "paid" },
     ]),
     "folio-builder": [],
   };
 
-  /* 북로그 1차 모집 피드백 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
+  /* 북로그 1차 모집 피드백 중 신고된 1건을 뺀 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
   const aiSummaries: Record<string, AiSummary> = {
     "booklog-first": {
       headline: "기록 기능은 편하다는 반응이지만, 책을 찾고 저장한 문장을 다시 찾는 흐름에서 헷갈린다는 의견이 있어요.",
       issues: [
         {
           text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요",
-          feedbackCount: 1,
+          feedbackCount: 2,
           suggestion: "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
         },
         {

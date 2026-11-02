@@ -18,9 +18,11 @@ export function UserDetailView({ user }: { user: UserDetail }) {
         목록으로
       </Link>
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {user.sanctions.length > 0 && <Badge tone="neutral">제재 이력 {user.sanctions.length}건</Badge>}
-        </div>
+        {user.sanctions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="neutral">제재 이력 {user.sanctions.length}건</Badge>
+          </div>
+        )}
         <h2 className="text-2xl font-extrabold tracking-[-0.03em]">{user.nickname}</h2>
       </div>
 
@@ -81,7 +83,7 @@ function ActivitySummary({ activity }: { activity: UserActivity }) {
   const { tester, developer } = activity;
   return (
     <div className="flex flex-col gap-5">
-      <ActivityGroup title="테스터 활동" emptyText="테스터 활동이 없어요">
+      <ActivityGroup title="테스터 활동" emptyText="테스터 활동이 없어요" hasActivity={tester !== null}>
         {tester && (
           <>
             <Info label="참여 확정">{tester.confirmedCount}회</Info>
@@ -90,7 +92,7 @@ function ActivitySummary({ activity }: { activity: UserActivity }) {
           </>
         )}
       </ActivityGroup>
-      <ActivityGroup title="개발자 활동" emptyText="개발자 활동이 없어요">
+      <ActivityGroup title="개발자 활동" emptyText="개발자 활동이 없어요" hasActivity={developer !== null}>
         {developer && (
           <>
             <Info label="프로젝트">{developer.projectCount}개</Info>
@@ -103,11 +105,13 @@ function ActivitySummary({ activity }: { activity: UserActivity }) {
   );
 }
 
-function ActivityGroup({ title, emptyText, children }: { title: string; emptyText: string; children: ReactNode }) {
+type ActivityGroupProps = { title: string; emptyText: string; hasActivity: boolean; children: ReactNode };
+
+function ActivityGroup({ title, emptyText, hasActivity, children }: ActivityGroupProps) {
   return (
     <div className="flex flex-col gap-3">
       <h4 className="text-sm font-extrabold">{title}</h4>
-      {children ? <dl className={infoGridClass}>{children}</dl> : <p className="text-sm text-text-muted">{emptyText}</p>}
+      {hasActivity ? <dl className={infoGridClass}>{children}</dl> : <p className="text-sm text-text-muted">{emptyText}</p>}
     </div>
   );
 }

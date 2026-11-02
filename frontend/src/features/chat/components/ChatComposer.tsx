@@ -10,6 +10,7 @@ import {
   useOptimistic,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { cn } from "@/lib/cn";
@@ -26,8 +27,27 @@ type ChatComposerProps = {
   now: string;
 };
 
+/* 터치가 주 입력인 기기(휴대폰·태블릿). 화상 키보드에는 Shift+Enter가 없어서 Enter를 줄바꿈으로 둔다 */
+const TOUCH_QUERY = "(pointer: coarse)";
+
+function subscribeTouch(onChange: () => void) {
+  const query = window.matchMedia(TOUCH_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/** 터치 기기면 true. 서버 렌더링과 처음 그릴 때는 키보드 기기로 본다 */
+function useTouchInput() {
+  return useSyncExternalStore(
+    subscribeTouch,
+    () => window.matchMedia(TOUCH_QUERY).matches,
+    () => false,
+  );
+}
+
 /**
- * 채팅방 아래에 붙는 메시지 입력창. Enter로 보내고 Shift+Enter로 줄을 바꾸며, 한글 조합 중의 Enter는 글자 확정으로 보고 보내지 않는다.
+ * 채팅방 아래에 붙는 메시지 입력창. 키보드 기기에서는 Enter로 보내고 Shift+Enter로 줄을 바꾼다.
+ * 휴대폰 같은 터치 기기에서는 Enter가 줄바꿈이고 보내기 버튼으로만 보낸다. 한글 조합 중의 Enter는 글자 확정으로 보고 보내지 않는다.
  * 보내기를 누르면 서버 응답 전에 보내는 중 말풍선을 먼저 보여 주고(useOptimistic), 저장되면 서버가 다시 그린 대화 내용으로 바뀐다.
  * 보내지 못하면 글을 입력창에 되돌리고 알린다.
  * 열 때와 메시지를 보낸 뒤에는 이 입력창의 끝이 화면 아래에 오도록 스크롤해, 가장 최근 메시지가 입력창 바로 위에 보인다.
@@ -39,9 +59,11 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
   const [pending, addPending] = useOptimistic<string[], string>([], (list, message) => [...list, message]);
   const [, startTransition] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrolledOnce = useRef(false);
   const inputId = useId();
   const hintId = useId();
+  const touch = useTouchInput();
   const canSend = text.trim().length > 0;
   const lastMessageId = lastMessage?.id ?? null;
   const startsToday = !lastMessage || !isTodayInSeoul(lastMessage.sentAt, new Date(now));
@@ -65,6 +87,8 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
     if (!message) return;
     setText("");
     setFailed(false);
+    /* 보내기 버튼을 키보드로 눌렀을 때도 바로 이어 쓸 수 있게 입력창으로 돌아간다 */
+    inputRef.current?.focus();
     startTransition(async () => {
       addPending(message);
       try {
@@ -82,7 +106,7 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (touch || event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
     event.preventDefault();
     send();
   }
@@ -122,13 +146,14 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
             메시지 입력
           </label>
           <textarea
+            ref={inputRef}
             id={inputId}
             name="message"
             rows={1}
             value={text}
             maxLength={CHAT_MESSAGE_MAX}
             placeholder="메시지를 입력하세요"
-            enterKeyHint="send"
+            enterKeyHint={touch ? "enter" : "send"}
             aria-describedby={hintId}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={onKeyDown}
@@ -138,13 +163,16 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
             type="submit"
             aria-label="보내기"
             disabled={!canSend}
+            /* 누를 때 입력창의 포커스를 뺏지 않는다. 휴대폰에서 보낼 때마다 키보드가 닫히지 않게 */
+            onMouseDown={(event) => event.preventDefault()}
             className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-[opacity,transform] duration-300 ease-brand hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
           >
             <PaperPlaneRightIcon aria-hidden size={18} weight="fill" />
           </button>
         </form>
+        {/* 화면에는 md 이상에서만 보이고, 보조 기술에는 늘 입력창 설명으로 읽힌다 */}
         <p id={hintId} className="mt-2 hidden px-5 text-xs text-text-muted md:block">
-          Enter로 보내고, Shift+Enter로 줄을 바꿔요.
+          {touch ? "Enter로 줄을 바꾸고, 보내기 버튼으로 보내요." : "Enter로 보내고, Shift+Enter로 줄을 바꿔요."}
         </p>
       </div>
       <div ref={endRef} />

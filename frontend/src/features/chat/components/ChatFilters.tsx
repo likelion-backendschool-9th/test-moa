@@ -19,6 +19,8 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   /* 마지막으로 보낸 조건. 새 주소로 화면이 다시 그려지기 전에 탭·정렬·검색이 이어져도 앞의 선택을 덮어쓰지 않게 여기에 합친다 */
   const latest = useRef(query);
+  /* 주소에 반영된 검색어. 화면을 떠날 때 입력창을 이 값으로 되돌린다 */
+  const appliedQ = useRef(query.q);
 
   /* 조건 초기화처럼 바깥에서 q가 바뀌면 입력값을 맞춘다. 내가 보낸 값이면 입력 중인 글자를 지키려고 그대로 둔다 */
   if (query.q !== syncedQ) {
@@ -28,26 +30,30 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
 
   useEffect(() => {
     latest.current = query;
+    appliedQ.current = query.q;
   }, [query]);
 
   /*
-   * 화면을 떠나면 기다리던 검색을 버린다. 늦게 실행된 검색이 다른 페이지로 가던 이동을 덮어써 채팅함으로 되돌아오지 않게 한다.
-   * 이동이 끝나 화면이 숨겨질 때(effect 정리)만으로는 늦어서, 링크를 누르는 순간과 뒤로·앞으로 가기에서도 버린다.
+   * 화면을 떠나면 기다리던 검색을 버리고, 입력창도 주소에 반영된 검색어로 되돌린다.
+   * 늦게 실행된 검색이 다른 페이지로 가던 이동을 덮어쓰지 않게 하고, 돌아왔을 때 입력창과 목록이 어긋나지 않게 한다
+   * (떠난 채팅함은 숨겨진 채 입력값까지 보존되고, 주소의 검색어가 그대로면 위의 맞추기도 일어나지 않는다).
+   * 이동이 끝나 화면이 숨겨질 때(effect 정리)만으로는 늦어서, 링크를 누르는 순간과 뒤로·앞으로 가기에서도 한다.
    */
   useEffect(() => {
-    const cancel = () => {
+    const leave = () => {
       clearTimeout(timer.current);
       timer.current = undefined;
+      setValue(appliedQ.current);
     };
-    const cancelOnLink = (event: MouseEvent) => {
-      if (event.target instanceof Element && event.target.closest("a[href]")) cancel();
+    const leaveOnLink = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest("a[href]")) leave();
     };
-    document.addEventListener("click", cancelOnLink, true);
-    window.addEventListener("popstate", cancel);
+    document.addEventListener("click", leaveOnLink, true);
+    window.addEventListener("popstate", leave);
     return () => {
-      document.removeEventListener("click", cancelOnLink, true);
-      window.removeEventListener("popstate", cancel);
-      cancel();
+      document.removeEventListener("click", leaveOnLink, true);
+      window.removeEventListener("popstate", leave);
+      leave();
     };
   }, []);
 

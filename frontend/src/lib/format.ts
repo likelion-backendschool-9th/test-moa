@@ -52,11 +52,21 @@ export function formatDday(iso: string, now: Date) {
   return days <= 0 ? "D-day" : `D-${days}`;
 }
 
-const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
+/* 채팅 시각용 24시간 시·분. 오전·오후는 formatDateTime처럼 ICU 버전과 관계없이 직접 붙인다 */
+const clockFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "numeric",
   minute: "2-digit",
+  hourCycle: "h23",
   timeZone: "Asia/Seoul",
 });
+
+/** 서울 시간 "오후 3:12". 자정은 "오전 12:05", 정오는 "오후 12:00" */
+function formatKoreanClock(date: Date) {
+  const parts = clockFormatter.formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = parts.find((part) => part.type === "minute")?.value;
+  return `${hour < 12 ? "오전" : "오후"} ${hour % 12 || 12}:${minute}`;
+}
 
 const fullDateFormatter = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
@@ -85,7 +95,7 @@ export function seoulDayKey(iso: string) {
 
 /** 메시지 시각. "오후 3:12" */
 export function formatClock(iso: string) {
-  return timeFormatter.format(new Date(iso));
+  return formatKoreanClock(new Date(iso));
 }
 
 const weekdayDateFormatter = new Intl.DateTimeFormat("ko-KR", {
@@ -119,7 +129,7 @@ export function formatChatTime(iso: string, now: Date) {
   const date = new Date(iso);
   const day = dayKeyFormatter.format(date);
   const today = dayKeyFormatter.format(now);
-  if (day === today) return timeFormatter.format(date);
+  if (day === today) return formatKoreanClock(date);
   if (day === dayKeyFormatter.format(new Date(now.getTime() - DAY_MS))) return "어제";
   if (day.slice(0, 4) === today.slice(0, 4)) return dateFormatter.format(date);
   return fullDateFormatter.format(date);

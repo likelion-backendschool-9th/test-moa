@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
-import { USER_FILTERS, USER_QUERY_MAX_LENGTH, USER_ROLE_LABEL, type UserFilter, type UserSummary } from "../users";
+import { USER_FILTERS, USER_QUERY_MAX_LENGTH, type UserFilter, type UserSummary } from "../users";
 import { LinkTabs } from "./LinkTabs";
 
 /** 필터를 바꿔도 검색어는 남긴다 */
@@ -64,7 +64,7 @@ const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-r
 
 type UserListProps = { users: UserSummary[]; filter: UserFilter; query: string };
 
-/** 회원 목록. 실명·이메일은 상세에서만, 그것도 가려서 보여 준다 */
+/** 회원 목록. 역할은 보여 주지 않는다(한 사람이 테스터도 개발자도 된다). 실명·이메일은 상세에서만, 그것도 가려서 보여 준다 */
 export function UserList({ users, filter, query }: UserListProps) {
   if (users.length === 0) return <EmptyState title={emptyTitle(filter, query)} />;
   return (
@@ -75,7 +75,7 @@ export function UserList({ users, filter, query }: UserListProps) {
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="font-semibold">{user.nickname}</span>
               <span className="text-sm text-text-muted">
-                {USER_ROLE_LABEL[user.activity.role]} · 가입 {formatDate(user.joinedAt)}
+                가입 {formatDate(user.joinedAt)}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 md:justify-end">

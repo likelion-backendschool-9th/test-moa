@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { REPORT_DECISION_LABEL, type Report } from "../types";
-import { maskEmail, maskName, USER_ROLE_LABEL, type UserActivity, type UserDetail } from "../users";
+import { maskEmail, maskName, type UserActivity, type UserDetail } from "../users";
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 const infoGridClass = "grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]";
@@ -19,7 +19,6 @@ export function UserDetailView({ user }: { user: UserDetail }) {
       </Link>
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="muted">{USER_ROLE_LABEL[user.activity.role]}</Badge>
           {user.sanctions.length > 0 && <Badge tone="neutral">제재 이력 {user.sanctions.length}건</Badge>}
         </div>
         <h2 className="text-2xl font-extrabold tracking-[-0.03em]">{user.nickname}</h2>
@@ -28,7 +27,6 @@ export function UserDetailView({ user }: { user: UserDetail }) {
       <Panel id="user-info-heading" title="기본 정보">
         <dl className={infoGridClass}>
           <Info label="닉네임">{user.nickname}</Info>
-          <Info label="역할">{USER_ROLE_LABEL[user.activity.role]}</Info>
           <Info label="가입">{formatDate(user.joinedAt)}</Info>
           <Info label="실명">{maskName(user.realName)}</Info>
           <Info label="이메일">{maskEmail(user.email)}</Info>
@@ -78,24 +76,39 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** 테스터는 참여 기록을, 개발자는 프로젝트·구독을 보여 준다 */
+/** 테스터 활동과 개발자 활동을 모두 보여 준다. 해 본 적이 없는 쪽은 없다고 적는다 */
 function ActivitySummary({ activity }: { activity: UserActivity }) {
+  const { tester, developer } = activity;
   return (
-    <dl className={infoGridClass}>
-      {activity.role === "tester" ? (
-        <>
-          <Info label="참여 확정">{activity.confirmedCount}회</Info>
-          <Info label="피드백 제출">{activity.submittedCount}회</Info>
-          <Info label="미완료">{activity.incompleteCount}회</Info>
-        </>
-      ) : (
-        <>
-          <Info label="프로젝트">{activity.projectCount}개</Info>
-          <Info label="모집 건">{activity.recruitmentCount}개</Info>
-          <Info label="구독">{activity.subscribed ? "구독 중" : "구독 안 함"}</Info>
-        </>
-      )}
-    </dl>
+    <div className="flex flex-col gap-5">
+      <ActivityGroup title="테스터 활동" emptyText="테스터 활동이 없어요">
+        {tester && (
+          <>
+            <Info label="참여 확정">{tester.confirmedCount}회</Info>
+            <Info label="피드백 제출">{tester.submittedCount}회</Info>
+            <Info label="미완료">{tester.incompleteCount}회</Info>
+          </>
+        )}
+      </ActivityGroup>
+      <ActivityGroup title="개발자 활동" emptyText="개발자 활동이 없어요">
+        {developer && (
+          <>
+            <Info label="프로젝트">{developer.projectCount}개</Info>
+            <Info label="모집 건">{developer.recruitmentCount}개</Info>
+            <Info label="구독">{developer.subscribed ? "구독 중" : "구독 안 함"}</Info>
+          </>
+        )}
+      </ActivityGroup>
+    </div>
+  );
+}
+
+function ActivityGroup({ title, emptyText, children }: { title: string; emptyText: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h4 className="text-sm font-extrabold">{title}</h4>
+      {children ? <dl className={infoGridClass}>{children}</dl> : <p className="text-sm text-text-muted">{emptyText}</p>}
+    </div>
   );
 }
 

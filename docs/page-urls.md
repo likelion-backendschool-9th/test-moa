@@ -56,6 +56,7 @@
 | 크레딧 관리 | `/my/credits` | 확정 |
 | 출금 신청·내역 | `/my/credits/withdrawals` | 확정 |
 | 구독 관리 | `/my/subscription` | 확정 |
+| 구독 결제 | `/my/subscription/checkout` | 후보 |
 
 ## 채팅
 

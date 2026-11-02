@@ -14,22 +14,22 @@
 - "테스트 모집" 탭이 가던 `/recruitments`는 아직 준비 중 페이지다. 페이지는 남기고 헤더 진입점만 없앤다.
 
 ## 1. 오른쪽 계정 영역 (R1)
-S317 로그인
+S341 로그인
 - Given `demo-role=tester`
 - Then  헤더에 보유 크레딧(`/my/credits`), "마이페이지"(`/my`), "로그아웃" 버튼이 이 순서로 있다 (고침 11-02: 로그아웃이 바탕색 없는 글자 버튼이라, 바탕색 있는 크레딧을 앞에 두고 글자 버튼인 마이페이지·로그아웃을 나란히 둠)
 - Then  크레딧 링크의 보이는 글자는 "12,480"(동전 아이콘 + 숫자)이고 "크레딧"이라는 글자는 보이지 않는다
 - Then  크레딧 링크의 이름(접근성 이름)은 "보유 크레딧 12,480"이고, 마우스를 올리면 같은 문구가 보인다(`title`)
 - Then  "내 정보" 링크는 없다
 
-S318 비로그인
+S342 비로그인
 - Given `demo-role=guest`
 - Then  헤더에 "로그인"(`/login`), "회원가입"(`/signup`)이 있고 "마이페이지"·크레딧·"로그아웃"은 없다
 
-S319 운영자·개발자
+S343 운영자·개발자
 - Given `demo-role=admin` 또는 `developer`
 - Then  "마이페이지", 보유 크레딧(이름 "보유 크레딧 0", "보유 크레딧 3,260"), "로그아웃"이 있다
 
-S320 마이페이지 현재 위치
+S344 마이페이지 현재 위치
 - Given `demo-role=tester`
 - When  `/my` 또는 `/my/profile/edit`에 접속한다
 - Then  헤더의 "마이페이지"에 `aria-current="page"`가 있다
@@ -38,15 +38,15 @@ S320 마이페이지 현재 위치
 - Then  `docs/2026-10-30-frontend-my.md` S84의 "마이페이지 탭이 현재 탭"은 헤더 "마이페이지"로 확인한다
 
 ## 2. 로그아웃 (R2)
-S321 로그아웃
+S345 로그아웃
 - Given `demo-role=tester`, `/my/credits`
 - When  헤더의 "로그아웃"을 누른다
 - Then  URL이 `/`다
 - Then  헤더에 "로그인"·"회원가입"이 있다
 - Then  `demo-role` 쿠키 값이 `guest`다
 
-S322 로그아웃 뒤 보호 페이지
-- Given S321처럼 로그아웃했다
+S346 로그아웃 뒤 보호 페이지
+- Given S345처럼 로그아웃했다
 - When  `/my`에 접속한다
 - Then  URL이 `/login?next=%2Fmy`다
 
@@ -112,7 +112,7 @@ S331 한 줄 배치 기준
 ## 7. 기존 테스트와 문서 (R7)
 S332 기존 시나리오 정리
 - Then  `docs/frontend-home.md`와 e2e를 아래처럼 고친다
-  - S2·S3(`header.spec.ts`): "내 정보" → "마이페이지"(`/my`)와 "로그아웃" (S317·S318로 대체)
+  - S2·S3(`header.spec.ts`): "내 정보" → "마이페이지"(`/my`)와 "로그아웃" (S341·S342로 대체)
   - S4·S5(`header.spec.ts`): 크레딧 링크 이름 "12,480 크레딧" → "보유 크레딧 12,480"
   - S6·S7·S8(`nav.spec.ts`): 탭 6·7개 → 3·4개, 홈이 현재 탭이던 확인은 S334로 대체, 탭 이동 예시는 "참여 테스트"
   - S11·S12(`mobile-menu.spec.ts`): 패널 탭 수 3개, 링크 이동 예시는 "참여 테스트"
@@ -138,9 +138,9 @@ S333 구조
 1. 탭과 검색 정리 — S323~S326, S334
    - `src/lib/nav.ts`의 `NAV`에서 "홈"·"테스트 모집"·"마이페이지" 삭제
    - `src/components/layout/HeaderSearch.tsx` 삭제, `AppHeader`·`MobileMenu`에서 사용처 삭제
-2. 로그아웃 — S321, S322
+2. 로그아웃 — S345, S346
    - `src/features/auth/actions.ts`에 `logout()`: `demo-role`을 `guest`로(로그인과 같은 쿠키 속성) 넣고 `redirect("/")`
-3. 오른쪽 영역과 모바일 메뉴 — S317~S320, S327~S329
+3. 오른쪽 영역과 모바일 메뉴 — S341~S344, S327~S329
    - `UserMenu`: "내 정보" → "마이페이지"(`/my`, 768px 미만 숨김), 크레딧 버튼은 아이콘 + 숫자만 보이고 `aria-label`·`title`은 "보유 크레딧 12,480"(숫자는 `formatCredits` 대신 숫자만 포맷하는 함수를 `lib/format.ts`에 추가), `<form action={logout}>`의 "로그아웃" 보조(ghost) 버튼(768px 미만 숨김). 마이페이지 현재 위치 표시는 `usePathname`이 필요해 작은 클라이언트 컴포넌트로 분리하거나 `MainNav`처럼 처리
    - `MobileMenu`: 계정 링크 자리에 "마이페이지"와 로그아웃 폼. 로그아웃 액션은 `features/auth/actions`에서 가져온다
    - `AppHeader`의 `getAccountLinks` 정리
@@ -148,7 +148,7 @@ S333 구조
    - 한 줄 기준을 `xl`(1280px)에서 `lg`(1024px)로 내린다 (11-02 측정: 한 줄에 필요한 폭은 비로그인 612px, 테스터 750px, 개발자 741px, 운영자 813px. 768px 기준은 운영자가 넘쳐서 1024px로 확정)
    - 탭·로고·오른쪽 버튼 글자에 `whitespace-nowrap`을 걸어, 폭이 모자라도 글자가 쪼개지지 않게 한다
 5. 테스트·문서 — S332, S333
-   - `e2e/header.spec.ts`(새 S317~S322 포함), `nav.spec.ts`, `mobile-menu.spec.ts`, `home-gallery.spec.ts`, `a11y.spec.ts`, `auth.spec.ts`, 새 `e2e/header-layout.spec.ts`(S330·S331)
+   - `e2e/header.spec.ts`(새 S341~S346 포함), `nav.spec.ts`, `mobile-menu.spec.ts`, `home-gallery.spec.ts`, `a11y.spec.ts`, `auth.spec.ts`, 새 `e2e/header-layout.spec.ts`(S330·S331)
    - `docs/frontend-home.md` R2~R5·R12 갱신, `docs/2026-11-01-frontend-auth.md` 범위 밖 갱신
    - 확인: `cd frontend && npm run lint && npx tsc --noEmit && npm run test:e2e`, 개발 서버에서 375·1024·1280·1440px와 다크 모드 확인
 
@@ -166,7 +166,7 @@ S333 구조
 ## 가정
 - 로그아웃 버튼은 보조(ghost) 버튼이다. 헤더의 주 버튼은 비로그인일 때 "회원가입" 하나뿐이다 (DESIGN.md The One Green Rule).
 - 768px 미만에서 크레딧 버튼은 헤더에 남긴다. 테스터가 가장 자주 보는 값이라서다.
-- S번호는 S317~S334를 쓴다. 로그인·회원가입 문서의 마지막 번호(S316) 다음부터.
+- S번호는 S323~S334와 S341~S346을 쓴다. 처음에는 로그인·회원가입 문서의 마지막 번호(S316) 다음인 S317~S334를 썼지만, 채팅(PR #20)의 S317~S322와 겹쳐 11-02에 앞의 여섯 개(로그인, 비로그인, 운영자·개발자, 마이페이지 현재 위치, 로그아웃, 로그아웃 뒤 보호 페이지)를 S341~S346으로 옮겼다.
 
 ## 참고 (2026-11-01 확인)
 - 헤더 코드: `frontend/src/components/layout/AppHeader.tsx`, `NavList.tsx`, `UserMenu.tsx`, `MobileMenu.tsx`, `HeaderSearch.tsx`, `frontend/src/lib/nav.ts`

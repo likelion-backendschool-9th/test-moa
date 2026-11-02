@@ -8,13 +8,11 @@ type NavDefinition = {
   adminOnly?: boolean;
 };
 
+/* 홈은 로고로, 마이페이지는 헤더 오른쪽 계정 영역으로 간다. 모집 글 검색은 홈 전체 테스트 그리드에서 한다 */
 const NAV: NavDefinition[] = [
-  { label: "홈", path: "/" },
-  { label: "테스트 모집", path: "/recruitments" },
   { label: "참여 테스트", path: "/my/participations", requiresAuth: true },
   { label: "내 프로젝트", path: "/my/projects", requiresAuth: true },
   { label: "채팅", path: "/my/chats", requiresAuth: true },
-  { label: "마이페이지", path: "/my", requiresAuth: true },
   { label: "운영자 페이지", path: "/admin", adminOnly: true },
 ];
 
@@ -41,4 +39,15 @@ export function findActivePath(items: NavItem[], pathname: string) {
     .map((item) => item.path)
     .filter((path) => pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)))
     .sort((a, b) => b.length - a.length)[0];
+}
+
+export const MY_PAGE_PATH = "/my";
+const CREDITS_PATH = "/my/credits";
+
+const isUnder = (pathname: string, path: string) => pathname === path || pathname.startsWith(`${path}/`);
+
+/** 헤더 "마이페이지"가 현재 위치인지. 마이페이지 아래라도 탭이 따로 있는 곳과 크레딧(별도 버튼)은 뺀다 */
+export function isMyPagePath(pathname: string) {
+  if (!isUnder(pathname, MY_PAGE_PATH) || isUnder(pathname, CREDITS_PATH)) return false;
+  return !NAV.some((item) => item.path !== MY_PAGE_PATH && isUnder(item.path, MY_PAGE_PATH) && isUnder(pathname, item.path));
 }

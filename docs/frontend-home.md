@@ -5,7 +5,7 @@
 ## 한눈에
 - 스택: Next.js 16(App Router, Cache Components), Tailwind CSS v4, TypeScript, Playwright E2E. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성(위에서부터):
-  1. 한 줄 헤더: 로고, 카테고리 탭, 검색창, 계정 영역
+  1. 한 줄 헤더: 로고, 카테고리 탭, 계정 영역 (고침 11-02: 검색창 삭제)
   2. 히어로 배너(소개 → 이벤트 → 공지 순환)와 "마감 임박 테스트 1~5" 패널
   3. 구독 모집: 구독 개발자의 모집 글
   4. 전체 테스트: 검색·카테고리·모집 중·정렬이 되는 그리드
@@ -34,43 +34,19 @@ S80 공유 이미지
 - Then  그 주소가 200, `image/png`로 열린다
 
 ## 2. 헤더와 계정 (R2)
-헤더 오른쪽은 로그인 상태에 따라 계정 버튼이나 내 정보·보유 크레딧을 보여 준다.
+(고침 11-02: 헤더 정리. 계정 영역·탭·모바일 메뉴·검색 시나리오는 `docs/2026-11-01-frontend-header.md` S317~S334로 옮겼다. S2·S3은 S317·S318, S6~S9는 S323·S324·S334·S325, S81은 S327, S59·S82는 S326으로 대체했다)
 
-S2 로그인
-- Given `demo-role=tester` (크레딧 12480)
-- Then  "Test Moa" 로고 링크(`/`), "내 정보"(`/my/profile/edit`), "12,480 크레딧"(`/my/credits`)이 있다
-- Then  "로그인"은 없다
-
-S3 비로그인
-- Given `demo-role=guest`
-- Then  "로그인"(`/login`), "회원가입"(`/signup`)이 있고 "내 정보"와 크레딧은 없다
+헤더 오른쪽은 로그인 상태에 따라 "로그인"·"회원가입"이나 "마이페이지"·보유 크레딧·"로그아웃"을 보여 준다.
 
 S4 쿠키 없음
-- Then  tester로 본다
+- Then  tester로 본다 (헤더에 "보유 크레딧 12,480" 링크)
 
 S5 알 수 없는 역할
 - Given `demo-role=foo`
 - Then  HTTP 200이고 tester로 본다
 
 ## 3. 카테고리 탭 (R3)
-탭은 page-urls.md의 섹션을 따르고, 현재 탭을 표시하며, 운영자 탭은 운영자에게만 보인다.
-
-S6 일반 사용자
-- Then  탭 6개가 순서대로 있다: 홈 `/`, 테스트 모집 `/recruitments`, 참여 테스트 `/my/participations`, 내 프로젝트 `/my/projects`, 채팅 `/my/chats`, 마이페이지 `/my`
-- Then  "운영자 페이지" 탭은 없고, "홈"에 `aria-current="page"`가 있다
-
-S7 운영자
-- Given `demo-role=admin`
-- Then  7번째 탭 "운영자 페이지"가 `/admin`을 가리킨다
-
-S8 탭 이동
-- When  "테스트 모집"을 누른다
-- Then  URL이 `/recruitments`이고 그 탭이 현재 탭이다
-
-S9 비로그인 보호 탭
-- Given `demo-role=guest`
-- When  "참여 테스트"를 누른다
-- Then  URL이 `/login?next=%2Fmy%2Fparticipations`이다
+탭은 참여 테스트·내 프로젝트·채팅이고 운영자에게만 운영자 페이지가 더해진다. 홈은 로고로 간다. 시나리오는 `docs/2026-11-01-frontend-header.md` R3.
 
 ## 4. 모바일 메뉴 (R4)
 너비 768px 미만에서는 탭 대신 메뉴 버튼이 나오고, 화면 전체 높이 패널이 열린다.
@@ -81,30 +57,18 @@ S10 메뉴 버튼
 
 S11 열기와 닫기
 - When  "메뉴 열기"를 누른다
-- Then  패널 높이가 뷰포트와 같고, 탭 링크 6개가 있으며, 버튼 이름이 "메뉴 닫기"다
+- Then  패널 높이가 뷰포트와 같고, 버튼 이름이 "메뉴 닫기"다
 - When  Esc를 누른다
 - Then  패널이 닫히고 포커스가 메뉴 버튼으로 돌아온다
 
 S12 링크 이동 후 닫힘
-- When  패널에서 "테스트 모집"을 누른다
-- Then  URL이 `/recruitments`이고 패널이 닫힌다
+- When  패널에서 "참여 테스트"를 누른다
+- Then  URL이 `/my/participations`이고 패널이 닫힌다
 
-S81 내 정보 위치
-- Then  좁은 화면 헤더에는 "내 정보"가 없고, 패널 안에 있다(`/my/profile/edit`)
+계정 영역(마이페이지·로그아웃)은 `docs/2026-11-01-frontend-header.md` R5.
 
 ## 5. 검색 (R5)
-헤더 검색과 모바일 메뉴 검색은 홈의 전체 테스트 그리드를 검색한다.
-
-S59 헤더 검색
-- Given 너비 1440px
-- When  헤더 검색창에 "가계부"를 입력하고 Enter를 누른다
-- Then  URL이 `/?q=%EA%B0%80%EA%B3%84%EB%B6%80#all-tests`이다
-- Then  전체 테스트에 "가계부 노트" 카드 1개만 보인다
-
-S82 모바일 메뉴 검색
-- Given 너비 375px, 메뉴가 열려 있다
-- When  패널 검색창에 "가계부"를 입력하고 Enter를 누른다
-- Then  URL에 `q=%EA%B0%80%EA%B3%84%EB%B6%80`가 붙고 패널이 닫힌다
+검색은 홈 전체 테스트 그리드에서만 한다(R9 S69). 헤더·모바일 메뉴 검색창은 없앴다 (`docs/2026-11-01-frontend-header.md` S326).
 
 ## 6. 히어로 배너 (R6)
 배너는 서비스 소개, 이벤트, 공지를 5초마다 순환한다. hover·focus 중이거나 reduced motion이면 멈춘다.
@@ -209,11 +173,11 @@ S35 본문 바로가기
 - Then  포커스가 `main`으로 간다
 
 S36 포커스 링
-- When  Tab으로 "테스트 모집" 탭에 간다
+- When  Tab으로 "참여 테스트" 탭에 간다
 - Then  `outline-style`이 `none`이 아니다
 
 S79 이름과 상태
-- Then  검색창 두 개 모두 이름이 "테스트 검색"이다
+- Then  전체 테스트 그리드 검색창 1개의 이름이 "테스트 검색"이다 (고침 11-02: 헤더 검색 삭제)
 - Then  결과 수가 `aria-live="polite"`로 읽힌다
 - Then  카테고리 칩은 `aria-pressed`로 선택 상태를 알린다
 
@@ -222,7 +186,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, HeaderSearch, MainNav, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 20개, 모두 26개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313), ApplicationStatusTabs
+- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 20개, 모두 26개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313), ApplicationStatusTabs (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/2026-11-01-frontend-header.md` S333)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

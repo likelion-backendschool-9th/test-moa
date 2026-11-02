@@ -28,7 +28,7 @@ S84 로그인
 - Given `demo-role=tester`
 - When  `/my`에 접속한다
 - Then  HTTP 200이고 h1 "마이페이지"가 있다
-- Then  헤더의 "마이페이지" 탭에 `aria-current="page"`가 있다
+- Then  헤더 오른쪽 "마이페이지"에 `aria-current="page"`가 있다 (고침 11-02: 탭에서 헤더 오른쪽으로 옮김, `docs/2026-11-01-frontend-header.md` S320)
 
 ## 2. 마이페이지 메뉴 (R2)
 마이페이지 하위 페이지는 같은 메뉴를 공유하고, 현재 페이지를 표시한다. 참여 테스트·내 프로젝트·채팅에는 이 메뉴가 없다.

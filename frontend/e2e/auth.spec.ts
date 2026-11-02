@@ -37,7 +37,7 @@ async function signup(page: Page, input: Partial<SignupInput> = {}) {
 }
 
 async function expectLoggedIn(page: Page) {
-  await expect(header(page).getByRole("link", { name: "내 정보" })).toBeVisible();
+  await expect(header(page).getByRole("link", { name: "마이페이지" })).toBeVisible();
   await expect(header(page).getByRole("link", { name: "로그인" })).toHaveCount(0);
 }
 

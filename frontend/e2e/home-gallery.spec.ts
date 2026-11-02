@@ -6,18 +6,6 @@ const allCards = (page: Page) => allSection(page).getByTestId("recruitment-card"
 const subscription = (page: Page) => page.getByRole("region", { name: "구독 모집" });
 const names = (page: Page) => allCards(page).locator("h3").allTextContents();
 
-test.describe("R5 검색", () => {
-  test("S59 헤더 검색은 전체 테스트를 거른다", async ({ page }) => {
-    await page.goto("/");
-    const input = page.getByRole("banner").getByRole("searchbox", { name: "테스트 검색" });
-    await input.fill("가계부");
-    await input.press("Enter");
-    await expect(page).toHaveURL(/\/\?q=%EA%B0%80%EA%B3%84%EB%B6%80#all-tests$/);
-    await expect(allCards(page)).toHaveCount(1);
-    await expect(allCards(page).first()).toContainText("가계부 노트");
-  });
-});
-
 test.describe("R7 마감 임박 패널", () => {
   test("S65 마감이 가까운 모집 5개를 보여 준다", async ({ page }) => {
     await page.goto("/");
@@ -121,7 +109,8 @@ test.describe("R10 로딩", () => {
 test.describe("R12 접근성", () => {
   test("S79 검색창 이름, 결과 수 알림, 칩 상태", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("searchbox", { name: "테스트 검색" })).toHaveCount(2);
+    /* 헤더 검색은 없앴다 (docs/2026-11-01-frontend-header.md S326) */
+    await expect(page.getByRole("searchbox", { name: "테스트 검색" })).toHaveCount(1);
     await expect(allSection(page).locator('[aria-live="polite"]').filter({ hasText: "개" })).toHaveCount(1);
     await expect(allSection(page).getByRole("button", { name: "전체" })).toHaveAttribute("aria-pressed", "true");
   });

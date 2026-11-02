@@ -10,16 +10,27 @@ import { validateEmail, validateName, validateNewPassword, validateNickname } fr
 import { type LoginField, type SignupField, SOCIAL_PROVIDERS, withNext } from "./types";
 
 /*
- * 로그인·회원가입. 목업이라 시연 회원 역할로 demo-role 쿠키를 바꾸는 것이 곧 로그인이다.
+ * 로그인·로그아웃·회원가입. 목업이라 시연 회원 역할로 demo-role 쿠키를 바꾸는 것이 곧 로그인이다.
  * 실제 인증을 붙일 때는 signIn과 계정 확인 부분만 바꾼다.
  */
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-/** 시연 전환기(DemoSwitcher)와 같은 속성으로 쿠키를 넣고 돌아갈 경로로 보낸다. 전환기가 덮어써야 해서 httpOnly는 쓰지 않는다 */
-async function signIn(role: Exclude<Role, "guest">, next: FormDataEntryValue | null): Promise<never> {
+/** 시연 전환기(DemoSwitcher)와 같은 쿠키 속성. 전환기가 덮어써야 해서 httpOnly는 쓰지 않는다 */
+async function setRole(role: Role) {
   (await cookies()).set(DEMO_ROLE_COOKIE, role, { path: "/", maxAge: ONE_YEAR_SECONDS, sameSite: "lax" });
+}
+
+/** 역할을 바꾸고 돌아갈 경로로 보낸다 */
+async function signIn(role: Exclude<Role, "guest">, next: FormDataEntryValue | null): Promise<never> {
+  await setRole(role);
   redirect(safeNextPath(next));
+}
+
+/** 로그아웃. 쿠키가 없으면 테스터로 보기 때문에 지우지 않고 guest를 넣는다. 끝나면 홈으로 간다 */
+export async function logout(): Promise<void> {
+  await setRole("guest");
+  redirect("/");
 }
 
 const text = (formData: FormData, name: string) => String(formData.get(name) ?? "");

@@ -1,7 +1,16 @@
 "use client";
 
 import { DotsThreeIcon } from "@phosphor-icons/react";
-import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState, useTransition } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { deleteChatRoomAction, renameChatRoomAction } from "../actions";
@@ -40,6 +49,17 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const inputId = useId();
+
+  /*
+   * 다른 화면으로 가서 숨겨지면 메뉴와 대화상자를 닫는다. 떠난 화면은 상태째 보존되어, 그대로 두면 돌아왔을 때
+   * 메뉴가 열려 있거나 이미 열린 대화상자를 다시 모달로 열다 오류가 나고 화면 조작이 막힌다.
+   */
+  useLayoutEffect(() => {
+    return () => {
+      setOpen(false);
+      setDialog(null);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -92,9 +112,13 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
   }
 
   function onDelete() {
+    /* 채팅함에서는 카드가 사라지며 포커스가 문서 처음으로 가므로, 다음(없으면 이전) 카드 링크로 옮긴다 */
+    const item = rootRef.current?.closest("li");
+    const neighbor = (item?.nextElementSibling ?? item?.previousElementSibling)?.querySelector<HTMLElement>("a[href]");
     startTransition(async () => {
       await deleteChatRoomAction(roomKey, leaveOnDelete);
       setDialog(null);
+      requestAnimationFrame(() => neighbor?.focus());
     });
   }
 

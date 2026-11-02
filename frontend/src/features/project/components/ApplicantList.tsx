@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -31,6 +31,11 @@ const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
   rejected: "muted",
 };
 
+/** 응답을 받지 못했고 서버 목록을 다시 받은 뒤의 안내 */
+const UNCERTAIN_ERROR = "연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요";
+/** 오프라인이라 서버 목록을 다시 받지 못하고 연결을 기다리는 동안의 안내 */
+const OFFLINE_ERROR = "인터넷 연결이 끊겨 결과를 확인하지 못했어요. 연결되면 지원자 목록을 다시 불러올게요";
+
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
 export function ApplicantList({ applications, capacity, canSelect, isSubscription, projectKey, recruitmentKey }: ApplicantListProps) {
   const router = useRouter();
@@ -39,6 +44,8 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
   const [error, setError] = useState("");
+  /** 오프라인이라 서버 목록을 다시 받지 못하고 연결을 기다리는 중이면 true */
+  const [waitingForOnline, setWaitingForOnline] = useState(false);
 
   const rows = applications.map((item) => ({ ...item, status: statuses[item.id] ?? item.status }));
   const confirmedCount = rows.filter((item) => item.status === "confirmed").length;
@@ -50,9 +57,30 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
   const selected = pendingIds.filter((id) => checked.has(id));
   const overCapacity = selected.length > remaining;
 
+  /*
+   * 오프라인일 때 router.refresh()를 부르면 재조회도 실패해 페이지 전체 오류 화면으로 넘어간다.
+   * 그래서 연결이 끊긴 동안에는 화면과 안내를 그대로 두고, 연결이 돌아오면 그때 서버 목록을 다시 받는다.
+   */
+  useEffect(() => {
+    if (!waitingForOnline) return;
+    const onOnline = () => {
+      setWaitingForOnline(false);
+      setError(UNCERTAIN_ERROR);
+      router.refresh();
+    };
+    /* 실패를 처리한 뒤 구독을 시작하기 전에 연결이 이미 돌아왔으면 이벤트를 놓치므로 바로 다시 받는다 */
+    if (navigator.onLine) {
+      onOnline();
+      return;
+    }
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [waitingForOnline, router]);
+
   /**
    * 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다.
    * 서버가 거절하면 되돌린다. 응답을 받지 못하면 저장됐는지 알 수 없어서, 서버의 최신 목록을 다시 받아 화면을 맞춘다.
+   * 오프라인이면 재조회도 실패하므로 연결이 돌아올 때까지 미룬다.
    */
   function decide(targets: Application[], status: "confirmed" | "rejected") {
     const ids = targets.map((item) => item.id);
@@ -61,6 +89,8 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
     setStatuses((prev) => ({ ...prev, ...Object.fromEntries(ids.map((id) => [id, status])) }));
     setChecked((prev) => new Set([...prev].filter((id) => !ids.includes(id))));
     setError("");
+    /* 앞선 오프라인 실패의 대기를 끝내, 이번 확정 뒤에 늦게 온 online 이벤트가 목록을 다시 받지 않게 한다 */
+    setWaitingForOnline(false);
     const label = APPLICATION_STATUS_LABEL[status];
     setAnnouncement(targets.length === 1 ? `${targets[0].testerNickname}님을 ${label}했어요` : `${targets.length}명을 ${label}했어요`);
     startTransition(async () => {
@@ -73,7 +103,12 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
       } catch {
         undo();
         setAnnouncement("");
-        setError("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
+        if (!navigator.onLine) {
+          setError(OFFLINE_ERROR);
+          setWaitingForOnline(true);
+          return;
+        }
+        setError(UNCERTAIN_ERROR);
         router.refresh();
       }
     });

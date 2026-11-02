@@ -85,12 +85,10 @@ export type AiFinding = {
 export type AiSummary = {
   /** 한 줄 요약 */
   headline: string;
-  /** 자주 나온 문제 (버그·사용성) */
-  issues: AiFinding[];
+  /** 고칠 점 (버그·사용성). 해결 제안이 있으면 문제에 짝지어 둔다 */
+  issues: Array<AiFinding & { suggestion?: string }>;
   /** 좋았던 점 */
   strengths: AiFinding[];
-  /** 개선 제안 */
-  suggestions: string[];
   /** 정리한 시각 */
   generatedAt: string;
   /** 시연용 샘플이면 true. 실제 AI를 붙이면 false */

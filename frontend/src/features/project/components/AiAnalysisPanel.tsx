@@ -25,22 +25,18 @@ function Frame({ badge, children }: { badge?: ReactNode; children: ReactNode }) 
   );
 }
 
-/** 근거 수가 붙은 항목 목록 (자주 나온 문제, 좋았던 점) */
-function FindingList({ title, items }: { title: string; items: AiFinding[] }) {
-  if (items.length === 0) return null;
+/** 묶음 제목. 항목 수를 옆에 붙인다 */
+function GroupTitle({ title, count }: { title: string; count: number }) {
   return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-bold text-text-muted">{title}</h3>
-      <ul className="flex flex-col gap-2">
-        {items.map((item) => (
-          <li key={item.text} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <span>{item.text}</span>
-            <span className="text-sm text-text-muted">피드백 {item.feedbackCount}건</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <h3 className="font-extrabold">
+      {title} <span className="text-text-muted">{count}</span>
+    </h3>
   );
+}
+
+/** 근거 피드백 수. 문장 바로 옆에 붙여 어느 항목의 숫자인지 헷갈리지 않게 한다 */
+function Evidence({ item }: { item: AiFinding }) {
+  return <Badge tone="muted">피드백 {item.feedbackCount}건</Badge>;
 }
 
 /** AI 분석 결과, 피드백 부족, 정리 전 상태를 그린다 */
@@ -65,16 +61,34 @@ export function AiAnalysisPanel({ analysis }: { analysis: AiAnalysis }) {
   return (
     <Frame badge={summary.isSample && <Badge tone="muted">시연용 샘플</Badge>}>
       <p className="text-lg font-semibold">{summary.headline}</p>
-      <div className="grid gap-6 md:grid-cols-2">
-        <FindingList title="자주 나온 문제" items={summary.issues} />
-        <FindingList title="좋았던 점" items={summary.strengths} />
-      </div>
-      {summary.suggestions.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-bold text-text-muted">개선 제안</h3>
-          <ul className="flex list-disc flex-col gap-1 pl-5">
-            {summary.suggestions.map((text) => (
-              <li key={text}>{text}</li>
+      {/* 고칠 점: 문제마다 바로 아래에 해결 제안을 붙여 무엇을 고치면 되는지 한 번에 보이게 한다 */}
+      {summary.issues.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <GroupTitle title="고칠 점" count={summary.issues.length} />
+          <ul className="flex flex-col gap-3">
+            {summary.issues.map((item) => (
+              <li key={item.text} className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
+                <p className="flex flex-wrap items-center gap-2 font-semibold">
+                  {item.text} <Evidence item={item} />
+                </p>
+                {item.suggestion && (
+                  <p className="text-sm text-text-muted">
+                    <span className="font-bold text-text">제안</span> {item.suggestion}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {summary.strengths.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <GroupTitle title="좋았던 점" count={summary.strengths.length} />
+          <ul className="flex flex-col gap-2">
+            {summary.strengths.map((item) => (
+              <li key={item.text} className="flex flex-wrap items-center gap-2">
+                {item.text} <Evidence item={item} />
+              </li>
             ))}
           </ul>
         </div>

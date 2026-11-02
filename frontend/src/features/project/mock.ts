@@ -105,14 +105,18 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     booklog: {
       headline: "기록 기능은 편하다는 반응이지만, 책을 찾고 저장한 문장을 다시 찾는 흐름에서 헷갈린다는 의견이 있어요.",
       issues: [
-        { text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요", feedbackCount: 1 },
-        { text: "저장한 문장을 다시 찾는 메뉴가 잘 안 보여요", feedbackCount: 1 },
+        {
+          text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요",
+          feedbackCount: 1,
+          suggestion: "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
+        },
+        {
+          text: "저장한 문장을 다시 찾는 메뉴가 잘 안 보여요",
+          feedbackCount: 1,
+          suggestion: "저장한 문장 모아 보기 메뉴를 눈에 띄는 곳에 두기",
+        },
       ],
       strengths: [{ text: "밑줄 문장 저장이 편해요", feedbackCount: 1 }],
-      suggestions: [
-        "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
-        "저장한 문장 모아 보기 메뉴를 눈에 띄는 곳에 두기",
-      ],
       generatedAt: hoursAgo(now, 2),
       isSample: true,
     },

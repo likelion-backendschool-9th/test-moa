@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DayGroups } from "@/features/credit/components/DayGroups";
 import { LedgerRow } from "@/features/credit/components/LedgerRow";
 import type { CreditEntry } from "@/features/credit/types";
 import { cardClass, cardTitleClass } from "./card-styles";
@@ -18,11 +19,9 @@ export function RecentCredits({ entries }: { entries: CreditEntry[] }) {
       {entries.length === 0 ? (
         <p className="text-sm text-text-muted">아직 크레딧 내역이 없어요</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-line">
-          {entries.map((entry) => (
-            <LedgerRow key={entry.id} entry={entry} />
-          ))}
-        </ul>
+        <DayGroups items={entries} dateOf={(entry) => entry.occurredAt} idPrefix="recent-credit-day">
+          {(entry) => <LedgerRow key={entry.id} entry={entry} />}
+        </DayGroups>
       )}
     </section>
   );

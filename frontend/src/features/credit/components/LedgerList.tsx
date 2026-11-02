@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { cardClass, cardTitleClass } from "@/features/my/components/card-styles";
 import { LEDGER_TYPE_LABEL, LEDGER_TYPES, type CreditEntry, type LedgerType } from "../types";
+import { DayGroups } from "./DayGroups";
 import { LedgerRow } from "./LedgerRow";
 
 const filterHref = (type: LedgerType) => (type === "all" ? "/my/credits" : `/my/credits?type=${type}`);
@@ -41,11 +42,9 @@ export function LedgerList({ entries, type }: { entries: CreditEntry[]; type: Le
           {type === "all" ? "아직 크레딧 내역이 없어요" : `${LEDGER_TYPE_LABEL[type]} 내역이 없어요`}
         </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-line">
-          {entries.map((entry) => (
-            <LedgerRow key={entry.id} entry={entry} />
-          ))}
-        </ul>
+        <DayGroups items={entries} dateOf={(entry) => entry.occurredAt} idPrefix="ledger-day">
+          {(entry) => <LedgerRow key={entry.id} entry={entry} />}
+        </DayGroups>
       )}
     </section>
   );

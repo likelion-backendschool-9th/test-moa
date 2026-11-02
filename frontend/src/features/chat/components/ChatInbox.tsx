@@ -37,10 +37,10 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
       </p>
       {inbox.rooms.length > 0 ? (
         <ul aria-label="채팅 목록" className="stagger-children flex flex-col gap-4">
-          {inbox.rooms.map((room) => (
-            /* 더보기 메뉴가 열린 카드는 다음 카드 위로 올라온다 */
+          {inbox.rooms.map((room, index) => (
+            /* 더보기 메뉴가 열린 카드는 다음 카드 위로 올라온다. 첫 카드 이미지는 화면에서 가장 큰 요소라 바로 불러온다 */
             <li key={room.roomKey} className="relative animate-rise-in has-[[aria-expanded=true]]:z-(--z-popover)">
-              <ChatCard room={room} now={now} />
+              <ChatCard room={room} now={now} eager={index === 0} />
             </li>
           ))}
         </ul>

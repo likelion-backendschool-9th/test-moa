@@ -23,10 +23,13 @@ export function ChatThumb({
   projectName,
   imageUrl,
   size = "card",
+  eager = false,
 }: {
   projectName: string;
   imageUrl?: string;
   size?: ChatThumbSize;
+  /** 화면을 열자마자 보이는 가장 큰 이미지(목록 첫 카드)면 바로 불러온다 */
+  eager?: boolean;
 }) {
   return (
     <div
@@ -43,6 +46,7 @@ export function ChatThumb({
           alt=""
           fill
           sizes={IMAGE_SIZES[size]}
+          loading={eager ? "eager" : undefined}
           className="object-cover transition-transform duration-500 ease-brand group-hover:scale-105"
         />
       ) : (

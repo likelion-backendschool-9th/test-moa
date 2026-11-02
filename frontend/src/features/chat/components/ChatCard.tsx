@@ -16,13 +16,13 @@ import { ChatThumb } from "./ChatThumb";
  * 더보기 메뉴가 카드 밖으로 나와야 해서 카드에 overflow-hidden을 쓰지 않고, 이미지 면이 왼쪽 모서리를 직접 둥글린다.
  * 강조색은 오늘 온 대화의 일시와 hover 때 프로젝트명에만 쓴다.
  */
-export function ChatCard({ room, now }: { room: ChatRoom; now: Date }) {
+export function ChatCard({ room, now, eager = false }: { room: ChatRoom; now: Date; eager?: boolean }) {
   const roomHref = `/my/chats/${room.roomKey}`;
   const title = room.roomName ?? room.projectName;
   const today = isTodayInSeoul(room.lastMessageAt, now);
   return (
     <article className="group relative flex rounded-2xl bg-surface-muted">
-      <ChatThumb projectName={room.projectName} imageUrl={room.projectImage} />
+      <ChatThumb projectName={room.projectName} imageUrl={room.projectImage} eager={eager} />
       <div className="flex min-w-0 flex-1 items-start gap-3 px-5 py-4 md:px-6">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3">

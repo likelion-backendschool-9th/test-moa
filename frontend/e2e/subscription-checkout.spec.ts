@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -124,6 +124,49 @@ test.describe("R3 결제하고 돌아오기", () => {
     await page.goto("/my/subscription?notice=paid");
     await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
     await expect(page.getByRole("status")).toHaveCount(0);
+  });
+});
+
+test.describe("R3 결제 기록", () => {
+  /** 지난 결제 기록을 쿠키에 직접 넣는다. paidAt·expiresAt은 오늘 기준 날 수 */
+  async function seedPayment(context: BrowserContext, role: string, paidDaysAgo: number, expiresInDays: number) {
+    const payment = {
+      id: "seed",
+      planId: "basic",
+      method: "cash",
+      amount: 10000,
+      paidAt: new Date(Date.now() - paidDaysAgo * DAY_MS).toISOString(),
+      expiresAt: new Date(Date.now() + expiresInDays * DAY_MS).toISOString(),
+    };
+    await context.addCookies([
+      { name: `demo-subscription-${role}`, value: encodeURIComponent(JSON.stringify([payment])), url: "http://localhost:3100" },
+    ]);
+  }
+
+  test("S350 결제할 때 정한 만료일은 조회 시각과 관계없이 그대로라 남은 기간이 줄고 만료된다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    /* 7일 전 연장으로 60일 뒤였던 만료일은 지금 53일 남았다 */
+    await seedPayment(context, "developer", 7, 53);
+    await page.goto("/my/subscription");
+    await expect(region(page, "내 구독").getByText("D-53")).toBeVisible();
+
+    /* 연장한 기간도 지나면 미구독으로 돌아간다 (목업의 "지금 + 30일"로 되살아나지 않는다) */
+    await seedPayment(context, "developer", 61, -1);
+    await page.goto("/my/subscription");
+    await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
+  });
+
+  test("S351 결제 기록은 가장 늦은 만료일보다 오래 남는다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    for (let index = 0; index < 4; index += 1) {
+      await page.goto("/my/subscription/checkout");
+      await checkout(page).getByRole("button", { name: "10,000원 결제하기" }).click();
+      await expect(page).toHaveURL("/my/subscription?notice=paid");
+    }
+    /* 목업 30일 + 30일 상품 네 번 = 150일 */
+    await expect(region(page, "내 구독").getByText("D-150")).toBeVisible();
+    const cookie = (await context.cookies()).find((item) => item.name === "demo-subscription-developer");
+    expect(cookie!.expires * 1000).toBeGreaterThan(Date.now() + 150 * DAY_MS);
   });
 });
 

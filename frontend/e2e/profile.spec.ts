@@ -205,7 +205,7 @@ test.describe("R5 로딩과 화면", () => {
       [passwordCard(page), "비밀번호 변경"],
     ] as const) {
       const width = (await card.locator("form").boundingBox())!.width;
-      for (const input of await card.locator("input").all()) {
+      for (const input of await card.locator('input:not([type="hidden"])').all()) {
         expect(Math.abs((await input.boundingBox())!.width - width)).toBeLessThan(1);
       }
       expect(Math.abs((await card.getByRole("button", { name: button }).boundingBox())!.width - width)).toBeLessThan(1);

@@ -38,17 +38,7 @@ export function ReportTabs({ current, target }: { current: ListTab; target: Repo
 /** 신고 대상 종류 필터(전체·피드백·모집 글·회원). 고른 상태 탭은 남긴다 */
 export function ReportTargetFilters({ tab, current }: { tab: ListTab; current: ReportTargetFilter }) {
   const tabs = TARGET_FILTERS.map((item) => ({ tab: item.target, label: item.label, href: reportsHref({ tab, target: item.target }) }));
-  return (
-    <div className="flex items-center gap-3">
-      {/* 위 상태 탭과 구분하려고 줄 앞에 이름을 둔다. 화면 읽기 프로그램은 nav 이름("신고 대상")을 읽는다 */}
-      <span aria-hidden="true" className="shrink-0 text-sm font-semibold text-text-muted">
-        대상
-      </span>
-      <div className="min-w-0 flex-1">
-        <LinkTabs label="신고 대상" tabs={tabs} current={current} />
-      </div>
-    </div>
-  );
+  return <LinkTabs label="신고 대상" tabs={tabs} current={current} />;
 }
 
 function processedMessage(decision: ReportDecision, held: boolean) {

@@ -82,6 +82,12 @@ test.describe("R102 내 프로젝트 목록", () => {
     /* 정원이 찬 베타 모집의 대기 지원자는 할 일이 아니다 */
     await expect(page.locator(`a[href^="${BETA_MANAGE}"]`)).toHaveCount(0);
 
+    /* 탭 이름은 일반 링크라 프로젝트 이름과 같은 보조 글씨색이다 */
+    const [label, name] = await Promise.all(
+      [todos.nth(0).getByText("테스터 관리"), todos.nth(0).getByText("북로그")].map((el) => el.evaluate((node) => getComputedStyle(node).color)),
+    );
+    expect(label).toBe(name);
+
     await todos.nth(0).click();
     await expect(page).toHaveURL(`${BOOKLOG_MANAGE}?tab=testers`);
   });
@@ -90,7 +96,7 @@ test.describe("R102 내 프로젝트 목록", () => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/projects");
     const overview = page.getByRole("region", { name: "전체 현황" });
-    for (const [term, value] of [["모집 중", "1건"], ["확정된 테스터", "30명"], ["받은 피드백", "5건"], ["신고 대기", "2건"]]) {
+    for (const [term, value] of [["모집 중", "1건"], ["모집 완료", "2건"], ["테스트 중", "0건"], ["신고 대기", "2건"]]) {
       const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) }) });
       await expect(tile.getByRole("definition")).toHaveText(value);
     }
@@ -177,6 +183,7 @@ test.describe("R104 프로젝트 상세", () => {
   test("S112 프로젝트 정보와 버튼이 있다", async ({ page }) => {
     await page.goto(BOOKLOG);
     await expect(page.getByRole("heading", { level: 1, name: "북로그" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "내 프로젝트로 돌아가기" })).toHaveAttribute("href", "/my/projects");
     const access = page.getByRole("link", { name: /booklog\.example\.com/ });
     await expect(access).toHaveAttribute("target", "_blank");
     await expect(access).toHaveAttribute("rel", "noopener noreferrer");

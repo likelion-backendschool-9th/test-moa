@@ -375,10 +375,10 @@ test.describe("R7 신청 기록", () => {
 
 test.describe("내역 시각", () => {
   const DATE = /^\d{1,2}월 \d{1,2}일$/;
-  const CLOCK = /^오[전후] \d{1,2}:\d{2}$/;
+  const CLOCK = /^\d{2}:\d{2}$/;
   const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
-  /** 날짜는 묶음 소제목에, 각 행에는 시각만 있다 */
+  /** 날짜는 묶음 소제목에, 각 행에는 왼쪽 24시간 시각만 있다 */
   async function expectGroupedTimes(section: Locator, rowCount: number) {
     const rows = section.locator("ul[aria-labelledby] > li");
     await expect(rows).toHaveCount(rowCount);

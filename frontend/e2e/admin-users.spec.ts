@@ -87,7 +87,7 @@ test.describe("R41 목록", () => {
     await expectNicknames(page, ALL_NICKNAMES);
     await expect(rows(page).first()).toContainText("가입");
     /* 한 사람이 테스터도 개발자도 되므로 목록에는 역할을 쓰지 않는다 */
-    await expect(rows(page).filter({ hasText: /테스터|개발자/ })).toHaveCount(0);
+    await expect(page.getByRole("main")).not.toContainText(/테스터|개발자/);
     await expect(page.getByRole("main")).not.toContainText("@example.com");
     await expect(page.getByRole("main")).not.toContainText("*");
   });

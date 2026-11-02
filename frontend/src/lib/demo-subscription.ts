@@ -19,15 +19,17 @@ export type DemoSubscriptionPayment = {
   method: PaymentMethod;
   /** 크레딧 결제면 크레딧, 현금 결제면 원 */
   amount: number;
-  /** 결제로 늘어나는 날 수. 상품 기간이 바뀌어도 이미 낸 결제는 그대로 계산한다 */
-  periodDays: number;
   paidAt: string;
+  /** 이 결제로 정해진 만료일. 결제할 때 계산해 고정하므로, 시간이 지나면 남은 기간이 줄고 만료된다 */
+  expiresAt: string;
 };
 
 const COOKIE_PREFIX = "demo-subscription-";
 /* 지운 결제가 있으면 만료일과 크레딧 잔액이 함께 틀어져서, 오래된 기록을 지우지 않고 더 받지 않는다 */
 export const MAX_DEMO_PAYMENTS = 10;
-const MAX_AGE_SECONDS = 90 * 24 * 60 * 60;
+const DAY_MS = 24 * 60 * 60 * 1000;
+/* 만료 뒤에도 잠시 남겨 둬서, 만료 직후 크레딧 차감 내역이 바로 사라지지 않게 한다 */
+const KEEP_AFTER_EXPIRY_MS = 30 * DAY_MS;
 
 const cookieName = (role: MemberRole) => `${COOKIE_PREFIX}${role}`;
 
@@ -39,8 +41,8 @@ function isPayment(value: unknown): value is DemoSubscriptionPayment {
     typeof item.planId === "string" &&
     (item.method === "credit" || item.method === "cash") &&
     typeof item.amount === "number" &&
-    typeof item.periodDays === "number" &&
-    typeof item.paidAt === "string"
+    typeof item.paidAt === "string" &&
+    typeof item.expiresAt === "string"
   );
 }
 
@@ -63,14 +65,18 @@ export async function getDemoSubscriptionCreditSpent(role: MemberRole): Promise<
     .reduce((sum, payment) => sum + payment.amount, 0);
 }
 
-/** Server Action에서만 부른다. 결제를 맨 뒤에 더한다 */
+/**
+ * Server Action에서만 부른다. 결제를 맨 뒤에 더한다.
+ * 쿠키는 가장 늦은 만료일보다 오래 남겨서, 여러 번 연장한 기간이나 크레딧 차감 기록이 이용 기간보다 먼저 사라지지 않게 한다
+ */
 export async function addDemoSubscriptionPayment(role: MemberRole, payment: Omit<DemoSubscriptionPayment, "id" | "paidAt">) {
   const now = new Date();
   const stored = [...(await getDemoSubscriptionPayments(role)), { ...payment, id: `demo-${now.getTime()}`, paidAt: now.toISOString() }];
+  const lastExpiry = Math.max(...stored.map((item) => new Date(item.expiresAt).getTime()));
   (await cookies()).set(cookieName(role), JSON.stringify(stored), {
     path: "/",
     httpOnly: true,
     sameSite: "lax",
-    maxAge: MAX_AGE_SECONDS,
+    maxAge: Math.ceil((lastExpiry + KEEP_AFTER_EXPIRY_MS - now.getTime()) / 1000),
   });
 }

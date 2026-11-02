@@ -4,7 +4,7 @@ import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
 import { requireMember } from "@/lib/auth";
 import { waitIfSlow } from "@/lib/demo";
-import { type DemoSubscriptionPayment, getDemoSubscriptionPayments } from "@/lib/demo-subscription";
+import { getDemoSubscriptionPayments } from "@/lib/demo-subscription";
 import type { Role } from "@/lib/session";
 import { formatDday } from "@/lib/format";
 import { getMemberProfile } from "@/features/member/api";
@@ -86,22 +86,14 @@ function startOfNextMonthInSeoul(now: Date) {
   return new Date(Date.UTC(seoul.getUTCFullYear(), seoul.getUTCMonth() + 1, 1) - SEOUL_OFFSET_MS).toISOString();
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** 목업 구독에 이 브라우저의 시연용 구독 결제를 차례로 더한 상태. 운영자는 null */
+/**
+ * 이 브라우저에서 시연용 구독 결제를 했으면 마지막 결제가 정한 만료일, 아니면 목업 구독. 운영자는 null.
+ * 목업 만료일은 조회 시각 기준이라 결제 뒤에는 쓰지 않는다 (결제할 때 고정한 만료일이 줄어들며 만료된다)
+ */
 async function subscriptionFor(role: Exclude<Role, "guest">, now: Date): Promise<Subscription | null> {
   const { subscription } = buildMyPageSummary(role, now);
   if (!subscription) return null;
-  const result = (await getDemoSubscriptionPayments(role)).reduce(applyPayment, subscription);
-  return result.status === "active" && new Date(result.expiresAt) <= now ? { status: "none" } : result;
-}
-
-/** 구독 중에 결제하면 지금 만료일부터, 아니면 결제 시각부터 상품 기간만큼 늘어난다 */
-function applyPayment(current: Subscription, payment: DemoSubscriptionPayment): Subscription {
-  const startsAt = current.status === "active" && current.expiresAt > payment.paidAt ? current.expiresAt : payment.paidAt;
-  return {
-    status: "active",
-    planId: payment.planId,
-    expiresAt: new Date(new Date(startsAt).getTime() + payment.periodDays * DAY_MS).toISOString(),
-  };
+  const last = (await getDemoSubscriptionPayments(role)).at(-1);
+  if (!last) return subscription;
+  return new Date(last.expiresAt) > now ? { status: "active", planId: last.planId, expiresAt: last.expiresAt } : { status: "none" };
 }

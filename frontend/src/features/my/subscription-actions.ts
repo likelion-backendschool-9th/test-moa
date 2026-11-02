@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { addDemoSubscriptionPayment, getDemoSubscriptionPayments, MAX_DEMO_PAYMENTS } from "@/lib/demo-subscription";
 import { getSession } from "@/lib/session";
 import { getSubscriptionOverview } from "./api";
+import { renewedExpiry } from "./types";
 
 /*
  * 구독 결제. 지금은 목업이라 고른 상품과 결제 수단을 검사한 뒤 시연용 쿠키(lib/demo-subscription.ts)에 남긴다.
@@ -35,7 +36,7 @@ export async function payForSubscription(_prev: CheckoutFormState, formData: For
     planId: plan.id,
     method,
     amount: method === "credit" ? plan.creditPrice : plan.cashPrice,
-    periodDays: plan.periodDays,
+    expiresAt: renewedExpiry(subscription, plan.periodDays, new Date()),
   });
   /* 헤더 크레딧, 마이페이지 대시보드, 크레딧 내역이 모두 결제를 반영하게 한다 */
   revalidatePath("/", "layout");

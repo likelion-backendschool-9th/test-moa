@@ -382,6 +382,106 @@ test.describe("R11 시연 회원 전환", () => {
   });
 });
 
+test.describe("R12 오가는 흐름", () => {
+  test("S335 채팅함에서 고른 조건은 채팅방의 채팅함 링크로 돌아와도 그대로다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/chats?role=developer&sort=oldest");
+    await inboxCards(page).first().getByRole("link").click();
+    await expect(page).toHaveURL("/my/chats/meeting-yunseul");
+    await expect(backLink(page)).toHaveAttribute("href", "/my/chats?role=developer&sort=oldest");
+    await backLink(page).click();
+    await expect(page).toHaveURL("/my/chats?role=developer&sort=oldest");
+    await expect(page.getByRole("group", { name: "역할별 보기" }).getByRole("button", { name: /개발자/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    /* 채팅방 주소로 바로 열면 조건 없는 채팅함으로 돌아간다 */
+    await page.goto("/my/chats/ledger-yunseul");
+    await expect(backLink(page)).toHaveAttribute("href", "/my/chats");
+  });
+
+  test("S336 메뉴나 대화상자를 연 채 떠났다가 돌아오면 닫혀 있고 화면을 그대로 쓸 수 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats");
+    await inboxCards(page).first().getByRole("link").click();
+    await expect(chatLog(page)).toBeVisible();
+    const more = roomHeader(page).getByRole("button", { name: "북로그 채팅 더보기" });
+
+    await more.click();
+    await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL("/my/chats");
+    /* 떠난 화면의 대화상자가 채팅함을 막지 않는다 */
+    await page.getByRole("searchbox", { name: "채팅방 검색" }).click();
+    await page.goForward();
+    await expect(page).toHaveURL("/my/chats/booklog-yunseul");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await messageInput(page).click();
+    await expect(messageInput(page)).toBeFocused();
+
+    await more.click();
+    await expect(page.getByRole("menu")).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL("/my/chats");
+    await page.goForward();
+    await expect(page).toHaveURL("/my/chats/booklog-yunseul");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("S337 같은 채팅방에 다시 들어오면 위에서부터 굴러 내려가지 않고 바로 최근 메시지가 보인다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats");
+    await inboxCards(page).first().getByRole("link").click();
+    await expect(chatLog(page)).toBeVisible();
+    await backLink(page).click();
+    await expect(page).toHaveURL("/my/chats");
+
+    await page.evaluate(() => {
+      const scrolls: number[] = [];
+      (window as unknown as { scrolls: number[] }).scrolls = scrolls;
+      window.addEventListener("scroll", () => scrolls.push(window.scrollY));
+    });
+    await inboxCards(page).first().getByRole("link").click();
+    await expect(page).toHaveURL("/my/chats/booklog-yunseul");
+    const bottom = () => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(await bottom());
+    await page.waitForTimeout(500);
+    const max = await bottom();
+    expect(max).toBeGreaterThan(0);
+    /* 맨 위(0)와 맨 아래 사이를 지나는 스크롤이 없다 */
+    const scrolls = await page.evaluate(() => (window as unknown as { scrolls: number[] }).scrolls);
+    expect(scrolls.filter((y) => y > 0 && y < max)).toEqual([]);
+  });
+
+  test("S338 보내는 중 말풍선은 저장된 뒤와 같은 자리에 보인다", async ({ page, context }) => {
+    /* 저장 뒤 다시 그리는 데 1.5초 걸려 보내는 중 말풍선을 잴 수 있다 */
+    await setDemo(context, { role: "tester", data: "slow" });
+    const top = (locator: Locator) => locator.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
+    /* 모아플랜은 마지막 대화가 어제라 "오늘" 구분이 먼저 붙고, 북로그는 오늘이라 구분 없이 붙는다 */
+    for (const [roomKey, dividers] of [
+      ["moaplan-yunseul", 1],
+      ["booklog-yunseul", 0],
+    ] as const) {
+      await page.goto(`/my/chats/${roomKey}`);
+      await expect(chatLog(page)).toBeVisible({ timeout: 10_000 });
+      const text = `자리 확인 ${roomKey}`;
+      await messageInput(page).fill(text);
+      await messageInput(page).press("Enter");
+      const pending = page.locator("[data-pending] p");
+      await expect(pending).toBeVisible();
+      await expect(page.locator("[data-pending-day]")).toHaveCount(dividers);
+      const pendingTop = await top(pending);
+
+      await expect(messages(page).last()).toContainText(text, { timeout: 10_000 });
+      await expect(dayHeadings(page).last()).toHaveText("오늘");
+      expect(Math.abs((await top(bubble(messages(page).last()))) - pendingTop)).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
 test.describe("R8 접근성", () => {
   test("S156 대화 기록, 입력창, 보내기 버튼의 이름과 순서", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });

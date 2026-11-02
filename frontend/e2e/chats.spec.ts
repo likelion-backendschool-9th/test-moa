@@ -392,6 +392,20 @@ test.describe("R5 더보기", () => {
     await expect(cardLinks(page)).toHaveText(roomNames(["북로그 피드백 문의"]));
   });
 
+  test("S339 카드에서 대화방을 삭제하면 포커스가 다음 카드로, 마지막 카드면 이전 카드로 간다", async ({ page }) => {
+    await page.goto("/my/chats");
+    const remove = async (title: string) => {
+      await page.getByRole("button", { name: `${title} 채팅 더보기` }).click();
+      await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
+      await page.getByRole("dialog", { name: "대화방을 삭제할까요?" }).getByRole("button", { name: "삭제", exact: true }).click();
+      await expect(chatList(page)).not.toContainText(title);
+    };
+    await remove("모아플랜");
+    await expect(cardLinks(page).filter({ hasText: "레시피핏" })).toBeFocused();
+    await remove("회의록 정리");
+    await expect(cardLinks(page).filter({ hasText: "가계부 노트" })).toBeFocused();
+  });
+
   test("S140 대화방을 삭제하면 확인 뒤 목록·탭 수에서 빠지고 새로고침해도 남는다", async ({ page }) => {
     await page.goto("/my/chats");
     await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();

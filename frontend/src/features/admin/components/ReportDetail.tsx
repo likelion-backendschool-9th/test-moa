@@ -6,7 +6,15 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatElapsed } from "@/lib/format";
 import { processReport } from "../actions";
-import { isOverdue, REPORT_DECISION_LABEL, REPORT_TARGET_LABEL, REVIEW_MEMO_MAX_LENGTH, type Report } from "../types";
+import {
+  isOverdue,
+  REPORT_DECISION_LABEL,
+  REPORT_TARGET_LABEL,
+  reportsHref,
+  REVIEW_MEMO_MAX_LENGTH,
+  type Report,
+  type ReportListView,
+} from "../types";
 
 export type ReviewFormError = "decision" | "memo";
 
@@ -18,11 +26,11 @@ const ERROR_MESSAGE: Record<ReviewFormError, string> = {
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 
 /** 신고 내용과 대상. 피드백 원문은 신고 검토에 필요해서 여기서만 보여 준다 */
-export function ReportDetail({ report, now }: { report: Report; now: Date }) {
+export function ReportDetail({ report, now, view }: { report: Report; now: Date; view: ReportListView }) {
   const pending = !report.review;
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin/reports" className="self-start text-sm font-semibold text-text-muted hover:text-text">
+      <Link href={reportsHref(view)} className="self-start text-sm font-semibold text-text-muted hover:text-text">
         목록으로
       </Link>
       <div className="flex flex-col gap-2">
@@ -88,7 +96,7 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** 처리 양식. 서버 양식이라 확인도 서버에서 하고, 문제가 있으면 error와 함께 돌아온다 */
-export function ReviewForm({ report, error }: { report: Report; error: ReviewFormError | null }) {
+export function ReviewForm({ report, error, view }: { report: Report; error: ReviewFormError | null; view: ReportListView }) {
   const upheldDetail =
     report.targetType === "feedback" ? "제재 이력에 반영되고, 이 피드백의 보상은 지급하지 않아요." : "제재 이력에 반영돼요.";
   return (
@@ -97,6 +105,9 @@ export function ReviewForm({ report, error }: { report: Report; error: ReviewFor
         처리하기
       </h3>
       <input type="hidden" name="reportKey" value={report.id} />
+      {/* 처리한 뒤 보던 목록으로 돌아가려고 탭과 필터를 함께 보낸다 */}
+      <input type="hidden" name="tab" value={view.tab} />
+      <input type="hidden" name="target" value={view.target} />
       <fieldset className="flex flex-col gap-3" aria-describedby={error === "decision" ? "review-error" : undefined}>
         <legend className="mb-3 text-sm font-semibold">처리 결과</legend>
         <Choice value="dismissed" label="기각" detail={report.holdsReward ? "문제가 없어요. 보류된 보상이 지급돼요." : "문제가 없어요."} />

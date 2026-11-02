@@ -7,6 +7,8 @@ import { formatElapsed } from "@/lib/format";
 import { LinkTabs } from "./LinkTabs";
 import {
   isOverdue,
+  reportDetailHref,
+  reportsHref,
   REPORT_DECISION_LABEL,
   REPORT_TARGET_LABEL,
   type Report,
@@ -14,15 +16,6 @@ import {
   type ReportTargetFilter,
   type ListTab,
 } from "../types";
-
-/** 상태 탭과 대상 필터는 서로의 값을 남긴다. 기본값(검토 대기, 전체)은 주소에 쓰지 않는다 */
-function reportsHref(tab: ListTab, target: ReportTargetFilter) {
-  const params = new URLSearchParams();
-  if (tab !== "pending") params.set("tab", tab);
-  if (target !== "all") params.set("target", target);
-  const search = params.toString();
-  return search ? `/admin/reports?${search}` : "/admin/reports";
-}
 
 const TABS: { tab: ListTab; label: string }[] = [
   { tab: "pending", label: "검토 대기" },
@@ -38,14 +31,24 @@ const TARGET_FILTERS: { target: ReportTargetFilter; label: string }[] = [
 
 /** 검토 대기·처리 완료 탭. 고른 대상 필터는 남긴다 */
 export function ReportTabs({ current, target }: { current: ListTab; target: ReportTargetFilter }) {
-  const tabs = TABS.map((item) => ({ ...item, href: reportsHref(item.tab, target) }));
+  const tabs = TABS.map((item) => ({ ...item, href: reportsHref({ tab: item.tab, target }) }));
   return <LinkTabs label="신고 상태" tabs={tabs} current={current} />;
 }
 
 /** 신고 대상 종류 필터(전체·피드백·모집 글·회원). 고른 상태 탭은 남긴다 */
 export function ReportTargetFilters({ tab, current }: { tab: ListTab; current: ReportTargetFilter }) {
-  const tabs = TARGET_FILTERS.map((item) => ({ tab: item.target, label: item.label, href: reportsHref(tab, item.target) }));
-  return <LinkTabs label="신고 대상" tabs={tabs} current={current} />;
+  const tabs = TARGET_FILTERS.map((item) => ({ tab: item.target, label: item.label, href: reportsHref({ tab, target: item.target }) }));
+  return (
+    <div className="flex items-center gap-3">
+      {/* 위 상태 탭과 구분하려고 줄 앞에 이름을 둔다. 화면 읽기 프로그램은 nav 이름("신고 대상")을 읽는다 */}
+      <span aria-hidden="true" className="shrink-0 text-sm font-semibold text-text-muted">
+        대상
+      </span>
+      <div className="min-w-0 flex-1">
+        <LinkTabs label="신고 대상" tabs={tabs} current={current} />
+      </div>
+    </div>
+  );
 }
 
 function processedMessage(decision: ReportDecision, held: boolean) {
@@ -77,15 +80,16 @@ export function ReportList({
   now: Date;
 }) {
   if (reports.length === 0) {
-    const kind = target === "all" ? "" : `${REPORT_TARGET_LABEL[target]} `;
-    return <EmptyState title={tab === "pending" ? `검토할 ${kind}신고가 없어요` : `처리한 ${kind}신고가 없어요`} />;
+    const base = tab === "pending" ? "검토할 신고가 없어요" : "처리한 신고가 없어요";
+    /* 어떤 필터 때문인지 알 수 있게 대상 종류를 따옴표로 말한다 */
+    return <EmptyState title={target === "all" ? base : `'${REPORT_TARGET_LABEL[target]}' 신고 중에는 ${base}`} />;
   }
   return (
     <ul aria-label={tab === "pending" ? "검토 대기 신고" : "처리 완료 신고"} className="flex flex-col gap-3">
       {reports.map((report) => (
         <li key={report.id}>
           <Link
-            href={`/admin/reports/${report.id}`}
+            href={reportDetailHref(report.id, { tab, target })}
             className={cn(rowClass, "transition-colors duration-300 ease-brand hover:bg-surface-strong")}
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">

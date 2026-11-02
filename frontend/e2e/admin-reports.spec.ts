@@ -3,6 +3,7 @@ import { setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "신고 상태" });
+const targetFilters = (page: Page) => page.getByRole("navigation", { name: "신고 대상" });
 
 async function decide(page: Page, reportKey: string, decision: "기각" | "인정", memo?: string) {
   await page.goto(`/admin/reports/${reportKey}`);
@@ -105,6 +106,45 @@ test.describe("R25 목록", () => {
     await setDemo(context, { data: "empty" });
     await page.goto("/admin/reports");
     await expect(page.getByText("검토할 신고가 없어요")).toBeVisible();
+  });
+
+  test("S532 대상 종류를 고르면 그 종류의 신고만 보이고 주소에 남는다", async ({ page }) => {
+    await page.goto("/admin/reports");
+    const filters = targetFilters(page);
+    await expect(filters.getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
+    for (const [label, query, names] of [
+      ["피드백", "feedback", ["회의록 정리", "북로그"]],
+      ["모집 글", "recruitment", ["포트폴리오 빌더"]],
+      ["회원", "user", ["가계부 노트"]],
+    ] as const) {
+      await filters.getByRole("link", { name: label }).click();
+      await expect(page).toHaveURL(new RegExp(`/admin/reports\\?target=${query}$`));
+      await expect(filters.getByRole("link", { name: label })).toHaveAttribute("aria-current", "page");
+      await expect(rows(page)).toHaveCount(names.length);
+      for (const [index, name] of names.entries()) await expect(rows(page).nth(index)).toContainText(name);
+    }
+    await filters.getByRole("link", { name: "전체" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports$/);
+    await expect(rows(page)).toHaveCount(4);
+  });
+
+  test("S533 상태 탭과 대상 필터는 서로의 선택을 남긴다", async ({ page }) => {
+    await page.goto("/admin/reports?target=feedback");
+    await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports\?tab=done&target=feedback$/);
+    await expect(rows(page)).toHaveCount(2);
+    await targetFilters(page).getByRole("link", { name: "회원" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports\?tab=done&target=user$/);
+    await expect(page.getByText("처리한 회원 신고가 없어요")).toBeVisible();
+    await statusTabs(page).getByRole("link", { name: "검토 대기" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports\?target=user$/);
+    await expect(rows(page)).toHaveCount(1);
+  });
+
+  test("S534 알 수 없는 대상 값은 전체로 본다", async ({ page }) => {
+    await page.goto("/admin/reports?target=nope");
+    await expect(targetFilters(page).getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
+    await expect(rows(page)).toHaveCount(4);
   });
 
   test("S122 행을 누르면 상세로 간다", async ({ page }) => {

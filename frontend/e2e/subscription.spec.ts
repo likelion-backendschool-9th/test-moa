@@ -23,12 +23,12 @@ const planHeader = (page: Page, name: string) =>
   region(page, "혜택 비교").getByRole("columnheader").filter({ hasText: name });
 
 test.describe("R1 접근 제어", () => {
-  test("S193 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
+  test("S382 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/subscription");
   });
 
-  test("S194 로그인하면 구독 화면이 열리고 메뉴의 현재 항목이다", async ({ page, context }) => {
+  test("S383 로그인하면 구독 화면이 열리고 메뉴의 현재 항목이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     const response = await page.goto("/my/subscription");
     expect(response?.status()).toBe(200);
@@ -40,7 +40,7 @@ test.describe("R1 접근 제어", () => {
 });
 
 test.describe("R2 내 구독 상태", () => {
-  test("S195 미구독", async ({ page, context }) => {
+  test("S384 미구독", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     const status = region(page, "내 구독");
@@ -49,7 +49,7 @@ test.describe("R2 내 구독 상태", () => {
     await expect(status.getByText(/만료/)).toHaveCount(0);
   });
 
-  test("S196 구독 중이면 상품, 남은 기간, 만료일", async ({ page, context }) => {
+  test("S385 구독 중이면 상품, 남은 기간, 만료일", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
     const status = region(page, "내 구독");
@@ -63,7 +63,7 @@ test.describe("R2 내 구독 상태", () => {
     await expect(value("만료일")).toHaveText(expiresAt);
   });
 
-  test("S197 운영자는 구독 대상이 아니다", async ({ page, context }) => {
+  test("S386 운영자는 구독 대상이 아니다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/subscription");
     await expect(page.getByText("운영자 계정은 구독 대상이 아니에요")).toBeVisible();
@@ -80,7 +80,7 @@ const nextMonthFirst = () => {
 };
 
 test.describe("R2 이번 달 모집 인원", () => {
-  test("S210 구독 중이면 구독 한도로 남은 인원을 보여 준다", async ({ page, context }) => {
+  test("S399 구독 중이면 구독 한도로 남은 인원을 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
     const status = region(page, "내 구독");
@@ -92,7 +92,7 @@ test.describe("R2 이번 달 모집 인원", () => {
     await expect(status.getByText(`${nextMonthFirst()}에 다시 채워져요`)).toBeVisible();
   });
 
-  test("S211 무료면 무료 한도와 구독 한도를 보여 준다", async ({ page, context }) => {
+  test("S400 무료면 무료 한도와 구독 한도를 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     const status = region(page, "내 구독");
@@ -103,7 +103,7 @@ test.describe("R2 이번 달 모집 인원", () => {
 });
 
 test.describe("R3 혜택 비교", () => {
-  test("S198 비교표의 열과 행", async ({ page, context }) => {
+  test("S387 비교표의 열과 행", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     const table = region(page, "혜택 비교").getByRole("table");
@@ -119,7 +119,7 @@ test.describe("R3 혜택 비교", () => {
     await expect(planHeader(page, "구독")).toContainText("30일 10,000원");
   });
 
-  test("S199 구독 중이면 구독 열에 표시한다", async ({ page, context }) => {
+  test("S388 구독 중이면 구독 열에 표시한다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
     await expect(planHeader(page, "구독")).toContainText("지금 이용 중");
@@ -129,7 +129,7 @@ test.describe("R3 혜택 비교", () => {
 });
 
 test.describe("R4 결제 안내", () => {
-  test("S201 상품 가격과 쓸 수 있는 크레딧", async ({ page, context }) => {
+  test("S390 상품 가격과 쓸 수 있는 크레딧", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     const payment = region(page, "결제 안내");
@@ -145,7 +145,7 @@ test.describe("R4 결제 안내", () => {
     await expect(page.getByRole("main").getByRole("link", { name: /구독하기/ })).toHaveCount(0);
   });
 
-  test("S202 출금 처리 중인 크레딧은 빼고 보여 준다", async ({ page, context }) => {
+  test("S391 출금 처리 중인 크레딧은 빼고 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
     const payment = region(page, "결제 안내");
@@ -153,7 +153,7 @@ test.describe("R4 결제 안내", () => {
     await expect(payment.getByRole("link", { name: "크레딧 내역" })).toHaveAttribute("href", "/my/credits");
   });
 
-  test("S209 상품 목록대로 결제 안내와 비교표 열이 생긴다", async ({ page, context }) => {
+  test("S398 상품 목록대로 결제 안내와 비교표 열이 생긴다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     await expect(region(page, "결제 안내").getByRole("list", { name: "구독 상품" }).getByRole("listitem")).toHaveCount(1);
@@ -163,7 +163,7 @@ test.describe("R4 결제 안내", () => {
 });
 
 test.describe("R5 만료 뒤 바뀌는 점", () => {
-  test("S203 구독 중이면 남는 것과 멈추는 것을 보여 준다", async ({ page, context }) => {
+  test("S392 구독 중이면 남는 것과 멈추는 것을 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription");
     const expiry = region(page, "만료되면");
@@ -180,7 +180,7 @@ test.describe("R5 만료 뒤 바뀌는 점", () => {
     ]);
   });
 
-  test("S204 미구독이면 만료 안내가 없다", async ({ page, context }) => {
+  test("S393 미구독이면 만료 안내가 없다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     await expect(region(page, "내 구독")).toBeVisible();
@@ -189,7 +189,7 @@ test.describe("R5 만료 뒤 바뀌는 점", () => {
 });
 
 test.describe("R6 로딩과 화면", () => {
-  test("S205 느린 응답이면 제목과 스켈레톤이 먼저 보인다", async ({ page, context }) => {
+  test("S394 느린 응답이면 제목과 스켈레톤이 먼저 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto("/my/subscription", { waitUntil: "commit" });
     await expect(page.getByRole("heading", { level: 1, name: "구독" })).toBeVisible();
@@ -198,7 +198,7 @@ test.describe("R6 로딩과 화면", () => {
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
   });
 
-  test("S206 모바일에서 가로 스크롤 없이 표가 보인다", async ({ page, context }) => {
+  test("S395 모바일에서 가로 스크롤 없이 표가 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/my/subscription");

@@ -8,19 +8,19 @@ const balanceRow = (page: Page, label: string) => region(page, "잔액").locator
 const filter = (page: Page, name: string) => page.getByRole("navigation", { name: "내역 필터" }).getByRole("link", { name });
 
 test.describe("R1 접근 제어", () => {
-  test("S135 비로그인은 크레딧 관리에서 로그인으로 간다", async ({ page, context }) => {
+  test("S348 비로그인은 크레딧 관리에서 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/credits");
   });
 
-  test("S136 비로그인은 출금에서 로그인으로 간다", async ({ page, context }) => {
+  test("S349 비로그인은 출금에서 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await expectLoginRedirect(page, "/my/credits/withdrawals");
   });
 });
 
 test.describe("R2 잔액", () => {
-  test("S137 총 잔액과 구성, 승인 대기", async ({ page, context }) => {
+  test("S350 총 잔액과 구성, 승인 대기", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
     await expect(page.getByRole("heading", { level: 1, name: "크레딧" })).toBeVisible();
@@ -34,7 +34,7 @@ test.describe("R2 잔액", () => {
     await expect(balance.getByRole("link", { name: "크레딧 내역" })).toHaveCount(0);
   });
 
-  test("S138 출금할 크레딧이 없으면 출금 신청이 없다", async ({ page, context }) => {
+  test("S351 출금할 크레딧이 없으면 출금 신청이 없다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/credits");
     const balance = region(page, "잔액");
@@ -44,7 +44,7 @@ test.describe("R2 잔액", () => {
 });
 
 test.describe("R3 크레딧 내역", () => {
-  test("S139 전체 내역을 최신순으로", async ({ page, context }) => {
+  test("S352 전체 내역을 최신순으로", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
     const rows = ledgerRows(page);
@@ -56,7 +56,7 @@ test.describe("R3 크레딧 내역", () => {
     await expect(filter(page, "전체")).toHaveAttribute("aria-current", "page");
   });
 
-  test("S140 받은 크레딧", async ({ page, context }) => {
+  test("S353 받은 크레딧", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
     await filter(page, "받은 크레딧").click();
@@ -65,7 +65,7 @@ test.describe("R3 크레딧 내역", () => {
     await expect(filter(page, "받은 크레딧")).toHaveAttribute("aria-current", "page");
   });
 
-  test("S141 쓴 크레딧", async ({ page, context }) => {
+  test("S354 쓴 크레딧", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
     await filter(page, "쓴 크레딧").click();
@@ -75,20 +75,20 @@ test.describe("R3 크레딧 내역", () => {
     await expect(ledgerRows(page).first()).toContainText("-3,000 크레딧");
   });
 
-  test("S142 모르는 필터는 전체로 본다", async ({ page, context }) => {
+  test("S355 모르는 필터는 전체로 본다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits?type=foo");
     await expect(filter(page, "전체")).toHaveAttribute("aria-current", "page");
     await expect(ledgerRows(page)).toHaveCount(12);
   });
 
-  test("S143 내역이 없으면 안내한다", async ({ page, context }) => {
+  test("S356 내역이 없으면 안내한다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/credits");
     await expect(region(page, "크레딧 내역").getByText("아직 크레딧 내역이 없어요")).toBeVisible();
   });
 
-  test("S144 구독 결제는 쓴 크레딧이다", async ({ page, context }) => {
+  test("S357 구독 결제는 쓴 크레딧이다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/credits?type=out");
     await expect(ledgerRows(page)).toHaveCount(1);
@@ -98,7 +98,7 @@ test.describe("R3 크레딧 내역", () => {
 });
 
 test.describe("R4 출금 내역", () => {
-  test("S145 지급 완료와 반려 이유", async ({ page, context }) => {
+  test("S358 지급 완료와 반려 이유", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits/withdrawals");
     const rows = historyRows(page);
@@ -110,14 +110,14 @@ test.describe("R4 출금 내역", () => {
     await expect(rows.nth(1)).toContainText("예금주 이름이 회원 정보와 달라요");
   });
 
-  test("S146 처리 중", async ({ page, context }) => {
+  test("S359 처리 중", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/credits/withdrawals");
     await expect(historyRows(page).first()).toContainText("1,000원");
     await expect(historyRows(page).first()).toContainText("처리 중");
   });
 
-  test("S147 출금 요청이 없으면 안내한다", async ({ page, context }) => {
+  test("S360 출금 요청이 없으면 안내한다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/credits/withdrawals");
     await expect(region(page, "출금 내역").getByText("아직 출금 요청이 없어요")).toBeVisible();
@@ -126,7 +126,7 @@ test.describe("R4 출금 내역", () => {
 
 test.describe("R4 출금 상태 표시", () => {
   for (const scheme of ["light", "dark"] as const) {
-    test(`S157 ${scheme} 모드에서 상태는 14px 이상이고 대비가 4.5 이상이다`, async ({ page, context }) => {
+    test(`S370 ${scheme} 모드에서 상태는 14px 이상이고 대비가 4.5 이상이다`, async ({ page, context }) => {
       await setDemo(context, { role: "tester" });
       await page.emulateMedia({ colorScheme: scheme });
       await page.goto("/my/credits/withdrawals");
@@ -165,14 +165,14 @@ test.describe("R5 출금 신청", () => {
     await page.getByLabel("예금주").fill(holder);
   }
 
-  test("S148 출금 가능 금액과 가입 크레딧 안내", async ({ page }) => {
+  test("S361 출금 가능 금액과 가입 크레딧 안내", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1, name: "출금" })).toBeVisible();
     const form = region(page, "출금 신청");
     await expect(form.getByText(/출금 가능\s*9,480 크레딧/)).toBeVisible();
     await expect(form.getByText(/가입 크레딧은 출금할 수 없어요/)).toBeVisible();
   });
 
-  test("S158 입력·선택·전액 버튼 높이가 같다", async ({ page }) => {
+  test("S371 입력·선택·전액 버튼 높이가 같다", async ({ page }) => {
     const heights = [];
     for (const label of ["금액(크레딧)", "은행", "계좌번호", "예금주"]) {
       heights.push((await page.getByLabel(label).boundingBox())!.height);
@@ -181,7 +181,7 @@ test.describe("R5 출금 신청", () => {
     expect(new Set(heights).size).toBe(1);
   });
 
-  test("S159 금액 폼은 12px 모서리, 폼 밖 버튼은 알약이다", async ({ page }) => {
+  test("S372 금액 폼은 12px 모서리, 폼 밖 버튼은 알약이다", async ({ page }) => {
     const radius = (locator: ReturnType<Page["getByRole"]>) => locator.evaluate((element) => getComputedStyle(element).borderRadius);
     for (const locator of [
       page.getByLabel("금액(크레딧)"),
@@ -198,7 +198,7 @@ test.describe("R5 출금 신청", () => {
     expect(parseFloat(outside)).toBeGreaterThan(1000);
   });
 
-  test("S160 신청 버튼은 오른쪽 아래, 받을 금액은 버튼 옆이다", async ({ page }) => {
+  test("S373 신청 버튼은 오른쪽 아래, 받을 금액은 버튼 옆이다", async ({ page }) => {
     const holder = (await page.getByLabel("예금주").boundingBox())!;
     const button = (await page.getByRole("button", { name: "출금 신청" }).boundingBox())!;
     const summary = (await page.getByText(/받을 금액/).boundingBox())!;
@@ -208,7 +208,7 @@ test.describe("R5 출금 신청", () => {
     expect(Math.abs(summary.y + summary.height / 2 - (button.y + button.height / 2))).toBeLessThan(8);
   });
 
-  test("S161 좁은 화면에서는 신청 버튼이 칸 너비만큼 넓다", async ({ page }) => {
+  test("S374 좁은 화면에서는 신청 버튼이 칸 너비만큼 넓다", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     const holder = (await page.getByLabel("예금주").boundingBox())!;
     const button = (await page.getByRole("button", { name: "출금 신청" }).boundingBox())!;
@@ -218,7 +218,7 @@ test.describe("R5 출금 신청", () => {
   });
 
   for (const width of [1440, 375]) {
-    test(`S162 ${width}px에서 펼친 은행 목록은 칸 바로 아래에 같은 너비로 붙는다`, async ({ page }) => {
+    test(`S375 ${width}px에서 펼친 은행 목록은 칸 바로 아래에 같은 너비로 붙는다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1000 });
       const select = page.getByLabel("은행");
       const field = (await select.boundingBox())!;
@@ -237,13 +237,13 @@ test.describe("R5 출금 신청", () => {
     });
   }
 
-  test("S149 전액", async ({ page }) => {
+  test("S362 전액", async ({ page }) => {
     await page.getByRole("button", { name: "전액" }).click();
     await expect(page.getByLabel("금액(크레딧)")).toHaveValue("9480");
     await expect(page.getByText(/받을 금액\s*9,480원/)).toBeVisible();
   });
 
-  test("S150 신청하면 성공 메시지를 보여 주고 칸을 비운다", async ({ page }) => {
+  test("S363 신청하면 성공 메시지를 보여 주고 칸을 비운다", async ({ page }) => {
     await fill(page);
     await page.getByRole("button", { name: "출금 신청" }).click();
     await expect(page.getByRole("status")).toHaveText("5,000원 출금을 신청했어요. 운영자가 확인한 뒤 지급해요.");
@@ -252,7 +252,7 @@ test.describe("R5 출금 신청", () => {
     await expect(page.getByLabel("예금주")).toHaveValue("");
   });
 
-  test("S185 신청한 뒤 다시 신청해 실패해도 입력이 남는다", async ({ page }) => {
+  test("S376 신청한 뒤 다시 신청해 실패해도 입력이 남는다", async ({ page }) => {
     await fill(page);
     await page.getByRole("button", { name: "출금 신청" }).click();
     await expect(page.getByRole("status")).toBeVisible();
@@ -265,7 +265,7 @@ test.describe("R5 출금 신청", () => {
     await expect(page.getByLabel("예금주")).toHaveValue("한서윤");
   });
 
-  test("S151 출금 가능 금액보다 많으면 알려 준다", async ({ page }) => {
+  test("S364 출금 가능 금액보다 많으면 알려 준다", async ({ page }) => {
     await fill(page, { amount: "10000" });
     await page.getByRole("button", { name: "출금 신청" }).click();
     await expect(page.getByText("출금 가능한 크레딧(9,480)보다 많아요")).toBeVisible();
@@ -273,7 +273,7 @@ test.describe("R5 출금 신청", () => {
     await expect(page.getByLabel("예금주")).toHaveValue("한서윤");
   });
 
-  test("S152 빈 칸과 잘못된 형식", async ({ page }) => {
+  test("S365 빈 칸과 잘못된 형식", async ({ page }) => {
     await page.getByRole("button", { name: "출금 신청" }).click();
     for (const message of ["금액을 입력해 주세요", "은행을 골라 주세요", "계좌번호를 입력해 주세요", "예금주를 입력해 주세요"]) {
       await expect(page.getByText(message)).toBeVisible();
@@ -286,14 +286,14 @@ test.describe("R5 출금 신청", () => {
   });
 });
 
-test("S153 출금할 크레딧이 없으면 신청할 수 없다", async ({ page, context }) => {
+test("S366 출금할 크레딧이 없으면 신청할 수 없다", async ({ page, context }) => {
   await setDemo(context, { role: "admin" });
   await page.goto("/my/credits/withdrawals");
   await expect(page.getByText("출금할 수 있는 크레딧이 없어요")).toBeVisible();
   await expect(page.getByRole("button", { name: "출금 신청" })).toBeDisabled();
 });
 
-test("S154 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같다", async ({ page, context }) => {
+test("S367 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같다", async ({ page, context }) => {
   await setDemo(context, { role: "tester" });
   await page.goto("/my/credits");
   await expect(ledgerRows(page)).toHaveCount(12);
@@ -322,7 +322,7 @@ test.describe("R7 신청 기록", () => {
     await expect(page.getByRole("status")).toBeVisible();
   });
 
-  test("S186 신청하면 출금 내역 맨 위에 처리 중으로 남는다", async ({ page }) => {
+  test("S377 신청하면 출금 내역 맨 위에 처리 중으로 남는다", async ({ page }) => {
     const rows = historyRows(page);
     await expect(rows).toHaveCount(3);
     await expect(rows.first()).toContainText("5,000원");
@@ -330,7 +330,7 @@ test.describe("R7 신청 기록", () => {
     await expect(rows.first()).toContainText("토스뱅크 ****5678");
   });
 
-  test("S187 출금 가능은 줄고 처리 중은 늘며 총 잔액은 그대로다", async ({ page }) => {
+  test("S378 출금 가능은 줄고 처리 중은 늘며 총 잔액은 그대로다", async ({ page }) => {
     await expect(region(page, "출금 신청").getByText(/출금 가능\s*4,480 크레딧/)).toBeVisible();
 
     await page.goto("/my/credits");
@@ -344,19 +344,19 @@ test.describe("R7 신청 기록", () => {
     await expect(card.locator("dl > div").filter({ hasText: "출금 처리 중" })).toContainText("5,000 크레딧");
   });
 
-  test("S188 새로고침해도 남는다", async ({ page }) => {
+  test("S379 새로고침해도 남는다", async ({ page }) => {
     await page.reload();
     await expect(historyRows(page)).toHaveCount(3);
     await expect(historyRows(page).first()).toContainText("5,000원");
   });
 
-  test("S189 잠긴 만큼 이어서 신청할 수 없다", async ({ page }) => {
+  test("S380 잠긴 만큼 이어서 신청할 수 없다", async ({ page }) => {
     await request(page, "5000");
     await expect(page.getByText("출금 가능한 크레딧(4,480)보다 많아요")).toBeVisible();
     await expect(historyRows(page)).toHaveCount(3);
   });
 
-  test("S190 다른 브라우저와 다른 회원에게는 보이지 않는다", async ({ page, context, browser }) => {
+  test("S381 다른 브라우저와 다른 회원에게는 보이지 않는다", async ({ page, context, browser }) => {
     const other = await browser.newContext();
     await setDemo(other, { role: "tester" });
     const otherPage = await other.newPage();

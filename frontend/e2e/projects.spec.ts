@@ -427,10 +427,12 @@ test.describe("R112 AI 분석", () => {
     const ai = page.getByRole("region", { name: "AI 분석" });
     await expect(ai).toBeVisible();
     await expect(ai.getByText("시연용 샘플")).toBeVisible();
-    for (const title of ["자주 나온 문제", "좋았던 점", "개선 제안"]) {
-      await expect(ai.getByRole("heading", { name: title })).toBeVisible();
-    }
-    await expect(ai.getByText(/피드백 \d+건/).first()).toBeVisible();
+    await expect(ai.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
+    await expect(ai.getByRole("heading", { name: "좋았던 점 1" })).toBeVisible();
+    /* 문제마다 근거 수와 해결 제안이 같은 항목 안에 붙어 있다 */
+    const issue = ai.getByRole("listitem").filter({ hasText: "표지가 늦게 떠서" });
+    await expect(issue.getByText("피드백 1건")).toBeVisible();
+    await expect(issue).toContainText("제안 검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기");
     await expect(ai.getByText(/AI가 정리한 내용이라 틀릴 수 있어요 · .+ 정리/)).toBeVisible();
   });
 
@@ -447,7 +449,7 @@ test.describe("R112 AI 분석", () => {
     await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`, { waitUntil: "commit" });
     await expect(page.getByRole("term").filter({ hasText: /^제출률$/ })).toBeVisible();
     await expect(page.getByTestId("ai-skeleton")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "자주 나온 문제" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
     await expect(page.getByTestId("ai-skeleton")).toHaveCount(0);
   });
 });

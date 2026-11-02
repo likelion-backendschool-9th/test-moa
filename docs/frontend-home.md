@@ -10,7 +10,7 @@
   3. 구독 모집: 구독 개발자의 모집 글
   4. 전체 테스트: 검색·카테고리·모집 중·정렬이 되는 그리드
 - 디자인: uibowl 갤러리 문법에 교정쇄 소재를 입혔다. 라이트는 교정쇄 바탕, 다크는 uibowl 바탕이고, 강조는 두 모드 모두 에메랄드 계열이다. 글꼴은 Wanted Sans 하나다. 토큰과 규칙은 `frontend/DESIGN.md`와 `docs/design-tokens.html`에 있다.
-- 데이터: 로그인과 API는 아직 목업이다. 쿠키 `demo-role`과 `demo-data`로 상태를 바꾼다. 개발 서버에서는 푸터의 "시연용" 선택 상자를 쓴다.
+- 데이터: 로그인과 API는 아직 목업이다. 쿠키 `demo-role`과 `demo-data`로 상태를 바꾼다. 개발 서버에서는 푸터의 "시연용" 선택 상자를 쓴다 (채팅방은 푸터가 없어서 다른 페이지에서 바꾼다).
 - 페이지 URL: `docs/page-urls.md`
 
 ## 1. 테마와 글꼴 (R1)
@@ -155,7 +155,7 @@ S75
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
 
 S26 준비 중 페이지와 내부 링크
-- Given `/recruitments`, `/recruitments/:slug`, `/my/chats`, `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/2026-11-01-frontend-auth.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
+- Given `/recruitments`, `/recruitments/:slug`, `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/2026-11-01-frontend-auth.md`에서, `/my/chats`는 `docs/2026-10-30-frontend-chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
@@ -186,7 +186,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 14개, 모두 20개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313) (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/2026-11-01-frontend-header.md` S333)
+- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 20개, 모두 26개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313), ApplicationStatusTabs (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/2026-11-01-frontend-header.md` S333)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`
@@ -200,7 +200,7 @@ S78
 - 카테고리 중 웹서비스 외에는 모집 글이 없어서 빈 상태가 보인다.
 
 ## 범위 밖
-- 홈 외 페이지의 실제 내용 (준비 중 화면만 있다. 마이페이지 `/my`는 `docs/2026-10-30-frontend-my.md`, 참여 테스트는 `docs/frontend-participations.md`)
+- 홈 외 페이지의 실제 내용 (준비 중 화면만 있다. 마이페이지 `/my`는 `docs/2026-10-30-frontend-my.md`, 채팅함 `/my/chats`는 `docs/2026-10-30-frontend-chats.md`)
 - 실제 로그인, API, 결제 연동
 - 페이지 나누기·무한 스크롤
 - 실제 서비스 스크린샷 썸네일

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const DETAIL = "/my/participations/p-meeting-notes";
 const status = (page: Page) => page.getByRole("region", { name: "진행 상황" });
@@ -121,8 +121,7 @@ test.describe("R14 상세 반응형과 링크", () => {
   test("S202 좁은 화면에서 가로 스크롤이 없고 제출 버튼이 전체 폭이며 링크는 모두 열린다", async ({ page, request }) => {
     await page.goto(DETAIL);
     await expect(field(page)).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBe(0);
+    await expectNoHorizontalOverflow(page);
     const button = await submit(page).boundingBox();
     const box = await field(page).boundingBox();
     expect(button?.width).toBe(box?.width);
@@ -149,8 +148,7 @@ test.describe("R14 상세 반응형 · 제출한 피드백", () => {
     await submit(page).click();
     await expect(page.getByRole("heading", { name: "제출한 피드백" })).toBeVisible();
 
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBe(0);
+    await expectNoHorizontalOverflow(page);
     const card = page.getByRole("heading", { name: "제출한 피드백" }).locator("..");
     const box = await card.boundingBox();
     expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").getByRole("list", { name: "회원" }).getByRole("listitem");
 const filters = (page: Page) => page.getByRole("navigation", { name: "회원 필터" });
@@ -291,8 +291,7 @@ test.describe("R45 로딩과 접근성", () => {
     for (const path of ["/admin/users", "/admin/users/user-4"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, path);
     }
   });
 });

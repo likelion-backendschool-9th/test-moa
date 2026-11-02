@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
 
@@ -25,8 +25,7 @@ const planHeader = (page: Page, name: string) =>
 test.describe("R1 접근 제어", () => {
   test("S193 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my/subscription");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fsubscription");
+    await expectLoginRedirect(page, "/my/subscription");
   });
 
   test("S194 로그인하면 구독 화면이 열리고 메뉴의 현재 항목이다", async ({ page, context }) => {
@@ -206,7 +205,6 @@ test.describe("R6 로딩과 화면", () => {
     const rows = region(page, "혜택 비교").locator("tbody tr");
     await expect(rows).toHaveCount(BENEFITS.length);
     for (let index = 0; index < BENEFITS.length; index++) await expect(rows.nth(index)).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page);
   });
 });

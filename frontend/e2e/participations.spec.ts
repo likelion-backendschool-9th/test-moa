@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const tabs = (page: Page) => page.getByRole("navigation", { name: "참여 상태" });
 const tab = (page: Page, name: string) => tabs(page).getByRole("link", { name });
@@ -217,8 +217,7 @@ test.describe("R7 반응형", () => {
   test("S99 좁은 화면에서 가로 스크롤 없이 쌓인다", async ({ page }) => {
     await page.goto("/my/participations");
     await expect(rows(page)).toHaveCount(6);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBe(0);
+    await expectNoHorizontalOverflow(page);
     const tops = await tabs(page)
       .getByRole("link")
       .evaluateAll((links) => links.map((link) => Math.round(link.getBoundingClientRect().top)));

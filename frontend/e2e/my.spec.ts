@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
 
@@ -17,8 +17,7 @@ const ACCOUNT_LINKS = [
 test.describe("R1 접근 제어", () => {
   test("S83 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my");
-    await expect(page).toHaveURL("/login?next=%2Fmy");
+    await expectLoginRedirect(page, "/my");
   });
 
   test("S84 로그인하면 마이페이지가 열리고 현재 탭이다", async ({ page, context }) => {

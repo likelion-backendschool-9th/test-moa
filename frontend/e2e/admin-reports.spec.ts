@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "신고 상태" });
@@ -241,8 +241,7 @@ test.describe("R29 로딩과 접근성", () => {
     for (const path of ["/admin/reports", "/admin/reports/report-1"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, path);
     }
   });
 
@@ -252,7 +251,6 @@ test.describe("R29 로딩과 접근성", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/admin/reports/report-1");
     await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(longWord);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page);
   });
 });

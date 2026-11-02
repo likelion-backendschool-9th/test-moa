@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 /* docs/frontend-projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
@@ -15,8 +15,7 @@ test.describe("R101 접근", () => {
   for (const path of ["/my/projects", "/my/projects/new", BOOKLOG, `${BOOKLOG}/edit`, `${BOOKLOG}/recruitments/new`, BOOKLOG_MANAGE]) {
     test(`S101 비로그인은 ${path}에서 로그인으로 간다`, async ({ page, context }) => {
       await setDemo(context, { role: "guest" });
-      await page.goto(path);
-      await expect(page).toHaveURL(`/login?next=${encodeURIComponent(path)}`);
+      await expectLoginRedirect(page, path);
     });
   }
 

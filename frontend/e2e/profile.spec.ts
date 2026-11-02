@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 const PATH = "/my/profile/edit";
 
@@ -18,8 +18,7 @@ async function fillPassword(page: Page, { current, next, confirm }: { current: s
 test.describe("R1 접근 제어", () => {
   test("S163 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto(PATH);
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fprofile%2Fedit");
+    await expectLoginRedirect(page, PATH);
   });
 
   test("S164 로그인하면 열리고 메뉴의 현재 페이지다", async ({ page, context }) => {

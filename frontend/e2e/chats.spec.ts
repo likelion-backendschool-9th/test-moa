@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { homeLogo, openMoreMenu, setDemo } from "./helpers";
+import { expectLoginRedirect, homeLogo, openMoreMenu, setDemo } from "./helpers";
 
 const chatList = (page: Page) => page.getByRole("list", { name: "채팅 목록" });
 const cards = (page: Page) => chatList(page).getByRole("listitem");
@@ -29,8 +29,7 @@ const DATE = /^(\d{1,2}월 \d{1,2}일|\d{4}\. \d{1,2}\. \d{1,2}\.)$/;
 test.describe("R1 접근 제어", () => {
   test("S114 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my/chats");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fchats");
+    await expectLoginRedirect(page, "/my/chats");
   });
 
   test("S115 로그인하면 채팅함이 열리고 현재 탭이며 마이페이지 메뉴는 없다", async ({ page, context }) => {

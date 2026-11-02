@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
 const ledgerRows = (page: Page) => region(page, "크레딧 내역").locator(":scope > ul > li");
@@ -10,14 +10,12 @@ const filter = (page: Page, name: string) => page.getByRole("navigation", { name
 test.describe("R1 접근 제어", () => {
   test("S135 비로그인은 크레딧 관리에서 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my/credits");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fcredits");
+    await expectLoginRedirect(page, "/my/credits");
   });
 
   test("S136 비로그인은 출금에서 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my/credits/withdrawals");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fcredits%2Fwithdrawals");
+    await expectLoginRedirect(page, "/my/credits/withdrawals");
   });
 });
 

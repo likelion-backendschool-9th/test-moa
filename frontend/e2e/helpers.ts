@@ -28,3 +28,15 @@ export async function openMoreMenu(button: Locator) {
     await expect(button).toHaveAttribute("aria-expanded", "true", { timeout: 1000 });
   }).toPass();
 }
+
+/** 페이지가 가로로 넘치지 않는지 확인한다. 여러 페이지를 돌 때는 label로 어느 곳인지 알린다 */
+export async function expectNoHorizontalOverflow(page: Page, label?: string) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, label).toBeLessThanOrEqual(0);
+}
+
+/** 비로그인으로 path에 가면 돌아올 주소(next)를 붙여 로그인으로 보낸다. 비로그인 쿠키는 호출하는 쪽에서 넣는다 */
+export async function expectLoginRedirect(page: Page, path: string) {
+  await page.goto(path);
+  await expect(page).toHaveURL(`/login?next=${encodeURIComponent(path)}`);
+}

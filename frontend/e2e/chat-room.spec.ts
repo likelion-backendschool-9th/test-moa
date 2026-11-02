@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { homeLogo, openMoreMenu, setDemo } from "./helpers";
+import { expectLoginRedirect, homeLogo, openMoreMenu, setDemo } from "./helpers";
 
 const main = (page: Page) => page.getByRole("main");
 const roomHeader = (page: Page) => main(page).locator("header");
@@ -27,8 +27,7 @@ const spoken = (item: Locator) => bubble(item).evaluate((element) => element.tex
 test.describe("R1 접근 제어", () => {
   test("S141 비로그인은 이 채팅방으로 돌아오는 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my/chats/booklog-yunseul");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fchats%2Fbooklog-yunseul");
+    await expectLoginRedirect(page, "/my/chats/booklog-yunseul");
   });
 
   test("S142 로그인하면 채팅방이 열리고 채팅 탭이 현재 탭이다", async ({ page, context }) => {

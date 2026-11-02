@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 const header = (page: Page) => page.getByRole("banner");
 
@@ -93,8 +93,7 @@ test.describe("R2 로그아웃", () => {
     await page.goto("/");
     await header(page).getByRole("button", { name: "로그아웃" }).click();
     await expect(header(page).getByRole("link", { name: "로그인" })).toBeVisible();
-    await page.goto("/my");
-    await expect(page).toHaveURL("/login?next=%2Fmy");
+    await expectLoginRedirect(page, "/my");
   });
 });
 

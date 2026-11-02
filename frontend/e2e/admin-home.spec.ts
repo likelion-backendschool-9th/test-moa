@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const summaryCards = (page: Page) => page.getByRole("region", { name: "처리 대기" }).getByRole("link");
 const oldestItems = (page: Page) => page.getByRole("region", { name: "오래 기다린 요청" }).locator("ol > li");
@@ -234,7 +234,6 @@ test.describe("R21 접근성과 좁은 화면", () => {
     const [first, second] = [await cards.nth(0).boundingBox(), await cards.nth(1).boundingBox()];
     expect(first?.x).toBe(second?.x);
     expect(second!.y).toBeGreaterThan(first!.y);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page);
   });
 });

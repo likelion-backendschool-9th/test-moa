@@ -155,6 +155,26 @@ test.describe("R4 메시지 보내기", () => {
     expect(await first.locator("time").evaluate((element) => getComputedStyle(element).color)).toBe(ACCENT_LIGHT);
   });
 
+  test("S340 키보드 기기에서는 Enter가 보내기이고, 보내기 버튼으로 보내도 입력창에 그대로 있다", async ({ page }) => {
+    await page.goto("/my/chats/moaplan-yunseul");
+    await expect(messageInput(page)).toHaveAttribute("enterkeyhint", "send");
+    await expect(messageInput(page)).toHaveAccessibleDescription("Enter로 보내고, Shift+Enter로 줄을 바꿔요.");
+
+    const count = await messages(page).count();
+    await messageInput(page).fill("버튼으로 보내기");
+    await sendButton(page).click();
+    await expect(messages(page)).toHaveCount(count + 1);
+    await expect(messageInput(page)).toBeFocused();
+
+    /* Tab으로 보내기 버튼에 가서 Enter로 눌러도 입력창으로 돌아온다 */
+    await messageInput(page).fill("키보드로 버튼 누르기");
+    await page.keyboard.press("Tab");
+    await expect(sendButton(page)).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(messages(page)).toHaveCount(count + 2);
+    await expect(messageInput(page)).toBeFocused();
+  });
+
   test("S150 빈 메시지는 보내지 않고, Shift+Enter는 줄을 바꾼다", async ({ page }) => {
     await page.goto("/my/chats/booklog-yunseul");
     const count = await messages(page).count();
@@ -194,6 +214,31 @@ test.describe("R4 메시지 보내기", () => {
     await pressEnter(false);
     await expect(messages(page)).toHaveCount(count + 1);
     await expect(messages(page).last()).toContainText("조합 중");
+  });
+});
+
+test.describe("R4 메시지 보내기 · 휴대폰", () => {
+  test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+
+  test("S340 휴대폰에서는 Enter가 줄바꿈이고, 보내기 버튼으로만 보낸다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/chats/moaplan-yunseul");
+    const count = await messages(page).count();
+    await expect(messageInput(page)).toHaveAttribute("enterkeyhint", "enter");
+    await expect(messageInput(page)).toHaveAccessibleDescription("Enter로 줄을 바꾸고, 보내기 버튼으로 보내요.");
+
+    await messageInput(page).fill("첫 줄");
+    await messageInput(page).press("Enter");
+    await messageInput(page).pressSequentially("둘째 줄");
+    await expect(messageInput(page)).toHaveValue("첫 줄\n둘째 줄");
+    await expect(messages(page)).toHaveCount(count);
+
+    await sendButton(page).tap();
+    await expect(messages(page)).toHaveCount(count + 1);
+    expect(await spoken(messages(page).last())).toBe("나: 첫 줄\n둘째 줄");
+    await expect(messageInput(page)).toHaveValue("");
+    /* 입력창에 그대로 있어 키보드가 닫히지 않는다 */
+    await expect(messageInput(page)).toBeFocused();
   });
 });
 
@@ -442,15 +487,20 @@ test.describe("R12 오가는 흐름", () => {
     await page.evaluate(() => {
       const scrolls: number[] = [];
       (window as unknown as { scrolls: number[] }).scrolls = scrolls;
-      window.addEventListener("scroll", () => scrolls.push(window.scrollY));
+      /* 채팅방 주소로 바뀐 뒤의 스크롤만 모은다. 카드를 누르기 전 채팅함에서 일어난 스크롤은 뺀다 */
+      window.addEventListener("scroll", () => {
+        if (window.location.pathname !== "/my/chats") scrolls.push(window.scrollY);
+      });
     });
     await inboxCards(page).first().getByRole("link").click();
     await expect(page).toHaveURL("/my/chats/booklog-yunseul");
+    await expect(chatLog(page)).toBeVisible();
     const bottom = () => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(await bottom());
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY > 0 && window.scrollY === document.documentElement.scrollHeight - window.innerHeight))
+      .toBe(true);
     await page.waitForTimeout(500);
     const max = await bottom();
-    expect(max).toBeGreaterThan(0);
     /* 맨 위(0)와 맨 아래 사이를 지나는 스크롤이 없다 */
     const scrolls = await page.evaluate(() => (window as unknown as { scrolls: number[] }).scrolls);
     expect(scrolls.filter((y) => y > 0 && y < max)).toEqual([]);

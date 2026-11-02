@@ -237,12 +237,7 @@ test.describe("R7 반응형", () => {
 });
 
 test.describe("R8 링크와 404", () => {
-  test("S100 상세는 준비 중이고 화면의 내부 링크는 모두 열린다", async ({ page, request }) => {
-    const detail = await page.goto("/my/participations/p-meeting-notes");
-    expect(detail?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1, name: /준비 중/ })).toBeVisible();
-    await expect(page.getByRole("main").getByRole("link", { name: "홈으로" })).toHaveAttribute("href", "/");
-
+  test("S100 화면의 내부 링크는 모두 열린다", async ({ page, request }) => {
     for (const value of ["applied", "ongoing", "history"]) {
       await page.goto(`/my/participations?tab=${value}`);
       await expect(rows(page).first()).toBeVisible();

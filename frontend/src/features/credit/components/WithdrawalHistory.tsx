@@ -1,7 +1,8 @@
 import { cn } from "@/lib/cn";
 import { cardClass, cardTitleClass } from "@/features/my/components/card-styles";
-import { formatDate, formatWon } from "@/lib/format";
+import { formatWon } from "@/lib/format";
 import { WITHDRAWAL_STATUS_LABEL, type Withdrawal, type WithdrawalStatus } from "../types";
+import { EntryTime } from "./EntryTime";
 
 /*
  * 상태는 라이트·다크 모두 대비가 높은 조합만 쓴다.
@@ -27,7 +28,7 @@ export function WithdrawalHistory({ withdrawals }: { withdrawals: Withdrawal[] }
           {withdrawals.map((item) => (
             <li key={item.id} className="flex flex-col gap-1 py-3">
               <div className="flex items-center gap-4 text-sm">
-                <span className="w-16 shrink-0 text-xs text-text-muted tabular-nums">{formatDate(item.requestedAt)}</span>
+                <EntryTime iso={item.requestedAt} />
                 <span className="flex-1 font-semibold tabular-nums">{formatWon(item.amount)}</span>
                 <span className={cn("shrink-0 rounded-full px-3 py-1 text-sm font-bold", STATUS_CLASS[item.status])}>
                   {WITHDRAWAL_STATUS_LABEL[item.status]}

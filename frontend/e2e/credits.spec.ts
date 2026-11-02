@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
@@ -28,8 +28,8 @@ test.describe("R2 잔액", () => {
     await expect(page.getByRole("heading", { level: 1, name: "크레딧" })).toBeVisible();
     const balance = region(page, "잔액");
     await expect(balance.getByText("12,480 크레딧", { exact: true })).toBeVisible();
-    await expect(balanceRow(page, "현금화 가능")).toContainText("9,480 크레딧");
-    await expect(balanceRow(page, "구독 결제 전용")).toContainText("3,000 크레딧");
+    await expect(balanceRow(page, "적립 크레딧")).toContainText("9,480 크레딧");
+    await expect(balanceRow(page, "이벤트 크레딧")).toContainText("3,000 크레딧");
     await expect(balanceRow(page, "출금 처리 중")).toContainText("0 크레딧");
     await expect(balance.getByText(/승인 대기\s*1,350 크레딧/)).toBeVisible();
     await expect(balance.getByRole("link", { name: "출금 신청" })).toHaveAttribute("href", "/my/credits/withdrawals");
@@ -167,11 +167,11 @@ test.describe("R5 출금 신청", () => {
     await page.getByLabel("예금주").fill(holder);
   }
 
-  test("S148 출금 가능 금액과 가입 크레딧 안내", async ({ page }) => {
+  test("S148 출금 가능 금액과 이벤트 크레딧 안내", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1, name: "출금" })).toBeVisible();
     const form = region(page, "출금 신청");
     await expect(form.getByText(/출금 가능\s*9,480 크레딧/)).toBeVisible();
-    await expect(form.getByText(/가입 크레딧은 출금할 수 없어요/)).toBeVisible();
+    await expect(form.getByText(/이벤트 크레딧은 출금할 수 없어요/)).toBeVisible();
   });
 
   test("S158 입력·선택·전액 버튼 높이가 같다", async ({ page }) => {
@@ -337,12 +337,12 @@ test.describe("R7 신청 기록", () => {
 
     await page.goto("/my/credits");
     await expect(region(page, "잔액").getByText("12,480 크레딧", { exact: true })).toBeVisible();
-    await expect(balanceRow(page, "현금화 가능")).toContainText("4,480 크레딧");
+    await expect(balanceRow(page, "적립 크레딧")).toContainText("4,480 크레딧");
     await expect(balanceRow(page, "출금 처리 중")).toContainText("5,000 크레딧");
 
     await page.goto("/my");
     const card = region(page, "크레딧");
-    await expect(card.locator("dl > div").filter({ hasText: "현금화 가능" })).toContainText("4,480 크레딧");
+    await expect(card.locator("dl > div").filter({ hasText: "적립 크레딧" })).toContainText("4,480 크레딧");
     await expect(card.locator("dl > div").filter({ hasText: "출금 처리 중" })).toContainText("5,000 크레딧");
   });
 
@@ -369,5 +369,49 @@ test.describe("R7 신청 기록", () => {
     await setDemo(context, { role: "developer" });
     await page.goto(PATH);
     await expect(historyRows(page)).toHaveCount(1);
+  });
+});
+
+test.describe("내역 시각", () => {
+  const DATE_TIME = /^\d{1,2}월 \d{1,2}일\s*오[전후] \d{1,2}:\d{2}$/;
+  const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+  async function expectDateTimes(rows: Locator, count: number) {
+    await expect(rows).toHaveCount(count);
+    for (let index = 0; index < count; index++) {
+      const time = rows.nth(index).locator("time");
+      await expect(time).toHaveText(DATE_TIME);
+      await expect(time).toHaveAttribute("datetime", ISO);
+    }
+  }
+
+  test("S341 크레딧 내역의 모든 행에 날짜와 시각이 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/credits");
+    await expectDateTimes(ledgerRows(page), 12);
+  });
+
+  test("S342 마이페이지 최근 크레딧 내역에도 시각이 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my");
+    await expectDateTimes(region(page, "최근 크레딧 내역").getByRole("listitem"), 5);
+  });
+
+  test("S343 출금 내역의 모든 행에 날짜와 시각이 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/credits/withdrawals");
+    await expectDateTimes(historyRows(page), 2);
+  });
+
+  test("S344 방금 신청한 출금에도 시각이 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "tester" });
+    await page.goto("/my/credits/withdrawals");
+    await page.getByLabel("금액(크레딧)").fill("5000");
+    await page.getByLabel("은행").selectOption("토스뱅크");
+    await page.getByLabel("계좌번호").fill("100012345678");
+    await page.getByLabel("예금주").fill("한서윤");
+    await page.getByRole("button", { name: "출금 신청" }).click();
+    await expect(page.getByRole("status")).toBeVisible();
+    await expectDateTimes(historyRows(page), 3);
   });
 });

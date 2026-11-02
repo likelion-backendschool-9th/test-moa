@@ -52,7 +52,7 @@ S253 비로그인
 S254 없는 요청
 - When  `/admin/cancellations/nope`에 접속한다
 - Then  맞춤 404("찾는 페이지가 없어요")가 보이고 `noindex`가 붙는다
-- 참고: 응답 상태는 신고 상세 S118처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404). `noindex` 메타는 두 번 들어가기도 해서 테스트는 개수가 아니라 있는지만 본다.
+- 참고: 응답 상태는 신고 상세 S427처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404). `noindex` 메타는 두 번 들어가기도 해서 테스트는 개수가 아니라 있는지만 본다.
 
 ## 3. 목록 (R49)
 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 보여 준다. 탭 상태는 URL(`tab`)에 남는다.
@@ -201,13 +201,13 @@ S277
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  모집 취소 처리 Server Action 안에서도 부른다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (`RequestReviewForm`을 출금 요청 관리와 함께 쓴다)
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S445과 같다 (`RequestReviewForm`을 출금 요청 관리와 함께 쓴다)
 
 ## 기존 시나리오·문서 변경
 - `frontend-admin-home.md`
-  - S93: PR #12가 탭 이동 확인을 "모집 취소" 탭과 "준비 중" 화면으로 바꿔 두었다. 모집 취소도 준비 중이 아니게 되므로 "준비 중" 대신 `h1` "모집 취소 요청 관리"를 본다.
-  - S97 다음 확인: "오래 기다린 요청"의 모집 취소 항목 링크가 목록이 아니라 상세로 바뀐다(S273).
-  - 모집 취소 목업에 요청 사유·모집 건 키를 더하고 처리 완료 2건을 더한다. 처리 대기 2건과 순서는 그대로라 S94~S97은 바뀌지 않는다.
+  - S411: PR #12가 탭 이동 확인을 "모집 취소" 탭과 "준비 중" 화면으로 바꿔 두었다. 모집 취소도 준비 중이 아니게 되므로 "준비 중" 대신 `h1` "모집 취소 요청 관리"를 본다.
+  - S415 다음 확인: "오래 기다린 요청"의 모집 취소 항목 링크가 목록이 아니라 상세로 바뀐다(S273).
+  - 모집 취소 목업에 요청 사유·모집 건 키를 더하고 처리 완료 2건을 더한다. 처리 대기 2건과 순서는 그대로라 S412~S415은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·회원(PR #13) PR과 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/cancellations?tab=done`(처리 완료 탭)과 `/admin/cancellations/:cancellationKey`(모집 취소 요청 상세)를 "후보"로 추가한다.
 - `frontend-admin-reports.md` "번호 사용 현황": S250~S279와 S283을 이 문서로 적는다(PR #12·#13 병합 뒤).
@@ -276,7 +276,7 @@ S277
   - 처리 양식(`CancellationForm`)은 출금 처리 양식(`WithdrawalForm`)과 거의 같다. PR #12가 리뷰 중이라 그 파일을 고치지 않고 따로 만들었다. 두 PR이 병합된 뒤 공용 처리 양식 하나로 합친다.
   - S번호를 S250부터 매겼다. 열린 PR까지 포함해 가장 큰 번호가 회원 관리 문서의 S249다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아, PR #12의 신고·출금 상세와 같이 Suspense 안에서 읽게 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S254)을 확인했다.
-  - 공백 없는 긴 반려 메모나 URL이 375px 화면에서 385px 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, PR #12를 다시 병합하고 상세의 정보 칸(`Info`)에 같은 `wrap-anywhere`를 줬다(S283, `frontend-admin-withdrawals.md` S281). 번호는 PR #12의 S281·S282 다음이다.
+  - 공백 없는 긴 반려 메모나 URL이 375px 화면에서 385px 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, PR #12를 다시 병합하고 상세의 정보 칸(`Info`)에 같은 `wrap-anywhere`를 줬다(S283, `frontend-admin-withdrawals.md` S281). 번호는 당시 PR #12가 쓰던 S281·S282 다음이다(신고의 S282는 11-02 번호 정리로 S447이 됐다).
   - PR #12를 다시 병합했다. 출금 처리 양식도 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 바뀌어(`frontend-admin-withdrawals.md` S284), 두 양식의 동작이 같아졌다. 공용 처리 양식으로 합치는 일은 그대로 남는다.
 - 2026-11-01
   - 처리 양식을 출금과 함께 `RequestReviewForm` 하나로 합쳤다(위 "공용 처리 양식으로 합친다"). `CancellationForm`은 문구·사유·서버 함수만 넘기는 서버 컴포넌트가 됐다. 목록 탭도 `LinkTabs`로 바꿨다.
@@ -284,9 +284,9 @@ S277
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S94 처리 대기 카드, S97 오래 기다린 요청)
+- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S412 처리 대기 카드, S415 오래 기다린 요청)
 - 출금 요청 관리: PR #12 `docs/frontend-admin-withdrawals.md` (같은 목록·상세·처리 구조, `useActionState` 양식, 결과 문구를 데이터로 만드는 방식)
-- 신고·제재 관리: `docs/frontend-admin-reports.md` (쿠키 크기 확인 S137)
+- 신고·제재 관리: `docs/frontend-admin-reports.md` (쿠키 크기 확인 S446)
 - 개발자 프로젝트: `docs/frontend-projects.md` (모집 건 상태, 모집 건 취소는 범위 밖)
 - 모집 목업: `frontend/src/features/recruitment/mock.ts` (모집 건 키, 구독 여부)
 - 기획 근거: `README.md` (핵심 이용 흐름의 테스트 완료 뒤 보상 지급, 운영 원칙)

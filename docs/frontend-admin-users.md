@@ -47,7 +47,7 @@ S223 비로그인
 S224 없는 회원
 - When  `/admin/users/nope`에 접속한다
 - Then  맞춤 404("찾는 페이지가 없어요")가 보이고 `noindex`가 붙는다
-- 참고: 응답 상태는 신고 상세 S118처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404). `noindex` 메타는 두 번 들어가기도 해서 테스트는 개수가 아니라 있는지만 본다.
+- 참고: 응답 상태는 신고 상세 S427처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404). `noindex` 메타는 두 번 들어가기도 해서 테스트는 개수가 아니라 있는지만 본다.
 
 ## 3. 목록 (R41)
 회원을 최근 가입 순서로 보여 준다. 실명과 이메일은 목록에 보여 주지 않는다.
@@ -190,16 +190,16 @@ S248
 - When  `grep -L "requireAdmin" src/app/admin/users/page.tsx src/app/admin/users/*/page.tsx`
 - Then  결과가 없다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (회원 관리는 더하지 않는다)
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S445과 같다 (회원 관리는 더하지 않는다)
 
 ## 기존 시나리오·문서 변경
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
-- `frontend-admin-home.md` S93: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
+- `frontend-admin-home.md` S411: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
 - `frontend-admin-reports.md`
-  - 상세의 대상 테스터·대상 회원 닉네임이 회원 상세 링크가 된다(S244). 기존 S123·S125의 문구 확인은 그대로 통과한다.
+  - 상세의 대상 테스터·대상 회원 닉네임이 회원 상세 링크가 된다(S244). 기존 S432·S434의 문구 확인은 그대로 통과한다.
   - "범위 밖"의 "제재 이력 화면, 회원별 제재 조회"에 이 문서를 연결한다.
   - "번호 사용 현황"에 S220~S249와 S280을 이 문서로 적는다. PR #12가 같은 표에 S191~S219 줄을 더하고 있어서, 병합 충돌을 피하려고 PR #12가 병합된 뒤 고친다(아래 "PR #12 병합 뒤 할 일").
-  - `e2e/admin-reports.spec.ts` S118: `noindex` 메타는 개수 대신 있는지만 본다. PR #12와 같은 수정이라 병합해도 충돌하지 않는다.
+  - `e2e/admin-reports.spec.ts` S427: `noindex` 메타는 개수 대신 있는지만 본다. PR #12와 같은 수정이라 병합해도 충돌하지 않는다.
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/users?filter=…&q=…`(필터·검색)와 `/admin/users/:userKey`(회원 상세)를 "후보"로 추가한다.
 
 ## 데모 데이터와 가정
@@ -273,7 +273,7 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
   - `UserFilters`와 PR #12의 `StatusTabs`는 모양이 같다. `StatusTabs`가 세 탭도 받게 넓혀 합칠지 정한다. `StatusTabs`는 지금 두 탭(`ListTab`) 전용이다.
   - `frontend-admin-reports.md` "번호 사용 현황"에 S220~S249, S280 줄을 더한다. S250~S279는 모집 취소 요청 관리(PR #14)가 쓴다.
 - 나중에 팀에서 정할 것: 시연용 회원의 닉네임과 실명. 정해지면 신고·출금·모집 취소·마이페이지·회원 관리 목업을 함께 맞춘다(위 "데모 데이터와 가정").
-- 그대로 맞는 곳: 이 문서의 번호 시작(S220)은 PR #12 최신 커밋의 마지막 번호(S219) 다음이다. S118 테스트 수정은 PR #12와 같아서 충돌하지 않는다.
+- 그대로 맞는 곳: 이 문서의 번호 시작(S220)은 PR #12 최신 커밋의 마지막 번호(S219) 다음이다. S427 테스트 수정은 PR #12와 같아서 충돌하지 않는다.
 
 ## 변경 이력
 - 2026-10-31
@@ -296,8 +296,8 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S93 탭 이동)
-- 신고·제재 관리: `docs/frontend-admin-reports.md` (신고 목업, 처리 결과 쿠키, S123·S125 대상 표시, 범위 밖의 제재 이력)
+- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S411 탭 이동)
+- 신고·제재 관리: `docs/frontend-admin-reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
 - 출금 요청 관리: `docs/frontend-admin-withdrawals.md` (번호, `LinkTabs`)
 - 기획 근거: `README.md` (운영 원칙의 신고·제재, 관리자 영역)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`

@@ -24,3 +24,7 @@ export function bubbleClass(from: ChatMessage["from"], endsRun: boolean) {
 }
 
 export const bubbleMetaClass = "shrink-0 pb-0.5 text-xs text-text-muted tabular-nums";
+
+/** 날짜 구분. 가운데 흐린 먹 글자 양옆에 1px 재단 회색 선 */
+export const dayDividerClass =
+  "flex items-center gap-3 text-xs font-semibold text-text-muted before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line";

@@ -1,15 +1,29 @@
 "use client";
 
 import { PaperPlaneRightIcon } from "@phosphor-icons/react";
-import { type FormEvent, type KeyboardEvent, useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { cn } from "@/lib/cn";
+import { isTodayInSeoul } from "@/lib/format";
 import { sendChatMessageAction } from "../actions";
-import { CHAT_MESSAGE_MAX } from "../types";
-import { bubbleClass, bubbleMetaClass, bubbleRowClass } from "./bubble";
+import { CHAT_MESSAGE_MAX, type ChatMessage } from "../types";
+import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from "./bubble";
 
 type ChatComposerProps = {
   roomKey: string;
-  /** 대화 기록의 마지막 메시지. 바뀌면(새로 보낸 메시지가 저장되면) 최근 메시지로 스크롤한다 */
-  lastMessageId: string | null;
+  /** 대화 기록의 마지막 메시지. 바뀌면(새로 보낸 메시지가 저장되면) 최근 메시지로 스크롤하고, 보내는 중 말풍선의 자리를 정한다 */
+  lastMessage: Pick<ChatMessage, "id" | "from" | "sentAt"> | null;
+  /** 대화 내용의 날짜 기준 시각 */
+  now: string;
 };
 
 /**
@@ -17,8 +31,9 @@ type ChatComposerProps = {
  * 보내기를 누르면 서버 응답 전에 보내는 중 말풍선을 먼저 보여 주고(useOptimistic), 저장되면 서버가 다시 그린 대화 내용으로 바뀐다.
  * 보내지 못하면 글을 입력창에 되돌리고 알린다.
  * 열 때와 메시지를 보낸 뒤에는 이 입력창의 끝이 화면 아래에 오도록 스크롤해, 가장 최근 메시지가 입력창 바로 위에 보인다.
+ * 보내는 중 말풍선은 저장된 뒤 놓일 자리에 미리 둔다. 마지막 대화가 오늘이 아니면 "오늘" 구분 아래에 두어 저장될 때 튀지 않는다.
  */
-export function ChatComposer({ roomKey, lastMessageId }: ChatComposerProps) {
+export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
   const [text, setText] = useState("");
   const [failed, setFailed] = useState(false);
   const [pending, addPending] = useOptimistic<string[], string>([], (list, message) => [...list, message]);
@@ -28,12 +43,22 @@ export function ChatComposer({ roomKey, lastMessageId }: ChatComposerProps) {
   const inputId = useId();
   const hintId = useId();
   const canSend = text.trim().length > 0;
+  const lastMessageId = lastMessage?.id ?? null;
+  const startsToday = !lastMessage || !isTodayInSeoul(lastMessage.sentAt, new Date(now));
 
   useEffect(() => {
     /* 처음에는 바로, 보낸 뒤에는 부드럽게 움직인다 */
     endRef.current?.scrollIntoView({ block: "end", behavior: scrolledOnce.current ? "smooth" : "instant" });
     scrolledOnce.current = true;
   }, [lastMessageId, pending.length]);
+
+  /* 다른 화면에 갔다가 돌아오면(숨겨졌다 다시 보이면) 처음 열 때처럼 최근 메시지로 바로 가고, 지난 실패 알림은 지운다 */
+  useLayoutEffect(() => {
+    return () => {
+      scrolledOnce.current = false;
+      setFailed(false);
+    };
+  }, []);
 
   function send() {
     const message = text.trim();
@@ -65,14 +90,22 @@ export function ChatComposer({ roomKey, lastMessageId }: ChatComposerProps) {
   return (
     <>
       {pending.length > 0 && (
-        <ol aria-label="보내는 중인 메시지" className="mt-1 flex flex-col gap-1">
-          {pending.map((message, index) => (
-            <li key={index} data-pending className={bubbleRowClass("me")}>
-              <p className={`${bubbleClass("me", true)} opacity-60`}>{message}</p>
-              <span className={bubbleMetaClass}>보내는 중</span>
-            </li>
-          ))}
-        </ol>
+        /* 대화 내용과 같은 간격: 날짜 묶음 사이 32px, 보낸 사람이 바뀌면 12px, 같은 사람이면 4px */
+        <div className={cn("flex flex-col gap-4", startsToday ? "mt-8" : lastMessage?.from === "me" ? "mt-1" : "mt-3")}>
+          {startsToday && (
+            <p aria-hidden data-pending-day className={dayDividerClass}>
+              오늘
+            </p>
+          )}
+          <ol aria-label="보내는 중인 메시지" className="flex flex-col gap-1">
+            {pending.map((message, index) => (
+              <li key={index} data-pending className={bubbleRowClass("me")}>
+                <p className={`${bubbleClass("me", true)} opacity-60`}>{message}</p>
+                <span className={bubbleMetaClass}>보내는 중</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
       {/* 대화가 짧으면 mt-auto로 화면 아래까지 내려가고, 길면 화면 아래에 붙는다 */}
       <div className="sticky bottom-0 mt-auto bg-surface pt-4 pb-4 md:pb-6">

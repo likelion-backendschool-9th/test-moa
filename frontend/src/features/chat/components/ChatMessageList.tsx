@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 import { formatClock } from "@/lib/format";
 import { groupChatMessages } from "../thread";
 import type { ChatMessage, ChatRoom } from "../types";
-import { bubbleClass, bubbleMetaClass, bubbleRowClass } from "./bubble";
+import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from "./bubble";
 
 /**
  * 채팅방의 대화 내용. 맨 위에 어느 모집 건의 대화방인지 한 줄로 알리고, 날짜(h2)마다 메시지를 묶는다.
@@ -17,10 +17,7 @@ export function ChatMessageList({ room, messages, now }: { room: ChatRoom; messa
       <p className="text-center text-xs text-text-muted">{room.projectName} 모집 건으로 열린 1대1 대화방이에요.</p>
       {days.map((day) => (
         <section key={day.key} aria-labelledby={`day-${day.key}`} className="flex flex-col gap-4">
-          <h2
-            id={`day-${day.key}`}
-            className="flex items-center gap-3 text-xs font-semibold text-text-muted before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line"
-          >
+          <h2 id={`day-${day.key}`} className={dayDividerClass}>
             {day.label}
           </h2>
           <ol className="flex flex-col">

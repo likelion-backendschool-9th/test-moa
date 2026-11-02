@@ -7,13 +7,18 @@ import { ChatRoomHeader } from "./ChatRoomHeader";
 /** 채팅방 본문. 머리 → 대화 내용 → 아래에 붙는 입력창 */
 export function ChatRoomView({ data }: { data: ChatRoomData }) {
   const { room, messages } = data;
+  const last = messages[messages.length - 1];
   return (
     <>
       <ChatRoomHeader room={room} />
       <div className="mt-10">
         <ChatMessageList room={room} messages={messages} now={new Date(data.now)} />
       </div>
-      <ChatComposer roomKey={room.roomKey} lastMessageId={messages[messages.length - 1]?.id ?? null} />
+      <ChatComposer
+        roomKey={room.roomKey}
+        lastMessage={last ? { id: last.id, from: last.from, sentAt: last.sentAt } : null}
+        now={data.now}
+      />
     </>
   );
 }

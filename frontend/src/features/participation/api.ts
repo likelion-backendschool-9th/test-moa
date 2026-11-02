@@ -4,6 +4,7 @@ import { cache } from "react";
 import { getRecruitmentsBySlugs } from "@/features/recruitment/api";
 import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
+import { readDemoFeedback } from "./demo-feedback";
 import { buildParticipations } from "./mock";
 import {
   keyDateOf,
@@ -31,11 +32,17 @@ const loadAll = cache(async (): Promise<ParticipationItem[]> => {
   await connection();
   /* 샘플 참여 내역은 데모 테스터에게만 있다 */
   if (session.role !== "tester" || mode === "empty") return [];
+  const submitted = await readDemoFeedback();
   const participations = buildParticipations(new Date());
   const recruitments = await getRecruitmentsBySlugs(participations.map((item) => item.recruitmentSlug));
   return participations.flatMap((participation) => {
     const recruitment = recruitments.find((item) => item.slug === participation.recruitmentSlug);
-    return recruitment ? [{ ...participation, recruitment }] : [];
+    if (!recruitment) return [];
+    /* 이 브라우저에서 제출한 피드백이 있으면 제출 전 → 지급 대기로 넘긴다 */
+    const feedback = participation.status === "beforeSubmit" ? submitted[participation.key] : undefined;
+    return feedback
+      ? [{ ...participation, recruitment, status: "payoutPending", submittedAt: feedback.submittedAt, feedback: feedback.content }]
+      : [{ ...participation, recruitment }];
   });
 });
 
@@ -64,6 +71,11 @@ export async function getParticipationSummary(): Promise<ParticipationSummary> {
       .filter((item) => item.status === "payoutPending")
       .reduce((sum, item) => sum + rewardOf(item.recruitment), 0),
   };
+}
+
+/** 참여 하나. 없거나 이 회원의 참여가 아니면 null */
+export async function getParticipation(key: string): Promise<ParticipationItem | null> {
+  return (await loadAll()).find((item) => item.key === key) ?? null;
 }
 
 /** 제출 전 참여를 피드백 제출 마감이 가까운 순서로. 없으면 빈 배열 */

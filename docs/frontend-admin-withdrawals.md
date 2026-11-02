@@ -212,8 +212,8 @@ S216
 - Then  결과가 없다
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  출금 처리 Server Action 안에서도 부른다
-- When  `grep -rl '"use client"' src`
-- Then  기존 11개에 `CopyAccountButton`, `WithdrawalForm` 2개만 더해져 13개다
+- When  `grep -rl '"use client"' src/app/admin src/features/admin`
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (`CopyAccountButton`과 `RequestReviewForm`이 출금 요청 관리에서 쓰는 것이다)
 
 ## 기존 시나리오·문서 변경
 - `frontend-admin-home.md`
@@ -268,7 +268,7 @@ S216
 3. 상세 — S195, S201~S204
    - 파일: `src/app/admin/withdrawals/[withdrawalKey]/page.tsx`, `src/features/admin/components/WithdrawalDetail.tsx`, `CopyAccountButton.tsx` (`"use client"`)
 4. 처리 — S205~S211
-   - 파일: `src/features/admin/actions.ts` (출금 처리 Server Action, `assertAdmin`, 크기 확인), `src/features/admin/components/WithdrawalForm.tsx` (`"use client"`, `useActionState`)
+   - 파일: `src/features/admin/actions.ts` (출금 처리 Server Action, `assertAdmin`, 크기 확인), `src/features/admin/components/WithdrawalForm.tsx` (출금 문구만 정하고 `RequestReviewForm`을 쓴다. 2026-11-01에 합쳤다)
 5. 운영자 홈 연결과 정리 — S212, S216, 기존 문서 변경
    - 파일: 운영자 홈 링크, `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend-admin-home.md`, `docs/frontend-admin-reports.md`
 6. 테스트 — S191~S219 (S216 제외), S281, S284
@@ -297,6 +297,10 @@ S216
   - 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 했다(S284). 모집 취소 처리 양식(PR #14, S279)에 먼저 넣은 방식을 출금에도 맞췄다. S214·S218은 "반려"를 고른 뒤 확인하게 고쳤다. 번호는 PR #14의 S283 다음이다.
   - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`frontend-admin-reports.md` S282). 번호는 회원 관리(PR #13)의 S280 다음이다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 신고 상세와 함께 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S195)을 확인했다.
+- 2026-11-01
+  - 처리 양식을 모집 취소와 함께 `RequestReviewForm`(`"use client"`, `useActionState`) 하나로 합쳤다. `WithdrawalForm`은 문구·사유·서버 함수만 넘기는 서버 컴포넌트가 됐다. 화면과 동작은 그대로라 기존 시나리오로 확인한다.
+  - 목록 탭 `StatusTabs`를 회원 필터와 함께 쓰는 `LinkTabs`로 바꿨다. 탭이 많으면 탭 줄만 가로로 스크롤한다.
+  - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S94 처리 대기 카드, S97 오래 기다린 요청)

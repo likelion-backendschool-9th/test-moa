@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatElapsed } from "@/lib/format";
 import { CANCELLATION_DECISION_LABEL, type CancellationRequest, type ListTab } from "../types";
-import { StatusTabs } from "./StatusTabs";
+import { LinkTabs } from "./LinkTabs";
 
 const TABS: { tab: ListTab; label: string; href: string }[] = [
   { tab: "pending", label: "처리 대기", href: "/admin/cancellations" },
@@ -14,7 +14,7 @@ const TABS: { tab: ListTab; label: string; href: string }[] = [
 
 /** 처리 대기·처리 완료 탭 */
 export function CancellationTabs({ current }: { current: ListTab }) {
-  return <StatusTabs label="모집 취소 요청 상태" tabs={TABS} current={current} />;
+  return <LinkTabs label="모집 취소 요청 상태" tabs={TABS} current={current} />;
 }
 
 /**

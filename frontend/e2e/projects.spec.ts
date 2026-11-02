@@ -268,7 +268,9 @@ test.describe("R106 테스트 모집 관리와 탭", () => {
     await expect(summary.filter({ hasText: /^13명$/ })).toBeVisible();
     await expect(summary.filter({ hasText: /^20명$/ })).toBeVisible();
     await expect(page.getByText(/\d+ \/ /)).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "프로젝트로 돌아가기" })).toHaveAttribute("href", BOOKLOG);
+    const trail = page.getByRole("navigation", { name: "현재 위치" });
+    await expect(trail.getByRole("link", { name: "내 프로젝트" })).toHaveAttribute("href", "/my/projects");
+    await expect(trail.getByRole("link", { name: "북로그" })).toHaveAttribute("href", BOOKLOG);
   });
 
   test("S120 탭은 URL을 따르고 기본은 테스터 관리다", async ({ page }) => {

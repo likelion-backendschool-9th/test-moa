@@ -4,6 +4,7 @@ import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
+import { rememberInboxHref } from "../inbox-href";
 import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "../query";
 import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from "../types";
 
@@ -31,6 +32,8 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
   useEffect(() => {
     latest.current = query;
     appliedQ.current = query.q;
+    /* 채팅방의 "채팅함" 링크가 이 조건으로 돌아오게 기억한다 */
+    rememberInboxHref(toChatsHref(query));
   }, [query]);
 
   /*

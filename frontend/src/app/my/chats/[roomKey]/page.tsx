@@ -1,12 +1,10 @@
-import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { HideFooter } from "@/components/layout/HideFooter";
 import { Container } from "@/components/ui/Container";
 import { getChatRoom, getChatRoomTitle } from "@/features/chat/api";
 import { ChatRoomSkeleton, ChatRoomView } from "@/features/chat/components/ChatRoomView";
-import { CHATS_PATH } from "@/features/chat/query";
+import { ChatsBackLink } from "@/features/chat/components/ChatsBackLink";
 
 type RoomPageProps = PageProps<"/my/chats/[roomKey]">;
 
@@ -25,13 +23,7 @@ export default function ChatRoomPage({ params }: RoomPageProps) {
     <Container className="flex flex-1 flex-col pt-6 md:pt-8">
       <HideFooter />
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
-        <Link
-          href={CHATS_PATH}
-          className="mb-5 -ml-1.5 inline-flex items-center gap-1 self-start rounded-full py-1.5 pr-3 pl-1.5 text-sm font-semibold text-text-muted transition-colors duration-300 ease-brand hover:bg-surface-strong hover:text-text"
-        >
-          <CaretLeftIcon aria-hidden size={16} weight="bold" />
-          채팅함
-        </Link>
+        <ChatsBackLink />
         <Suspense fallback={<ChatRoomSkeleton />}>
           <RoomSlot params={params} />
         </Suspense>

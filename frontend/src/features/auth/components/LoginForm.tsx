@@ -21,8 +21,9 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   const errors = state.status === "error" ? state.errors : {};
+  /* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       {errors.form && <FormMessage status="error" message={errors.form} />}
       <input type="hidden" name="next" value={next} />
       <div className="flex flex-col gap-5">

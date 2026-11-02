@@ -39,7 +39,8 @@ export function PasswordForm() {
       </div>
       <div className={settingsBodyClass}>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
-        <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        {/* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */}
+        <form ref={formRef} action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
           <div className="flex flex-col gap-5">
             <FormField
               id="password-current"

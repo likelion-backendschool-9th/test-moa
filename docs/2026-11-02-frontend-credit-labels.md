@@ -71,7 +71,7 @@ S344 신청 직후 행
    - 파일: `frontend/e2e/my.spec.ts`, `frontend/e2e/credits.spec.ts`, `frontend/e2e/subscription.spec.ts`
    - 확인: `npm run test:e2e -- my.spec.ts credits.spec.ts subscription.spec.ts`
 2. 내역 시각 — S341~S345
-   - 파일: `frontend/src/features/credit/components/DayGroups.tsx` 새로 만듦(날짜별 묶음), `LedgerRow.tsx`, `LedgerList.tsx`, `WithdrawalHistory.tsx`, `frontend/src/features/my/components/RecentCredits.tsx` (`formatTime24` 추가, 기존 `formatDate`, `seoulDayKey` 재사용)
+   - 파일: `frontend/src/features/credit/mock.ts`(시각 고정, 같은 날 여러 건), `frontend/src/features/credit/components/DayGroups.tsx` 새로 만듦(날짜별 묶음), `LedgerRow.tsx`, `LedgerList.tsx`, `WithdrawalHistory.tsx`, `frontend/src/features/my/components/RecentCredits.tsx` (`formatTime24` 추가, 기존 `formatDate`, `seoulDayKey` 재사용)
    - 파일: `frontend/e2e/credits.spec.ts`, `frontend/e2e/my.spec.ts`
    - 확인: `npm run test:e2e -- my.spec.ts credits.spec.ts`
 3. 전체 확인과 문서
@@ -93,7 +93,7 @@ S344 신청 직후 행
 ## 가정
 - "이벤트 크레딧"은 지금의 가입 크레딧 자리다. 출금할 수 없고 구독 결제에만 쓴다는 규칙은 그대로다.
 - 시각은 열로 줄 세우기 좋게 24시간 "09:40"(`formatTime24`, 새로 추가)으로 쓴다. 채팅의 "오후 3:12"와 형식이 다르다. 날짜는 묶음 소제목 "11월 2일"(`formatDate`)로만 보여 준다. (고침 11-02: 처음에는 행마다 날짜 칸 아래 줄에 "오후 3:12"를 두었음)
-- 목업 데이터의 시각은 접속 시각에서 일 단위로만 빼서 만들기 때문에, 모든 행의 시각이 같게 보인다. 목업은 바꾸지 않는다.
+- 목업 데이터는 "며칠 전 + 서울 시각"으로 만든다. tester는 12건이 8개 날짜에, developer는 4건이 3개 날짜에 묶이고, 하루에 여러 건인 날이 있어 구분선과 시각 차이가 보인다. 내역 순서, 금액, 합계는 그대로다. (고침 11-02: 처음에는 일 단위로만 빼서 모든 행의 시각이 같았음)
 - S번호는 S341부터 쓴다 (기존 최대 S340).
 
 ## 참고 (2026-11-02 확인)

@@ -50,7 +50,7 @@ S118 없는 신고
 - 참고: 응답 상태는 테스트하지 않는다. 키 검사가 Suspense 안에 있어서 개발 서버(`next dev`)에서는 200, 빌드한 서버(`next start`)에서는 404로 나온다(2026-10-31 확인). 상태가 꼭 필요하면 `proxy.ts`에서 거른다.
 
 ## 3. 목록 (R25)
-검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 보여 준다. 탭 상태는 URL(`tab`), 대상 종류 필터는 URL(`target`)에 남고, 둘은 함께 쓸 수 있다. 기본값(검토 대기, 전체)은 주소에 쓰지 않는다. 피드백 원문은 목록에 보여 주지 않는다.
+검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 보여 준다. 탭 상태는 URL(`tab`), 대상 종류 필터는 URL(`target`)에 남고, 둘은 함께 쓸 수 있다. 기본값(검토 대기, 전체)은 주소에 쓰지 않는다. 목록에서 상세로 갈 때도 같은 값을 상세 주소에 붙여(`/admin/reports/report-1?target=feedback`), "목록으로"와 처리한 뒤에 보던 목록으로 돌아온다. 상세의 `tab`·`target`은 돌아갈 곳만 정하고 상세 내용은 바꾸지 않는다. 필터 줄 앞에는 "대상"이라는 작은 글자를 둬서 위 상태 탭과 구분한다(화면 읽기 프로그램은 "신고 대상"으로 읽는다). 피드백 원문은 목록에 보여 주지 않는다.
 
 S119 검토 대기
 - When  `/admin/reports`에 접속한다
@@ -75,15 +75,30 @@ S532 대상 종류 필터
 
 S533 탭과 필터 함께
 - When  `/admin/reports?target=feedback`에서 "처리 완료" 탭을 누른다
-- Then  URL이 `?tab=done&target=feedback`이고 2건이 보인다
+- Then  URL이 `?tab=done&target=feedback`이고 2건이 보인다 (주소는 값의 순서가 아니라 값으로 확인한다)
 - When  "회원" 필터를 누른다
-- Then  URL이 `?tab=done&target=user`이고 "처리한 회원 신고가 없어요"가 보인다
+- Then  URL이 `?tab=done&target=user`이고 "'회원' 신고 중에는 처리한 신고가 없어요"가 보인다
 - When  "검토 대기" 탭을 누른다
 - Then  URL이 `?target=user`이고 1건이 보인다 (필터가 남는다)
 
 S534 알 수 없는 대상 값
 - When  `/admin/reports?target=nope`에 접속한다
 - Then  "전체"에 `aria-current="page"`가 있고 신고 4건이 보인다
+
+S535 필터 결과가 없을 때
+- Given 피드백 신고 두 건(report-1, report-2)을 기각해 처리했다
+- When  `/admin/reports?target=feedback`에 접속한다
+- Then  "'피드백' 신고 중에는 검토할 신고가 없어요"가 보인다
+
+S536 상세를 거쳐도 보던 탭과 필터가 남는다
+- When  `/admin/reports?target=feedback`에서 첫 행을 누른다
+- Then  URL이 `/admin/reports/report-1?target=feedback`이다
+- When  "목록으로"를 누른다
+- Then  URL이 `?target=feedback`이고 피드백 신고 2건이 보인다
+- When  첫 행을 눌러 "기각"으로 처리한다
+- Then  `?target=feedback&processed=dismissed&held=1`로 돌아와 결과 문구가 보이고 피드백 신고 1건이 남는다
+- When  `/admin/reports?tab=done&target=feedback`에서 행을 눌러 "목록으로"를 누른다
+- Then  URL이 `?tab=done&target=feedback`이다
 
 S122 상세로 이동
 - When  첫 행을 누른다
@@ -279,7 +294,8 @@ R번호도 운영자 문서는 R14부터 이어서 쓰고, 마이페이지 문�
 
 - 2026-11-02
   - 목록에 신고 대상 종류 필터(전체·피드백·모집 글·회원)를 더했다. 주소는 `?tab=done&target=feedback`처럼 상태 탭과 함께 쓴다. 보상 보류·처리 결과 필터는 이번에 하지 않았다.
-  - S532~S534는 번호 정리 전 임시 번호다.
+  - 리뷰 반영: 상세를 거치면 필터가 풀리던 문제를 고쳤다(S536). 목록 → 상세 → 처리 → 목록으로 탭과 필터가 이어진다. 필터 줄에 "대상" 글자를 더해 상태 탭과 구분하고, 빈 문구는 "'피드백' 신고 중에는 …"으로 바꿨다. 주소 확인은 값의 순서에 기대지 않게 파싱해서 본다. 처리 결과 문구 주소는 바뀌지 않는다(`processed`, `held`).
+  - S532~S536은 번호 정리 전 임시 번호다.
 
 ## 참고
 - 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, R22 구조, S97 오래 기다린 요청)

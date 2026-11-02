@@ -42,7 +42,7 @@ async function expectLoggedIn(page: Page) {
 }
 
 test.describe("R1 로그인 보기", () => {
-  test("S335 비로그인에게 폼, 소셜 버튼, 회원가입 링크, 시연 계정을 보여 준다", async ({ page, context }) => {
+  test("S347 비로그인에게 폼, 소셜 버튼, 회원가입 링크, 시연 계정을 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/login");
     await expect(page.getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();

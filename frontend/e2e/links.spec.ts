@@ -4,7 +4,6 @@ import { setDemo } from "./helpers";
 const COMING_SOON_PATHS = [
   "/recruitments",
   "/recruitments/booklog",
-  "/my/chats",
   "/login",
   "/signup",
   "/terms",

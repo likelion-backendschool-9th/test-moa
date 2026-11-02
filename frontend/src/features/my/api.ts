@@ -1,11 +1,12 @@
 import "server-only";
 import { connection } from "next/server";
 import { creditDataFor } from "@/features/credit/api";
+import { payableCredits } from "@/features/credit/types";
 import { requireMember } from "@/lib/auth";
 import { waitIfSlow } from "@/lib/demo";
 import { formatDday } from "@/lib/format";
-import { buildMyPageSummary, DEMO_PASSWORD, DEMO_PROFILES } from "./mock";
-import type { MyPageSummary, Profile, Todo } from "./types";
+import { buildMyPageSummary, DEMO_PASSWORD, DEMO_PROFILES, FREE_PLAN, monthlyRecruitUsed, SUBSCRIPTION_PLANS } from "./mock";
+import type { MyPageSummary, Profile, SubscriptionOverview, Todo } from "./types";
 
 /*
  * 마이페이지 데이터 접근. 지금은 목업을 돌려준다.
@@ -57,4 +58,35 @@ function sortTodos(todos: Todo[], now: Date): Todo[] {
   return [...withDue, ...rest]
     .slice(0, TODO_LIMIT)
     .map((todo) => (todo.dueAt ? { ...todo, detail: formatDday(todo.dueAt, now) } : todo));
+}
+
+/** 구독 관리 화면 데이터. 운영자는 구독 대상이 아니라 subscription이 null이다 */
+export async function getSubscriptionOverview(): Promise<SubscriptionOverview> {
+  const session = await requireMember("/my/subscription");
+  await waitIfSlow();
+  await connection();
+  const now = new Date();
+  const { subscription } = buildMyPageSummary(session.role, now);
+  const { balance } = await creditDataFor(session.role, now);
+  const plan = subscription?.status === "active" ? SUBSCRIPTION_PLANS.find(({ id }) => id === subscription.planId) : undefined;
+  return {
+    subscription,
+    freePlan: FREE_PLAN,
+    plans: SUBSCRIPTION_PLANS,
+    recruitQuota: {
+      used: monthlyRecruitUsed(session.role),
+      limit: (plan ?? FREE_PLAN).monthlyLimit,
+      resetsAt: startOfNextMonthInSeoul(now),
+    },
+    payableCredits: payableCredits(balance),
+    now: now.toISOString(),
+  };
+}
+
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/** 한국 시간 기준 다음 달 1일 0시 */
+function startOfNextMonthInSeoul(now: Date) {
+  const seoul = new Date(now.getTime() + SEOUL_OFFSET_MS);
+  return new Date(Date.UTC(seoul.getUTCFullYear(), seoul.getUTCMonth() + 1, 1) - SEOUL_OFFSET_MS).toISOString();
 }

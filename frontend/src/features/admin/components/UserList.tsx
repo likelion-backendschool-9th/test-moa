@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { USER_FILTERS, USER_QUERY_MAX_LENGTH, USER_ROLE_LABEL, type UserFilter, type UserSummary } from "../users";
+import { LinkTabs } from "./LinkTabs";
 
 /** 필터를 바꿔도 검색어는 남긴다 */
 function usersHref(filter: UserFilter, query: string) {
@@ -46,29 +47,8 @@ export function UserSearch({ filter, query }: { filter: UserFilter; query: strin
 
 /** 전체·제재 이력 있음·검토 대기 신고 있음. 상태는 주소(filter)에 남는다 */
 export function UserFilters({ current, query }: { current: UserFilter; query: string }) {
-  return (
-    <nav aria-label="회원 필터" className="overflow-x-auto">
-      <ul className="flex gap-2 whitespace-nowrap">
-        {USER_FILTERS.map((item) => {
-          const active = item.filter === current;
-          return (
-            <li key={item.filter}>
-              <Link
-                href={usersHref(item.filter, query)}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-                  active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
-                )}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+  const tabs = USER_FILTERS.map((item) => ({ tab: item.filter, label: item.label, href: usersHref(item.filter, query) }));
+  return <LinkTabs label="회원 필터" tabs={tabs} current={current} />;
 }
 
 /** 결과가 없을 때 무엇 때문인지 알 수 있게, 걸려 있는 검색어와 필터를 함께 말한다 */

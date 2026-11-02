@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatElapsed } from "@/lib/format";
-import { StatusTabs } from "./StatusTabs";
+import { LinkTabs } from "./LinkTabs";
 import {
   isOverdue,
   REPORT_DECISION_LABEL,
@@ -21,7 +21,7 @@ const TABS: { tab: ListTab; label: string; href: string }[] = [
 
 /** 검토 대기·처리 완료 탭 */
 export function ReportTabs({ current }: { current: ListTab }) {
-  return <StatusTabs label="신고 상태" tabs={TABS} current={current} />;
+  return <LinkTabs label="신고 상태" tabs={TABS} current={current} />;
 }
 
 function processedMessage(decision: ReportDecision, held: boolean) {

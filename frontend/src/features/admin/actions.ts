@@ -10,9 +10,8 @@ import {
   isReportDecision,
   isWithdrawalDecision,
   REVIEW_MEMO_MAX_LENGTH,
-  type CancellationFormState,
   type CancellationReview,
-  type WithdrawalFormState,
+  type RequestFormState,
   type WithdrawalReview,
 } from "./types";
 
@@ -47,7 +46,7 @@ export async function processReport(formData: FormData) {
  * 막히면 오류만 돌려주고 페이지를 옮기지 않아서, 고른 값과 메모가 화면에 그대로 남는다(useActionState).
  * 처리하면 목록에 요청 키를 넘기고, 목록은 그 요청이 실제로 처리됐는지 확인한 뒤 금액을 데이터에서 꺼낸다.
  */
-export async function processWithdrawal(_prev: WithdrawalFormState, formData: FormData): Promise<WithdrawalFormState> {
+export async function processWithdrawal(_prev: RequestFormState, formData: FormData): Promise<RequestFormState> {
   await assertAdmin();
   const withdrawalKey = String(formData.get("withdrawalKey") ?? "");
   if (!isWithdrawalKey(withdrawalKey)) redirect("/admin/withdrawals");
@@ -75,7 +74,7 @@ export async function processWithdrawal(_prev: WithdrawalFormState, formData: Fo
  * 모집 취소 처리. 출금 처리와 같은 구조다. 반려는 사유가 있어야 하고, "기타"는 메모가 개발자에게 보이는 사유가 된다.
  * 막히면 오류만 돌려줘 고른 값과 메모가 화면에 남고, 처리하면 목록에 요청 키를 넘긴다.
  */
-export async function processCancellation(_prev: CancellationFormState, formData: FormData): Promise<CancellationFormState> {
+export async function processCancellation(_prev: RequestFormState, formData: FormData): Promise<RequestFormState> {
   await assertAdmin();
   const cancellationKey = String(formData.get("cancellationKey") ?? "");
   if (!isCancellationKey(cancellationKey)) redirect("/admin/cancellations");

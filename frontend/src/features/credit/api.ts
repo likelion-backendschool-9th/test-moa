@@ -2,6 +2,7 @@ import "server-only";
 import { connection } from "next/server";
 import { requireMember } from "@/lib/auth";
 import { waitIfSlow } from "@/lib/demo";
+import { type DemoSubscriptionPayment, getDemoSubscriptionPayments } from "@/lib/demo-subscription";
 import type { Role } from "@/lib/session";
 import { getDemoWithdrawals } from "./demo-requests";
 import { buildCreditData, type CreditData } from "./mock";
@@ -22,19 +23,36 @@ async function load(next: string): Promise<CreditData> {
 }
 
 /**
- * 목업에 이 브라우저의 시연용 출금 신청을 더한 값. 신청 금액은 처리 중이라 잠긴다.
+ * 목업에 이 브라우저의 시연용 출금 신청과 크레딧 구독 결제를 더한 값. 신청 금액은 처리 중이라 잠긴다.
  * 마이페이지 대시보드도 같은 값을 보여 주려고 이 함수를 쓴다 (세션 확인은 부르는 쪽에서)
  */
 export async function creditDataFor(role: Exclude<Role, "guest">, now: Date): Promise<CreditData> {
   const data = buildCreditData(role, now);
-  const requested = await getDemoWithdrawals(role);
+  const [requested, payments] = await Promise.all([getDemoWithdrawals(role), getDemoSubscriptionPayments(role)]);
   const locked = requested.reduce((sum, item) => sum + item.amount, 0);
+  const paidWithCredits = payments.filter((payment) => payment.method === "credit");
   return {
     ...data,
-    balance: { ...data.balance, pendingWithdrawal: data.balance.pendingWithdrawal + locked },
+    balance: payForSubscriptions({ ...data.balance, pendingWithdrawal: data.balance.pendingWithdrawal + locked }, paidWithCredits),
+    ledger: [...paidWithCredits.map(toLedgerEntry).reverse(), ...data.ledger],
     withdrawals: [...requested, ...data.withdrawals],
   };
 }
+
+/** 가입 크레딧은 구독 결제에만 쓰여서 먼저 쓰고, 모자란 만큼 테스트로 받은 크레딧에서 뺀다 */
+function payForSubscriptions(balance: CreditBalance, payments: DemoSubscriptionPayment[]): CreditBalance {
+  return payments.reduce((current, { amount }) => {
+    const fromSignup = Math.min(current.signup, amount);
+    return { ...current, signup: current.signup - fromSignup, earned: current.earned - (amount - fromSignup) };
+  }, balance);
+}
+
+const toLedgerEntry = (payment: DemoSubscriptionPayment): CreditEntry => ({
+  id: payment.id,
+  label: "구독 결제",
+  amount: -payment.amount,
+  occurredAt: payment.paidAt,
+});
 
 export async function getCreditBalance(next: string): Promise<CreditBalance> {
   return (await load(next)).balance;

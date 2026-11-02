@@ -1,4 +1,4 @@
-import type { BrowserContext } from "@playwright/test";
+import { expect, type BrowserContext, type Locator, type Page } from "@playwright/test";
 
 type DemoCookies = {
   role?: "guest" | "tester" | "developer" | "admin" | string;
@@ -11,4 +11,20 @@ export async function setDemo(context: BrowserContext, { role, data }: DemoCooki
   if (role) cookies.push({ name: "demo-role", value: role, url: "http://localhost:3100" });
   if (data) cookies.push({ name: "demo-data", value: data, url: "http://localhost:3100" });
   await context.addCookies(cookies);
+}
+
+/** 헤더 로고 링크. 홈으로 가는 길은 로고뿐이다(탭에는 "홈"이 없다) */
+export function homeLogo(page: Page): Locator {
+  return page.getByRole("banner").getByRole("link", { name: "Test Moa" });
+}
+
+/**
+ * 더보기 같은 메뉴 버튼을 눌러 메뉴를 연다. 페이지가 준비되기 전에 누르면 아무 일도 일어나지 않아서,
+ * 닫혀 있을 때만 누르고 열릴 때까지 다시 시도한다(열린 메뉴를 다시 눌러 닫는 일은 없다).
+ */
+export async function openMoreMenu(button: Locator) {
+  await expect(async () => {
+    if ((await button.getAttribute("aria-expanded")) !== "true") await button.click({ timeout: 2000 });
+    await expect(button).toHaveAttribute("aria-expanded", "true", { timeout: 1000 });
+  }).toPass();
 }

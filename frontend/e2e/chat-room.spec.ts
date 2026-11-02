@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { homeLogo, openMoreMenu, setDemo } from "./helpers";
 
 const main = (page: Page) => page.getByRole("main");
 const roomHeader = (page: Page) => main(page).locator("header");
@@ -249,7 +249,7 @@ test.describe("R5 더보기", () => {
 
   test("S152 채팅방에서 이름을 바꾸면 제목과 채팅함 카드가 바뀐다", async ({ page }) => {
     await page.goto("/my/chats/booklog-yunseul");
-    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "북로그 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
     const dialog = page.getByRole("dialog", { name: "대화방 이름 변경" });
     await dialog.getByRole("textbox", { name: "대화방 이름" }).fill("북로그 피드백 문의");
@@ -265,7 +265,7 @@ test.describe("R5 더보기", () => {
 
   test("S153 채팅방에서 삭제하면 채팅함으로 돌아가고, 그 방은 다시 열리지 않는다", async ({ page }) => {
     await page.goto("/my/chats/moaplan-yunseul");
-    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "모아플랜 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
     await page.getByRole("dialog", { name: "대화방을 삭제할까요?" }).getByRole("button", { name: "삭제", exact: true }).click();
 
@@ -350,7 +350,7 @@ test.describe("R10 푸터 없는 채팅방", () => {
     await expect(page).toHaveURL("/my/chats/booklog-yunseul");
     await expect(siteFooter(page)).toBeHidden();
 
-    await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "홈" }).click();
+    await homeLogo(page).click();
     await expect(page).toHaveURL("/");
     await expect(siteFooter(page)).toBeVisible();
   });
@@ -402,7 +402,7 @@ test.describe("R11 시연 회원 전환", () => {
   test("S318 대화방 이름 변경과 삭제는 바꾼 회원의 채팅함에만 적용된다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats/ledger-yunseul");
-    await page.getByRole("button", { name: "가계부 노트 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "가계부 노트 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
     const dialog = page.getByRole("dialog", { name: "대화방 이름 변경" });
     await dialog.getByRole("textbox", { name: "대화방 이름" }).fill("가계부 문의");
@@ -410,7 +410,7 @@ test.describe("R11 시연 회원 전환", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("가계부 문의");
 
     await page.goto("/my/chats/meeting-yunseul");
-    await page.getByRole("button", { name: "회의록 정리 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "회의록 정리 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
     await page.getByRole("dialog", { name: "대화방을 삭제할까요?" }).getByRole("button", { name: "삭제", exact: true }).click();
     await expect(page).toHaveURL("/my/chats");

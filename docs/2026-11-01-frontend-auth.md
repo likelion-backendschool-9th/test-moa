@@ -57,6 +57,7 @@ S287 이미 로그인
 
 S288 입력 속성
 - Then  이메일 칸은 `type="email"`, `autocomplete="email"`이고, 비밀번호 칸은 `type="password"`, `autocomplete="current-password"`다
+- Then  JS 번들이 아직 없을 때 제출해도 POST로 가고 주소에 비밀번호가 남지 않는다 (폼에 서버 액션 `action`을 둔다. 고침 11-02: PR #21 리뷰)
 
 ## 2. 이메일 로그인 (R2)
 시연 계정이 맞으면 그 역할로 `demo-role` 쿠키를 넣고 `next`로 보낸다. 서버 액션에서 검사하고, 틀리면 이메일 입력은 남는다.
@@ -136,6 +137,7 @@ S299 이미 로그인
 S300 입력 속성
 - Then  이름 `autocomplete="name"`, 닉네임 `autocomplete="nickname"`, 이메일 `type="email"`·`autocomplete="email"`, 비밀번호·확인 `type="password"`·`autocomplete="new-password"`다
 - Then  비밀번호 칸 아래에 "영문과 숫자를 섞어 8자 이상"이 보인다
+- Then  JS 번들이 아직 없을 때 제출해도 POST로 가고 주소에 비밀번호가 남지 않는다 (고침 11-02: PR #21 리뷰)
 
 ## 5. 회원가입 검사 (R5)
 서버 액션에서 검사하고 칸 아래에 이유를 보여 준다. 문구는 개인정보 수정과 같다. 오류가 나도 입력은 남는다.

@@ -348,6 +348,21 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByRole("button", { name: "확정", exact: true })).toBeDisabled();
   });
 
+  test("S144 확정 요청이 끊기면 안내를 보여 주고 서버 목록으로 화면을 맞춘다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    /* 확정 요청(서버 액션 POST)만 끊는다. 화면을 다시 불러오는 GET은 통과한다 */
+    await page.route(`**${BOOKLOG_MANAGE}`, (route) => (route.request().method() === "POST" ? route.abort() : route.fallback()));
+    const refetch = page.waitForRequest((request) => request.method() === "GET" && request.headers()["rsc"] === "1");
+    await page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true }).click();
+
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
+    await refetch;
+    /* 오류 화면 없이 그대로이고, 먼저 바꾼 표시는 서버 상태(저장 안 됨)로 돌아온다 */
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+    await expect(page.getByTestId("applicant").filter({ hasText: "권나연" })).toContainText("지원");
+    await expect(page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true })).toBeVisible();
+  });
+
   test("S143 확정 결과는 요약·분석·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {
     await page.goto(BOOKLOG_MANAGE);
     await page.getByRole("checkbox", { name: "전체 선택" }).check();

@@ -11,8 +11,8 @@ type DayGroupsProps<T> = {
 };
 
 /**
- * 내역을 서울 기준 날짜별로 묶는다. 금융 앱 거래내역처럼 날짜는 묶음 소제목으로 한 번만 보이고,
- * 행에는 시각만 둔다. 행마다 날짜 칸이 없어 좁은 화면에서도 내역 이름이 넓게 보인다
+ * 내역을 서울 기준 날짜별로 묶는다. 날짜는 묶음 소제목으로 한 번만 보이고, 행에는 왼쪽 시각 열만 둔다.
+ * 행마다 날짜 칸이 없어 좁은 화면에서도 내역 이름이 넓게 보인다
  */
 export function DayGroups<T>({ items, dateOf, idPrefix, children }: DayGroupsProps<T>) {
   const groups: { key: string; iso: string; items: T[] }[] = [];

@@ -98,6 +98,20 @@ export function seoulDayKey(iso: string) {
   return dayKeyFormatter.format(new Date(iso));
 }
 
+const time24Formatter = new Intl.DateTimeFormat("ko-KR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "Asia/Seoul",
+});
+
+/** 서울 시간 24시간 시·분. "09:40", "15:12". 내역의 시각 열처럼 자릿수를 맞춰 세로로 줄 세울 때 쓴다 */
+export function formatTime24(iso: string) {
+  const parts = time24Formatter.formatToParts(new Date(iso));
+  const value = (type: "hour" | "minute") => parts.find((part) => part.type === type)?.value.padStart(2, "0");
+  return `${value("hour")}:${value("minute")}`;
+}
+
 /** 메시지 시각. "오후 3:12" */
 export function formatClock(iso: string) {
   return formatKoreanClock(new Date(iso));

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 import { cardClass, cardTitleClass } from "@/features/my/components/card-styles";
-import { formatClock, formatWon } from "@/lib/format";
+import { formatTime24, formatWon } from "@/lib/format";
 import { WITHDRAWAL_STATUS_LABEL, type Withdrawal, type WithdrawalStatus } from "../types";
 import { DayGroups } from "./DayGroups";
 
@@ -14,7 +14,7 @@ const STATUS_CLASS: Record<WithdrawalStatus, string> = {
   rejected: "bg-surface-strong text-text ring-1 ring-inset ring-text-muted",
 };
 
-/** 지난 출금 요청을 신청 날짜별로 묶는다. 금액 아래에 신청 시각과 계좌를 두고, 반려는 이유를 함께 보여 준다 */
+/** 지난 출금 요청을 신청 날짜별로 묶는다. 왼쪽에 신청 시각, 금액 아래에 계좌를 두고, 반려는 이유를 함께 보여 준다 */
 export function WithdrawalHistory({ withdrawals }: { withdrawals: Withdrawal[] }) {
   return (
     <section aria-labelledby="withdrawal-history-heading" className={cardClass}>
@@ -26,14 +26,13 @@ export function WithdrawalHistory({ withdrawals }: { withdrawals: Withdrawal[] }
       ) : (
         <DayGroups items={withdrawals} dateOf={(item) => item.requestedAt} idPrefix="withdrawal-day">
           {(item) => (
-            <li key={item.id} className="flex items-center gap-4 py-3">
+            <li key={item.id} className="flex items-center gap-3 py-3">
+              <time dateTime={item.requestedAt} className="w-10 shrink-0 text-xs text-text-muted tabular-nums">
+                {formatTime24(item.requestedAt)}
+              </time>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-sm font-semibold tabular-nums">{formatWon(item.amount)}</span>
                 <p className="text-xs text-text-muted">
-                  <time dateTime={item.requestedAt} className="tabular-nums">
-                    {formatClock(item.requestedAt)}
-                  </time>
-                  {" · "}
                   {item.bank} {item.accountMasked}
                   {item.rejectReason && ` · ${item.rejectReason}`}
                 </p>

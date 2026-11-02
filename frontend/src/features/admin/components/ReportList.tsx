@@ -11,17 +11,41 @@ import {
   REPORT_TARGET_LABEL,
   type Report,
   type ReportDecision,
+  type ReportTargetFilter,
   type ListTab,
 } from "../types";
 
-const TABS: { tab: ListTab; label: string; href: string }[] = [
-  { tab: "pending", label: "검토 대기", href: "/admin/reports" },
-  { tab: "done", label: "처리 완료", href: "/admin/reports?tab=done" },
+/** 상태 탭과 대상 필터는 서로의 값을 남긴다. 기본값(검토 대기, 전체)은 주소에 쓰지 않는다 */
+function reportsHref(tab: ListTab, target: ReportTargetFilter) {
+  const params = new URLSearchParams();
+  if (tab !== "pending") params.set("tab", tab);
+  if (target !== "all") params.set("target", target);
+  const search = params.toString();
+  return search ? `/admin/reports?${search}` : "/admin/reports";
+}
+
+const TABS: { tab: ListTab; label: string }[] = [
+  { tab: "pending", label: "검토 대기" },
+  { tab: "done", label: "처리 완료" },
 ];
 
-/** 검토 대기·처리 완료 탭 */
-export function ReportTabs({ current }: { current: ListTab }) {
-  return <LinkTabs label="신고 상태" tabs={TABS} current={current} />;
+const TARGET_FILTERS: { target: ReportTargetFilter; label: string }[] = [
+  { target: "all", label: "전체" },
+  { target: "feedback", label: REPORT_TARGET_LABEL.feedback },
+  { target: "recruitment", label: REPORT_TARGET_LABEL.recruitment },
+  { target: "user", label: REPORT_TARGET_LABEL.user },
+];
+
+/** 검토 대기·처리 완료 탭. 고른 대상 필터는 남긴다 */
+export function ReportTabs({ current, target }: { current: ListTab; target: ReportTargetFilter }) {
+  const tabs = TABS.map((item) => ({ ...item, href: reportsHref(item.tab, target) }));
+  return <LinkTabs label="신고 상태" tabs={tabs} current={current} />;
+}
+
+/** 신고 대상 종류 필터(전체·피드백·모집 글·회원). 고른 상태 탭은 남긴다 */
+export function ReportTargetFilters({ tab, current }: { tab: ListTab; current: ReportTargetFilter }) {
+  const tabs = TARGET_FILTERS.map((item) => ({ tab: item.target, label: item.label, href: reportsHref(tab, item.target) }));
+  return <LinkTabs label="신고 대상" tabs={tabs} current={current} />;
 }
 
 function processedMessage(decision: ReportDecision, held: boolean) {
@@ -41,9 +65,20 @@ export function ProcessedNotice({ decision, held }: { decision: ReportDecision; 
 const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-row md:items-center md:gap-4 md:p-6";
 
 /** 신고 목록. 피드백 원문은 상세에서만 보여 준다 */
-export function ReportList({ reports, tab, now }: { reports: Report[]; tab: ListTab; now: Date }) {
+export function ReportList({
+  reports,
+  tab,
+  target,
+  now,
+}: {
+  reports: Report[];
+  tab: ListTab;
+  target: ReportTargetFilter;
+  now: Date;
+}) {
   if (reports.length === 0) {
-    return <EmptyState title={tab === "pending" ? "검토할 신고가 없어요" : "처리한 신고가 없어요"} />;
+    const kind = target === "all" ? "" : `${REPORT_TARGET_LABEL[target]} `;
+    return <EmptyState title={tab === "pending" ? `검토할 ${kind}신고가 없어요` : `처리한 ${kind}신고가 없어요`} />;
   }
   return (
     <ul aria-label={tab === "pending" ? "검토 대기 신고" : "처리 완료 신고"} className="flex flex-col gap-3">

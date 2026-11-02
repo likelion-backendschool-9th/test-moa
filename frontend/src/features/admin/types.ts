@@ -22,6 +22,13 @@ export const REPORT_TARGET_LABEL: Record<ReportTarget, string> = {
   user: "회원",
 };
 
+/** 신고 목록의 대상 필터. 주소(target)에 남고, 알 수 없는 값은 전체로 본다 */
+export type ReportTargetFilter = ReportTarget | "all";
+
+export function parseReportTargetFilter(value: unknown): ReportTargetFilter {
+  return value === "feedback" || value === "recruitment" || value === "user" ? value : "all";
+}
+
 /** 운영자의 신고 처리 결과. 기각은 문제없음, 인정은 제재 이력에 반영 */
 export type ReportDecision = "dismissed" | "upheld";
 

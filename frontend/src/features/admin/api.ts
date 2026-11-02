@@ -12,6 +12,7 @@ import {
   type ListTab,
   type PendingItem,
   type Report,
+  type ReportTargetFilter,
   type WithdrawalRequest,
 } from "./types";
 
@@ -138,9 +139,13 @@ export function getReportKeys() {
   return [...REPORT_KEYS];
 }
 
-/** 검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
-export async function getReports(tab: ListTab): Promise<{ now: Date; reports: Report[] }> {
-  const { now, reports } = await loadAll();
+/** 검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로. 대상 종류로 거를 수 있다 */
+export async function getReports(
+  tab: ListTab,
+  target: ReportTargetFilter = "all",
+): Promise<{ now: Date; reports: Report[] }> {
+  const { now, reports: every } = await loadAll();
+  const reports = target === "all" ? every : every.filter((report) => report.targetType === target);
   if (tab === "pending") return { now, reports: reports.filter((report) => !report.review).sort(byOldest) };
   const done = reports.filter((report) => report.review);
   return { now, reports: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };

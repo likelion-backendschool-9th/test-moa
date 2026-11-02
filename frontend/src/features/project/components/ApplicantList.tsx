@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -32,10 +33,12 @@ const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
 export function ApplicantList({ applications, capacity, canSelect, isSubscription, projectKey, recruitmentKey }: ApplicantListProps) {
+  const router = useRouter();
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
+  const [error, setError] = useState("");
 
   const rows = applications.map((item) => ({ ...item, status: statuses[item.id] ?? item.status }));
   const confirmedCount = rows.filter((item) => item.status === "confirmed").length;
@@ -47,18 +50,32 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
   const selected = pendingIds.filter((id) => checked.has(id));
   const overCapacity = selected.length > remaining;
 
-  /** 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다. 저장에 실패하면 되돌린다 */
+  /**
+   * 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다.
+   * 서버가 거절하면 되돌린다. 응답을 받지 못하면 저장됐는지 알 수 없어서, 서버의 최신 목록을 다시 받아 화면을 맞춘다.
+   */
   function decide(targets: Application[], status: "confirmed" | "rejected") {
     const ids = targets.map((item) => item.id);
+    /** 먼저 바꿔 둔 표시를 지워 서버에서 받은 상태가 보이게 한다 */
+    const undo = () => setStatuses((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => !ids.includes(id))));
     setStatuses((prev) => ({ ...prev, ...Object.fromEntries(ids.map((id) => [id, status])) }));
     setChecked((prev) => new Set([...prev].filter((id) => !ids.includes(id))));
+    setError("");
     const label = APPLICATION_STATUS_LABEL[status];
     setAnnouncement(targets.length === 1 ? `${targets[0].testerNickname}님을 ${label}했어요` : `${targets.length}명을 ${label}했어요`);
     startTransition(async () => {
-      const { ok } = await decideApplicants(projectKey, recruitmentKey, ids, status);
-      if (ok) return;
-      setStatuses((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => !ids.includes(id))));
-      setAnnouncement(`${label}하지 못했어요. 다시 시도해 주세요`);
+      try {
+        const { ok } = await decideApplicants(projectKey, recruitmentKey, ids, status);
+        if (ok) return;
+        undo();
+        setAnnouncement("");
+        setError(`${label}하지 못했어요. 다시 시도해 주세요`);
+      } catch {
+        undo();
+        setAnnouncement("");
+        setError("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
+        router.refresh();
+      }
     });
   }
 
@@ -110,6 +127,11 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
         </div>
       )}
 
+      {error && (
+        <p role="alert" className="rounded-2xl bg-surface-strong px-5 py-3 text-sm font-semibold">
+          {error}
+        </p>
+      )}
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>

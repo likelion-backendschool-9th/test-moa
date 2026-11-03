@@ -85,11 +85,12 @@
 
 | 브랜치 | 용도 |
 | --- | --- |
-| `main` | 최종 배포되는 브랜치 |
-| `develop` | 개발을 위한 브랜치 |
+| `main` | 운영 배포용 브랜치. 지금은 `develop`의 내용을 보관만 하고 배포하지 않음 |
+| `develop` | 개발을 위한 브랜치. 머지되면 테스트 서버(3005번 포트)에 배포 |
 | `feature` | 각각의 개발자가 기능을 개발하는 브랜치 |
-| `release` | `develop`에서 `main`으로 병합하기 전에 품질 검사를 진행하는 브랜치 |
 | `hotfix` | 출시 버전에서 발생한 버그를 수정하는 브랜치 |
+
+`release` 브랜치는 쓰지 않습니다. 실제 운영 단계로 넘어가면 `main`을 운영 서버에 배포합니다.
 
 ### Commit Message Rules
 
@@ -124,7 +125,7 @@ PR 제목은 커밋 메시지와 같은 `유형: 변경 내용` 형식으로 작
 | 작업 브랜치 | base 브랜치 |
 | --- | --- |
 | `feature/*` | `develop` |
-| `release/*` | `main` |
+| `develop` | `main` |
 | `hotfix/*` | `main` |
 
 PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. 필수 섹션은 비우지 않고, 해당 없는 선택 섹션은 지웁니다.

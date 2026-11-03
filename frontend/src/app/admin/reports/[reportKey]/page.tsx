@@ -5,6 +5,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getReport, getReportKeys, isReportKey, requireAdmin } from "@/features/admin/api";
+import { parseListTab, parseReportTargetFilter, type ReportListView } from "@/features/admin/types";
 import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";
 import {
   ReportDetail,
@@ -40,15 +41,17 @@ async function Detail({ params, searchParams }: DetailProps) {
   const { reportKey } = await params;
   if (!isReportKey(reportKey)) notFound();
   if (!(await requireAdmin(`/admin/reports/${reportKey}`))) return <AccessDenied pageName="신고·제재 관리" />;
-  const { error: errorParam } = await searchParams;
+  const { error: errorParam, tab, target } = await searchParams;
   const error: ReviewFormError | null = errorParam === "decision" || errorParam === "memo" ? errorParam : null;
+  /* 목록에서 보던 탭과 필터. 목록으로 돌아갈 때와 처리한 뒤에 되살린다 */
+  const view: ReportListView = { tab: parseListTab(tab), target: parseReportTargetFilter(target) };
   return (
     <AdminShell path="/admin/reports" title="신고·제재 관리">
       <Container className="pt-10">
         {/* 읽고 판단하는 화면이라 줄 길이를 줄인다 */}
         <div className="flex max-w-3xl flex-col gap-6">
           <Suspense fallback={<ReportDetailSkeleton />}>
-            <DetailSlot reportKey={reportKey} error={error} />
+            <DetailSlot reportKey={reportKey} error={error} view={view} />
           </Suspense>
         </div>
       </Container>
@@ -56,13 +59,13 @@ async function Detail({ params, searchParams }: DetailProps) {
   );
 }
 
-async function DetailSlot({ reportKey, error }: { reportKey: string; error: ReviewFormError | null }) {
+async function DetailSlot({ reportKey, error, view }: { reportKey: string; error: ReviewFormError | null; view: ReportListView }) {
   const { now, report } = await getReport(reportKey);
   if (!report) return <EmptyState title="신고를 찾을 수 없어요" description="시연용 데이터에 이 신고가 없어요." />;
   return (
     <>
-      <ReportDetail report={report} now={now} />
-      {report.review ? <ReviewResult report={report} now={now} /> : <ReviewForm report={report} error={error} />}
+      <ReportDetail report={report} now={now} view={view} />
+      {report.review ? <ReviewResult report={report} now={now} /> : <ReviewForm report={report} error={error} view={view} />}
     </>
   );
 }

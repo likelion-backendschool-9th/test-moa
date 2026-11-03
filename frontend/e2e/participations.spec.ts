@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 const tabs = (page: Page) => page.getByRole("navigation", { name: "참여 상태" });
@@ -299,5 +299,128 @@ test.describe("R3 다음 할 일 · 화면 폭과 모션", () => {
       return [element.scrollLeft, element.clientWidth + gap];
     });
     expect(left).toBe(expected);
+  });
+});
+
+test.describe("R203 보기 방식", () => {
+  const viewToggle = (page: Page) => page.getByRole("group", { name: "보기 방식" });
+  const viewButton = (page: Page, name: "리스트" | "그리드") => viewToggle(page).getByRole("button", { name });
+  const setGridCookie = (context: BrowserContext, value = "grid") =>
+    context.addCookies([{ name: "participation-view", value, url: "http://localhost:3100" }]);
+  /** 첫 줄에 놓인 카드 수 */
+  const columnCount = async (page: Page) => {
+    const tops = await rows(page).evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().top)));
+    return tops.filter((top) => top === tops[0]).length;
+  };
+
+  test("S552 기본은 리스트이고 알 수 없는 쿠키 값도 리스트다", async ({ page, context }) => {
+    await page.goto("/my/participations");
+    await expect(viewButton(page, "리스트")).toHaveAttribute("aria-pressed", "true");
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "false");
+    await expect(rows(page)).toHaveCount(6);
+    expect(await columnCount(page)).toBe(1);
+
+    await setGridCookie(context, "nope");
+    await page.reload();
+    await expect(viewButton(page, "리스트")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("S553 그리드를 고르면 주소는 그대로 한 줄에 3개씩 보인다", async ({ page }) => {
+    await page.goto("/my/participations");
+    await viewButton(page, "그리드").click();
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL("/my/participations");
+    await expect(rows(page)).toHaveCount(6);
+    await expect.poll(() => columnCount(page)).toBe(3);
+
+    const cards = await rows(page).evaluateAll((items) => items.slice(0, 3).map((item) => Math.round(item.getBoundingClientRect().height)));
+    expect(new Set(cards).size).toBe(1);
+    const firstCard = rows(page).first();
+    const thumb = await firstCard.locator("[data-thumb]").boundingBox();
+    const card = await firstCard.boundingBox();
+    expect(thumb && card && card.width - thumb.width).toBe(48);
+
+    await viewButton(page, "리스트").click();
+    await expect(viewButton(page, "리스트")).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => columnCount(page)).toBe(1);
+  });
+
+  test("S554 고른 보기 방식은 탭 이동, 상세 왕복, 새로고침 뒤에도 남는다", async ({ page }) => {
+    await page.goto("/my/participations");
+    await viewButton(page, "그리드").click();
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+
+    await tab(page, "참여했던 테스트").click();
+    await expect(page).toHaveURL("/my/participations?tab=history");
+    await expect(page.getByText("받은 크레딧 합계")).toBeVisible();
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+
+    await rows(page).first().getByRole("link").click();
+    await expect(page).toHaveURL(/\/my\/participations\/[^/?]+$/);
+    await page.getByRole("main").getByRole("link", { name: /돌아가기|참여/ }).first().click();
+    await expect(page).toHaveURL("/my/participations?tab=history");
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+
+    await page.reload();
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+    await expect(rows(page)).toHaveCount(3);
+    await expect.poll(() => columnCount(page)).toBe(3);
+  });
+
+  for (const [width, columns] of [
+    [1024, 3],
+    [768, 2],
+    [375, 1],
+  ] as const) {
+    test(`S555 너비 ${width}px의 그리드는 ${columns}열이고 가로 스크롤이 없다`, async ({ page, context }) => {
+      await setGridCookie(context);
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/my/participations");
+      await expect(rows(page)).toHaveCount(6);
+      expect(await columnCount(page)).toBe(columns);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBe(0);
+    });
+  }
+
+  test("S559 보기 방식을 바꿔도 스크롤과 방문 기록은 그대로다", async ({ page }) => {
+    await page.goto("/my/participations?tab=ongoing");
+    await viewButton(page, "그리드").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const before = await page.evaluate(() => [window.scrollY, history.length]);
+    await viewButton(page, "그리드").click();
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL("/my/participations?tab=ongoing");
+    expect(await page.evaluate(() => [window.scrollY, history.length])).toEqual(before);
+  });
+
+  test("S556 목록이 비었으면 보기 방식을 보여 주지 않는다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/participations");
+    await expect(page.getByText("아직 참여한 테스트가 없어요")).toBeVisible();
+    await expect(viewToggle(page)).toHaveCount(0);
+  });
+
+  test("S557 그리드를 고른 상태의 로딩은 카드 스켈레톤이다", async ({ page, context }) => {
+    await setGridCookie(context);
+    await setDemo(context, { data: "slow" });
+    await page.goto("/my/participations", { waitUntil: "commit" });
+    await expect(page.locator('[data-skeleton="card"]').first()).toBeVisible();
+    await expect(rows(page)).toHaveCount(6, { timeout: 10_000 });
+    await expect(page.locator("[data-skeleton]")).toHaveCount(0);
+  });
+
+  test("S558 JS 번들을 받기 전에 눌러도 보기 방식이 바뀐다", async ({ page }) => {
+    const bundle = "**/_next/static/**/*.js";
+    await page.route(bundle, (route) => route.abort());
+    await page.goto("/my/participations");
+    await page.unroute(bundle);
+    const [request] = await Promise.all([
+      page.waitForRequest((req) => req.isNavigationRequest()),
+      viewButton(page, "그리드").click(),
+    ]);
+    expect(request.method()).toBe("POST");
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => columnCount(page)).toBe(3);
   });
 });

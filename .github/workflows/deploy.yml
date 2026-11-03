@@ -201,7 +201,8 @@ jobs:
             # .env의 TEAM_PORT가 응답할 때까지 최대 30초 기다린다
             TEAM_PORT=$(grep -E '^TEAM_PORT=' .env | cut -d= -f2)
             for i in $(seq 1 10); do
-              curl -fsS -o /dev/null "http://localhost:$TEAM_PORT" && exit 0
+              # compose.prod.yaml이 127.0.0.1에만 포트를 열므로 localhost(::1일 수 있음) 대신 IP로 확인한다
+              curl -fsS -o /dev/null "http://127.0.0.1:$TEAM_PORT" && exit 0
               sleep 3
             done
             echo "$TEAM_PORT 응답 없음"

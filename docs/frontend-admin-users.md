@@ -271,7 +271,7 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
 - 텍스트 충돌은 아니지만 병합하면 틀려지는 곳:
   - S248: `"use client"` 파일이 13개가 된다(PR #12의 `CopyAccountButton`, `WithdrawalForm`). 문서 숫자를 고친다.
   - `UserFilters`와 PR #12의 `StatusTabs`는 모양이 같다. `StatusTabs`가 세 탭도 받게 넓혀 합칠지 정한다. `StatusTabs`는 지금 두 탭(`ListTab`) 전용이다.
-  - `frontend-admin-reports.md` "번호 사용 현황"에 S220~S249, S280 줄을 더한다. S250~S279는 모집 취소 요청 관리(PR #14)가 쓴다.
+  - `scenario-numbers.md` "시나리오 번호(S)"에 S220~S249, S280 줄을 더한다. S250~S279는 모집 취소 요청 관리(PR #14)가 쓴다.
 - 나중에 팀에서 정할 것: 시연용 회원의 닉네임과 실명. 정해지면 신고·출금·모집 취소·마이페이지·회원 관리 목업을 함께 맞춘다(위 "데모 데이터와 가정").
 - 그대로 맞는 곳: 이 문서의 번호 시작(S220)은 PR #12 최신 커밋의 마지막 번호(S219) 다음이다. S427 테스트 수정은 PR #12와 같아서 충돌하지 않는다.
 

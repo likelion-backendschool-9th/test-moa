@@ -222,7 +222,7 @@ S216
   - 출금 목업을 이 문서와 함께 쓰도록 계좌 정보와 처리 완료 2건을 더한다. 처리 대기 3건과 순서는 그대로라 S412~S415은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 회원 관리(PR #13)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다. (처음에는 준비 중 목록에서 `/admin/withdrawals`만 뺐는데, 세 PR이 같은 줄을 다르게 고쳐 충돌했다.)
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/withdrawals?tab=done`(처리 완료 탭)과 `/admin/withdrawals/:withdrawalKey`(출금 요청 상세)를 "후보"로 추가한다.
-- `frontend-admin-reports.md` "번호 사용 현황": S191~S219를 이 문서로 적는다.
+- `scenario-numbers.md` "시나리오 번호(S)": S191~S219를 이 문서로 적는다.
 - `frontend-admin-reports.md` S427: 테스트가 `noindex` 메타 개수가 아니라 있는지만 보게 바꾼다(S195와 같은 이유).
 
 ## 데모 데이터와 가정

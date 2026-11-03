@@ -210,7 +210,7 @@ S277
   - 모집 취소 목업에 요청 사유·모집 건 키를 더하고 처리 완료 2건을 더한다. 처리 대기 2건과 순서는 그대로라 S412~S415은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·회원(PR #13) PR과 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/cancellations?tab=done`(처리 완료 탭)과 `/admin/cancellations/:cancellationKey`(모집 취소 요청 상세)를 "후보"로 추가한다.
-- `frontend-admin-reports.md` "번호 사용 현황": S250~S279와 S283을 이 문서로 적는다(PR #12·#13 병합 뒤).
+- `scenario-numbers.md` "시나리오 번호(S)": S250~S279와 S283을 이 문서로 적는다(PR #12·#13 병합 뒤).
 - `frontend/README.md` 시연용 쿠키 표에 `demo-admin-cancellations`를 더한다.
 - PR #13(회원 관리)과는 충돌하지 않는다. 처음에는 `e2e/links.spec.ts`의 준비 중 목록(`ADMIN_COMING_SOON_PATHS`)을 세 PR이 각자 다르게 고쳐 충돌했으나, 세 PR이 그 부분을 똑같이 바꿔 없앴다(2026-10-31).
 

@@ -3,7 +3,7 @@
 #   docker compose -f compose.prod.yaml up -d
 # 서버에는 이 파일, nginx/default.conf, .env만 있으면 된다
 # 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다
-# 필요한 값: IMAGE_TAG, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, COMPOSE_PROJECT_NAME, TEAM_PORT
+# 필요한 값: GITHUB_OWNER, IMAGE_TAG, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, COMPOSE_PROJECT_NAME, TEAM_PORT
 # NEXT_PUBLIC_SITE_URL은 프론트 이미지를 빌드할 때 들어가므로 여기서는 받지 않는다
 # 다른 팀과 같은 서버를 쓰므로 COMPOSE_PROJECT_NAME으로 네트워크·볼륨 이름을 팀별로 나눈다
 
@@ -27,7 +27,7 @@ services:
 
   backend:
     # IMAGE_TAG로 배포할 버전(커밋 SHA 등)을 고른다. 이전 태그로 바꾸면 롤백이 된다
-    image: ghcr.io/likelion-backendschool-9th/test-moa-backend:${IMAGE_TAG}
+    image: ghcr.io/${GITHUB_OWNER}/test-moa-backend:${IMAGE_TAG}
     container_name: test-moa-backend
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ghcr.io/likelion-backendschool-9th/test-moa-frontend:${IMAGE_TAG}
+    image: ghcr.io/${GITHUB_OWNER}/test-moa-frontend:${IMAGE_TAG}
     container_name: test-moa-frontend
     restart: unless-stopped
     depends_on:

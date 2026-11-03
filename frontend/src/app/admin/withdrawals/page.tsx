@@ -10,7 +10,8 @@ import {
   WithdrawalProcessedNotice,
   WithdrawalTabs,
 } from "@/features/admin/components/WithdrawalList";
-import type { ListTab } from "@/features/admin/types";
+import { WithdrawalModalContent } from "@/features/admin/components/WithdrawalModalContent";
+import { withdrawalsHref, type ListTab } from "@/features/admin/types";
 
 export const metadata: Metadata = { title: "출금 요청 관리" };
 
@@ -24,10 +25,12 @@ export default function WithdrawalsPage({ searchParams }: PageProps<"/admin/with
 }
 
 async function Withdrawals({ searchParams }: { searchParams: PageProps<"/admin/withdrawals">["searchParams"] }) {
-  if (!(await requireAdmin("/admin/withdrawals"))) return <AccessDenied pageName="출금 요청 관리" />;
   const params = await searchParams;
   const tab: ListTab = params.tab === "done" ? "done" : "pending";
+  const openKey = typeof params.open === "string" && isWithdrawalKey(params.open) ? params.open : null;
   const processed = typeof params.processed === "string" && isWithdrawalKey(params.processed) ? params.processed : null;
+  const gatePath = withdrawalsHref({ tab, ...(openKey ? { open: openKey } : {}) });
+  if (!(await requireAdmin(gatePath))) return <AccessDenied pageName="출금 요청 관리" />;
   return (
     <AdminShell path="/admin/withdrawals" title="출금 요청 관리">
       <Container className="flex flex-col gap-6 pt-10">
@@ -40,6 +43,11 @@ async function Withdrawals({ searchParams }: { searchParams: PageProps<"/admin/w
         <Suspense key={tab} fallback={<WithdrawalListSkeleton />}>
           <WithdrawalListSlot tab={tab} />
         </Suspense>
+        {openKey && (
+          <Suspense fallback={null}>
+            <WithdrawalModalSlot withdrawalKey={openKey} tab={tab} />
+          </Suspense>
+        )}
       </Container>
     </AdminShell>
   );
@@ -53,4 +61,10 @@ async function ProcessedNoticeSlot({ withdrawalKey }: { withdrawalKey: string })
 async function WithdrawalListSlot({ tab }: { tab: ListTab }) {
   const { now, withdrawals } = await getWithdrawals(tab);
   return <WithdrawalList withdrawals={withdrawals} tab={tab} now={now} />;
+}
+
+async function WithdrawalModalSlot({ withdrawalKey, tab }: { withdrawalKey: string; tab: ListTab }) {
+  const { now, withdrawal } = await getWithdrawal(withdrawalKey);
+  if (!withdrawal) return null;
+  return <WithdrawalModalContent withdrawal={withdrawal} now={now} tab={tab} />;
 }

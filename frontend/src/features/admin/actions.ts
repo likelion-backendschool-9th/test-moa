@@ -14,6 +14,7 @@ import {
   reportsHref,
   isWithdrawalDecision,
   REVIEW_MEMO_MAX_LENGTH,
+  withdrawalsHref,
   type CancellationReview,
   type RequestFormState,
   type WithdrawalReview,
@@ -54,7 +55,7 @@ export async function processReport(formData: FormData) {
 export async function processWithdrawal(_prev: RequestFormState, formData: FormData): Promise<RequestFormState> {
   await assertAdmin();
   const withdrawalKey = String(formData.get("withdrawalKey") ?? "");
-  if (!isWithdrawalKey(withdrawalKey)) redirect("/admin/withdrawals");
+  if (!isWithdrawalKey(withdrawalKey)) redirect(withdrawalsHref());
 
   const decision = formData.get("decision");
   if (!isWithdrawalDecision(decision)) return { error: "decision" };
@@ -67,12 +68,12 @@ export async function processWithdrawal(_prev: RequestFormState, formData: FormD
     review = { ...review, reason, memo };
   }
 
-  /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 처리 결과를 보여 준다 */
+  /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
   const { withdrawal } = await getWithdrawal(withdrawalKey);
-  if (!withdrawal || withdrawal.review) redirect(`/admin/withdrawals/${withdrawalKey}`);
+  if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ open: withdrawalKey }));
 
   if (!(await saveWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
-  redirect(`/admin/withdrawals?processed=${withdrawalKey}`);
+  redirect(withdrawalsHref({ processed: withdrawalKey }));
 }
 
 /**

@@ -63,6 +63,8 @@ export type Feedback = {
   testItemId: string | null;
   /** 피드백에 붙인 스크린샷 (백엔드 FeedbackImage) */
   images: ProjectImage[];
+  /** 개발자가 도움이 된 피드백으로 추천했는지 */
+  recommended: boolean;
   content: string;
   submittedAt: string;
   status: FeedbackStatus;

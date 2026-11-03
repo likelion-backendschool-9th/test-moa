@@ -59,6 +59,7 @@ type FeedbackSeed = {
   /** 테스트 항목 id. 기타 의견은 null */
   testItemId: string | null;
   images?: ProjectImage[];
+  recommended?: boolean;
 };
 
 function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedback[] {
@@ -67,6 +68,7 @@ function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedbac
     testerNickname: seed.nickname,
     testItemId: seed.testItemId,
     images: seed.images ?? [],
+    recommended: seed.recommended ?? false,
     content: seed.content,
     submittedAt: hoursAgo(now, seed.submittedHoursAgo),
     status: seed.status,
@@ -153,6 +155,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
         submittedHoursAgo: 96,
         status: "paid",
         testItemId: "booklog-first-t2",
+        recommended: true,
       },
     ]),
     "folio-builder": [],

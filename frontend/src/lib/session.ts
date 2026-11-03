@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
+import { getDemoSubscriptionCreditSpent } from "./demo-subscription";
 
 /*
  * 목업 세션. 실제 로그인을 붙일 때는 이 파일만 바꾼다.
@@ -34,5 +35,7 @@ function parseRole(value: string | undefined): Role {
 export const getSession = cache(async (): Promise<Session> => {
   const role = parseRole((await cookies()).get(DEMO_ROLE_COOKIE)?.value);
   if (role === "guest") return { role, user: null };
-  return { role, user: DEMO_USERS[role] };
+  /* 시연용 구독 결제를 크레딧으로 냈으면 헤더 잔액에서도 뺀다 */
+  const user = DEMO_USERS[role];
+  return { role, user: { ...user, credits: user.credits - (await getDemoSubscriptionCreditSpent(role)) } };
 });

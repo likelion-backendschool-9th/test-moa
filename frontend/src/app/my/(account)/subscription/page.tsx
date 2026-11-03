@@ -8,23 +8,29 @@ import { PlanComparison } from "@/features/my/components/PlanComparison";
 import { SubscriptionExpiry } from "@/features/my/components/SubscriptionExpiry";
 import { SubscriptionPayment } from "@/features/my/components/SubscriptionPayment";
 import { SubscriptionStatus } from "@/features/my/components/SubscriptionStatus";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "구독" };
 
+type SearchParams = PageProps<"/my/subscription">["searchParams"];
+
 /* 제목은 정적 셸에 두고, 세션을 읽는 본문만 Suspense 안에서 스트리밍한다 */
-export default function SubscriptionPage() {
+export default function SubscriptionPage({ searchParams }: PageProps<"/my/subscription">) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-extrabold tracking-[-0.03em]">구독</h1>
       <Suspense fallback={<SubscriptionSkeleton />}>
-        <Overview />
+        <Overview searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function Overview() {
-  const { subscription, freePlan, plans, recruitQuota, payableCredits, now } = await getSubscriptionOverview();
+async function Overview({ searchParams }: { searchParams: SearchParams }) {
+  const [{ subscription, freePlan, plans, recruitQuota, payableCredits, now }, { notice }] = await Promise.all([
+    getSubscriptionOverview(),
+    searchParams,
+  ]);
   if (!subscription) {
     return (
       <section className={cardClass}>
@@ -41,6 +47,12 @@ async function Overview() {
   const currentPlanId = active ? subscription.planId : null;
   return (
     <div className="flex flex-col gap-4">
+      {/* 구독 결제에서 돌아왔다 */}
+      {notice === "paid" && active && (
+        <p role="status" className="rounded-2xl bg-accent-soft px-5 py-4 text-sm font-semibold text-accent">
+          결제했어요. {formatDate(subscription.expiresAt)}까지 구독 혜택을 쓸 수 있어요. 시연용이라 실제로 결제되지 않고 이 브라우저에만 남아요.
+        </p>
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <SubscriptionStatus
           subscription={subscription}
@@ -49,7 +61,7 @@ async function Overview() {
           upgradeLimit={Math.max(...plans.map((plan) => plan.monthlyLimit))}
           now={new Date(now)}
         />
-        <SubscriptionPayment plans={plans} payableCredits={payableCredits} />
+        <SubscriptionPayment plans={plans} payableCredits={payableCredits} active={active} />
       </div>
       <PlanComparison freePlan={freePlan} plans={plans} currentPlanId={currentPlanId} />
       {active && <SubscriptionExpiry />}

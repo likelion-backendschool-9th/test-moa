@@ -3,8 +3,15 @@ import { formatCredits, formatWon } from "@/lib/format";
 import type { SubscriptionPlan } from "../types";
 import { cardClass, cardHeaderClass, cardTitleClass } from "./card-styles";
 
-/** 결제 안내. 구독 상품별 기간과 가격(현금·크레딧), 구독 결제에 쓸 수 있는 크레딧을 보여 준다 */
-export function SubscriptionPayment({ plans, payableCredits }: { plans: SubscriptionPlan[]; payableCredits: number }) {
+type SubscriptionPaymentProps = {
+  plans: SubscriptionPlan[];
+  payableCredits: number;
+  /** 구독 중이면 결제 버튼이 연장이 된다 */
+  active: boolean;
+};
+
+/** 결제 안내. 구독 상품별 기간과 가격(현금·크레딧), 구독 결제에 쓸 수 있는 크레딧, 구독 결제로 가는 이 화면의 주 버튼을 둔다 */
+export function SubscriptionPayment({ plans, payableCredits, active }: SubscriptionPaymentProps) {
   return (
     <section aria-labelledby="subscription-payment-heading" className={cardClass}>
       <div className={cardHeaderClass}>
@@ -43,6 +50,9 @@ export function SubscriptionPayment({ plans, payableCredits }: { plans: Subscrip
         <li>이벤트 크레딧도 구독 결제에 쓸 수 있어요.</li>
         <li>크레딧으로 결제하면 현금보다 우대 가격이 적용돼요.</li>
       </ul>
+      <LinkButton href="/my/subscription/checkout" className="mt-auto self-start">
+        {active ? "구독 연장하기" : "구독하기"}
+      </LinkButton>
     </section>
   );
 }

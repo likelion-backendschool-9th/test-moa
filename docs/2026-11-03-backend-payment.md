@@ -50,7 +50,7 @@
   2. 기간: 미구독·만료 → now부터 / 구독 중 → endAt에 periodDays 가산
   3. Subscription upsert (ACTIVE, endAt)
   4. Payment 행 COMPLETED
-  5. CREDIT면 C8 차감 (이벤트 먼저, ledger "구독 결제" −amount 한 줄 권장)
+  5. CREDIT면 C8 `spendForSubscription` (이벤트 먼저 → 적립, **장부는 종류별 행** — 아래·UC-C8)
   6. 커밋
 - 응답: subscription, paymentId, (CREDIT면) 잔액 요약
 - 화면: 결제 버튼 → notice=paid
@@ -68,7 +68,7 @@
 
 ---
 
-## 차감 디테일 (P2 ↔ C8)
+## 차감·장부 디테일 (P2 ↔ C8)
 
 ```
 need = plan.creditPrice
@@ -76,6 +76,16 @@ takeEvent = min(eventCredit, need)
 takeEarned = need - takeEvent
 assert (earned - locked) >= takeEarned
 ```
+
+**장부 확정 (UC-C8과 동일)**
+
+| 계층 | 규칙 |
+| --- | --- |
+| DB (`credit_ledgers`) | 종류별 행. EVENT −takeEvent, EARNED −takeEarned (0이면 해당 행 없음). description 모두 `"구독 결제"` |
+| 조회 API (UC-C2) | 같은 결제의 행을 합쳐 `"구독 결제"` 한 줄로 응답 (프론트·S346) |
+| 쓰지 않음 | 혼합용 `CreditType` 추가, `type` null 허용, DB에 총액 한 줄만 저장 |
+
+한 줄로만 남기면 `type`이 EVENT/EARNED 중 하나만 가능해 차감 종류를 잃는다. 종류별 저장 + 조회 시 합치기로 맞춘다.
 
 ## PR 묶음
 

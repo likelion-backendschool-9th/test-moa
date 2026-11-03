@@ -108,9 +108,9 @@ test.describe("R33 목록", () => {
     await expect(page).toHaveURL(/\/admin\/withdrawals\?tab=done$/);
     const list = rows(page);
     await expect(list).toHaveCount(2);
-    await expect(list.nth(0)).toContainText("박도현");
+    await expect(list.nth(0)).toContainText("오태민");
     await expect(list.nth(0)).toContainText("지급 완료");
-    await expect(list.nth(1)).toContainText("최유나");
+    await expect(list.nth(1)).toContainText("윤소희");
     await expect(list.nth(1)).toContainText("반려");
     await expect(list.nth(0)).toContainText("처리");
   });

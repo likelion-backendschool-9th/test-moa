@@ -141,8 +141,7 @@ test.describe("R151 결제 안내", () => {
     await expect(payableRow(page)).toHaveText("구독 결제에 쓸 수 있는 크레딧12,480 크레딧");
     await expect(payment.getByText("가입 크레딧도 구독 결제에 쓸 수 있어요")).toBeVisible();
     await expect(payment.getByText("크레딧으로 결제하면 현금보다 우대 가격이 적용돼요")).toBeVisible();
-    await expect(page.getByRole("main").getByRole("button", { name: /구독하기/ })).toHaveCount(0);
-    await expect(page.getByRole("main").getByRole("link", { name: /구독하기/ })).toHaveCount(0);
+    await expect(payment.getByRole("link", { name: "구독하기", exact: true })).toHaveAttribute("href", "/my/subscription/checkout");
   });
 
   test("S391 출금 처리 중인 크레딧은 빼고 보여 준다", async ({ page, context }) => {

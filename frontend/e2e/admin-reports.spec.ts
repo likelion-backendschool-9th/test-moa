@@ -3,6 +3,17 @@ import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "신고 상태" });
+/** 주소의 경로와 검색 값을 확인한다. 값의 순서나 다른 값이 더 붙어도 깨지지 않게 파싱해서 본다 */
+async function expectUrl(page: Page, pathname: string, query: Record<string, string>) {
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return { pathname: url.pathname, query: Object.fromEntries(url.searchParams) };
+    })
+    .toEqual({ pathname, query });
+}
+
+const targetFilters = (page: Page) => page.getByRole("navigation", { name: "신고 대상" });
 
 async function decide(page: Page, reportKey: string, decision: "기각" | "인정", memo?: string) {
   await page.goto(`/admin/reports/${reportKey}`);
@@ -107,6 +118,72 @@ test.describe("R25 목록", () => {
     await expect(page.getByText("검토할 신고가 없어요")).toBeVisible();
   });
 
+  test("S528 대상 종류를 고르면 그 종류의 신고만 보이고 주소에 남는다", async ({ page }) => {
+    await page.goto("/admin/reports");
+    const filters = targetFilters(page);
+    await expect(filters.getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
+    for (const [label, query, names] of [
+      ["피드백", "feedback", ["회의록 정리", "북로그"]],
+      ["모집 글", "recruitment", ["포트폴리오 빌더"]],
+      ["회원", "user", ["가계부 노트"]],
+    ] as const) {
+      await filters.getByRole("link", { name: label }).click();
+      await expectUrl(page, "/admin/reports", { target: query });
+      await expect(filters.getByRole("link", { name: label })).toHaveAttribute("aria-current", "page");
+      await expect(rows(page)).toHaveCount(names.length);
+      for (const [index, name] of names.entries()) await expect(rows(page).nth(index)).toContainText(name);
+    }
+    await filters.getByRole("link", { name: "전체" }).click();
+    await expectUrl(page, "/admin/reports", {});
+    await expect(rows(page)).toHaveCount(4);
+  });
+
+  test("S529 상태 탭과 대상 필터는 서로의 선택을 남긴다", async ({ page }) => {
+    await page.goto("/admin/reports?target=feedback");
+    await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
+    await expectUrl(page, "/admin/reports", { tab: "done", target: "feedback" });
+    await expect(rows(page)).toHaveCount(2);
+    await targetFilters(page).getByRole("link", { name: "회원" }).click();
+    await expectUrl(page, "/admin/reports", { tab: "done", target: "user" });
+    await expect(page.getByText("'회원' 신고 중에는 처리한 신고가 없어요")).toBeVisible();
+    await statusTabs(page).getByRole("link", { name: "검토 대기" }).click();
+    await expectUrl(page, "/admin/reports", { target: "user" });
+    await expect(rows(page)).toHaveCount(1);
+  });
+
+  test("S530 알 수 없는 대상 값은 전체로 본다", async ({ page }) => {
+    await page.goto("/admin/reports?target=nope");
+    await expect(targetFilters(page).getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
+    await expect(rows(page)).toHaveCount(4);
+  });
+
+  test("S531 필터에 맞는 검토 대기 신고를 모두 처리하면 빈 문구가 보인다", async ({ page }) => {
+    await decide(page, "report-1", "기각");
+    await decide(page, "report-2", "기각");
+    await page.goto("/admin/reports?target=feedback");
+    await expect(page.getByText("'피드백' 신고 중에는 검토할 신고가 없어요")).toBeVisible();
+  });
+
+  test("S532 상세를 거쳐도 보던 탭과 필터가 남는다", async ({ page }) => {
+    await page.goto("/admin/reports?target=feedback");
+    await rows(page).first().getByRole("link").click();
+    await expectUrl(page, "/admin/reports/report-1", { target: "feedback" });
+    await page.getByRole("link", { name: "목록으로" }).click();
+    await expectUrl(page, "/admin/reports", { target: "feedback" });
+    await expect(rows(page)).toHaveCount(2);
+    /* 처리하면 보던 필터의 목록으로 돌아와서 다음 신고를 이어서 처리할 수 있다 */
+    await rows(page).first().getByRole("link").click();
+    await page.getByRole("radio", { name: /^기각/ }).check();
+    await page.getByRole("button", { name: "처리하기" }).click();
+    await expect(page).toHaveURL(/\/admin\/reports\?/);
+    await expectUrl(page, "/admin/reports", { target: "feedback", processed: "dismissed", held: "1" });
+    await expect(rows(page)).toHaveCount(1);
+    /* 처리 완료 탭에서 연 상세도 그 탭으로 돌아간다 */
+    await page.goto("/admin/reports?tab=done&target=feedback");
+    await rows(page).first().getByRole("link").click();
+    await page.getByRole("link", { name: "목록으로" }).click();
+    await expectUrl(page, "/admin/reports", { tab: "done", target: "feedback" });
+  });
   test("S431 행을 누르면 상세로 간다", async ({ page }) => {
     await page.goto("/admin/reports");
     await rows(page).first().getByRole("link").click();

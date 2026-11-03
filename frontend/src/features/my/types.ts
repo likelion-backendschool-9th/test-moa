@@ -8,6 +8,14 @@ import type { Profile } from "@/features/member/types";
 
 export type Subscription = { status: "none" } | { status: "active"; planId: string; expiresAt: string };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** 지금 결제하면 정해지는 만료일. 구독 중이면 지금 만료일부터, 아니면 지금부터 기간만큼 늘어난다 */
+export function renewedExpiry(subscription: Subscription, periodDays: number, now: Date): string {
+  const startsAt = subscription.status === "active" ? Math.max(new Date(subscription.expiresAt).getTime(), now.getTime()) : now.getTime();
+  return new Date(startsAt + periodDays * DAY_MS).toISOString();
+}
+
 /** 지금 할 일은 테스트 참여와 내 프로젝트에서만 나온다 */
 export type TodoCategory = "participation" | "project";
 

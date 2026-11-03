@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+build
+coverage
+test-results
+playwright-report
+.impeccable
+*.tsbuildinfo
+.env*
+.DS_Store
+npm-debug.log*
+Dockerfile
+.dockerignore

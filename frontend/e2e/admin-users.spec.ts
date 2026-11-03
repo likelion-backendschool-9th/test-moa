@@ -85,9 +85,9 @@ test.describe("R41 목록", () => {
     await page.goto("/admin/users");
     await expect(filters(page).getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
     await expectNicknames(page, ALL_NICKNAMES);
-    await expect(rows(page).first()).toContainText("테스터");
     await expect(rows(page).first()).toContainText("가입");
-    await expect(rows(page).last()).toContainText("개발자");
+    /* 한 사람이 테스터도 개발자도 되므로 목록에는 역할을 쓰지 않는다 */
+    await expect(page.getByRole("main")).not.toContainText(/테스터|개발자/);
     await expect(page.getByRole("main")).not.toContainText("@example.com");
     await expect(page.getByRole("main")).not.toContainText("*");
   });
@@ -184,27 +184,38 @@ test.describe("R43 상세", () => {
   test("S235 기본 정보는 실명과 이메일을 가려서 보여 준다", async ({ page }) => {
     await page.goto("/admin/users/user-4");
     const info = region(page, "기본 정보");
-    for (const text of ["서준호", "테스터", "가입", "서*호", "me***@example.com"]) {
+    for (const text of ["서준호", "가입", "서*호", "me***@example.com"]) {
       await expect(info).toContainText(text);
     }
     await expect(page.locator("body")).not.toContainText("member04@example.com");
+    await expect(info).not.toContainText("역할");
   });
 
-  test("S236 테스터는 참여 기록을 보여 준다", async ({ page }) => {
+  test("S236 테스터만 한 회원은 테스터 활동만 보여 준다", async ({ page }) => {
     await page.goto("/admin/users/user-4");
     const activity = region(page, "활동");
-    for (const text of ["참여 확정", "7회", "피드백 제출", "5회", "미완료", "2회"]) {
+    for (const text of ["테스터 활동", "참여 확정", "7회", "피드백 제출", "5회", "미완료", "2회", "개발자 활동이 없어요"]) {
       await expect(activity).toContainText(text);
     }
+    await expect(activity).not.toContainText("모집 건");
   });
 
-  test("S237 개발자는 프로젝트와 구독을 보여 준다", async ({ page }) => {
+  test("S237 개발자만 한 회원은 개발자 활동만 보여 준다", async ({ page }) => {
     await page.goto("/admin/users/user-1");
     const activity = region(page, "활동");
-    for (const text of ["프로젝트", "3개", "모집 건", "5개", "구독 중"]) {
+    for (const text of ["개발자 활동", "프로젝트", "3개", "모집 건", "5개", "구독 중", "테스터 활동이 없어요"]) {
       await expect(activity).toContainText(text);
     }
     await expect(activity).not.toContainText("미완료");
+  });
+
+  test("S527 테스터이면서 개발자인 회원은 두 활동을 모두 보여 준다", async ({ page }) => {
+    await page.goto("/admin/users/user-2");
+    const activity = region(page, "활동");
+    for (const text of ["테스터 활동", "참여 확정", "4회", "개발자 활동", "프로젝트", "2개", "모집 건", "3개", "구독 중"]) {
+      await expect(activity).toContainText(text);
+    }
+    await expect(activity).not.toContainText("활동이 없어요");
   });
 
   test("S238 제재 이력은 인정된 신고이고 신고 상세로 간다", async ({ page }) => {

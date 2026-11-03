@@ -31,7 +31,7 @@ public class CreditLedger {
     @Column(nullable = false)
     private String description;
 
-    // 변동 크레딧 종류(EVENT, EARNED, LOCKED)
+    // 변동 크레딧 종류(EVENT, EARNED). 잠금/해제는 ledger에 남기지 않는다
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CreditType type;

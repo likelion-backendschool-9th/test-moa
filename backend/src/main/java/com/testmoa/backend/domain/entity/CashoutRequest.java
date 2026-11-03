@@ -39,7 +39,7 @@ public class CashoutRequest {
     @Column(nullable = false)
     private String accountHolder;
 
-    // 처리 상태(REQUESTED, PAID, COMPLETED, REJECTED). 지급 완료는 PAID를 쓴다
+    // 처리 상태(REQUESTED, PAID, REJECTED). 지급 완료는 PAID
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CashoutStatus status;

@@ -47,7 +47,7 @@ export function SubscriptionPayment({ plans, payableCredits, active }: Subscript
         <dd className="font-semibold tabular-nums">{formatCredits(payableCredits)}</dd>
       </dl>
       <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-text-muted">
-        <li>가입 크레딧도 구독 결제에 쓸 수 있어요.</li>
+        <li>이벤트 크레딧도 구독 결제에 쓸 수 있어요.</li>
         <li>크레딧으로 결제하면 현금보다 우대 가격이 적용돼요.</li>
       </ul>
       <LinkButton href="/my/subscription/checkout" className="mt-auto self-start">

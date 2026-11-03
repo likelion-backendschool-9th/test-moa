@@ -135,8 +135,8 @@ test.describe("R134 크레딧", () => {
     await page.goto("/my");
     const credits = region(page, "크레딧");
     await expect(credits.getByText("12,480 크레딧", { exact: true })).toBeVisible();
-    await expect(creditRow(page, "현금화 가능")).toContainText("9,480 크레딧");
-    await expect(creditRow(page, "구독 결제 전용")).toContainText("3,000 크레딧");
+    await expect(creditRow(page, "적립 크레딧")).toContainText("9,480 크레딧");
+    await expect(creditRow(page, "이벤트 크레딧")).toContainText("3,000 크레딧");
     await expect(creditRow(page, "출금 처리 중")).toContainText("0 크레딧");
     await expect(credits.getByRole("link", { name: "크레딧 내역" })).toHaveAttribute("href", "/my/credits");
     await expect(credits.getByRole("link", { name: "출금 신청" })).toHaveAttribute("href", "/my/credits/withdrawals");

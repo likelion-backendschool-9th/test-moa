@@ -39,7 +39,7 @@ export async function creditDataFor(role: Exclude<Role, "guest">, now: Date): Pr
   };
 }
 
-/** 가입 크레딧은 구독 결제에만 쓰여서 먼저 쓰고, 모자란 만큼 테스트로 받은 크레딧에서 뺀다 */
+/** 이벤트 크레딧(가입 크레딧 등)은 구독 결제에만 쓰여서 먼저 쓰고, 모자란 만큼 적립 크레딧에서 뺀다 */
 function payForSubscriptions(balance: CreditBalance, payments: DemoSubscriptionPayment[]): CreditBalance {
   return payments.reduce((current, { amount }) => {
     const fromSignup = Math.min(current.signup, amount);

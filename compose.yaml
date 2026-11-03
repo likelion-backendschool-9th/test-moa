@@ -1,6 +1,7 @@
 # 전체 서비스를 한 번에 띄운다: docker compose up --build
 # 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다
-# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, NEXT_PUBLIC_SITE_URL
+# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, NEXT_PUBLIC_SITE_URL, TEAM_PORT
+# 로컬 HTTPS(--profile https)를 쓸 때: HTTP_PORT, HTTPS_PORT
 services:
   db:
     image: postgres:17
@@ -54,9 +55,25 @@ services:
     image: nginx:stable-alpine
     container_name: test-moa-nginx
     ports:
-      - "3005:80"
+      # 우리 팀에 배정된 포트
+      - "${TEAM_PORT}:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+
+  # 로컬 HTTPS: docker compose --profile https up 할 때만 뜬다
+  # 인증서 만드는 방법은 nginx/https.conf 맨 위 주석 참고
+  nginx-https:
+    image: nginx:stable-alpine
+    container_name: test-moa-nginx-https
+    profiles: [https]
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+    volumes:
+      - ./nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
 

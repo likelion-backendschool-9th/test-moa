@@ -4,7 +4,7 @@
 
 개발자는 테스트할 소프트웨어와 요청 사항을 등록하고, 테스터는 직접 사용한 뒤 버그와 사용성 피드백을 전달합니다. 테스터는 참여 보상으로 크레딧을 받고, 개발자는 피드백을 바탕으로 소프트웨어를 개선합니다.
 
-> 현재 기획 단계입니다. 아래 내용은 서비스의 기획 방향이며, 구현 완료된 기능을 의미하지 않습니다. 개발 범위와 기술 스택은 추후 결정합니다.
+> 현재 개발 중입니다. 아래 내용은 서비스의 기획 방향이며, 구현 완료된 기능을 의미하지 않습니다. 개발 범위는 추후 결정하고, 기술 스택과 실행 방법은 [개발 현황](#개발-현황)과 [실행 방법](#실행-방법)에 있습니다.
 
 ## 프로젝트 소개
 
@@ -85,11 +85,12 @@
 
 | 브랜치 | 용도 |
 | --- | --- |
-| `main` | 최종 배포되는 브랜치 |
-| `develop` | 개발을 위한 브랜치 |
+| `main` | 운영 배포용 브랜치. 지금은 `develop`의 내용을 보관만 하고 배포하지 않음 |
+| `develop` | 개발을 위한 브랜치. 머지되면 테스트 서버(3005번 포트)에 배포 |
 | `feature` | 각각의 개발자가 기능을 개발하는 브랜치 |
-| `release` | `develop`에서 `main`으로 병합하기 전에 품질 검사를 진행하는 브랜치 |
 | `hotfix` | 출시 버전에서 발생한 버그를 수정하는 브랜치 |
+
+`release` 브랜치는 쓰지 않습니다. 실제 운영 단계로 넘어가면 `main`을 운영 서버에 배포합니다.
 
 ### Commit Message Rules
 
@@ -124,8 +125,14 @@ PR 제목은 커밋 메시지와 같은 `유형: 변경 내용` 형식으로 작
 | 작업 브랜치 | base 브랜치 |
 | --- | --- |
 | `feature/*` | `develop` |
-| `release/*` | `main` |
+| `develop` | `main` |
 | `hotfix/*` | `main` |
+
+`develop`과 `main`에는 브랜치 보호 규칙이 걸려 있습니다.
+
+- 직접 push와 force push, 브랜치 삭제는 막혀 있고 PR로만 머지합니다.
+- CI 검사 4개(`Frontend lint·build`, `Backend test`, `Docker build (backend)`, `Docker build (frontend)`)가 통과해야 합니다.
+- 본인 외 팀원 1명이 승인해야 합니다. 승인 뒤 커밋을 더 올리면 다시 승인을 받습니다.
 
 PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. 필수 섹션은 비우지 않고, 해당 없는 선택 섹션은 지웁니다.
 
@@ -142,4 +149,66 @@ PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. �
 
 ## 개발 현황
 
-현재 저장소에는 프로젝트 소개 문서를 작성한 상태입니다. 기술 스택, 실행 방법, 팀원별 역할과 개발 일정은 결정 후 추가합니다.
+저장소에는 프론트엔드(`frontend/`, Next.js)와 백엔드(`backend/`, Spring Boot), Docker Compose 실행 환경, GitHub Actions CI/CD가 있습니다. `develop`에 머지하면 테스트 서버 <https://test-moa.newlecture.com>에 자동으로 배포됩니다. 팀원별 역할과 개발 일정은 결정 후 추가합니다.
+
+## 실행 방법
+
+Docker만 있으면 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄울 수 있습니다.
+
+```text
+브라우저 → nginx (localhost:TEAM_PORT) → frontend:3000 → backend:8080 → db:5432
+```
+
+브라우저는 nginx만 거쳐 프론트엔드에 접속합니다. 백엔드는 프론트엔드가 서버 안에서 부르므로(BFF) 호스트에 포트를 열지 않습니다.
+
+### 처음 한 번
+
+```sh
+cp .env.example .env
+```
+
+`.env`에서 `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`를 채웁니다. 로컬에서는 아무 값이나 써도 됩니다. `TEAM_PORT`는 브라우저로 접속할 포트입니다. `.env`는 커밋하지 않습니다.
+
+### 개발 모드
+
+```sh
+docker compose up --build
+```
+
+`http://localhost:<TEAM_PORT>`로 접속합니다. `compose.override.yaml`이 자동으로 합쳐져 소스 폴더가 컨테이너에 붙습니다.
+
+- 프론트엔드: 파일을 저장하면 바로 반영됩니다.
+- 백엔드: 고친 뒤 `docker compose restart backend`로 다시 시작합니다.
+
+### 운영 이미지로 띄우기
+
+```sh
+docker compose -f compose.yaml up --build
+```
+
+`compose.override.yaml`을 빼고 운영과 같은 이미지로 빌드해 띄웁니다. 배포 전에 이미지가 제대로 뜨는지 볼 때 씁니다.
+
+### 로컬 HTTPS
+
+[mkcert](https://github.com/FiloSottile/mkcert)로 인증서를 만든 뒤 `https` 프로필을 붙여 띄웁니다. 인증서는 `nginx/certs/`에 생기고 커밋하지 않습니다.
+
+```sh
+mkcert -install
+mkcert -cert-file nginx/certs/local.pem -key-file nginx/certs/local-key.pem localhost 127.0.0.1 ::1
+docker compose --profile https up --build
+```
+
+`https://localhost:<HTTPS_PORT>`로 접속합니다. `HTTP_PORT`로 들어오면 HTTPS로 넘어갑니다.
+
+### 자주 쓰는 명령
+
+| 명령 | 하는 일 |
+| --- | --- |
+| `docker compose ps` | 컨테이너 상태 |
+| `docker compose logs -f backend` | 한 서비스의 로그 |
+| `docker compose down` | 컨테이너 중지·삭제. DB 데이터는 남음 |
+| `docker compose down -v` | DB 데이터까지 삭제 |
+
+### 테스트 서버 배포
+
+`develop`에 머지하면 [GitHub Actions](.github/workflows/deploy.yml)가 이미지를 빌드해 GHCR에 올리고, 테스트 서버에 접속해 [compose.prod.yaml](compose.prod.yaml)로 다시 띄웁니다. 직접 할 일은 없고, Actions 탭에서 `CI/CD` 워크플로의 결과를 확인합니다.

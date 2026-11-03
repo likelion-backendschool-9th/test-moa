@@ -2,12 +2,13 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { cardClass, cardTitleClass } from "@/features/my/components/card-styles";
 import { LEDGER_TYPE_LABEL, LEDGER_TYPES, type CreditEntry, type LedgerType } from "../types";
+import { DayGroups } from "./DayGroups";
 import { LedgerRow } from "./LedgerRow";
 
 const filterHref = (type: LedgerType) => (type === "all" ? "/my/credits" : `/my/credits?type=${type}`);
 
 /** 전체 크레딧 내역과 받은·쓴 필터. 필터는 링크라 상태가 URL에 남는다 */
-export function LedgerList({ entries, type }: { entries: CreditEntry[]; type: LedgerType }) {
+export function LedgerList({ entries, type, now }: { entries: CreditEntry[]; type: LedgerType; now: Date }) {
   return (
     <section aria-labelledby="ledger-heading" className={cardClass}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -41,11 +42,9 @@ export function LedgerList({ entries, type }: { entries: CreditEntry[]; type: Le
           {type === "all" ? "아직 크레딧 내역이 없어요" : `${LEDGER_TYPE_LABEL[type]} 내역이 없어요`}
         </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-line">
-          {entries.map((entry) => (
-            <LedgerRow key={entry.id} entry={entry} />
-          ))}
-        </ul>
+        <DayGroups items={entries} dateOf={(entry) => entry.occurredAt} idPrefix="ledger-day" now={now}>
+          {(entry) => <LedgerRow key={entry.id} entry={entry} />}
+        </DayGroups>
       )}
     </section>
   );

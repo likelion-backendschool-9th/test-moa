@@ -1,0 +1,209 @@
+name: CI/CD
+
+# PR(→ develop, main): 검사만 한다
+# develop에 push(머지): 검사를 다시 돌리고, 통과하면 이미지를 GHCR에 올린 뒤 테스트 서버(3005)에 배포한다
+# main은 지금 배포하지 않는다 (운영 단계에서 추가)
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+# 같은 PR에 새 커밋이 오면 이전 검사는 취소한다. develop push는 취소하지 않고 순서대로 돈다
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ---- CI: 검사 ----
+
+  frontend:
+    name: Frontend lint·build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3005
+          NEXT_TELEMETRY_DISABLED: 1
+
+  backend:
+    name: Backend test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # @SpringBootTest가 DB에 연결하므로 테스트용 Postgres를 함께 띄운다
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_DB: testmoa
+          POSTGRES_USER: testmoa
+          POSTGRES_PASSWORD: testmoa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testmoa -d testmoa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Gradle 배포판과 의존성을 캐시한다
+      - uses: gradle/actions/setup-gradle@v6
+
+      - run: ./gradlew test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testmoa
+          SPRING_DATASOURCE_USERNAME: testmoa
+          SPRING_DATASOURCE_PASSWORD: testmoa
+
+  # PR에서만: 운영 이미지가 빌드되는지 확인하고 올리지 않는다
+  docker:
+    name: Docker build (${{ matrix.service }})
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.service }}
+          push: false
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=http://localhost:3005
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # ---- CD: 이미지 빌드·푸시 ----
+
+  # develop에 push됐고 검사를 통과했을 때만
+  build-push:
+    name: Build·push image (${{ matrix.service }})
+    needs: [frontend, backend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # GITHUB_TOKEN으로 GHCR에 이미지를 올린다
+      packages: write
+    strategy:
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v7
+
+      # 프론트 이미지에는 접속 주소가 빌드할 때 들어가므로, 비어 있으면 여기서 멈춘다
+      # 값은 Settings → Secrets and variables → Actions → Variables에 둔다
+      - name: Check NEXT_PUBLIC_SITE_URL
+        if: matrix.service == 'frontend'
+        env:
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::저장소 변수 NEXT_PUBLIC_SITE_URL이 비어 있습니다"
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 태그: sha-<커밋 7자리>(배포·롤백용), latest(가장 최근 이미지. 서버 .env의 IMAGE_TAG 기본값)
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/test-moa-${{ matrix.service }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # ---- CD: 배포 ----
+
+  # 두 이미지가 모두 올라간 뒤 서버에 SSH로 들어가 새 이미지로 다시 띄운다
+  # Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (포트가 22가 아니면 DEPLOY_PORT)
+  # 서버에는 ~/test-moa에 저장소를 develop 브랜치로 clone하고 .env를 둔다
+  deploy:
+    name: Deploy to test server
+    needs: build-push
+    runs-on: ubuntu-latest
+    # Actions 화면에 배포 이력과 접속 주소가 남는다
+    environment:
+      name: develop
+      url: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+    steps:
+      # build-push가 붙인 sha-<커밋 7자리> 태그와 같은 값을 만든다
+      - name: Set IMAGE_TAG
+        run: echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - uses: appleboy/ssh-action@v1
+        env:
+          REPO_URL: https://github.com/${{ github.repository }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: IMAGE_TAG,REPO_URL
+          script: |
+            set -e
+            cd ~/test-moa
+            # compose.prod.yaml, nginx 설정을 최신으로 맞춘다
+            git pull --ff-only
+            docker compose -f compose.prod.yaml pull
+            docker compose -f compose.prod.yaml up -d --no-build
+            # 같은 서버를 다른 팀도 쓰므로 우리 저장소에서 만든 이미지만 정리한다
+            docker image prune -f --filter "label=org.opencontainers.image.source=$REPO_URL"
+            docker compose -f compose.prod.yaml ps
+            # .env의 TEAM_PORT가 응답할 때까지 최대 30초 기다린다
+            TEAM_PORT=$(grep -E '^TEAM_PORT=' .env | cut -d= -f2)
+            for i in $(seq 1 10); do
+              # compose.prod.yaml이 127.0.0.1에만 포트를 열므로 localhost(::1일 수 있음) 대신 IP로 확인한다
+              curl -fsS -o /dev/null "http://127.0.0.1:$TEAM_PORT" && exit 0
+              sleep 3
+            done
+            echo "$TEAM_PORT 응답 없음"
+            exit 1

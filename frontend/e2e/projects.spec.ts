@@ -175,6 +175,94 @@ test.describe("R103 프로젝트 등록·수정", () => {
   });
 });
 
+test.describe("R113 프로젝트 이미지·링크·첨부·미리보기", () => {
+  /* 시연용 파일. 내용은 상관없고 이름·형식·크기만 본다 */
+  const file = (name: string, mimeType: string, bytes = 1024) => ({ name, mimeType, buffer: Buffer.alloc(bytes) });
+  const png = (name: string) => file(name, "image/png");
+
+  test.beforeEach(async ({ context, page }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects/new");
+  });
+
+  test("S145 등록 폼에 상세 설명·이미지·첨부파일·추가 링크가 있다", async ({ page }) => {
+    for (const label of ["상세 설명 (선택)", "이미지 (선택)", "첨부파일 (선택)"]) {
+      await expect(page.getByLabel(label)).toBeVisible();
+    }
+    await expect(page.getByRole("button", { name: "링크 추가" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "미리보기" })).toBeVisible();
+  });
+
+  test("S146 이미지를 고르면 썸네일이 보이고 첫 장이 대표다. 한도를 넘으면 막는다", async ({ page }) => {
+    const input = page.getByLabel("이미지 (선택)");
+    await input.setInputFiles([png("첫화면.png"), png("기록.png")]);
+    const items = page.getByTestId("image-item");
+    await expect(items).toHaveCount(2);
+    await expect(items.nth(0)).toContainText("대표");
+    await expect(page.getByTestId("project-preview").getByRole("img", { name: "프로젝트 대표 이미지" })).toBeVisible();
+
+    await page.getByRole("button", { name: "첫화면.png 삭제" }).click();
+    await expect(items).toHaveCount(1);
+    await expect(items.nth(0)).toContainText("대표");
+
+    await input.setInputFiles(["1", "2", "3", "4", "5"].map((n) => png(`${n}.png`)));
+    await expect(page.getByText("이미지는 5장까지 올릴 수 있어요")).toBeVisible();
+    await expect(items).toHaveCount(1);
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+
+    await input.setInputFiles([file("움짤.gif", "image/gif")]);
+    await expect(page.getByText("PNG, JPG, WEBP 이미지만 올릴 수 있어요")).toBeVisible();
+    await input.setInputFiles([file("큰.png", "image/png", 6 * 1024 * 1024)]);
+    await expect(page.getByText("이미지는 한 장에 5MB까지 올릴 수 있어요")).toBeVisible();
+    await expect(items).toHaveCount(1);
+  });
+
+  test("S147 첨부파일은 이름과 크기가 보이고 허용한 형식만 받는다", async ({ page }) => {
+    const input = page.getByLabel("첨부파일 (선택)");
+    await input.setInputFiles([file("테스트 시나리오.pdf", "application/pdf", 2048)]);
+    await expect(page.getByTestId("attachment-item")).toHaveText(/테스트 시나리오\.pdf\s*2KB/);
+    await expect(page.getByTestId("project-preview")).toContainText("테스트 시나리오.pdf · 2KB");
+    await input.setInputFiles([file("설치.exe", "application/octet-stream")]);
+    await expect(page.getByText("PDF, DOCX, PPTX, ZIP, TXT 파일만 올릴 수 있어요")).toBeVisible();
+    await expect(page.getByTestId("attachment-item")).toHaveCount(1);
+  });
+
+  test("S148 추가 링크는 3개까지이고 주소가 잘못되면 그 칸에 오류가 보인다", async ({ page }) => {
+    const add = page.getByRole("button", { name: "링크 추가" });
+    for (let i = 0; i < 3; i += 1) await add.click();
+    await expect(page.getByTestId("link-row")).toHaveCount(3);
+    await expect(add).toBeDisabled();
+    await page.getByRole("button", { name: "링크 3 삭제" }).click();
+    await page.getByRole("button", { name: "링크 2 삭제" }).click();
+
+    await page.getByLabel("프로젝트 이름").fill("새 서비스");
+    await page.getByLabel("한 줄 소개").fill("새로 만든 서비스예요");
+    await page.getByLabel("접속 링크").fill("https://new.example.com");
+    await page.getByLabel("링크 1 이름").fill("이용 가이드");
+    await page.getByLabel("링크 1 주소").fill("guide");
+    /* 주소가 올바르지 않은 링크는 미리보기에 아직 안 나온다 */
+    await page.getByRole("button", { name: "등록" }).click();
+    await expect(page.getByText("http:// 또는 https://로 시작하는 주소를 적어 주세요")).toBeVisible();
+    await expect(page.getByLabel("링크 1 주소")).toBeFocused();
+
+    await page.getByLabel("링크 1 주소").fill("https://new.example.com/guide");
+    await expect(page.getByTestId("project-preview").getByRole("link", { name: /이용 가이드/ })).toHaveAttribute("href", "https://new.example.com/guide");
+    await page.getByRole("button", { name: "등록" }).click();
+    await expect(page).toHaveURL("/my/projects?notice=saved");
+  });
+
+  test("S149 미리보기는 입력할 때마다 상세 화면 모양으로 바뀐다", async ({ page }) => {
+    const preview = page.getByTestId("project-preview");
+    await expect(preview.getByRole("heading", { name: "프로젝트 이름" })).toBeVisible();
+    await page.getByLabel("프로젝트 이름").fill("새 서비스");
+    await page.getByLabel("한 줄 소개").fill("새로 만든 서비스예요");
+    await page.getByLabel("상세 설명 (선택)").fill("이번에는 가입 흐름을 보고 싶어요");
+    await expect(preview.getByRole("heading", { name: "새 서비스" })).toBeVisible();
+    await expect(preview).toContainText("새로 만든 서비스예요");
+    await expect(preview).toContainText("이번에는 가입 흐름을 보고 싶어요");
+  });
+});
+
 test.describe("R104 프로젝트 상세", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
@@ -191,9 +279,23 @@ test.describe("R104 프로젝트 상세", () => {
     await expect(page.getByRole("link", { name: "테스트 모집 작성" })).toHaveAttribute("href", `${BOOKLOG}/recruitments/new`);
   });
 
+  test("S150 상세 설명·추가 링크·첨부파일이 보이고 수정 폼에 채워져 있다", async ({ page }) => {
+    await page.goto(BOOKLOG);
+    await expect(page.getByText(/이번에는 책 등록부터 기록 작성까지/)).toBeVisible();
+    const guide = page.getByRole("link", { name: /이용 가이드/ });
+    await expect(guide).toHaveAttribute("href", "https://booklog.example.com/guide");
+    await expect(guide).toHaveAttribute("target", "_blank");
+    await expect(page.getByText("테스트 시나리오.pdf")).toBeVisible();
+
+    await page.goto(`${BOOKLOG}/edit`);
+    await expect(page.getByLabel("링크 1 이름")).toHaveValue("이용 가이드");
+    await expect(page.getByTestId("attachment-item")).toContainText("테스트 시나리오.pdf");
+    await expect(page.getByLabel("상세 설명 (선택)")).toHaveValue(/읽은 책을 검색해/);
+  });
+
   test("S113 모집 건이 최신순으로 보이고 관리 화면으로 간다", async ({ page }) => {
     await page.goto(BOOKLOG);
-    const items = page.getByRole("main").getByRole("listitem");
+    const items = page.getByRole("region", { name: "테스트 모집" }).getByRole("listitem");
     await expect(items).toHaveCount(2);
     await expect(items.nth(0)).toContainText("모집 중");
     await expect(items.nth(0)).toContainText("구독 모집");

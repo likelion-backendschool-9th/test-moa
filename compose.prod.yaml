@@ -3,11 +3,9 @@
 #   docker compose -f compose.prod.yaml up -d
 # 서버에는 이 파일, nginx/default.conf, .env만 있으면 된다
 # 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다
-# 필요한 값: IMAGE_TAG, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+# 필요한 값: IMAGE_TAG, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, COMPOSE_PROJECT_NAME, TEAM_PORT
 # NEXT_PUBLIC_SITE_URL은 프론트 이미지를 빌드할 때 들어가므로 여기서는 받지 않는다
-
-# 다른 팀과 같은 서버를 쓰므로 폴더 이름과 상관없이 프로젝트 이름(네트워크·볼륨 접두어)을 고정한다
-name: test-moa
+# 다른 팀과 같은 서버를 쓰므로 COMPOSE_PROJECT_NAME으로 네트워크·볼륨 이름을 팀별로 나눈다
 
 services:
   db:
@@ -53,7 +51,8 @@ services:
     container_name: test-moa-nginx
     restart: unless-stopped
     ports:
-      - "3005:80"
+      # 서버에서 우리 팀에 배정된 포트
+      - "${TEAM_PORT}:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

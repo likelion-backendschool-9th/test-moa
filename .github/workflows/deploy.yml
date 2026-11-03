@@ -141,14 +141,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 태그: sha-<커밋 7자리>(배포·롤백용), develop(가장 최근 이미지)
+      # 태그: sha-<커밋 7자리>(배포·롤백용), latest(가장 최근 이미지. 서버 .env의 IMAGE_TAG 기본값)
       - id: meta
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/test-moa-${{ matrix.service }}
           tags: |
             type=sha
-            type=raw,value=develop
+            type=raw,value=latest
 
       - uses: docker/build-push-action@v7
         with:
@@ -198,10 +198,11 @@ jobs:
             # 같은 서버를 다른 팀도 쓰므로 우리 저장소에서 만든 이미지만 정리한다
             docker image prune -f --filter "label=org.opencontainers.image.source=$REPO_URL"
             docker compose -f compose.prod.yaml ps
-            # 3005가 응답할 때까지 최대 30초 기다린다
+            # .env의 TEAM_PORT가 응답할 때까지 최대 30초 기다린다
+            TEAM_PORT=$(grep -E '^TEAM_PORT=' .env | cut -d= -f2)
             for i in $(seq 1 10); do
-              curl -fsS -o /dev/null http://localhost:3005 && exit 0
+              curl -fsS -o /dev/null "http://localhost:$TEAM_PORT" && exit 0
               sleep 3
             done
-            echo "3005 응답 없음"
+            echo "$TEAM_PORT 응답 없음"
             exit 1

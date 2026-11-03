@@ -23,6 +23,11 @@ public class CreditLedger {
     @JoinColumn(nullable = false)
     private CreditWallet creditWallet;
 
+    // 구독 결제에서 생긴 행만 채운다. 그 외(가입 지급·출금 지급 등)는 null
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Payment payment;
+
     // 변동량. 음수, 양수 모두 가능
     @Column(nullable = false)
     private Integer delta;
@@ -50,6 +55,7 @@ public class CreditLedger {
      * 크레딧 변동 시 새로운 CreditLedger 엔티티 생성하기 위해 사용하는 빌더 생성자.
      *
      * @param creditWallet  변동이 일어난 크레딧 지갑
+     * @param payment       구독 결제면 해당 Payment, 아니면 null
      * @param delta         변동량 (음수, 양수 모두 가능)
      * @param description   변동 원인
      * @param type          변동 크레딧 종류
@@ -57,11 +63,13 @@ public class CreditLedger {
     @Builder
     public CreditLedger(
             CreditWallet creditWallet,
+            Payment payment,
             Integer delta,
             String description,
             CreditType type
     ){
         this.creditWallet = creditWallet;
+        this.payment = payment;
         this.delta = delta;
         this.description = description;
         this.type = type;

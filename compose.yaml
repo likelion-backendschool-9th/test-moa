@@ -1,0 +1,64 @@
+# 전체 서비스를 한 번에 띄운다: docker compose up --build
+# 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다
+# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, NEXT_PUBLIC_SITE_URL
+services:
+  db:
+    image: postgres:17
+    container_name: test-moa-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # 백엔드가 DB 준비가 끝난 뒤에 뜨도록 상태를 확인한다
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # adminer:
+  #   image: adminer
+  #   container_name: test-moa-adminer
+  #   environment:
+  #     # 로그인 화면의 서버 칸에 db를 미리 채운다
+  #     ADMINER_DEFAULT_SERVER: db
+  #   ports:
+  #     - "{}:8080"
+  #   depends_on:
+  #     - db
+
+  backend:
+    build: ./backend
+    container_name: test-moa-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    container_name: test-moa-frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    depends_on:
+      - backend
+
+  # 외부 요청은 nginx 하나로만 받아 프론트엔드(BFF)로 넘긴다
+  nginx:
+    image: nginx:stable-alpine
+    container_name: test-moa-nginx
+    ports:
+      - "3005:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+
+volumes:
+  db-data:

@@ -14,6 +14,14 @@ export type Project = {
   softwareType: SoftwareType;
   /** 테스터가 접속할 링크 */
   accessUrl: string;
+  /** 상세 설명. 없으면 빈 문자열 */
+  description: string;
+  /** 화면 이미지. 첫 장이 대표 이미지다 */
+  images: ProjectImage[];
+  /** 접속 링크 말고 더 알려 줄 링크 (이용 가이드, 저장소 등) */
+  links: ProjectLink[];
+  /** 테스트에 필요한 첨부파일 (테스트 시나리오, 설명서 등) */
+  attachments: ProjectFile[];
   createdAt: string;
   /** 이 프로젝트의 테스트 모집 건. slug를 recruitmentKey로 쓴다 */
   recruitments: Recruitment[];
@@ -99,6 +107,19 @@ export type AiSummary = {
 export const AI_MIN_FEEDBACKS = 3;
 
 /** 폼 제출 결과. 오류가 있으면 입력값을 그대로 돌려줘 다시 채운다 */
+export type ProjectImage = { url: string; name: string };
+export type ProjectLink = { label: string; url: string };
+/** 첨부파일. 시연용이라 이름과 크기만 있고 실제 파일은 없다 */
+export type ProjectFile = { name: string; size: number };
+
+/** 프로젝트 등록 폼의 이미지·링크·첨부 한도. 기획 확정 전 임시값이다 */
+export const PROJECT_MEDIA_LIMIT = {
+  images: { count: 5, bytes: 5 * 1024 * 1024, types: ["image/png", "image/jpeg", "image/webp"] },
+  attachments: { count: 3, bytes: 10 * 1024 * 1024, extensions: [".pdf", ".docx", ".pptx", ".zip", ".txt"] },
+  links: { count: 3, labelLength: 20 },
+  descriptionLength: 1000,
+} as const;
+
 export type FormState = {
   values: Record<string, string>;
   errors: Record<string, string>;

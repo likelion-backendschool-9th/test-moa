@@ -16,8 +16,9 @@ export const inputClass =
   "w-full rounded-xl bg-surface-strong px-4 py-3 text-base transition-colors duration-300 ease-brand focus:bg-surface-muted aria-invalid:ring-2 aria-invalid:ring-text";
 
 /** 레이블과 오류 문구가 붙은 입력란. 오류가 있으면 aria-invalid와 aria-describedby를 단다 */
-export function TextField({ name, label, error, hint, multiline, className, ...props }: TextFieldProps) {
-  const id = `field-${name}`;
+export function TextField({ id: idProp, name, label, error, hint, multiline, className, ...props }: TextFieldProps) {
+  /* 같은 name이 여러 줄이면(추가 링크) id를 따로 받는다 */
+  const id = idProp ?? `field-${name}`;
   const errorId = `${id}-error`;
   const hintId = `${id}-hint`;
   const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(" ") || undefined;

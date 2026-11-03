@@ -10,11 +10,13 @@ import {
   findProjects,
   saveApplicationDecisions,
 } from "./api";
+import { checkAttachments, checkImages, parseFileMeta } from "./media";
 import {
   AI_MIN_FEEDBACKS,
   BASE_REWARD,
   EXTRA_REWARD,
   MAX_CAPACITY,
+  PROJECT_MEDIA_LIMIT,
   REPORT_WINDOW_HOURS,
   type AiSummary,
   type Application,
@@ -267,13 +269,17 @@ function isHttpUrl(value: string) {
   }
 }
 
-/** 프로젝트 등록·수정 폼 검증. 첫 지원 대상이 웹서비스라 유형은 web만 받는다 */
+/**
+ * 프로젝트 등록·수정 폼 검증. 첫 지원 대상이 웹서비스라 유형은 web만 받는다.
+ * 이미지·첨부는 화면에서도 거르지만 요청은 조작될 수 있어서 여기서 다시 확인한다.
+ */
 export function validateProjectForm(formData: FormData): FormState {
   const values = {
     name: text(formData, "name"),
     summary: text(formData, "summary"),
     softwareType: text(formData, "softwareType"),
     accessUrl: text(formData, "accessUrl"),
+    description: text(formData, "description"),
   };
   const errors: Record<string, string> = {};
   if (!values.name) errors.name = "프로젝트 이름을 적어 주세요";
@@ -282,6 +288,31 @@ export function validateProjectForm(formData: FormData): FormState {
   else if (values.summary.length > 100) errors.summary = "한 줄 소개는 100자까지 적을 수 있어요";
   if (values.softwareType !== "web") errors.softwareType = "지금은 웹서비스만 등록할 수 있어요";
   if (!isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
+  if (values.description.length > PROJECT_MEDIA_LIMIT.descriptionLength) {
+    errors.description = `상세 설명은 ${PROJECT_MEDIA_LIMIT.descriptionLength}자까지 적을 수 있어요`;
+  }
+
+  /* 추가 링크: 이름과 주소가 둘 다 빈 줄은 없는 것으로 본다 */
+  const labels = formData.getAll("linkLabel").map((item) => String(item).trim());
+  const urls = formData.getAll("linkUrl").map((item) => String(item).trim());
+  const links = labels.map((label, index) => ({ label, url: urls[index] ?? "" })).filter((link) => link.label || link.url);
+  if (links.length > PROJECT_MEDIA_LIMIT.links.count) errors.links = `링크는 ${PROJECT_MEDIA_LIMIT.links.count}개까지 넣을 수 있어요`;
+  labels.forEach((label, index) => {
+    const url = urls[index] ?? "";
+    if (!label && !url) return;
+    if (!label) errors[`linkLabel-${index}`] = "링크 이름을 적어 주세요";
+    else if (label.length > PROJECT_MEDIA_LIMIT.links.labelLength) {
+      errors[`linkLabel-${index}`] = `링크 이름은 ${PROJECT_MEDIA_LIMIT.links.labelLength}자까지 적을 수 있어요`;
+    }
+    if (!isHttpUrl(url)) errors[`linkUrl-${index}`] = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
+  });
+
+  const images = parseFileMeta(formData.get("imagesMeta"));
+  const imageError = images ? checkImages(images) : "이미지 정보를 읽지 못했어요";
+  if (imageError) errors.images = imageError;
+  const attachments = parseFileMeta(formData.get("attachmentsMeta"));
+  const attachmentError = attachments ? checkAttachments(attachments) : "첨부파일 정보를 읽지 못했어요";
+  if (attachmentError) errors.attachments = attachmentError;
   return { values, errors };
 }
 

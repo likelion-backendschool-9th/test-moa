@@ -3,19 +3,30 @@ import { setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "출금 요청 상태" });
+const modal = (page: Page) => page.getByRole("dialog");
 
 type Decision = { decision: "지급 완료" } | { decision: "반려"; reason: string; memo?: string };
 
+async function openWithdrawal(page: Page, withdrawalKey: string, tab?: "done") {
+  const query = new URLSearchParams();
+  if (tab === "done") query.set("tab", "done");
+  query.set("open", withdrawalKey);
+  await page.goto(`/admin/withdrawals?${query.toString()}`);
+  await expect(modal(page)).toBeVisible();
+}
+
 async function decide(page: Page, withdrawalKey: string, choice: Decision) {
-  await page.goto(`/admin/withdrawals/${withdrawalKey}`);
-  await page.getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: new RegExp(`^${choice.decision}`) }).check();
+  await openWithdrawal(page, withdrawalKey);
+  await modal(page).getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: new RegExp(`^${choice.decision}`) }).check();
   if (choice.decision === "반려") {
-    await page.getByRole("group", { name: "반려 사유" }).getByRole("radio", { name: choice.reason }).check();
-    if (choice.memo) await page.getByRole("textbox", { name: "반려 메모" }).fill(choice.memo);
+    await modal(page).getByRole("group", { name: "반려 사유" }).getByRole("radio", { name: choice.reason }).check();
+    if (choice.memo) await modal(page).getByRole("textbox", { name: "반려 메모" }).fill(choice.memo);
   }
-  await page.getByRole("button", { name: "처리하기" }).click();
-  /* 처리되면 목록으로 가고, 막히면 상세에 남아 오류를 보여 준다. 어느 쪽이든 서버 응답을 기다린다 */
-  await expect(page.getByRole("main").getByRole("alert").or(statusTabs(page))).toBeVisible();
+  /* Server Action 성공 시 redirect라 navigation wait를 끄고, 결과 문구·오류로 완료를 본다 */
+  await modal(page).getByRole("button", { name: "처리하기" }).click({ noWaitAfter: true });
+  /* 처리되면 목록의 결과 문구(p[role=status])가 보이고, 막히면 모달 안 alert가 남는다.
+   * 계좌 복사 버튼의 빈 span[role=status]는 성공 신호로 쓰지 않는다. */
+  await expect(modal(page).getByRole("alert").or(page.locator("main p[role='status']"))).toBeVisible();
 }
 
 test.beforeEach(async ({ context }) => {
@@ -45,9 +56,9 @@ test.describe("R31 테마", () => {
 
   test("S192 강조색 바탕 버튼은 처리하기 하나다", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    await expect(page.getByRole("button", { name: "처리하기" })).toBeVisible();
-    const accentButtons = await page.locator("main a, main button").evaluateAll((elements) =>
+    await openWithdrawal(page, "withdrawal-1");
+    await expect(modal(page).getByRole("button", { name: "처리하기" })).toBeVisible();
+    const accentButtons = await modal(page).locator("a, button").evaluateAll((elements) =>
       elements
         .filter((element) => getComputedStyle(element).backgroundColor === "rgb(15, 124, 74)")
         .map((element) => element.textContent?.trim()),
@@ -57,24 +68,26 @@ test.describe("R31 테마", () => {
 });
 
 test.describe("R32 접근 권한", () => {
-  test("S193 일반 회원은 출금 요청 상세를 볼 수 없다", async ({ page, context }) => {
+  test("S193 일반 회원은 출금 요청 모달을 볼 수 없다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
-    await page.goto("/admin/withdrawals/withdrawal-1");
+    await page.goto("/admin/withdrawals?open=withdrawal-1");
     await expect(page.getByRole("heading", { level: 1, name: "운영자만 볼 수 있는 페이지예요" })).toBeVisible();
     await expect(page.getByText("123456789012")).toHaveCount(0);
+    await expect(modal(page)).toHaveCount(0);
   });
 
   test("S194 비로그인은 그 요청으로 돌아오게 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    await expect(page).toHaveURL(/\/login\?next=%2Fadmin%2Fwithdrawals%2Fwithdrawal-1$/);
+    await page.goto("/admin/withdrawals?open=withdrawal-1");
+    await expect(page).toHaveURL(/\/login\?next=%2Fadmin%2Fwithdrawals%3Fopen%3Dwithdrawal-1$/);
   });
 
-  test("S195 없는 요청은 맞춤 404 화면을 보여 준다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/nope");
-    await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
-    /* 스트리밍 순서에 따라 Next가 noindex 메타를 두 번 넣기도 해서 개수가 아니라 있는지만 본다 */
-    await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached();
+  test("S195 없는 요청 키는 모달 없이 목록만 보여 준다", async ({ page }) => {
+    await page.goto("/admin/withdrawals?open=nope");
+    await expect(page.getByRole("heading", { level: 1, name: "출금 요청 관리" })).toBeVisible();
+    await expect(modal(page)).toHaveCount(0);
+    await expect(statusTabs(page)).toBeVisible();
+    await expect(rows(page)).toHaveCount(3);
   });
 });
 
@@ -121,21 +134,23 @@ test.describe("R33 목록", () => {
     await expect(page.getByText("처리할 출금 요청이 없어요")).toBeVisible();
   });
 
-  test("S200 행을 누르면 상세로 간다", async ({ page }) => {
+  test("S200 행을 누르면 모달이 열린다", async ({ page }) => {
     await page.goto("/admin/withdrawals");
     await rows(page).first().getByRole("link").click();
-    await expect(page).toHaveURL(/\/admin\/withdrawals\/withdrawal-1$/);
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page)).toBeVisible();
+    await expect(modal(page)).toContainText("이지우");
   });
 });
 
-test.describe("R34 상세", () => {
-  test("S201 처리 대기 상세는 송금에 필요한 정보를 보여 준다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    const info = page.getByRole("region", { name: "신청 내용" });
+test.describe("R34 모달", () => {
+  test("S201 처리 대기 모달은 송금에 필요한 정보를 보여 준다", async ({ page }) => {
+    await openWithdrawal(page, "withdrawal-1");
+    const info = modal(page).getByRole("region", { name: "신청 내용" });
     for (const text of ["이지우", "회원 이름", "5,000원", "신청"]) {
       await expect(info).toContainText(text);
     }
-    const account = page.getByRole("region", { name: "받을 계좌" });
+    const account = modal(page).getByRole("region", { name: "받을 계좌" });
     for (const text of ["국민", "123456789012", "이지우"]) {
       await expect(account).toContainText(text);
     }
@@ -143,43 +158,62 @@ test.describe("R34 상세", () => {
   });
 
   test("S202 예금주가 회원 이름과 다르면 알린다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-2");
-    await expect(page.getByRole("region", { name: "받을 계좌" })).toContainText("김민지");
-    await expect(page.getByRole("region", { name: "신청 내용" })).toContainText("김민준");
-    await expect(page.getByText("예금주가 회원 이름과 달라요.")).toBeVisible();
+    await openWithdrawal(page, "withdrawal-2");
+    await expect(modal(page).getByRole("region", { name: "받을 계좌" })).toContainText("김민지");
+    await expect(modal(page).getByRole("region", { name: "신청 내용" })).toContainText("김민준");
+    await expect(modal(page).getByText("예금주가 회원 이름과 달라요.")).toBeVisible();
   });
 
-  test("S203 처리 완료 상세는 계좌번호 끝 4자리만 보여 준다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-4");
-    const account = page.getByRole("region", { name: "받을 계좌" });
+  test("S203 처리 완료 모달은 계좌번호 끝 4자리만 보여 준다", async ({ page }) => {
+    await openWithdrawal(page, "withdrawal-4", "done");
+    const account = modal(page).getByRole("region", { name: "받을 계좌" });
     await expect(account).toContainText("****5678");
     await expect(account).not.toContainText("3333015678");
-    await expect(page.getByRole("button", { name: "계좌번호 복사" })).toHaveCount(0);
+    await expect(modal(page).getByRole("button", { name: "계좌번호 복사" })).toHaveCount(0);
   });
 
-  test("S204 목록으로 링크가 있다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    await expect(page.getByRole("link", { name: "목록으로" })).toHaveAttribute("href", "/admin/withdrawals");
+  test("S204 닫기 링크는 open을 뺀 목록으로 간다", async ({ page }) => {
+    await openWithdrawal(page, "withdrawal-1");
+    const close = modal(page).getByRole("link", { name: "닫기" });
+    await expect(close).toHaveAttribute("href", "/admin/withdrawals");
+    await close.evaluate((element: HTMLAnchorElement) => element.click());
+    await expect(page).toHaveURL(/\/admin\/withdrawals$/);
+    await expect(page).not.toHaveURL(/open=/);
+    await expect(modal(page)).toHaveCount(0);
+  });
+
+  test("S537 상태 탭 링크에는 open이 없다", async ({ page }) => {
+    await openWithdrawal(page, "withdrawal-1");
+    await expect(statusTabs(page).getByRole("link", { name: "처리 대기" })).toHaveAttribute("href", "/admin/withdrawals");
+    await expect(statusTabs(page).getByRole("link", { name: "처리 완료" })).toHaveAttribute("href", "/admin/withdrawals?tab=done");
+  });
+
+  test("S538 새로고침 뒤에도 모달이 유지된다", async ({ page }) => {
+    await openWithdrawal(page, "withdrawal-1");
+    await page.reload();
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page)).toBeVisible();
+    await expect(modal(page).getByRole("region", { name: "받을 계좌" })).toContainText("123456789012");
   });
 });
 
 test.describe("R35 처리", () => {
   test("S205 결과를 고르지 않으면 처리되지 않는다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    await page.getByRole("button", { name: "처리하기" }).click();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText("처리 결과를 골라 주세요.");
-    await expect(page).toHaveURL(/\/admin\/withdrawals\/withdrawal-1$/);
+    await openWithdrawal(page, "withdrawal-1");
+    await modal(page).getByRole("button", { name: "처리하기" }).click({ noWaitAfter: true });
+    await expect(modal(page).getByRole("alert")).toHaveText("처리 결과를 골라 주세요.");
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
     await page.goto("/admin/withdrawals");
     await expect(rows(page)).toHaveCount(3);
   });
 
   test("S206 반려는 사유가 있어야 하고 기타는 메모가 있어야 한다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    await page.getByRole("radio", { name: /^반려/ }).check();
-    await page.getByRole("button", { name: "처리하기" }).click();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText("반려 사유를 골라 주세요.");
+    await openWithdrawal(page, "withdrawal-1");
+    await modal(page).getByRole("radio", { name: /^반려/ }).check();
+    await modal(page).getByRole("button", { name: "처리하기" }).click({ noWaitAfter: true });
+    await expect(modal(page).getByRole("alert")).toHaveText("반려 사유를 골라 주세요.");
     await decide(page, "withdrawal-1", { decision: "반려", reason: "기타" });
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText("회원에게 보여 줄 사유를 적어 주세요.");
+    await expect(modal(page).getByRole("alert")).toHaveText("회원에게 보여 줄 사유를 적어 주세요.");
     await page.goto("/admin/withdrawals");
     await expect(rows(page)).toHaveCount(3);
   });
@@ -203,15 +237,15 @@ test.describe("R35 처리", () => {
     await expect(rows(page).filter({ hasText: "김민준" })).toContainText("반려");
   });
 
-  test("S209 처리한 요청의 상세는 결과만 보여 준다", async ({ page }) => {
+  test("S209 처리한 요청의 키는 결과 모달을 연다", async ({ page }) => {
     await decide(page, "withdrawal-2", { decision: "반려", reason: "예금주 이름이 회원 정보와 달라요" });
-    await page.goto("/admin/withdrawals/withdrawal-2");
-    await expect(page.getByRole("button", { name: "처리하기" })).toHaveCount(0);
-    const result = page.getByRole("region", { name: "처리 결과" });
+    await openWithdrawal(page, "withdrawal-2", "done");
+    await expect(modal(page).getByRole("button", { name: "처리하기" })).toHaveCount(0);
+    const result = modal(page).getByRole("region", { name: "처리 결과" });
     await expect(result).toContainText("반려");
     await expect(result).toContainText("예금주 이름이 회원 정보와 달라요");
     await expect(result).toContainText("처리");
-    await expect(page.getByRole("region", { name: "받을 계좌" })).toContainText("****7890");
+    await expect(modal(page).getByRole("region", { name: "받을 계좌" })).toContainText("****7890");
   });
 
   test("S210 기록을 저장할 공간이 모자라면 처리하지 않고 알린다", async ({ page, context }) => {
@@ -222,10 +256,10 @@ test.describe("R35 처리", () => {
       { name: "demo-admin-withdrawals", value: encodeURIComponent(JSON.stringify(stored)), url: "http://localhost:3100" },
     ]);
     await decide(page, "withdrawal-1", { decision: "반려", reason: "기타", memo: "나".repeat(80) });
-    await expect(page.getByRole("main").getByRole("alert")).toContainText("시연용 저장 공간이 모자라 처리하지 못했어요");
-    await expect(page).toHaveURL(/\/admin\/withdrawals\/withdrawal-1$/);
+    await expect(modal(page).getByRole("alert")).toContainText("시연용 저장 공간이 모자라 처리하지 못했어요");
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
     /* 줄이라고 안내하는 메모가 그대로 남아 있다 */
-    await expect(page.getByRole("textbox", { name: "반려 메모" })).toHaveValue("나".repeat(80));
+    await expect(modal(page).getByRole("textbox", { name: "반려 메모" })).toHaveValue("나".repeat(80));
     await page.goto("/admin/withdrawals");
     await expect(rows(page)).toHaveCount(1);
     await expect(rows(page).first()).toContainText("이지우");
@@ -233,23 +267,23 @@ test.describe("R35 처리", () => {
 
   test("S217 막혀도 고른 값이 남아 있고 주소는 그대로다", async ({ page }) => {
     await decide(page, "withdrawal-1", { decision: "반려", reason: "기타" });
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText("회원에게 보여 줄 사유를 적어 주세요.");
-    await expect(page).toHaveURL(/\/admin\/withdrawals\/withdrawal-1$/);
-    await expect(page.getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: /^반려/ })).toBeChecked();
-    await expect(page.getByRole("group", { name: "반려 사유" }).getByRole("radio", { name: "기타" })).toBeChecked();
+    await expect(modal(page).getByRole("alert")).toHaveText("회원에게 보여 줄 사유를 적어 주세요.");
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page).getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: /^반려/ })).toBeChecked();
+    await expect(modal(page).getByRole("group", { name: "반려 사유" }).getByRole("radio", { name: "기타" })).toBeChecked();
     /* 빠뜨린 메모만 적으면 처리된다 */
-    await page.getByRole("textbox", { name: "반려 메모" }).fill("계좌가 해지됐다고 은행에서 알려 왔어요");
-    await page.getByRole("button", { name: "처리하기" }).click();
+    await modal(page).getByRole("textbox", { name: "반려 메모" }).fill("계좌가 해지됐다고 은행에서 알려 왔어요");
+    await modal(page).getByRole("button", { name: "처리하기" }).click({ noWaitAfter: true });
     await expect(page).toHaveURL(/\/admin\/withdrawals\?processed=withdrawal-1$/);
   });
 
   test("S218 기타가 아닌 반려의 메모는 운영자 메모로 남는다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    await page.getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: /^반려/ }).check();
-    await expect(page.getByText("반려할 때 운영자 기록으로 남아요.", { exact: false })).toBeVisible();
+    await openWithdrawal(page, "withdrawal-1");
+    await modal(page).getByRole("group", { name: "처리 결과" }).getByRole("radio", { name: /^반려/ }).check();
+    await expect(modal(page).getByText("반려할 때 운영자 기록으로 남아요.", { exact: false })).toBeVisible();
     await decide(page, "withdrawal-1", { decision: "반려", reason: "계좌번호를 확인할 수 없어요", memo: "은행 조회 결과 없음" });
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    const result = page.getByRole("region", { name: "처리 결과" });
+    await openWithdrawal(page, "withdrawal-1", "done");
+    const result = modal(page).getByRole("region", { name: "처리 결과" });
     await expect(result).toContainText("계좌번호를 확인할 수 없어요");
     await expect(result).toContainText("운영자 메모");
     await expect(result).toContainText("은행 조회 결과 없음");
@@ -273,10 +307,18 @@ test.describe("R35 처리", () => {
 });
 
 test.describe("R36 운영자 홈 연결", () => {
-  test("S212 오래 기다린 요청의 출금은 상세로 간다", async ({ page }) => {
+  test("S212 오래 기다린 요청의 출금은 모달로 간다", async ({ page }) => {
     await page.goto("/admin");
     await page.getByRole("region", { name: "오래 기다린 요청" }).getByRole("link", { name: /이지우/ }).click();
-    await expect(page).toHaveURL(/\/admin\/withdrawals\/withdrawal-1$/);
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page)).toBeVisible();
+  });
+
+  test("S539 최근 요청의 출금도 모달로 간다", async ({ page }) => {
+    await page.goto("/admin");
+    await page.getByRole("region", { name: "최근 요청" }).locator('a[href="/admin/withdrawals?open=withdrawal-1"]').click();
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page)).toBeVisible();
   });
 });
 
@@ -292,10 +334,10 @@ test.describe("R37 로딩과 접근성", () => {
   });
 
   test("S284 반려 사유와 메모는 반려를 골라야 보인다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    const decision = page.getByRole("group", { name: "처리 결과" });
-    const reasons = page.getByRole("group", { name: "반려 사유" });
-    const memo = page.getByRole("textbox", { name: "반려 메모" });
+    await openWithdrawal(page, "withdrawal-1");
+    const decision = modal(page).getByRole("group", { name: "처리 결과" });
+    const reasons = modal(page).getByRole("group", { name: "반려 사유" });
+    const memo = modal(page).getByRole("textbox", { name: "반려 메모" });
     await expect(decision).toBeVisible();
     await expect(reasons).toBeHidden();
     await expect(memo).toBeHidden();
@@ -315,27 +357,26 @@ test.describe("R37 로딩과 접근성", () => {
   });
 
   test("S214 처리 양식은 이름 붙은 라디오 그룹과 메모 입력창이다", async ({ page }) => {
-    await page.goto("/admin/withdrawals/withdrawal-1");
-    const decision = page.getByRole("group", { name: "처리 결과" });
+    await openWithdrawal(page, "withdrawal-1");
+    const decision = modal(page).getByRole("group", { name: "처리 결과" });
     await expect(decision.getByRole("radio")).toHaveCount(2);
     await expect(decision.getByRole("radio", { name: /^지급 완료/ })).toBeVisible();
     await expect(decision.getByRole("radio", { name: /^반려/ })).toBeVisible();
     /* 반려 사유와 메모는 반려를 골라야 보인다(S284) */
     await decision.getByRole("radio", { name: /^반려/ }).check();
-    await expect(page.getByRole("group", { name: "반려 사유" }).getByRole("radio")).toHaveCount(3);
-    await expect(page.getByRole("textbox", { name: "반려 메모" })).toHaveAttribute("maxlength", "80");
+    await expect(modal(page).getByRole("group", { name: "반려 사유" }).getByRole("radio")).toHaveCount(3);
+    await expect(modal(page).getByRole("textbox", { name: "반려 메모" })).toHaveAttribute("maxlength", "80");
   });
 
   test("S215 좁은 화면에서 가로로 넘치지 않는다", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    for (const path of ["/admin/withdrawals", "/admin/withdrawals/withdrawal-1"]) {
-      await page.goto(path);
-      await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
-    }
+    await page.goto("/admin/withdrawals");
+    await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    await openWithdrawal(page, "withdrawal-1");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     /* 계좌번호는 줄바꿈 없이 한 줄이다 */
-    const number = page.getByRole("region", { name: "받을 계좌" }).getByText("123456789012");
+    const number = modal(page).getByRole("region", { name: "받을 계좌" }).getByText("123456789012");
     const { height, lineHeight } = await number.evaluate((element) => ({
       height: element.getBoundingClientRect().height,
       lineHeight: parseFloat(getComputedStyle(element).lineHeight),
@@ -353,8 +394,8 @@ test.describe("R37 로딩과 접근성", () => {
       ["withdrawal-1", longWord],
       ["withdrawal-2", longUrl],
     ]) {
-      await page.goto(`/admin/withdrawals/${key}`);
-      await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(text);
+      await openWithdrawal(page, key, "done");
+      await expect(modal(page).getByRole("region", { name: "처리 결과" })).toContainText(text);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, key).toBeLessThanOrEqual(0);
     }

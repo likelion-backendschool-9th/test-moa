@@ -14,7 +14,8 @@ import { TextField } from "./TextField";
 /*
  * 프로젝트 등록·수정 폼과 미리보기. 검증은 서버 액션이 하고, 오류가 오면 첫 오류 칸으로 포커스를 옮긴다.
  * 이미지·첨부파일은 고를 때 바로 한도를 확인하고, 서버에는 이름·크기·형식만 보낸다(media.ts).
- * 미리보기는 입력할 때마다 상세 화면과 같은 모양(ProjectBody)으로 다시 그린다.
+ * 등록 버튼 옆 "미리보기"를 누르면 지금 적은 내용을 상세 화면과 같은 모양(ProjectBody)으로 대화상자에 보여 준다.
+ * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
 
 type ProjectFormProps = {
@@ -53,6 +54,7 @@ export function ProjectForm({
     EMPTY_FORM_STATE,
   );
   const formRef = useFocusFirstError(state);
+  const previewRef = useRef<HTMLDialogElement>(null);
   const values: Record<string, string> = { softwareType: "web", ...initialValues, ...state.values };
 
   const [draft, setDraft] = useState<Record<string, string>>(values);
@@ -99,15 +101,15 @@ export function ProjectForm({
   const imageError = fileErrors.images ?? state.errors.images;
   const attachmentError = fileErrors.attachments ?? state.errors.attachments;
 
+  /** 지금 적은 값을 읽어 미리보기를 연다 */
+  function openPreview() {
+    if (formRef.current) setDraft(readDraft(formRef.current));
+    previewRef.current?.showModal();
+  }
+
   return (
-    <div className="grid gap-10 lg:grid-cols-2">
-      <form
-        ref={formRef}
-        action={formAction}
-        noValidate
-        onInput={(event) => setDraft(readDraft(event.currentTarget))}
-        className="flex flex-col gap-6"
-      >
+    <>
+      <form ref={formRef} action={formAction} noValidate className="flex max-w-2xl flex-col gap-6">
         <TextField name="name" label="프로젝트 이름" defaultValue={values.name} error={state.errors.name} hint="50자까지" />
         <TextField name="summary" label="한 줄 소개" defaultValue={values.summary} error={state.errors.summary} hint="100자까지" />
         <fieldset
@@ -285,18 +287,30 @@ export function ProjectForm({
           <Button type="submit" disabled={pending}>
             {projectKey ? "저장" : "등록"}
           </Button>
+          <Button type="button" variant="secondary" onClick={openPreview}>
+            미리보기
+          </Button>
           <LinkButton href={cancelHref} variant="secondary">
             취소
           </LinkButton>
         </div>
       </form>
 
-      <section aria-labelledby="preview-heading" className="flex flex-col gap-3 lg:sticky lg:top-28 lg:self-start">
-        <div>
-          <h2 id="preview-heading" className="text-xl font-extrabold tracking-[-0.03em]">
-            미리보기
-          </h2>
-          <p className="text-sm text-text-muted">프로젝트 상세에서 이렇게 보여요</p>
+      <dialog
+        ref={previewRef}
+        aria-labelledby="preview-heading"
+        className="m-auto w-full max-w-2xl rounded-2xl bg-surface p-6 text-text backdrop:bg-text/50"
+      >
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 id="preview-heading" className="text-xl font-extrabold tracking-[-0.03em]">
+              미리보기
+            </h2>
+            <p className="text-sm text-text-muted">프로젝트 상세에서 이렇게 보여요</p>
+          </div>
+          <Button type="button" size="sm" variant="secondary" onClick={() => previewRef.current?.close()}>
+            닫기
+          </Button>
         </div>
         <Card data-testid="project-preview">
           <ProjectBody
@@ -313,8 +327,8 @@ export function ProjectForm({
             }}
           />
         </Card>
-      </section>
-    </div>
+      </dialog>
+    </>
   );
 }
 

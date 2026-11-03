@@ -138,8 +138,10 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       description:
         "읽은 책을 검색해 등록하고, 마음에 드는 문장에 밑줄을 그어 모아 두는 서비스예요.\n이번에는 책 등록부터 기록 작성까지 처음 쓰는 흐름이 자연스러운지 보고 싶어요.",
       images: [],
-      links: [{ label: "이용 가이드", url: "https://booklog.example.com/guide" }],
-      attachments: [{ name: "테스트 시나리오.pdf", size: 240 * 1024 }],
+      links: [
+        { label: "이용 가이드", url: "https://booklog.example.com/guide" },
+        { label: "테스트 시나리오 (PDF)", url: "https://booklog.example.com/files/test-scenario.pdf" },
+      ],
       createdAt: daysAgo(now, 30),
       recruitments: [booklog, booklogFirst],
     },
@@ -152,7 +154,6 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       description: "",
       images: [],
       links: [],
-      attachments: [],
       createdAt: daysAgo(now, 20),
       recruitments: [folio],
     },
@@ -166,7 +167,6 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       description: "",
       images: [],
       links: [],
-      attachments: [],
       createdAt: daysAgo(now, 1),
       recruitments: [],
     },

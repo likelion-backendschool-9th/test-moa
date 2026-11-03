@@ -1,5 +1,5 @@
 /*
- * 프로젝트 이미지·첨부파일 검사. 화면(파일을 고를 때)과 서버(제출할 때)가 같은 규칙을 쓴다.
+ * 프로젝트 이미지 검사. 화면(파일을 고를 때)과 서버(제출할 때)가 같은 규칙을 쓴다.
  * 시연용이라 파일 자체는 서버로 보내지 않고 이름·크기·형식만 보낸다.
  * ponytail: 실제 업로드는 백엔드 저장소(예: 미리 서명한 업로드 주소)가 정해지면 붙인다.
  */
@@ -23,15 +23,6 @@ export function checkImages(files: FileMeta[]): string | undefined {
   if (files.length > count) return `이미지는 ${count}장까지 올릴 수 있어요`;
   if (files.some((file) => !(types as readonly string[]).includes(file.type))) return "PNG, JPG, WEBP 이미지만 올릴 수 있어요";
   if (files.some((file) => file.size > bytes)) return `이미지는 한 장에 ${formatBytes(bytes)}까지 올릴 수 있어요`;
-}
-
-/** 첨부파일 목록이 한도 안인지. 형식은 확장자로 본다 */
-export function checkAttachments(files: FileMeta[]): string | undefined {
-  const { count, bytes, extensions } = PROJECT_MEDIA_LIMIT.attachments;
-  if (files.length > count) return `첨부파일은 ${count}개까지 올릴 수 있어요`;
-  const allowed = (name: string) => extensions.some((extension) => name.toLowerCase().endsWith(extension));
-  if (files.some((file) => !allowed(file.name))) return "PDF, DOCX, PPTX, ZIP, TXT 파일만 올릴 수 있어요";
-  if (files.some((file) => file.size > bytes)) return `첨부파일은 하나에 ${formatBytes(bytes)}까지 올릴 수 있어요`;
 }
 
 /** 폼에 숨겨 보낸 파일 정보(JSON)를 읽는다. 모양이 다르면 null */

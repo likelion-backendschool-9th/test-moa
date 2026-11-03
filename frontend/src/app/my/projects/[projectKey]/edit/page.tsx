@@ -32,7 +32,6 @@ async function FormSlot({ params }: Pick<Props, "params">) {
       initialValues={{ name, summary, softwareType, accessUrl, description }}
       initialImages={project.images}
       initialLinks={project.links}
-      initialAttachments={project.attachments}
       cancelHref={`/my/projects/${project.key}`}
     />
   );

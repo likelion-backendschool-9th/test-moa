@@ -6,14 +6,14 @@ import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES, type SoftwareType } from "@/features/recruitment/types";
 import { saveProject } from "../actions";
-import { checkAttachments, checkImages, formatBytes, type FileMeta } from "../media";
-import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectFile, type ProjectImage, type ProjectLink } from "../types";
+import { checkImages, formatBytes, type FileMeta } from "../media";
+import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImage, type ProjectLink } from "../types";
 import { ProjectBody } from "./ProjectDetail";
 import { TextField } from "./TextField";
 
 /*
  * 프로젝트 등록·수정 폼과 미리보기. 검증은 서버 액션이 하고, 오류가 오면 첫 오류 칸으로 포커스를 옮긴다.
- * 이미지·첨부파일은 고를 때 바로 한도를 확인하고, 서버에는 이름·크기·형식만 보낸다(media.ts).
+ * 이미지는 고를 때 바로 한도를 확인하고, 서버에는 이름·크기·형식만 보낸다(media.ts).
  * 등록 버튼 옆 "미리보기"를 누르면 지금 적은 내용을 상세 화면과 같은 모양(ProjectBody)으로 대화상자에 보여 준다.
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
@@ -25,7 +25,6 @@ type ProjectFormProps = {
   initialValues?: Record<string, string>;
   initialImages?: ProjectImage[];
   initialLinks?: ProjectLink[];
-  initialAttachments?: ProjectFile[];
   cancelHref: string;
 };
 
@@ -46,7 +45,6 @@ export function ProjectForm({
   initialValues = {},
   initialImages = [],
   initialLinks = [],
-  initialAttachments = [],
   cancelHref,
 }: ProjectFormProps) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
@@ -59,9 +57,8 @@ export function ProjectForm({
 
   const [draft, setDraft] = useState<Record<string, string>>(values);
   const [images, setImages] = useState<ImageItem[]>(initialImages.map((image) => ({ ...image, size: 0, type: "image/png" })));
-  const [attachments, setAttachments] = useState<FileMeta[]>(initialAttachments.map((file) => ({ ...file, type: "" })));
   const [links, setLinks] = useState<ProjectLink[]>(initialLinks);
-  const [fileErrors, setFileErrors] = useState<{ images?: string; attachments?: string }>({});
+  const [fileErrors, setFileErrors] = useState<{ images?: string }>({});
 
   /* 화면을 떠나면 브라우저 임시 주소를 풀어 메모리를 돌려준다 */
   const imagesRef = useRef(images);
@@ -85,21 +82,12 @@ export function ProjectForm({
     setFileErrors((prev) => ({ ...prev, images: undefined }));
   }
 
-  function addAttachments(event: ChangeEvent<HTMLInputElement>) {
-    const picked = [...(event.target.files ?? [])].map((file) => ({ name: file.name, size: file.size, type: file.type }));
-    event.target.value = "";
-    const error = checkAttachments([...attachments, ...picked]);
-    setFileErrors((prev) => ({ ...prev, attachments: error }));
-    if (!error) setAttachments((prev) => [...prev, ...picked]);
-  }
-
   function updateLink(index: number, field: keyof ProjectLink, value: string) {
     setLinks((prev) => prev.map((link, i) => (i === index ? { ...link, [field]: value } : link)));
   }
 
   const toMeta = ({ name, size, type }: FileMeta) => ({ name, size, type });
   const imageError = fileErrors.images ?? state.errors.images;
-  const attachmentError = fileErrors.attachments ?? state.errors.attachments;
 
   /** 지금 적은 값을 읽어 미리보기를 연다 */
   function openPreview() {
@@ -197,41 +185,10 @@ export function ProjectForm({
           )}
         </FileField>
 
-        <FileField
-          name="attachments"
-          label="첨부파일 (선택)"
-          accept={PROJECT_MEDIA_LIMIT.attachments.extensions.join(",")}
-          hint={`테스트 시나리오, 설명서 등 · PDF, DOCX, PPTX, ZIP, TXT · 하나에 ${formatBytes(PROJECT_MEDIA_LIMIT.attachments.bytes)}까지 · ${PROJECT_MEDIA_LIMIT.attachments.count}개까지`}
-          error={attachmentError}
-          onChange={addAttachments}
-        >
-          {attachments.length > 0 && (
-            <ul className="flex flex-col divide-y divide-line rounded-xl bg-surface-muted">
-              {attachments.map((file, index) => (
-                <li key={`${file.name}-${index}`} data-testid="attachment-item" className="flex items-center gap-3 px-4 py-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                  <span className="text-text-muted">{formatBytes(file.size)}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAttachments((prev) => prev.filter((_, i) => i !== index));
-                      setFileErrors((prev) => ({ ...prev, attachments: undefined }));
-                    }}
-                    aria-label={`${file.name} 삭제`}
-                    className="font-semibold text-text-muted hover:text-text"
-                  >
-                    삭제
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </FileField>
-
         <fieldset className="flex flex-col gap-3" aria-describedby="field-links-hint">
           <legend className="mb-2 text-sm font-bold">추가 링크 (선택)</legend>
           <p id="field-links-hint" className="-mt-2 text-xs text-text-muted">
-            이용 가이드, 저장소 등 · {PROJECT_MEDIA_LIMIT.links.count}개까지
+            이용 가이드, 저장소, 테스트 시나리오·설명서 내려받기 링크 등 · {PROJECT_MEDIA_LIMIT.links.count}개까지
           </p>
           {links.map((link, index) => (
             <div key={index} data-testid="link-row" className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] sm:items-start">
@@ -281,7 +238,6 @@ export function ProjectForm({
         </fieldset>
 
         <input type="hidden" name="imagesMeta" value={JSON.stringify(images.map(toMeta))} />
-        <input type="hidden" name="attachmentsMeta" value={JSON.stringify(attachments.map(toMeta))} />
 
         <div className="flex gap-2">
           <Button type="submit" disabled={pending}>
@@ -323,7 +279,6 @@ export function ProjectForm({
               description: draft.description,
               images,
               links: links.filter((link) => link.label && link.url),
-              attachments,
             }}
           />
         </Card>

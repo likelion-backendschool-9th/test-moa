@@ -6,7 +6,6 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { formatDate } from "@/lib/format";
-import { formatBytes } from "../media";
 import type { RecruitmentView } from "../service";
 import type { Project } from "../types";
 import { RecruitmentStatusBadge } from "./StatusBadge";
@@ -15,7 +14,7 @@ import { RecruitmentStatusBadge } from "./StatusBadge";
 
 export type ProjectBodyData = Pick<
   Project,
-  "name" | "summary" | "softwareType" | "accessUrl" | "description" | "images" | "links" | "attachments"
+  "name" | "summary" | "softwareType" | "accessUrl" | "description" | "images" | "links"
 >;
 
 /** 새 탭으로 여는 링크. 화면 읽기 프로그램에 새 탭임을 알린다 */
@@ -29,7 +28,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 }
 
 /**
- * 프로젝트 내용(이미지, 이름, 소개, 링크, 설명, 첨부). 상세 화면과 등록 폼 미리보기가 같이 써서 보이는 모습이 같다.
+ * 프로젝트 내용(이미지, 이름, 소개, 링크, 설명). 상세 화면과 등록 폼 미리보기가 같이 써서 보이는 모습이 같다.
  * 미리보기는 페이지 제목이 따로 있어서 이름을 h3로 내린다.
  */
 export function ProjectBody({ project, titleAs: Title = "h1" }: { project: ProjectBodyData; titleAs?: "h1" | "h3" }) {
@@ -67,19 +66,6 @@ export function ProjectBody({ project, titleAs: Title = "h1" }: { project: Proje
             {project.links.map((link, index) => (
               <li key={index}>
                 <ExternalLink href={link.url}>{link.label}</ExternalLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {project.attachments.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-bold">첨부파일</p>
-          {/* 시연용이라 실제 파일이 없어 이름과 크기만 보여 준다 */}
-          <ul className="flex flex-col gap-1">
-            {project.attachments.map((file, index) => (
-              <li key={index} className="text-sm">
-                {file.name} <span className="text-text-muted">· {formatBytes(file.size)}</span>
               </li>
             ))}
           </ul>

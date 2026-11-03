@@ -10,7 +10,7 @@ import {
   findProjects,
   saveApplicationDecisions,
 } from "./api";
-import { checkAttachments, checkImages, parseFileMeta } from "./media";
+import { checkImages, parseFileMeta } from "./media";
 import {
   AI_MIN_FEEDBACKS,
   BASE_REWARD,
@@ -271,7 +271,7 @@ function isHttpUrl(value: string) {
 
 /**
  * 프로젝트 등록·수정 폼 검증. 첫 지원 대상이 웹서비스라 유형은 web만 받는다.
- * 이미지·첨부는 화면에서도 거르지만 요청은 조작될 수 있어서 여기서 다시 확인한다.
+ * 이미지는 화면에서도 거르지만 요청은 조작될 수 있어서 여기서 다시 확인한다.
  */
 export function validateProjectForm(formData: FormData): FormState {
   const values = {
@@ -310,9 +310,6 @@ export function validateProjectForm(formData: FormData): FormState {
   const images = parseFileMeta(formData.get("imagesMeta"));
   const imageError = images ? checkImages(images) : "이미지 정보를 읽지 못했어요";
   if (imageError) errors.images = imageError;
-  const attachments = parseFileMeta(formData.get("attachmentsMeta"));
-  const attachmentError = attachments ? checkAttachments(attachments) : "첨부파일 정보를 읽지 못했어요";
-  if (attachmentError) errors.attachments = attachmentError;
   return { values, errors };
 }
 

@@ -1,7 +1,7 @@
 name: CI/CD
 
 # PR(→ develop, main): 검사만 한다
-# develop에 push(머지): 검사를 다시 돌리고, 통과하면 이미지를 만들어 GHCR에 올린다
+# develop에 push(머지): 검사를 다시 돌리고, 통과하면 이미지를 GHCR에 올린 뒤 테스트 서버(3005)에 배포한다
 # main은 지금 배포하지 않는다 (운영 단계에서 추가)
 on:
   pull_request:
@@ -162,4 +162,46 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   # ---- CD: 배포 ----
-  # 서버 접속 방식(self-hosted runner 또는 SSH)이 정해지면 build-push 뒤에 deploy job을 추가한다
+
+  # 두 이미지가 모두 올라간 뒤 서버에 SSH로 들어가 새 이미지로 다시 띄운다
+  # Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (포트가 22가 아니면 DEPLOY_PORT)
+  # 서버에는 ~/test-moa에 저장소를 develop 브랜치로 clone하고 .env를 둔다
+  deploy:
+    name: Deploy to test server
+    needs: build-push
+    runs-on: ubuntu-latest
+    # Actions 화면에 배포 이력과 접속 주소가 남는다
+    environment:
+      name: develop
+      url: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+    steps:
+      # build-push가 붙인 sha-<커밋 7자리> 태그와 같은 값을 만든다
+      - name: Set IMAGE_TAG
+        run: echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - uses: appleboy/ssh-action@v1
+        env:
+          REPO_URL: https://github.com/${{ github.repository }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: IMAGE_TAG,REPO_URL
+          script: |
+            set -e
+            cd ~/test-moa
+            # compose.prod.yaml, nginx 설정을 최신으로 맞춘다
+            git pull --ff-only
+            docker compose -f compose.prod.yaml pull
+            docker compose -f compose.prod.yaml up -d --no-build
+            # 같은 서버를 다른 팀도 쓰므로 우리 저장소에서 만든 이미지만 정리한다
+            docker image prune -f --filter "label=org.opencontainers.image.source=$REPO_URL"
+            docker compose -f compose.prod.yaml ps
+            # 3005가 응답할 때까지 최대 30초 기다린다
+            for i in $(seq 1 10); do
+              curl -fsS -o /dev/null http://localhost:3005 && exit 0
+              sleep 3
+            done
+            echo "3005 응답 없음"
+            exit 1

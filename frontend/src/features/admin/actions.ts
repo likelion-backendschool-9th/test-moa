@@ -8,6 +8,10 @@ import {
   isCancellationRejectReason,
   isRejectReason,
   isReportDecision,
+  parseListTab,
+  parseReportTargetFilter,
+  reportDetailHref,
+  reportsHref,
   isWithdrawalDecision,
   REVIEW_MEMO_MAX_LENGTH,
   type CancellationReview,
@@ -23,20 +27,21 @@ import {
 export async function processReport(formData: FormData) {
   await assertAdmin();
   const reportKey = String(formData.get("reportKey") ?? "");
-  if (!isReportKey(reportKey)) redirect("/admin/reports");
+  /* 보던 목록(탭·필터)을 되살려서, 같은 종류의 신고를 이어서 처리할 수 있게 한다 */
+  const view = { tab: parseListTab(formData.get("tab")), target: parseReportTargetFilter(formData.get("target")) };
+  if (!isReportKey(reportKey)) redirect(reportsHref(view));
 
-  const detailPath = `/admin/reports/${reportKey}`;
   const decision = formData.get("decision");
-  if (!isReportDecision(decision)) redirect(`${detailPath}?error=decision`);
+  if (!isReportDecision(decision)) redirect(reportDetailHref(reportKey, view, { error: "decision" }));
 
   /* 이미 처리한 신고는 결과를 바꾸지 않는다 */
   const { report } = await getReport(reportKey);
-  if (!report || report.review) redirect(detailPath);
+  if (!report || report.review) redirect(reportDetailHref(reportKey, view));
 
   const memo = String(formData.get("memo") ?? "").trim().slice(0, REVIEW_MEMO_MAX_LENGTH);
   const saved = await saveReview(reportKey, { decision, memo, processedAt: new Date().toISOString() });
-  if (!saved) redirect(`${detailPath}?error=memo`);
-  redirect(`/admin/reports?processed=${decision}${report.holdsReward ? "&held=1" : ""}`);
+  if (!saved) redirect(reportDetailHref(reportKey, view, { error: "memo" }));
+  redirect(reportsHref(view, report.holdsReward ? { processed: decision, held: "1" } : { processed: decision }));
 }
 
 /**

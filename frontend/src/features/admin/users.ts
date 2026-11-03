@@ -13,17 +13,18 @@ import type { Report } from "./types";
  * 클라이언트 컴포넌트에 넘길 때는 원문 대신 maskName·maskEmail로 가린 값만 넘긴다. props로 넘긴 값은 그대로 브라우저에 실린다.
  */
 
-export type UserRole = "tester" | "developer";
+/*
+ * 한 사람이 테스터도 되고 개발자도 된다(백엔드 Role은 USER·ADMIN뿐이다). 그래서 회원에게 역할 하나를 붙이지 않고,
+ * 테스터 활동과 개발자 활동을 따로 둔다. 해 본 적이 없는 쪽은 null이다.
+ */
 
-export const USER_ROLE_LABEL: Record<UserRole, string> = {
-  tester: "테스터",
-  developer: "개발자",
-};
+/** 테스터 활동. 미완료는 "악의적인 미완료 반복"을 판단할 때 본다 */
+export type TesterActivity = { confirmedCount: number; submittedCount: number; incompleteCount: number };
 
-/** 테스터는 참여 기록, 개발자는 프로젝트·구독을 본다. 미완료는 "악의적인 미완료 반복"을 판단할 때 본다 */
-export type UserActivity =
-  | { role: "tester"; confirmedCount: number; submittedCount: number; incompleteCount: number }
-  | { role: "developer"; projectCount: number; recruitmentCount: number; subscribed: boolean };
+/** 개발자 활동. 프로젝트와 구독을 본다 */
+export type DeveloperActivity = { projectCount: number; recruitmentCount: number; subscribed: boolean };
+
+export type UserActivity = { tester: TesterActivity | null; developer: DeveloperActivity | null };
 
 /** 회원. id가 상세 주소의 userKey다. 주소에는 이름·아이디 대신 번호를 쓴다 */
 export type AdminUser = {
@@ -87,31 +88,30 @@ const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY
 
 type UserSeed = Omit<AdminUser, "realName" | "email" | "joinedAt"> & { joinedDaysAgo: number };
 
-const tester = (confirmedCount: number, submittedCount: number, incompleteCount: number): UserActivity => ({
-  role: "tester",
+const tester = (confirmedCount: number, submittedCount: number, incompleteCount: number): TesterActivity => ({
   confirmedCount,
   submittedCount,
   incompleteCount,
 });
 
-const developer = (projectCount: number, recruitmentCount: number, subscribed: boolean): UserActivity => ({
-  role: "developer",
+const developer = (projectCount: number, recruitmentCount: number, subscribed: boolean): DeveloperActivity => ({
   projectCount,
   recruitmentCount,
   subscribed,
 });
 
 const SEEDS: UserSeed[] = [
-  { id: "user-1", nickname: "박도현", joinedDaysAgo: 55, activity: developer(3, 5, true) },
-  { id: "user-2", nickname: "정하린", joinedDaysAgo: 47, activity: developer(2, 3, true) },
-  { id: "user-3", nickname: "최유나", joinedDaysAgo: 40, activity: developer(1, 2, false) },
-  { id: "user-4", nickname: "서준호", joinedDaysAgo: 33, activity: tester(7, 5, 2) },
-  { id: "user-5", nickname: "이지우", joinedDaysAgo: 26, activity: tester(8, 8, 0) },
-  { id: "user-6", nickname: "오태민", joinedDaysAgo: 20, activity: tester(5, 4, 1) },
-  { id: "user-7", nickname: "윤소희", joinedDaysAgo: 15, activity: tester(4, 3, 1) },
-  { id: "user-8", nickname: "한서윤", joinedDaysAgo: 12, activity: tester(6, 6, 0) },
-  { id: "user-9", nickname: "김민준", joinedDaysAgo: 8, activity: tester(3, 3, 0) },
-  { id: "user-10", nickname: "강민서", joinedDaysAgo: 3, activity: tester(2, 1, 1) },
+  { id: "user-1", nickname: "박도현", joinedDaysAgo: 55, activity: { tester: null, developer: developer(3, 5, true) } },
+  /* 테스터이면서 개발자인 회원 */
+  { id: "user-2", nickname: "정하린", joinedDaysAgo: 47, activity: { tester: tester(4, 4, 0), developer: developer(2, 3, true) } },
+  { id: "user-3", nickname: "최유나", joinedDaysAgo: 40, activity: { tester: null, developer: developer(1, 2, false) } },
+  { id: "user-4", nickname: "서준호", joinedDaysAgo: 33, activity: { tester: tester(7, 5, 2), developer: null } },
+  { id: "user-5", nickname: "이지우", joinedDaysAgo: 26, activity: { tester: tester(8, 8, 0), developer: null } },
+  { id: "user-6", nickname: "오태민", joinedDaysAgo: 20, activity: { tester: tester(5, 4, 1), developer: null } },
+  { id: "user-7", nickname: "윤소희", joinedDaysAgo: 15, activity: { tester: tester(4, 3, 1), developer: null } },
+  { id: "user-8", nickname: "한서윤", joinedDaysAgo: 12, activity: { tester: tester(6, 6, 0), developer: null } },
+  { id: "user-9", nickname: "김민준", joinedDaysAgo: 8, activity: { tester: tester(3, 3, 0), developer: null } },
+  { id: "user-10", nickname: "강민서", joinedDaysAgo: 3, activity: { tester: tester(2, 1, 1), developer: null } },
 ];
 
 function buildUsers(now: Date): AdminUser[] {

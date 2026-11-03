@@ -18,9 +18,9 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 결제 대상 구독
+    // 결제 대상 구독. 연장마다 결제 행이 생기므로 구독 1 : 결제 N
     @ToString.Exclude
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     private Subscription subscription;
 

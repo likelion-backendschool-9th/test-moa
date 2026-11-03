@@ -5,7 +5,17 @@
  * 날짜 순서는 항상 모집 생성 → 지원 → 모집 마감 → 피드백 제출이다. 피드백은 테스트 중인 북로그 1차 모집에만 있다.
  */
 import type { Recruitment } from "@/features/recruitment/types";
-import type { AiSummary, Application, ApplicationStatus, Feedback, FeedbackStatus, Project } from "./types";
+import type {
+  AiSummary,
+  Application,
+  ApplicationStatus,
+  CancelRequest,
+  Feedback,
+  FeedbackStatus,
+  Project,
+  ProjectImage,
+  RecruitmentDetail,
+} from "./types";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -20,13 +30,14 @@ const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY
 const inDays = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
 
 /**
- * 상태별 인원 수로 지원 목록을 만든다. 먼저 지원한 사람부터 확정, 거절, 대기 순이다.
+ * 상태별 인원 수로 지원 목록을 만든다. 먼저 지원한 사람부터 확정, 거절, 참여 취소, 대기 순이다.
  * 지원 시각은 모집 생성 뒤부터 지금(모집이 끝났으면 모집 마감)까지 고르게 나눈다.
  */
 function buildApplications(recruitment: Recruitment, now: Date, counts: Record<ApplicationStatus, number>): Application[] {
   const statuses: ApplicationStatus[] = [
     ...Array<ApplicationStatus>(counts.confirmed).fill("confirmed"),
     ...Array<ApplicationStatus>(counts.rejected).fill("rejected"),
+    ...Array<ApplicationStatus>(counts.cancelled).fill("cancelled"),
     ...Array<ApplicationStatus>(counts.applied).fill("applied"),
   ];
   const from = new Date(recruitment.createdAt).getTime();
@@ -40,12 +51,22 @@ function buildApplications(recruitment: Recruitment, now: Date, counts: Record<A
   }));
 }
 
-type FeedbackSeed = { nickname: string; content: string; submittedHoursAgo: number; status: FeedbackStatus };
+type FeedbackSeed = {
+  nickname: string;
+  content: string;
+  submittedHoursAgo: number;
+  status: FeedbackStatus;
+  /** 테스트 항목 id. 기타 의견은 null */
+  testItemId: string | null;
+  images?: ProjectImage[];
+};
 
 function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedback[] {
   return seeds.map((seed, index) => ({
     id: `${slug}-f${index + 1}`,
     testerNickname: seed.nickname,
+    testItemId: seed.testItemId,
+    images: seed.images ?? [],
     content: seed.content,
     submittedAt: hoursAgo(now, seed.submittedHoursAgo),
     status: seed.status,
@@ -60,6 +81,10 @@ export type ProjectSeedData = {
   feedbacks: Record<string, Feedback[]>;
   /** recruitmentKey별 AI 분석 결과 */
   aiSummaries: Record<string, AiSummary>;
+  /** recruitmentKey별 모집 조건과 테스트 항목 */
+  details: Record<string, RecruitmentDetail>;
+  /** recruitmentKey별 모집 취소 요청. 운영자가 이미 처리한 것만 둔다 */
+  cancelRequests: Record<string, CancelRequest>;
 };
 
 /**
@@ -87,23 +112,51 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     confirmedCount: 5,
   };
 
+  /* 운영자가 취소 요청을 승인한 지난 무료 모집. 확정됐던 테스터의 참여도 함께 취소됐다 */
+  const folioOld: Recruitment = {
+    ...folio,
+    slug: "folio-builder-old",
+    request: "첫 버전 템플릿 고르기 화면 써 보기",
+    createdAt: daysAgo(now, 15),
+    recruitDeadline: daysAgo(now, 9),
+    submitDeadline: daysAgo(now, 2),
+    capacity: 10,
+    confirmedCount: 0,
+  };
+
   const applications: Record<string, Application[]> = {
     /* 모집 중. 대기 지원자 8명이 남은 자리 7명보다 많아 일괄 확정의 정원 안내를 보여 준다 */
-    booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, applied: 8 }),
-    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, applied: 0 }),
+    booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, cancelled: 0, applied: 8 }),
+    /* 확정 5명 중 2명은 아직 피드백을 내지 않았고, 1명은 확정 뒤 참여를 취소했다 */
+    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, cancelled: 1, applied: 0 }),
     /* 무료 모집은 선착순 자동 확정이라 대기·거절이 없다 */
-    "folio-builder": buildApplications(folio, now, { confirmed: folio.confirmedCount, rejected: 0, applied: 0 }),
+    "folio-builder": buildApplications(folio, now, { confirmed: folio.confirmedCount, rejected: 0, cancelled: 0, applied: 0 }),
+    "folio-builder-old": buildApplications(folioOld, now, { confirmed: 0, rejected: 0, cancelled: 3, applied: 0 }),
   };
 
   const feedbacks: Record<string, Feedback[]> = {
     booklog: [],
     /* 확정된 테스터(앞의 5명)가 모집 마감(5일 전) 뒤에 낸 피드백 */
     "booklog-first": buildFeedbacks("booklog-first", now, [
-      { nickname: "김하늘", content: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 두 번 눌렀어요.", submittedHoursAgo: 10, status: "waiting" },
-      { nickname: "이도윤", content: "좋아요.", submittedHoursAgo: 30, status: "reported" },
-      { nickname: "박서아", content: "밑줄 문장 저장은 편했는데, 저장한 문장을 다시 찾는 메뉴가 안 보였어요.", submittedHoursAgo: 96, status: "paid" },
+      {
+        nickname: "김하늘",
+        content: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 두 번 눌렀어요.",
+        submittedHoursAgo: 10,
+        status: "waiting",
+        testItemId: "booklog-first-t1",
+        images: [{ url: "/sample/feedback/booklog-search.svg", name: "표지가 비어 있는 검색 결과" }],
+      },
+      { nickname: "이도윤", content: "좋아요.", submittedHoursAgo: 30, status: "reported", testItemId: null },
+      {
+        nickname: "박서아",
+        content: "밑줄 문장 저장은 편했는데, 저장한 문장을 다시 찾는 메뉴가 안 보였어요.",
+        submittedHoursAgo: 96,
+        status: "paid",
+        testItemId: "booklog-first-t2",
+      },
     ]),
     "folio-builder": [],
+    "folio-builder-old": [],
   };
 
   /* 북로그 1차 모집 피드백 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
@@ -126,6 +179,46 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       generatedAt: hoursAgo(now, 2),
       isSample: true,
     },
+  };
+
+  const details: Record<string, RecruitmentDetail> = {
+    booklog: {
+      conditions: "한 달에 책을 한 권 이상 읽는 분\n휴대폰 브라우저(크롬·사파리)로 참여할 수 있는 분",
+      testItems: [
+        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 검색해 내 서재에 등록해 주세요." },
+        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장해 주세요." },
+        { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요." },
+      ],
+    },
+    "booklog-first": {
+      conditions: "",
+      testItems: [
+        { id: "booklog-first-t1", title: "책 검색하기", description: "제목으로 책을 찾아 보세요." },
+        { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요." },
+      ],
+    },
+    "folio-builder": {
+      conditions: "포트폴리오를 만들어 본 적이 있는 분",
+      testItems: [
+        { id: "folio-t1", title: "템플릿 고르기", description: "마음에 드는 템플릿을 하나 골라 주세요." },
+        { id: "folio-t2", title: "프로젝트 추가하기", description: "프로젝트 하나를 추가하고 미리보기로 확인해 주세요." },
+      ],
+    },
+    "folio-builder-old": {
+      conditions: "",
+      testItems: [{ id: "folio-old-t1", title: "템플릿 고르기", description: "첫 버전 템플릿 화면을 써 보세요." }],
+    },
+  };
+
+  /* 운영자가 이미 처리한 취소 요청. 반려 사유 문구는 운영자 화면(admin/types.ts)과 같다 */
+  const cancelRequests: Record<string, CancelRequest> = {
+    "folio-builder": {
+      status: "rejected",
+      reason: "모집 인원을 바꾸고 싶어요",
+      requestedAt: daysAgo(now, 1),
+      rejectReason: "취소 사유가 부족해요",
+    },
+    "folio-builder-old": { status: "approved", reason: "서비스 화면을 크게 바꿔서 다시 모집할게요", requestedAt: daysAgo(now, 10) },
   };
 
   const projects: Project[] = [
@@ -155,7 +248,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       images: [],
       links: [],
       createdAt: daysAgo(now, 20),
-      recruitments: [folio],
+      recruitments: [folio, folioOld],
     },
     {
       /* 모집 건이 없는 프로젝트. 빈 상태를 보여 준다 */
@@ -172,5 +265,5 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     },
   ];
 
-  return { projects, applications, feedbacks, aiSummaries };
+  return { projects, applications, feedbacks, aiSummaries, details, cancelRequests };
 }

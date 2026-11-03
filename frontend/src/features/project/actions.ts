@@ -5,6 +5,7 @@ import {
   decideApplicants as decide,
   getMyProject,
   getRecruitmentFormInfo,
+  requestRecruitmentCancel,
   requireRole,
   validateProjectForm,
   validateRecruitmentForm,
@@ -44,4 +45,14 @@ export async function decideApplicants(
 ): Promise<{ ok: boolean }> {
   if (status !== "confirmed" && status !== "rejected") return { ok: false };
   return decide(projectKey, recruitmentKey, ids, status);
+}
+
+/** 모집 취소 요청. 시연용이라 브라우저 쿠키에 남고, 화면에 "처리 대기"로 보인다 */
+export async function requestCancel(
+  projectKey: string,
+  recruitmentKey: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState & { ok?: boolean }> {
+  return requestRecruitmentCancel(projectKey, recruitmentKey, formData);
 }

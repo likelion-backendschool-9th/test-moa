@@ -4,9 +4,9 @@ import { cache } from "react";
 import { getDemoDataMode } from "@/lib/demo";
 import type { Role } from "@/lib/session";
 import { buildGeneralRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
-import { readDecisions, saveDecisions, type Decision } from "./demo-decisions";
+import { readCancelRequests, readDecisions, saveCancelRequest, saveDecisions, type Decision } from "./demo-decisions";
 import { buildDeveloperProjects, type ProjectSeedData } from "./mock";
-import type { AiSummary, Application, Feedback, Project } from "./types";
+import type { AiSummary, Application, CancelRequest, Feedback, Project, RecruitmentDetail } from "./types";
 
 /*
  * 데이터 계층. 프로젝트·지원·피드백 데이터를 가져온다. 지금은 목업을 돌려준다.
@@ -15,7 +15,7 @@ import type { AiSummary, Application, Feedback, Project } from "./types";
  */
 
 const SLOW_DELAY_MS = 1500;
-const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {} };
+const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {}, details: {}, cancelRequests: {} };
 
 /** 한 요청 안에서는 목업을 한 번만 만든다 */
 const load = cache(async (role: Role): Promise<ProjectSeedData> => {
@@ -77,6 +77,27 @@ export async function findAiSummary(role: Role, recruitmentKey: string): Promise
   /* 느린 응답 시연: 숫자 카드보다 늦게 도착하는 모습을 보여 준다 */
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
   return (await load(role)).aiSummaries[recruitmentKey] ?? null;
+}
+
+/** 모집 건의 모집 조건과 테스트 항목 */
+export async function findRecruitmentDetail(role: Role, recruitmentKey: string): Promise<RecruitmentDetail> {
+  return (await load(role)).details[recruitmentKey] ?? { conditions: "", testItems: [] };
+}
+
+/** 모집 건의 취소 요청. 운영자가 처리한 요청이 있으면 그것을, 아니면 시연 중 보낸 요청(처리 대기)을 돌려준다 */
+export async function findCancelRequest(role: Role, recruitmentKey: string): Promise<CancelRequest | null> {
+  const processed = (await load(role)).cancelRequests[recruitmentKey];
+  const sent = (await readCancelRequests())[recruitmentKey];
+  /* 반려된 뒤 다시 보낸 요청은 새 요청이 우선이다 */
+  if (sent && (!processed || (processed.status === "rejected" && sent.requestedAt > processed.requestedAt))) {
+    return { status: "pending", ...sent };
+  }
+  return processed ?? null;
+}
+
+/** 모집 취소 요청을 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
+export async function saveRecruitmentCancelRequest(recruitmentKey: string, reason: string): Promise<boolean> {
+  return saveCancelRequest(recruitmentKey, { reason, requestedAt: new Date().toISOString() });
 }
 
 /** 회원이 지금 구독 중인지. 시연에서는 개발자 역할만 구독 중이다 */

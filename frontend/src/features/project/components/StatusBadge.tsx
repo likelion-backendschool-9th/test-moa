@@ -8,6 +8,7 @@ const TONE: Record<RecruitmentStatus, "accent" | "neutral" | "muted"> = {
   full: "neutral",
   testing: "neutral",
   closed: "muted",
+  cancelled: "muted",
 };
 
 /** 모집 건 상태 배지 */

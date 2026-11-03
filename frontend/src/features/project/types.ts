@@ -28,13 +28,14 @@ export type Project = {
   recruitments: Recruitment[];
 };
 
-/** 지원 상태: 지원, 확정, 거절 */
-export type ApplicationStatus = "applied" | "confirmed" | "rejected";
+/** 지원 상태: 지원, 확정, 거절, 참여 취소(테스터가 그만뒀거나 모집이 취소됨. 백엔드 RegisterStatus.CANCELLED) */
+export type ApplicationStatus = "applied" | "confirmed" | "rejected" | "cancelled";
 
 export const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> = {
   applied: "지원",
   confirmed: "확정",
   rejected: "거절",
+  cancelled: "참여 취소",
 };
 
 /** 모집 건에 들어온 지원 한 건. 테스터 개인정보는 닉네임만 둔다 */
@@ -58,19 +59,58 @@ export const FEEDBACK_STATUS_LABEL: Record<FeedbackStatus, string> = {
 export type Feedback = {
   id: string;
   testerNickname: string;
+  /** 어느 테스트 항목에 대한 피드백인지. 기타 의견은 null (백엔드 Feedback.testItem) */
+  testItemId: string | null;
+  /** 피드백에 붙인 스크린샷 (백엔드 FeedbackImage) */
+  images: ProjectImage[];
   content: string;
   submittedAt: string;
   status: FeedbackStatus;
 };
 
-/** 모집 건 상태. 저장하지 않고 마감일과 인원으로 계산한다 */
-export type RecruitmentStatus = "recruiting" | "full" | "testing" | "closed";
+/** 모집 건 상태. 저장하지 않고 마감일과 인원으로 계산한다. 취소 요청이 승인되면 취소다 */
+export type RecruitmentStatus = "recruiting" | "full" | "testing" | "closed" | "cancelled";
 
 export const RECRUITMENT_STATUS_LABEL: Record<RecruitmentStatus, string> = {
   recruiting: "모집 중",
   full: "모집 완료",
   testing: "테스트 중",
   closed: "종료",
+  cancelled: "취소",
+};
+
+/** 테스터에게 해 달라고 할 작업 하나 (백엔드 TestItem) */
+export type TestItem = { id: string; title: string; description: string };
+
+/** 모집 건에 붙는 내용. 홈의 Recruitment 타입은 홈 담당이라 여기에 따로 둔다 */
+export type RecruitmentDetail = {
+  /** 모집 조건: 필요한 경험·관심사·사용 환경 (README). 없으면 빈 문자열 */
+  conditions: string;
+  testItems: TestItem[];
+};
+
+/** 확정된 테스터의 피드백 제출 현황. 제출 마감까지 안 내면 미완료 (README: 보상 없이 미완료 처리) */
+export type SubmissionStatus = "submitted" | "pending" | "incomplete";
+
+export const SUBMISSION_STATUS_LABEL: Record<SubmissionStatus, string> = {
+  submitted: "제출함",
+  pending: "미제출",
+  incomplete: "미완료",
+};
+
+/** 모집 취소 요청. 운영자가 승인하거나 반려한다 (docs/frontend-admin-cancellations.md) */
+export type CancelRequest = {
+  status: "pending" | "approved" | "rejected";
+  reason: string;
+  requestedAt: string;
+  /** 반려 사유. 개발자에게 보인다 */
+  rejectReason?: string;
+};
+
+export const CANCEL_REQUEST_LABEL: Record<CancelRequest["status"], string> = {
+  pending: "처리 대기",
+  approved: "승인",
+  rejected: "반려",
 };
 
 /** README: 제출 후 72시간 동안 신고가 없으면 자동 지급 */
@@ -107,7 +147,6 @@ export type AiSummary = {
 /** AI 분석을 시작하는 최소 피드백 수. 기획에서 미정이라 임시값이다 */
 export const AI_MIN_FEEDBACKS = 3;
 
-/** 폼 제출 결과. 오류가 있으면 입력값을 그대로 돌려줘 다시 채운다 */
 export type ProjectImage = { url: string; name: string };
 export type ProjectLink = { label: string; url: string };
 /** 프로젝트 등록 폼의 이미지·링크 한도. 기획 확정 전 임시값이다 */
@@ -117,6 +156,14 @@ export const PROJECT_MEDIA_LIMIT = {
   descriptionLength: 1000,
 } as const;
 
+/** 모집 작성 폼과 취소 요청의 글자 수·개수 한도. 기획 확정 전 임시값이다 */
+export const RECRUITMENT_LIMIT = {
+  conditionsLength: 500,
+  testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300 },
+  cancelReasonLength: 300,
+} as const;
+
+/** 폼 제출 결과. 오류가 있으면 입력값을 그대로 돌려줘 다시 채운다 */
 export type FormState = {
   values: Record<string, string>;
   errors: Record<string, string>;

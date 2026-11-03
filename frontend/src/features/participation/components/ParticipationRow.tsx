@@ -2,8 +2,17 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentThumb";
+import { cn } from "@/lib/cn";
 import { daysUntil, formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
-import { keyDateOf, participationPath, STATUS_LABEL, tabOf, type ParticipationItem, type ParticipationStatus } from "../types";
+import {
+  keyDateOf,
+  participationPath,
+  STATUS_LABEL,
+  tabOf,
+  type ParticipationItem,
+  type ParticipationStatus,
+  type ParticipationView,
+} from "../types";
 
 /** D-3 이하는 굵기로 급함을 알린다 */
 const URGENT_DAYS = 3;
@@ -25,17 +34,22 @@ function actionOf(item: ParticipationItem) {
 
 /**
  * 참여 행. 활자 썸네일 → 요청 문구 → 상태 → 날짜 → 보상 → 동작 순서로 고정한다.
- * lg 이상은 썸네일 | 내용 | 동작 한 줄, 그보다 좁으면 위아래로 쌓인다.
+ * 리스트는 lg 이상에서 썸네일 | 내용 | 동작 한 줄, 그보다 좁으면 위아래로 쌓인다.
+ * 그리드는 항상 위아래로 쌓고, 내용이 남는 높이를 채워 같은 줄 카드의 동작 버튼 위치를 맞춘다.
  */
-export function ParticipationRow({ item, now }: { item: ParticipationItem; now: Date }) {
+export function ParticipationRow({ item, view = "list", now }: { item: ParticipationItem; view?: ParticipationView; now: Date }) {
   const { recruitment, status } = item;
   const keyDate = keyDateOf(item);
   const action = actionOf(item);
   const urgent = status === "beforeSubmit" && daysUntil(recruitment.submitDeadline, now) <= URGENT_DAYS;
+  const grid = view === "grid";
 
   return (
-    <Card data-testid="participation-row" className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
-      <div className="w-36 shrink-0 lg:w-48">
+    <Card
+      data-testid="participation-row"
+      className={cn("flex flex-col gap-4", grid ? "h-full" : "lg:flex-row lg:items-center lg:gap-6")}
+    >
+      <div className={grid ? "w-full" : "w-36 shrink-0 lg:w-48"}>
         <RecruitmentThumb recruitment={recruitment} stamp={status === "paid" ? "지급 완료" : undefined} />
       </div>
       <div className="flex flex-1 flex-col gap-3">
@@ -66,7 +80,7 @@ export function ParticipationRow({ item, now }: { item: ParticipationItem; now: 
         )}
         {status === "payoutPending" && <p className="text-xs text-text-muted">72시간 동안 신고가 없으면 자동으로 지급돼요</p>}
       </div>
-      <LinkButton href={action.href} variant="secondary" size="sm" className="self-start lg:self-center">
+      <LinkButton href={action.href} variant="secondary" size="sm" className={grid ? "self-start" : "self-start lg:self-center"}>
         <span className="sr-only">{recruitment.projectName} </span>
         {action.label}
       </LinkButton>

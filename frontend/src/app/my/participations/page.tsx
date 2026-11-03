@@ -14,7 +14,8 @@ import { NextTodoPanel, NextTodoPanelSkeleton } from "@/features/participation/c
 import { NoParticipations, ParticipationList } from "@/features/participation/components/ParticipationList";
 import { ParticipationSkeleton } from "@/features/participation/components/ParticipationSkeleton";
 import { ParticipationTabs } from "@/features/participation/components/ParticipationTabs";
-import { parseParticipationTab, type ParticipationTab } from "@/features/participation/types";
+import { parseParticipationTab, type ParticipationTab, type ParticipationView } from "@/features/participation/types";
+import { readParticipationView } from "@/features/participation/view-preference";
 import { formatCredits } from "@/lib/format";
 import { getSession } from "@/lib/session";
 
@@ -89,10 +90,22 @@ async function TabsWithCounts({ tab }: { tab: ParticipationTab }) {
   return <ParticipationTabs active={tab} counts={await getParticipationCounts()} />;
 }
 
+/* 고른 보기 방식은 바로 읽히므로, 데이터를 기다리는 동안 같은 배치의 스켈레톤을 보여 준다 */
 async function ListSlot({ searchParams }: { searchParams: SearchParams }) {
-  const tab = parseParticipationTab((await searchParams).tab);
+  const [params, view] = await Promise.all([searchParams, readParticipationView()]);
+  const tab = parseParticipationTab(params.tab);
+  return (
+    <Suspense fallback={<ParticipationSkeleton view={view} />}>
+      <ListWithData tab={tab} urlTab={params.tab === tab ? tab : undefined} view={view} />
+    </Suspense>
+  );
+}
+
+type ListWithDataProps = { tab: ParticipationTab; urlTab?: ParticipationTab; view: ParticipationView };
+
+async function ListWithData({ tab, urlTab, view }: ListWithDataProps) {
   const [session, items] = await Promise.all([getSession(), getParticipations(tab)]);
   if (session.role !== "tester") return <NoParticipations />;
   await connection();
-  return <ParticipationList tab={tab} items={items} now={new Date()} />;
+  return <ParticipationList tab={tab} view={view} urlTab={urlTab} items={items} now={new Date()} />;
 }

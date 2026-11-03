@@ -8,6 +8,8 @@ const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
 const FIRST_MANAGE = `${BOOKLOG}/recruitments/booklog-first`;
 const FOLIO_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder";
+/* 운영자가 취소를 승인한 지난 무료 모집 */
+const FOLIO_OLD_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder-old";
 
 test.describe("R101 접근", () => {
   for (const path of ["/my/projects", "/my/projects/new", BOOKLOG, `${BOOKLOG}/edit`, `${BOOKLOG}/recruitments/new`, BOOKLOG_MANAGE]) {
@@ -370,6 +372,7 @@ test.describe("R105 테스트 모집 작성", () => {
     await page.getByLabel("모집 마감일").fill("2099-01-10");
     await page.getByLabel("피드백 제출 마감일").fill("2099-01-20");
     await page.getByLabel("모집 인원").fill("10");
+    await page.getByLabel("항목 1 이름").fill("회원가입하기");
     await page.getByRole("button", { name: "모집 등록" }).click();
     await expect(page).toHaveURL(`${BOOKLOG}?notice=saved`);
     await expect(page.getByText("시연용이라 실제로 저장되지는 않아요")).toBeVisible();
@@ -614,5 +617,142 @@ test.describe("R112 AI 분석", () => {
     await expect(page.getByTestId("ai-skeleton")).toBeVisible();
     await expect(page.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
     await expect(page.getByTestId("ai-skeleton")).toHaveCount(0);
+  });
+});
+
+test.describe("R114 모집 조건과 테스트 항목", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S352 모집 작성에 모집 조건과 테스트 항목이 있고 항목은 1개 이상이다", async ({ page }) => {
+    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await expect(page.getByLabel("모집 조건 (선택)")).toBeVisible();
+    await expect(page.getByTestId("test-item-row")).toHaveCount(1);
+    const add = page.getByRole("button", { name: "항목 추가" });
+    for (let i = 1; i < 10; i += 1) await add.click();
+    await expect(page.getByTestId("test-item-row")).toHaveCount(10);
+    await expect(add).toBeDisabled();
+    await page.getByRole("button", { name: "항목 10 삭제" }).click();
+    await expect(page.getByTestId("test-item-row")).toHaveCount(9);
+
+    /* 다른 칸은 다 채우고 테스트 항목만 비운다 */
+    await page.getByLabel("요청 내용").fill("회원가입부터 첫 기록까지 해 보기");
+    await page.getByLabel("모집 마감일").fill("2099-01-10");
+    await page.getByLabel("피드백 제출 마감일").fill("2099-01-20");
+    await page.getByLabel("모집 인원").fill("10");
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    await expect(page.getByText("테스트 항목을 1개 이상 적어 주세요")).toBeVisible();
+    await expect(page.getByLabel("항목 1 이름")).toBeFocused();
+  });
+
+  test("S353 모집 관리 화면에서 모집 조건과 테스트 항목을 펼쳐 본다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const box = page.getByText("모집 조건과 테스트 항목 3개");
+    await box.click();
+    await expect(page.getByText(/한 달에 책을 한 권 이상 읽는 분/)).toBeVisible();
+    await expect(page.getByText("책 검색해서 등록하기")).toBeVisible();
+    await expect(page.getByText("독서 기록 쓰기")).toBeVisible();
+  });
+});
+
+test.describe("R115 모집 취소 요청", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S354 테스트 전 모집은 사유를 적어 취소를 요청하고, 처리 대기 상태가 남는다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const button = page.getByRole("button", { name: "모집 취소 요청" });
+    await button.click();
+    const dialog = page.getByRole("dialog", { name: "모집 취소 요청" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await expect(dialog.getByText("취소 사유를 적어 주세요")).toBeVisible();
+    await expect(dialog.getByLabel("취소 사유")).toBeFocused();
+
+    await dialog.getByLabel("취소 사유").fill("서비스 점검 일정이 바뀌었어요");
+    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await expect(dialog).toBeHidden();
+    const status = page.getByTestId("cancel-status");
+    await expect(status).toContainText("취소 요청 처리 대기");
+    await expect(status).toContainText("요청 사유: 서비스 점검 일정이 바뀌었어요");
+    await expect(button).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByTestId("cancel-status")).toContainText("처리 대기");
+  });
+
+  test("S355 테스트가 시작된 모집은 취소를 요청할 수 없다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
+  });
+
+  test("S356 반려된 요청은 반려 사유를 보여 주고 다시 요청할 수 있다", async ({ page }) => {
+    await page.goto(FOLIO_MANAGE);
+    const status = page.getByTestId("cancel-status");
+    await expect(status).toContainText("취소 요청 반려");
+    await expect(status).toContainText("반려 사유: 취소 사유가 부족해요");
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toBeVisible();
+  });
+
+  test("S357 승인된 모집은 취소 상태이고 진행 숫자에서 빠진다", async ({ page }) => {
+    await page.goto(FOLIO_OLD_MANAGE);
+    await expect(page.getByTestId("cancel-status")).toContainText("운영자가 모집 취소를 승인했어요");
+    await expect(page.getByRole("main").getByText("취소", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
+    await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(3);
+
+    await page.goto("/my/projects");
+    const folio = page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem").filter({ hasText: "포트폴리오 빌더" });
+    await expect(folio).toContainText("모집 2건 · 모집 중 0건");
+    const overview = page.getByRole("region", { name: "전체 현황" });
+    const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 완료$/ }) });
+    await expect(tile.getByRole("definition")).toHaveText("1건");
+  });
+});
+
+test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S358 테스트 중이면 확정 테스터마다 피드백 제출 현황이 보인다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByTestId("submission-summary")).toHaveText("피드백 제출 3명 · 미제출 2명 · 미완료 0명");
+    await expect(page.getByTestId("applicant").filter({ hasText: "김하늘" })).toContainText("제출함");
+    await expect(page.getByTestId("applicant").filter({ hasText: "최지호" })).toContainText("미제출");
+
+    /* 테스트 전(모집 중)에는 제출 현황이 없다 */
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByTestId("submission-summary")).toHaveCount(0);
+  });
+
+  test("S359 확정 뒤 참여를 취소한 테스터는 참여 취소로 보이고 확정 수에서 빠진다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(1);
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명 · 정원 5명");
+  });
+
+  test("S360 구독 모집의 확정 테스터에게 채팅 바로가기가 있다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByRole("link", { name: "김하늘님과 채팅" })).toHaveAttribute("href", `/my/chats?q=${encodeURIComponent("김하늘")}`);
+    /* 확정되지 않은 테스터와 무료 모집에는 없다 */
+    await expect(page.getByRole("link", { name: /님과 채팅$/ })).toHaveCount(5);
+    await page.goto(FOLIO_MANAGE);
+    await expect(page.getByRole("link", { name: /님과 채팅$/ })).toHaveCount(0);
+  });
+});
+
+test.describe("R117 항목별 피드백과 스크린샷", () => {
+  test("S361 피드백마다 테스트 항목과 스크린샷이 보이고 항목별 수가 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${FIRST_MANAGE}?tab=feedback`);
+    await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 1건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건");
+    const first = page.getByTestId("feedback").filter({ hasText: "김하늘" });
+    await expect(first).toContainText("책 검색하기");
+    await expect(first.getByRole("img", { name: "표지가 비어 있는 검색 결과" })).toBeVisible();
+    await expect(page.getByTestId("feedback").filter({ hasText: "이도윤" })).toContainText("기타 의견");
   });
 });

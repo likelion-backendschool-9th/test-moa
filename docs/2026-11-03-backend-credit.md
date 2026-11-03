@@ -27,12 +27,14 @@
 
 쓰기 UC보다 먼저. 단독 커밋 또는 C1과 같은 PR.
 
-| 변경 | 내용 |
-| --- | --- |
-| `CashoutRequest` | `bank`, `accountNumber`, `accountHolder`, `rejectReason` 추가 |
-| `pendingReward` | wallet 컬럼 없음. Feedback 합으로 조회 |
+| 변경 | 내용 | 상태 |
+| --- | --- | --- |
+| `CashoutRequest` | `bank`, `accountNumber`, `accountHolder`, `rejectReason` 추가 | 반영 |
+| `pendingReward` | wallet 컬럼 없음. Feedback 합으로 조회 | 반영(주석) |
 
 잠금/해제는 ledger에 **안 남긴다**. ledger는 잔액이 바뀐 사건만.
+
+Payment `@ManyToOne`은 결제 P0에서 다룬다(크레딧 C0 범위 밖).
 
 ---
 

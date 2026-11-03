@@ -6,7 +6,7 @@ test.use({ viewport: { width: 375, height: 812 } });
 const panel = (page: Page) => page.getByTestId("mobile-menu");
 const openMenu = (page: Page) => page.getByRole("button", { name: "메뉴 열기" }).click();
 
-test.describe("R178 모바일 메뉴", () => {
+test.describe("R4 모바일 메뉴", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });

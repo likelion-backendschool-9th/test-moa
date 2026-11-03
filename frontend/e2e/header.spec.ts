@@ -3,7 +3,7 @@ import { expectLoginRedirect, setDemo } from "./helpers";
 
 const header = (page: Page) => page.getByRole("banner");
 
-test.describe("R176 헤더와 계정", () => {
+test.describe("R2 헤더와 계정", () => {
   test("S4 쿠키가 없으면 테스터로 본다", async ({ page }) => {
     await page.goto("/");
     await expect(header(page).getByRole("link", { name: "보유 크레딧 12,480" })).toBeVisible();

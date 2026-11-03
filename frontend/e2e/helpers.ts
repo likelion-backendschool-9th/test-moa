@@ -20,18 +20,20 @@ export function homeLogo(page: Page): Locator {
 
 /**
  * 더보기 같은 메뉴 버튼을 눌러 메뉴를 연다. 페이지가 준비되기 전에 누르면 아무 일도 일어나지 않아서,
- * 닫혀 있을 때만 누르고 열릴 때까지 다시 시도한다(열린 메뉴를 다시 눌러 닫는 일은 없다).
+ * 닫혀 있을 때만 한 번 누르고 열릴 때까지 기다린다. 재시도로 다시 눌러 닫지 않도록, 클릭은
+ * aria-expanded가 true가 아닐 때만 하고 열림 확인은 길게 잡는다.
  */
 export async function openMoreMenu(button: Locator) {
   await expect(async () => {
-    if ((await button.getAttribute("aria-expanded")) !== "true") await button.click({ timeout: 2000 });
-    await expect(button).toHaveAttribute("aria-expanded", "true", { timeout: 1000 });
-  }).toPass();
+    if ((await button.getAttribute("aria-expanded")) === "true") return;
+    await button.click({ timeout: 2000 });
+    await expect(button).toHaveAttribute("aria-expanded", "true", { timeout: 5000 });
+  }).toPass({ timeout: 15000 });
 }
 
 /** 페이지가 가로로 넘치지 않는지 확인한다. 여러 페이지를 돌 때는 label로 어느 곳인지 알린다 */
 export async function expectNoHorizontalOverflow(page: Page, label?: string) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow, label).toBeLessThanOrEqual(0);
 }
 

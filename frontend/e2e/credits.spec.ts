@@ -97,7 +97,7 @@ test.describe("tester 크레딧 관리", () => {
     await expect(rows).toHaveCount(12);
   });
 
-  test("S341·S345 날짜별 묶음과 시각, 좁은 화면에서도 이름이 다 보인다", async ({ page }) => {
+  test("S352·S356 날짜별 묶음과 시각, 좁은 화면에서도 이름이 다 보인다", async ({ page }) => {
     await expectDayGroups(region(page, "크레딧 내역"), 12);
     await expect(region(page, "크레딧 내역").getByRole("heading", { level: 3 }).first()).toHaveText("어제");
 
@@ -106,7 +106,7 @@ test.describe("tester 크레딧 관리", () => {
     expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   });
 
-  test("S154·S342 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같고 모양도 같다", async ({ page }) => {
+  test("S154·S353 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같고 모양도 같다", async ({ page }) => {
     await expect(ledgerRows(page)).toHaveCount(12);
     const full = (await ledgerRows(page).allInnerTexts()).slice(0, 5);
     await page.goto("/my");
@@ -148,7 +148,7 @@ test.describe("tester 출금", () => {
     await page.goto("/my/credits/withdrawals");
   });
 
-  test("S145·S343 출금 내역은 날짜별로 묶이고 반려는 이유를 보여 준다", async ({ page }) => {
+  test("S145·S354 출금 내역은 날짜별로 묶이고 반려는 이유를 보여 준다", async ({ page }) => {
     await expectDayGroups(region(page, "출금 내역"), 2);
     const rows = historyRows(page);
     await expect(rows.nth(0)).toContainText("3,000원");
@@ -259,14 +259,14 @@ test.describe("tester 출금", () => {
     await expect(page.getByLabel("예금주")).toHaveValue("한서윤");
   });
 
-  test("S150·S185·S186·S188·S189·S344 신청하면 오늘 묶음 맨 위에 남고, 이어서 넘치게 신청하면 입력이 남는다", async ({ page }) => {
+  test("S150·S185·S186·S188·S189·S355 신청하면 오늘 묶음 맨 위에 남고, 이어서 넘치게 신청하면 입력이 남는다", async ({ page }) => {
     await request(page);
     await expect(page.getByRole("status")).toHaveText("5,000원 출금을 신청했어요. 운영자가 확인한 뒤 지급해요.");
     for (const label of ["금액(크레딧)", "계좌번호", "예금주"]) await expect(page.getByLabel(label), "S150").toHaveValue("");
 
     const rows = historyRows(page);
     await expectDayGroups(region(page, "출금 내역"), 3);
-    await expect(region(page, "출금 내역").getByRole("heading", { level: 3 }).first(), "S344").toHaveText("오늘");
+    await expect(region(page, "출금 내역").getByRole("heading", { level: 3 }).first(), "S355").toHaveText("오늘");
     await expect(rows.first(), "S186").toContainText("5,000원");
     await expect(rows.first(), "S186").toContainText("처리 중");
     await expect(rows.first(), "S186").toContainText("토스뱅크 ****5678");

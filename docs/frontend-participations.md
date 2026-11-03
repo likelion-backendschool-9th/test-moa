@@ -151,7 +151,7 @@ S98
 - Then  응답 뒤 행이 보이고 스켈레톤은 없다
 
 ## 7. 반응형 (R7)
-행 카드는 lg 이상에서 가로 한 줄(썸네일 | 내용(요청·상태·날짜·보상) | 동작), lg 미만에서 위아래로 쌓인다.
+리스트의 행 카드는 lg 이상에서 가로 한 줄(썸네일 | 내용(요청·상태·날짜·보상) | 동작), lg 미만에서 위아래로 쌓인다. 그리드의 배치는 R203을 따른다.
 
 S99 좁은 화면
 - Given 너비 375px
@@ -265,6 +265,45 @@ S285 제출한 피드백의 긴 문자열
 - When  긴 URL과 공백 없는 오류 문자열이 든 피드백을 제출한다
 - Then  가로 스크롤이 없고, "제출한 피드백" 카드와 본문이 화면 폭 안에 있다 (줄바꿈은 지키고 긴 문자열은 칸 끝에서 끊는다)
 
+## 15. 보기 방식 (R203)
+목록을 리스트와 그리드 중에 골라서 본다. 기본은 리스트다. 그리드는 lg 이상 3열, md 2열, 그보다 좁으면 1열이고 카드는 항상 위아래로 쌓인다. 고른 값은 쿠키 `participation-view`에 1년 동안 남아서, 탭을 바꾸거나 상세에 갔다 돌아오거나 새로고침해도 유지된다. 항목이 없는 화면에는 선택 장치가 없다.
+
+S552 기본값
+- Then  "리스트"가 눌린 상태(`aria-pressed`)이고 행이 한 줄에 하나씩 있다
+- Given 쿠키 값을 알 수 없다
+- Then  리스트로 보인다
+
+S553 그리드 선택
+- When  "그리드"를 누른다
+- Then  주소는 그대로이고 한 줄에 카드 3개가 같은 높이로 보이며, 썸네일이 카드 폭을 채운다
+- When  "리스트"를 누른다
+- Then  한 줄에 하나로 돌아온다
+
+S559 스크롤과 방문 기록
+- When  목록을 내려 본 채로 보기 방식을 바꾼다
+- Then  스크롤 위치와 방문 기록 수가 그대로다
+
+S554 선택 유지
+- Given 그리드를 골랐다
+- When  탭을 바꾸거나, 상세에 갔다 돌아오거나, 새로고침한다
+- Then  그리드가 유지된다
+
+S555 그리드 반응형
+- Then  너비 1024px은 3열, 768px은 2열, 375px은 1열이고 가로 스크롤이 없다
+
+S556 빈 목록
+- Given 목록이 비었다
+- Then  보기 방식 선택이 없다
+
+S557 로딩
+- Given 그리드를 골랐다
+- Then  불러오는 동안 카드 모양 스켈레톤이 보이고, 응답 뒤에는 없다
+
+S558 JS 번들을 받기 전
+- Given 화면은 보이지만 JS 번들이 아직 받아지지 않았다
+- When  "그리드"를 누른다
+- Then  폼이 POST로 제출되어 값이 저장되고, 번들을 받은 뒤 그리드로 보인다
+
 ## 구현
 - `src/app/my/participations/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·다음 할 일·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
 - `src/app/my/participations/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
@@ -272,9 +311,10 @@ S285 제출한 피드백의 긴 문자열
   - `types.ts`: `Participation`(key, 모집 건 slug, 상태, 지원일, 제출일, 지급일, 받은 크레딧, 제출한 피드백), 상태 상수, 탭↔상태 묶음, 피드백 글자 수(20~500자)
   - `mock.ts`: 아래 샘플. 날짜는 홈처럼 접속 시각 기준 상대값
   - `api.ts`: `getParticipations(tab)`, `getParticipationCounts()`, `getParticipationSummary()`, `getNextTodos()`, `getParticipation(key)`. 시그니처는 실제 API를 붙여도 유지. 한 요청 안에서는 React `cache`로 한 번만 읽는다
-  - `actions.ts`: `submitFeedback(key)` 서버 액션. 글자 수·상태·마감을 검사하고 시연용 기록에 남긴 뒤 상세로 돌아간다
+  - `actions.ts`: `submitFeedback(key)` 서버 액션. 글자 수·상태·마감을 검사하고 시연용 기록에 남긴 뒤 상세로 돌아간다. `setParticipationView`는 보기 방식을 저장하고 같은 탭으로 돌아간다(리다이렉트 없는 서버 액션의 POST 응답에는 본문이 없어, JS 번들을 받기 전에 누르면 빈 화면이 되기 때문이다)
+  - `view-preference.ts`: 보기 방식 쿠키 읽기·쓰기. 시연용이 아니라 브라우저별 화면 설정이라 실제 API를 붙여도 남는다
   - `demo-feedback.ts`: 시연용 제출 기록. 참여마다 쿠키 `demo-feedback-<키>`에 "제출 시각.내용(base64url)"을 둔다. 쿠키 한도(4,000바이트)를 넘으면 저장하지 않고 오류를 알린다. `api.ts`가 읽어서 그 참여를 제출 전 → 지급 대기로 바꾼다
-  - `components/`: `ParticipationTabs`, `ParticipationRow`, `ParticipationList`(빈 상태·받은 크레딧 합계 포함), `NextTodoPanel`, `TodoScroller`(클라이언트, 띠를 버튼으로 넘긴다), `ParticipationSkeleton`, `ParticipationDetail`(상세), `FeedbackForm`(클라이언트, 피드백 작성)
+  - `components/`: `ParticipationTabs`, `ParticipationRow`, `ParticipationList`(빈 상태·받은 크레딧 합계 포함), `ParticipationViewToggle`(보기 방식), `NextTodoPanel`, `TodoScroller`(클라이언트, 띠를 버튼으로 넘긴다), `ParticipationSkeleton`, `ParticipationDetail`(상세), `FeedbackForm`(클라이언트, 피드백 작성)
 - 모집 쪽 변경: 지난 모집 글 3개를 `recruitment/mock.ts`의 `PAST`에 두고(홈 목록에는 안 나온다), `recruitment/api.ts`에 `getRecruitmentsBySlugs(slugs)`를 더했다. 이 함수는 목록용 시연 상황(`demo-data`)을 따르지 않는다.
 - 재사용: `Container`, `Card`, `Badge`, `LinkButton`, `EmptyState`, `Skeleton`, `RecruitmentThumb`, `ProofStamp`, `lib/format.ts`, `lib/auth.ts`의 `requireMember`, 프로젝트 폼의 입력 칸 모양(`TextField`의 `inputClass`)
 - 도장: `RecruitmentThumb`이 `stamp` prop을 받게 바꿨다(`RecruitmentCard`는 정원이 차면 "모집 완료"를 넘긴다). 참여 기능은 썸네일만 가져다 쓰고 `ProofStamp`를 직접 쓰지 않아서 `features/recruitment`에 그대로 두었다.
@@ -286,6 +326,7 @@ S285 제출한 피드백의 긴 문자열
 - 행 카드: 교정지(surface-muted) 16px 면, 안쪽 24px. 썸네일은 lg에서 폭 고정의 16:10.
 - 다음 할 일: 교정지 카드 띠(바탕 없는 섹션 안에 카드). 이전·다음은 보조 버튼(칩 회색 알약, 아이콘만)이고 끝에 닿으면 비활성이다. 한 번에 한 화면의 카드 수만큼 넘기고, 위치를 카드 번호로 계산해 카드가 항상 왼쪽 끝에 맞는다. 이징은 브라우저 기본 부드러운 스크롤이고, 모션 줄이기에서는 바로 이동한다. 재단선·CMYK 막대(`ProofMarks`)는 히어로 전용이라 쓰지 않는다.
 - 상세: 썸네일은 제목과 이름이 겹쳐 보조 기술에서 숨기고, 상태는 배지 글자로 읽힌다. 테스트 정보는 모집 글에 대한 정보라 제목 바로 아래에 목록 행과 같은 모양(작은 항목 이름 + 굵은 값)으로 둔다(10-31: 오른쪽 카드는 따로 떨어져 보인다는 피드백으로 옮김). 진행 상황은 바탕 없이 제목·본문, 피드백 작성·제출한 피드백은 교정지 카드다. 피드백 칸은 프로젝트 폼과 같은 12px 모서리 입력 칸(`inputClass`)이고, 제출 버튼은 알약 주 버튼이다(금액 폼이 아니라 The Money Field Rule 대상이 아니다).
+- 보기 방식: 채팅함 역할 탭(`ChatFilters`)과 같은 세그먼트 모양에 아이콘과 이름을 함께 둔다. 목록 맨 위 줄 오른쪽에 놓고, 참여했던 테스트에서는 왼쪽에 받은 크레딧 합계가 온다.
 - 그림자 없음, 이징은 `--ease-brand` 하나.
 
 ## 데모 데이터와 가정
@@ -340,6 +381,8 @@ S285 제출한 피드백의 긴 문자열
   - 상세의 상태 배지를 제목 옆으로 옮기고, "모집 글 보기"를 진행 상황 설명 문장과 같은 줄 오른쪽으로 옮겼다.
 - 2026-11-01
   - PR 리뷰 반영: 제출한 피드백에 긴 URL이나 공백 없는 문자열이 있으면 좁은 화면에서 넘치던 것을 고쳤다(`wrap-anywhere`). 제출 뒤 모바일 상태를 확인하는 S285를 더했다.
+- 2026-11-04
+  - 목록을 리스트와 그리드 중에 고를 수 있게 했다. 고른 값은 상세에 갔다 돌아와도 남도록 URL이 아니라 쿠키에 둔다. R203, S552~S559를 더했다.
 
 ## 참고
 - 홈 요구사항: `docs/frontend-home.md` (헤더·탭·준비 중 화면 규칙 R2, R3, R11)

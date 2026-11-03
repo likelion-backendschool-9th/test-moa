@@ -149,7 +149,7 @@ S333 구조
    - 탭·로고·오른쪽 버튼 글자에 `whitespace-nowrap`을 걸어, 폭이 모자라도 글자가 쪼개지지 않게 한다
 5. 테스트·문서 — S332, S333
    - `e2e/header.spec.ts`(새 S341~S346 포함), `nav.spec.ts`, `mobile-menu.spec.ts`, `home-gallery.spec.ts`, `a11y.spec.ts`, `auth.spec.ts`, 새 `e2e/header-layout.spec.ts`(S330·S331)
-   - `docs/frontend-home.md` R2~R179·R12 갱신, `docs/2026-11-01-frontend-auth.md` 범위 밖 갱신
+   - `docs/frontend-home.md` R2~R5·R12 갱신, `docs/2026-11-01-frontend-auth.md` 범위 밖 갱신
    - 확인: `cd frontend && npm run lint && npx tsc --noEmit && npm run test:e2e`, 개발 서버에서 375·1024·1280·1440px와 다크 모드 확인
 
 ## 브랜치·커밋
@@ -170,5 +170,5 @@ S333 구조
 
 ## 참고 (2026-11-01 확인)
 - 헤더 코드: `frontend/src/components/layout/AppHeader.tsx`, `NavList.tsx`, `UserMenu.tsx`, `MobileMenu.tsx`, `HeaderSearch.tsx`, `frontend/src/lib/nav.ts`
-- 기존 시나리오: `docs/frontend-home.md` R2~R179, R12
+- 기존 시나리오: `docs/frontend-home.md` R2~R5, R12
 - 로그인 목업: `docs/2026-11-01-frontend-auth.md`, `frontend/src/features/auth/actions.ts`

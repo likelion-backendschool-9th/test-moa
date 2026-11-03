@@ -63,7 +63,6 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
               value={item.title}
               onChange={(event) => updateItem(index, "title", event.target.value)}
               error={errors[`testItemTitle-${index}`]}
-              placeholder="책 검색해서 등록하기"
               hint={`${titleLength}자까지`}
             />
             <TextField

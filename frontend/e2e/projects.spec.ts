@@ -179,6 +179,13 @@ test.describe("R113 프로젝트 이미지·링크·첨부·미리보기", () =>
   /* 시연용 파일. 내용은 상관없고 이름·형식·크기만 본다 */
   const file = (name: string, mimeType: string, bytes = 1024) => ({ name, mimeType, buffer: Buffer.alloc(bytes) });
   const png = (name: string) => file(name, "image/png");
+  /** 미리보기 대화상자를 연다. Esc로 닫는다 */
+  const openPreview = async (page: import("@playwright/test").Page) => {
+    await page.getByRole("button", { name: "미리보기" }).click();
+    const dialog = page.getByRole("dialog", { name: "미리보기" });
+    await expect(dialog).toBeVisible();
+    return dialog;
+  };
 
   test.beforeEach(async ({ context, page }) => {
     await setDemo(context, { role: "developer" });
@@ -190,7 +197,8 @@ test.describe("R113 프로젝트 이미지·링크·첨부·미리보기", () =>
       await expect(page.getByLabel(label)).toBeVisible();
     }
     await expect(page.getByRole("button", { name: "링크 추가" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "미리보기" })).toBeVisible();
+    /* 미리보기는 등록 버튼 옆에 있고 누르면 대화상자로 열린다 */
+    await expect(page.getByRole("button", { name: "미리보기" })).toBeVisible();
   });
 
   test("S146 이미지를 고르면 썸네일이 보이고 첫 장이 대표다. 한도를 넘으면 막는다", async ({ page }) => {
@@ -199,7 +207,9 @@ test.describe("R113 프로젝트 이미지·링크·첨부·미리보기", () =>
     const items = page.getByTestId("image-item");
     await expect(items).toHaveCount(2);
     await expect(items.nth(0)).toContainText("대표");
-    await expect(page.getByTestId("project-preview").getByRole("img", { name: "프로젝트 대표 이미지" })).toBeVisible();
+    const dialog = await openPreview(page);
+    await expect(dialog.getByRole("img", { name: "프로젝트 대표 이미지" })).toBeVisible();
+    await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "첫화면.png 삭제" }).click();
     await expect(items).toHaveCount(1);
@@ -221,7 +231,8 @@ test.describe("R113 프로젝트 이미지·링크·첨부·미리보기", () =>
     const input = page.getByLabel("첨부파일 (선택)");
     await input.setInputFiles([file("테스트 시나리오.pdf", "application/pdf", 2048)]);
     await expect(page.getByTestId("attachment-item")).toHaveText(/테스트 시나리오\.pdf\s*2KB/);
-    await expect(page.getByTestId("project-preview")).toContainText("테스트 시나리오.pdf · 2KB");
+    await expect(await openPreview(page)).toContainText("테스트 시나리오.pdf · 2KB");
+    await page.keyboard.press("Escape");
     await input.setInputFiles([file("설치.exe", "application/octet-stream")]);
     await expect(page.getByText("PDF, DOCX, PPTX, ZIP, TXT 파일만 올릴 수 있어요")).toBeVisible();
     await expect(page.getByTestId("attachment-item")).toHaveCount(1);
@@ -240,26 +251,36 @@ test.describe("R113 프로젝트 이미지·링크·첨부·미리보기", () =>
     await page.getByLabel("접속 링크").fill("https://new.example.com");
     await page.getByLabel("링크 1 이름").fill("이용 가이드");
     await page.getByLabel("링크 1 주소").fill("guide");
-    /* 주소가 올바르지 않은 링크는 미리보기에 아직 안 나온다 */
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page.getByText("http:// 또는 https://로 시작하는 주소를 적어 주세요")).toBeVisible();
     await expect(page.getByLabel("링크 1 주소")).toBeFocused();
 
     await page.getByLabel("링크 1 주소").fill("https://new.example.com/guide");
-    await expect(page.getByTestId("project-preview").getByRole("link", { name: /이용 가이드/ })).toHaveAttribute("href", "https://new.example.com/guide");
+    await expect((await openPreview(page)).getByRole("link", { name: /이용 가이드/ })).toHaveAttribute("href", "https://new.example.com/guide");
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page).toHaveURL("/my/projects?notice=saved");
   });
 
-  test("S149 미리보기는 입력할 때마다 상세 화면 모양으로 바뀐다", async ({ page }) => {
-    const preview = page.getByTestId("project-preview");
-    await expect(preview.getByRole("heading", { name: "프로젝트 이름" })).toBeVisible();
+  test("S149 미리보기 버튼을 누르면 지금 적은 내용을 상세 화면 모양으로 보여 준다", async ({ page }) => {
+    const button = page.getByRole("button", { name: "미리보기" });
+    /* 등록 버튼 바로 옆에 있다 */
+    await expect(page.getByRole("button", { name: "등록" }).locator("xpath=following-sibling::*[1]")).toHaveText("미리보기");
+    let dialog = await openPreview(page);
+    await expect(dialog.getByRole("heading", { name: "프로젝트 이름" })).toBeVisible();
+    await dialog.getByRole("button", { name: "닫기" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+
     await page.getByLabel("프로젝트 이름").fill("새 서비스");
     await page.getByLabel("한 줄 소개").fill("새로 만든 서비스예요");
     await page.getByLabel("상세 설명 (선택)").fill("이번에는 가입 흐름을 보고 싶어요");
-    await expect(preview.getByRole("heading", { name: "새 서비스" })).toBeVisible();
-    await expect(preview).toContainText("새로 만든 서비스예요");
-    await expect(preview).toContainText("이번에는 가입 흐름을 보고 싶어요");
+    dialog = await openPreview(page);
+    await expect(dialog.getByRole("heading", { name: "새 서비스" })).toBeVisible();
+    await expect(dialog).toContainText("새로 만든 서비스예요");
+    await expect(dialog).toContainText("이번에는 가입 흐름을 보고 싶어요");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
   });
 });
 

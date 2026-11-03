@@ -98,12 +98,12 @@ test.describe("R3 결제하고 돌아오기", () => {
     await expect(region(page, "결제 안내").getByRole("link", { name: "구독 연장하기" })).toBeVisible();
     await expect(header(page).getByRole("link", { name: "보유 크레딧 3,480" })).toBeVisible();
 
-    /* 가입 크레딧 3,000을 먼저 쓰고 나머지 6,000은 테스트로 받은 크레딧에서 뺀다 */
+    /* 이벤트 크레딧 3,000을 먼저 쓰고 나머지 6,000은 적립 크레딧에서 뺀다 */
     await page.goto("/my/credits");
     const balance = region(page, "잔액");
     await expect(balance.getByRole("paragraph").filter({ hasText: /^3,480 크레딧$/ })).toBeVisible();
-    await expect(balance.locator("dl > div").filter({ hasText: "구독 결제 전용" })).toContainText("0 크레딧");
-    await expect(balance.locator("dl > div").filter({ hasText: "현금화 가능" })).toContainText("3,480 크레딧");
+    await expect(balance.locator("dl > div").filter({ hasText: "이벤트 크레딧" })).toContainText("0 크레딧");
+    await expect(balance.locator("dl > div").filter({ hasText: "적립 크레딧" })).toContainText("3,480 크레딧");
     await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "구독 결제" }).first()).toContainText("9,000");
   });
 

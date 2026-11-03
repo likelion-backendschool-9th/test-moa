@@ -140,7 +140,7 @@ test.describe("R4 결제 안내", () => {
     await expect(priceRow(page, "현금")).toHaveText("현금10,000원");
     await expect(priceRow(page, "크레딧")).toHaveText("크레딧9,000 크레딧");
     await expect(payableRow(page)).toHaveText("구독 결제에 쓸 수 있는 크레딧12,480 크레딧");
-    await expect(payment.getByText("가입 크레딧도 구독 결제에 쓸 수 있어요")).toBeVisible();
+    await expect(payment.getByText("이벤트 크레딧도 구독 결제에 쓸 수 있어요")).toBeVisible();
     await expect(payment.getByText("크레딧으로 결제하면 현금보다 우대 가격이 적용돼요")).toBeVisible();
     await expect(payment.getByRole("link", { name: "구독하기", exact: true })).toHaveAttribute("href", "/my/subscription/checkout");
   });

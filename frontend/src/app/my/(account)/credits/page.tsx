@@ -29,7 +29,7 @@ async function Credits({ searchParams }: { searchParams: PageProps<"/my/credits"
   return (
     <div className="flex flex-col gap-4">
       <CreditSummaryCard credits={balance} title="잔액" showHistoryLink={false} />
-      <LedgerList entries={entries} type={type} />
+      <LedgerList entries={entries} type={type} now={new Date()} />
     </div>
   );
 }

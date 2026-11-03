@@ -22,17 +22,22 @@ public class CreditWallet {
     @JoinColumn(nullable = false)
     private User user;
 
-    // 이벤트 크레딧. 현금 교환 불가
+    // 이벤트 크레딧. 구독 결제 가능, 현금화 불가
     @Column(nullable = false)
     private Integer eventCredit;
 
-    // 적립 잔액. 현금 교환 가능
+    // 적립 잔액. 구독 결제·현금화 가능. 잠긴 금액도 여기에 포함된다
     @Column(nullable = false)
     private Integer earnedBalance;
 
-    // 잠긴 잔액. 현금 교환 대기 중
+    // 잠긴 잔액. 출금 요청 후 처리 중이라 earnedBalance 안에서 쓸 수 없는 분
     @Column(nullable = false)
     private Integer lockedBalance;
+
+    /*
+     * 승인 대기 보상(pendingReward)은 wallet 컬럼으로 두지 않는다.
+     * Feedback.status=SUBMITTED 인 건의 base+extra 합으로 조회한다.
+     */
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp

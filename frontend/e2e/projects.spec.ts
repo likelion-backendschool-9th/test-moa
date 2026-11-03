@@ -749,10 +749,32 @@ test.describe("R117 항목별 피드백과 스크린샷", () => {
   test("S361 피드백마다 테스트 항목과 스크린샷이 보이고 항목별 수가 있다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
-    await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 1건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건");
+    await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 1건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건 · 추천 1건");
     const first = page.getByTestId("feedback").filter({ hasText: "김하늘" });
     await expect(first).toContainText("책 검색하기");
     await expect(first.getByRole("img", { name: "표지가 비어 있는 검색 결과" })).toBeVisible();
     await expect(page.getByTestId("feedback").filter({ hasText: "이도윤" })).toContainText("기타 의견");
+  });
+});
+
+test.describe("R118 피드백 추천", () => {
+  test("S362 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${FIRST_MANAGE}?tab=feedback`);
+    const count = page.getByTestId("recommended-count");
+    await expect(count).toHaveText("· 추천 1건");
+    await expect(page.getByRole("button", { name: "박서아님의 피드백 추천" })).toHaveAttribute("aria-pressed", "true");
+
+    const like = page.getByRole("button", { name: "김하늘님의 피드백 추천" });
+    await expect(like).toHaveAttribute("aria-pressed", "false");
+    await like.click();
+    await expect(like).toHaveAttribute("aria-pressed", "true");
+    await expect(like).toHaveText("추천함");
+    await expect(count).toHaveText("· 추천 2건");
+    await expect(page.locator('[aria-live="polite"]').filter({ hasText: "김하늘님의 피드백을 추천했어요" })).toHaveCount(1);
+    await like.click();
+    await expect(count).toHaveText("· 추천 1건");
+
+    await expect(page.getByRole("button", { name: "이도윤님의 피드백 추천" })).toHaveCount(0);
   });
 });

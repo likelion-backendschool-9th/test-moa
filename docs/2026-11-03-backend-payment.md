@@ -26,10 +26,10 @@
 
 ## UC-P0 스키마 갭 (메서드 아님)
 
-| 변경 | 내용 |
-| --- | --- |
-| Payment → Subscription | OneToOne → **ManyToOne** |
-| (권장) Payment.periodEndAt | 이 결제로 확정한 만료일 |
+| 변경 | 내용 | 상태 |
+| --- | --- | --- |
+| Payment → Subscription | OneToOne → **ManyToOne** | 반영 |
+| (권장) Payment.periodEndAt | 이 결제로 확정한 만료일 | 보류(미추가) |
 
 ## UC-P1 checkout 페이지 조회 (구성)
 

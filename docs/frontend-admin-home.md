@@ -97,7 +97,7 @@ S96 없음
 - Then  세 카드 모두 "처리할 요청 없음"이 보인다
 
 ## 5. 오래 기다린 요청 (R18)
-세 종류 요청을 합쳐 접수가 오래된 순서로 5개 보여 준다. 72시간이 지난 신고는 따로 표시한다. 신고 항목은 그 신고의 상세로(`frontend-admin-reports.md` S132), 출금 항목은 그 출금 요청의 상세로(`frontend-admin-withdrawals.md` S212), 모집 취소 항목은 그 모집 취소 요청의 상세로 간다(`frontend-admin-cancellations.md` S273).
+세 종류 요청을 합쳐 접수가 오래된 순서로 5개 보여 준다. 72시간이 지난 신고는 따로 표시한다. 신고 항목은 그 신고의 상세로(`frontend-admin-reports.md` S132), 출금 항목은 출금 목록 모달로(`frontend-admin-withdrawals.md` S212), 모집 취소 항목은 그 모집 취소 요청의 상세로 간다(`frontend-admin-cancellations.md` S273).
 
 S97 순서
 - Then  목록이 5개이고 접수가 오래된 순서다
@@ -108,7 +108,7 @@ S98 없음
 - Then  "기다리는 요청이 없어요"가 보인다
 
 ## 6. 최근 요청 (R19)
-영역별 최근 요청을 확인만 하고, 승인·반려 같은 처리는 각 관리 페이지에서 한다.
+영역별 최근 요청을 확인만 하고, 승인·반려 같은 처리는 각 관리 페이지에서 한다. 출금 행은 목록 모달(`/admin/withdrawals?open=`)로 이어진다(`frontend-admin-withdrawals.md` S539).
 
 S99 목록
 - Then  "최근 요청" 영역의 세 열에 각각 3건 이하와 "전체 보기" 링크가 있다
@@ -180,6 +180,8 @@ S104
   - 운영자 홈과 하위 페이지 4개를 구현했다. S83~S103은 `e2e/admin-home.spec.ts`, S26 변경은 `e2e/links.spec.ts`에 있고 S104는 grep으로 확인한다.
 - 2026-11-01
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
+- 2026-11-03
+  - 출금 요청을 목록 모달로 바꾸며, 오래 기다린 요청·최근 요청의 출금 링크를 `/admin/withdrawals?open=`으로 맞췄다.
 
 ## 참고
 - 제품 기록: `frontend/PRODUCT.md`

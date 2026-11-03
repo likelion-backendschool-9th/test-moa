@@ -81,11 +81,11 @@ assert (earned - locked) >= takeEarned
 
 | 계층 | 규칙 |
 | --- | --- |
-| DB (`credit_ledgers`) | 종류별 행. EVENT −takeEvent, EARNED −takeEarned (0이면 해당 행 없음). description 모두 `"구독 결제"` |
-| 조회 API (UC-C2) | 같은 결제의 행을 합쳐 `"구독 결제"` 한 줄로 응답 (프론트·S346) |
-| 쓰지 않음 | 혼합용 `CreditType` 추가, `type` null 허용, DB에 총액 한 줄만 저장 |
+| DB (`credit_ledgers`) | 종류별 행. EVENT −takeEvent, EARNED −takeEarned (0이면 해당 행 없음). description `"구독 결제"`, **같은 `payment_id`** |
+| 조회 API (UC-C2) | **`payment_id`가 같은** 행을 합쳐 `"구독 결제"` 한 줄로 응답 (프론트·S346) |
+| 쓰지 않음 | 혼합용 `CreditType` 추가, `type` null 허용, DB에 총액 한 줄만 저장, description·createdAt만으로 묶기 |
 
-한 줄로만 남기면 `type`이 EVENT/EARNED 중 하나만 가능해 차감 종류를 잃는다. 종류별 저장 + 조회 시 합치기로 맞춘다.
+한 줄로만 남기면 `type`이 EVENT/EARNED 중 하나만 가능해 차감 종류를 잃는다. 종류별 저장 + **`payment_id`로 묶어** 조회 시 합친다.
 
 ## PR 묶음
 

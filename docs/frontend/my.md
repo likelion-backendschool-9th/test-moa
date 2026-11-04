@@ -28,7 +28,7 @@ S84 로그인
 - Given `demo-role=tester`
 - When  `/my`에 접속한다
 - Then  HTTP 200이고 h1 "마이페이지"가 있다
-- Then  헤더 오른쪽 "마이페이지"에 `aria-current="page"`가 있다 (고침 11-02: 탭에서 헤더 오른쪽으로 옮김, `docs/2026-11-01-frontend-header.md` S344)
+- Then  헤더 오른쪽 "마이페이지"에 `aria-current="page"`가 있다 (고침 11-02: 탭에서 헤더 오른쪽으로 옮김, `docs/frontend/header.md` S344)
 
 ## 2. 마이페이지 메뉴 (R131)
 마이페이지 하위 페이지는 같은 메뉴를 공유하고, 현재 페이지를 표시한다. 참여 테스트·내 프로젝트·채팅에는 이 메뉴가 없다.
@@ -88,7 +88,7 @@ S112 둘 다 비었을 때
 S86 테스터
 - Given `demo-role=tester`
 - Then  총 잔액 "12,480 크레딧"이 보인다 (헤더 값과 같다)
-- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
 - Then  "크레딧 내역"(`/my/credits`), "출금 신청"(`/my/credits/withdrawals`) 링크가 있다
 
 S103 승인 대기
@@ -185,7 +185,7 @@ S113
 - Then  "구독 알아보기" 버튼과 "구독" 제목의 세로 중심 차이가 8px 미만이다
 
 ## 범위 밖
-- 하위 페이지 실제 내용: 개인정보 수정은 `docs/2026-10-30-frontend-profile-edit.md`, 구독 관리는 `docs/2026-10-30-frontend-subscription.md`에서 만든다
+- 하위 페이지 실제 내용: 개인정보 수정은 `docs/frontend/profile-edit.md`, 구독 관리는 `docs/frontend/subscription.md`에서 만든다
 - 신고·제재 내역, 회원 탈퇴 (와이어프레임에 있으나 기획 미정)
 - 프로필 완성도 (2차에 넣었다가 3차에 뺐다)
 - 레벨·경험치, 알림
@@ -209,7 +209,7 @@ S113
 6. 활동 요약과 최근 크레딧 내역 — S104~S107, S109, S110
    - 파일: `ActivitySummary.tsx`, `RecentCredits.tsx` (재사용: `formatCredits`, `formatDate`)
 7. 화면 배치·스켈레톤·문서 — S92, S93, S94
-   - 파일: `src/app/my/(account)/page.tsx`, `docs/frontend-home.md` S78 목록(7개)
+   - 파일: `src/app/my/(account)/page.tsx`, `docs/frontend/home.md` S78 목록(7개)
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 테스트: `e2e/my.spec.ts`를 R130~R139 묶음으로 다시 정리하고, 테스트 이름은 S번호로 시작한다.

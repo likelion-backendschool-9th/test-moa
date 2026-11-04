@@ -32,7 +32,7 @@ S349 출금
 S350 테스터
 - Given `demo-role=tester`, `/my/credits`
 - Then  h1 "크레딧"과 "12,480 크레딧"이 보인다
-- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧", "승인 대기 1,350 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧", "승인 대기 1,350 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
 - Then  "출금 신청" 링크가 `/my/credits/withdrawals`를 가리킨다
 
 S351 출금할 크레딧 없음
@@ -96,7 +96,7 @@ S370 상태 표시 (고침 10-30: 다크 모드에서 작고 잘 안 보인다�
 S361 안내
 - Given `demo-role=tester`, `/my/credits/withdrawals`
 - Then  h1 "출금"과 "출금 가능 9,480 크레딧"이 보인다
-- Then  "이벤트 크레딧은 출금할 수 없어요"가 보인다 (고침 11-02: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  "이벤트 크레딧은 출금할 수 없어요"가 보인다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
 
 S362 전액
 - When  "전액"을 누른다
@@ -162,7 +162,7 @@ S377 내역에 추가
 
 S378 잔액에 반영
 - Then  출금 신청 카드에 "출금 가능 4,480 크레딧"이 보인다
-- Then  `/my/credits`에 "적립 크레딧 4,480 크레딧", "출금 처리 중 5,000 크레딧"이 보이고 총 잔액은 "12,480 크레딧" 그대로다 (고침 11-02: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  `/my/credits`에 "적립 크레딧 4,480 크레딧", "출금 처리 중 5,000 크레딧"이 보이고 총 잔액은 "12,480 크레딧" 그대로다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
 - Then  `/my` 크레딧 카드도 같은 값이다
 
 S379 새로고침
@@ -228,7 +228,7 @@ S369 구조 (기존 S78)
    - 파일: `src/features/credit/actions.ts` (`"use server"`, 입력 검사), `src/features/credit/components/WithdrawalForm.tsx` (`"use client"`, `useActionState`)
    - Next 16 문서 `node_modules/next/dist/docs/`에서 Server Actions·`useActionState`·폼 검사 확인 후 작성
 6. 테스트·문서 정리 — S368, S369
-   - 파일: `e2e/credits.spec.ts` 새로 만듦, `e2e/links.spec.ts`, `docs/frontend-home.md` S26·S78
+   - 파일: `e2e/credits.spec.ts` 새로 만듦, `e2e/links.spec.ts`, `docs/frontend/home.md` S26·S78
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 ## 브랜치·커밋
@@ -265,4 +265,4 @@ S369 구조 (기존 S78)
 - 페이지 URL: `docs/page-urls.md` 마이페이지 섹션 (`/my/credits` 크레딧 관리, `/my/credits/withdrawals` 출금 신청·내역)
 - 크레딧·현금화 규칙: `project-lion/.scratch/tester-platform-planning/spec.md` 3장, `project-lion/GLOSSARY.md`
 - 와이어프레임: 내 지갑 — 크레딧 잔액, 크레딧 획득·사용내역, 현금화 요청·진행 상태
-- 마이페이지 데이터: `frontend/src/features/my/` (`docs/2026-10-30-frontend-my.md`)
+- 마이페이지 데이터: `frontend/src/features/my/` (`docs/frontend/my.md`)

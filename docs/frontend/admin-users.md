@@ -3,7 +3,7 @@
 회원 관리 페이지가 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. 번호는 다른 문서와 겹치지 않게 R39, S220부터 매긴다(열린 PR #12 출금 요청 관리가 R38, S219까지 쓴다). 테스터·개발자 겸업 활동 시나리오(옛 임시 번호 S531)는 11-03에 S527로 확정했다. S번호는 `frontend/e2e/admin-users.spec.ts`의 테스트 이름과 1:1로 맞춘다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
 
 ## 한눈에
-- 목적: 운영자가 회원을 찾아 기본 정보와 제재 이력, 받은 신고를 한 화면에서 확인한다. 신고·제재 관리 문서가 "제재 이력 화면, 회원별 제재 조회"를 이 페이지로 미뤄 두었다(`frontend-admin-reports.md` 범위 밖).
+- 목적: 운영자가 회원을 찾아 기본 정보와 제재 이력, 받은 신고를 한 화면에서 확인한다. 신고·제재 관리 문서가 "제재 이력 화면, 회원별 제재 조회"를 이 페이지로 미뤄 두었다(`admin-reports.md` 범위 밖).
 - 스택: 홈과 같다. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성:
   1. 목록 `/admin/users`: 운영자 하위 탭(회원이 현재 탭), 닉네임 검색, "전체"·"제재 이력 있음"·"검토 대기 신고 있음" 필터, 회원 목록
@@ -198,12 +198,12 @@ S248
 - When  `grep -L "requireAdmin" src/app/admin/users/page.tsx src/app/admin/users/*/page.tsx`
 - Then  결과가 없다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S445과 같다 (회원 관리는 더하지 않는다)
+- Then  운영자 폴더의 목록이 `admin-reports.md` S445과 같다 (회원 관리는 더하지 않는다)
 
 ## 기존 시나리오·문서 변경
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
-- `frontend-admin-home.md` S411: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
-- `frontend-admin-reports.md`
+- `admin-home.md` S411: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
+- `admin-reports.md`
   - 상세의 대상 테스터·대상 회원 닉네임이 회원 상세 링크가 된다(S244). 기존 S432·S434의 문구 확인은 그대로 통과한다.
   - "범위 밖"의 "제재 이력 화면, 회원별 제재 조회"에 이 문서를 연결한다.
   - "번호 사용 현황"에 S220~S249와 S280을 이 문서로 적는다. PR #12가 같은 표에 S191~S219 줄을 더하고 있어서, 병합 충돌을 피하려고 PR #12가 병합된 뒤 고친다(아래 "PR #12 병합 뒤 할 일").
@@ -266,7 +266,7 @@ S248
 4. 신고 연결 — S242~S244
    - 파일: `src/features/admin/components/ReportDetail.tsx` (대상 닉네임을 링크로)
 5. 정리 — S248, 기존 문서 변경
-   - 파일: `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend-admin-reports.md`
+   - 파일: `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend/admin-reports.md`
 6. 테스트 — S220~S247, S249, S280
    - 파일: `e2e/admin-users.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
@@ -289,7 +289,7 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
 ## 변경 이력
 - 2026-11-02
   - 회원 목록에서 역할(테스터·개발자)을 빼고, 상세의 "기본 정보"에서도 "역할"과 역할 배지를 뺐다. 한 사람이 테스터도 개발자도 되기 때문이다(백엔드 Role은 USER·ADMIN뿐).
-  - 출금 요청 목업의 신청자(withdrawal-4·5)를 개발자만 하는 박도현·최유나에서 테스터 오태민·윤소희로 바꿨다. 출금은 테스트로 받은 크레딧만 되는데, "테스터 활동이 없어요"인 회원이 출금한 것으로 보여서다(`frontend-admin-withdrawals.md` 데모 표).
+  - 출금 요청 목업의 신청자(withdrawal-4·5)를 개발자만 하는 박도현·최유나에서 테스터 오태민·윤소희로 바꿨다. 출금은 테스트로 받은 크레딧만 되는데, "테스터 활동이 없어요"인 회원이 출금한 것으로 보여서다(`admin-withdrawals.md` 데모 표).
   - 상세의 "활동"은 테스터 활동과 개발자 활동을 둘 다 보여 준다. 해 본 적이 없는 쪽은 "…활동이 없어요"로 적는다. S235~S237을 고치고 둘 다 하는 회원(user-2)을 보는 S531을 더했다. 임시 번호 S531은 11-03에 S527로 확정했다.
 - 2026-10-31
   - 회원 관리 요구사항을 처음 정리했다. 제재 단계가 미정이라 이번 범위는 조회로 정했다.
@@ -307,13 +307,13 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
   - PR 리뷰 반영: 검색을 두 번 한 뒤 뒤로 가면 주소와 목록은 앞 검색어로 돌아오는데 검색창에는 뒤 검색어가 남았다. `next/form`의 같은 페이지 이동은 입력칸을 그대로 두어 `defaultValue`가 다시 적용되지 않아서다. 입력칸에 `key={query}`를 달아 주소의 검색어가 바뀌면 새로 그리게 했다(S280). 번호는 모집 취소 요청 관리(PR #14)의 S250~S279 다음이다.
   - PR 리뷰 반영: 회원 상세가 `params`를 Suspense 밖에서 읽어, 목록에서 상세로 이동할 때 개발 서버에 `instant-shell-url-data` 진단이 떴다. `generateStaticParams`로 키를 알려 둬도 `params`는 주소마다 달라서 Suspense 안에서 읽어야 한다(Next 문서 `02-guides/optimizing-prefetching.md`). 페이지는 `params`를 그대로 넘기고, Suspense 안의 자식이 키를 읽고 검사한다. 개발 서버에서 진단이 사라진 것과, 없는 회원 주소에서 맞춤 404가 나오는 것(S224)을 확인했다. S224 참고의 "응답 상태는 200"은 실제로 확인한 값(개발 서버 200, 빌드한 서버 404)으로 고쳤다. 같은 구조인 신고·출금 상세는 PR #12, 모집 취소 상세는 PR #14에서 함께 고쳤다.
 - 2026-11-01
-  - "PR #12 병합 뒤 할 일"을 마쳤다. 회원 필터는 출금 목록 탭(`StatusTabs`)과 합친 `LinkTabs`를 쓴다. 번호 사용 현황에 S220~S249, S280을 적었다(`frontend-admin-reports.md`). 닉네임·실명 맞추기는 팀에서 정한 뒤 한다.
+  - "PR #12 병합 뒤 할 일"을 마쳤다. 회원 필터는 출금 목록 탭(`StatusTabs`)과 합친 `LinkTabs`를 쓴다. 번호 사용 현황에 S220~S249, S280을 적었다(`admin-reports.md`). 닉네임·실명 맞추기는 팀에서 정한 뒤 한다.
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S411 탭 이동)
-- 신고·제재 관리: `docs/frontend-admin-reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
-- 출금 요청 관리: `docs/frontend-admin-withdrawals.md` (번호, `LinkTabs`)
+- 운영자 홈: `docs/frontend/admin-home.md` (R15 접근 권한, S411 탭 이동)
+- 신고·제재 관리: `docs/frontend/admin-reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
+- 출금 요청 관리: `docs/frontend/admin-withdrawals.md` (번호, `LinkTabs`)
 - 기획 근거: `README.md` (운영 원칙의 신고·제재, 관리자 영역)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`
 - Next.js 16 문서(`frontend/node_modules/next/dist/docs/01-app/`): `02-guides/authentication.md`, `02-guides/forms.md`(GET 검색 양식)

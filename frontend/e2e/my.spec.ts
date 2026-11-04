@@ -25,7 +25,7 @@ test.describe("R130 접근 제어", () => {
     const response = await page.goto("/my");
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1, name: "마이페이지" })).toBeVisible();
-    /* 마이페이지는 탭이 아니라 헤더 오른쪽에 있다 (docs/2026-11-01-frontend-header.md S344) */
+    /* 마이페이지는 탭이 아니라 헤더 오른쪽에 있다 (docs/frontend/header.md S344) */
     await expect(page.getByRole("banner").getByRole("link", { name: "마이페이지" })).toHaveAttribute("aria-current", "page");
   });
 });

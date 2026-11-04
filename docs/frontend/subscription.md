@@ -79,7 +79,7 @@ S390 가격과 쓸 수 있는 크레딧
 - Then  "결제 안내" 카드에 상품 "구독"과 "30일"이 보인다
 - Then  "현금 10,000원", "크레딧 9,000 크레딧"이 보인다
 - Then  "구독 결제에 쓸 수 있는 크레딧 12,480 크레딧"이 보인다
-- Then  "이벤트 크레딧도 구독 결제에 쓸 수 있어요"와 "크레딧으로 결제하면 현금보다 우대 가격이 적용돼요"가 보인다 (고침 11-02: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  "이벤트 크레딧도 구독 결제에 쓸 수 있어요"와 "크레딧으로 결제하면 현금보다 우대 가격이 적용돼요"가 보인다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
 - Then  "구독하기" 링크가 `/my/subscription/checkout`을 가리킨다 (고침 11-02: 버튼·링크 없음 → 구독 결제로 가는 링크)
 
 S391 출금 처리 중 제외
@@ -167,7 +167,7 @@ S538 크레딧으로 결제
 - Then  URL이 `/my/subscription?notice=paid`이고 "결제했어요. N월 N일까지 구독 혜택을 쓸 수 있어요."가 보인다
 - Then  "내 구독"이 "구독 중", "D-30"이고, 쓸 수 있는 크레딧 3,480, 버튼은 "구독 연장하기"다
 - Then  헤더 보유 크레딧이 3,480이다
-- Then  크레딧 화면 잔액이 3,480이고 이벤트 크레딧 0, 적립 크레딧 3,480이며 내역 맨 위에 "구독 결제 −9,000"이 있다 (이벤트 크레딧을 먼저 쓴다) (고침 11-03: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  크레딧 화면 잔액이 3,480이고 이벤트 크레딧 0, 적립 크레딧 3,480이며 내역 맨 위에 "구독 결제 −9,000"이 있다 (이벤트 크레딧을 먼저 쓴다) (고침 11-03: 크레딧 구분 이름 변경, `credit-labels.md`)
 
 S539 현금으로 연장
 - Given `demo-role=developer`
@@ -196,7 +196,7 @@ S543 기록 보관 기간 (리뷰 반영)
 - Then  "D-150"이고, 결제 기록 쿠키는 150일 뒤보다 늦게 만료된다
 
 정한 것 (11-02)
-- 주소는 구독 관리 아래 `/my/subscription/checkout`이다 (출금 신청 `/my/credits/withdrawals`와 같은 구조, `page-urls.md`에서는 후보).
+- 주소는 구독 관리 아래 `/my/subscription/checkout`이다 (출금 신청 `/my/credits/withdrawals`와 같은 구조, `docs/page-urls.md`에서는 후보).
 - 결제 수단은 크레딧·현금 둘 다. 크레딧이 모자라면 크레딧 칸을 막고 모자란 양을 알리며, 현금은 시연이라 바로 결제된 것으로 본다.
 - 구독 중이면 연장이다. 지금 만료일부터 상품 기간만큼 늘어난다. 만료가 지난 뒤 결제하면 결제 시각부터다.
 - 만료일은 결제할 때 계산해 결제 기록에 고정한다. 결제 기록이 있으면 마지막 결제의 만료일을 쓰고, 조회 시각 기준인 목업 만료일은 쓰지 않는다. 그래야 시간이 지나며 남은 기간이 줄고 만료된다 (리뷰 반영, S542).
@@ -236,7 +236,7 @@ S543 기록 보관 기간 (리뷰 반영)
 4. 결제 안내와 만료 안내 — S390, S391, S392, S393
    - 파일: `src/features/my/components/SubscriptionPayment.tsx`, `SubscriptionExpiry.tsx` (재사용: `formatCredits`, `LinkButton`)
 5. 테스트·문서 — S396, S397
-   - 파일: `e2e/subscription.spec.ts` 새로 만듦 (테스트 이름은 S번호로 시작), `e2e/links.spec.ts`, `docs/frontend-home.md` S26, `docs/2026-10-30-frontend-my.md` 범위 밖에서 "구독 관리" 제거
+   - 파일: `e2e/subscription.spec.ts` 새로 만듦 (테스트 이름은 S번호로 시작), `e2e/links.spec.ts`, `docs/frontend/home.md` S26, `docs/frontend/my.md` 범위 밖에서 "구독 관리" 제거
    - 확인: `cd frontend && npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px·다크 모드 눈으로 확인
 
 6. (10-31 추가) 이번 달 모집 인원 — S399, S400, S387

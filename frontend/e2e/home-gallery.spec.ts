@@ -109,7 +109,7 @@ test.describe("R10 로딩", () => {
 test.describe("R12 접근성", () => {
   test("S79 검색창 이름, 결과 수 알림, 칩 상태", async ({ page }) => {
     await page.goto("/");
-    /* 헤더 검색은 없앴다 (docs/2026-11-01-frontend-header.md S326) */
+    /* 헤더 검색은 없앴다 (docs/frontend/header.md S326) */
     await expect(page.getByRole("searchbox", { name: "테스트 검색" })).toHaveCount(1);
     await expect(allSection(page).locator('[aria-live="polite"]').filter({ hasText: "개" })).toHaveCount(1);
     await expect(allSection(page).getByRole("button", { name: "전체" })).toHaveAttribute("aria-pressed", "true");

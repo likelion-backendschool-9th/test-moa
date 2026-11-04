@@ -9,8 +9,8 @@
 ## 맥락
 - 헤더는 `src/components/layout/`의 `AppHeader`(배치), `NavList`·`MainNav`(탭), `HeaderSearch`(검색창), `UserMenu`(오른쪽), `MobileMenu`(좁은 화면 패널)로 되어 있고, 탭 정의는 `src/lib/nav.ts`의 `NAV`다.
 - 지금 1280px 이상에서는 로고·탭·검색창(최대 384px)·오른쪽을 한 줄에 줄바꿈 없이 놓는다. 한 줄에 필요한 폭은 비로그인 1241px, 테스터 1306px, 운영자 1373px(11-01 측정)라서, 로그인 상태에서 1280~1372px일 때 자리가 모자라 띄어쓰기마다 글자가 줄바꿈된다("테스트 / 모집", "test / moa", "12,480 / 크레딧").
-- 로그인은 `demo-role` 쿠키를 바꾸는 목업이다(`docs/2026-11-01-frontend-auth.md`). 쿠키가 없으면 테스터로 보므로, 로그아웃은 쿠키를 지우지 않고 `guest`로 넣는다.
-- 홈 전체 테스트 그리드에는 검색창이 따로 있다(`docs/frontend-home.md` S69). 헤더 검색은 그 그리드로 보내는 입구였다.
+- 로그인은 `demo-role` 쿠키를 바꾸는 목업이다(`docs/frontend/auth.md`). 쿠키가 없으면 테스터로 보므로, 로그아웃은 쿠키를 지우지 않고 `guest`로 넣는다.
+- 홈 전체 테스트 그리드에는 검색창이 따로 있다(`docs/frontend/home.md` S69). 헤더 검색은 그 그리드로 보내는 입구였다.
 - "테스트 모집" 탭이 가던 `/recruitments`는 아직 준비 중 페이지다. 페이지는 남기고 헤더 진입점만 없앤다.
 
 ## 1. 오른쪽 계정 영역 (R175)
@@ -35,7 +35,7 @@ S344 마이페이지 현재 위치
 - Then  헤더의 "마이페이지"에 `aria-current="page"`가 있다
 - When  `/my/credits` 또는 `/my/projects`에 접속한다
 - Then  "마이페이지"에 `aria-current`가 없다 (크레딧은 별도 버튼, 내 프로젝트는 탭이 따로 있다)
-- Then  `docs/2026-10-30-frontend-my.md` S84의 "마이페이지 탭이 현재 탭"은 헤더 "마이페이지"로 확인한다
+- Then  `docs/frontend/my.md` S84의 "마이페이지 탭이 현재 탭"은 헤더 "마이페이지"로 확인한다
 
 ## 2. 로그아웃 (R176)
 S345 로그아웃
@@ -111,7 +111,7 @@ S331 한 줄 배치 기준
 
 ## 7. 기존 테스트와 문서 (R181)
 S332 기존 시나리오 정리
-- Then  `docs/frontend-home.md`와 e2e를 아래처럼 고친다
+- Then  `docs/frontend/home.md`와 e2e를 아래처럼 고친다
   - S2·S3(`header.spec.ts`): "내 정보" → "마이페이지"(`/my`)와 "로그아웃" (S341·S342로 대체)
   - S4·S5(`header.spec.ts`): 크레딧 링크 이름 "12,480 크레딧" → "보유 크레딧 12,480"
   - S6·S7·S8(`nav.spec.ts`): 탭 6·7개 → 3·4개, 홈이 현재 탭이던 확인은 S334로 대체, 탭 이동 예시는 "참여 테스트"
@@ -121,7 +121,7 @@ S332 기존 시나리오 정리
   - S79(`home-gallery.spec.ts`): 검색창 2개 → 1개
   - S36(`a11y.spec.ts`): 포커스 링 확인 탭을 "참여 테스트"로
   - `auth.spec.ts`의 로그인 확인: "내 정보" → "마이페이지"
-- Then  `docs/2026-11-01-frontend-auth.md` 범위 밖의 "로그아웃"을 이 문서로 옮겼다고 적는다
+- Then  `docs/frontend/auth.md` 범위 밖의 "로그아웃"을 이 문서로 옮겼다고 적는다
 
 S333 구조
 - When  `grep -rn "HeaderSearch" src`
@@ -149,7 +149,7 @@ S333 구조
    - 탭·로고·오른쪽 버튼 글자에 `whitespace-nowrap`을 걸어, 폭이 모자라도 글자가 쪼개지지 않게 한다
 5. 테스트·문서 — S332, S333
    - `e2e/header.spec.ts`(새 S341~S346 포함), `nav.spec.ts`, `mobile-menu.spec.ts`, `home-gallery.spec.ts`, `a11y.spec.ts`, `auth.spec.ts`, 새 `e2e/header-layout.spec.ts`(S330·S331)
-   - `docs/frontend-home.md` R2~R5·R12 갱신, `docs/2026-11-01-frontend-auth.md` 범위 밖 갱신
+   - `docs/frontend/home.md` R2~R5·R12 갱신, `docs/frontend/auth.md` 범위 밖 갱신
    - 확인: `cd frontend && npm run lint && npx tsc --noEmit && npm run test:e2e`, 개발 서버에서 375·1024·1280·1440px와 다크 모드 확인
 
 ## 브랜치·커밋
@@ -170,5 +170,5 @@ S333 구조
 
 ## 참고 (2026-11-01 확인)
 - 헤더 코드: `frontend/src/components/layout/AppHeader.tsx`, `NavList.tsx`, `UserMenu.tsx`, `MobileMenu.tsx`, `HeaderSearch.tsx`, `frontend/src/lib/nav.ts`
-- 기존 시나리오: `docs/frontend-home.md` R2~R5, R12
-- 로그인 목업: `docs/2026-11-01-frontend-auth.md`, `frontend/src/features/auth/actions.ts`
+- 기존 시나리오: `docs/frontend/home.md` R2~R5, R12
+- 로그인 목업: `docs/frontend/auth.md`, `frontend/src/features/auth/actions.ts`

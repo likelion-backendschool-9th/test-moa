@@ -77,7 +77,7 @@ S547 신청 직후 행
    - 파일: `frontend/e2e/credits.spec.ts`, `frontend/e2e/my.spec.ts`
    - 확인: `npm run test:e2e -- my.spec.ts credits.spec.ts`
 3. 전체 확인과 문서
-   - 파일: `docs/2026-10-30-frontend-my.md`(S86), `docs/2026-10-30-frontend-credits.md`(S350, S361, S378), `docs/2026-10-30-frontend-subscription.md`(S390)에 고침 반영
+   - 파일: `docs/frontend/my.md`(S86), `docs/frontend/credits.md`(S350, S361, S378), `docs/frontend/subscription.md`(S390)에 고침 반영
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 ## 브랜치·커밋
@@ -100,6 +100,6 @@ S547 신청 직후 행
 - S번호는 S544~S548을 쓴다 (크레딧 본문 필터 S352~S356·구독 결제 S533~S543과 겹치지 않게 재배정). R은 R200~R202.
 
 ## 참고 (2026-11-02 확인)
-- 크레딧 규칙과 기존 시나리오: `docs/2026-10-30-frontend-credits.md`, `docs/2026-10-30-frontend-my.md` R134, `docs/2026-10-30-frontend-subscription.md` S390
+- 크레딧 규칙과 기존 시나리오: `docs/frontend/credits.md`, `docs/frontend/my.md` R134, `docs/frontend/subscription.md` S390
 - 시각 포맷: `frontend/src/lib/format.ts`의 `formatDate`("11월 6일"), `formatClock`("오후 3:12"), 둘 다 서울 시간 기준
 - `LedgerRow`는 `/my/credits`와 마이페이지 홈 "최근 크레딧 내역"이 함께 쓴다

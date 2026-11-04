@@ -208,12 +208,12 @@ S445
 번호 표, 번호 규칙, 옛 번호 → 새 번호 대응표는 문서마다 따로 두지 않고 [시나리오·요구사항 번호](scenario-numbers.md)에 모았다. 이 문서의 번호는 S423~S447·S528~S532(2026-11-02 번호 정리, 11-03 필터), R23~R30이고 새로 더하는 번호는 `scenario-numbers.md`에서 확인한다.
 
 ## 기존 시나리오·문서 변경
-- `frontend-admin-home.md`
+- `admin-home.md`
   - S97 다음 확인: "오래 기다린 요청"의 신고 항목 링크가 목록이 아니라 상세로 바뀐다(S441).
   - 신고 목업을 이 문서와 함께 쓰도록 옮긴다. 신고 4건과 순서는 그대로라 S94~S97은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: `/admin/reports`를 운영자 준비 중 목록에서 뺀다.
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/reports?tab=done`(처리 완료 탭)과 `/admin/reports/:reportKey`(신고 상세)를 "후보"로 추가한다.
-- `docs/frontend-home.md` S26: Given 목록에 아직 `/admin`이 남아 있다. 운영자 홈이 생기면서 빠져야 했으므로 함께 고친다.
+- `docs/frontend/home.md` S26: Given 목록에 아직 `/admin`이 남아 있다. 운영자 홈이 생기면서 빠져야 했으므로 함께 고친다.
 
 ## 데모 데이터와 가정
 - 신고 목업은 검토 대기 4건(운영자 홈과 같음)과 처리 완료 2건(기각 1, 인정 1)이다. 피드백 신고에는 시연용 피드백 원문을 넣는다. 시각은 접속 시각 기준으로 계산한다.
@@ -226,7 +226,7 @@ S445
 - 처리를 마치면 목록으로 돌아가 결과 문구를 한 번 보여 준다(`?processed=dismissed|upheld`).
 
 ## 범위 밖
-- 제재 이력 화면, 회원별 제재 조회 (회원 관리 `/admin/users`에서 다룬다. `frontend-admin-users.md`. 상세의 대상 테스터·대상 회원 닉네임은 회원 상세 링크다(S244))
+- 제재 이력 화면, 회원별 제재 조회 (회원 관리 `/admin/users`에서 다룬다. `admin-users.md`. 상세의 대상 테스터·대상 회원 닉네임은 회원 상세 링크다(S244))
 - 기간 필터, 보상 보류 필터, 처리 결과(기각·인정) 필터, 신고 사유 필터(사유가 정해진 목록이 아니다), 검색, 페이지 나누기
 - 처리 결과 알림(신고자·대상자에게 알리기)
 - 이의 제기·재검토, 처리 취소
@@ -244,7 +244,7 @@ S445
   - S번호를 처음에는 S114부터 매겼다. 운영자 홈(S83~S104)과 마이페이지(S83~S113) 문서의 번호가 겹쳐 있어서, 두 문서 모두와 겹치지 않는 번호로 시작했다. 11-02 번호 정리로 S423~S447이 됐다.
 - 2026-10-31
   - 상세가 `params`를 Suspense 밖에서 읽어, 목록에서 상세로 이동할 때 개발 서버에 `instant-shell-url-data` 진단이 떴다(회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 함께 고쳤다). `generateStaticParams`로 키를 알려 둬도 `params`는 주소마다 달라서 Suspense 안에서 읽어야 한다(Next 문서 `02-guides/optimizing-prefetching.md`). 페이지는 `params`를 그대로 넘기고 Suspense 안에서 키를 읽고 검사한다. S427 참고의 "응답 상태는 200"을 실제로 확인한 값으로 고쳤다.
-  - 공백 없는 긴 처리 메모가 375px 화면에서 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, 상세의 정보 칸에 `wrap-anywhere`를 줘서 함께 고쳤다(S447, `frontend-admin-withdrawals.md` S281).
+  - 공백 없는 긴 처리 메모가 375px 화면에서 넘쳤다. 출금 요청 관리 PR #12 리뷰에서 같은 문제를 지적받아, 상세의 정보 칸에 `wrap-anywhere`를 줘서 함께 고쳤다(S447, `admin-withdrawals.md` S281).
 - 2026-11-01
   - "번호 사용 현황"에 운영자 하위 페이지 문서(출금 요청·회원·모집 취소)와 리뷰 반영 번호(S280~S284)를 더했다. 세 PR(#12~#14)이 같은 표를 고치면 충돌해서 병합 뒤로 미뤄 둔 일이다.
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
@@ -260,7 +260,7 @@ S445
   - 대상 종류 필터 시나리오는 임시 번호 S532~S536이었고, 11-03에 `develop` 병합하며 S528~S531로 확정했다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, R22 구조, S97 오래 기다린 요청)
+- 운영자 홈: `docs/frontend/admin-home.md` (R15 접근 권한, R22 구조, S97 오래 기다린 요청)
 - 기획 근거: `README.md` (핵심 흐름 5단계, 운영 원칙), `frontend/PRODUCT.md`
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`
 - Next.js 16 문서(`frontend/node_modules/next/dist/docs/01-app/`): `02-guides/authentication.md`(Server Action 권한 확인), `02-guides/forms.md`

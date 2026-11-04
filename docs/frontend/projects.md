@@ -1,6 +1,6 @@
 # 프론트엔드 개발자 프로젝트 (`/my/projects`)
 
-개발자 프로젝트 영역(`docs/page-urls.md`의 "개발자 프로젝트" 9개 페이지)이 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. S번호는 `frontend/e2e`의 테스트 이름과 1:1로 맞는다. 홈 문서(`frontend-home.md`, S1~S82)와 겹치지 않게 처음에는 S101부터 썼고, 11-02 번호 정리에서 S483~S526이 됐다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
+개발자 프로젝트 영역(`docs/page-urls.md`의 "개발자 프로젝트" 9개 페이지)이 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. S번호는 `frontend/e2e`의 테스트 이름과 1:1로 맞는다. 홈 문서(`home.md`, S1~S82)와 겹치지 않게 처음에는 S101부터 썼고, 11-02 번호 정리에서 S483~S526이 됐다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
 
 ## 한눈에
 - 스택과 규칙은 홈과 같다: Next.js 16(App Router, Cache Components), Tailwind CSS v4, TypeScript, Playwright E2E. 폴더 구조와 규칙은 `frontend/README.md`를 따른다.
@@ -25,7 +25,7 @@
 
 ## 코드 작성 규칙
 ### 3계층 구조
-공통 의존 규칙은 [프론트엔드 README의 의존 방향](../frontend/README.md#의존-방향)을 따른다. 프로젝트 영역은 여기에 로직 계층(`service.ts`)을 하나 더 둔다. 위 계층만 아래 계층을 부른다(화면 → 로직 → 데이터). 아래 계층은 위 계층을 모른다.
+공통 의존 규칙은 [프론트엔드 README의 의존 방향](../../frontend/README.md#의존-방향)을 따른다. 프로젝트 영역은 여기에 로직 계층(`service.ts`)을 하나 더 둔다. 위 계층만 아래 계층을 부른다(화면 → 로직 → 데이터). 아래 계층은 위 계층을 모른다.
 
 | 계층 | 위치 | 하는 일 | 하지 않는 일 |
 | --- | --- | --- | --- |
@@ -367,7 +367,7 @@ S516
 - Then  `src/features/project`의 각 파일 맨 위에 한글 주석이 있다
 
 ## 홈 문서와 맞춰야 할 것
-기존 문서(`frontend-home.md`)는 고치지 않는다. 대신 이 작업으로 홈 문서와 달라지는 점을 여기 적어 둔다.
+기존 문서(`home.md`)는 고치지 않는다. 대신 이 작업으로 홈 문서와 달라지는 점을 여기 적어 둔다.
 - S26: `/my/projects`가 더 이상 "준비 중"이 아니다. 홈 문서의 목록에는 아직 남아 있다. 테스트(`e2e/links.spec.ts`)는 이 목록에서 `/my/projects`를 빼야 통과해서 뺐다.
 - S78: `"use client"` 파일이 6개에서 10개로 늘어난다. 홈 문서의 목록은 6개 그대로다. 늘어난 4개는 이 문서 S516에 있다.
 
@@ -427,7 +427,7 @@ S516
 
 ## 참고
 - 페이지 URL: `docs/page-urls.md`
-- 홈 문서(형식·공통 규칙): `docs/frontend-home.md`
+- 홈 문서(형식·공통 규칙): `docs/frontend/home.md`
 - 폴더 구조와 규칙: `frontend/README.md`
 - 제품 기록: `frontend/PRODUCT.md`
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`

@@ -12,7 +12,7 @@
   4. 탭 3개: 지원한 테스트 / 참여 중인 테스트 / 참여했던 테스트 (개수 표시)
   5. 선택한 탭의 참여 목록(행 카드)
   6. 상세(`/my/participations/:participationKey`): 진행 상황, 피드백 작성 또는 제출한 피드백, 테스트 정보
-- URL: `page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/my/participations/:participationKey`(`page-urls.md`에서는 아직 후보).
+- URL: `docs/page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/my/participations/:participationKey`(`docs/page-urls.md`에서는 아직 후보).
 - 디자인: `frontend/DESIGN.md`와 `docs/design-tokens.html`의 토큰·컴포넌트를 그대로 쓴다. 새 색이나 새 버튼 스타일을 만들지 않는다.
 - 데이터: 목업이다. `demo-role`, `demo-data` 쿠키로 상태를 바꾼다(홈과 같은 장치).
 
@@ -308,7 +308,7 @@ S482 제출한 피드백의 긴 문자열
 - "보상 제외": "운영자 검토 결과 이번 참여는 보상에서 제외됐어요"와 검토 완료일만 보여 주고 사유는 보여 주지 않는다 (10-31)
 
 ## 정해야 할 것
-- `page-urls.md`의 "내 참여 상세"를 후보에서 확정으로 바꿀지
+- `docs/page-urls.md`의 "내 참여 상세"를 후보에서 확정으로 바꿀지
 - 피드백 제출 화면 담당: 개발자 프로젝트 문서는 "피드백 제출 화면은 다른 담당"이라고 적고 있다. 이 문서에서 상세 안에 만들었으니 그 문구를 맞출지
 - 기본 탭: "참여 중"(이 문서의 가정) vs 첫 번째 탭 "지원한"
 - 미선정 건을 "지원한"에 계속 둘지, 일정 기간 뒤 숨길지
@@ -345,7 +345,7 @@ S482 제출한 피드백의 긴 문자열
   - 요구사항 번호를 정리했다(옛 R1~R14 → 새 R182~R195). 다른 문서와 겹치던 번호라 새 구간으로 옮겼고, 대응표는 `scenario-numbers.md` "요구사항 번호(R)"에 있다.
 
 ## 참고
-- 홈 요구사항: `docs/frontend-home.md` (헤더·탭·준비 중 화면 규칙 R2, R3, R11)
+- 홈 요구사항: `docs/frontend/home.md` (헤더·탭·준비 중 화면 규칙 R2, R3, R11)
 - 페이지 URL: `docs/page-urls.md` 참여 테스트 섹션
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`
 - 제품 기록: `frontend/PRODUCT.md` (참여 흐름, 72시간 자동 지급)

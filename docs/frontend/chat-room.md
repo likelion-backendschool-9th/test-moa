@@ -6,7 +6,7 @@
 - 규모: 7단계
 
 ## 맥락
-- 채팅함(`docs/2026-10-30-frontend-chats.md`)은 목록만 만들고 채팅방은 "준비 중"으로 뒀다. 이번에 그 채팅방을 만든다.
+- 채팅함(`docs/frontend/chats.md`)은 목록만 만들고 채팅방은 "준비 중"으로 뒀다. 이번에 그 채팅방을 만든다.
 - 채팅은 구독 개발자와 선정된 테스터의 1대1 소통이다 (README 주요 서비스 구성). 한 방에는 나와 대화 상대 두 사람만 있다.
 - 백엔드에는 채팅 테이블이 아직 없고 실시간 연결(웹소켓 등)도 없다. 대화 기록은 목업으로 만들고, 보낸 메시지는 채팅함의 이름 변경·삭제처럼 시연용 세션 쿠키에 둔다. 상대의 답장은 오지 않는다.
 - 디자인 토큰 문서와 채팅함의 분위기를 따른다: 작업대 바탕 위 교정지 면, 먹 글씨, 그림자·그라데이션 없음, 강조색은 정해진 자리에만.
@@ -250,7 +250,7 @@ S338 보내는 중 말풍선의 자리
 6. 페이지·로딩·없는 방 — S141~S143, S154
    - 파일: `src/app/my/chats/[roomKey]/page.tsx` ("채팅함" 링크는 정적 셸, 대화방은 Suspense 안에서 스트리밍, `generateMetadata`로 "북로그 채팅방"), `src/app/my/chats/[roomKey]/not-found.tsx`, `src/features/chat/components/ChatRoomView.tsx` (`ChatRoomView`, `ChatRoomSkeleton`). 재사용: `Container`, `Badge`, `LinkButton`, `Skeleton`
 7. 기존 테스트와 문서 — R171
-   - 파일: `e2e/chats.spec.ts` S119, `e2e/links.spec.ts`, `docs/frontend-home.md` S26·S78, `docs/2026-10-30-frontend-chats.md`(결정 필요 3, S119, S134, S135, 범위 밖), `frontend/DESIGN.md`·`docs/design-tokens.html`·`frontend/.impeccable/design.json`에 새 요소(대화방 머리, 날짜 구분, 말풍선, 메시지 입력창)
+   - 파일: `e2e/chats.spec.ts` S119, `e2e/links.spec.ts`, `docs/frontend/home.md` S26·S78, `docs/frontend/chats.md`(결정 필요 3, S119, S134, S135, 범위 밖), `frontend/DESIGN.md`·`docs/design-tokens.html`·`frontend/.impeccable/design.json`에 새 요소(대화방 머리, 날짜 구분, 말풍선, 메시지 입력창)
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px, 라이트·다크 눈으로 확인
 
 테스트: `e2e/chat-room.spec.ts`를 R163~R170, R172~R174 묶음으로 만들고, 테스트 이름은 S번호로 시작한다.
@@ -337,7 +337,7 @@ S338 보내는 중 말풍선의 자리
   - 요구사항 번호를 정리했다(옛 R1~R12 → 새 R163~R174). 다른 문서와 겹치던 번호라 새 구간으로 옮겼고, 대응표는 `scenario-numbers.md` "요구사항 번호(R)"에 있다.
 
 ## 참고 (2026-11-01 확인)
-- 채팅함 계획과 샘플: `docs/2026-10-30-frontend-chats.md`
+- 채팅함 계획과 샘플: `docs/frontend/chats.md`
 - 페이지 URL: `docs/page-urls.md` 채팅 섹션 (`/my/chats/:roomKey` 채팅방, 확정)
 - 디자인: `frontend/DESIGN.md`, `docs/design-tokens.html` 05 채팅 요소
 - 스트리밍 중 `notFound()`의 상태 코드: `frontend/node_modules/next/dist/docs/01-app/02-guides/streaming.md` "Status codes"

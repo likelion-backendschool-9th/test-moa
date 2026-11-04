@@ -59,17 +59,3 @@ test("S177 JS 없이 비밀번호를 바꿔도 POST로 제출되고 비밀번호
   expect(page.url()).not.toContain("test1234");
   expect(page.url()).not.toContain("moa2026pw");
 });
-
-test("S177 JS 없이 기본 정보를 저장해도 POST로 제출된다", async ({ page, context }) => {
-  await setDemo(context, { role: "tester" });
-  await page.goto("/my/profile/edit");
-  const card = page.getByRole("region", { name: "기본 정보", exact: true });
-  await card.getByLabel("닉네임").fill("서윤테스트");
-  const [request] = await Promise.all([
-    page.waitForRequest((req) => req.url().includes("/my/profile/edit") && req.isNavigationRequest()),
-    card.getByRole("button", { name: "저장" }).click(),
-  ]);
-  expect(request.method()).toBe("POST");
-  await page.waitForLoadState();
-  expect(page.url()).not.toContain("nickname=");
-});

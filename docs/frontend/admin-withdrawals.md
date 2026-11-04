@@ -1,9 +1,11 @@
 # 프론트엔드 출금 요청 관리 (`/admin/withdrawals`)
 
-출금 요청 관리 페이지가 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. 번호는 다른 문서와 겹치지 않게 R31, S191부터 매긴다. S번호는 `frontend/e2e/admin-withdrawals.spec.ts`의 테스트 이름과 1:1로 맞춘다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
+출금 요청 관리 페이지가 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. 번호는 다른 문서와 겹치지 않게 R31, S191부터 매긴다. 이 이슈(#42)에서 새로 생긴 시나리오는 `#42-S1`부터 센다. 옛 S번호 동작이 바뀌면 번호는 두고 `(고침 #42: …)`를 붙인다.
+
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
 
 ## 한눈에
-- 목적: 운영자가 테스터의 출금 요청(크레딧 현금화)을 확인하고 지급 완료 또는 반려로 처리한다. 요청 금액은 처리 중 잠겨 있고, 지급하면 차감되고 반려하면 회원에게 돌아간다(크레딧 계획 문서 `2026-10-30-frontend-credits.md` 맥락).
+- 목적: 운영자가 테스터의 출금 요청(크레딧 현금화)을 확인하고 지급 완료 또는 반려로 처리한다. 요청 금액은 처리 중 잠겨 있고, 지급하면 차감되고 반려하면 회원에게 돌아간다(크레딧 계획 문서 `credits.md` 맥락).
 - 스택: 홈과 같다. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성:
   1. 목록 `/admin/withdrawals`: 운영자 하위 탭(출금 요청이 현재 탭), "처리 대기"·"처리 완료" 탭, 요청 목록
@@ -98,11 +100,11 @@ S203 처리 완료 모달의 계좌 가림
 S204 닫기
 - Then  "닫기" 버튼을 누르면 모달이 닫히고 주소에서 open이 빠진다
 
-S549 상태 탭 링크에는 open이 없다
+#42-S1 상태 탭 링크에는 open이 없다
 - Given `/admin/withdrawals?open=withdrawal-1`에서 모달이 열린 상태
 - Then  "처리 대기" 탭 링크는 `/admin/withdrawals`, "처리 완료" 탭 링크는 `/admin/withdrawals?tab=done`이다(open 없음)
 
-S550 새로고침 뒤에도 모달 유지
+#42-S2 새로고침 뒤에도 모달 유지
 - Given `/admin/withdrawals?open=withdrawal-1`에서 모달이 열린 상태
 - When  새로고침한다
 - Then  모달이 그대로 열려 계좌 정보가 보인다
@@ -175,7 +177,7 @@ S212
 - When  `/admin`의 "오래 기다린 요청"에서 "이지우" 출금 항목을 누른다
 - Then  URL이 `/admin/withdrawals?open=withdrawal-1`이고 모달이 열린다
 
-S551 최근 요청
+#42-S3 최근 요청
 - When  `/admin`의 "최근 요청" 출금 열에서 `withdrawal-1` 링크를 누른다
 - Then  URL이 `/admin/withdrawals?open=withdrawal-1`이고 모달이 열린다
 
@@ -224,17 +226,17 @@ S216
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  출금 처리 Server Action 안에서도 부른다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더에 `CopyAccountButton`, `RequestReviewForm`, `WithdrawalModal`이 있다 (`frontend-admin-reports.md` S445도 같이 맞춘다)
+- Then  운영자 폴더에 `CopyAccountButton`, `RequestReviewForm`, `WithdrawalModal`이 있다 (`admin-reports.md` S445도 같이 맞춘다)
 
 ## 기존 시나리오·문서 변경
-- `frontend-admin-home.md`
+- `admin-home.md`
   - S415 다음 확인: "오래 기다린 요청"의 출금 항목 링크가 목록이 아니라 상세로 바뀐다(S212).
   - S411: 탭 이동 확인을 "출금 요청" 대신 아직 준비 중인 "모집 취소"로 바꾼다.
   - 출금 목업을 이 문서와 함께 쓰도록 계좌 정보와 처리 완료 2건을 더한다. 처리 대기 3건과 순서는 그대로라 S412~S415은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 회원 관리(PR #13)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다. (처음에는 준비 중 목록에서 `/admin/withdrawals`만 뺐는데, 세 PR이 같은 줄을 다르게 고쳐 충돌했다.)
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/withdrawals?tab=done`(처리 완료 탭)과 `/admin/withdrawals?open=:withdrawalKey`(출금 요청 모달)를 "후보"로 둔다. 예전 상세 경로 `/admin/withdrawals/:withdrawalKey`는 쓰지 않는다.
-- `scenario-numbers.md` "시나리오 번호(S)": S191~S219, S549~S551을 이 문서로 적는다.
-- `frontend-admin-reports.md` S427: 테스트가 `noindex` 메타 개수가 아니라 있는지만 보게 바꾼다.
+- `scenario-numbers.md` "시나리오 번호(S)": S191~S219, #42-S1~S3을 이 문서로 적는다.
+- `admin-reports.md` S427: 테스트가 `noindex` 메타 개수가 아니라 있는지만 보게 바꾼다.
 
 ## 데모 데이터와 가정
 - 출금 목업은 처리 대기 3건(운영자 홈과 같음)과 처리 완료 2건이다. 시각은 접속 시각 기준으로 계산한다.
@@ -259,7 +261,7 @@ S216
 - 처리를 마치면 목록으로 돌아가 결과 문구를 한 번 보여 준다(`?processed=<요청 키>`). 문구는 주소의 값이 아니라 그 요청의 처리 기록과 금액 데이터로 만든다. 처리되지 않은 요청이면 문구를 보이지 않는다(S219). 실제 API를 붙여도 금액은 서버 데이터에서 가져온다.
 - 처리 완료 뒤에는 계좌번호를 끝 4자리만 보여 준다. 송금이 끝난 뒤에는 전체 번호가 필요 없다.
 - 금액은 "원"으로 적는다. 1크레딧 = 1원이고, 운영자에게는 송금할 금액이 중요하다.
-- 모달은 `?open=<요청 키>`로 연다. 없는 키는 모달 없이 목록만 보여 준다. 상태 탭 링크는 open을 넣지 않는다(S549). 목록에서 모달을 열 때는 `replace`로 기록을 쌓지 않는다. 처리 뒤에는 지금처럼 `?processed=<key>`로 목록에 결과 문구를 보여 준다.
+- 모달은 `?open=<요청 키>`로 연다. 없는 키는 모달 없이 목록만 보여 준다. 상태 탭 링크는 open을 넣지 않는다(#42-S1). 목록에서 모달을 열 때는 `replace`로 기록을 쌓지 않는다. 처리 뒤에는 지금처럼 `?processed=<key>`로 목록에 결과 문구를 보여 준다.
 
 ## 범위 밖
 - 테스터 화면과의 연동(결정 필요 참고)
@@ -277,14 +279,14 @@ S216
 2. 목록 — S196~S200, S213
    - 파일: `src/app/admin/withdrawals/page.tsx`, `src/features/admin/components/WithdrawalList.tsx`
    - 재사용: 신고 목록의 탭·행·스켈레톤 모양
-3. 모달 — S195, S200~S204, S549~S550
+3. 모달 — S195, S200~S204, #42-S1~S2
    - 파일: `src/app/admin/withdrawals/page.tsx`(`open` searchParam), `WithdrawalModal.tsx`, `WithdrawalModalContent.tsx`, `WithdrawalDetail.tsx`, `CopyAccountButton.tsx`
    - 상세 라우트 `app/admin/withdrawals/[withdrawalKey]`는 제거한다
 4. 처리 — S205~S211
    - 파일: `src/features/admin/actions.ts` (출금 처리 Server Action, `assertAdmin`, 크기 확인), `src/features/admin/components/WithdrawalForm.tsx` (출금 문구만 정하고 `RequestReviewForm`을 쓴다. 2026-11-01에 합쳤다)
-5. 운영자 홈 연결과 정리 — S212, S551, S216, 기존 문서 변경
-   - 파일: `OldestPendingPanel`, `RecentRequests`, `docs/page-urls.md`, `docs/frontend-admin-home.md`
-6. 테스트 — S191~S219 (S216 제외), S281, S284, S549~S551
+5. 운영자 홈 연결과 정리 — S212, #42-S3, S216, 기존 문서 변경
+   - 파일: `OldestPendingPanel`, `RecentRequests`, `docs/page-urls.md`, `docs/admin-home.md`
+6. 테스트 — S191~S219 (S216 제외), S281, S284, #42-S1~S3
    - 파일: `e2e/admin-withdrawals.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
@@ -308,19 +310,19 @@ S216
   - 막혔을 때 값을 주소(`decision`, `reason`, `memo`)에 실어 다시 채우던 방식을 `useActionState` 클라이언트 양식으로 바꿨다. 주소에 실으면 메모가 방문 기록에 남기 때문이다. `?error=` 주소는 더 쓰지 않는다. `"use client"` 파일은 13개가 된다(S216).
 - 2026-10-31
   - 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 했다(S284). 모집 취소 처리 양식(PR #14, S279)에 먼저 넣은 방식을 출금에도 맞췄다. S214·S218은 "반려"를 고른 뒤 확인하게 고쳤다. 번호는 PR #14의 S283 다음이다.
-  - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`frontend-admin-reports.md` S447). 번호는 회원 관리(PR #13)의 S280 다음이다.
-  - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 신고 상세와 함께 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S195)을 확인했다.
+  - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`admin-reports.md` S447). 번호는 회원 관리(PR #13)의 S280 다음이다.
+  - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 신고 상세와 함께 고쳤다(`admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S195)을 확인했다.
 - 2026-11-01
   - 처리 양식을 모집 취소와 함께 `RequestReviewForm`(`"use client"`, `useActionState`) 하나로 합쳤다. `WithdrawalForm`은 문구·사유·서버 함수만 넘기는 서버 컴포넌트가 됐다. 화면과 동작은 그대로라 기존 시나리오로 확인한다.
   - 목록 탭 `StatusTabs`를 회원 필터와 함께 쓰는 `LinkTabs`로 바꿨다. 탭이 많으면 탭 줄만 가로로 스크롤한다.
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 - 2026-11-03
-  - 출금 요청 상세 페이지를 없애고 목록 모달(`?open=`)로 처리한다. S195·S200·S204·S209·S212 등을 모달 기준으로 고치고, S549~S551(탭 href·새로고침 유지·최근 요청 링크)를 더했다.
+  - 출금 요청 상세 페이지를 없애고 목록 모달(`?open=`)로 처리한다. S195·S200·S204·S209·S212 등을 모달 기준으로 고치고, #42-S1~S3(탭 href·새로고침 유지·최근 요청 링크)를 더했다.
   - 긴 모달이 위에서 잘리던 것을 items-start + md:my-auto로 고치고, `showModal` dialog로 포커스 가둠을 맞췄다. 바깥 클릭으로는 닫지 않는다. 목록 행은 replace로 연다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S412 처리 대기 카드, S415 오래 기다린 요청)
-- 신고·제재 관리: `docs/frontend-admin-reports.md` (목록·상세·처리 구조, 쿠키 크기 확인 S446)
+- 운영자 홈: `docs/admin-home.md` (R15 접근 권한, S412 처리 대기 카드, S415 오래 기다린 요청)
+- 신고·제재 관리: `docs/admin-reports.md` (목록·상세·처리 구조, 쿠키 크기 확인 S446)
 - 테스터 출금 신청: `docs/2026-10-30-frontend-credits.md` (PR #9, 출금 상태·은행 목록·계좌 형식·반려 사유 표시)
 - 기획 근거: `README.md` (구독과 크레딧, 운영 원칙)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`

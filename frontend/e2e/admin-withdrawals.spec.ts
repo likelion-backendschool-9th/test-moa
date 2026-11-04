@@ -180,13 +180,13 @@ test.describe("R34 모달", () => {
     await expect(modal(page)).toHaveCount(0);
   });
 
-  test("S549 상태 탭 링크에는 open이 없다", async ({ page }) => {
+  test("#42-S1 상태 탭 링크에는 open이 없다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
     await expect(statusTabs(page).getByRole("link", { name: "처리 대기" })).toHaveAttribute("href", "/admin/withdrawals");
     await expect(statusTabs(page).getByRole("link", { name: "처리 완료" })).toHaveAttribute("href", "/admin/withdrawals?tab=done");
   });
 
-  test("S550 새로고침 뒤에도 모달이 유지된다", async ({ page }) => {
+  test("#42-S2 새로고침 뒤에도 모달이 유지된다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
     await page.reload();
     await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
@@ -335,7 +335,7 @@ test.describe("R36 운영자 홈 연결", () => {
     await expect(modal(page)).toBeVisible();
   });
 
-  test("S551 최근 요청의 출금도 모달로 간다", async ({ page }) => {
+  test("#42-S3 최근 요청의 출금도 모달로 간다", async ({ page }) => {
     await page.goto("/admin");
     await page.getByRole("region", { name: "최근 요청" }).locator('a[href="/admin/withdrawals?open=withdrawal-1"]').click();
     await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);

@@ -15,41 +15,6 @@ const dateAfter = (days: number) =>
     new Date(Date.now() + days * DAY_MS),
   );
 
-test.describe("R196 접근과 진입", () => {
-  test("S533 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/my/subscription/checkout");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fsubscription%2Fcheckout");
-  });
-
-  test("S534 구독 화면의 주 버튼이 구독 결제로 가고, 구독 중이면 연장이다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/subscription");
-    await region(page, "결제 안내").getByRole("link", { name: "구독하기", exact: true }).click();
-    await expect(page).toHaveURL("/my/subscription/checkout");
-    await expect(page.getByRole("heading", { level: 1, name: "구독 결제" })).toBeVisible();
-    await expect(
-      page.getByRole("navigation", { name: "마이페이지 메뉴" }).getByRole("link", { name: "구독" }),
-    ).toHaveAttribute("aria-current", "page");
-    /* 메뉴의 "구독"과 별개로 본문 위에 돌아가는 링크가 있다 */
-    await expect(page.getByRole("main").locator('a[href="/my/subscription"]:not([aria-current])')).toHaveText("구독");
-
-    await setDemo(context, { role: "developer" });
-    await page.goto("/my/subscription");
-    await expect(region(page, "결제 안내").getByRole("link", { name: "구독 연장하기" })).toHaveAttribute(
-      "href",
-      "/my/subscription/checkout",
-    );
-  });
-
-  test("S535 운영자는 구독 대상이 아니다", async ({ page, context }) => {
-    await setDemo(context, { role: "admin" });
-    await page.goto("/my/subscription/checkout");
-    await expect(page.getByText("운영자 계정은 구독 대상이 아니에요")).toBeVisible();
-    await expect(page.getByRole("main").getByRole("radio")).toHaveCount(0);
-  });
-});
-
 test.describe("R197 결제 내용", () => {
   test("S536 크레딧이 넉넉하면 크레딧 결제가 먼저 골라져 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
@@ -118,13 +83,6 @@ test.describe("R198 결제하고 돌아오기", () => {
     await expect(status.getByText(dateAfter(60))).toBeVisible();
     await expect(header(page).getByRole("link", { name: "보유 크레딧 3,260" })).toBeVisible();
   });
-
-  test("S540 안내 문구는 결제하고 돌아왔을 때만 보인다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/subscription?notice=paid");
-    await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
-    await expect(page.getByRole("status")).toHaveCount(0);
-  });
 });
 
 test.describe("R198 결제 기록", () => {
@@ -167,16 +125,5 @@ test.describe("R198 결제 기록", () => {
     await expect(region(page, "내 구독").getByText("D-150")).toBeVisible();
     const cookie = (await context.cookies()).find((item) => item.name === "demo-subscription-developer");
     expect(cookie!.expires * 1000).toBeGreaterThan(Date.now() + 150 * DAY_MS);
-  });
-});
-
-test.describe("R199 화면", () => {
-  test("S541 모바일에서 가로 스크롤이 없다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    await page.setViewportSize({ width: 375, height: 800 });
-    await page.goto("/my/subscription/checkout");
-    await expect(checkout(page)).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
   });
 });

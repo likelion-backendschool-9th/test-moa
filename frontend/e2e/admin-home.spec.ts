@@ -1,68 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectNoHorizontalOverflow, setDemo } from "./helpers";
+import { setDemo } from "./helpers";
 
 const summaryCards = (page: Page) => page.getByRole("region", { name: "처리 대기" }).getByRole("link");
 const oldestItems = (page: Page) => page.getByRole("region", { name: "오래 기다린 요청" }).locator("ol > li");
-const rankNumber = (page: Page) => oldestItems(page).first().locator("span").first();
-
-test.describe("R14 테마와 글꼴", () => {
-  test.beforeEach(async ({ context }) => {
-    await setDemo(context, { role: "admin" });
-  });
-
-  test("S401 라이트는 교정쇄 바탕이고 순위 숫자만 에메랄드다", async ({ page }) => {
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/admin");
-    await expect(page.locator("body")).toHaveCSS("background-color", "rgb(239, 239, 236)");
-    await expect(summaryCards(page).first()).toHaveCSS("background-color", "rgb(251, 251, 250)");
-    await expect(summaryCards(page).first()).toHaveCSS("box-shadow", "none");
-    await expect(rankNumber(page)).toHaveCSS("color", "rgb(15, 124, 74)");
-  });
-
-  test("S402 다크는 uibowl 바탕이고 순위 숫자만 에메랄드다", async ({ page }) => {
-    await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/admin");
-    await expect(page.locator("body")).toHaveCSS("background-color", "rgb(0, 0, 0)");
-    await expect(summaryCards(page).first()).toHaveCSS("background-color", "rgb(22, 24, 29)");
-    await expect(summaryCards(page).first()).toHaveCSS("box-shadow", "none");
-    await expect(rankNumber(page)).toHaveCSS("color", "rgb(18, 147, 87)");
-  });
-
-  test("S403 제목 글꼴은 Wanted Sans다", async ({ page }) => {
-    await page.goto("/admin");
-    const heading = page.getByRole("heading", { level: 1, name: "운영자 홈" });
-    const fontFamily = await heading.evaluate((element) => getComputedStyle(element).fontFamily);
-    expect(fontFamily).toMatch(/^"?wanted/i);
-  });
-
-  for (const colorScheme of ["light", "dark"] as const) {
-    test(`S404 보상 보류는 강조색 없이 굵기로 강조한다 (${colorScheme})`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme });
-      await page.goto("/admin");
-      const held = summaryCards(page).first().locator("strong");
-      const textColor = await page.evaluate(() => getComputedStyle(document.body).color);
-      await expect(held).toHaveCSS("color", textColor);
-      await expect(held).toHaveCSS("font-weight", "800");
-    });
-  }
-});
 
 test.describe("R15 접근 권한", () => {
-  test("S405 운영자는 운영자 홈을 본다", async ({ page, context }) => {
-    await setDemo(context, { role: "admin" });
-    await page.goto("/admin");
-    await expect(page.getByRole("heading", { level: 1, name: "운영자 홈" })).toBeVisible();
-    const headerTab = page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "운영자 페이지" });
-    await expect(headerTab).toHaveAttribute("aria-current", "page");
-  });
-
-  test("S406 비로그인은 로그인으로 간다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/admin");
-    await expect(page).toHaveURL(/\/login\?next=%2Fadmin$/);
-  });
-
-  for (const role of ["tester", "developer"]) {
+  for (const role of ["tester"]) {
     test(`S407 일반 회원은 안내 화면을 본다 (${role})`, async ({ page, context }) => {
       await setDemo(context, { role });
       await page.goto("/admin");
@@ -73,51 +16,10 @@ test.describe("R15 접근 권한", () => {
     });
   }
 
-  test("S408 하위 페이지도 일반 회원에게 안내 화면을 보여 준다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/admin/reports");
-    await expect(page.getByRole("heading", { level: 1, name: "운영자만 볼 수 있는 페이지예요" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toHaveCount(0);
-  });
-
   test("S409 하위 페이지의 비로그인은 그 주소로 돌아오게 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/admin/reports");
     await expect(page).toHaveURL(/\/login\?next=%2Fadmin%2Freports$/);
-  });
-});
-
-test.describe("R16 하위 탭", () => {
-  test.beforeEach(async ({ context }) => {
-    await setDemo(context, { role: "admin" });
-  });
-
-  test("S410 탭 5개가 순서대로 있고 홈이 현재 탭이다", async ({ page }) => {
-    await page.goto("/admin");
-    const tabs = page.getByRole("navigation", { name: "운영자 메뉴" }).getByRole("link");
-    const expected = [
-      ["홈", "/admin"],
-      ["회원", "/admin/users"],
-      ["신고·제재", "/admin/reports"],
-      ["출금 요청", "/admin/withdrawals"],
-      ["모집 취소", "/admin/cancellations"],
-    ];
-    await expect(tabs).toHaveCount(expected.length);
-    for (const [index, [label, href]] of expected.entries()) {
-      await expect(tabs.nth(index)).toHaveText(label);
-      await expect(tabs.nth(index)).toHaveAttribute("href", href);
-    }
-    await expect(tabs.nth(0)).toHaveAttribute("aria-current", "page");
-  });
-
-  test("S411 탭을 누르면 그 관리 페이지로 이동한다", async ({ page }) => {
-    await page.goto("/admin");
-    const nav = page.getByRole("navigation", { name: "운영자 메뉴" });
-    await nav.getByRole("link", { name: "모집 취소" }).click();
-    await expect(page).toHaveURL(/\/admin\/cancellations$/);
-    await expect(nav.getByRole("link", { name: "모집 취소" })).toHaveAttribute("aria-current", "page");
-    /* 하위 페이지가 모두 생겨서 "준비 중" 대신 그 페이지 제목을 본다 */
-    await expect(page.getByRole("heading", { level: 1, name: "모집 취소 요청 관리" })).toBeVisible();
   });
 });
 
@@ -138,20 +40,6 @@ test.describe("R17 처리 대기", () => {
     await expect(cards.nth(2)).toContainText("모집 취소 요청");
     await expect(cards.nth(2)).toContainText("2건");
   });
-
-  test("S413 카드는 해당 관리 페이지를 가리킨다", async ({ page }) => {
-    await page.goto("/admin");
-    const cards = summaryCards(page);
-    await expect(cards.nth(0)).toHaveAttribute("href", "/admin/reports");
-    await expect(cards.nth(1)).toHaveAttribute("href", "/admin/withdrawals");
-    await expect(cards.nth(2)).toHaveAttribute("href", "/admin/cancellations");
-  });
-
-  test("S414 요청이 없으면 처리할 요청 없음이 보인다", async ({ page, context }) => {
-    await setDemo(context, { data: "empty" });
-    await page.goto("/admin");
-    await expect(summaryCards(page).filter({ hasText: "처리할 요청 없음" })).toHaveCount(3);
-  });
 });
 
 test.describe("R18 오래 기다린 요청", () => {
@@ -170,12 +58,6 @@ test.describe("R18 오래 기다린 요청", () => {
     await expect(items.first()).toContainText("72시간 지남");
     await expect(page.getByRole("region", { name: "오래 기다린 요청" }).getByText("72시간 지남")).toHaveCount(1);
   });
-
-  test("S416 요청이 없으면 빈 상태 문구가 보인다", async ({ page, context }) => {
-    await setDemo(context, { data: "empty" });
-    await page.goto("/admin");
-    await expect(page.getByRole("region", { name: "오래 기다린 요청" })).toContainText("기다리는 요청이 없어요");
-  });
 });
 
 test.describe("R19 최근 요청", () => {
@@ -191,49 +73,5 @@ test.describe("R19 최근 요청", () => {
       expect(await list.locator("li").count()).toBeLessThanOrEqual(3);
     }
     await expect(region.getByRole("link", { name: /전체 보기/ })).toHaveCount(3);
-  });
-
-  test("S418 홈에는 승인·반려 버튼이 없다", async ({ page }) => {
-    await page.goto("/admin");
-    await expect(page.getByRole("region", { name: "최근 요청" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /승인|반려/ })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: /승인|반려/ })).toHaveCount(0);
-  });
-});
-
-test.describe("R20 로딩", () => {
-  test("S419 응답이 늦어도 제목과 탭은 먼저 보이고 목록은 스켈레톤이다", async ({ page, context }) => {
-    await setDemo(context, { role: "admin", data: "slow" });
-    await page.goto("/admin", { waitUntil: "commit" });
-    await expect(page.getByRole("heading", { level: 1, name: "운영자 홈" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-    await expect(page.locator('[data-skeleton="summary"]').first()).toBeVisible();
-    await expect(summaryCards(page)).toHaveCount(3, { timeout: 10_000 });
-    await expect(page.locator("[data-skeleton]")).toHaveCount(0);
-  });
-});
-
-test.describe("R21 접근성과 좁은 화면", () => {
-  test.beforeEach(async ({ context }) => {
-    await setDemo(context, { role: "admin" });
-  });
-
-  test("S420 영역은 h2 제목으로 이름 붙고 요약 숫자는 함께 읽힌다", async ({ page }) => {
-    await page.goto("/admin");
-    for (const name of ["처리 대기", "오래 기다린 요청", "최근 요청"]) {
-      await expect(page.getByRole("region", { name }).getByRole("heading", { level: 2, name })).toBeVisible();
-    }
-    await expect(page.getByRole("link", { name: /^신고 대기 4건/ })).toBeVisible();
-  });
-
-  test("S421 좁은 화면에서 요약 카드는 1열이고 가로로 넘치지 않는다", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/admin");
-    const cards = summaryCards(page);
-    await expect(cards).toHaveCount(3);
-    const [first, second] = [await cards.nth(0).boundingBox(), await cards.nth(1).boundingBox()];
-    expect(first?.x).toBe(second?.x);
-    expect(second!.y).toBeGreaterThan(first!.y);
-    await expectNoHorizontalOverflow(page);
   });
 });

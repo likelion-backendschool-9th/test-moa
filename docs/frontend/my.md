@@ -1,5 +1,7 @@
 # 프론트엔드 마이페이지 (`/my`)
 
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
+
 ## 한눈에
 - 끝나면: 마이페이지 하위 페이지 5개에 왼쪽 메뉴(모바일은 위쪽 가로 탭)가 생긴다. `/my`는 대시보드가 된다: 프로필(이름·닉네임·이메일), 지금 할 일, 활동 요약, 크레딧과 구독, 최근 크레딧 내역. 하위 페이지 내용은 지금처럼 "준비 중".
 - 결정 필요: 없음 (레이아웃은 사이드바 + 대시보드, 섹션 4개 추가로 확정 10-30)
@@ -19,41 +21,41 @@
 ## 1. 접근 제어 (R130)
 비로그인 사용자는 `/my`를 볼 수 없고 로그인으로 이동한다.
 
-S83 비로그인
+S83 비로그인 [테스트: pages.spec.ts #56-S2]
 - Given `demo-role=guest`
 - When  `/my`에 접속한다
 - Then  URL이 `/login?next=%2Fmy`이다
 
-S84 로그인
+S84 로그인 [직접]
 - Given `demo-role=tester`
 - When  `/my`에 접속한다
 - Then  HTTP 200이고 h1 "마이페이지"가 있다
-- Then  헤더 오른쪽 "마이페이지"에 `aria-current="page"`가 있다 (고침 11-02: 탭에서 헤더 오른쪽으로 옮김, `docs/2026-11-01-frontend-header.md` S344)
+- Then  헤더 오른쪽 "마이페이지"에 `aria-current="page"`가 있다 (고침 11-02: 탭에서 헤더 오른쪽으로 옮김, `docs/frontend/header.md` S344)
 
 ## 2. 마이페이지 메뉴 (R131)
 마이페이지 하위 페이지는 같은 메뉴를 공유하고, 현재 페이지를 표시한다. 참여 테스트·내 프로젝트·채팅에는 이 메뉴가 없다.
 
-S95 메뉴 항목
+S95 메뉴 항목 [직접]
 - Given 너비 1440px, `/my`
 - Then  "마이페이지 메뉴"에 링크 5개가 순서대로 있다: 홈 `/my`, 개인정보 수정 `/my/profile/edit`, 크레딧 `/my/credits`, 출금 `/my/credits/withdrawals`, 구독 `/my/subscription`
 - Then  "홈"에 `aria-current="page"`가 있다
 
-S96 현재 페이지
+S96 현재 페이지 [테스트]
 - When  `/my/credits/withdrawals`에 접속한다
 - Then  "출금"에만 `aria-current="page"`가 있다 ("크레딧"에는 없다)
 
-S97 메뉴가 없는 페이지
+S97 메뉴가 없는 페이지 [직접]
 - When  `/my/participations`에 접속한다
 - Then  "마이페이지 메뉴"가 없다
 
-S108 모바일
+S108 모바일 [직접]
 - Given 너비 375px, `/my`
 - Then  "마이페이지 메뉴"가 본문 위에 가로로 있고 링크 5개가 있다
 
 ## 3. 프로필 (R132)
 이름·닉네임·이메일을 보여 주고 개인정보 수정으로 보낸다. 회원 유형은 표시하지 않는다. (고침 10-30: 완성도 막대 제거 요청)
 
-S85 프로필
+S85 프로필 [직접]
 - Given `demo-role=tester`
 - Then  이름 "한서윤", 닉네임 "윤슬", 이메일 "seoyun@example.com"이 보인다 (고침 10-30: 이름·이메일 추가 요청)
 - Then  "개인정보 수정" 링크(`/my/profile/edit`)가 보인다
@@ -62,22 +64,22 @@ S85 프로필
 ## 4. 지금 할 일 (R133)
 테스트 참여와 내 프로젝트에서 바로 처리할 일만, 두 묶음으로 나눠 보여 준다. 할 일이 없어도 두 묶음은 항상 보인다 (고침 10-30). 두 묶음은 활동 요약과 같은 아이콘(플라스크 / 폴더)과 면으로 구분한다. 묶음 안에서는 마감이 가까운 순서이고, 각 항목은 해당 페이지로 보낸다. 크레딧 관련 일은 넣지 않는다. (고침 10-30: 항목끼리 구분이 안 되고 범위가 넓다는 피드백)
 
-S100 테스트 참여
+S100 테스트 참여 [테스트]
 - Given `demo-role=tester`
 - Then  "지금 할 일"에 "테스트 참여" 묶음만 있고 항목은 2개다
 - Then  1번은 "북로그 피드백 제출", "D-2"이고 `/my/participations?tab=ongoing`을 가리킨다
 - Then  2번은 "모아플랜 참여 확정, 테스트 시작하기", "D-9"이다
 - Then  "크레딧"이라는 말이 없다
 
-S101 내 프로젝트
+S101 내 프로젝트 [직접]
 - Given `demo-role=developer`
 - Then  "내 프로젝트" 묶음에 "가계부 노트 지원자 선정", "D-3"과 "회의록 정리 새 피드백 확인", "3건"(`/my/projects`)이 순서대로 있다
 
-S102 묶음 하나가 비었을 때
+S102 묶음 하나가 비었을 때 [직접]
 - Given `demo-role=tester`
 - Then  "내 프로젝트" 묶음에 "지금 할 프로젝트 일이 없어요"와 "내 프로젝트"(`/my/projects`)가 보인다
 
-S112 둘 다 비었을 때
+S112 둘 다 비었을 때 [직접]
 - Given `demo-role=admin`
 - Then  "테스트 참여" 묶음에 "지금 할 테스트가 없어요"와 "테스트 둘러보기"(`/recruitments`)가 보인다
 - Then  "내 프로젝트" 묶음에 "지금 할 프로젝트 일이 없어요"가 보인다
@@ -85,73 +87,73 @@ S112 둘 다 비었을 때
 ## 5. 크레딧 (R134)
 총 잔액과 구성(현금화 가능, 구독 결제 전용, 출금 처리 중)을 보여 준다. 승인 대기 보상은 총 잔액에 넣지 않고 따로 보여 준다.
 
-S86 테스터
+S86 테스터 [직접]
 - Given `demo-role=tester`
 - Then  총 잔액 "12,480 크레딧"이 보인다 (헤더 값과 같다)
-- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `2026-11-02-frontend-credit-labels.md`)
+- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
 - Then  "크레딧 내역"(`/my/credits`), "출금 신청"(`/my/credits/withdrawals`) 링크가 있다
 
-S103 승인 대기
+S103 승인 대기 [테스트]
 - Then  "승인 대기 1,350 크레딧"이 보이고, 총 잔액은 12,480 그대로다
 
-S87 출금 처리 중
+S87 출금 처리 중 [직접]
 - Given `demo-role=developer`
 - Then  총 잔액 "3,260 크레딧", "출금 처리 중 1,000 크레딧"이 보인다
 
-S88 잔액 0
+S88 잔액 0 [직접]
 - Given `demo-role=admin`
 - Then  "0 크레딧"이 보이고 "출금 신청" 링크는 없다
 
 ## 6. 구독 (R135)
 계정 단위 구독 상태를 보여 준다. 가격은 보여 주지 않는다.
 
-S89 미구독
+S89 미구독 [직접]
 - Given `demo-role=tester`
 - Then  "구독하지 않았어요"와 "구독 알아보기"(`/my/subscription`)가 보인다
 
-S90 구독 중
+S90 구독 중 [직접]
 - Given `demo-role=developer`
 - Then  "구독 중", "11월 29일 만료" 같은 만료일, "구독 관리"(`/my/subscription`)가 보인다
 
-S91 운영자
+S91 운영자 [직접]
 - Given `demo-role=admin`
 - Then  구독 카드가 없다
 
 ## 7. 활동 요약 (R136)
 테스트 참여와 내 프로젝트 숫자를 한 카드에 보여 주고, 숫자를 누르면 해당 목록으로 간다.
 
-S104 테스트 참여
+S104 테스트 참여 [직접]
 - Given `demo-role=tester`
 - Then  "지원 2" → `/my/participations?tab=applied`, "참여 중 1" → `?tab=ongoing`, "완료 5" → `?tab=history`
 
-S105 프로젝트 없음
+S105 프로젝트 없음 [직접]
 - Then  "아직 등록한 프로젝트가 없어요"와 "내 프로젝트"(`/my/projects`) 링크가 보인다
 
-S109 프로젝트 있음
+S109 프로젝트 있음 [직접]
 - Given `demo-role=developer`
 - Then  "프로젝트 2", "모집 중 1", "새 피드백 3"이 보이고 모두 `/my/projects`를 가리킨다
 
-S110 운영자
+S110 운영자 [직접]
 - Given `demo-role=admin`
 - Then  활동 요약이 없다
 
 ## 8. 최근 크레딧 내역 (R137)
 최근 크레딧 변동 5건을 최신순으로 보여 준다. 늘어난 금액은 `+`, 줄어든 금액은 `-`를 붙인다.
 
-S106 정상
+S106 정상 [직접]
 - Given `demo-role=tester`
 - Then  "최근 크레딧 내역"에 5개 행이 있다
 - Then  첫 행은 "레시피핏 테스트 보상", "+1,260 크레딧"이다
 - Then  "전체 보기"가 `/my/credits`를 가리킨다
 
-S107 없음
+S107 없음 [직접]
 - Given `demo-role=admin`
 - Then  "아직 크레딧 내역이 없어요"가 보인다
 
 ## 9. 로딩 (R138)
 메뉴와 제목은 바로 보이고, 데이터는 `features/my/api.ts`에서 받는 동안 섹션 스켈레톤을 보여 준다.
 
-S92 지연
+S92 지연 [직접]
 - Given `demo-data=slow`
 - When  `/my`에 접속한다 (응답 시작 직후)
 - Then  h1 "마이페이지", "마이페이지 메뉴", 스켈레톤이 보인다
@@ -160,10 +162,10 @@ S92 지연
 ## 10. 기존 테스트와 구조 (R139)
 홈 테스트를 깨지 않고 구조 규칙을 지킨다.
 
-S93 (기존 S26)
+S93 (기존 S26) [직접]
 - Then  `/my`는 S26 "준비 중" 목록에 없고, `/my/credits/withdrawals`는 있다
 
-S94 (기존 S78 수정)
+S94 (기존 S78 수정) [명령]
 - When  `grep -rl '"use client"' src`
 - Then  기존 6개 + `AccountNav` 1개, 모두 7개다
 - When  `grep -rln "mock" src --include='*.tsx'`
@@ -172,20 +174,20 @@ S94 (기존 S78 수정)
 ## 11. 섹션 순서 (R140)
 대시보드는 프로필 → 지금 할 일 → 활동 요약 → 크레딧·구독 → 최근 크레딧 내역 순서다.
 
-S111
+S111 [직접]
 - Given `demo-role=tester`
 - Then  "지금 할 일"이 "활동 요약"보다 위, "활동 요약"이 "크레딧"보다 위에 있다
 
 ## 12. 카드 머리말 (R141)
 크레딧·구독 카드의 행동 버튼은 제목과 같은 줄 오른쪽에 둔다. 구독 상태는 크레딧 총액과 같은 크기로 쓴다. (고침 10-30: 아래 빈 공간과 작은 본문 피드백)
 
-S113
+S113 [직접]
 - Given `demo-role=tester`, 너비 1440px
 - Then  "크레딧 내역" 버튼과 "크레딧" 제목의 세로 중심 차이가 8px 미만이다
 - Then  "구독 알아보기" 버튼과 "구독" 제목의 세로 중심 차이가 8px 미만이다
 
 ## 범위 밖
-- 하위 페이지 실제 내용: 개인정보 수정은 `docs/2026-10-30-frontend-profile-edit.md`, 구독 관리는 `docs/2026-10-30-frontend-subscription.md`에서 만든다
+- 하위 페이지 실제 내용: 개인정보 수정은 `docs/frontend/profile-edit.md`, 구독 관리는 `docs/frontend/subscription.md`에서 만든다
 - 신고·제재 내역, 회원 탈퇴 (와이어프레임에 있으나 기획 미정)
 - 프로필 완성도 (2차에 넣었다가 3차에 뺐다)
 - 레벨·경험치, 알림
@@ -209,7 +211,7 @@ S113
 6. 활동 요약과 최근 크레딧 내역 — S104~S107, S109, S110
    - 파일: `ActivitySummary.tsx`, `RecentCredits.tsx` (재사용: `formatCredits`, `formatDate`)
 7. 화면 배치·스켈레톤·문서 — S92, S93, S94
-   - 파일: `src/app/my/(account)/page.tsx`, `docs/frontend-home.md` S78 목록(7개)
+   - 파일: `src/app/my/(account)/page.tsx`, `docs/frontend/home.md` S78 목록(7개)
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 테스트: `e2e/my.spec.ts`를 R130~R139 묶음으로 다시 정리하고, 테스트 이름은 S번호로 시작한다.

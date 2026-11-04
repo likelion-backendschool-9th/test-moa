@@ -2,8 +2,10 @@
 
 회원 관리 페이지가 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. 번호는 다른 문서와 겹치지 않게 R39, S220부터 매긴다(열린 PR #12 출금 요청 관리가 R38, S219까지 쓴다). 테스터·개발자 겸업 활동 시나리오(옛 임시 번호 S531)는 11-03에 S527로 확정했다. S번호는 `frontend/e2e/admin-users.spec.ts`의 테스트 이름과 1:1로 맞춘다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
 
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
+
 ## 한눈에
-- 목적: 운영자가 회원을 찾아 기본 정보와 제재 이력, 받은 신고를 한 화면에서 확인한다. 신고·제재 관리 문서가 "제재 이력 화면, 회원별 제재 조회"를 이 페이지로 미뤄 두었다(`frontend-admin-reports.md` 범위 밖).
+- 목적: 운영자가 회원을 찾아 기본 정보와 제재 이력, 받은 신고를 한 화면에서 확인한다. 신고·제재 관리 문서가 "제재 이력 화면, 회원별 제재 조회"를 이 페이지로 미뤄 두었다(`admin-reports.md` 범위 밖).
 - 스택: 홈과 같다. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성:
   1. 목록 `/admin/users`: 운영자 하위 탭(회원이 현재 탭), 닉네임 검색, "전체"·"제재 이력 있음"·"검토 대기 신고 있음" 필터, 회원 목록
@@ -22,29 +24,29 @@
 ## 1. 테마 (R39)
 신고·제재 관리와 같은 토큰을 쓴다. 이 페이지는 처리하는 화면이 아니라서 강조색 바탕 버튼이 없다.
 
-S220 배지
+S220 배지 [직접]
 - Given `prefers-color-scheme: light` (`dark`도 같다)
 - When  `/admin/users?filter=sanctioned`에 접속한다
 - Then  "제재 이력 1건" 배지의 글씨색이 `--accent`가 아니다
 
-S221 주 버튼 없음
+S221 주 버튼 없음 [직접]
 - When  `/admin/users`와 `/admin/users/user-4`에 접속한다
 - Then  본문에 강조색 바탕의 버튼이나 링크가 없다
 
 ## 2. 접근 권한 (R40)
 목록과 상세 모두 운영자에게만 보인다. 규칙은 운영자 홈 R15와 같다.
 
-S222 일반 회원
+S222 일반 회원 [테스트: pages.spec.ts #56-S3]
 - Given `demo-role=tester`
 - When  `/admin/users/user-4`에 접속한다
 - Then  "운영자만 볼 수 있는 페이지예요"가 보이고 회원 정보는 없다
 
-S223 비로그인
+S223 비로그인 [테스트: pages.spec.ts #56-S2]
 - Given `demo-role=guest`
 - When  `/admin/users/user-4`에 접속한다
 - Then  URL이 `/login?next=%2Fadmin%2Fusers%2Fuser-4`이다
 
-S224 없는 회원
+S224 없는 회원 [직접]
 - When  `/admin/users/nope`에 접속한다
 - Then  맞춤 404("찾는 페이지가 없어요")가 보이고 `noindex`가 붙는다
 - 참고: 응답 상태는 신고 상세 S427처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404). `noindex` 메타는 두 번 들어가기도 해서 테스트는 개수가 아니라 있는지만 본다.
@@ -52,60 +54,60 @@ S224 없는 회원
 ## 3. 목록 (R41)
 회원을 최근 가입 순서로 보여 준다. 실명과 이메일은 목록에 보여 주지 않는다.
 
-S225 전체
+S225 전체 [테스트]
 - When  `/admin/users`에 접속한다
 - Then  "전체" 필터에 `aria-current="page"`가 있고 회원 10명이 최근 가입 순서다
 - Then  각 행에 닉네임과 가입일이 있고, 역할(테스터·개발자)은 없다. 한 사람이 둘 다 할 수 있기 때문이다
 - Then  실명·이메일은 목록 어디에도 없다
 
-S226 제재·신고 표시
+S226 제재·신고 표시 [직접]
 - Then  "서준호" 행에 "제재 이력 1건"이 있다
 - Then  "오태민", "윤소희", "강민서" 행에 "검토 대기 신고 1건"이 있다
 - Then  다른 행에는 두 표시가 없다
 
-S227 상세로 이동
+S227 상세로 이동 [직접]
 - When  "서준호" 행을 누른다
 - Then  URL이 `/admin/users/user-4`이다
 
-S228 없음
+S228 없음 [직접]
 - Given `demo-data=empty`
 - Then  "회원이 없어요"가 보인다
 
 ## 4. 검색과 필터 (R42)
 닉네임 일부로 찾고, 필터로 확인이 필요한 회원만 본다. 검색어와 필터는 URL(`q`, `filter`)에 남고 함께 쓸 수 있다.
 
-S229 검색
+S229 검색 [테스트]
 - When  검색창 "닉네임 검색"에 `민`을 넣고 제출한다
 - Then  URL에 `q=%EB%AF%BC`가 붙고 "강민서", "김민준", "오태민" 3명만 보인다
 
-S230 검색 결과 없음
+S230 검색 결과 없음 [직접]
 - When  `/admin/users?q=없는회원`에 접속한다
 - Then  "'없는회원'에 맞는 회원이 없어요"가 보이고 검색창에 `없는회원`이 남아 있다
 
-S231 제재 이력 있음
+S231 제재 이력 있음 [테스트]
 - When  "제재 이력 있음"을 누른다
 - Then  URL이 `/admin/users?filter=sanctioned`이고 "서준호" 1명만 보인다
 
-S232 검토 대기 신고 있음
+S232 검토 대기 신고 있음 [직접]
 - When  "검토 대기 신고 있음"을 누른다
 - Then  URL이 `/admin/users?filter=reported`이고 "강민서", "윤소희", "오태민" 3명이 보인다
 
-S233 검색과 필터를 함께
+S233 검색과 필터를 함께 [테스트]
 - When  `/admin/users?filter=reported&q=민`에 접속한다
 - Then  "강민서", "오태민" 2명만 보인다
 - When  "전체"를 누른다
 - Then  URL이 `/admin/users?q=%EB%AF%BC`이고 3명이 보인다 (검색어는 남는다)
 
-S234 알 수 없는 필터
+S234 알 수 없는 필터 [직접]
 - When  `/admin/users?filter=foo`에 접속한다
 - Then  "전체" 필터가 선택되고 10명이 보인다
 
-S249 검색과 필터를 함께 써서 결과가 없을 때
+S249 검색과 필터를 함께 써서 결과가 없을 때 [직접]
 - When  `/admin/users?filter=sanctioned&q=민`에 접속한다
 - Then  "'민' 검색과 '제재 이력 있음' 필터에 함께 맞는 회원이 없어요"가 보인다 (원인이 필터일 수도 있어서 둘 다 말한다)
 - 참고: 검색어만 있으면 "'민'에 맞는 회원이 없어요", 필터만 있으면 "'제재 이력 있음'에 맞는 회원이 없어요"다.
 
-S280 뒤로 가기
+S280 뒤로 가기 [테스트]
 - When  검색창에 `민`을 넣고 제출한 뒤, `준`을 넣고 제출한다
 - Then  "김민준", "서준호" 2명이 보인다
 - When  브라우저에서 뒤로 간다
@@ -114,60 +116,60 @@ S280 뒤로 가기
 ## 5. 상세 (R43)
 판단에 필요한 정보를 한 화면에 모은다. 실명과 이메일은 상세에서만, 그것도 일부를 가려서 보여 준다.
 
-S235 기본 정보
+S235 기본 정보 [테스트]
 - When  `/admin/users/user-4`에 접속한다
 - Then  닉네임 "서준호", 가입일, 실명 "서*호", 이메일 "me***@example.com"이 보인다
 - Then  이메일 전체 주소(`member04@example.com`)는 페이지 어디에도 없다
 - Then  "기본 정보"에 "역할" 항목은 없다
 
-S236 테스터만 한 회원
+S236 테스터만 한 회원 [직접]
 - When  `/admin/users/user-4`에 접속한다
 - Then  "활동" 영역에 "테스터 활동"의 참여 확정, 피드백 제출, 미완료 횟수가 보인다
 - Then  "개발자 활동이 없어요"가 보이고 모집 건 수는 없다
 
-S237 개발자만 한 회원
+S237 개발자만 한 회원 [직접]
 - When  `/admin/users/user-1`에 접속한다
 - Then  "활동" 영역에 "개발자 활동"의 프로젝트 수, 모집 건 수, 구독 여부가 보인다
 - Then  "테스터 활동이 없어요"가 보이고 미완료 항목은 없다
 
-S527 테스터이면서 개발자인 회원
+S527 테스터이면서 개발자인 회원 [테스트]
 - When  `/admin/users/user-2`에 접속한다
 - Then  "활동" 영역에 테스터 활동(참여 확정 4회 등)과 개발자 활동(프로젝트 2개, 모집 건 3개, 구독 중)이 함께 보이고 "활동이 없어요"는 없다
 
-S238 제재 이력
+S238 제재 이력 [테스트]
 - When  `/admin/users/user-4`에 접속한다
 - Then  "제재 이력" 영역에 1건이 있고 사유 "다른 모집 건의 피드백을 그대로 붙여 넣었어요", 모집 건 "스터디 매칭", 처리일이 보인다
 - Then  그 행은 `/admin/reports/report-6`으로 가는 링크다
 
-S239 받은 신고
+S239 받은 신고 [직접]
 - When  `/admin/users/user-6`에 접속한다
 - Then  "받은 신고" 영역에 "회의록 정리" 신고 1건이 "검토 대기"로 있고 `/admin/reports/report-1`로 간다
 - Then  "제재 이력" 영역에 "제재 이력이 없어요"가 보인다
 
-S240 기각된 신고
+S240 기각된 신고 [테스트]
 - When  `/admin/users/user-5`에 접속한다
 - Then  "받은 신고"에 "레시피핏" 신고가 "기각"으로 있고, 제재 이력은 없다
 
-S241 목록으로
+S241 목록으로 [직접]
 - Then  "목록으로" 링크가 `/admin/users`를 가리킨다
 
 ## 6. 신고·제재 관리와 연결 (R44)
 제재 이력은 신고 처리 결과에서 계산하므로, 신고를 처리하면 회원 관리에 바로 반영된다.
 
-S242 인정하면 제재 이력이 생긴다
+S242 인정하면 제재 이력이 생긴다 [테스트]
 - When  `/admin/reports/report-4`(대상 "강민서")에서 "인정"으로 처리한다
 - When  `/admin/users/user-10`에 접속한다
 - Then  "제재 이력"에 "채팅에서 부적절한 표현을 썼어요" 1건이 있고, "받은 신고"의 그 신고는 "인정"이다
 - When  `/admin/users?filter=sanctioned`에 접속한다
 - Then  "서준호", "강민서" 2명이 보인다
 
-S243 기각하면 제재 이력은 그대로다
+S243 기각하면 제재 이력은 그대로다 [직접]
 - When  `/admin/reports/report-1`(대상 "오태민")에서 "기각"으로 처리한다
 - When  `/admin/users/user-6`에 접속한다
 - Then  "받은 신고"의 그 신고는 "기각"이고 "제재 이력이 없어요"가 보인다
 - Then  목록 "검토 대기 신고 있음" 필터에 "오태민"은 없다
 
-S244 신고 상세에서 회원으로
+S244 신고 상세에서 회원으로 [직접]
 - When  `/admin/reports/report-1`에 접속한다
 - Then  "대상 테스터" 값 "오태민"이 `/admin/users/user-6`으로 가는 링크다
 - When  `/admin/reports/report-4`에 접속한다
@@ -176,17 +178,17 @@ S244 신고 상세에서 회원으로
 ## 7. 로딩과 접근성 (R45)
 제목·검색창·필터는 목록 데이터를 기다리지 않고, 검색은 키보드로 쓸 수 있으며, 좁은 화면에서 가로로 넘치지 않는다.
 
-S245 로딩
+S245 로딩 [직접]
 - Given `demo-data=slow` (1.5초 지연)
 - When  `/admin/users`에 접속한다 (응답 시작 직후)
 - Then  운영자 하위 탭, 검색창, 필터가 보이고 목록 스켈레톤이 보인다
 - Then  응답 뒤 스켈레톤이 없다
 
-S246 검색 양식
+S246 검색 양식 [직접]
 - Then  검색창은 이름이 "닉네임 검색"인 `searchbox`이고, Enter로 제출된다
 - Then  필터 묶음은 이름이 "회원 필터"인 `navigation`이다
 
-S247 좁은 화면
+S247 좁은 화면 [테스트: pages.spec.ts #56-S1]
 - Given 너비 375px
 - When  `/admin/users`와 `/admin/users/user-4`에 접속한다
 - Then  페이지에 가로 스크롤이 없다 (하위 탭·필터 줄 안의 스크롤만 예외)
@@ -194,16 +196,16 @@ S247 좁은 화면
 ## 8. 구조 (R46)
 권한은 페이지와 데이터 함수에서 각각 확인한다. 이 페이지에는 Server Action이 없다. 검색은 GET 양식이라 `"use client"`를 늘리지 않는다.
 
-S248
+S248 [명령]
 - When  `grep -L "requireAdmin" src/app/admin/users/page.tsx src/app/admin/users/*/page.tsx`
 - Then  결과가 없다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S445과 같다 (회원 관리는 더하지 않는다)
+- Then  운영자 폴더의 목록이 `admin-reports.md` S445과 같다 (회원 관리는 더하지 않는다)
 
 ## 기존 시나리오·문서 변경
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 출금(PR #12)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다.
-- `frontend-admin-home.md` S411: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
-- `frontend-admin-reports.md`
+- `admin-home.md` S411: 탭 이동 확인에 쓰는 탭이 "출금 요청"이다. 이 브랜치에서는 그대로 둔다(출금 요청 관리 PR #12가 "모집 취소"로 바꾼다).
+- `admin-reports.md`
   - 상세의 대상 테스터·대상 회원 닉네임이 회원 상세 링크가 된다(S244). 기존 S432·S434의 문구 확인은 그대로 통과한다.
   - "범위 밖"의 "제재 이력 화면, 회원별 제재 조회"에 이 문서를 연결한다.
   - "번호 사용 현황"에 S220~S249와 S280을 이 문서로 적는다. PR #12가 같은 표에 S191~S219 줄을 더하고 있어서, 병합 충돌을 피하려고 PR #12가 병합된 뒤 고친다(아래 "PR #12 병합 뒤 할 일").
@@ -266,7 +268,7 @@ S248
 4. 신고 연결 — S242~S244
    - 파일: `src/features/admin/components/ReportDetail.tsx` (대상 닉네임을 링크로)
 5. 정리 — S248, 기존 문서 변경
-   - 파일: `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend-admin-reports.md`
+   - 파일: `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend/admin-reports.md`
 6. 테스트 — S220~S247, S249, S280
    - 파일: `e2e/admin-users.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
@@ -289,7 +291,7 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
 ## 변경 이력
 - 2026-11-02
   - 회원 목록에서 역할(테스터·개발자)을 빼고, 상세의 "기본 정보"에서도 "역할"과 역할 배지를 뺐다. 한 사람이 테스터도 개발자도 되기 때문이다(백엔드 Role은 USER·ADMIN뿐).
-  - 출금 요청 목업의 신청자(withdrawal-4·5)를 개발자만 하는 박도현·최유나에서 테스터 오태민·윤소희로 바꿨다. 출금은 테스트로 받은 크레딧만 되는데, "테스터 활동이 없어요"인 회원이 출금한 것으로 보여서다(`frontend-admin-withdrawals.md` 데모 표).
+  - 출금 요청 목업의 신청자(withdrawal-4·5)를 개발자만 하는 박도현·최유나에서 테스터 오태민·윤소희로 바꿨다. 출금은 테스트로 받은 크레딧만 되는데, "테스터 활동이 없어요"인 회원이 출금한 것으로 보여서다(`admin-withdrawals.md` 데모 표).
   - 상세의 "활동"은 테스터 활동과 개발자 활동을 둘 다 보여 준다. 해 본 적이 없는 쪽은 "…활동이 없어요"로 적는다. S235~S237을 고치고 둘 다 하는 회원(user-2)을 보는 S531을 더했다. 임시 번호 S531은 11-03에 S527로 확정했다.
 - 2026-10-31
   - 회원 관리 요구사항을 처음 정리했다. 제재 단계가 미정이라 이번 범위는 조회로 정했다.
@@ -307,13 +309,13 @@ PR #12(`feature/admin-withdrawals`)와 미리 병합해 본 결과다(2026-10-31
   - PR 리뷰 반영: 검색을 두 번 한 뒤 뒤로 가면 주소와 목록은 앞 검색어로 돌아오는데 검색창에는 뒤 검색어가 남았다. `next/form`의 같은 페이지 이동은 입력칸을 그대로 두어 `defaultValue`가 다시 적용되지 않아서다. 입력칸에 `key={query}`를 달아 주소의 검색어가 바뀌면 새로 그리게 했다(S280). 번호는 모집 취소 요청 관리(PR #14)의 S250~S279 다음이다.
   - PR 리뷰 반영: 회원 상세가 `params`를 Suspense 밖에서 읽어, 목록에서 상세로 이동할 때 개발 서버에 `instant-shell-url-data` 진단이 떴다. `generateStaticParams`로 키를 알려 둬도 `params`는 주소마다 달라서 Suspense 안에서 읽어야 한다(Next 문서 `02-guides/optimizing-prefetching.md`). 페이지는 `params`를 그대로 넘기고, Suspense 안의 자식이 키를 읽고 검사한다. 개발 서버에서 진단이 사라진 것과, 없는 회원 주소에서 맞춤 404가 나오는 것(S224)을 확인했다. S224 참고의 "응답 상태는 200"은 실제로 확인한 값(개발 서버 200, 빌드한 서버 404)으로 고쳤다. 같은 구조인 신고·출금 상세는 PR #12, 모집 취소 상세는 PR #14에서 함께 고쳤다.
 - 2026-11-01
-  - "PR #12 병합 뒤 할 일"을 마쳤다. 회원 필터는 출금 목록 탭(`StatusTabs`)과 합친 `LinkTabs`를 쓴다. 번호 사용 현황에 S220~S249, S280을 적었다(`frontend-admin-reports.md`). 닉네임·실명 맞추기는 팀에서 정한 뒤 한다.
+  - "PR #12 병합 뒤 할 일"을 마쳤다. 회원 필터는 출금 목록 탭(`StatusTabs`)과 합친 `LinkTabs`를 쓴다. 번호 사용 현황에 S220~S249, S280을 적었다(`admin-reports.md`). 닉네임·실명 맞추기는 팀에서 정한 뒤 한다.
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S411 탭 이동)
-- 신고·제재 관리: `docs/frontend-admin-reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
-- 출금 요청 관리: `docs/frontend-admin-withdrawals.md` (번호, `LinkTabs`)
+- 운영자 홈: `docs/frontend/admin-home.md` (R15 접근 권한, S411 탭 이동)
+- 신고·제재 관리: `docs/frontend/admin-reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
+- 출금 요청 관리: `docs/frontend/admin-withdrawals.md` (번호, `LinkTabs`)
 - 기획 근거: `README.md` (운영 원칙의 신고·제재, 관리자 영역)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`
 - Next.js 16 문서(`frontend/node_modules/next/dist/docs/01-app/`): `02-guides/authentication.md`, `02-guides/forms.md`(GET 검색 양식)

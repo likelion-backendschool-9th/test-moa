@@ -10,7 +10,7 @@ import { maskEmail, maskName, type UserActivity, type UserDetail } from "../user
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 const infoGridClass = "grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]";
 
-/** 회원 상세. 실명·이메일은 가려서 보여 준다. 제재는 이번에는 이력만 보여 준다(docs/frontend-admin-users.md) */
+/** 회원 상세. 실명·이메일은 가려서 보여 준다. 제재는 이번에는 이력만 보여 준다(docs/frontend/admin-users.md) */
 export function UserDetailView({ user }: { user: UserDetail }) {
   return (
     <div className="flex flex-col gap-6">

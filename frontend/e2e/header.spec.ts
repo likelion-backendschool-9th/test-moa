@@ -47,33 +47,6 @@ test.describe("R175 오른쪽 계정 영역", () => {
     await expect(banner.getByRole("link", { name: /보유 크레딧/ })).toHaveCount(0);
     await expect(banner.getByRole("button", { name: "로그아웃" })).toHaveCount(0);
   });
-
-  for (const [role, credits] of [
-    ["developer", "3,260"],
-    ["admin", "0"],
-  ] as const) {
-    test(`S343 ${role}도 보유 크레딧, 마이페이지, 로그아웃을 본다`, async ({ page, context }) => {
-      await setDemo(context, { role });
-      await page.goto("/");
-      const banner = header(page);
-      await expect(banner.getByRole("link", { name: "마이페이지" })).toBeVisible();
-      await expect(banner.getByRole("link", { name: `보유 크레딧 ${credits}` })).toBeVisible();
-      await expect(banner.getByRole("button", { name: "로그아웃" })).toBeVisible();
-    });
-  }
-
-  test("S344 마이페이지 현재 위치", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    const myPage = header(page).getByRole("link", { name: "마이페이지" });
-    await page.goto("/my");
-    await expect(myPage).toHaveAttribute("aria-current", "page");
-    await page.goto("/my/profile/edit");
-    await expect(myPage).toHaveAttribute("aria-current", "page");
-    await page.goto("/my/credits");
-    await expect(myPage).not.toHaveAttribute("aria-current");
-    await page.goto("/my/projects");
-    await expect(myPage).not.toHaveAttribute("aria-current");
-  });
 });
 
 test.describe("R176 로그아웃", () => {
@@ -94,15 +67,5 @@ test.describe("R176 로그아웃", () => {
     await header(page).getByRole("button", { name: "로그아웃" }).click();
     await expect(header(page).getByRole("link", { name: "로그인" })).toBeVisible();
     await expectLoginRedirect(page, "/my");
-  });
-});
-
-test.describe("R178 검색 진입점 정리", () => {
-  test("S326 헤더에는 검색창이 없고 홈 검색창은 그리드의 1개뿐이다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/");
-    await expect(header(page).getByRole("searchbox")).toHaveCount(0);
-    await expect(page.getByRole("searchbox", { name: "테스트 검색" })).toHaveCount(1);
-    await expect(page.locator("#all-tests").getByRole("searchbox", { name: "테스트 검색" })).toBeVisible();
   });
 });

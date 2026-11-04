@@ -220,7 +220,7 @@ export function cancellationRejectText(review: CancellationReview) {
 /**
  * 모집 취소 요청. id가 상세 주소의 cancellationKey다.
  * 확정 테스터 수와 제출된 피드백 수는 요청할 때의 값이다. 보상은 테스트를 완료해야 지급되고
- * 취소는 테스트 전에 요청하므로, 승인해도 지급할 보상이 없다(docs/frontend-admin-cancellations.md).
+ * 취소는 테스트 전에 요청하므로, 승인해도 지급할 보상이 없다(docs/frontend/admin-cancellations.md).
  */
 export type CancellationRequest = {
   id: string;

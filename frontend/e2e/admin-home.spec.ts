@@ -28,17 +28,15 @@ test.describe("R17 처리 대기", () => {
     await setDemo(context, { role: "admin" });
   });
 
-  test("S412 카드 3개에 영역별 대기 건수가 있다", async ({ page }) => {
+  test("S412 카드 2개에 영역별 대기 건수가 있다", async ({ page }) => {
     await page.goto("/admin");
     const cards = summaryCards(page);
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(2);
     await expect(cards.nth(0)).toContainText("신고 대기");
     await expect(cards.nth(0)).toContainText("4건");
     await expect(cards.nth(0)).toContainText("보상 보류 2건");
     await expect(cards.nth(1)).toContainText("출금 요청");
     await expect(cards.nth(1)).toContainText("3건");
-    await expect(cards.nth(2)).toContainText("모집 취소 요청");
-    await expect(cards.nth(2)).toContainText("2건");
   });
 });
 
@@ -51,7 +49,7 @@ test.describe("R18 오래 기다린 요청", () => {
     await page.goto("/admin");
     const items = oldestItems(page);
     await expect(items).toHaveCount(5);
-    for (const [index, title] of ["회의록 정리", "이지우", "포트폴리오 빌더", "레시피핏", "북로그"].entries()) {
+    for (const [index, title] of ["회의록 정리", "이지우", "포트폴리오 빌더", "북로그", "김민준"].entries()) {
       await expect(items.nth(index)).toContainText(title);
     }
     await expect(items.first()).toContainText("신고");
@@ -65,13 +63,13 @@ test.describe("R19 최근 요청", () => {
     await setDemo(context, { role: "admin" });
   });
 
-  test("S417 세 열에 최근 3건 이하와 전체 보기 링크가 있다", async ({ page }) => {
+  test("S417 두 열에 최근 3건 이하와 전체 보기 링크가 있다", async ({ page }) => {
     await page.goto("/admin");
     const region = page.getByRole("region", { name: "최근 요청" });
-    await expect(region.getByRole("heading", { level: 3 })).toHaveText(["신고", "출금 요청", "모집 취소 요청"]);
+    await expect(region.getByRole("heading", { level: 3 })).toHaveText(["신고", "출금 요청"]);
     for (const list of await region.locator("ul").all()) {
       expect(await list.locator("li").count()).toBeLessThanOrEqual(3);
     }
-    await expect(region.getByRole("link", { name: /전체 보기/ })).toHaveCount(3);
+    await expect(region.getByRole("link", { name: /전체 보기/ })).toHaveCount(2);
   });
 });

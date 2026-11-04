@@ -3,7 +3,8 @@ import { connection } from "next/server";
 import { cache } from "react";
 import { getDemoDataMode } from "@/lib/demo";
 import type { Role } from "@/lib/session";
-import { buildGeneralRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
+import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
+import type { Recruitment } from "@/features/recruitment/types";
 import { readCancelRequests, readDecisions, saveCancelRequest, saveDecisions, type Decision } from "./demo-decisions";
 import { buildDeveloperProjects, type ProjectSeedData } from "./mock";
 import type { AiSummary, Application, CancelRequest, Feedback, Project, RecruitmentDetail } from "./types";
@@ -51,6 +52,33 @@ function applyDecisions(seed: ProjectSeedData, decisions: Record<string, Decisio
 /** 지원자 확정·거절을 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
 export async function saveApplicationDecisions(ids: string[], status: Decision): Promise<boolean> {
   return saveDecisions(ids, status);
+}
+
+export type PublicRecruitmentData = {
+  recruitment: Recruitment;
+  /** 모집글 제목, 모집 조건, 테스트 항목. 샘플이 없는 모집 건은 null */
+  detail: RecruitmentDetail | null;
+  /** 이 모집 건의 프로젝트. 샘플이 없는 모집 건은 null */
+  project: Pick<Project, "description" | "image"> | null;
+};
+
+/**
+ * 누구나 볼 수 있는 모집글 하나. 역할과 상관없이 읽는다. 없거나 취소가 승인된 모집 건은 null.
+ * 시연용 상세 샘플은 개발자 데모 계정의 모집 건에만 있다.
+ */
+export async function findPublicRecruitment(slug: string): Promise<PublicRecruitmentData | null> {
+  const mode = await getDemoDataMode();
+  if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+  await connection();
+  const now = new Date();
+  const home = [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)];
+  const seed = buildDeveloperProjects(now, home);
+  if (seed.cancelRequests[slug]?.status === "approved") return null;
+  const owner = seed.projects.find((project) => project.recruitments.some((item) => item.slug === slug));
+  const recruitment =
+    owner?.recruitments.find((item) => item.slug === slug) ?? [...home, ...buildPastRecruitments(now)].find((item) => item.slug === slug);
+  if (!recruitment) return null;
+  return { recruitment, detail: seed.details[slug] ?? null, project: owner ?? null };
 }
 
 /** 회원의 프로젝트 전체 */

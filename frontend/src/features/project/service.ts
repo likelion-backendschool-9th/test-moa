@@ -9,6 +9,7 @@ import {
   findFeedbacks,
   findIsSubscribed,
   findProjects,
+  findPublicRecruitment,
   findRecruitmentDetail,
   saveApplicationDecisions,
   saveRecruitmentCancelRequest,
@@ -224,6 +225,16 @@ export async function getMyProject(path: string, projectKey: string) {
   if (!project) notFound();
   return { project, recruitments: await withStatus(role, [...project.recruitments].sort(byLatest), new Date()) };
 }
+
+/** 공개 모집글에 필요한 값. 없거나 취소된 모집 건이면 null */
+export async function getPublicRecruitment(slug: string) {
+  const data = await findPublicRecruitment(slug);
+  if (!data) return null;
+  const now = new Date();
+  return { ...data, now, status: getRecruitmentStatus(data.recruitment, now) as Exclude<RecruitmentStatus, "cancelled"> };
+}
+
+export type PublicRecruitmentView = NonNullable<Awaited<ReturnType<typeof getPublicRecruitment>>>;
 
 export type FeedbackView = Feedback & { hoursUntilPaid: number };
 

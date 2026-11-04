@@ -262,11 +262,11 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       recruitments: [folio, folioOld],
     },
     {
-      /* 모집 건과 상세 설명이 없는 프로젝트. 빈 상태를 보여 준다 */
+      /* 모집 건, 상세 설명, 대표 이미지가 없는 프로젝트. 빈 상태와 기본 이미지를 보여 준다 */
       key: "todo-memo",
       name: "할 일 메모",
       description: "",
-      image: { url: "/sample/projects/todo-memo.svg", name: "할 일 목록 화면" },
+      image: null,
       createdAt: daysAgo(now, 1),
       recruitments: [],
     },

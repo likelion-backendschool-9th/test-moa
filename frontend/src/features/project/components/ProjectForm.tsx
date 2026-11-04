@@ -74,8 +74,7 @@ export function ProjectForm({
   }
 
   const toMeta = ({ name, size, type }: FileMeta) => ({ name, size, type });
-  /* "골라 주세요" 오류는 이미지를 고르면 바로 사라져야 한다 */
-  const imageError = fileErrors.images ?? (image ? undefined : state.errors.images);
+  const imageError = fileErrors.images ?? state.errors.images;
 
   /** 지금 적은 값을 읽어 미리보기를 연다 */
   function openPreview() {
@@ -99,9 +98,9 @@ export function ProjectForm({
 
         <FileField
           name="images"
-          label="대표 이미지"
+          label="대표 이미지 (선택)"
           accept={PROJECT_MEDIA_LIMIT.images.types.join(",")}
-          hint={`PNG, JPG, WEBP · ${formatBytes(PROJECT_MEDIA_LIMIT.images.bytes)}까지 · 다시 고르면 바뀌어요`}
+          hint={`PNG, JPG, WEBP · ${formatBytes(PROJECT_MEDIA_LIMIT.images.bytes)}까지 · 다시 고르면 바뀌어요 · 없으면 기본 이미지가 보여요`}
           error={imageError}
           onChange={pickImage}
           buttonLabel={image ? "이미지 바꾸기" : "이미지 고르기"}

@@ -11,8 +11,8 @@ export type Project = {
   name: string;
   /** 상세 설명. 없으면 빈 문자열 */
   description: string;
-  /** 대표 이미지 (백엔드 project.image_url). 필수 */
-  image: ProjectImage;
+  /** 대표 이미지 (백엔드 project.image_url). 없으면 null이고 화면에는 기본 이미지가 나온다 */
+  image: ProjectImage | null;
   createdAt: string;
   /** 이 프로젝트의 테스트 모집 건. slug를 recruitmentKey로 쓴다 */
   recruitments: Recruitment[];
@@ -153,6 +153,9 @@ export type AiSummary = {
 export const AI_MIN_FEEDBACKS = 3;
 
 export type ProjectImage = { url: string; name: string };
+/** 대표 이미지를 넣지 않은 프로젝트에 보여 주는 이미지 */
+export const DEFAULT_PROJECT_IMAGE_URL = "/sample/projects/default.svg";
+
 /** 프로젝트 등록 폼의 이미지·설명 한도 */
 export const PROJECT_MEDIA_LIMIT = {
   images: { count: 1, bytes: 5 * 1024 * 1024, types: ["image/png", "image/jpeg", "image/webp"] },

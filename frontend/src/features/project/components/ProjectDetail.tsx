@@ -4,17 +4,15 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { RecruitmentView } from "../service";
-import type { Project } from "../types";
+import { DEFAULT_PROJECT_IMAGE_URL, type Project } from "../types";
 import { ProjectDescription } from "./ProjectDescription";
 import { RecruitmentStatusBadge } from "./StatusBadge";
 
 /* 프로젝트 상세 화면: 프로젝트 정보와 모집 건 목록 */
 
-/** 미리보기에서는 이미지를 고르기 전일 수 있다 */
-export type ProjectBodyData = Pick<Project, "name" | "description"> & { image: Project["image"] | null };
+export type ProjectBodyData = Pick<Project, "name" | "description" | "image">;
 
 /** 새 탭으로 여는 링크. 화면 읽기 프로그램에 새 탭임을 알린다 */
 export function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
@@ -47,10 +45,7 @@ export function ProjectBody({
         글이 이미지보다 짧아도 버튼이 글 바로 아래에 오도록 마지막 줄이 남는 높이를 받는다.
       */}
       <div
-        className={cn(
-          "flex flex-col gap-4",
-          project.image && "@3xl:grid @3xl:grid-cols-[minmax(0,1fr)_41.6667%] @3xl:grid-rows-[auto_auto_1fr] @3xl:gap-x-6",
-        )}
+        className="flex flex-col gap-4 @3xl:grid @3xl:grid-cols-[minmax(0,1fr)_41.6667%] @3xl:grid-rows-[auto_auto_1fr] @3xl:gap-x-6"
       >
         <div className="flex min-w-0 flex-col gap-4 @3xl:col-span-2">
           <Title className={Title === "h1" ? "text-4xl font-extrabold tracking-[-0.035em]" : "text-2xl font-extrabold tracking-[-0.03em]"}>
@@ -62,18 +57,16 @@ export function ProjectBody({
             <ProjectDescription text={project.description} />
           </div>
         )}
-        {project.image && (
-          <div className="w-full max-w-md @3xl:col-start-2 @3xl:row-span-2 @3xl:row-start-2 @3xl:max-w-none">
-            {/* 등록 중인 이미지는 브라우저 안의 임시 주소(blob:)라 next/image를 쓸 수 없다 */}
-            {/* 이미지마다 비율이 달라도 잘리지 않게 칸 안에 맞춘다 */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={project.image.url}
-              alt={`${project.name || "프로젝트"} 대표 이미지`}
-              className="aspect-[4/3] w-full rounded-2xl bg-surface-muted object-contain outline -outline-offset-1 outline-line"
-            />
-          </div>
-        )}
+        <div className="w-full max-w-md @3xl:col-start-2 @3xl:row-span-2 @3xl:row-start-2 @3xl:max-w-none">
+          {/* 등록 중인 이미지는 브라우저 안의 임시 주소(blob:)라 next/image를 쓸 수 없다 */}
+          {/* 이미지마다 비율이 달라도 잘리지 않게 칸 안에 맞춘다 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={project.image?.url ?? DEFAULT_PROJECT_IMAGE_URL}
+            alt={project.image ? `${project.name || "프로젝트"} 대표 이미지` : "기본 프로젝트 이미지"}
+            className="aspect-[4/3] w-full rounded-2xl bg-surface-muted object-contain outline -outline-offset-1 outline-line"
+          />
+        </div>
         {children && <div className="flex min-w-0 flex-col gap-4 @3xl:col-start-1 @3xl:row-start-3">{children}</div>}
       </div>
     </div>

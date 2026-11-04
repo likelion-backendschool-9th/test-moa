@@ -349,7 +349,7 @@ export async function getRecruitmentFormInfo(path: string, projectKey: string) {
 const text = (formData: FormData, name: string) => String(formData.get(name) ?? "").replace(/\r\n/g, "\n").trim();
 
 /**
- * 프로젝트 등록·수정 폼 검증. 대표 이미지는 필수다.
+ * 프로젝트 등록·수정 폼 검증. 대표 이미지는 선택이고, 없으면 화면에 기본 이미지가 나온다.
  * 이미지는 화면에서도 거르지만 요청은 조작될 수 있어서 여기서 다시 확인한다.
  */
 export function validateProjectForm(formData: FormData): FormState {
@@ -367,7 +367,6 @@ export function validateProjectForm(formData: FormData): FormState {
   const images = parseFileMeta(formData.get("imagesMeta"));
   const imageError = images ? checkImages(images) : "이미지 정보를 읽지 못했어요";
   if (imageError) errors.images = imageError;
-  else if (images?.length === 0) errors.images = "대표 이미지를 골라 주세요";
   return { values, errors };
 }
 

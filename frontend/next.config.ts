@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   outputFileTracingRoot: root,
+  async redirects() {
+    /* 옛 출금 상세 주소를 목록 모달(?open=)로 보낸다 */
+    return [{ source: "/admin/withdrawals/:withdrawalKey", destination: "/admin/withdrawals?open=:withdrawalKey", permanent: true }];
+  },
   turbopack: {
     root,
     rules: {

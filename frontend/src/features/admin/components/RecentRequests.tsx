@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -5,6 +6,7 @@ import { formatCredits, formatElapsed } from "@/lib/format";
 import {
   ADMIN_REQUEST_PATH,
   REPORT_TARGET_LABEL,
+  adminRequestHref,
   type CancellationRequest,
   type Report,
   type WithdrawalRequest,
@@ -41,6 +43,7 @@ export function RecentRequests({ now, reports, withdrawals, cancellations }: Rec
           {withdrawals.map((item) => (
             <Row
               key={item.id}
+              href={adminRequestHref("withdrawal", item.id)}
               title={item.nickname}
               description={formatCredits(item.amount)}
               elapsed={formatElapsed(item.createdAt, now)}
@@ -78,14 +81,35 @@ function Column({ title, href, children }: { title: string; href: string; childr
   );
 }
 
-function Row({ title, description, elapsed }: { title: string; description: string; elapsed: string }) {
-  return (
-    <li className="flex flex-col gap-1">
+function Row({
+  title,
+  description,
+  elapsed,
+  href,
+}: {
+  title: string;
+  description: string;
+  elapsed: string;
+  href?: string;
+}) {
+  const body = (
+    <>
       <div className="flex items-baseline justify-between gap-3">
         <span className="truncate text-sm font-semibold">{title}</span>
         <span className="shrink-0 text-xs text-text-muted tabular-nums">{elapsed}</span>
       </div>
       <span className="truncate text-sm text-text-muted">{description}</span>
+    </>
+  );
+  return (
+    <li className="flex flex-col gap-1">
+      {href ? (
+        <Link href={href} className="flex flex-col gap-1 rounded-lg transition-colors duration-300 ease-brand hover:bg-surface-strong">
+          {body}
+        </Link>
+      ) : (
+        body
+      )}
     </li>
   );
 }

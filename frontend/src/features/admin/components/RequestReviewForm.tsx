@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, startTransition, useActionState } from "react";
+import { type FormEvent, type ReactNode, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { REVIEW_MEMO_MAX_LENGTH, type RequestFormError, type RequestFormState } from "../types";
 
@@ -24,6 +24,8 @@ type RequestReviewFormProps = {
   audience: string;
   /** 시연용 처리 기록 쿠키. 저장 공간이 모자랄 때 안내에 쓴다 */
   cookieName: string;
+  /** 목록 탭 등 추가 숨은 칸 */
+  extraFields?: ReactNode;
 };
 
 /**
@@ -40,6 +42,7 @@ export function RequestReviewForm({
   reasons,
   audience,
   cookieName,
+  extraFields,
 }: RequestReviewFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const errorId = `${idPrefix}-error`;
@@ -65,6 +68,7 @@ export function RequestReviewForm({
         처리하기
       </h3>
       <input type="hidden" name={keyName} value={keyValue} />
+      {extraFields}
       <fieldset className="flex flex-col gap-3" aria-describedby={state.error === "decision" ? describedBy : undefined}>
         <legend className="mb-3 text-sm font-semibold">처리 결과</legend>
         <Choice name="decision" value={accept.value} label={accept.label} detail={accept.detail} />

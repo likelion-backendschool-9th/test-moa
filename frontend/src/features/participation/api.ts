@@ -78,7 +78,7 @@ export async function getParticipation(key: string): Promise<ParticipationItem |
   return (await loadAll()).find((item) => item.key === key) ?? null;
 }
 
-/** 제출 전 참여를 피드백 제출 마감이 가까운 순서로. 없으면 빈 배열 */
-export async function getNextTodos(): Promise<ParticipationItem[]> {
+/** 이 회원의 제출 전 참여를 피드백 제출 마감이 가까운 순서로. 없으면 빈 배열 */
+export async function getUpcomingDeadlines(): Promise<ParticipationItem[]> {
   return (await loadAll()).filter((item) => item.status === "beforeSubmit").sort(byKeyDate);
 }

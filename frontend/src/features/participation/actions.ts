@@ -1,12 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { getParticipation } from "./api";
 import { saveDemoFeedback } from "./demo-feedback";
 import { checkFeedbackImages, parseFileMeta } from "./feedback-images";
-import { FEEDBACK_MAX_LENGTH, FEEDBACK_MIN_LENGTH, participationPath } from "./types";
+import {
+  FEEDBACK_MAX_LENGTH,
+  FEEDBACK_MIN_LENGTH,
+  parseParticipationTab,
+  parseParticipationView,
+  participationPath,
+} from "./types";
+import { saveParticipationView } from "./view-preference";
 
 /*
  * 피드백 제출. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo-feedback.ts)에 남긴다.
@@ -40,7 +47,19 @@ export async function submitFeedback(
   if (!(await saveDemoFeedback(participationKey, content, imageNames))) {
     return { status: "error", error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용이나 이미지를 줄여 다시 제출해 주세요" };
   }
-  /* 목록의 탭 개수·다음 할 일·요약 줄도 제출을 반영하게 한다 */
+  /* 목록의 탭 개수·마감 일정·요약 줄도 제출을 반영하게 한다 */
   revalidatePath("/my/participations", "layout");
   redirect(`${path}?notice=submitted`);
+}
+
+/**
+ * 목록 보기 방식을 저장하고 같은 탭으로 돌아간다. JS 번들을 받기 전에 누르면 폼이 POST로 제출되는데,
+ * 리다이렉트 없는 서버 액션의 POST 응답에는 페이지 본문이 없어 빈 화면이 된다. 방문 기록은 늘리지 않는다.
+ */
+export async function setParticipationView(formData: FormData) {
+  const tab = formData.get("tab");
+  const path = typeof tab === "string" ? `/my/participations?tab=${parseParticipationTab(tab)}` : "/my/participations";
+  await requireMember(path);
+  await saveParticipationView(parseParticipationView(formData.get("view")));
+  redirect(path, RedirectType.replace);
 }

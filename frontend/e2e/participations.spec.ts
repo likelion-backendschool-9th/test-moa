@@ -5,8 +5,9 @@ const tabs = (page: Page) => page.getByRole("navigation", { name: "참여 상태
 const tab = (page: Page, name: string) => tabs(page).getByRole("link", { name });
 const rows = (page: Page) => page.getByTestId("participation-row");
 const rowNames = (page: Page) => rows(page).locator("h3").allTextContents();
-const nextTodo = (page: Page) => page.getByRole("region", { name: /^다음 할 일/ });
-const todoCards = (page: Page) => page.getByTestId("next-todo");
+const deadlineList = (page: Page) => page.getByRole("region", { name: /^마감 임박 테스트/ });
+const deadlineItems = (page: Page) => page.getByTestId("deadline-item");
+const calendar = (page: Page) => page.getByRole("region", { name: "마감 캘린더" });
 
 test.describe("R1 접근과 역할", () => {
   test("S83 비로그인은 탭까지 기억해 로그인으로 보낸다", async ({ page, context }) => {
@@ -74,10 +75,19 @@ test.describe("R2 탭", () => {
   });
 });
 
-test.describe("R3 다음 할 일 패널", () => {
+test.describe("R3 마감 캘린더와 마감 임박 테스트", () => {
+  const seoulMonthTitle = (offset = 0) => {
+    const [year, month] = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", timeZone: "Asia/Seoul" })
+      .format(new Date())
+      .split("-")
+      .map(Number);
+    const total = year * 12 + month - 1 + offset;
+    return `${Math.floor(total / 12)}년 ${(total % 12) + 1}월`;
+  };
+
   test("S90 마감이 가장 가까운 제출 전 참여와 주 버튼", async ({ page }) => {
     await page.goto("/my/participations");
-    const first = todoCards(page).first();
+    const first = deadlineItems(page).first();
     await expect(first).toContainText("회의록 정리");
     await expect(first).toContainText("D-8");
     await expect(first.getByRole("link", { name: "회의록 정리 피드백 쓰기" })).toHaveAttribute("href", "/my/participations/p-meeting-notes");
@@ -86,52 +96,74 @@ test.describe("R3 다음 할 일 패널", () => {
     await expect(first.locator(".bg-accent")).toHaveCount(1);
   });
 
-  test("S103 마감이 가까운 2개가 넓은 화면에 함께 보인다", async ({ page }) => {
+  test("S560 내 제출 전 참여가 마감 순으로 목록에 나온다", async ({ page }) => {
     await page.goto("/my/participations");
-    await expect(todoCards(page).nth(0)).toContainText("회의록 정리");
-    await expect(todoCards(page).nth(1)).toContainText("중고책 장터");
-    await expect(todoCards(page).nth(1).getByRole("link", { name: "중고책 장터 피드백 쓰기" })).toHaveAttribute("href", "/my/participations/p-used-books");
-    for (const card of (await todoCards(page).all()).slice(0, 2)) await expect(card).toBeInViewport({ ratio: 1 });
-    const [a, b] = await todoCards(page).evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().top));
-    expect(a).toBe(b);
+    await expect(deadlineList(page).getByRole("heading")).toHaveText("마감 임박 테스트 4");
+    expect(await deadlineItems(page).locator("p:first-child").allTextContents()).toEqual([
+      "회의록 정리D-8",
+      "중고책 장터D-12",
+      "가계부 노트D-14",
+      "모아플랜D-16",
+    ]);
+    await expect(deadlineItems(page).nth(1).getByRole("link", { name: "중고책 장터 피드백 쓰기" })).toHaveAttribute("href", "/my/participations/p-used-books");
+    await expect(deadlineItems(page).nth(1).getByRole("link")).not.toHaveClass(/bg-accent/);
+  });
+
+  test("S561 캘린더는 이번 달에서 시작해 오늘과 내 마감을 표시한다", async ({ page }) => {
+    await page.goto("/my/participations");
+    const box = calendar(page);
+    await expect(box.getByText(seoulMonthTitle(), { exact: true })).toBeVisible();
+    await expect(box.getByRole("columnheader")).toHaveText(["일", "월", "화", "수", "목", "금", "토"]);
+    await expect(box.locator('td[aria-current="date"]')).toHaveCount(1);
+
+    /* 마감은 오늘부터 16일 안이라 이번 달과 다음 달에 모두 들어온다 */
+    const marked = async () => box.locator("td[data-deadline] .sr-only").allTextContents();
+    const thisMonth = await marked();
+    await box.getByRole("button", { name: "다음 달" }).click();
+    await expect(box.getByText(seoulMonthTitle(1), { exact: true })).toBeVisible();
+    const nextMonth = await marked();
+    expect([...thisMonth, ...nextMonth].sort()).toEqual(
+      ["회의록 정리 제출 마감", "중고책 장터 제출 마감", "가계부 노트 제출 마감", "모아플랜 제출 마감"].sort(),
+    );
+  });
+
+  test("S562 이전·다음 달로 넘기고 해가 바뀌어도 맞으며 탭을 바꿔도 보던 달이 남는다", async ({ page }) => {
+    await page.goto("/my/participations");
+    const box = calendar(page);
+    const next = box.getByRole("button", { name: "다음 달" });
+    for (let index = 1; index <= 12; index += 1) {
+      await next.click();
+      await expect(box.getByText(seoulMonthTitle(index), { exact: true })).toBeVisible();
+    }
+    await box.getByRole("button", { name: "이전 달" }).click();
+    await expect(box.getByText(seoulMonthTitle(11), { exact: true })).toBeVisible();
+    await expect(box.locator('td[aria-current="date"]')).toHaveCount(0);
+
+    await tab(page, "지원한 테스트").click();
+    await expect(page).toHaveURL("/my/participations?tab=applied");
+    await expect(rows(page)).toHaveCount(2);
+    await expect(box.getByText(seoulMonthTitle(11), { exact: true })).toBeVisible();
+  });
+
+  test("S563 넓은 화면은 캘린더와 목록이 나란하고 좁은 화면은 위아래로 쌓인다", async ({ page }) => {
+    await page.goto("/my/participations");
+    const wide = [await calendar(page).boundingBox(), await deadlineList(page).boundingBox()];
+    expect(wide[0]?.y).toBe(wide[1]?.y);
+    expect(wide[0] && wide[1] && wide[0].x + wide[0].width).toBeLessThan(wide[1]?.x ?? 0);
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expect.poll(async () => {
+      const [top, bottom] = [await calendar(page).boundingBox(), await deadlineList(page).boundingBox()];
+      return Boolean(top && bottom && top.y + top.height <= bottom.y && top.x === bottom.x);
+    }).toBe(true);
   });
 
   test("S91 제출 전 참여가 없으면 패널이 없다", async ({ page, context }) => {
     await setDemo(context, { data: "empty" });
     await page.goto("/my/participations");
     await expect(page.getByText("참여 중인 테스트가 없어요")).toBeVisible();
-    await expect(nextTodo(page)).toHaveCount(0);
-  });
-});
-
-test.describe("R3 다음 할 일 · 2개보다 많을 때", () => {
-  test("S104 모두 마감 순으로 띠에 담기고 위쪽 이전·다음 버튼으로만 넘긴다", async ({ page }) => {
-    await page.goto("/my/participations");
-    await expect(nextTodo(page).getByRole("heading")).toHaveText("다음 할 일 4");
-    await expect(todoCards(page)).toHaveCount(4);
-    expect(await todoCards(page).locator("p:first-child").allTextContents()).toEqual([
-      "회의록 정리D-8",
-      "중고책 장터D-12",
-      "가계부 노트D-14",
-      "모아플랜D-16",
-    ]);
-    const strip = nextTodo(page).locator("ul");
-    expect(await strip.evaluate((element) => getComputedStyle(element).overflowX)).toBe("hidden");
-
-    const prev = nextTodo(page).getByRole("button", { name: "이전 할 일" });
-    const next = nextTodo(page).getByRole("button", { name: "다음 할 일" });
-    await expect(prev).toBeDisabled();
-    await expect(todoCards(page).nth(2)).not.toBeInViewport();
-
-    await next.click();
-    await expect(todoCards(page).nth(2)).toBeInViewport({ ratio: 1 });
-    await expect(todoCards(page).nth(3)).toBeInViewport({ ratio: 1 });
-    await expect(todoCards(page).nth(1)).not.toBeInViewport();
-    await expect(next).toBeDisabled();
-
-    await prev.click();
-    await expect(todoCards(page).nth(0)).toBeInViewport({ ratio: 1 });
-    await expect(prev).toBeDisabled();
+    await expect(deadlineList(page)).toHaveCount(0);
+    await expect(calendar(page)).toHaveCount(0);
   });
 });
 
@@ -206,6 +238,7 @@ test.describe("R6 로딩", () => {
     await page.goto("/my/participations", { waitUntil: "commit" });
     await expect(page.getByRole("heading", { level: 1, name: "참여 테스트" })).toBeVisible();
     await expect(tabs(page).getByRole("link")).toHaveCount(3);
+    await expect(page.locator('[data-skeleton="panel"]')).toBeVisible();
     await expect(page.locator('[data-skeleton="row"]').first()).toBeVisible();
     await expect(rows(page)).toHaveCount(6, { timeout: 10_000 });
     await expect(page.locator("[data-skeleton]")).toHaveCount(0);
@@ -224,16 +257,9 @@ test.describe("R7 반응형", () => {
       .getByRole("link")
       .evaluateAll((links) => links.map((link) => Math.round(link.getBoundingClientRect().top)));
     expect(new Set(tops).size).toBe(1);
-    const card = todoCards(page).first();
-    expect(await card.evaluate((element) => element.getBoundingClientRect().left)).toBe(16);
-    await expect(todoCards(page).nth(1)).not.toBeInViewport();
-    await nextTodo(page).getByRole("button", { name: "다음 할 일" }).click();
-    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
-    await nextTodo(page).getByRole("button", { name: "이전 할 일" }).click();
-    await expect(card).toBeInViewport({ ratio: 1 });
-    const button = await card.getByRole("link", { name: "피드백 쓰기" }).boundingBox();
-    const box = await card.boundingBox();
-    expect(button && box && box.width - button.width).toBeLessThanOrEqual(48);
+    const cell = await calendar(page).locator("td").first().boundingBox();
+    expect(cell?.width).toBeGreaterThan(30);
+    await expect(deadlineItems(page).first().getByRole("link", { name: "회의록 정리 피드백 쓰기" })).toBeVisible();
   });
 });
 
@@ -267,39 +293,6 @@ test.describe("R9 접근성", () => {
     }
     await expect(target).toBeFocused();
     expect(await target.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe("none");
-  });
-});
-
-test.describe("R3 다음 할 일 · 화면 폭과 모션", () => {
-  test("S191 좁은 화면에서 넘긴 뒤 넓히면 보던 카드가 왼쪽 끝에 맞는다", async ({ page }) => {
-    await page.setViewportSize({ width: 500, height: 900 });
-    await page.goto("/my/participations");
-    await nextTodo(page).getByRole("button", { name: "다음 할 일" }).click();
-    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
-
-    await page.setViewportSize({ width: 900, height: 900 });
-    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
-    await expect(todoCards(page).nth(2)).toBeInViewport({ ratio: 1 });
-    await expect(todoCards(page).nth(0)).not.toBeInViewport();
-    const stripLeft = async () => (await nextTodo(page).locator("ul").boundingBox())?.x;
-    const cardLeft = async () => (await todoCards(page).nth(1).boundingBox())?.x;
-    expect(await cardLeft()).toBe(await stripLeft());
-
-    await page.setViewportSize({ width: 500, height: 900 });
-    await expect.poll(async () => (await cardLeft()) === (await stripLeft())).toBe(true);
-    await expect(todoCards(page).nth(1)).toBeInViewport({ ratio: 1 });
-  });
-
-  test("S192 모션 줄이기 설정이면 애니메이션 없이 바로 넘긴다", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/my/participations");
-    const strip = nextTodo(page).locator("ul");
-    await nextTodo(page).getByRole("button", { name: "다음 할 일" }).click();
-    const [left, expected] = await strip.evaluate((element) => {
-      const gap = parseFloat(getComputedStyle(element).columnGap);
-      return [element.scrollLeft, element.clientWidth + gap];
-    });
-    expect(left).toBe(expected);
   });
 });
 

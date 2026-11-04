@@ -74,7 +74,7 @@ test.describe("R12 제출 전 상세와 피드백 작성", () => {
     await expect(field(page)).toHaveCount(0);
 
     await page.goto("/my/participations");
-    await expect(page.getByRole("region", { name: /^다음 할 일/ }).getByRole("heading")).toHaveText("다음 할 일 3");
+    await expect(page.getByRole("region", { name: /^마감 임박 테스트/ }).getByRole("heading")).toHaveText("마감 임박 테스트 3");
     await expect(page.getByTestId("participation-row").filter({ hasText: "회의록 정리" })).toContainText("지급 대기");
   });
 });

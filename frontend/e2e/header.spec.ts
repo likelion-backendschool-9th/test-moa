@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 const header = (page: Page) => page.getByRole("banner");
 
@@ -17,8 +17,8 @@ test.describe("R2 헤더와 계정", () => {
   });
 });
 
-test.describe("R1 오른쪽 계정 영역", () => {
-  test("S317 로그인하면 보유 크레딧, 마이페이지, 로그아웃이 이 순서로 있다", async ({ page, context }) => {
+test.describe("R175 오른쪽 계정 영역", () => {
+  test("S341 로그인하면 보유 크레딧, 마이페이지, 로그아웃이 이 순서로 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/");
     const banner = header(page);
@@ -37,7 +37,7 @@ test.describe("R1 오른쪽 계정 영역", () => {
     await expect(banner.getByRole("link", { name: "내 정보" })).toHaveCount(0);
   });
 
-  test("S318 비로그인은 로그인과 회원가입만 본다", async ({ page, context }) => {
+  test("S342 비로그인은 로그인과 회원가입만 본다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/");
     const banner = header(page);
@@ -52,7 +52,7 @@ test.describe("R1 오른쪽 계정 영역", () => {
     ["developer", "3,260"],
     ["admin", "0"],
   ] as const) {
-    test(`S319 ${role}도 보유 크레딧, 마이페이지, 로그아웃을 본다`, async ({ page, context }) => {
+    test(`S343 ${role}도 보유 크레딧, 마이페이지, 로그아웃을 본다`, async ({ page, context }) => {
       await setDemo(context, { role });
       await page.goto("/");
       const banner = header(page);
@@ -62,7 +62,7 @@ test.describe("R1 오른쪽 계정 영역", () => {
     });
   }
 
-  test("S320 마이페이지 현재 위치", async ({ page, context }) => {
+  test("S344 마이페이지 현재 위치", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     const myPage = header(page).getByRole("link", { name: "마이페이지" });
     await page.goto("/my");
@@ -76,8 +76,8 @@ test.describe("R1 오른쪽 계정 영역", () => {
   });
 });
 
-test.describe("R2 로그아웃", () => {
-  test("S321 로그아웃하면 비로그인이 되고 홈으로 간다", async ({ page, context }) => {
+test.describe("R176 로그아웃", () => {
+  test("S345 로그아웃하면 비로그인이 되고 홈으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits");
     await header(page).getByRole("button", { name: "로그아웃" }).click();
@@ -88,17 +88,16 @@ test.describe("R2 로그아웃", () => {
     expect(role?.value).toBe("guest");
   });
 
-  test("S322 로그아웃 뒤 보호 페이지는 로그인으로 보낸다", async ({ page, context }) => {
+  test("S346 로그아웃 뒤 보호 페이지는 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/");
     await header(page).getByRole("button", { name: "로그아웃" }).click();
     await expect(header(page).getByRole("link", { name: "로그인" })).toBeVisible();
-    await page.goto("/my");
-    await expect(page).toHaveURL("/login?next=%2Fmy");
+    await expectLoginRedirect(page, "/my");
   });
 });
 
-test.describe("R4 검색 진입점 정리", () => {
+test.describe("R178 검색 진입점 정리", () => {
   test("S326 헤더에는 검색창이 없고 홈 검색창은 그리드의 1개뿐이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/");

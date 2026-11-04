@@ -4,7 +4,7 @@ import { setDemo } from "./helpers";
 const ROLES = ["guest", "tester", "developer", "admin"] as const;
 const WIDTHS = [768, 1024, 1280, 1366, 1440];
 
-test.describe("R6 깨지지 않는 배치", () => {
+test.describe("R180 깨지지 않는 배치", () => {
   for (const role of ROLES) {
     test(`S330 ${role}: 헤더 글자가 줄바꿈되지 않고 가로로 넘치지 않는다`, async ({ page, context }) => {
       await setDemo(context, { role });

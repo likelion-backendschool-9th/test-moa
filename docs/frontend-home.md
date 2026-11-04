@@ -34,7 +34,7 @@ S80 공유 이미지
 - Then  그 주소가 200, `image/png`로 열린다
 
 ## 2. 헤더와 계정 (R2)
-(고침 11-02: 헤더 정리. 계정 영역·탭·모바일 메뉴·검색 시나리오는 `docs/2026-11-01-frontend-header.md` S317~S334로 옮겼다. S2·S3은 S317·S318, S6~S9는 S323·S324·S334·S325, S81은 S327, S59·S82는 S326으로 대체했다)
+(고침 11-02: 헤더 정리. 계정 영역·탭·모바일 메뉴·검색 시나리오는 `docs/2026-11-01-frontend-header.md` S323~S334와 S341~S346으로 옮겼다. S2·S3은 S341·S342, S6~S9는 S323·S324·S334·S325, S81은 S327, S59·S82는 S326으로 대체했다)
 
 헤더 오른쪽은 로그인 상태에 따라 "로그인"·"회원가입"이나 "마이페이지"·보유 크레딧·"로그아웃"을 보여 준다.
 
@@ -46,7 +46,7 @@ S5 알 수 없는 역할
 - Then  HTTP 200이고 tester로 본다
 
 ## 3. 카테고리 탭 (R3)
-탭은 참여 테스트·내 프로젝트·채팅이고 운영자에게만 운영자 페이지가 더해진다. 홈은 로고로 간다. 시나리오는 `docs/2026-11-01-frontend-header.md` R3.
+탭은 참여 테스트·내 프로젝트·채팅이고 운영자에게만 운영자 페이지가 더해진다. 홈은 로고로 간다. 시나리오는 `docs/2026-11-01-frontend-header.md` R177.
 
 ## 4. 모바일 메뉴 (R4)
 너비 768px 미만에서는 탭 대신 메뉴 버튼이 나오고, 화면 전체 높이 패널이 열린다.
@@ -65,7 +65,7 @@ S12 링크 이동 후 닫힘
 - When  패널에서 "참여 테스트"를 누른다
 - Then  URL이 `/my/participations`이고 패널이 닫힌다
 
-계정 영역(마이페이지·로그아웃)은 `docs/2026-11-01-frontend-header.md` R5.
+계정 영역(마이페이지·로그아웃)은 `docs/2026-11-01-frontend-header.md` R179.
 
 ## 5. 검색 (R5)
 검색은 홈 전체 테스트 그리드에서만 한다(R9 S69). 헤더·모바일 메뉴 검색창은 없앴다 (`docs/2026-11-01-frontend-header.md` S326).
@@ -186,7 +186,7 @@ S79 이름과 상태
 
 S78
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 21개, 모두 27개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S136), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S134), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S102), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313), ApplicationStatusTabs, CheckoutForm(`docs/2026-10-30-frontend-subscription.md` S341~S351) (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/2026-11-01-frontend-header.md` S333. 구독 결제 CheckoutForm 추가)
+- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 20개, 모두 26개만 나온다: AccountNav(`docs/2026-10-30-frontend-my.md`), ChatFilters·ChatCardMenu(`docs/2026-10-30-frontend-chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/2026-11-01-frontend-chat-room.md`), WithdrawalForm(`docs/2026-10-30-frontend-credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend-admin-reports.md` S445), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend-projects.md` S516), TodoScroller·FeedbackForm(`docs/frontend-participations.md` S467), ProfileForm·PasswordForm(`docs/2026-10-30-frontend-profile-edit.md` S181), LoginForm·SignupForm(`docs/2026-11-01-frontend-auth.md` S313), CheckoutForm(`docs/2026-10-30-frontend-subscription.md` S533~S543) (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/2026-11-01-frontend-header.md` S333. 구독 결제 CheckoutForm 추가)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`

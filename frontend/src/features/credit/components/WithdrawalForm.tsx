@@ -50,7 +50,7 @@ export function WithdrawalForm({ cashable }: { cashable: number }) {
         </h2>
         <p className="text-sm text-text-muted">
           출금 가능 <span className="font-semibold text-text tabular-nums">{formatCredits(cashable)}</span> · 1크레딧은 1원이에요.
-          가입 크레딧은 출금할 수 없어요.
+          이벤트 크레딧은 출금할 수 없어요.
         </p>
       </div>
       {disabled && <p className="text-sm font-semibold">출금할 수 있는 크레딧이 없어요</p>}

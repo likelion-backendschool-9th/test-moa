@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, setDemo } from "./helpers";
 
 const PATH = "/my/profile/edit";
 
@@ -15,11 +15,10 @@ async function fillPassword(page: Page, { current, next, confirm }: { current: s
   await card.getByRole("button", { name: "비밀번호 변경" }).click();
 }
 
-test.describe("R1 접근 제어", () => {
+test.describe("R142 접근 제어", () => {
   test("S163 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto(PATH);
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fprofile%2Fedit");
+    await expectLoginRedirect(page, PATH);
   });
 
   test("S164 로그인하면 열리고 메뉴의 현재 페이지다", async ({ page, context }) => {
@@ -32,7 +31,7 @@ test.describe("R1 접근 제어", () => {
   });
 });
 
-test.describe("R2 기본 정보 보기", () => {
+test.describe("R143 기본 정보 보기", () => {
   test("S165 테스터의 현재 값과 고칠 수 없는 이메일", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto(PATH);
@@ -53,7 +52,7 @@ test.describe("R2 기본 정보 보기", () => {
   });
 });
 
-test.describe("R3 기본 정보 저장", () => {
+test.describe("R144 기본 정보 저장", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto(PATH);
@@ -116,7 +115,7 @@ test.describe("R3 기본 정보 저장", () => {
   });
 });
 
-test.describe("R4 비밀번호 변경", () => {
+test.describe("R145 비밀번호 변경", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto(PATH);
@@ -184,7 +183,7 @@ test.describe("R4 비밀번호 변경", () => {
   });
 });
 
-test.describe("R5 로딩과 화면", () => {
+test.describe("R146 로딩과 화면", () => {
   test("S178 제목은 바로, 폼은 스켈레톤 먼저", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto(PATH, { waitUntil: "commit" });

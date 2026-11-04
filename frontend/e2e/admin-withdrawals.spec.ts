@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "출금 요청 상태" });
@@ -180,13 +180,13 @@ test.describe("R34 모달", () => {
     await expect(modal(page)).toHaveCount(0);
   });
 
-  test("S537 상태 탭 링크에는 open이 없다", async ({ page }) => {
+  test("S549 상태 탭 링크에는 open이 없다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
     await expect(statusTabs(page).getByRole("link", { name: "처리 대기" })).toHaveAttribute("href", "/admin/withdrawals");
     await expect(statusTabs(page).getByRole("link", { name: "처리 완료" })).toHaveAttribute("href", "/admin/withdrawals?tab=done");
   });
 
-  test("S538 새로고침 뒤에도 모달이 유지된다", async ({ page }) => {
+  test("S550 새로고침 뒤에도 모달이 유지된다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
     await page.reload();
     await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
@@ -335,7 +335,7 @@ test.describe("R36 운영자 홈 연결", () => {
     await expect(modal(page)).toBeVisible();
   });
 
-  test("S539 최근 요청의 출금도 모달로 간다", async ({ page }) => {
+  test("S551 최근 요청의 출금도 모달로 간다", async ({ page }) => {
     await page.goto("/admin");
     await page.getByRole("region", { name: "최근 요청" }).locator('a[href="/admin/withdrawals?open=withdrawal-1"]').click();
     await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
@@ -393,9 +393,9 @@ test.describe("R37 로딩과 접근성", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/admin/withdrawals");
     await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page, "/admin/withdrawals");
     await openWithdrawal(page, "withdrawal-1");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page, "/admin/withdrawals?open=withdrawal-1");
     /* 계좌번호는 줄바꿈 없이 한 줄이다 */
     const number = modal(page).getByRole("region", { name: "받을 계좌" }).getByText("123456789012");
     const { height, lineHeight } = await number.evaluate((element) => ({
@@ -417,8 +417,7 @@ test.describe("R37 로딩과 접근성", () => {
     ]) {
       await openWithdrawal(page, key, "done");
       await expect(modal(page).getByRole("region", { name: "처리 결과" })).toContainText(text);
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, key).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, key);
     }
   });
 });

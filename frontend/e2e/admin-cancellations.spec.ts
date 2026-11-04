@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "모집 취소 요청 상태" });
@@ -301,8 +301,7 @@ test.describe("R53 로딩과 접근성", () => {
     for (const path of ["/admin/cancellations", "/admin/cancellations/cancellation-1"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, path);
     }
   });
 
@@ -318,8 +317,7 @@ test.describe("R53 로딩과 접근성", () => {
     ]) {
       await page.goto(`/admin/cancellations/${key}`);
       await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(text);
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, key).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, key);
     }
   });
 });

@@ -19,10 +19,6 @@
   --thumb: #ffffff;
   --on-thumb: #1a1a1a;
   --mark: #1a1a1a;
-  /* 교정쇄 색 막대. 장식에만 쓰고 글씨에는 쓰지 않는다 */
-  --proof-c: #00a0e0;
-  --proof-m: #e4007f;
-  --proof-y: #ffe600;
 
   /* 겹침 순서. 숫자를 컴포넌트에 직접 쓰지 않는다 */
   --z-popover: 20;
@@ -62,9 +58,6 @@
   --color-thumb: var(--thumb);
   --color-on-thumb: var(--on-thumb);
   --color-mark: var(--mark);
-  --color-proof-c: var(--proof-c);
-  --color-proof-m: var(--proof-m);
-  --color-proof-y: var(--proof-y);
   --font-sans: var(--font-wanted), system-ui, sans-serif;
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }

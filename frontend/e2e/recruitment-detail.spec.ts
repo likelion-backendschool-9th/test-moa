@@ -60,6 +60,42 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByRole("list", { name: "책 검색해서 등록하기 이미지 2장" }).getByRole("img")).toHaveCount(2);
   });
 
+  test("#63-S9 대표 이미지 옆에 항목 이미지를 이어 놓고 버튼으로 넘긴다", async ({ page }) => {
+    await page.goto("/recruitments/booklog");
+    const gallery = page.getByRole("list", { name: "북로그 이미지 5장" });
+    expect(await gallery.getByRole("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt")))).toEqual([
+      "북로그 대표 이미지",
+      "책 검색 화면",
+      "내 서재 화면",
+      "밑줄 긋기 화면",
+      "밑줄 모아 보기 화면",
+    ]);
+    const prev = page.getByRole("button", { name: "이전 이미지" });
+    const next = page.getByRole("button", { name: "다음 이미지" });
+    const scrollLeft = () => gallery.evaluate((node) => node.scrollLeft);
+    await expect(prev).toBeDisabled();
+
+    await next.click();
+    await expect.poll(scrollLeft).toBeGreaterThan(0);
+    await expect(prev).toBeEnabled();
+
+    /* 1440px에서는 두 번 더 넘기면 끝이다. 끝까지 가면 마지막 이미지가 보이고 다음 버튼이 꺼진다 */
+    const second = await scrollLeft();
+    await next.click();
+    await expect.poll(scrollLeft).toBeGreaterThan(second);
+    await next.click();
+    await expect(next).toBeDisabled();
+    await expect(gallery.getByRole("img", { name: "밑줄 모아 보기 화면" })).toBeInViewport({ ratio: 1 });
+
+    await prev.click();
+    await expect(next).toBeEnabled();
+
+    /* 항목 이미지가 없으면 대표 이미지만 있고 넘길 것이 없다 */
+    await page.goto("/recruitments/moaplan");
+    await expect(page.getByTestId("recruitment-gallery").getByRole("img")).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "다음 이미지" })).toHaveCount(0);
+  });
+
   test.describe("모집 작성", () => {
     const NEW = "/my/projects/booklog/recruitments/new";
     const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");

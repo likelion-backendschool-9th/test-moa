@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
+import { cn } from "@/lib/cn";
 import { formatCredits, formatDate, formatDday } from "@/lib/format";
 import type { PublicRecruitmentView } from "../service";
 import { DEFAULT_PROJECT_IMAGE_URL, SELECTION_MODE_LABEL } from "../types";
@@ -75,7 +76,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
             {keyFacts.map(({ term, value, accent }) => (
               <div key={term} className="flex flex-col gap-1">
                 <dt className="text-sm text-text-muted">{term}</dt>
-                <dd className={`text-xl font-extrabold tracking-[-0.03em] tabular-nums lg:text-3xl${accent ? " text-accent" : ""}`}>{value}</dd>
+                <dd className={cn("text-xl font-extrabold tracking-[-0.03em] tabular-nums lg:text-3xl", accent && "text-accent")}>{value}</dd>
               </div>
             ))}
           </dl>

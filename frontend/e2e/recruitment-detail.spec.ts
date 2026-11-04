@@ -87,8 +87,13 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(next).toBeDisabled();
     await expect(gallery.getByRole("img", { name: "밑줄 모아 보기 화면" })).toBeInViewport({ ratio: 1 });
 
+    /* 움직이는 중에 빠르게 눌러도 누른 만큼 넘어간다 */
     await prev.click();
+    await prev.click();
+    await prev.click();
+    await expect.poll(scrollLeft).toBe(0);
     await expect(next).toBeEnabled();
+    await expect(prev).toBeDisabled();
 
     /* 항목 이미지가 없으면 대표 이미지만 있고 넘길 것이 없다 */
     await page.goto("/recruitments/moaplan");

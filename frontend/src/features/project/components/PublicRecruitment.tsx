@@ -50,6 +50,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
     {
       url: project?.image?.url ?? DEFAULT_PROJECT_IMAGE_URL,
       alt: project?.image ? `${recruitment.projectName} 대표 이미지` : "기본 프로젝트 이미지",
+      badge: project?.image ? "대표 이미지" : undefined,
     },
     ...testItems.flatMap((item) => item.images.map((image) => ({ url: image.url, alt: image.name }))),
   ];

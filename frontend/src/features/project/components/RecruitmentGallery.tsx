@@ -2,9 +2,15 @@
 
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
-export type GalleryImage = { url: string; alt: string };
+export type GalleryImage = {
+  url: string;
+  alt: string;
+  /** 다른 이미지와 구분할 표시. 이미지가 한 장이면 구분할 것이 없어 보여 주지 않는다 */
+  badge?: string;
+};
 
 /** 이미지 양쪽 가운데에 겹치는 넘기기 버튼 */
 export const NAV_BUTTON_CLASS = "absolute top-1/2 size-10 -translate-y-1/2 bg-surface !px-0 !py-0 outline -outline-offset-1 outline-line";
@@ -61,7 +67,7 @@ export function RecruitmentGallery({ images, label }: { images: GalleryImage[]; 
         className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto [scrollbar-width:none] motion-safe:scroll-smooth [&::-webkit-scrollbar]:hidden"
       >
         {images.map((image, index) => (
-          <li key={`${index}-${image.url}`} className="w-[min(100%,28rem)] shrink-0 snap-start">
+          <li key={`${index}-${image.url}`} className="relative w-[min(100%,28rem)] shrink-0 snap-start">
             {/* 등록 중인 이미지와 샘플 이미지를 같은 방식으로 보여 준다 */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -69,6 +75,11 @@ export function RecruitmentGallery({ images, label }: { images: GalleryImage[]; 
               alt={image.alt}
               className="aspect-[4/3] w-full rounded-2xl bg-surface-muted object-contain outline -outline-offset-1 outline-line"
             />
+            {image.badge && images.length > 1 && (
+              <Badge tone="neutral" className="absolute top-3 left-3">
+                {image.badge}
+              </Badge>
+            )}
           </li>
         ))}
       </ul>

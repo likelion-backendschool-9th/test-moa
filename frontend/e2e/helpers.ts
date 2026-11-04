@@ -33,7 +33,7 @@ export async function openMoreMenu(button: Locator) {
 
 /** 페이지가 가로로 넘치지 않는지 확인한다. 여러 페이지를 돌 때는 label로 어느 곳인지 알린다 */
 export async function expectNoHorizontalOverflow(page: Page, label?: string) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, label).toBeLessThanOrEqual(0);
 }
 

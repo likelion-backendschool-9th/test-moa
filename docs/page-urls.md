@@ -80,9 +80,6 @@
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
 | 처리 완료 출금 탭 | `/admin/withdrawals?tab=done` | 후보 |
 | 출금 요청 모달 | `/admin/withdrawals?open=:withdrawalKey` | 후보 |
-| 모집 취소 요청 관리 | `/admin/cancellations` | 후보 |
-| 처리 완료 모집 취소 탭 | `/admin/cancellations?tab=done` | 후보 |
-| 모집 취소 요청 상세 | `/admin/cancellations/:cancellationKey` | 후보 |
 
 ## 변경 이력
 - 2026-11-03: 출금 요청 상세(`/admin/withdrawals/:withdrawalKey`)를 목록 모달(`/admin/withdrawals?open=:withdrawalKey`)로 바꿨다.

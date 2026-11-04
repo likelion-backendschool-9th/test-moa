@@ -10,7 +10,6 @@ export const ADMIN_NAV = [
   { label: "회원", path: "/admin/users" },
   { label: "신고·제재", path: "/admin/reports" },
   { label: "출금 요청", path: "/admin/withdrawals" },
-  { label: "모집 취소", path: "/admin/cancellations" },
 ] as const;
 
 export type AdminPath = (typeof ADMIN_NAV)[number]["path"];

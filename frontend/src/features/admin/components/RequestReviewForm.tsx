@@ -11,16 +11,16 @@ const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8"
 type RequestReviewFormProps = {
   /** 처리 Server Action. 막히면 오류를 돌려주고, 처리되면 목록으로 이동한다 */
   action: (prev: RequestFormState, formData: FormData) => Promise<RequestFormState>;
-  /** 요청 키를 담을 숨은 칸 이름(withdrawalKey, cancellationKey)과 값 */
+  /** 요청 키를 담을 숨은 칸 이름(withdrawalKey)과 값 */
   keyName: string;
   keyValue: string;
   /** 같은 화면에 양식이 하나라 id 앞에 붙인다 */
   idPrefix: string;
-  /** 반려가 아닌 결과(지급 완료, 승인) */
+  /** 반려가 아닌 결과(지급 완료) */
   accept: { value: string; label: string; detail: string };
   rejectDetail: string;
   reasons: Record<string, string>;
-  /** 반려 사유를 보는 사람(회원, 개발자) */
+  /** 반려 사유를 보는 사람(회원) */
   audience: string;
   /** 시연용 처리 기록 쿠키. 저장 공간이 모자랄 때 안내에 쓴다 */
   cookieName: string;
@@ -29,7 +29,7 @@ type RequestReviewFormProps = {
 };
 
 /**
- * 출금·모집 취소 처리 양식. 확인은 서버에서 하고, 막히면 페이지를 옮기지 않고 오류만 보여 준다.
+ * 출금 처리 양식. 확인은 서버에서 하고, 막히면 페이지를 옮기지 않고 오류만 보여 준다.
  * 그래서 고른 결과·사유와 메모가 그대로 남고, 주소나 방문 기록에 메모가 실리지 않는다.
  */
 export function RequestReviewForm({

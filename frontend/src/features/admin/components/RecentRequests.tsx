@@ -7,7 +7,6 @@ import {
   ADMIN_REQUEST_PATH,
   REPORT_TARGET_LABEL,
   adminRequestHref,
-  type CancellationRequest,
   type Report,
   type WithdrawalRequest,
 } from "../types";
@@ -18,17 +17,16 @@ type RecentRequestsProps = {
   now: Date;
   reports: Report[];
   withdrawals: WithdrawalRequest[];
-  cancellations: CancellationRequest[];
 };
 
 /** 영역별 최근 요청. 확인만 하고 승인·반려는 각 관리 페이지에서 한다 */
-export function RecentRequests({ now, reports, withdrawals, cancellations }: RecentRequestsProps) {
+export function RecentRequests({ now, reports, withdrawals }: RecentRequestsProps) {
   return (
     <section aria-labelledby="recent-heading" className="flex flex-col gap-6">
       <h2 id="recent-heading" className="text-2xl font-extrabold tracking-[-0.03em]">
         최근 요청
       </h2>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         <Column title="신고" href={ADMIN_REQUEST_PATH.report}>
           {reports.map((report) => (
             <Row
@@ -46,16 +44,6 @@ export function RecentRequests({ now, reports, withdrawals, cancellations }: Rec
               href={adminRequestHref("withdrawal", item.id)}
               title={item.nickname}
               description={formatCredits(item.amount)}
-              elapsed={formatElapsed(item.createdAt, now)}
-            />
-          ))}
-        </Column>
-        <Column title="모집 취소 요청" href={ADMIN_REQUEST_PATH.cancellation}>
-          {cancellations.map((item) => (
-            <Row
-              key={item.id}
-              title={item.recruitmentName}
-              description={`${item.developerNickname} · 확정 테스터 ${item.confirmedCount}명`}
               elapsed={formatElapsed(item.createdAt, now)}
             />
           ))}
@@ -118,8 +106,8 @@ export function RecentRequestsSkeleton() {
   return (
     <div aria-busy="true" aria-label="최근 요청 불러오는 중" className="flex flex-col gap-6">
       <Skeleton className="h-8 w-28" />
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }, (_, index) => (
+      <div className="grid gap-4 md:grid-cols-2">
+        {Array.from({ length: 2 }, (_, index) => (
           <div key={index} className={columnClass} data-skeleton="recent">
             <Skeleton className="h-6 w-20" />
             {Array.from({ length: 3 }, (_, row) => (

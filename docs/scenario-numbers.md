@@ -13,7 +13,7 @@
 | S141~S158, S317~S318, S321, S335~S338, S340 | 채팅방 (`2026-11-01-frontend-chat-room.md`) | `chat-room.spec.ts` |
 | S163~S184 | 개인정보 수정 (`2026-10-30-frontend-profile-edit.md`) | `profile.spec.ts` |
 | S191~S219, S281, S284 | 출금 요청 관리 (`frontend-admin-withdrawals.md`) | `admin-withdrawals.spec.ts` |
-| S220~S249, S280 | 회원 관리 (`frontend-admin-users.md`) | `admin-users.spec.ts` |
+| S220~S249, S280, S527 | 회원 관리 (`frontend-admin-users.md`) | `admin-users.spec.ts` |
 | S250~S279, S283 | 모집 취소 요청 관리 (`frontend-admin-cancellations.md`) | `admin-cancellations.spec.ts` |
 | S286~S316, S347 | 로그인·회원가입 (`2026-11-01-frontend-auth.md`) | `auth.spec.ts`, `no-js-forms.spec.ts` |
 | S323~S334, S341~S346 | 헤더 (`2026-11-01-frontend-header.md`) | `header.spec.ts`, `header-layout.spec.ts`, `mobile-menu.spec.ts` |

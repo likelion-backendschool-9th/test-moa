@@ -22,24 +22,37 @@ function hasUnsavedInput(dialog: HTMLDialogElement) {
 /**
  * 출금 요청 처리 모달. 주소의 ?open= 으로 열리고, 닫으면 open을 뺀 목록으로 간다.
  * 브라우저 기본 dialog(showModal)로 포커스 가둠·Esc를 쓰고, 배경 스크롤은
- * `html:has(dialog[open]:modal)` CSS로 잠근다. 바깥 클릭으로는 닫지 않는다.
+ * body를 `position: fixed`로 고정해 잠근다(`overflow: hidden`은 스크롤 위치를 깎아서 쓰지 않는다).
+ * 바깥 클릭으로는 닫지 않는다.
  * 긴 모달은 위에서부터 스크롤되고, 짧은 모달은 md에서 세로 가운데에 온다(items-start + md:my-auto).
  */
 export function WithdrawalModal({ title, closeHref, withdrawalKey, children }: WithdrawalModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const skipCloseNav = useRef(false);
+  const scrollYRef = useRef(0);
   const titleId = useId();
   const router = useRouter();
 
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    const scrollY = window.scrollY;
+    scrollYRef.current = scrollY;
+    const { body } = document;
+    const previous = body.style.cssText;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
     if (!dialog.open) dialog.showModal();
     return () => {
+      body.style.cssText = previous;
       /* bfcache·언마운트 때 열린 dialog를 닫아, 다시 보일 때 showModal()이 실패하지 않게 한다 */
-      if (!dialog.open) return;
-      skipCloseNav.current = true;
-      dialog.close();
+      if (dialog.open) {
+        skipCloseNav.current = true;
+        dialog.close();
+      }
+      window.scrollTo(0, scrollYRef.current);
     };
   }, []);
 
@@ -63,13 +76,14 @@ export function WithdrawalModal({ title, closeHref, withdrawalKey, children }: W
   }
 
   function restoreFocus() {
+    /* preventScroll: 포커스가 목록 스크롤을 다시 움직이지 않게 한다(#42-S7) */
     const row = document.querySelector<HTMLElement>(`[data-withdrawal-key="${withdrawalKey}"]`);
     if (row) {
-      row.focus();
+      row.focus({ preventScroll: true });
       return;
     }
     /* 목록에 없는 요청(다른 탭의 처리 건 등)을 열었다 닫으면 행이 없다. 상태 탭으로 보낸다 */
-    document.querySelector<HTMLElement>('[aria-label="출금 요청 상태"] a')?.focus();
+    document.querySelector<HTMLElement>('[aria-label="출금 요청 상태"] a')?.focus({ preventScroll: true });
   }
 
   return (
@@ -81,6 +95,7 @@ export function WithdrawalModal({ title, closeHref, withdrawalKey, children }: W
           skipCloseNav.current = false;
           return;
         }
+        /* 스크롤 복원은 layout effect cleanup에서 한 번만 한다 */
         router.replace(closeHref, { scroll: false });
         requestAnimationFrame(() => requestAnimationFrame(restoreFocus));
       }}

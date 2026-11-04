@@ -70,6 +70,9 @@ test.describe("#63-R1 모집글 상세", () => {
       "밑줄 긋기 화면",
       "밑줄 모아 보기 화면",
     ]);
+    /* 대표 이미지에만 표시가 있다 */
+    await expect(gallery.getByText("대표 이미지", { exact: true })).toHaveCount(1);
+    await expect(gallery.getByRole("listitem").first()).toContainText("대표 이미지");
     const prev = page.getByRole("button", { name: "이전 이미지" });
     const next = page.getByRole("button", { name: "다음 이미지" });
     const scrollLeft = () => gallery.evaluate((node) => node.scrollLeft);
@@ -99,6 +102,7 @@ test.describe("#63-R1 모집글 상세", () => {
     await page.goto("/recruitments/moaplan");
     await expect(page.getByTestId("recruitment-gallery").getByRole("img")).toHaveCount(1);
     await expect(page.getByRole("button", { name: "다음 이미지" })).toHaveCount(0);
+    await expect(page.getByTestId("recruitment-gallery").getByText("대표 이미지", { exact: true })).toHaveCount(0);
   });
 
   test("#63-S11 항목 이미지를 크게 보여 주고 누르면 확대해 넘겨 본다", async ({ page, context }) => {

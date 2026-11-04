@@ -131,7 +131,7 @@ function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
                 <Badge tone={item.required ? "neutral" : "outline"} className="ml-2">
                   {item.required ? "필수" : "선택"}
                 </Badge>
-                {item.description && <span className="text-text-muted"> · {item.description}</span>}
+                {item.description && <span className="break-words text-text-muted"> · {item.description}</span>}
                 <div className="pt-3 empty:hidden">
                   <TestItemImages item={item} />
                 </div>

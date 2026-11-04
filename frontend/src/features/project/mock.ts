@@ -198,11 +198,14 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       accessUrl: "https://booklog.example.com",
       conditions: "한 달에 책을 한 권 이상 읽는 분\n휴대폰 브라우저(크롬·사파리)로 참여할 수 있는 분",
       testItems: [
-        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 검색해 내 서재에 등록해 주세요.", required: true, images: [
+        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 제목이나 저자 이름으로 검색한 뒤 결과 목록에서 같은 책을 골라 내 서재에 등록해 주세요. 판본이 여러 개 나오면 표지와 출판사를 비교해 실제로 가진 책을 고르면 됩니다. 검색 결과가 없다면 띄어쓰기를 바꾸거나 부제를 빼고 다시 찾아보고, 그래도 없으면 어떤 검색어를 썼는지 메모해 주세요. 등록한 뒤에는 내 서재 첫 화면에서 책이 바로 보이는지, 표지와 제목이 맞게 나오는지도 함께 확인해 주세요. 원하는 책을 찾기까지 몇 번 검색했는지도 알려 주세요.", required: true, images: [
             { url: "/sample/feedback/booklog-search.svg", name: "책 검색 화면" },
-            { url: "/sample/projects/booklog.svg", name: "내 서재 화면" },
+            { url: "/sample/projects/booklog-library.svg", name: "내 서재 화면" },
           ] },
-        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장해 주세요.", required: true, images: [] },
+        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장한 뒤 모아 보기에서 다시 찾아 주세요. 문장을 고르기 어려웠다면 어느 단계에서 막혔는지 적어 주세요. 참고 화면: https://help.example.com/underline/how-to-save-a-sentence-and-find-it-again-in-your-collection", required: true, images: [
+            { url: "/sample/projects/booklog-underline.svg", name: "밑줄 긋기 화면" },
+            { url: "/sample/projects/booklog-collection.svg", name: "밑줄 모아 보기 화면" },
+          ] },
         { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요.", required: false, images: [] },
       ],
     },

@@ -7,6 +7,7 @@ import { formatCredits, formatDate, formatDday } from "@/lib/format";
 import type { PublicRecruitmentView } from "../service";
 import { DEFAULT_PROJECT_IMAGE_URL, SELECTION_MODE_LABEL } from "../types";
 import { ProjectDescription } from "./ProjectDescription";
+import { RecruitmentGallery, type GalleryImage } from "./RecruitmentGallery";
 import { RecruitmentStatusBadge } from "./StatusBadge";
 import { TestItemImages } from "./TestItemImages";
 
@@ -32,6 +33,14 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
     ["기본 보상", formatCredits(recruitment.baseReward)],
   ];
   const description = project?.description || recruitment.summary;
+  /* 대표 이미지 다음에 테스트 항목 이미지를 항목 순서대로 잇는다 */
+  const gallery: GalleryImage[] = [
+    {
+      url: project?.image?.url ?? DEFAULT_PROJECT_IMAGE_URL,
+      alt: project?.image ? `${recruitment.projectName} 대표 이미지` : "기본 프로젝트 이미지",
+    },
+    ...(detail?.testItems ?? []).flatMap((item) => item.images.map((image) => ({ url: image.url, alt: image.name }))),
+  ];
 
   return (
     <article className="flex flex-col gap-8">
@@ -82,13 +91,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
             <h2 id="recruitment-project-heading" className="text-xl font-extrabold">
               {recruitment.projectName}
             </h2>
-            {/* 등록 중인 이미지와 샘플 이미지를 같은 방식으로 보여 준다 */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={project?.image?.url ?? DEFAULT_PROJECT_IMAGE_URL}
-              alt={project?.image ? `${recruitment.projectName} 대표 이미지` : "기본 프로젝트 이미지"}
-              className="aspect-[4/3] w-full max-w-md rounded-2xl bg-surface-muted object-contain outline -outline-offset-1 outline-line"
-            />
+            <RecruitmentGallery images={gallery} label={`${recruitment.projectName} 이미지 ${gallery.length}장`} />
             <ProjectDescription text={description} />
           </section>
 
@@ -109,7 +112,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
                       {index + 1}. {item.title}
                       <Badge tone={item.required ? "neutral" : "outline"}>{item.required ? "필수" : "선택"}</Badge>
                     </p>
-                    {item.description && <p className="text-sm text-text-muted">{item.description}</p>}
+                    {item.description && <p className="text-sm break-words text-text-muted">{item.description}</p>}
                     <div className="pt-1 empty:hidden">
                       <TestItemImages item={item} />
                     </div>

@@ -1,5 +1,5 @@
 name: 기능 요청
-description: 새 기능이나 기존 기능 개선을 사용자 시나리오로 정리합니다.
+description: 새 기능이나 기존 기능 개선을 시나리오로 정리합니다.
 title: "Feat: "
 labels: ["enhancement"]
 body:
@@ -13,8 +13,8 @@ body:
   - type: textarea
     id: scenario
     attributes:
-      label: 사용자 시나리오
-      description: 주요 흐름을 사용자 행동 순서대로 적어 주세요. 이 흐름이 모두 동작하면 이슈를 닫습니다.
+      label: 시나리오
+      description: 누가(사용자·운영자·시스템) 무엇을 하는지 순서대로 적어 주세요. 이 흐름이 모두 동작하면 이슈를 닫습니다.
       placeholder: |
         1. 테스터가 헤더의 채팅 아이콘을 눌러 채팅함에 들어간다
         2. 대화 목록에서 마지막 메시지와 안 읽은 수를 본다

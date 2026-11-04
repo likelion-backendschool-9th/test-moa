@@ -5,20 +5,34 @@
  * 컴포넌트에서는 hex나 임의 px 대신 아래 토큰과 Tailwind 기본 스케일을 쓴다.
  */
 :root {
-  /* 라이트: 교정쇄. 작업대 회색 위 교정지, 먹, 에메랄드 강조 */
-  --surface: #efefec;
-  --surface-muted: #fbfbfa;
-  --surface-strong: #e4e4e0;
-  --line: #d6d6d1;
+  /* 라이트: 흰 교정지 위 진한 초록 재단 매트, 먹, 같은 초록 강조 */
+  --surface: #ffffff;
+  --surface-muted: #ffffff;
+  /* 모집 카드: 흰 썸네일과 페이지 사이를 나누는 옅은 중성색 종이 면 */
+  --surface-card: #fcfcfb;
+  --surface-strong: #f1f3f1;
+  --line: #d6ded7;
   --text: #1a1a1a;
   --text-muted: #5c5c58;
-  --accent: #0f7c4a;
+  --brand-green: #0f7c4a;
+  --brand-logo: #129357;
+  --accent: var(--brand-green);
   --accent-soft: #def7eb;
+  /* 추가 보상 배지처럼 연한 바탕보다 한 단계 진하게 눈에 띄어야 하는 강조 꼬리표 */
+  --accent-tint: #cdeedc;
+  --on-accent-tint: var(--brand-green);
   --on-accent: #ffffff;
   /* 활자 썸네일의 교정지 면과 재단선 */
   --thumb: #ffffff;
   --on-thumb: #1a1a1a;
+  /* 밝은 교정지 위 초록 글씨·도장은 테마와 관계없이 진한 색을 쓴다 */
+  --paper-accent: var(--brand-green);
   --mark: #1a1a1a;
+  --hero-mat: var(--brand-green);
+  --hero-grid-minor: rgb(255 255 255 / 0.09);
+  --hero-grid-major: rgb(255 255 255 / 0.2);
+  --hero-muted: #ffffff;
+  --hero-button-text: var(--brand-green);
 
   /* 겹침 순서. 숫자를 컴포넌트에 직접 쓰지 않는다 */
   --z-popover: 20;
@@ -32,14 +46,17 @@
     /* 다크: uibowl 바탕. 검정 바탕, 남회색 패널, 라이트와 같은 에메랄드 계열 강조 */
     --surface: #000000;
     --surface-muted: #16181d;
+    --surface-card: #16181d;
     --surface-strong: #1f222a;
     --line: #2a3037;
     --text: #ffffff;
     --text-muted: #a3aab5;
     --accent: #129357;
     --accent-soft: #123625;
+    --accent-tint: #123625;
+    --on-accent-tint: #129357;
     --on-accent: #000000;
-    --thumb: #e9ecf0;
+    --thumb: #ffffff;
     --on-thumb: #16181d;
     --mark: #3d434b;
   }
@@ -48,18 +65,73 @@
 @theme inline {
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-card: var(--surface-card);
   --color-surface-strong: var(--surface-strong);
   --color-line: var(--line);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
+  --color-brand-logo: var(--brand-logo);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-tint: var(--accent-tint);
+  --color-on-accent-tint: var(--on-accent-tint);
   --color-on-accent: var(--on-accent);
   --color-thumb: var(--thumb);
   --color-on-thumb: var(--on-thumb);
+  --color-paper-accent: var(--paper-accent);
   --color-mark: var(--mark);
+  --color-hero-mat: var(--hero-mat);
   --font-sans: var(--font-wanted), system-ui, sans-serif;
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 다크에서도 교정지는 밝으므로 체크·도장 색을 밝히지 않는다. */
+.hero-paper,
+[data-thumb].bg-thumb {
+  --accent: var(--paper-accent);
+}
+
+/* 라이트의 흰 패널은 재단선으로 나누고, 홈 배너 격자는 CSS로 그려 SVG 패턴 ID 충돌을 피한다. */
+@media (prefers-color-scheme: light) {
+  .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg) {
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+  }
+
+  .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .hero-banner {
+    background-color: var(--hero-mat);
+    background-image:
+      linear-gradient(to right, var(--hero-grid-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--hero-grid-major) 1px, transparent 1px),
+      linear-gradient(to right, var(--hero-grid-minor) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--hero-grid-minor) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    color: #ffffff;
+    --text: #ffffff;
+    --text-muted: var(--hero-muted);
+    --accent: #ffffff;
+    --on-accent: var(--hero-button-text);
+    --surface-strong: rgb(255 255 255 / 0.14);
+    --mark: #ffffff;
+  }
+
+  .hero-banner > svg { display: none; }
+
+  .hero-banner [data-thumb],
+  .hero-banner .hero-paper {
+    --text: #1a1a1a;
+    --accent: var(--hero-mat);
+    --on-accent: #ffffff;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-banner { background-color: var(--surface-muted); }
 }
 
 @layer base {

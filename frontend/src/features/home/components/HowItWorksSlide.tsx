@@ -34,7 +34,7 @@ export function HowItWorksSlide() {
           개발 경험이 없어도 <span className="font-bold text-text">느낀 점만 남기면</span> 보상을 받아요
         </li>
       </ul>
-      <div className="relative row-start-2 w-full max-w-[36rem] self-center justify-self-center rotate-1 md:justify-self-end rounded-2xl border border-line bg-thumb px-4 py-1 text-on-thumb max-md:mb-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mb-8 md:px-5 lg:px-8 lg:py-1.5">
+      <div className="hero-paper relative row-start-2 w-full max-w-[36rem] self-center justify-self-center rotate-1 md:justify-self-end rounded-2xl border border-line bg-thumb px-4 py-1 text-on-thumb max-md:mb-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mb-8 md:px-5 lg:px-8 lg:py-1.5">
         <ol className="divide-y divide-on-thumb/10">
           {STEPS.map((step, index) => {
             const last = index === STEPS.length - 1;

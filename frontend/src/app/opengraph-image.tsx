@@ -7,7 +7,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /* ImageResponse는 CSS 변수를 읽지 못해서 globals.css의 라이트 토큰 값을 그대로 쓴다 */
-const COLORS = { surface: "#efefec", text: "#1a1a1a", muted: "#5c5c58", accent: "#0f7c4a" };
+const COLORS = { surface: "#ffffff", text: "#1a1a1a", muted: "#5c5c58", accent: "#129357" };
 
 export default async function Image() {
   /*

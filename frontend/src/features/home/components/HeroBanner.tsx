@@ -12,11 +12,11 @@ import { ServiceIntroSlide } from "./ServiceIntroSlide";
  */
 const frameClass = "relative h-full min-h-120 p-8 md:min-h-80 md:p-12 lg:min-h-88";
 
-/* 교정지 면 위에 재단 매트 격자를 깔고, 그 위에 슬라이드와 재단선을 얹는다 */
-const shellClass = "relative overflow-hidden rounded-2xl bg-surface-muted";
+/* 라이트는 진한 초록 재단 매트, 다크는 기존 패널 위 격자. 색과 격자는 globals.css에서 정한다. */
+const shellClass = "hero-banner relative overflow-hidden rounded-2xl";
 
 /*
- * 홈 배너. 전체 폭으로 서비스 소개 → 진행 흐름 순서다. 바탕은 교정지 면 위 재단 매트 격자다.
+ * 홈 배너. 전체 폭으로 서비스 소개 → 진행 흐름 순서다. 라이트 바탕은 진한 초록 재단 매트다.
  * 이벤트·공지 슬라이드는 뺐다 (#60). 내용이 정해지면 슬라이드를 새로 만든다.
  */
 export function HeroBanner({ recent }: { recent: Recruitment[] }) {

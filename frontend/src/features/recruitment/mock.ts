@@ -246,11 +246,22 @@ const PAST: Seed[] = [
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** 채팅에서도 사용하는 시연용 프로젝트 이미지. 실제 업로드 이미지로 교체할 자리다. */
+const PROJECT_IMAGES: Record<string, string> = {
+  booklog: "/sample/projects/booklog.svg",
+  moaplan: "/sample/projects/moaplan.svg",
+  recipefit: "/sample/projects/recipefit.svg",
+  "ledger-note": "/sample/projects/ledger-note.svg",
+  "meeting-notes": "/sample/projects/meeting-notes.svg",
+  "folio-builder": "/sample/projects/folio-builder.svg",
+};
+
 function toRecruitment(seed: Seed, now: Date): Recruitment {
   const { createdDaysAgo, recruitInDays, submitInDays, ...rest } = seed;
   const at = (days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
   return {
     ...rest,
+    projectImage: seed.projectImage ?? PROJECT_IMAGES[seed.slug],
     createdAt: at(-createdDaysAgo),
     recruitDeadline: at(recruitInDays),
     submitDeadline: at(submitInDays),

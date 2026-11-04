@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentThumb";
-import { SOFTWARE_TYPE_LABEL, type Recruitment } from "@/features/recruitment/types";
+import type { Recruitment } from "@/features/recruitment/types";
 
 /*
  * 교정지 더미: 작업대 위에 흩어 놓은 교정지처럼 기울여 겹친다.
@@ -35,7 +35,7 @@ export function ServiceIntroSlide({ recent = [] }: { recent?: Recruitment[] }) {
             aria-label={`${recent[0].projectName} 모집 보기`}
             className="block w-[72%] -rotate-3 self-center rounded-2xl outline-offset-4 md:hidden"
           >
-            <RecruitmentThumb recruitment={recent[0]} category={SOFTWARE_TYPE_LABEL[recent[0].softwareType]} />
+            <RecruitmentThumb recruitment={recent[0]} showImage />
           </Link>
         )}
         <div>
@@ -51,7 +51,7 @@ export function ServiceIntroSlide({ recent = [] }: { recent?: Recruitment[] }) {
                 aria-label={`${item.projectName} 모집 보기`}
                 className="block rounded-2xl outline-offset-4 transition-transform duration-500 ease-brand hover:-translate-y-3 focus-visible:-translate-y-3"
               >
-                <RecruitmentThumb recruitment={item} category={SOFTWARE_TYPE_LABEL[item.softwareType]} />
+                <RecruitmentThumb recruitment={item} showImage />
               </Link>
             </li>
           ))}

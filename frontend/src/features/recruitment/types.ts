@@ -14,6 +14,8 @@ export type Recruitment = {
   slug: string;
   /** 테스트할 소프트웨어(프로젝트) 이름 */
   projectName: string;
+  /** 프로젝트 대표 이미지. 목록 API에서 프로젝트 이미지 URL을 연결한다 */
+  projectImage?: string;
   /** 프로젝트 한 줄 소개 */
   summary: string;
   /** 테스터에게 요청하는 내용 한 줄 */

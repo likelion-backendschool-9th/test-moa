@@ -172,11 +172,9 @@ test.describe("R34 모달", () => {
     await expect(modal(page).getByRole("button", { name: "계좌번호 복사" })).toHaveCount(0);
   });
 
-  test("S204 닫기 링크는 open을 뺀 목록으로 간다", async ({ page }) => {
+  test("S204 닫기 버튼은 open을 뺀 목록으로 간다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
-    const close = modal(page).getByRole("link", { name: "닫기" });
-    await expect(close).toHaveAttribute("href", "/admin/withdrawals");
-    await close.evaluate((element: HTMLAnchorElement) => element.click());
+    await modal(page).getByRole("button", { name: "닫기" }).click();
     await expect(page).toHaveURL(/\/admin\/withdrawals$/);
     await expect(page).not.toHaveURL(/open=/);
     await expect(modal(page)).toHaveCount(0);
@@ -194,6 +192,29 @@ test.describe("R34 모달", () => {
     await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).getByRole("region", { name: "받을 계좌" })).toContainText("123456789012");
+  });
+
+  test("뒤로 갔다 앞으로 와도 모달이 다시 열린다", async ({ page }) => {
+    await page.goto("/admin");
+    await page.getByRole("region", { name: "오래 기다린 요청" }).getByRole("link", { name: /이지우/ }).click();
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page)).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/admin\/?$/);
+    await page.goForward();
+    await expect(page).toHaveURL(/\/admin\/withdrawals\?open=withdrawal-1$/);
+    await expect(modal(page)).toBeVisible();
+    await expect(modal(page).getByRole("region", { name: "받을 계좌" })).toContainText("123456789012");
+  });
+
+  test("Esc로 닫은 뒤 다른 행을 누르면 모달이 다시 열린다", async ({ page, context }) => {
+    await setDemo(context, { role: "admin", data: "slow" });
+    await openWithdrawal(page, "withdrawal-1");
+    await page.keyboard.press("Escape");
+    await expect(modal(page)).toHaveCount(0);
+    await rows(page).nth(1).getByRole("link").click();
+    await expect(page).toHaveURL(/open=withdrawal-2/);
+    await expect(modal(page)).toBeVisible({ timeout: 10_000 });
   });
 });
 

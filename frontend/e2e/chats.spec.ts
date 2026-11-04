@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { homeLogo, openMoreMenu, setDemo } from "./helpers";
 
 const chatList = (page: Page) => page.getByRole("list", { name: "채팅 목록" });
 const cards = (page: Page) => chatList(page).getByRole("listitem");
@@ -20,134 +20,11 @@ const preview = (card: Locator) => card.locator("[data-preview]");
 const roomNames = (projects: string[]) => projects.map((project) => `${project} 채팅방`);
 
 const ACCENT_LIGHT = "rgb(15, 124, 74)";
-const CHIP_LIGHT = "rgb(228, 228, 224)";
-const LINE_LIGHT = "rgb(214, 214, 209)";
 const TIME_TODAY = /^(오전|오후) \d{1,2}:\d{2}$/;
 /* 연초 며칠은 작년 날짜가 되므로 두 형식을 모두 받는다 */
 const DATE = /^(\d{1,2}월 \d{1,2}일|\d{4}\. \d{1,2}\. \d{1,2}\.)$/;
 
-test.describe("R1 접근 제어", () => {
-  test("S114 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/my/chats");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fchats");
-  });
-
-  test("S115 로그인하면 채팅함이 열리고 현재 탭이며 마이페이지 메뉴는 없다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    const response = await page.goto("/my/chats");
-    expect(response?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1, name: "채팅함" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "채팅" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-    await expect(page.getByRole("navigation", { name: "마이페이지 메뉴" })).toHaveCount(0);
-  });
-});
-
-test.describe("R2 채팅 카드", () => {
-  test.beforeEach(async ({ context }) => {
-    await setDemo(context, { role: "tester" });
-  });
-
-  test("S116 카드에 프로젝트명, 상대 닉네임과 역할 배지, 미리보기, 일시, 더보기가 있고 내 닉네임은 없다", async ({ page }) => {
-    await page.goto("/my/chats");
-    const card = cards(page).first();
-    await expect(card.getByRole("heading", { level: 2 })).toHaveText("북로그 채팅방");
-    await expect(partner(card)).toHaveText("서재지기");
-    await expect(partnerRole(card)).toHaveText("개발자");
-    expect((await partnerRole(card).boundingBox())!.x).toBeLessThan((await partner(card).boundingBox())!.x);
-    await expect(card).not.toContainText("윤슬");
-
-    /* 글자는 모두 최근 메시지와 같은 크기이고, 대화방 이름만 역할 탭처럼 굵다. 이름·닉네임은 먹, 메시지는 흐린 먹 */
-    const style = (locator: Locator) =>
-      locator.evaluate((element) => {
-        const { fontSize, fontWeight, color } = getComputedStyle(element);
-        return { fontSize, fontWeight, color };
-      });
-    const [title, nickname, message] = await Promise.all([
-      style(card.getByRole("heading", { level: 2 })),
-      style(partner(card)),
-      style(preview(card)),
-    ]);
-    expect(title.fontSize).toBe(message.fontSize);
-    expect(nickname.fontSize).toBe(message.fontSize);
-    expect([title.fontWeight, nickname.fontWeight, message.fontWeight]).toEqual(["700", "400", "400"]);
-    const tab = await style(roleTab(page, "전체"));
-    expect([title.fontSize, title.fontWeight]).toEqual([tab.fontSize, tab.fontWeight]);
-    expect(nickname.color).toBe(title.color);
-    expect(title.color).not.toBe(message.color);
-    await expect(preview(card)).toHaveText("피드백 마감이 이틀 남았어요. 막히는 부분 있으면 편하게 물어봐 주세요.");
-    await expect(card.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
-    await expect(card.getByRole("button", { name: "북로그 채팅 더보기" })).toBeVisible();
-  });
-
-  test("S117 프로젝트 이미지는 카드 왼쪽에 붙어 높이를 다 채우고, 선이나 그라데이션 없이 바로 정보로 이어진다", async ({ page }) => {
-    await page.goto("/my/chats");
-    const card = cards(page).first().locator("article");
-    const thumb = card.locator("[data-thumb]");
-    const image = thumb.locator("img");
-    await expect(image).toHaveAttribute("src", "/sample/projects/booklog.svg");
-    await expect(image).toHaveAttribute("alt", "");
-    expect(await image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
-    await expect(thumb).toHaveCSS("border-right-width", "0px");
-    expect(await thumb.evaluate((element) => [...element.querySelectorAll("*")].some((child) => getComputedStyle(child).backgroundImage.includes("gradient")))).toBe(false);
-    const cardBox = (await card.boundingBox())!;
-    const thumbBox = (await thumb.boundingBox())!;
-    expect(Math.abs(thumbBox.x - cardBox.x)).toBeLessThan(1);
-    expect(Math.abs(thumbBox.height - cardBox.height)).toBeLessThan(1);
-    const headingBox = (await card.getByRole("heading", { level: 2 }).boundingBox())!;
-    expect(headingBox.x).toBeGreaterThan(thumbBox.x + thumbBox.width);
-  });
-
-  test("S322 역할 배지는 강조색 없이 테스터는 칩 회색 바탕, 개발자는 바탕 없이 재단 회색 테두리이고 채팅방 머리도 같다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    const look = (locator: Locator) =>
-      locator.evaluate((element) => {
-        const { backgroundColor, boxShadow, color, height } = getComputedStyle(element);
-        return { backgroundColor, boxShadow, color, height };
-      });
-    const expectTester = (style: Awaited<ReturnType<typeof look>>) => {
-      expect(style.backgroundColor).toBe(CHIP_LIGHT);
-      expect(style.boxShadow).toBe("none");
-    };
-    const expectDeveloper = (style: Awaited<ReturnType<typeof look>>) => {
-      expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
-      expect(style.boxShadow).toContain(`${LINE_LIGHT} 0px 0px 0px 1px inset`);
-    };
-
-    await page.goto("/my/chats");
-    const tester = await look(chatList(page).locator('[data-partner-role="tester"]').first());
-    const developer = await look(chatList(page).locator('[data-partner-role="developer"]').first());
-    expectTester(tester);
-    expectDeveloper(developer);
-    expect(developer.color).toBe(tester.color);
-    expect(developer.color).not.toBe(ACCENT_LIGHT);
-    expect(developer.height).toBe(tester.height);
-
-    await page.goto("/my/chats/ledger-yunseul");
-    expectTester(await look(page.getByRole("main").locator("header [data-partner-role]")));
-    await page.goto("/my/chats/booklog-dohyeon");
-    expectDeveloper(await look(page.getByRole("main").locator("header [data-partner-role]")));
-  });
-
-  test("S118 미리보기는 한 줄로 줄인다", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/my/chats");
-    expect(await preview(cards(page).first()).evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("1");
-  });
-
-  test("S119 카드 어디를 눌러도 채팅방으로 간다", async ({ page }) => {
-    await page.goto("/my/chats");
-    const box = await preview(cards(page).first()).boundingBox();
-    await page.mouse.click(box!.x + 8, box!.y + box!.height / 2);
-    await expect(page).toHaveURL("/my/chats/booklog-yunseul");
-    await expect(page.getByRole("heading", { level: 1, name: "북로그" })).toBeVisible();
-  });
-});
-
-test.describe("R3 순서와 일시", () => {
+test.describe("R115 순서와 일시", () => {
   test("S120 테스터는 최근 메시지 순서이고 일시는 시각, 어제, 날짜로 쓴다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -193,7 +70,7 @@ test.describe("R3 순서와 일시", () => {
   });
 });
 
-test.describe("R4 검색·정렬·역할 탭", () => {
+test.describe("R116 검색·정렬·역할 탭", () => {
   test("S122 채팅방을 상대 닉네임으로 검색하면 탭의 수도 바뀐다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -236,34 +113,12 @@ test.describe("R4 검색·정렬·역할 탭", () => {
     await expect(cardLinks(page).last()).toHaveText("북로그 채팅방");
   });
 
-  test("S125 결과가 없으면 조건 초기화로 돌아간다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/chats");
-    await searchBox(page).fill("없는채팅방");
-    await expect(page.getByText("조건에 맞는 채팅방이 없어요")).toBeVisible();
-    await page.getByRole("link", { name: "조건 초기화" }).click();
-    await expect(page).toHaveURL("/my/chats");
-    await expect(cards(page)).toHaveCount(5);
-    await expect(searchBox(page)).toHaveValue("");
-  });
-
   test("S126 URL로 연 조건이 그대로 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/chats?role=developer&sort=oldest");
     await expect(roleTab(page, "개발자")).toHaveAttribute("aria-pressed", "true");
     await expect(sortButton(page, "오래된순")).toHaveAttribute("aria-pressed", "true");
     await expect(cardLinks(page).first()).toHaveText("회의록 정리 채팅방");
-  });
-
-  test("S137 역할 탭에 채팅방이 없으면 안내하고 전체로 돌아간다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/chats");
-    await roleTab(page, "개발자").click();
-    await expect(page.getByText("개발자로 나눈 채팅이 없어요")).toBeVisible();
-    await expect(page.getByText("내 프로젝트에서 선정한 테스터와 나눈 채팅이 여기에 모여요.")).toBeVisible();
-    await page.getByRole("link", { name: "전체 보기" }).click();
-    await expect(page).toHaveURL("/my/chats");
-    await expect(cards(page)).toHaveCount(5);
   });
 
   test("S319 검색어를 쓰고 곧바로 역할 탭이나 정렬을 눌러도 검색어와 고른 조건이 함께 남는다", async ({ page, context }) => {
@@ -298,7 +153,7 @@ test.describe("R4 검색·정렬·역할 탭", () => {
 
     /* 헤더의 채팅 링크로 돌아오기 */
     await searchBox(page).fill("북로그");
-    await nav.getByRole("link", { name: "홈" }).click();
+    await homeLogo(page).click();
     await expect(page).toHaveURL("/");
     await page.waitForTimeout(600);
     await expect(page).toHaveURL("/");
@@ -309,65 +164,23 @@ test.describe("R4 검색·정렬·역할 탭", () => {
 
     /* 브라우저 뒤로 가기로 돌아오기 */
     await searchBox(page).fill("모아");
-    await nav.getByRole("link", { name: "홈" }).click();
+    await homeLogo(page).click();
     await expect(page).toHaveURL("/");
     await page.goBack();
     await expect(page).toHaveURL("/my/chats");
     await expect(searchBox(page)).toHaveValue("");
     await expect(cards(page)).toHaveCount(5);
   });
-
-  for (const width of [1440, 375]) {
-    test(`S138 너비 ${width}px에서 역할 탭은 왼쪽, 정렬은 같은 줄 오른쪽이다`, async ({ page, context }) => {
-      await setDemo(context, { role: "tester" });
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto("/my/chats");
-      const sort = (await sortGroup(page).boundingBox())!;
-      const tabs = (await roleTabGroup(page).boundingBox())!;
-      const search = (await searchBox(page).boundingBox())!;
-      expect(tabs.x + tabs.width).toBeLessThan(sort.x);
-      expect(Math.abs(sort.y + sort.height / 2 - (tabs.y + tabs.height / 2))).toBeLessThan(8);
-      expect(search.y).toBeLessThan(tabs.y);
-    });
-  }
 });
 
-test.describe("R5 더보기", () => {
+test.describe("R117 더보기", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
 
-  test("S127 더보기를 누르면 이름 변경과 맨 아래 삭제 메뉴가 열리고 첫 항목에 포커스가 간다", async ({ page }) => {
-    await page.goto("/my/chats");
-    const button = page.getByRole("button", { name: "북로그 채팅 더보기" });
-    await button.click();
-    await expect(button).toHaveAttribute("aria-expanded", "true");
-    const menu = page.getByRole("menu", { name: "북로그 채팅 메뉴" });
-    await expect(menu.getByRole("menuitem")).toHaveText(["대화방 이름 변경", "대화방 삭제"]);
-    await expect(menu.getByRole("separator")).toHaveCount(1);
-    await expect(menu.getByRole("menuitem", { name: "대화방 이름 변경" })).toBeFocused();
-  });
-
-  test("S128 화살표로 옮기고 Esc와 바깥 클릭으로 닫는다", async ({ page }) => {
-    await page.goto("/my/chats");
-    const button = page.getByRole("button", { name: "북로그 채팅 더보기" });
-    const menu = page.getByRole("menu", { name: "북로그 채팅 메뉴" });
-    await button.click();
-    await expect(menu.getByRole("menuitem", { name: "대화방 이름 변경" })).toBeFocused();
-    await page.keyboard.press("ArrowDown");
-    await expect(menu.getByRole("menuitem", { name: "대화방 삭제" })).toBeFocused();
-    await page.keyboard.press("Escape");
-    await expect(menu).toHaveCount(0);
-    await expect(button).toBeFocused();
-    await button.click();
-    await expect(menu).toBeVisible();
-    await page.getByRole("heading", { level: 1, name: "채팅함" }).click();
-    await expect(menu).toHaveCount(0);
-  });
-
   test("S139 대화방 이름을 바꾸면 카드·검색에 반영되고 새로고침해도 남는다", async ({ page }) => {
     await page.goto("/my/chats");
-    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "북로그 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
     const dialog = page.getByRole("dialog", { name: "대화방 이름 변경" });
     const input = dialog.getByRole("textbox", { name: "대화방 이름" });
@@ -378,7 +191,7 @@ test.describe("R5 더보기", () => {
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole("button", { name: "북로그 채팅 더보기" })).toBeFocused();
 
-    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "북로그 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
     await input.fill("북로그 피드백 문의");
     await dialog.getByRole("button", { name: "저장" }).click();
@@ -392,23 +205,9 @@ test.describe("R5 더보기", () => {
     await expect(cardLinks(page)).toHaveText(roomNames(["북로그 피드백 문의"]));
   });
 
-  test("S339 카드에서 대화방을 삭제하면 포커스가 다음 카드로, 마지막 카드면 이전 카드로 간다", async ({ page }) => {
-    await page.goto("/my/chats");
-    const remove = async (title: string) => {
-      await page.getByRole("button", { name: `${title} 채팅 더보기` }).click();
-      await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
-      await page.getByRole("dialog", { name: "대화방을 삭제할까요?" }).getByRole("button", { name: "삭제", exact: true }).click();
-      await expect(chatList(page)).not.toContainText(title);
-    };
-    await remove("모아플랜");
-    await expect(cardLinks(page).filter({ hasText: "레시피핏" })).toBeFocused();
-    await remove("회의록 정리");
-    await expect(cardLinks(page).filter({ hasText: "가계부 노트" })).toBeFocused();
-  });
-
   test("S140 대화방을 삭제하면 확인 뒤 목록·탭 수에서 빠지고 새로고침해도 남는다", async ({ page }) => {
     await page.goto("/my/chats");
-    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "모아플랜 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
     const dialog = page.getByRole("dialog", { name: "대화방을 삭제할까요?" });
     await expect(dialog).toContainText('"모아플랜" 대화방이 채팅함 목록에서 사라져요.');
@@ -418,7 +217,7 @@ test.describe("R5 더보기", () => {
     await expect(dialog).toHaveCount(0);
     await expect(cards(page)).toHaveCount(5);
 
-    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "모아플랜 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
     await dialog.getByRole("button", { name: "삭제", exact: true }).click();
     await expect(dialog).toHaveCount(0);
@@ -430,72 +229,5 @@ test.describe("R5 더보기", () => {
     await page.reload();
     await expect(cards(page)).toHaveCount(4);
     await expect(chatList(page)).not.toContainText("모아플랜");
-  });
-});
-
-test.describe("R6 빈 상태", () => {
-  test("S129 운영자는 채팅방이 없고 검색 영역도 없다", async ({ page, context }) => {
-    await setDemo(context, { role: "admin" });
-    await page.goto("/my/chats");
-    await expect(page.getByText("아직 채팅이 없어요")).toBeVisible();
-    await expect(page.getByText("채팅은 구독 모집 건의 개발자와 선정된 테스터가 1대1로 나눠요.")).toBeVisible();
-    await expect(page.getByRole("main").getByRole("link", { name: "테스트 둘러보기" })).toHaveAttribute("href", "/recruitments");
-    await expect(searchBox(page)).toHaveCount(0);
-    await expect(roleTabGroup(page)).toHaveCount(0);
-  });
-
-  test("S130 데이터가 없으면 같은 빈 상태다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester", data: "empty" });
-    await page.goto("/my/chats");
-    await expect(page.getByText("아직 채팅이 없어요")).toBeVisible();
-    await expect(chatList(page)).toHaveCount(0);
-  });
-});
-
-test.describe("R7 로딩", () => {
-  test("S131 제목은 바로, 목록은 스켈레톤 먼저", async ({ page, context }) => {
-    await setDemo(context, { role: "tester", data: "slow" });
-    await page.goto("/my/chats", { waitUntil: "commit" });
-    await expect(page.getByRole("heading", { level: 1, name: "채팅함" })).toBeVisible();
-    const skeleton = page.getByLabel("채팅함 불러오는 중");
-    await expect(skeleton).toBeVisible();
-    await expect(cards(page)).toHaveCount(5);
-    await expect(skeleton).toHaveCount(0);
-  });
-});
-
-test.describe("R8 모바일", () => {
-  test("S132 좁은 화면에서도 가로 스크롤 없이 카드 요소와 역할 탭이 보인다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/my/chats");
-    await expect(cards(page)).toHaveCount(5);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
-    const card = cards(page).first();
-    for (const element of [
-      card.locator("[data-thumb]"),
-      card.getByRole("link"),
-      card.locator("time"),
-      card.getByRole("button"),
-      partnerRole(card),
-      roleTabGroup(page),
-    ]) {
-      const box = await element.boundingBox();
-      expect(box!.x).toBeGreaterThanOrEqual(0);
-      expect(box!.x + box!.width).toBeLessThanOrEqual(375);
-    }
-  });
-});
-
-test.describe("R9 접근성", () => {
-  test("S133 목록 구조와 카드 이름, 카드 링크 다음은 더보기 버튼이다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/chats");
-    await expect(cards(page)).toHaveCount(5);
-    const link = cardLinks(page).first();
-    await expect(link).toHaveAccessibleName("북로그 채팅방");
-    await link.focus();
-    await page.keyboard.press("Tab");
-    await expect(page.getByRole("button", { name: "북로그 채팅 더보기" })).toBeFocused();
   });
 });

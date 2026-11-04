@@ -51,6 +51,19 @@ export function parseParticipationTab(value: string | string[] | undefined): Par
   return PARTICIPATION_TABS.find((item) => item === tab) ?? DEFAULT_TAB;
 }
 
+/** 목록 보기 방식. 리스트는 한 줄 행, 그리드는 넓은 화면에서 3열 카드다 */
+export const PARTICIPATION_VIEWS = ["list", "grid"] as const;
+export type ParticipationView = (typeof PARTICIPATION_VIEWS)[number];
+
+export const VIEW_LABEL: Record<ParticipationView, string> = {
+  list: "리스트",
+  grid: "그리드",
+};
+
+export function parseParticipationView(value: unknown): ParticipationView {
+  return PARTICIPATION_VIEWS.find((view) => view === value) ?? "list";
+}
+
 export function tabOf(status: ParticipationStatus): ParticipationTab {
   return PARTICIPATION_TABS.find((tab) => TAB_STATUSES[tab].includes(status)) ?? DEFAULT_TAB;
 }
@@ -69,6 +82,8 @@ export type Participation = {
   earnedCredits: number;
   /** 제출한 피드백 내용. 제출 전이거나 미제출이면 없다 */
   feedback?: string;
+  /** 제출한 피드백의 이미지 이름. 시연용이라 파일은 없다 */
+  feedbackImages?: string[];
 };
 
 export const FEEDBACK_MIN_LENGTH = 20;

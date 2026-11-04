@@ -5,7 +5,15 @@ import { REJECT_REASONS } from "../types";
 import { RequestReviewForm } from "./RequestReviewForm";
 
 /** 출금 처리 양식. 모양과 동작은 모집 취소와 같은 RequestReviewForm이고 문구만 출금에 맞춘다 */
-export function WithdrawalForm({ withdrawalKey, amount }: { withdrawalKey: string; amount: number }) {
+export function WithdrawalForm({
+  withdrawalKey,
+  amount,
+  tab,
+}: {
+  withdrawalKey: string;
+  amount: number;
+  tab: "pending" | "done";
+}) {
   return (
     <RequestReviewForm
       action={processWithdrawal}
@@ -17,6 +25,7 @@ export function WithdrawalForm({ withdrawalKey, amount }: { withdrawalKey: strin
       reasons={REJECT_REASONS}
       audience="회원"
       cookieName={DEMO_ADMIN_WITHDRAWALS_COOKIE}
+      extraFields={<input type="hidden" name="tab" value={tab} />}
     />
   );
 }

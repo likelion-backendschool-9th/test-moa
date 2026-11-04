@@ -1,0 +1,29 @@
+name: 버그 제보
+description: 예상과 다르게 동작하는 문제를 알립니다.
+title: "Fix: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 문제
+      description: 어떻게 돼야 하는데 실제로는 어떻게 되는지 적어 주세요.
+      placeholder: 닉네임을 바꿔 저장하면 헤더에도 바뀌어야 하는데, 새로고침 전까지 이전 닉네임이 보인다.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 단계
+      placeholder: |
+        1. /my/profile/edit 에서 닉네임을 바꾸고 저장한다
+        2. 헤더를 본다
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고
+      description: 발생 환경(테스트 서버·로컬), 브라우저, 스크린샷, 에러 로그 등
+    validations:
+      required: false

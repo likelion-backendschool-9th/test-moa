@@ -106,6 +106,22 @@ export type Report = {
 /** 관리 목록의 탭. 신고·출금(나중에 모집 취소도)이 같은 두 탭을 쓴다 */
 export type ListTab = "pending" | "done";
 
+/** 출금 목록 주소. 기본 탭(처리 대기)과 빈 값은 쓰지 않는다. open은 모달로 연 요청 키다 */
+export function withdrawalsHref(options: { tab?: ListTab; open?: string; processed?: string } = {}) {
+  const params = new URLSearchParams();
+  if (options.tab === "done") params.set("tab", "done");
+  if (options.open) params.set("open", options.open);
+  if (options.processed) params.set("processed", options.processed);
+  const search = params.toString();
+  return search ? `/admin/withdrawals?${search}` : "/admin/withdrawals";
+}
+
+/** 운영자 홈·목록에서 요청 한 건으로 가는 주소. 출금은 목록 모달(?open=), 나머지는 상세다 */
+export function adminRequestHref(kind: AdminRequestKind, id: string) {
+  if (kind === "withdrawal") return withdrawalsHref({ open: id });
+  return `${ADMIN_REQUEST_PATH[kind]}/${id}`;
+}
+
 /** 운영자의 출금 처리 결과. 테스터 출금 내역의 상태 이름과 맞춘다 */
 export type WithdrawalDecision = "paid" | "rejected";
 
@@ -220,7 +236,7 @@ export function cancellationRejectText(review: CancellationReview) {
 /**
  * 모집 취소 요청. id가 상세 주소의 cancellationKey다.
  * 확정 테스터 수와 제출된 피드백 수는 요청할 때의 값이다. 보상은 테스트를 완료해야 지급되고
- * 취소는 테스트 전에 요청하므로, 승인해도 지급할 보상이 없다(docs/frontend-admin-cancellations.md).
+ * 취소는 테스트 전에 요청하므로, 승인해도 지급할 보상이 없다(docs/frontend/admin-cancellations.md).
  */
 export type CancellationRequest = {
   id: string;

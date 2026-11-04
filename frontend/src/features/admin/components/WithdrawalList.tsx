@@ -6,18 +6,20 @@ import { cn } from "@/lib/cn";
 import { formatElapsed, formatWon } from "@/lib/format";
 import {
   isHolderMismatch,
+  withdrawalsHref,
   WITHDRAWAL_DECISION_LABEL,
   type WithdrawalRequest,
   type ListTab,
 } from "../types";
 import { LinkTabs } from "./LinkTabs";
 
+/* 탭을 바꾸면 open을 지워서 모달이 닫힌다 */
 const TABS: { tab: ListTab; label: string; href: string }[] = [
-  { tab: "pending", label: "처리 대기", href: "/admin/withdrawals" },
-  { tab: "done", label: "처리 완료", href: "/admin/withdrawals?tab=done" },
+  { tab: "pending", label: "처리 대기", href: withdrawalsHref() },
+  { tab: "done", label: "처리 완료", href: withdrawalsHref({ tab: "done" }) },
 ];
 
-/** 처리 대기·처리 완료 탭 */
+/** 처리 대기·처리 완료 탭. 탭 href에는 open이 없어서, 탭으로 이동하면 모달이 닫힌다 */
 export function WithdrawalTabs({ current }: { current: ListTab }) {
   return <LinkTabs label="출금 요청 상태" tabs={TABS} current={current} />;
 }
@@ -41,7 +43,7 @@ export function WithdrawalProcessedNotice({ withdrawal }: { withdrawal: Withdraw
 
 const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-row md:items-center md:gap-4 md:p-6";
 
-/** 출금 요청 목록. 계좌번호는 상세에서만 보여 준다 */
+/** 출금 요청 목록. 계좌번호는 모달에서만 보여 준다 */
 export function WithdrawalList({ withdrawals, tab, now }: { withdrawals: WithdrawalRequest[]; tab: ListTab; now: Date }) {
   if (withdrawals.length === 0) {
     return <EmptyState title={tab === "pending" ? "처리할 출금 요청이 없어요" : "처리한 출금 요청이 없어요"} />;
@@ -58,7 +60,10 @@ export function WithdrawalList({ withdrawals, tab, now }: { withdrawals: Withdra
         {withdrawals.map((request) => (
           <li key={request.id}>
             <Link
-              href={`/admin/withdrawals/${request.id}`}
+              href={withdrawalsHref({ tab, open: request.id })}
+              replace
+              scroll={false}
+              data-withdrawal-key={request.id}
               className={cn(rowClass, "transition-colors duration-300 ease-brand hover:bg-surface-strong")}
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -99,6 +104,29 @@ export function WithdrawalListSkeleton() {
           <Skeleton className="h-6 w-28" />
         </div>
       ))}
+    </div>
+  );
+}
+
+/** 모달 데이터를 기다리는 동안 보여 주는 다이얼로그 모양 스켈레톤 */
+export function WithdrawalModalSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="출금 요청 불러오는 중"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-surface/80 p-4 backdrop-blur-sm md:p-6"
+    >
+      <div className="my-4 w-full max-w-3xl rounded-2xl bg-surface p-6 md:my-auto md:p-8">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start justify-between gap-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-5 w-10" />
+          </div>
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+      </div>
     </div>
   );
 }

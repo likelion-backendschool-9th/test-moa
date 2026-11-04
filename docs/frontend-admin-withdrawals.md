@@ -96,7 +96,7 @@ S203 처리 완료 모달의 계좌 가림
 - Then  "계좌번호 복사" 버튼은 없다
 
 S204 닫기
-- Then  "닫기" 링크가 `/admin/withdrawals`(open 없음)를 가리키고, 누르면 모달이 닫힌다
+- Then  "닫기" 버튼을 누르면 모달이 닫히고 주소에서 open이 빠진다
 
 S537 상태 탭 링크에는 open이 없다
 - Given `/admin/withdrawals?open=withdrawal-1`에서 모달이 열린 상태
@@ -180,7 +180,7 @@ S539 최근 요청
 - Then  URL이 `/admin/withdrawals?open=withdrawal-1`이고 모달이 열린다
 
 ## 7. 로딩과 접근성 (R37)
-제목과 탭은 목록 데이터를 기다리지 않고, 처리 양식은 키보드와 보조 기술로 쓸 수 있으며, 좁은 화면에서 가로로 넘치지 않는다. 모달은 Esc·닫기 링크로 닫히고(바깥 클릭으로는 닫지 않는다), 포커스 가둠·배경 스크롤 잠금은 브라우저 dialog(`showModal`)가 한다.
+제목과 탭은 목록 데이터를 기다리지 않고, 처리 양식은 키보드와 보조 기술로 쓸 수 있으며, 좁은 화면에서 가로로 넘치지 않는다. 모달은 Esc·닫기 버튼으로 닫히고(바깥 클릭으로는 닫지 않는다). 포커스 가둠은 브라우저 dialog(`showModal`)가 하고, 배경 스크롤은 `html:has(dialog[open]:modal)`로 잠근다. 처리 양식에 고른 값·메모가 있으면 Esc·닫기 전에 확인한다.
 
 S213 로딩
 - Given `demo-data=slow` (1.5초 지연)
@@ -216,7 +216,7 @@ S281 긴 메모
 - Then  처리 결과에 메모 전체가 보이고, 페이지에 가로 스크롤이 없다 (메모는 칸 안에서 줄을 바꾼다)
 
 ## 8. 구조 (R38)
-권한은 페이지, 데이터 함수, 처리 Server Action에서 각각 확인한다. 처리 양식은 막혀도 입력이 남도록 `useActionState`를 쓰는 클라이언트 컴포넌트다(크레딧 출금 신청 폼과 같은 방식). 모달 셸(`WithdrawalModal`)과 "계좌번호 복사"·`RequestReviewForm`이 클라이언트다.
+권한은 페이지, 데이터 함수, 처리 Server Action에서 각각 확인한다. 처리 양식은 막혀도 입력이 남도록 `useActionState`를 쓰는 클라이언트 컴포넌트다(크레딧 출금 신청 폼과 같은 방식). 모달 셸(`WithdrawalModal`)과 "계좌번호 복사"·`RequestReviewForm`이 클라이언트다. 옛 상세 주소 `/admin/withdrawals/:key`는 `?open=:key`로 리다이렉트한다.
 
 S216
 - When  `grep -L "requireAdmin" src/app/admin/withdrawals/page.tsx`

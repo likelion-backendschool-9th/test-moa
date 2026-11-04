@@ -200,7 +200,7 @@ S136
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  처리 Server Action 안에서 부른다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식) 2개만 나온다 (신고 처리 양식은 서버 양식이라 더하지 않는다)
+- Then  `CopyAccountButton`(계좌번호 복사), `RequestReviewForm`(출금·모집 취소 처리 양식), `WithdrawalModal`(출금 목록 모달) 3개가 나온다 (신고 처리 양식은 서버 양식이라 더하지 않는다)
 - 참고(2026-11-01): 처음에는 `src` 전체의 `"use client"` 개수를 적었는데, 다른 페이지가 클라이언트 컴포넌트를 더할 때마다 틀려져서 운영자 폴더만 센다.
 - 참고: 운영자 문서 다섯 개 중 목록은 이 시나리오에만 적고, 나머지 문서는 여기를 가리킨다. 운영자 쪽에 클라이언트 컴포넌트가 늘면 여기만 고친다.
 

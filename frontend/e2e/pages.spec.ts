@@ -33,7 +33,7 @@ const PAGES: [path: string, role: Role][] = [
   ["/admin/reports", "admin"],
   ["/admin/reports/report-1", "admin"],
   ["/admin/withdrawals", "admin"],
-  ["/admin/withdrawals/withdrawal-1", "admin"],
+  ["/admin/withdrawals?open=withdrawal-1", "admin"],
   ["/admin/cancellations", "admin"],
   ["/admin/cancellations/cancellation-1", "admin"],
   ["/admin/users", "admin"],

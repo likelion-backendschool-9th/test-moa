@@ -3,7 +3,7 @@ import type { Recruitment } from "../types";
 import { RecruitmentCard } from "./RecruitmentCard";
 
 const COLUMNS = {
-  /* 10개가 2열·5열 모두 빈칸 없이 떨어진다 */
+  /* 한 페이지 20개가 2열·5열 모두 빈칸 없이 떨어진다 */
   five: "grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5",
   /* 작은 화면은 가로로 넘기는 띠, 넓은 화면은 3열 */
   three:

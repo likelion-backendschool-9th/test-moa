@@ -8,6 +8,8 @@ export type RecruitmentQuery = {
   type: SoftwareType | null;
   open: boolean;
   sort: RecruitmentSort;
+  /** 1부터 센다. 마지막 페이지보다 크면 데이터 계층에서 마지막 페이지로 맞춘다 */
+  page: number;
 };
 
 export const SORT_LABEL: Record<RecruitmentSort, string> = {
@@ -24,6 +26,11 @@ function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function parsePage(value: string | undefined) {
+  const page = Number(value);
+  return Number.isInteger(page) && page > 1 ? page : 1;
+}
+
 export function parseRecruitmentQuery(params: Params): RecruitmentQuery {
   const type = first(params.type);
   const sort = first(params.sort);
@@ -32,6 +39,7 @@ export function parseRecruitmentQuery(params: Params): RecruitmentQuery {
     type: SOFTWARE_TYPES.find((value) => value === type) ?? null,
     open: first(params.open) === "1",
     sort: SORTS.find((value) => value === sort) ?? "latest",
+    page: parsePage(first(params.page)),
   };
 }
 
@@ -42,5 +50,6 @@ export function toSearchParams(query: RecruitmentQuery) {
   if (query.type) params.set("type", query.type);
   if (query.open) params.set("open", "1");
   if (query.sort !== "latest") params.set("sort", query.sort);
+  if (query.page > 1) params.set("page", String(query.page));
   return params;
 }

@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
 import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "./mock";
 import type { RecruitmentQuery } from "./query";
-import { isFull, type Recruitment } from "./types";
+import { isFull, type Recruitment, type RecruitmentPage } from "./types";
 
 /*
  * 모집 데이터 접근. 지금은 목업을 돌려준다.
@@ -37,25 +37,31 @@ export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
   return [...subscription].sort(byLatest);
 }
 
-/** 모집 마감 전이고 정원이 남은 모집 건을 마감이 가까운 순서로 */
-export async function getClosingSoon(limit = 5): Promise<Recruitment[]> {
-  const { now, subscription, general } = await loadAll();
+/** 정원이 남은 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
+export async function getLatestOpenRecruitments(limit = 3): Promise<Recruitment[]> {
+  const { subscription, general } = await loadAll();
   return [...subscription, ...general]
-    .filter((item) => !isFull(item) && new Date(item.recruitDeadline) > now)
-    .sort(byDeadline)
+    .filter((item) => !isFull(item))
+    .sort(byLatest)
     .slice(0, limit);
 }
 
-/** 전체 모집 건을 검색 조건으로 거른다. 검색 대상은 이름, 소개, 요청 내용이다 */
-export async function searchRecruitments(query: RecruitmentQuery): Promise<Recruitment[]> {
+export const RECRUITMENT_PAGE_SIZE = 20;
+
+/** 전체 모집 건을 검색 조건으로 거르고 한 페이지만 잘라 준다. 검색 대상은 이름, 소개, 요청 내용이다 */
+export async function searchRecruitments(query: RecruitmentQuery): Promise<RecruitmentPage> {
   const { subscription, general } = await loadAll();
   const keyword = query.q.toLowerCase();
   const sorter = { latest: byLatest, deadline: byDeadline, reward: byReward }[query.sort];
-  return [...subscription, ...general]
+  const matched = [...subscription, ...general]
     .filter((item) => !query.type || item.softwareType === query.type)
     .filter((item) => !query.open || !isFull(item))
     .filter((item) => !keyword || [item.projectName, item.summary, item.request].some((text) => text.toLowerCase().includes(keyword)))
     .sort(sorter);
+  const pageCount = Math.max(1, Math.ceil(matched.length / RECRUITMENT_PAGE_SIZE));
+  const page = Math.min(query.page, pageCount);
+  const start = (page - 1) * RECRUITMENT_PAGE_SIZE;
+  return { items: matched.slice(start, start + RECRUITMENT_PAGE_SIZE), total: matched.length, page, pageCount };
 }
 
 /** slug로 모집 건을 찾는다. 끝난 모집 건도 포함하고, 목록용 시연 상황(demo-data)은 따르지 않는다 */

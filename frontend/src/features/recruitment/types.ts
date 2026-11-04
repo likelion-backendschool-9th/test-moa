@@ -35,3 +35,13 @@ export type Recruitment = {
 export function isFull(recruitment: Recruitment) {
   return recruitment.confirmedCount >= recruitment.capacity;
 }
+
+/** 전체 테스트 그리드의 한 페이지 */
+export type RecruitmentPage = {
+  items: Recruitment[];
+  /** 조건에 맞는 전체 개수 */
+  total: number;
+  /** 실제로 보여 주는 페이지. 요청한 페이지가 마지막보다 크면 마지막 페이지다 */
+  page: number;
+  pageCount: number;
+};

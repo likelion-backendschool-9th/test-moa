@@ -1,3 +1,4 @@
+import { ImageIcon } from "@phosphor-icons/react/ssr";
 import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -161,10 +162,30 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
         )}
 
         {item.feedback && (
-          <Card className="flex flex-col gap-3 md:p-8">
+          <Card className="flex flex-col gap-4 md:p-8">
             <h2 className="text-lg font-extrabold">제출한 피드백</h2>
             {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
             <p className="text-sm whitespace-pre-wrap wrap-anywhere">{item.feedback}</p>
+            {item.feedbackImages && item.feedbackImages.length > 0 && (
+              <div className="flex flex-col gap-3 pt-2">
+                <h3 className="text-sm font-bold">
+                  첨부 이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{item.feedbackImages.length}</span>
+                </h3>
+                {/* 작성할 때의 미리 보기와 같은 칸. 시연용이라 파일이 없어 이미지 자리에 아이콘과 이름을 둔다 */}
+                <ul data-testid="feedback-image-names" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {item.feedbackImages.map((name, index) => (
+                    <li
+                      key={`${name}-${index}`}
+                      title={name}
+                      className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-surface-strong p-3 text-text-muted"
+                    >
+                      <ImageIcon aria-hidden size={24} className="shrink-0" />
+                      <span className="w-full truncate text-center text-xs font-semibold">{name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </Card>
         )}
       </div>

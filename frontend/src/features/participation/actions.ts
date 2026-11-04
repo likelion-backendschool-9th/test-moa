@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { getParticipation } from "./api";
 import { saveDemoFeedback } from "./demo-feedback";
+import { checkFeedbackImages, parseFileMeta } from "./feedback-images";
 import { FEEDBACK_MAX_LENGTH, FEEDBACK_MIN_LENGTH, participationPath } from "./types";
 
 /*
@@ -30,8 +31,14 @@ export async function submitFeedback(
   if (content.length < FEEDBACK_MIN_LENGTH) return { status: "error", error: `${FEEDBACK_MIN_LENGTH}자 이상 적어 주세요` };
   if (content.length > FEEDBACK_MAX_LENGTH) return { status: "error", error: `${FEEDBACK_MAX_LENGTH}자까지 적을 수 있어요` };
 
-  if (!(await saveDemoFeedback(participationKey, content))) {
-    return { status: "error", error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용을 줄여 다시 제출해 주세요" };
+  const images = parseFileMeta(formData.get("imagesMeta"));
+  if (!images) return { status: "error", error: "이미지 정보를 읽지 못했어요. 이미지를 다시 골라 주세요" };
+  const imageError = checkFeedbackImages(images);
+  if (imageError) return { status: "error", error: imageError };
+
+  const imageNames = images.map((image) => image.name);
+  if (!(await saveDemoFeedback(participationKey, content, imageNames))) {
+    return { status: "error", error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용이나 이미지를 줄여 다시 제출해 주세요" };
   }
   /* 목록의 탭 개수·다음 할 일·요약 줄도 제출을 반영하게 한다 */
   revalidatePath("/my/participations", "layout");

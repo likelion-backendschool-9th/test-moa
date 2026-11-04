@@ -41,7 +41,7 @@ const loadAll = cache(async (): Promise<ParticipationItem[]> => {
     /* 이 브라우저에서 제출한 피드백이 있으면 제출 전 → 지급 대기로 넘긴다 */
     const feedback = participation.status === "beforeSubmit" ? submitted[participation.key] : undefined;
     return feedback
-      ? [{ ...participation, recruitment, status: "payoutPending", submittedAt: feedback.submittedAt, feedback: feedback.content }]
+      ? [{ ...participation, recruitment, status: "payoutPending", submittedAt: feedback.submittedAt, feedback: feedback.content, feedbackImages: feedback.imageNames }]
       : [{ ...participation, recruitment }];
   });
 });

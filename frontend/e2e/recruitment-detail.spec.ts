@@ -8,7 +8,9 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page).toHaveURL("/recruitments/booklog");
     await expect(page.getByRole("heading", { level: 1, name: "북로그 2차 베타 테스터 모집" })).toBeVisible();
     await expect(page.getByText("모집 중", { exact: true })).toBeVisible();
-    await expect(page.getByText("구독 모집", { exact: true })).toBeVisible();
+    /* 맨 위 배지와 요약 두 곳에 있다 */
+    await expect(page.getByText("추가 보상", { exact: true })).toHaveCount(2);
+    await expect(page.getByText("구독 모집", { exact: true })).toHaveCount(0);
     const summary = page.getByRole("complementary", { name: "모집 요약" });
     for (const term of ["모집 마감", "피드백 제출 마감", "인원", "선정 방식", "기본 보상", "추가 보상"]) {
       await expect(summary.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) })).toBeVisible();
@@ -29,6 +31,8 @@ test.describe("#63-R1 모집글 상세", () => {
     await page.goto("/recruitments/folio-builder");
     await expect(page.getByText("모집 완료", { exact: true })).toBeVisible();
     await expect(page.getByText("정원이 모두 찼어요")).toBeVisible();
+    /* 추가 보상이 없으면 배지도 없다 */
+    await expect(page.getByText("추가 보상", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "지원하기" })).toHaveCount(0);
 
     await page.goto("/recruitments/memo-garden");

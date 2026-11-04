@@ -161,16 +161,6 @@
         "displayName": "교정지 위 강조",
         "canonical": "#0f7c4a"
       },
-      "accent-tint": {
-        "role": "primary",
-        "displayName": "진한 연두 꼬리표",
-        "canonical": "#cdeedc"
-      },
-      "on-accent-tint": {
-        "role": "primary",
-        "displayName": "꼬리표 글씨",
-        "canonical": "#0f7c4a"
-      },
       "hero-mat": {
         "role": "primary",
         "displayName": "재단 매트",

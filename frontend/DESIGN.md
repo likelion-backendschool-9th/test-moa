@@ -14,8 +14,6 @@ colors:
   accent: "#0f7c4a"
   paper-accent: "#0f7c4a"
   accent-soft: "#def7eb"
-  accent-tint: "#cdeedc"
-  on-accent-tint: "#0f7c4a"
   on-accent: "#ffffff"
   thumb: "#ffffff"
   on-thumb: "#1a1a1a"

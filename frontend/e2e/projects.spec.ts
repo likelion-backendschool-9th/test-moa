@@ -3,11 +3,15 @@ import { setDemo } from "./helpers";
 
 /* docs/frontend/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
+/* 등록에 필요한 대표 이미지. 시연용이라 내용은 상관없다 */
+const COVER = { name: "화면.png", mimeType: "image/png", buffer: Buffer.alloc(1024) };
 const BOOKLOG = "/my/projects/booklog";
 const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
 const FIRST_MANAGE = `${BOOKLOG}/recruitments/booklog-first`;
 const FOLIO_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder";
+/* 운영자가 취소를 승인한 지난 무료 모집 */
+const FOLIO_OLD_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder-old";
 
 test.describe("R101 접근", () => {
   for (const path of ["/my/projects/nope", `${BOOKLOG}/recruitments/nope`]) {
@@ -32,10 +36,8 @@ test.describe("R103 프로젝트 등록·수정", () => {
 
   test("S490 잘못 입력하면 오류를 보여 주고 첫 오류 칸으로 포커스가 간다", async ({ page }) => {
     await page.goto("/my/projects/new");
-    await page.getByLabel("접속 링크").fill("abc");
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page.getByText("프로젝트 이름을 적어 주세요")).toBeVisible();
-    await expect(page.getByText("http:// 또는 https://로 시작하는 주소를 적어 주세요")).toBeVisible();
     const name = page.getByLabel("프로젝트 이름");
     await expect(name).toBeFocused();
     await expect(name).toHaveAttribute("aria-describedby", /field-name-error/);
@@ -44,13 +46,30 @@ test.describe("R103 프로젝트 등록·수정", () => {
     await name.fill("가".repeat(51));
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page.getByText("이름은 50자까지 적을 수 있어요")).toBeVisible();
+
+    /* 대표 이미지는 필수이고, 고르면 오류가 사라진다 */
+    await name.fill("새 서비스");
+    await page.getByRole("button", { name: "등록" }).click();
+    await expect(page.getByText("대표 이미지를 골라 주세요")).toBeVisible();
+    await expect(page.getByLabel("대표 이미지")).toBeFocused();
+    await expect(page).toHaveURL("/my/projects/new");
+    await page.getByLabel("대표 이미지").setInputFiles(COVER);
+    await expect(page.getByText("대표 이미지를 골라 주세요")).toHaveCount(0);
+
+    /* 상세 설명은 2000자까지다 */
+    await page.getByLabel("상세 설명 (선택)").fill("가".repeat(2001));
+    await page.getByRole("button", { name: "등록" }).click();
+    await expect(page.getByText("상세 설명은 2000자까지 적을 수 있어요")).toBeVisible();
+    /* 줄바꿈도 한 글자로 센다 */
+    await page.getByLabel("상세 설명 (선택)").fill(`${"가".repeat(1000)}\n${"나".repeat(999)}`);
+    await page.getByRole("button", { name: "등록" }).click();
+    await expect(page).toHaveURL("/my/projects?notice=saved");
   });
 
   test("S491 등록하면 목록으로 가고 시연 안내가 보인다", async ({ page }) => {
     await page.goto("/my/projects/new");
     await page.getByLabel("프로젝트 이름").fill("새 서비스");
-    await page.getByLabel("한 줄 소개").fill("새로 만든 서비스예요");
-    await page.getByLabel("접속 링크").fill("https://new.example.com");
+    await page.getByLabel("대표 이미지").setInputFiles(COVER);
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page).toHaveURL("/my/projects?notice=saved");
     await expect(page.getByText("시연용이라 실제로 저장되지는 않아요")).toBeVisible();
@@ -58,10 +77,194 @@ test.describe("R103 프로젝트 등록·수정", () => {
 
   test("S493 수정하면 상세로 가고 저장 안내가 보인다", async ({ page }) => {
     await page.goto(`${BOOKLOG}/edit`);
-    await page.getByLabel("한 줄 소개").fill("바꾼 소개");
+    await page.getByLabel("상세 설명 (선택)").fill("바꾼 설명");
     await page.getByRole("button", { name: "저장" }).click();
     await expect(page).toHaveURL(`${BOOKLOG}?notice=saved`);
     await expect(page.getByText("시연용이라 실제로 저장되지는 않아요")).toBeVisible();
+  });
+});
+
+test.describe("R113 프로젝트 이미지·미리보기", () => {
+  /* 시연용 파일. 내용은 상관없고 이름·형식·크기만 본다 */
+  const file = (name: string, mimeType: string, bytes = 1024) => ({ name, mimeType, buffer: Buffer.alloc(bytes) });
+  const png = (name: string) => file(name, "image/png");
+  /** 미리보기 대화상자를 연다. Esc로 닫는다 */
+  const openPreview = async (page: import("@playwright/test").Page) => {
+    await page.getByRole("button", { name: "미리보기" }).click();
+    const dialog = page.getByRole("dialog", { name: "미리보기" });
+    await expect(dialog).toBeVisible();
+    return dialog;
+  };
+
+  test.beforeEach(async ({ context, page }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects/new");
+  });
+
+  test("S145 등록 폼에 이름·상세 설명·대표 이미지만 있다", async ({ page }) => {
+    for (const label of ["프로젝트 이름", "상세 설명 (선택)", "대표 이미지"]) {
+      await expect(page.getByLabel(label)).toBeVisible();
+    }
+    await expect(page.getByLabel("한 줄 소개")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "링크 추가" })).toHaveCount(0);
+    await expect(page.getByRole("radio")).toHaveCount(0);
+    /* 미리보기는 등록 버튼 옆에 있고 누르면 대화상자로 열린다 */
+    await expect(page.getByRole("button", { name: "미리보기" })).toBeVisible();
+  });
+
+  test("S146 대표 이미지를 고르면 썸네일이 보이고, 다시 고르면 바뀌며, 한도를 넘으면 막는다", async ({ page }) => {
+    const input = page.getByLabel("대표 이미지");
+    await expect(input).not.toHaveAttribute("multiple");
+    await expect(page.getByText("이미지 고르기")).toBeVisible();
+    await input.setInputFiles(png("첫화면.png"));
+    const items = page.getByTestId("image-item");
+    await expect(items).toHaveCount(1);
+    await expect(page.getByText("이미지 바꾸기")).toBeVisible();
+    const dialog = await openPreview(page);
+    await expect(dialog.getByRole("img", { name: "프로젝트 대표 이미지" })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await input.setInputFiles(png("기록.png"));
+    await expect(items).toHaveCount(1);
+    await page.getByRole("button", { name: "기록.png 삭제" }).click();
+    await expect(items).toHaveCount(0);
+
+    await input.setInputFiles(png("첫화면.png"));
+    await input.setInputFiles([file("움짤.gif", "image/gif")]);
+    await expect(page.getByText("PNG, JPG, WEBP 이미지만 올릴 수 있어요")).toBeVisible();
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+    await input.setInputFiles([file("큰.png", "image/png", 6 * 1024 * 1024)]);
+    await expect(page.getByText("이미지는 5MB까지 올릴 수 있어요")).toBeVisible();
+    await expect(page.getByRole("button", { name: "첫화면.png 삭제" })).toBeVisible();
+  });
+
+  test("S363 다른 화면에 갔다가 뒤로 와도 고른 이미지가 깨지지 않는다", async ({ page }) => {
+    /* 1x1 PNG. 실제로 그려지는지 봐야 해서 올바른 이미지를 쓴다 */
+    const buffer = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+    await page.getByLabel("대표 이미지").setInputFiles({ name: "첫화면.png", mimeType: "image/png", buffer });
+    const items = page.getByTestId("image-item");
+    await expect(items).toHaveCount(1);
+
+    await page.getByRole("link", { name: "취소" }).click();
+    await expect(page).not.toHaveURL(/\/new$/);
+    await page.goBack();
+    await expect(items).toHaveCount(1);
+
+    const dialog = await openPreview(page);
+    const hero = dialog.getByRole("img", { name: "프로젝트 대표 이미지" });
+    await expect(hero).toBeVisible();
+    await expect.poll(() => hero.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
+  });
+
+  test("S366 샘플 이미지가 상세와 수정 폼에 보이고, 수정 때 이미지를 지우면 저장할 수 없다", async ({ page }) => {
+    await page.goto(BOOKLOG);
+    const cover = page.getByRole("img", { name: /대표 이미지$/ });
+    await expect(cover).toBeVisible();
+    await expect.poll(() => cover.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
+
+    await page.goto(`${BOOKLOG}/edit`);
+    await expect(page.getByTestId("image-item")).toHaveCount(1);
+
+    await page.goto("/my/projects/folio-builder");
+    await expect.poll(() => cover.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
+
+    await page.goto("/my/projects/todo-memo");
+    await expect(cover).toBeVisible();
+
+    await page.goto(`${BOOKLOG}/edit`);
+    await page.getByRole("button", { name: /삭제$/ }).click();
+    await page.getByRole("button", { name: "저장" }).click();
+    await expect(page.getByText("대표 이미지를 골라 주세요")).toBeVisible();
+  });
+
+  test("S149 미리보기 버튼을 누르면 지금 적은 내용을 상세 화면 모양으로 보여 준다", async ({ page }) => {
+    const button = page.getByRole("button", { name: "미리보기" });
+    /* 등록 버튼 바로 옆에 있다 */
+    await expect(page.getByRole("button", { name: "등록" }).locator("xpath=following-sibling::*[1]")).toHaveText("미리보기");
+    let dialog = await openPreview(page);
+    await expect(dialog.getByRole("heading", { name: "프로젝트 이름" })).toBeVisible();
+    await dialog.getByRole("button", { name: "닫기" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+
+    await page.getByLabel("프로젝트 이름").fill("새 서비스");
+    await page.getByLabel("상세 설명 (선택)").fill("이번에는 가입 흐름을 보고 싶어요");
+    dialog = await openPreview(page);
+    await expect(dialog.getByRole("heading", { name: "새 서비스" })).toBeVisible();
+    await expect(dialog).toContainText("이번에는 가입 흐름을 보고 싶어요");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+  });
+
+  test("#62-S1 설명이 이미지보다 길면 이미지 높이까지 보이고 더 보기로 펼친다", async ({ page }) => {
+    await page.getByLabel("대표 이미지").setInputFiles(png("첫화면.png"));
+    await page.getByLabel("상세 설명 (선택)").fill("짧은 설명이에요");
+    let dialog = await openPreview(page);
+    await expect(dialog.getByRole("button", { name: "더 보기" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+
+    await page.getByLabel("상세 설명 (선택)").fill(Array.from({ length: 40 }, (_, index) => `${index + 1}번째 줄 설명`).join("\n"));
+    dialog = await openPreview(page);
+    const more = dialog.getByRole("button", { name: "더 보기" });
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    const text = dialog.getByTestId("project-description");
+    const heightOf = async (locator: typeof text) => (await locator.boundingBox())?.height ?? 0;
+    const imageHeight = await heightOf(dialog.getByRole("img", { name: /대표 이미지$/ }));
+    const clipped = await heightOf(text);
+    expect(clipped).toBeLessThanOrEqual(imageHeight);
+    /* 다음 줄과 문단 여백까지 합쳐도 들어가지 않을 만큼만 남는다 */
+    expect(clipped).toBeGreaterThan(imageHeight - 40);
+
+    await more.click();
+    const less = dialog.getByRole("button", { name: "접기" });
+    await expect(less).toHaveAttribute("aria-expanded", "true");
+    await expect.poll(() => heightOf(text)).toBeGreaterThan(imageHeight * 2);
+    await less.click();
+    await expect.poll(() => heightOf(text)).toBe(clipped);
+    await page.keyboard.press("Escape");
+  });
+});
+
+test.describe("R104 프로젝트 상세", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S112 프로젝트 정보와 버튼이 있다", async ({ page }) => {
+    await page.goto(BOOKLOG);
+    await expect(page.getByRole("heading", { level: 1, name: "북로그" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "내 프로젝트로 돌아가기" })).toHaveAttribute("href", "/my/projects");
+    await expect(page.getByRole("link", { name: /^https:/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "수정" })).toHaveAttribute("href", `${BOOKLOG}/edit`);
+    await expect(page.getByRole("link", { name: "테스트 모집 작성" })).toHaveAttribute("href", `${BOOKLOG}/recruitments/new`);
+  });
+
+  test("S150 상세 설명이 보이고 수정 폼에 채워져 있다", async ({ page }) => {
+    await page.goto(BOOKLOG);
+    await expect(page.getByText(/이번에는 책 등록부터 기록 작성까지/)).toBeVisible();
+
+    await page.goto(`${BOOKLOG}/edit`);
+    await expect(page.getByLabel("상세 설명 (선택)")).toHaveValue(/읽은 책을 검색해/);
+  });
+
+  test("S113 모집 건이 최신순으로 보이고 관리 화면으로 간다", async ({ page }) => {
+    await page.goto(BOOKLOG);
+    const items = page.getByRole("region", { name: "테스트 모집" }).getByRole("listitem");
+    await expect(items).toHaveCount(2);
+    await expect(items.nth(0)).toContainText("북로그 2차 베타 테스터 모집");
+    await expect(items.nth(0)).toContainText("모집 중");
+    await expect(items.nth(0)).toContainText("구독 모집");
+    await expect(items.nth(0)).toContainText("확정 13명 · 정원 20명");
+    await expect(items.nth(1)).toContainText("테스트 중");
+    await expect(items.nth(1)).toContainText("확정 5명 · 정원 5명");
+    await expect(items.nth(0).getByRole("link", { name: "공개 페이지 보기" })).toHaveAttribute("href", "/recruitments/booklog");
+    await items.nth(0).getByRole("link").first().click();
+    await expect(page).toHaveURL(BOOKLOG_MANAGE);
+  });
+
+  test("S114 모집 건이 없으면 빈 상태다", async ({ page }) => {
+    await page.goto("/my/projects/todo-memo");
+    await expect(page.getByText("아직 테스트 모집이 없어요")).toBeVisible();
   });
 });
 
@@ -84,13 +287,111 @@ test.describe("R105 테스트 모집 작성", () => {
 
   test("S500 작성하면 프로젝트로 가고 시연 안내가 보인다", async ({ page }) => {
     await page.goto(NEW);
-    await page.getByLabel("요청 내용").fill("회원가입부터 첫 기록까지 해 보기");
+    await page.getByLabel("모집글 제목").fill("북로그 3차 테스터 모집");
+    await page.getByLabel("모집 설명").fill("회원가입부터 첫 기록까지 해 보기");
+    await page.getByLabel("접속 링크").fill("https://booklog.example.com");
     await page.getByLabel("모집 마감일").fill("2099-01-10");
     await page.getByLabel("피드백 제출 마감일").fill("2099-01-20");
     await page.getByLabel("모집 인원").fill("10");
+    await page.getByLabel("항목 1 이름").fill("회원가입하기");
     await page.getByRole("button", { name: "모집 등록" }).click();
     await expect(page).toHaveURL(`${BOOKLOG}?notice=saved`);
     await expect(page.getByText("시연용이라 실제로 저장되지는 않아요")).toBeVisible();
+  });
+});
+
+test.describe("R119 모집글 제목과 선정 조건", () => {
+  const NEW = `${BOOKLOG}/recruitments/new`;
+
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S371 테스트 항목 줄을 지우면 지난 오류가 다른 줄에 붙지 않는다", async ({ page }) => {
+    await page.goto(NEW);
+    const add = page.getByRole("button", { name: "항목 추가" });
+    await add.click();
+    await add.click();
+    await page.getByLabel("항목 1 이름").fill("회원가입하기");
+    await page.getByLabel("항목 2 설명 (선택)").fill("이름 없는 항목");
+    await page.getByLabel("항목 3 이름").fill("기록 쓰기");
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    const error = page.getByText("항목 이름을 적어 주세요");
+    await expect(error).toBeVisible();
+
+    /* 기록 쓰기 줄이 둘째로 올라오지만 이름 없는 줄의 오류를 물려받지 않는다 */
+    await page.getByRole("button", { name: "항목 1 삭제" }).click();
+    await expect(page.getByLabel("항목 2 이름")).toHaveValue("기록 쓰기");
+    await expect(error).toHaveCount(0);
+  });
+
+  test("S367 구독 모집은 선정 조건을 고르고, 오류가 나도 고른 값이 남는다", async ({ page }) => {
+    await page.goto(NEW);
+    await expect(page.getByRole("radio", { name: "선발형" })).toBeChecked();
+    await page.getByRole("radio", { name: "선착순" }).check();
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    await expect(page.getByText("모집글 제목을 적어 주세요")).toBeVisible();
+    await expect(page.getByLabel("모집글 제목")).toBeFocused();
+    await expect(page.getByRole("radio", { name: "선착순" })).toBeChecked();
+
+    await page.getByLabel("모집글 제목").fill("가".repeat(51));
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    await expect(page.getByText("모집글 제목은 50자까지 적을 수 있어요")).toBeVisible();
+  });
+
+  test("S369 접속 링크는 모집글마다 적고 모집 관리에서 새 탭으로 열린다", async ({ page }) => {
+    await page.goto("/my/projects/new");
+    await expect(page.getByLabel("접속 링크")).toHaveCount(0);
+
+    await page.goto(NEW);
+    await page.getByLabel("접속 링크").fill("abc");
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    await expect(page.getByText("http:// 또는 https://로 시작하는 주소를 적어 주세요")).toBeVisible();
+
+    await page.goto(BOOKLOG_MANAGE);
+    const access = page.getByRole("link", { name: /booklog\.example\.com/ });
+    await expect(access).toHaveAttribute("target", "_blank");
+    await expect(access).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  test("S368 모집 관리에 모집글 제목과 선정 방식이 보인다", async ({ page }) => {
+    const value = (term: string) => page.locator("dt", { hasText: term }).locator("+ dd");
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByRole("heading", { level: 1, name: "북로그 2차 베타 테스터 모집" })).toBeVisible();
+    await expect(value("선정 방식")).toHaveText("선발형");
+    await page.goto(FOLIO_MANAGE);
+    await expect(page.getByRole("heading", { level: 1, name: "포트폴리오 빌더 템플릿 테스터 모집" })).toBeVisible();
+    await expect(value("선정 방식")).toHaveText("선착순");
+  });
+});
+
+test.describe("R106 테스트 모집 관리와 탭", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S119 요약이 보인다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByRole("heading", { level: 1, name: "북로그 2차 베타 테스터 모집" })).toBeVisible();
+    await expect(page.getByText("책 등록부터 독서 기록 작성까지 한 번 써 보기")).toBeVisible();
+    const summary = page.getByRole("definition");
+    await expect(page.getByRole("term").filter({ hasText: /^확정 인원$/ })).toBeVisible();
+    await expect(summary.filter({ hasText: /^13명$/ })).toBeVisible();
+    await expect(summary.filter({ hasText: /^20명$/ })).toBeVisible();
+    await expect(page.getByText(/\d+ \/ /)).toHaveCount(0);
+    const trail = page.getByRole("navigation", { name: "현재 위치" });
+    await expect(trail.getByRole("link", { name: "내 프로젝트" })).toHaveAttribute("href", "/my/projects");
+    await expect(trail.getByRole("link", { name: "북로그" })).toHaveAttribute("href", BOOKLOG);
+  });
+
+  test("S120 탭은 URL을 따르고 기본은 테스터 관리다", async ({ page }) => {
+    await page.goto(`${BOOKLOG_MANAGE}?tab=nope`);
+    const tabs = page.getByRole("navigation", { name: "모집 관리 탭" }).getByRole("link");
+    await expect(tabs).toHaveText(["테스터 관리", "피드백", "분석"]);
+    await expect(tabs.nth(0)).toHaveAttribute("aria-current", "page");
+    await tabs.nth(1).click();
+    await expect(page).toHaveURL(`${BOOKLOG_MANAGE}?tab=feedback`);
+    await expect(tabs.nth(1)).toHaveAttribute("aria-current", "page");
   });
 });
 
@@ -298,5 +599,289 @@ test.describe("R109 분석 탭", () => {
     await expect(page.getByText("구독 모집에서 분석을 볼 수 있어요")).toBeVisible();
     await expect(page.getByRole("link", { name: "구독 알아보기" })).toHaveAttribute("href", "/my/subscription");
     await expect(page.getByRole("heading", { name: "AI 분석" })).toHaveCount(0);
+  });
+});
+
+test.describe("R112 AI 분석", () => {
+  test("S135 피드백을 정리한 결과와 근거 수를 보여 준다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${FIRST_MANAGE}?tab=analytics`);
+    const ai = page.getByRole("region", { name: "AI 분석" });
+    await expect(ai).toBeVisible();
+    await expect(ai.getByText("시연용 샘플")).toBeVisible();
+    await expect(ai.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
+    await expect(ai.getByRole("heading", { name: "좋았던 점 1" })).toBeVisible();
+    /* 문제마다 근거 수와 해결 제안이 같은 항목 안에 붙어 있다 */
+    const issue = ai.getByRole("listitem").filter({ hasText: "표지가 늦게 떠서" });
+    await expect(issue.getByText("피드백 2건")).toBeVisible();
+    await expect(issue).toContainText("제안 검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기");
+    await expect(ai.getByText(/AI가 정리한 내용이라 틀릴 수 있어요 · .+ 정리/)).toBeVisible();
+  });
+
+  test("S136 피드백이 부족하면 안내를 보여 준다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`);
+    const ai = page.getByRole("region", { name: "AI 분석" });
+    await expect(ai.getByText("피드백이 3건 이상 모이면 AI가 정리해 드려요")).toBeVisible();
+    await expect(ai.getByText("지금 피드백 0건")).toBeVisible();
+  });
+
+  test("S137 분석을 기다리는 동안 스켈레톤이 먼저 보인다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer", data: "slow" });
+    await page.goto(`${FIRST_MANAGE}?tab=analytics`, { waitUntil: "commit" });
+    await expect(page.getByRole("term").filter({ hasText: /^제출률$/ })).toBeVisible();
+    await expect(page.getByTestId("ai-skeleton")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
+    await expect(page.getByTestId("ai-skeleton")).toHaveCount(0);
+  });
+});
+
+test.describe("R114 모집 조건과 테스트 항목", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S352 모집 작성에 모집 조건과 테스트 항목이 있고 항목은 1개 이상이다", async ({ page }) => {
+    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await expect(page.getByLabel("모집 조건 (선택)")).toBeVisible();
+    await expect(page.getByTestId("test-item-row")).toHaveCount(1);
+    const add = page.getByRole("button", { name: "항목 추가" });
+    for (let i = 1; i < 10; i += 1) await add.click();
+    await expect(page.getByTestId("test-item-row")).toHaveCount(10);
+    await expect(add).toBeDisabled();
+    await page.getByRole("button", { name: "항목 10 삭제" }).click();
+    await expect(page.getByTestId("test-item-row")).toHaveCount(9);
+
+    /* 다른 칸은 다 채우고 테스트 항목만 비운다 */
+    await page.getByLabel("모집글 제목").fill("북로그 3차 테스터 모집");
+    await page.getByLabel("모집 설명").fill("회원가입부터 첫 기록까지 해 보기");
+    await page.getByLabel("접속 링크").fill("https://booklog.example.com");
+    await page.getByLabel("모집 마감일").fill("2099-01-10");
+    await page.getByLabel("피드백 제출 마감일").fill("2099-01-20");
+    await page.getByLabel("모집 인원").fill("10");
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    await expect(page.getByText("테스트 항목을 1개 이상 적어 주세요")).toBeVisible();
+    await expect(page.getByLabel("항목 1 이름")).toBeFocused();
+  });
+
+  test("S353 모집 관리 화면에서 모집 조건과 테스트 항목을 펼쳐 본다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const box = page.getByText("모집 조건과 테스트 항목 3개");
+    await box.click();
+    await expect(page.getByText(/한 달에 책을 한 권 이상 읽는 분/)).toBeVisible();
+    await expect(page.getByText("책 검색해서 등록하기")).toBeVisible();
+    await expect(page.getByText("독서 기록 쓰기")).toBeVisible();
+  });
+
+  test("#62-S2 테스트 항목은 처음부터 필수이고, 끈 값은 줄을 지우거나 제출에 실패해도 남으며 모집 관리에 배지로 보인다", async ({ page }) => {
+    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await expect(page.getByRole("checkbox", { name: "항목 1 필수" })).toBeChecked();
+    const add = page.getByRole("button", { name: "항목 추가" });
+    await add.click();
+    await add.click();
+    await page.getByRole("checkbox", { name: "항목 3 필수" }).uncheck();
+    await page.getByRole("button", { name: "항목 2 삭제" }).click();
+    await expect(page.getByRole("checkbox", { name: "항목 1 필수" })).toBeChecked();
+    const second = page.getByRole("checkbox", { name: "항목 2 필수" });
+    await expect(second).not.toBeChecked();
+
+    await page.getByRole("button", { name: "모집 등록" }).click();
+    await expect(page.getByText("모집글 제목을 적어 주세요")).toBeVisible();
+    await expect(second).not.toBeChecked();
+
+    await page.goto(BOOKLOG_MANAGE);
+    await page.getByText("모집 조건과 테스트 항목 3개").click();
+    await expect(page.getByRole("listitem").filter({ hasText: "책 검색해서 등록하기" })).toContainText("필수");
+    await expect(page.getByRole("listitem").filter({ hasText: "독서 기록 쓰기" })).toContainText("선택");
+  });
+
+  test("#62-S3 유형은 모집 작성에서 고르고 모집 관리에 보인다", async ({ page }) => {
+    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await expect(page.getByRole("radio", { name: /웹서비스/ })).toBeChecked();
+    for (const label of ["모바일앱", "게임", "API·라이브러리"]) {
+      await expect(page.getByRole("radio", { name: new RegExp(label) })).toBeDisabled();
+    }
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByRole("term").filter({ hasText: /^유형$/ })).toBeVisible();
+    await expect(page.getByRole("definition").filter({ hasText: /^웹서비스$/ })).toBeVisible();
+  });
+});
+
+test.describe("R115 모집 취소 요청", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S354 테스트 전 모집은 사유를 적어 취소를 요청하고, 처리 대기 상태가 남는다", async ({ page }) => {
+    await page.goto(BOOKLOG_MANAGE);
+    const button = page.getByRole("button", { name: "모집 취소 요청" });
+    await button.click();
+    const dialog = page.getByRole("dialog", { name: "모집 취소 요청" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await expect(dialog.getByText("취소 사유를 적어 주세요")).toBeVisible();
+    await expect(dialog.getByLabel("취소 사유")).toBeFocused();
+
+    await dialog.getByLabel("취소 사유").fill("서비스 점검 일정이 바뀌었어요");
+    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await expect(dialog).toBeHidden();
+    const status = page.getByTestId("cancel-status");
+    await expect(status).toContainText("취소 요청 처리 대기");
+    await expect(status).toContainText("요청 사유: 서비스 점검 일정이 바뀌었어요");
+    await expect(button).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByTestId("cancel-status")).toContainText("처리 대기");
+  });
+
+  test("S355 테스트가 시작된 모집은 취소를 요청할 수 없다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
+  });
+
+  test("S356 반려된 요청은 반려 사유를 보여 주고 다시 요청할 수 있다", async ({ page }) => {
+    await page.goto(FOLIO_MANAGE);
+    const status = page.getByTestId("cancel-status");
+    await expect(status).toContainText("취소 요청 반려");
+    await expect(status).toContainText("반려 사유: 취소 사유가 부족해요");
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toBeVisible();
+  });
+
+  test("S372 쿠키의 요청 시각이 깨져 있어도 화면이 열리고 그 요청은 버린다", async ({ page, context }) => {
+    await context.addCookies([
+      {
+        name: "demo-cancel-request-booklog",
+        value: encodeURIComponent(JSON.stringify({ reason: "일정이 바뀌었어요", requestedAt: "bad" })),
+        url: "http://localhost:3100",
+      },
+    ]);
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toBeVisible();
+    await expect(page.getByTestId("cancel-status")).toHaveCount(0);
+  });
+
+  test("S364 반려 뒤 다시 보낸 요청은 시간이 지나도 처리 대기로 남는다", async ({ page, context }) => {
+    /* 목업의 반려 시각은 요청마다 '1일 전'으로 계산되므로, 그보다 오래된 재요청을 쿠키로 만든다 */
+    const requestedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    await context.addCookies([
+      {
+        name: "demo-cancel-request-folio-builder",
+        value: encodeURIComponent(JSON.stringify({ reason: "일정이 바뀌었어요", requestedAt })),
+        url: "http://localhost:3100",
+      },
+    ]);
+    await page.goto(FOLIO_MANAGE);
+    await expect(page.getByTestId("cancel-status")).toContainText("취소 요청 처리 대기");
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
+  });
+
+  test("S365 긴 사유로 여러 모집에 요청해도 모두 저장된다", async ({ page }) => {
+    for (const manage of [BOOKLOG_MANAGE, FOLIO_MANAGE]) {
+      await page.goto(manage);
+      await page.getByRole("button", { name: "모집 취소 요청" }).click();
+      const dialog = page.getByRole("dialog", { name: "모집 취소 요청" });
+      await dialog.getByLabel("취소 사유").fill("가".repeat(300));
+      await dialog.getByRole("button", { name: "요청 보내기" }).click();
+      await expect(dialog).toBeHidden();
+      await expect(page.getByTestId("cancel-status")).toContainText("취소 요청 처리 대기");
+    }
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByTestId("cancel-status")).toContainText("취소 요청 처리 대기");
+  });
+
+  test("S357 승인된 모집은 취소 상태이고 진행 숫자에서 빠진다", async ({ page }) => {
+    await page.goto(FOLIO_OLD_MANAGE);
+    await expect(page.getByTestId("cancel-status")).toContainText("운영자가 모집 취소를 승인했어요");
+    await expect(page.getByRole("main").getByText("취소", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
+    await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(3);
+
+    await page.goto("/my/projects");
+    const folio = page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem").filter({ hasText: "포트폴리오 빌더" });
+    await expect(folio).toContainText("모집 1건 · 모집 중 0건");
+    const overview = page.getByRole("region", { name: "전체 현황" });
+    const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 완료$/ }) });
+    await expect(tile.getByRole("definition")).toHaveText("1건");
+
+    await page.goto("/my/projects/folio-builder");
+    const cancelled = page.getByRole("listitem").filter({ hasText: "포트폴리오 빌더 첫 버전 테스트" });
+    await expect(cancelled).toBeVisible();
+    await expect(cancelled.getByRole("link", { name: "공개 페이지 보기" })).toHaveCount(0);
+  });
+});
+
+test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("S358 테스트 중이면 확정 테스터마다 피드백 제출 현황이 보인다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByTestId("submission-summary")).toHaveText("피드백 제출 4명 · 미제출 1명 · 미완료 0명");
+    await expect(page.getByTestId("applicant").filter({ hasText: "김하늘" })).toContainText("제출함");
+    await expect(page.getByTestId("applicant").filter({ hasText: "윤슬" })).toContainText("미제출");
+
+    /* 테스트 전(모집 중)에는 제출 현황이 없다 */
+    await page.goto(BOOKLOG_MANAGE);
+    await expect(page.getByTestId("submission-summary")).toHaveCount(0);
+  });
+
+  test("S359 확정 뒤 참여를 취소한 테스터는 참여 취소로 보이고 확정 수에서 빠진다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(1);
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명 · 정원 5명");
+  });
+
+  test("S360 구독 모집의 확정 테스터에게 채팅 바로가기가 있다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await expect(page.getByRole("link", { name: "김하늘님과 채팅" })).toHaveAttribute("href", `/my/chats?q=${encodeURIComponent("김하늘")}`);
+    /* 확정되지 않은 테스터와 무료 모집에는 없다 */
+    await expect(page.getByRole("link", { name: /님과 채팅$/ })).toHaveCount(5);
+    await page.goto(FOLIO_MANAGE);
+    await expect(page.getByRole("link", { name: /님과 채팅$/ })).toHaveCount(0);
+  });
+});
+
+test.describe("R117 항목별 피드백과 스크린샷", () => {
+  test("S370 채팅 바로가기는 그 테스터와의 채팅으로 이어진다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(FIRST_MANAGE);
+    await page.getByRole("link", { name: "윤슬님과 채팅" }).click();
+    await expect(page).toHaveURL(/\/my\/chats\?q=/);
+    await expect(page.getByRole("main")).toContainText("윤슬");
+    await expect(page.getByRole("main")).toContainText("가계부");
+  });
+
+  test("S361 피드백마다 테스트 항목과 스크린샷이 보이고 항목별 수가 있다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${FIRST_MANAGE}?tab=feedback`);
+    await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 2건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건 · 추천 1건");
+    const first = page.getByTestId("feedback").filter({ hasText: "김하늘" });
+    await expect(first).toContainText("책 검색하기");
+    await expect(first.getByRole("img", { name: "표지가 비어 있는 검색 결과" })).toBeVisible();
+    await expect(page.getByTestId("feedback").filter({ hasText: "이도윤" })).toContainText("기타 의견");
+  });
+});
+
+test.describe("R118 피드백 추천", () => {
+  test("S362 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${FIRST_MANAGE}?tab=feedback`);
+    const count = page.getByTestId("recommended-count");
+    await expect(count).toHaveText("· 추천 1건");
+    await expect(page.getByRole("button", { name: "박서아님의 피드백 추천" })).toHaveAttribute("aria-pressed", "true");
+
+    const like = page.getByRole("button", { name: "김하늘님의 피드백 추천" });
+    await expect(like).toHaveAttribute("aria-pressed", "false");
+    await like.click();
+    await expect(like).toHaveAttribute("aria-pressed", "true");
+    await expect(like).toHaveText("추천함");
+    await expect(count).toHaveText("· 추천 2건");
+    await expect(page.locator('[aria-live="polite"]').filter({ hasText: "김하늘님의 피드백을 추천했어요" })).toHaveCount(1);
+    await like.click();
+    await expect(count).toHaveText("· 추천 1건");
+
+    await expect(page.getByRole("button", { name: "이도윤님의 피드백 추천" })).toHaveCount(0);
   });
 });

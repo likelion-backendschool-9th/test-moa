@@ -39,7 +39,6 @@ pyftsubset node_modules/wanted-sans/fonts/ttf/WantedSans-Bold.ttf \
 | `demo-data` | `normal`(기본) · `single` · `empty` · `slow` | 구독 모집 1개, 모집 글 없음, 1.5초 지연 |
 | `demo-reports` | 처리한 신고 기록(JSON) | 운영자가 신고를 처리하면 생긴다. 지우면 신고가 처음 상태로 돌아간다 |
 | `demo-admin-withdrawals` | 처리한 출금 요청 기록(JSON) | 운영자가 출금 요청을 처리하면 생긴다. 지우면 출금 요청이 처음 상태로 돌아간다 |
-| `demo-admin-cancellations` | 처리한 모집 취소 요청 기록(JSON) | 운영자가 모집 취소 요청을 처리하면 생긴다. 지우면 모집 취소 요청이 처음 상태로 돌아간다 |
 
 ## 폴더 구조와 규칙
 

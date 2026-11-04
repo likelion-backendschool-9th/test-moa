@@ -3,12 +3,11 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
-import { buildCancellations, buildReports, buildWithdrawals, CANCELLATION_KEYS, REPORT_KEYS, WITHDRAWAL_KEYS } from "./mock";
-import { readCancellationReviews, readReviews, readWithdrawalReviews } from "./reviews";
+import { buildReports, buildWithdrawals, REPORT_KEYS, WITHDRAWAL_KEYS } from "./mock";
+import { readReviews, readWithdrawalReviews } from "./reviews";
 import {
   isOverdue,
   type AdminSummary,
-  type CancellationRequest,
   type ListTab,
   type PendingItem,
   type Report,
@@ -51,22 +50,15 @@ export async function loadAll() {
   await connection();
   const now = new Date();
   if (mode === "empty") {
-    return { now, reports: [] as Report[], withdrawals: [] as WithdrawalRequest[], cancellations: [] as CancellationRequest[] };
+    return { now, reports: [] as Report[], withdrawals: [] as WithdrawalRequest[] };
   }
   /* 시연 중 처리한 결과를 목업 위에 덮는다 */
-  const [reviews, withdrawalReviews, cancellationReviews] = await Promise.all([
-    readReviews(),
-    readWithdrawalReviews(),
-    readCancellationReviews(),
-  ]);
+  const [reviews, withdrawalReviews] = await Promise.all([readReviews(), readWithdrawalReviews()]);
   const reports = buildReports(now).map((report) => (report.review ? report : { ...report, review: reviews[report.id] }));
   const withdrawals = buildWithdrawals(now).map((request) =>
     request.review ? request : { ...request, review: withdrawalReviews[request.id] },
   );
-  const cancellations = buildCancellations(now).map((request) =>
-    request.review ? request : { ...request, review: cancellationReviews[request.id] },
-  );
-  return { now, reports, withdrawals, cancellations };
+  return { now, reports, withdrawals };
 }
 
 /** 운영자 홈이 다루는 처리 전 요청 */
@@ -76,7 +68,6 @@ async function loadPending() {
     ...all,
     reports: all.reports.filter((report) => !report.review),
     withdrawals: all.withdrawals.filter((request) => !request.review),
-    cancellations: all.cancellations.filter((request) => !request.review),
   };
 }
 
@@ -85,20 +76,18 @@ const byOldest = (a: { createdAt: string }, b: { createdAt: string }) => a.creat
 
 /** 영역별 처리 대기 건수 */
 export async function getAdminSummary(): Promise<AdminSummary> {
-  const { reports, withdrawals, cancellations } = await loadPending();
+  const { reports, withdrawals } = await loadPending();
   return {
     reportCount: reports.length,
     heldRewardCount: reports.filter((report) => report.holdsReward).length,
     withdrawalCount: withdrawals.length,
     withdrawalAmount: withdrawals.reduce((sum, item) => sum + item.amount, 0),
-    cancellationCount: cancellations.length,
-    cancellationWithTestersCount: cancellations.filter((item) => item.confirmedCount > 0).length,
   };
 }
 
-/** 세 종류를 합쳐 접수가 오래된 순서로 */
+/** 두 종류를 합쳐 접수가 오래된 순서로 */
 export async function getOldestPending(limit = 5): Promise<{ now: Date; items: PendingItem[] }> {
-  const { now, reports, withdrawals, cancellations } = await loadPending();
+  const { now, reports, withdrawals } = await loadPending();
   const items: PendingItem[] = [
     ...reports.map((item) => ({
       kind: "report" as const,
@@ -108,25 +97,17 @@ export async function getOldestPending(limit = 5): Promise<{ now: Date; items: P
       overdue: isOverdue(item, now),
     })),
     ...withdrawals.map((item) => ({ kind: "withdrawal" as const, id: item.id, title: item.nickname, createdAt: item.createdAt, overdue: false })),
-    ...cancellations.map((item) => ({
-      kind: "cancellation" as const,
-      id: item.id,
-      title: item.recruitmentName,
-      createdAt: item.createdAt,
-      overdue: false,
-    })),
   ];
   return { now, items: items.sort(byOldest).slice(0, limit) };
 }
 
 /** 영역별 최근 접수 */
 export async function getRecentRequests(limit = 3) {
-  const { now, reports, withdrawals, cancellations } = await loadPending();
+  const { now, reports, withdrawals } = await loadPending();
   return {
     now,
     reports: [...reports].sort(byLatest).slice(0, limit),
     withdrawals: [...withdrawals].sort(byLatest).slice(0, limit),
-    cancellations: [...cancellations].sort(byLatest).slice(0, limit),
   };
 }
 
@@ -172,28 +153,4 @@ export async function getWithdrawals(tab: ListTab): Promise<{ now: Date; withdra
 export async function getWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null }> {
   const { now, withdrawals } = await loadAll();
   return { now, withdrawal: withdrawals.find((request) => request.id === withdrawalKey) ?? null };
-}
-
-/** 상세 주소의 모집 취소 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
-export function isCancellationKey(cancellationKey: string) {
-  return CANCELLATION_KEYS.includes(cancellationKey);
-}
-
-export function getCancellationKeys() {
-  return [...CANCELLATION_KEYS];
-}
-
-/** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
-export async function getCancellations(tab: ListTab): Promise<{ now: Date; cancellations: CancellationRequest[] }> {
-  const { now, cancellations } = await loadAll();
-  if (tab === "pending") return { now, cancellations: cancellations.filter((request) => !request.review).sort(byOldest) };
-  const done = cancellations.filter((request) => request.review);
-  return { now, cancellations: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };
-}
-
-export async function getCancellation(
-  cancellationKey: string,
-): Promise<{ now: Date; cancellation: CancellationRequest | null }> {
-  const { now, cancellations } = await loadAll();
-  return { now, cancellation: cancellations.find((request) => request.id === cancellationKey) ?? null };
 }

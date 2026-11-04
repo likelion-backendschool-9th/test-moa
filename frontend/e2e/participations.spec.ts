@@ -81,7 +81,8 @@ test.describe("R3 다음 할 일 패널", () => {
     await expect(first).toContainText("회의록 정리");
     await expect(first).toContainText("D-8");
     await expect(first.getByRole("link", { name: "회의록 정리 피드백 쓰기" })).toHaveAttribute("href", "/my/participations/p-meeting-notes");
-    await expect(page.getByRole("main").locator(".bg-accent")).toHaveCount(1);
+    /* 주 버튼은 한 화면에 하나다. 추가 보상 배지도 강조색 면이지만 버튼이 아니다 */
+    await expect(page.getByRole("main").locator("a.bg-accent, button.bg-accent")).toHaveCount(1);
     await expect(first.locator(".bg-accent")).toHaveCount(1);
   });
 
@@ -149,7 +150,7 @@ test.describe("R4 참여 목록", () => {
     await expect(first).toContainText("제출 마감");
     await expect(first).toContainText("910 크레딧");
     await expect(first).not.toContainText("추가 보상");
-    await expect(rows(page).filter({ hasText: "모아플랜" })).toContainText("추가 보상");
+    await expect(rows(page).filter({ hasText: "모아플랜" }).locator("[data-thumb] .bg-accent")).toHaveText("추가 보상 +320 크레딧");
   });
 
   test("S94 지급 대기는 지급 예정 일시와 안내가 있다", async ({ page }) => {
@@ -317,6 +318,7 @@ test.describe("R203 보기 방식", () => {
     await page.goto("/my/participations");
     await expect(viewButton(page, "리스트")).toHaveAttribute("aria-pressed", "true");
     await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "false");
+    await expect(viewToggle(page)).toHaveText("");
     await expect(rows(page)).toHaveCount(6);
     expect(await columnCount(page)).toBe(1);
 

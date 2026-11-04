@@ -1,7 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatElapsed, formatWon } from "@/lib/format";
 import { isHolderMismatch, maskAccount, rejectReasonText, WITHDRAWAL_DECISION_LABEL, type WithdrawalRequest } from "../types";
 import { CopyAccountButton } from "./CopyAccountButton";
@@ -15,17 +13,9 @@ export function WithdrawalDetail({ withdrawal, now }: { withdrawal: WithdrawalRe
   const mismatch = isHolderMismatch(withdrawal);
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin/withdrawals" className="self-start text-sm font-semibold text-text-muted hover:text-text">
-        목록으로
-      </Link>
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="muted">출금 요청</Badge>
-          {pending && mismatch && <Badge tone="neutral">예금주 확인 필요</Badge>}
-        </div>
-        <h2 className="text-2xl font-extrabold tracking-[-0.03em] tabular-nums">
-          {withdrawal.nickname} · {formatWon(withdrawal.amount)}
-        </h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone="muted">출금 요청</Badge>
+        {pending && mismatch && <Badge tone="neutral">예금주 확인 필요</Badge>}
       </div>
 
       <section aria-labelledby="withdrawal-info-heading" className={panelClass}>
@@ -94,18 +84,5 @@ export function WithdrawalResult({ withdrawal, now }: { withdrawal: WithdrawalRe
         </Info>
       </dl>
     </section>
-  );
-}
-
-export function WithdrawalDetailSkeleton() {
-  return (
-    <div aria-busy="true" aria-label="출금 요청 불러오는 중" className="flex flex-col gap-6">
-      <Skeleton className="h-5 w-16" />
-      <Skeleton className="h-8 w-64 max-w-full" />
-      <div className={panelClass} data-skeleton="withdrawal-detail">
-        <Skeleton className="h-6 w-24" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    </div>
   );
 }

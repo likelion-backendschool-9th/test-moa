@@ -106,6 +106,22 @@ export type Report = {
 /** 관리 목록의 탭. 신고·출금(나중에 모집 취소도)이 같은 두 탭을 쓴다 */
 export type ListTab = "pending" | "done";
 
+/** 출금 목록 주소. 기본 탭(처리 대기)과 빈 값은 쓰지 않는다. open은 모달로 연 요청 키다 */
+export function withdrawalsHref(options: { tab?: ListTab; open?: string; processed?: string } = {}) {
+  const params = new URLSearchParams();
+  if (options.tab === "done") params.set("tab", "done");
+  if (options.open) params.set("open", options.open);
+  if (options.processed) params.set("processed", options.processed);
+  const search = params.toString();
+  return search ? `/admin/withdrawals?${search}` : "/admin/withdrawals";
+}
+
+/** 운영자 홈·목록에서 요청 한 건으로 가는 주소. 출금은 목록 모달(?open=), 나머지는 상세다 */
+export function adminRequestHref(kind: AdminRequestKind, id: string) {
+  if (kind === "withdrawal") return withdrawalsHref({ open: id });
+  return `${ADMIN_REQUEST_PATH[kind]}/${id}`;
+}
+
 /** 운영자의 출금 처리 결과. 테스터 출금 내역의 상태 이름과 맞춘다 */
 export type WithdrawalDecision = "paid" | "rejected";
 

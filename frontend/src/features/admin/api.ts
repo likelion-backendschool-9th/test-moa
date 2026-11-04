@@ -161,10 +161,6 @@ export function isWithdrawalKey(withdrawalKey: string) {
   return WITHDRAWAL_KEYS.includes(withdrawalKey);
 }
 
-export function getWithdrawalKeys() {
-  return [...WITHDRAWAL_KEYS];
-}
-
 /** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
 export async function getWithdrawals(tab: ListTab): Promise<{ now: Date; withdrawals: WithdrawalRequest[] }> {
   const { now, withdrawals } = await loadAll();

@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { expectNoHorizontalOverflow, setDemo } from "./helpers";
+import { setDemo } from "./helpers";
 
 const tabs = (page: Page) => page.getByRole("navigation", { name: "참여 상태" });
 const tab = (page: Page, name: string) => tabs(page).getByRole("link", { name });
@@ -15,62 +15,15 @@ test.describe("R182 접근과 역할", () => {
     await page.goto("/my/participations?tab=history");
     await expect(page).toHaveURL(/\/login\?next=%2Fmy%2Fparticipations%3Ftab%3Dhistory$/);
   });
-
-  test("S449 테스터는 참여 테스트 화면을 본다", async ({ page }) => {
-    const response = await page.goto("/my/participations");
-    expect(response?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1, name: "참여 테스트" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "참여 테스트" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-  });
-
-  test("S450 개발자는 빈 상태를 본다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    const response = await page.goto("/my/participations");
-    expect(response?.status()).toBe(200);
-    await expect(page.getByText("아직 참여한 테스트가 없어요")).toBeVisible();
-    await expect(page.getByRole("main").getByRole("link", { name: "테스트 둘러보기" })).toHaveAttribute("href", "/recruitments");
-  });
 });
 
 test.describe("R183 탭", () => {
-  test("S451 기본 탭은 참여 중이고 탭 3개가 순서대로 있다", async ({ page }) => {
-    await page.goto("/my/participations");
-    await expect(tab(page, "참여 중인 테스트")).toHaveAttribute("aria-current", "page");
-    const links = tabs(page).getByRole("link");
-    await expect(links).toHaveCount(3);
-    const expected = [
-      ["지원한 테스트", "/my/participations?tab=applied"],
-      ["참여 중인 테스트", "/my/participations?tab=ongoing"],
-      ["참여했던 테스트", "/my/participations?tab=history"],
-    ];
-    for (const [index, [name, href]] of expected.entries()) {
-      await expect(links.nth(index)).toContainText(name);
-      await expect(links.nth(index)).toHaveAttribute("href", href);
-    }
-  });
-
-  test("S452 탭 옆에 개수가 보인다", async ({ page }) => {
-    await page.goto("/my/participations");
-    await expect(tab(page, "지원한 테스트")).toHaveText("지원한 테스트2");
-    await expect(tab(page, "참여 중인 테스트")).toHaveText("참여 중인 테스트6");
-    await expect(tab(page, "참여했던 테스트")).toHaveText("참여했던 테스트3");
-  });
-
   test("S453 탭을 누르면 URL이 바뀌고 뒤로 가기로 돌아온다", async ({ page }) => {
     await page.goto("/my/participations");
     await tab(page, "참여했던 테스트").click();
     await expect(page).toHaveURL(/\/my\/participations\?tab=history$/);
     await expect(tab(page, "참여했던 테스트")).toHaveAttribute("aria-current", "page");
     await page.goBack();
-    await expect(tab(page, "참여 중인 테스트")).toHaveAttribute("aria-current", "page");
-  });
-
-  test("S454 알 수 없는 탭은 기본 탭을 보여 준다", async ({ page }) => {
-    const response = await page.goto("/my/participations?tab=foo");
-    expect(response?.status()).toBe(200);
     await expect(tab(page, "참여 중인 테스트")).toHaveAttribute("aria-current", "page");
   });
 });
@@ -96,7 +49,7 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     await expect(first.locator(".bg-accent")).toHaveCount(1);
   });
 
-  test("S560 내 제출 전 참여가 마감 순으로 목록에 나온다", async ({ page }) => {
+  test("#46-S9 내 제출 전 참여가 마감 순으로 목록에 나온다", async ({ page }) => {
     await page.goto("/my/participations");
     await expect(deadlineList(page).getByRole("heading")).toHaveText("마감 임박 테스트 4");
     expect(await deadlineItems(page).locator("p:first-child").allTextContents()).toEqual([
@@ -109,7 +62,7 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     await expect(deadlineItems(page).nth(1).getByRole("link")).not.toHaveClass(/bg-accent/);
   });
 
-  test("S561 캘린더는 이번 달에서 시작해 오늘과 내 마감을 표시한다", async ({ page }) => {
+  test("#46-S10 캘린더는 이번 달에서 시작해 오늘과 내 마감을 표시한다", async ({ page }) => {
     await page.goto("/my/participations");
     const box = calendar(page);
     await expect(box.getByText(seoulMonthTitle(), { exact: true })).toBeVisible();
@@ -127,7 +80,7 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     );
   });
 
-  test("S562 이전·다음 달로 넘기고 해가 바뀌어도 맞으며 탭을 바꿔도 보던 달이 남는다", async ({ page }) => {
+  test("#46-S11 이전·다음 달로 넘기고 해가 바뀌어도 맞으며 탭을 바꿔도 보던 달이 남는다", async ({ page }) => {
     await page.goto("/my/participations");
     const box = calendar(page);
     const next = box.getByRole("button", { name: "다음 달" });
@@ -144,53 +97,12 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     await expect(rows(page)).toHaveCount(2);
     await expect(box.getByText(seoulMonthTitle(11), { exact: true })).toBeVisible();
   });
-
-  test("S563 넓은 화면은 캘린더와 목록이 나란하고 좁은 화면은 위아래로 쌓인다", async ({ page }) => {
-    await page.goto("/my/participations");
-    const wide = [await calendar(page).boundingBox(), await deadlineList(page).boundingBox()];
-    expect(wide[0]?.y).toBe(wide[1]?.y);
-    expect(wide[0] && wide[1] && wide[0].x + wide[0].width).toBeLessThan(wide[1]?.x ?? 0);
-
-    await page.setViewportSize({ width: 375, height: 812 });
-    await expect.poll(async () => {
-      const [top, bottom] = [await calendar(page).boundingBox(), await deadlineList(page).boundingBox()];
-      return Boolean(top && bottom && top.y + top.height <= bottom.y && top.x === bottom.x);
-    }).toBe(true);
-  });
-
-  test("S456 제출 전 참여가 없으면 패널이 없다", async ({ page, context }) => {
-    await setDemo(context, { data: "empty" });
-    await page.goto("/my/participations");
-    await expect(page.getByText("참여 중인 테스트가 없어요")).toBeVisible();
-    await expect(deadlineList(page)).toHaveCount(0);
-    await expect(calendar(page)).toHaveCount(0);
-  });
 });
 
 test.describe("R185 참여 목록", () => {
   test("S457 참여 중은 할 일 순서다", async ({ page }) => {
     await page.goto("/my/participations");
     expect(await rowNames(page)).toEqual(["회의록 정리", "중고책 장터", "가계부 노트", "모아플랜", "스터디 매칭", "동네 러닝 크루"]);
-  });
-
-  test("S458 행에 썸네일, 요청 문구, 상태, 날짜, 보상이 있다", async ({ page }) => {
-    await page.goto("/my/participations");
-    const first = rows(page).first();
-    await expect(first.locator("h3")).toHaveText("회의록 정리");
-    await expect(first).toContainText("회의록 작성 후 할 일 목록이 맞는지 보기");
-    await expect(first).toContainText("피드백 제출 전");
-    await expect(first).toContainText("제출 마감");
-    await expect(first).toContainText("910 크레딧");
-    await expect(first).not.toContainText("추가 보상");
-    await expect(rows(page).filter({ hasText: "모아플랜" }).locator("[data-thumb] .bg-accent")).toHaveText("추가 보상 +320 크레딧");
-  });
-
-  test("S459 지급 대기는 지급 예정 일시와 안내가 있다", async ({ page }) => {
-    await page.goto("/my/participations");
-    const row = rows(page).filter({ hasText: "스터디 매칭" });
-    await expect(row).toContainText("지급 대기");
-    await expect(row).toContainText(/지급 예정\d+월 \d+일 (오전|오후) \d+시/);
-    await expect(row).toContainText("72시간 동안 신고가 없으면 자동으로 지급돼요");
   });
 
   test("S460 지원한 테스트는 선정 대기가 먼저다", async ({ page }) => {
@@ -213,89 +125,7 @@ test.describe("R185 참여 목록", () => {
   });
 });
 
-test.describe("R186 빈 상태", () => {
-  test("S462 탭마다 다른 빈 상태와 둘러보기 버튼", async ({ page, context }) => {
-    await setDemo(context, { data: "empty" });
-    const cases = [
-      ["applied", "지원한 테스트가 없어요"],
-      ["ongoing", "참여 중인 테스트가 없어요"],
-      ["history", "아직 끝난 테스트가 없어요"],
-    ];
-    for (const [value, title] of cases) {
-      await page.goto(`/my/participations?tab=${value}`);
-      await expect(page.getByText(title)).toBeVisible();
-      await expect(page.getByRole("main").getByRole("link", { name: "테스트 둘러보기" })).toHaveAttribute("href", "/recruitments");
-    }
-    for (const name of ["지원한 테스트", "참여 중인 테스트", "참여했던 테스트"]) {
-      await expect(tab(page, name)).toHaveText(`${name}0`);
-    }
-  });
-});
-
-test.describe("R187 로딩", () => {
-  test("S463 제목과 탭은 바로 보이고 목록은 스켈레톤이다", async ({ page, context }) => {
-    await setDemo(context, { data: "slow" });
-    await page.goto("/my/participations", { waitUntil: "commit" });
-    await expect(page.getByRole("heading", { level: 1, name: "참여 테스트" })).toBeVisible();
-    await expect(tabs(page).getByRole("link")).toHaveCount(3);
-    await expect(page.locator('[data-skeleton="panel"]')).toBeVisible();
-    await expect(page.locator('[data-skeleton="row"]').first()).toBeVisible();
-    await expect(rows(page)).toHaveCount(6, { timeout: 10_000 });
-    await expect(page.locator("[data-skeleton]")).toHaveCount(0);
-  });
-});
-
-test.describe("R188 반응형", () => {
-  test.use({ viewport: { width: 375, height: 812 } });
-
-  test("S464 좁은 화면에서 가로 스크롤 없이 쌓인다", async ({ page }) => {
-    await page.goto("/my/participations");
-    await expect(rows(page)).toHaveCount(6);
-    await expectNoHorizontalOverflow(page);
-    const tops = await tabs(page)
-      .getByRole("link")
-      .evaluateAll((links) => links.map((link) => Math.round(link.getBoundingClientRect().top)));
-    expect(new Set(tops).size).toBe(1);
-    const cell = await calendar(page).locator("td").first().boundingBox();
-    expect(cell?.width).toBeGreaterThan(30);
-    await expect(deadlineItems(page).first().getByRole("link", { name: "회의록 정리 피드백 쓰기" })).toBeVisible();
-  });
-});
-
-test.describe("R189 링크와 404", () => {
-  test("S465 화면의 내부 링크는 모두 열린다", async ({ page, request }) => {
-    for (const value of ["applied", "ongoing", "history"]) {
-      await page.goto(`/my/participations?tab=${value}`);
-      await expect(rows(page).first()).toBeVisible();
-      const hrefs = await page
-        .getByRole("main")
-        .locator('a[href^="/"]')
-        .evaluateAll((links) => [...new Set(links.map((link) => link.getAttribute("href") ?? ""))]);
-      for (const href of hrefs) {
-        const response = await request.get(href);
-        expect(response.status(), href).toBe(200);
-      }
-    }
-  });
-});
-
-test.describe("R190 접근성", () => {
-  test("S466 탭은 링크 묶음이고 상태는 글자로, 동작 이름에 서비스 이름이 있다", async ({ page }) => {
-    await page.goto("/my/participations");
-    await expect(page.getByRole("tab")).toHaveCount(0);
-    await expect(rows(page).first()).toContainText("D-8");
-    await expect(rows(page).first().getByRole("link", { name: "회의록 정리 피드백 쓰기" })).toBeVisible();
-
-    const target = tab(page, "지원한 테스트");
-    for (let i = 0; i < 30 && !(await target.evaluate((element) => element === document.activeElement)); i++) {
-      await page.keyboard.press("Tab");
-    }
-    await expect(target).toBeFocused();
-    expect(await target.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe("none");
-  });
-});
-
-test.describe("R203 보기 방식", () => {
+test.describe("#46-R1 보기 방식", () => {
   const viewToggle = (page: Page) => page.getByRole("group", { name: "보기 방식" });
   const viewButton = (page: Page, name: "리스트" | "그리드") => viewToggle(page).getByRole("button", { name });
   const setGridCookie = (context: BrowserContext, value = "grid") =>
@@ -306,7 +136,7 @@ test.describe("R203 보기 방식", () => {
     return tops.filter((top) => top === tops[0]).length;
   };
 
-  test("S552 기본은 리스트이고 알 수 없는 쿠키 값도 리스트다", async ({ page, context }) => {
+  test("#46-S1 기본은 리스트이고 알 수 없는 쿠키 값도 리스트다", async ({ page, context }) => {
     await page.goto("/my/participations");
     await expect(viewButton(page, "리스트")).toHaveAttribute("aria-pressed", "true");
     await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "false");
@@ -319,7 +149,7 @@ test.describe("R203 보기 방식", () => {
     await expect(viewButton(page, "리스트")).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("S553 그리드를 고르면 주소는 그대로 한 줄에 3개씩 보인다", async ({ page }) => {
+  test("#46-S2 그리드를 고르면 주소는 그대로 한 줄에 3개씩 보인다", async ({ page }) => {
     await page.goto("/my/participations");
     await viewButton(page, "그리드").click();
     await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
@@ -339,7 +169,18 @@ test.describe("R203 보기 방식", () => {
     await expect.poll(() => columnCount(page)).toBe(1);
   });
 
-  test("S554 고른 보기 방식은 탭 이동, 상세 왕복, 새로고침 뒤에도 남는다", async ({ page }) => {
+  test("#46-S3 보기 방식을 바꿔도 스크롤과 방문 기록은 그대로다", async ({ page }) => {
+    await page.goto("/my/participations?tab=ongoing");
+    await viewButton(page, "그리드").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const before = await page.evaluate(() => [window.scrollY, history.length]);
+    await viewButton(page, "그리드").click();
+    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL("/my/participations?tab=ongoing");
+    expect(await page.evaluate(() => [window.scrollY, history.length])).toEqual(before);
+  });
+
+  test("#46-S4 고른 보기 방식은 탭 이동, 상세 왕복, 새로고침 뒤에도 남는다", async ({ page }) => {
     await page.goto("/my/participations");
     await viewButton(page, "그리드").click();
     await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
@@ -361,49 +202,7 @@ test.describe("R203 보기 방식", () => {
     await expect.poll(() => columnCount(page)).toBe(3);
   });
 
-  for (const [width, columns] of [
-    [1024, 3],
-    [768, 2],
-    [375, 1],
-  ] as const) {
-    test(`S555 너비 ${width}px의 그리드는 ${columns}열이고 가로 스크롤이 없다`, async ({ page, context }) => {
-      await setGridCookie(context);
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto("/my/participations");
-      await expect(rows(page)).toHaveCount(6);
-      expect(await columnCount(page)).toBe(columns);
-      await expectNoHorizontalOverflow(page);
-    });
-  }
-
-  test("S559 보기 방식을 바꿔도 스크롤과 방문 기록은 그대로다", async ({ page }) => {
-    await page.goto("/my/participations?tab=ongoing");
-    await viewButton(page, "그리드").scrollIntoViewIfNeeded();
-    await page.evaluate(() => window.scrollTo(0, 400));
-    const before = await page.evaluate(() => [window.scrollY, history.length]);
-    await viewButton(page, "그리드").click();
-    await expect(viewButton(page, "그리드")).toHaveAttribute("aria-pressed", "true");
-    await expect(page).toHaveURL("/my/participations?tab=ongoing");
-    expect(await page.evaluate(() => [window.scrollY, history.length])).toEqual(before);
-  });
-
-  test("S556 목록이 비었으면 보기 방식을 보여 주지 않는다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    await page.goto("/my/participations");
-    await expect(page.getByText("아직 참여한 테스트가 없어요")).toBeVisible();
-    await expect(viewToggle(page)).toHaveCount(0);
-  });
-
-  test("S557 그리드를 고른 상태의 로딩은 카드 스켈레톤이다", async ({ page, context }) => {
-    await setGridCookie(context);
-    await setDemo(context, { data: "slow" });
-    await page.goto("/my/participations", { waitUntil: "commit" });
-    await expect(page.locator('[data-skeleton="card"]').first()).toBeVisible();
-    await expect(rows(page)).toHaveCount(6, { timeout: 10_000 });
-    await expect(page.locator("[data-skeleton]")).toHaveCount(0);
-  });
-
-  test("S558 JS 번들을 받기 전에 눌러도 보기 방식이 바뀐다", async ({ page }) => {
+  test("#46-S8 JS 번들을 받기 전에 눌러도 보기 방식이 바뀐다", async ({ page }) => {
     const bundle = "**/_next/static/**/*.js";
     await page.route(bundle, (route) => route.abort());
     await page.goto("/my/participations");

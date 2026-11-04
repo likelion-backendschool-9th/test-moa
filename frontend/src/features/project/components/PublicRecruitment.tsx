@@ -1,3 +1,4 @@
+import { CheckIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -18,28 +19,38 @@ const CLOSED_MESSAGE = {
   closed: "모집이 마감됐어요",
 };
 
+/** 넓은 화면에서 왼쪽에 이미지와 본문, 오른쪽에 요약을 둔다. 좁은 화면은 이미지 → 요약 → 본문 순서다 */
+const LAYOUT_CLASS = "grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]";
+const SUMMARY_PLACE_CLASS = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
+
 /**
  * 공개 모집글. 테스터가 지원 전에 일정, 인원, 보상을 확인하는 화면이다 (PRODUCT: 보상과 일정은 숨기지 않는다).
- * 넓은 화면은 오른쪽에 요약과 지원 버튼이 따라오고, 좁은 화면은 제목 바로 아래에 온다.
+ * 요약은 보상과 인원을 크게, 일정과 선정 방식을 작게 두어 먼저 볼 숫자가 드러나게 한다.
  * 접속 링크는 참여가 확정된 테스터에게만 안내하므로 보여 주지 않는다.
  */
 export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
   const { recruitment, detail, project, status, now } = post;
-  const facts: Array<[string, string]> = [
+  const keyFacts: Array<{ term: string; value: string; accent?: boolean }> = [
+    { term: "기본 보상", value: formatCredits(recruitment.baseReward) },
+    ...(recruitment.extraReward !== undefined ? [{ term: "추가 보상", value: `+${formatCredits(recruitment.extraReward)}`, accent: true }] : []),
+    { term: "인원", value: `${recruitment.confirmedCount} / ${recruitment.capacity}명` },
+  ];
+  const scheduleFacts: Array<[string, string]> = [
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
     ["피드백 제출 마감", formatDate(recruitment.submitDeadline)],
-    ["인원", `${recruitment.confirmedCount} / ${recruitment.capacity}명`],
     ...(detail ? ([["선정 방식", SELECTION_MODE_LABEL[detail.selectionMode]]] as Array<[string, string]>) : []),
-    ["기본 보상", formatCredits(recruitment.baseReward)],
   ];
   const description = project?.description || recruitment.summary;
+  const conditions = detail?.conditions.split("\n").filter((line) => line.trim()) ?? [];
+  const testItems = detail?.testItems ?? [];
+  const requiredCount = testItems.filter((item) => item.required).length;
   /* 대표 이미지 다음에 테스트 항목 이미지를 항목 순서대로 잇는다 */
   const gallery: GalleryImage[] = [
     {
       url: project?.image?.url ?? DEFAULT_PROJECT_IMAGE_URL,
       alt: project?.image ? `${recruitment.projectName} 대표 이미지` : "기본 프로젝트 이미지",
     },
-    ...(detail?.testItems ?? []).flatMap((item) => item.images.map((image) => ({ url: image.url, alt: image.name }))),
+    ...testItems.flatMap((item) => item.images.map((image) => ({ url: image.url, alt: image.name }))),
   ];
 
   return (
@@ -54,26 +65,32 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
         {detail?.title && <p className="text-lg text-text-muted">{recruitment.request}</p>}
       </header>
 
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <aside aria-label="모집 요약" className="flex flex-col gap-5 rounded-2xl bg-surface-muted p-6 lg:sticky lg:top-24 lg:order-last">
-          <dl className="grid grid-cols-2 gap-4 lg:grid-cols-1">
-            {facts.map(([term, value]) => (
+      <div data-project-body className={LAYOUT_CLASS}>
+        <div className="min-w-0">
+          <RecruitmentGallery images={gallery} label={`${recruitment.projectName} 이미지 ${gallery.length}장`} />
+        </div>
+
+        <aside aria-label="모집 요약" className={`flex flex-col gap-6 rounded-2xl bg-surface-muted p-6 lg:sticky lg:top-24 ${SUMMARY_PLACE_CLASS}`}>
+          <dl className="grid grid-cols-2 gap-4 lg:grid-cols-1 lg:gap-5">
+            {keyFacts.map(({ term, value, accent }) => (
               <div key={term} className="flex flex-col gap-1">
-                <dt className="text-xs text-text-muted">{term}</dt>
-                <dd className="font-bold tabular-nums">
+                <dt className="text-sm text-text-muted">{term}</dt>
+                <dd className={`text-xl font-extrabold tracking-[-0.03em] tabular-nums lg:text-3xl${accent ? " text-accent" : ""}`}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <dl className="flex flex-col gap-3 border-t border-line pt-5 text-sm">
+            {scheduleFacts.map(([term, value]) => (
+              <div key={term} className="flex items-baseline justify-between gap-4">
+                <dt className="text-text-muted">{term}</dt>
+                <dd className="text-right font-bold tabular-nums">
                   {value}
                   {term === "모집 마감" && status === "recruiting" && (
-                    <span className="ml-2 text-sm font-semibold text-text-muted">{formatDday(recruitment.recruitDeadline, now)}</span>
+                    <span className="ml-2 font-semibold text-text-muted">{formatDday(recruitment.recruitDeadline, now)}</span>
                   )}
                 </dd>
               </div>
             ))}
-            {recruitment.extraReward !== undefined && (
-              <div className="flex flex-col gap-1">
-                <dt className="text-xs text-text-muted">추가 보상</dt>
-                <dd className="font-bold text-accent tabular-nums">+{formatCredits(recruitment.extraReward)}</dd>
-              </div>
-            )}
           </dl>
           {status === "recruiting" ? (
             <LinkButton href={`/recruitments/${recruitment.slug}/apply`} className="w-full">
@@ -86,35 +103,53 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
           )}
         </aside>
 
-        <div className="flex min-w-0 flex-col gap-6">
-          <section aria-labelledby="recruitment-project-heading" data-project-body className="flex flex-col gap-4">
-            <h2 id="recruitment-project-heading" className="text-xl font-extrabold">
-              {recruitment.projectName}
-            </h2>
-            <RecruitmentGallery images={gallery} label={`${recruitment.projectName} 이미지 ${gallery.length}장`} />
+        <div className="flex min-w-0 flex-col gap-4">
+          <Card className="flex flex-col gap-4 md:p-8">
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em]">{recruitment.projectName}</h2>
             <ProjectDescription text={description} />
-          </section>
-
-          <Card className="flex flex-col gap-3">
-            <h2 className="text-lg font-extrabold">모집 조건</h2>
-            <p className="whitespace-pre-line text-sm text-text-muted">{detail?.conditions || "따로 정한 조건이 없어요"}</p>
           </Card>
 
-          {detail && detail.testItems.length > 0 && (
-            <Card className="flex flex-col gap-3">
-              <h2 className="text-lg font-extrabold">
-                테스트 항목 <span className="ml-1 text-text-muted tabular-nums">{detail.testItems.length}</span>
-              </h2>
-              <ol className="flex flex-col gap-5">
-                {detail.testItems.map((item, index) => (
-                  <li key={item.id} className="flex flex-col gap-2">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                      {index + 1}. {item.title}
-                      <Badge tone={item.required ? "neutral" : "outline"}>{item.required ? "필수" : "선택"}</Badge>
-                    </p>
-                    {item.description && <p className="text-sm break-words text-text-muted">{item.description}</p>}
-                    <div className="pt-1 empty:hidden">
-                      <TestItemImages item={item} />
+          <Card className="flex flex-col gap-4 md:p-8">
+            <h2 className="text-2xl font-extrabold tracking-[-0.03em]">모집 조건</h2>
+            {conditions.length > 0 ? (
+              <ul className="flex flex-col gap-3">
+                {conditions.map((condition) => (
+                  <li key={condition} className="flex gap-3">
+                    <CheckIcon aria-hidden size={20} weight="bold" className="mt-0.5 shrink-0 text-text-muted" />
+                    <span className="min-w-0 break-words">{condition}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-text-muted">따로 정한 조건이 없어요</p>
+            )}
+          </Card>
+
+          {testItems.length > 0 && (
+            <Card className="flex flex-col gap-6 md:p-8">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 className="text-2xl font-extrabold tracking-[-0.03em]">
+                  테스트 항목 <span className="ml-1 text-text-muted tabular-nums">{testItems.length}</span>
+                </h2>
+                <p className="text-sm text-text-muted tabular-nums">
+                  필수 {requiredCount} · 선택 {testItems.length - requiredCount}
+                </p>
+              </div>
+              <ol className="flex flex-col divide-y divide-line">
+                {testItems.map((item, index) => (
+                  <li key={item.id} className="flex gap-3 py-6 first:pt-0 last:pb-0 md:gap-4">
+                    <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-strong text-sm font-bold tabular-nums">
+                      {index + 1}
+                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <div className="flex min-h-8 flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-bold">{item.title}</h3>
+                        <Badge tone={item.required ? "neutral" : "outline"}>{item.required ? "필수" : "선택"}</Badge>
+                      </div>
+                      {item.description && <p className="max-w-prose leading-relaxed break-words text-text-muted">{item.description}</p>}
+                      <div className="pt-2 empty:hidden">
+                        <TestItemImages item={item} />
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -134,12 +169,10 @@ export function PublicRecruitmentSkeleton() {
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-10 w-96 max-w-full" />
       </div>
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Skeleton className="h-64 rounded-2xl lg:order-last" />
-        <div className="flex flex-col gap-4">
-          <Skeleton className="aspect-[4/3] w-full max-w-md rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-        </div>
+      <div className={LAYOUT_CLASS}>
+        <Skeleton className="aspect-[4/3] w-full max-w-md rounded-2xl" />
+        <Skeleton className={`h-96 rounded-2xl ${SUMMARY_PLACE_CLASS}`} />
+        <Skeleton className="h-48 rounded-2xl" />
       </div>
     </div>
   );

@@ -101,6 +101,41 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByRole("button", { name: "다음 이미지" })).toHaveCount(0);
   });
 
+  test("#63-S11 항목 이미지를 크게 보여 주고 누르면 확대해 넘겨 본다", async ({ page, context }) => {
+    await page.goto("/recruitments/booklog");
+    const opener = page.getByRole("button", { name: "책 검색 화면 크게 보기" });
+    expect((await opener.boundingBox())?.width).toBeGreaterThan(200);
+
+    await opener.click();
+    const viewer = page.getByRole("dialog", { name: "책 검색해서 등록하기 이미지 크게 보기" });
+    await expect(viewer.getByRole("img", { name: "책 검색 화면" })).toBeVisible();
+    await expect(viewer).toContainText("1 / 2");
+
+    await viewer.getByRole("button", { name: "다음 이미지" }).click();
+    await expect(viewer.getByRole("img", { name: "내 서재 화면" })).toBeVisible();
+    await expect(viewer).toContainText("2 / 2");
+    await page.keyboard.press("ArrowLeft");
+    await expect(viewer.getByRole("img", { name: "책 검색 화면" })).toBeVisible();
+
+    /* Esc, 닫기 버튼, 바깥 클릭으로 닫히고 Esc로 닫으면 누른 이미지로 포커스가 돌아온다 */
+    await page.keyboard.press("Escape");
+    await expect(viewer).toHaveCount(0);
+    await expect(opener).toBeFocused();
+    await opener.click();
+    await viewer.getByRole("button", { name: "닫기" }).click();
+    await expect(viewer).toHaveCount(0);
+    await opener.click();
+    await expect(viewer).toBeVisible();
+    await page.mouse.click(5, 5);
+    await expect(viewer).toHaveCount(0);
+
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects/booklog/recruitments/booklog");
+    await page.getByText("모집 조건과 테스트 항목 3개").click();
+    await page.getByRole("button", { name: "책 검색 화면 크게 보기" }).click();
+    await expect(page.getByRole("dialog", { name: "책 검색해서 등록하기 이미지 크게 보기" })).toBeVisible();
+  });
+
   test.describe("모집 작성", () => {
     const NEW = "/my/projects/booklog/recruitments/new";
     const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");

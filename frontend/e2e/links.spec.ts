@@ -3,7 +3,7 @@ import { setDemo } from "./helpers";
 
 const COMING_SOON_PATHS = [
   "/recruitments",
-  "/recruitments/booklog",
+  "/recruitments/booklog/apply",
   "/terms",
   "/privacy",
   "/events",

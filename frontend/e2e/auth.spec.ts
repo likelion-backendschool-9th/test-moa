@@ -41,8 +41,8 @@ async function expectLoggedIn(page: Page) {
   await expect(header(page).getByRole("link", { name: "로그인" })).toHaveCount(0);
 }
 
-test.describe("R1 로그인 보기", () => {
-  test("S335 비로그인에게 폼, 소셜 버튼, 회원가입 링크, 시연 계정을 보여 준다", async ({ page, context }) => {
+test.describe("R155 로그인 보기", () => {
+  test("S347 비로그인에게 폼, 소셜 버튼, 회원가입 링크, 시연 계정을 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/login");
     await expect(page.getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
@@ -84,7 +84,7 @@ test.describe("R1 로그인 보기", () => {
   });
 });
 
-test.describe("R2 이메일 로그인", () => {
+test.describe("R156 이메일 로그인", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "guest" });
   });
@@ -163,7 +163,7 @@ test.describe("R2 이메일 로그인", () => {
   });
 });
 
-test.describe("R3 소셜 로그인", () => {
+test.describe("R157 소셜 로그인", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "guest" });
   });
@@ -183,7 +183,7 @@ test.describe("R3 소셜 로그인", () => {
   });
 });
 
-test.describe("R4 회원가입 보기", () => {
+test.describe("R158 회원가입 보기", () => {
   test("S298 비로그인에게 칸, 동의, 소셜 버튼, 로그인 링크를 보여 준다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/signup?next=%2Fmy");
@@ -224,7 +224,7 @@ test.describe("R4 회원가입 보기", () => {
   });
 });
 
-test.describe("R5 회원가입 검사", () => {
+test.describe("R159 회원가입 검사", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/signup");
@@ -296,7 +296,7 @@ test.describe("R5 회원가입 검사", () => {
   });
 });
 
-test.describe("R6 가입 성공", () => {
+test.describe("R160 가입 성공", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "guest" });
   });
@@ -323,7 +323,7 @@ test.describe("R6 가입 성공", () => {
   });
 });
 
-test.describe("R7 화면", () => {
+test.describe("R161 화면", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "guest" });
   });

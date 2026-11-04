@@ -15,14 +15,14 @@ const dateAfter = (days: number) =>
     new Date(Date.now() + days * DAY_MS),
   );
 
-test.describe("R1 접근과 진입", () => {
-  test("S341 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
+test.describe("R196 접근과 진입", () => {
+  test("S533 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/my/subscription/checkout");
     await expect(page).toHaveURL("/login?next=%2Fmy%2Fsubscription%2Fcheckout");
   });
 
-  test("S342 구독 화면의 주 버튼이 구독 결제로 가고, 구독 중이면 연장이다", async ({ page, context }) => {
+  test("S534 구독 화면의 주 버튼이 구독 결제로 가고, 구독 중이면 연장이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription");
     await region(page, "결제 안내").getByRole("link", { name: "구독하기", exact: true }).click();
@@ -42,7 +42,7 @@ test.describe("R1 접근과 진입", () => {
     );
   });
 
-  test("S343 운영자는 구독 대상이 아니다", async ({ page, context }) => {
+  test("S535 운영자는 구독 대상이 아니다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/subscription/checkout");
     await expect(page.getByText("운영자 계정은 구독 대상이 아니에요")).toBeVisible();
@@ -50,8 +50,8 @@ test.describe("R1 접근과 진입", () => {
   });
 });
 
-test.describe("R2 결제 내용", () => {
-  test("S344 크레딧이 넉넉하면 크레딧 결제가 먼저 골라져 있다", async ({ page, context }) => {
+test.describe("R197 결제 내용", () => {
+  test("S536 크레딧이 넉넉하면 크레딧 결제가 먼저 골라져 있다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription/checkout");
     const form = checkout(page);
@@ -70,7 +70,7 @@ test.describe("R2 결제 내용", () => {
     await expect(form.getByText("결제 뒤 남는 크레딧")).toHaveCount(0);
   });
 
-  test("S345 크레딧이 모자라면 크레딧 결제를 고를 수 없고 모자란 양을 알린다", async ({ page, context }) => {
+  test("S537 크레딧이 모자라면 크레딧 결제를 고를 수 없고 모자란 양을 알린다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription/checkout");
     const form = checkout(page);
@@ -83,8 +83,8 @@ test.describe("R2 결제 내용", () => {
   });
 });
 
-test.describe("R3 결제하고 돌아오기", () => {
-  test("S346 크레딧으로 결제하면 구독이 시작되고 크레딧 잔액·내역·헤더에 반영된다", async ({ page, context }) => {
+test.describe("R198 결제하고 돌아오기", () => {
+  test("S538 크레딧으로 결제하면 구독이 시작되고 크레딧 잔액·내역·헤더에 반영된다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription/checkout");
     await checkout(page).getByRole("button", { name: "9,000 크레딧 결제하기" }).click();
@@ -107,7 +107,7 @@ test.describe("R3 결제하고 돌아오기", () => {
     await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "구독 결제" }).first()).toContainText("9,000");
   });
 
-  test("S347 현금으로 연장하면 지금 만료일부터 이어지고 크레딧은 그대로다", async ({ page, context }) => {
+  test("S539 현금으로 연장하면 지금 만료일부터 이어지고 크레딧은 그대로다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription/checkout");
     await checkout(page).getByRole("button", { name: "10,000원 결제하기" }).click();
@@ -119,7 +119,7 @@ test.describe("R3 결제하고 돌아오기", () => {
     await expect(header(page).getByRole("link", { name: "보유 크레딧 3,260" })).toBeVisible();
   });
 
-  test("S348 안내 문구는 결제하고 돌아왔을 때만 보인다", async ({ page, context }) => {
+  test("S540 안내 문구는 결제하고 돌아왔을 때만 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/subscription?notice=paid");
     await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
@@ -127,7 +127,7 @@ test.describe("R3 결제하고 돌아오기", () => {
   });
 });
 
-test.describe("R3 결제 기록", () => {
+test.describe("R198 결제 기록", () => {
   /** 지난 결제 기록을 쿠키에 직접 넣는다. paidAt·expiresAt은 오늘 기준 날 수 */
   async function seedPayment(context: BrowserContext, role: string, paidDaysAgo: number, expiresInDays: number) {
     const payment = {
@@ -143,7 +143,7 @@ test.describe("R3 결제 기록", () => {
     ]);
   }
 
-  test("S350 결제할 때 정한 만료일은 조회 시각과 관계없이 그대로라 남은 기간이 줄고 만료된다", async ({ page, context }) => {
+  test("S542 결제할 때 정한 만료일은 조회 시각과 관계없이 그대로라 남은 기간이 줄고 만료된다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     /* 7일 전 연장으로 60일 뒤였던 만료일은 지금 53일 남았다 */
     await seedPayment(context, "developer", 7, 53);
@@ -156,7 +156,7 @@ test.describe("R3 결제 기록", () => {
     await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
   });
 
-  test("S351 결제 기록은 가장 늦은 만료일보다 오래 남는다", async ({ page, context }) => {
+  test("S543 결제 기록은 가장 늦은 만료일보다 오래 남는다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     for (let index = 0; index < 4; index += 1) {
       await page.goto("/my/subscription/checkout");
@@ -170,8 +170,8 @@ test.describe("R3 결제 기록", () => {
   });
 });
 
-test.describe("R4 화면", () => {
-  test("S349 모바일에서 가로 스크롤이 없다", async ({ page, context }) => {
+test.describe("R199 화면", () => {
+  test("S541 모바일에서 가로 스크롤이 없다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto("/my/subscription/checkout");

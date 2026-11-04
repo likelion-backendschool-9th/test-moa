@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "출금 요청 상태" });
@@ -331,8 +331,7 @@ test.describe("R37 로딩과 접근성", () => {
     for (const path of ["/admin/withdrawals", "/admin/withdrawals/withdrawal-1"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, path);
     }
     /* 계좌번호는 줄바꿈 없이 한 줄이다 */
     const number = page.getByRole("region", { name: "받을 계좌" }).getByText("123456789012");
@@ -355,8 +354,7 @@ test.describe("R37 로딩과 접근성", () => {
     ]) {
       await page.goto(`/admin/withdrawals/${key}`);
       await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(text);
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, key).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, key);
     }
   });
 });

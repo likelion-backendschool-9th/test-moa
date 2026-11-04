@@ -89,7 +89,7 @@
 | `accessUrl` | 접속 링크. `http(s)://`로 시작한다 (백엔드 `post.access_url`) |
 | `selectionMode` | 선정 방식 `firstCome`(선착순)·`selection`(선발형). 선발형은 구독 모집만 (백엔드 `post.selection_mode`) |
 | `conditions` | 모집 조건: 필요한 경험·관심사·사용 환경. 선택, 500자까지 |
-| `testItems` | 테스트 항목 `{ id, title, description, required }` 목록. 1~10개, 이름 50자·설명 300자까지 (백엔드 `TestItem`. `required`는 백엔드에 아직 칸이 없다) |
+| `testItems` | 테스트 항목 `{ id, title, description, required }` 목록. 1~10개, 이름 50자·설명 300자까지 (백엔드 `TestItem`. `required`는 ERD의 `is_required`이고 엔티티에는 아직 없다) |
 
 **CancelRequest** (모집 취소 요청)
 | 필드 | 설명 |

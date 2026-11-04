@@ -82,6 +82,8 @@ export type Participation = {
   earnedCredits: number;
   /** 제출한 피드백 내용. 제출 전이거나 미제출이면 없다 */
   feedback?: string;
+  /** 제출한 피드백의 이미지 이름. 시연용이라 파일은 없다 */
+  feedbackImages?: string[];
 };
 
 export const FEEDBACK_MIN_LENGTH = 20;

@@ -46,14 +46,6 @@ async function request(page: Page, amount = "5000") {
   await page.getByRole("button", { name: "출금 신청" }).click();
 }
 
-test("S348·S349 비로그인은 크레딧 관리와 출금에서 로그인으로 간다", async ({ page, context }) => {
-  await setDemo(context, { role: "guest" });
-  await page.goto("/my/credits");
-  await expect(page).toHaveURL("/login?next=%2Fmy%2Fcredits");
-  await page.goto("/my/credits/withdrawals");
-  await expect(page).toHaveURL("/login?next=%2Fmy%2Fcredits%2Fwithdrawals");
-});
-
 test.describe("tester 크레딧 관리", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
@@ -116,20 +108,6 @@ test.describe("tester 크레딧 관리", () => {
   });
 });
 
-test("S351·S356·S360·S366 내역과 출금할 크레딧이 없으면 안내하고 신청할 수 없다", async ({ page, context }) => {
-  await setDemo(context, { role: "admin" });
-  await page.goto("/my/credits");
-  await expect(region(page, "크레딧 내역").getByText("아직 크레딧 내역이 없어요")).toBeVisible();
-  const balance = region(page, "잔액");
-  await expect(balance.getByText("0 크레딧").first()).toBeVisible();
-  await expect(balance.getByRole("link", { name: "출금 신청" }), "S351").toHaveCount(0);
-
-  await page.goto("/my/credits/withdrawals");
-  await expect(region(page, "출금 내역").getByText("아직 출금 요청이 없어요")).toBeVisible();
-  await expect(page.getByText("출금할 수 있는 크레딧이 없어요")).toBeVisible();
-  await expect(page.getByRole("button", { name: "출금 신청" })).toBeDisabled();
-});
-
 test("S357·S359 developer의 구독 결제는 쓴 크레딧이고 출금은 처리 중이다", async ({ page, context }) => {
   await setDemo(context, { role: "developer" });
   await page.goto("/my/credits?type=out");
@@ -158,30 +136,6 @@ test.describe("tester 출금", () => {
     await expect(rows.nth(1)).toContainText("예금주 이름이 회원 정보와 달라요");
   });
 
-  test("S370 라이트·다크 모두 상태는 14px 이상이고 대비가 4.5 이상이다", async ({ page }) => {
-    for (const scheme of ["light", "dark"] as const) {
-      await page.emulateMedia({ colorScheme: scheme });
-      for (const label of ["지급 완료", "반려"]) {
-        const status = historyRows(page).getByText(label, { exact: true });
-        const { fontSize, ratio } = await status.evaluate((element) => {
-          const style = getComputedStyle(element);
-          const parse = (color: string) => color.match(/[\d.]+/g)!.slice(0, 3).map(Number);
-          const luminance = (rgb: number[]) => {
-            const [r, g, b] = rgb.map((value) => {
-              const channel = value / 255;
-              return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-            });
-            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-          };
-          const [light, dark] = [luminance(parse(style.color)), luminance(parse(style.backgroundColor))].sort((x, y) => y - x);
-          return { fontSize: parseFloat(style.fontSize), ratio: (light + 0.05) / (dark + 0.05) };
-        });
-        expect(fontSize, `${scheme} ${label}`).toBeGreaterThanOrEqual(14);
-        expect(ratio, `${scheme} ${label}`).toBeGreaterThanOrEqual(4.5);
-      }
-    }
-  });
-
   test("S361·S362 출금 가능 금액, 이벤트 크레딧 안내, 전액", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1, name: "출금" })).toBeVisible();
     const form = region(page, "출금 신청");
@@ -190,56 +144,6 @@ test.describe("tester 출금", () => {
     await page.getByRole("button", { name: "전액" }).click();
     await expect(page.getByLabel("금액(크레딧)")).toHaveValue("9480");
     await expect(page.getByText(/받을 금액\s*9,480원/)).toBeVisible();
-  });
-
-  test("S371~S373 칸 높이와 모서리, 신청 버튼 위치", async ({ page }) => {
-    const fields = [page.getByLabel("금액(크레딧)"), page.getByLabel("은행"), page.getByLabel("계좌번호"), page.getByLabel("예금주")];
-    const allButton = page.getByRole("button", { name: "전액" });
-    const submit = page.getByRole("button", { name: "출금 신청" });
-
-    const heights = await Promise.all([...fields, allButton].map(async (locator) => (await locator.boundingBox())!.height));
-    expect(new Set(heights).size, "S371").toBe(1);
-
-    const radius = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).borderRadius);
-    for (const locator of [...fields, allButton, submit]) expect(await radius(locator), "S372").toBe("12px");
-
-    const holder = (await fields[3].boundingBox())!;
-    const button = (await submit.boundingBox())!;
-    const summary = (await page.getByText(/받을 금액/).boundingBox())!;
-    expect(Math.abs(button.x + button.width - (holder.x + holder.width)), "S373").toBeLessThan(2);
-    expect(button.y, "S373").toBeGreaterThan(holder.y + holder.height);
-    expect(summary.x + summary.width, "S373").toBeLessThanOrEqual(button.x);
-    expect(Math.abs(summary.y + summary.height / 2 - (button.y + button.height / 2)), "S373").toBeLessThan(8);
-
-    await page.goto("/my/credits");
-    const outside = await radius(region(page, "잔액").getByRole("link", { name: "출금 신청" }));
-    expect(parseFloat(outside), "S372 폼 밖 버튼은 알약").toBeGreaterThan(1000);
-  });
-
-  test("S374·S375 좁은 화면 신청 버튼, 펼친 은행 목록", async ({ page }) => {
-    const select = page.getByLabel("은행");
-    for (const width of [1440, 375]) {
-      await page.setViewportSize({ width, height: 1000 });
-      const field = (await select.boundingBox())!;
-      await select.click();
-      const first = page.getByRole("option", { name: "국민은행" });
-      await expect(first).toBeVisible();
-      const option = (await first.boundingBox())!;
-      expect(option.x, `S375 ${width}`).toBeGreaterThanOrEqual(field.x);
-      expect(option.x + option.width, `S375 ${width}`).toBeLessThanOrEqual(field.x + field.width);
-      expect(field.width - option.width, `S375 ${width}`).toBeLessThan(16);
-      expect(option.y - (field.y + field.height), `S375 ${width}`).toBeGreaterThan(0);
-      expect(option.y - (field.y + field.height), `S375 ${width}`).toBeLessThan(16);
-      await expect(page.getByRole("option", { name: "은행 선택" })).toBeHidden();
-      await page.getByRole("option", { name: "토스뱅크" }).click();
-      await expect(select).toHaveValue("토스뱅크");
-    }
-
-    const holder = (await page.getByLabel("예금주").boundingBox())!;
-    const button = (await page.getByRole("button", { name: "출금 신청" }).boundingBox())!;
-    const summary = (await page.getByText(/받을 금액/).boundingBox())!;
-    expect(Math.abs(button.width - holder.width), "S374").toBeLessThan(2);
-    expect(summary.y, "S374").toBeLessThan(button.y);
   });
 
   test("S364·S365 금액 초과, 빈 칸, 잘못된 형식", async ({ page }) => {

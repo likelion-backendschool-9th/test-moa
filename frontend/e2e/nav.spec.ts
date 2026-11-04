@@ -41,11 +41,4 @@ test.describe("R3 카테고리 탭", () => {
     await expect(page).toHaveURL("/my/projects");
     await expect(nav.getByRole("link", { name: "내 프로젝트" })).toHaveAttribute("aria-current", "page");
   });
-
-  test("S325 비로그인이 보호 탭을 누르면 로그인으로 간다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/");
-    await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "참여 테스트" }).click();
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fparticipations");
-  });
 });

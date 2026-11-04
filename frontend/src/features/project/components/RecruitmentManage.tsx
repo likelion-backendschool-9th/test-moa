@@ -124,7 +124,7 @@ function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
         </div>
         <div className="flex flex-col gap-1">
           <p className="font-bold">테스트 항목</p>
-          <ol className="flex list-decimal flex-col gap-1 pl-5">
+          <ol className="flex list-decimal flex-col gap-4 pl-5">
             {detail.testItems.map((item) => (
               <li key={item.id}>
                 <span className="font-semibold">{item.title}</span>
@@ -132,7 +132,7 @@ function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
                   {item.required ? "필수" : "선택"}
                 </Badge>
                 {item.description && <span className="text-text-muted"> · {item.description}</span>}
-                <div className="pt-1">
+                <div className="pt-3 empty:hidden">
                   <TestItemImages item={item} />
                 </div>
               </li>

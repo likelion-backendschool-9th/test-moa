@@ -102,15 +102,17 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
               <h2 className="text-lg font-extrabold">
                 테스트 항목 <span className="ml-1 text-text-muted tabular-nums">{detail.testItems.length}</span>
               </h2>
-              <ol className="flex flex-col gap-3">
+              <ol className="flex flex-col gap-5">
                 {detail.testItems.map((item, index) => (
-                  <li key={item.id} className="flex flex-col gap-1">
+                  <li key={item.id} className="flex flex-col gap-2">
                     <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                       {index + 1}. {item.title}
                       <Badge tone={item.required ? "neutral" : "outline"}>{item.required ? "필수" : "선택"}</Badge>
                     </p>
                     {item.description && <p className="text-sm text-text-muted">{item.description}</p>}
-                    <TestItemImages item={item} />
+                    <div className="pt-1 empty:hidden">
+                      <TestItemImages item={item} />
+                    </div>
                   </li>
                 ))}
               </ol>

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/Button";
 
 export type GalleryImage = { url: string; alt: string };
 
-const NAV_BUTTON_CLASS = "absolute top-1/2 size-10 -translate-y-1/2 bg-surface !px-0 !py-0 outline -outline-offset-1 outline-line";
+/** 이미지 양쪽 가운데에 겹치는 넘기기 버튼 */
+export const NAV_BUTTON_CLASS = "absolute top-1/2 size-10 -translate-y-1/2 bg-surface !px-0 !py-0 outline -outline-offset-1 outline-line";
 
 /**
  * 모집글 이미지를 가로로 늘어놓고 양쪽 버튼으로 한 장씩 부드럽게 넘긴다. 손가락으로 밀어도 넘어간다.

@@ -50,8 +50,9 @@ export async function submitFeedback(
  * 리다이렉트 없는 서버 액션의 POST 응답에는 페이지 본문이 없어 빈 화면이 된다. 방문 기록은 늘리지 않는다.
  */
 export async function setParticipationView(formData: FormData) {
-  await saveParticipationView(parseParticipationView(formData.get("view")));
   const tab = formData.get("tab");
   const path = typeof tab === "string" ? `/my/participations?tab=${parseParticipationTab(tab)}` : "/my/participations";
+  await requireMember(path);
+  await saveParticipationView(parseParticipationView(formData.get("view")));
   redirect(path, RedirectType.replace);
 }

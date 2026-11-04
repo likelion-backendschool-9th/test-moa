@@ -43,7 +43,8 @@ export default function ParticipationsPage({ searchParams }: PageProps<"/my/part
         <Suspense fallback={<ParticipationTabs />}>
           <TabsSlot searchParams={searchParams} />
         </Suspense>
-        <Suspense fallback={<ParticipationSkeleton />}>
+        {/* 처음 보내는 HTML에서는 고른 보기 방식(쿠키)을 몰라서 스켈레톤은 ListSlot 안에서만 그린다 */}
+        <Suspense fallback={null}>
           <ListSlot searchParams={searchParams} />
         </Suspense>
       </div>

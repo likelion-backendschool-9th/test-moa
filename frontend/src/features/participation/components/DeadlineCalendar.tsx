@@ -27,7 +27,7 @@ function weeksOf(year: number, monthIndex: number) {
 
 /**
  * 내 피드백 제출 마감을 표시하는 달력. 오늘이 있는 달에서 시작해 이전·다음 달로 넘긴다.
- * 넓은 화면은 칸에 서비스 이름을, 좁은 화면은 점을 보여 주고, 스크린 리더는 어느 폭에서나 이름을 읽는다.
+ * 넓은 화면은 칸에 서비스 이름을(같은 날이 여러 건이면 첫 이름과 "외 n건"), 좁은 화면은 점을 보여 주고, 스크린 리더는 어느 폭에서나 모든 이름을 읽는다.
  */
 export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDeadline[]; today: string }) {
   const [month, setMonth] = useState(() => {
@@ -89,11 +89,10 @@ export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDead
                       <>
                         <span aria-hidden className="mx-auto mt-0.5 block size-1.5 rounded-full bg-text md:hidden" />
                         <span aria-hidden className="hidden md:block">
-                          {names.map((name) => (
-                            <span key={name} className="block truncate text-center text-xs font-semibold">
-                              {name}
-                            </span>
-                          ))}
+                          <span className="block truncate text-center text-xs font-semibold">{names[0]}</span>
+                          {names.length > 1 && (
+                            <span className="block text-center text-xs text-text-muted tabular-nums">외 {names.length - 1}건</span>
+                          )}
                         </span>
                         <span className="sr-only">{names.join(", ")} 제출 마감</span>
                       </>

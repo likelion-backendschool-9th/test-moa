@@ -40,7 +40,7 @@ export async function submitFeedback(
   if (!(await saveDemoFeedback(participationKey, content))) {
     return { status: "error", error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용을 줄여 다시 제출해 주세요" };
   }
-  /* 목록의 탭 개수·다음 할 일·요약 줄도 제출을 반영하게 한다 */
+  /* 목록의 탭 개수·마감 일정·요약 줄도 제출을 반영하게 한다 */
   revalidatePath("/my/participations", "layout");
   redirect(`${path}?notice=submitted`);
 }

@@ -108,6 +108,11 @@
     scrollbar-color: var(--color-line) var(--color-surface);
   }
 
+  /* showModal()만으로는 배경 스크롤이 안 잠긴다. 열린 modal dialog가 있을 때 잠근다 */
+  html:has(dialog[open]:modal) {
+    overflow: hidden;
+  }
+
   a {
     text-underline-offset: 0.2em;
   }

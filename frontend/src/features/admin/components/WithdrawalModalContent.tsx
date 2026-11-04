@@ -17,6 +17,7 @@ export function WithdrawalModalContent({
   const closeHref = withdrawalsHref({ tab });
   return (
     <WithdrawalModal
+      key={withdrawal.id}
       title={`${withdrawal.nickname} · ${formatWon(withdrawal.amount)}`}
       closeHref={closeHref}
       withdrawalKey={withdrawal.id}
@@ -25,7 +26,7 @@ export function WithdrawalModalContent({
       {withdrawal.review ? (
         <WithdrawalResult withdrawal={withdrawal} now={now} />
       ) : (
-        <WithdrawalForm withdrawalKey={withdrawal.id} amount={withdrawal.amount} />
+        <WithdrawalForm withdrawalKey={withdrawal.id} amount={withdrawal.amount} tab={tab} />
       )}
     </WithdrawalModal>
   );

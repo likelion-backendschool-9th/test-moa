@@ -7,6 +7,7 @@ import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/Admi
 import {
   WithdrawalList,
   WithdrawalListSkeleton,
+  WithdrawalModalSkeleton,
   WithdrawalProcessedNotice,
   WithdrawalTabs,
 } from "@/features/admin/components/WithdrawalList";
@@ -44,7 +45,7 @@ async function Withdrawals({ searchParams }: { searchParams: PageProps<"/admin/w
           <WithdrawalListSlot tab={tab} />
         </Suspense>
         {openKey && (
-          <Suspense fallback={null}>
+          <Suspense key={openKey} fallback={<WithdrawalModalSkeleton />}>
             <WithdrawalModalSlot withdrawalKey={openKey} tab={tab} />
           </Suspense>
         )}

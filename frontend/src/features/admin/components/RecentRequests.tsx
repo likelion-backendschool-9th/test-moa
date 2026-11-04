@@ -6,7 +6,7 @@ import { formatCredits, formatElapsed } from "@/lib/format";
 import {
   ADMIN_REQUEST_PATH,
   REPORT_TARGET_LABEL,
-  withdrawalsHref,
+  adminRequestHref,
   type CancellationRequest,
   type Report,
   type WithdrawalRequest,
@@ -43,7 +43,7 @@ export function RecentRequests({ now, reports, withdrawals, cancellations }: Rec
           {withdrawals.map((item) => (
             <Row
               key={item.id}
-              href={withdrawalsHref({ open: item.id })}
+              href={adminRequestHref("withdrawal", item.id)}
               title={item.nickname}
               description={formatCredits(item.amount)}
               elapsed={formatElapsed(item.createdAt, now)}

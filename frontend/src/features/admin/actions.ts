@@ -68,12 +68,14 @@ export async function processWithdrawal(_prev: RequestFormState, formData: FormD
     review = { ...review, reason, memo };
   }
 
+  const tab = formData.get("tab") === "done" ? "done" : undefined;
+
   /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
   const { withdrawal } = await getWithdrawal(withdrawalKey);
-  if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ open: withdrawalKey }));
+  if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
 
   if (!(await saveWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
-  redirect(withdrawalsHref({ processed: withdrawalKey }));
+  redirect(withdrawalsHref({ tab, processed: withdrawalKey }));
 }
 
 /**

@@ -62,6 +62,7 @@ export function WithdrawalList({ withdrawals, tab, now }: { withdrawals: Withdra
             <Link
               href={withdrawalsHref({ tab, open: request.id })}
               replace
+              scroll={false}
               data-withdrawal-key={request.id}
               className={cn(rowClass, "transition-colors duration-300 ease-brand hover:bg-surface-strong")}
             >
@@ -103,6 +104,29 @@ export function WithdrawalListSkeleton() {
           <Skeleton className="h-6 w-28" />
         </div>
       ))}
+    </div>
+  );
+}
+
+/** 모달 데이터를 기다리는 동안 보여 주는 다이얼로그 모양 스켈레톤 */
+export function WithdrawalModalSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="출금 요청 불러오는 중"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-surface/80 p-4 backdrop-blur-sm md:p-6"
+    >
+      <div className="my-4 w-full max-w-3xl rounded-2xl bg-surface p-6 md:my-auto md:p-8">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start justify-between gap-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-5 w-10" />
+          </div>
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+      </div>
     </div>
   );
 }

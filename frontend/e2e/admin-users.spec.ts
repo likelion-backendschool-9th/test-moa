@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").getByRole("list", { name: "회원" }).getByRole("listitem");
 const filters = (page: Page) => page.getByRole("navigation", { name: "회원 필터" });
@@ -209,7 +209,7 @@ test.describe("R43 상세", () => {
     await expect(activity).not.toContainText("미완료");
   });
 
-  test("S531 테스터이면서 개발자인 회원은 두 활동을 모두 보여 준다", async ({ page }) => {
+  test("S527 테스터이면서 개발자인 회원은 두 활동을 모두 보여 준다", async ({ page }) => {
     await page.goto("/admin/users/user-2");
     const activity = region(page, "활동");
     for (const text of ["테스터 활동", "참여 확정", "4회", "개발자 활동", "프로젝트", "2개", "모집 건", "3개", "구독 중"]) {
@@ -302,8 +302,7 @@ test.describe("R45 로딩과 접근성", () => {
     for (const path of ["/admin/users", "/admin/users/user-4"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, path);
     }
   });
 });

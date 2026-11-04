@@ -39,7 +39,7 @@ test.describe("R4 모바일 메뉴", () => {
   });
 });
 
-test.describe("R5 모바일 메뉴의 계정 영역", () => {
+test.describe("R179 모바일 메뉴의 계정 영역", () => {
   test("S327 로그인 상태는 마이페이지·로그아웃을 패널로 옮기고 크레딧은 헤더에 남긴다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/");

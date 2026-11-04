@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectNoHorizontalOverflow, setDemo } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "신고 상태" });
@@ -29,7 +29,7 @@ test.beforeEach(async ({ context }) => {
 
 test.describe("R23 테마", () => {
   for (const colorScheme of ["light", "dark"] as const) {
-    test(`S114 결과 배지에는 강조색을 쓰지 않는다 (${colorScheme})`, async ({ page }) => {
+    test(`S423 결과 배지에는 강조색을 쓰지 않는다 (${colorScheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme });
       await page.goto("/admin/reports?tab=done");
       const accent = await page.evaluate(() => {
@@ -48,7 +48,7 @@ test.describe("R23 테마", () => {
     });
   }
 
-  test("S115 강조색 바탕 버튼은 처리하기 하나다", async ({ page }) => {
+  test("S424 강조색 바탕 버튼은 처리하기 하나다", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/admin/reports/report-1");
     await expect(page.getByRole("button", { name: "처리하기" })).toBeVisible();
@@ -63,20 +63,20 @@ test.describe("R23 테마", () => {
 });
 
 test.describe("R24 접근 권한", () => {
-  test("S116 일반 회원은 신고 상세를 볼 수 없다", async ({ page, context }) => {
+  test("S425 일반 회원은 신고 상세를 볼 수 없다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/admin/reports/report-1");
     await expect(page.getByRole("heading", { level: 1, name: "운영자만 볼 수 있는 페이지예요" })).toBeVisible();
     await expect(page.getByText("제출된 피드백")).toHaveCount(0);
   });
 
-  test("S117 비로그인은 그 신고로 돌아오게 로그인으로 간다", async ({ page, context }) => {
+  test("S426 비로그인은 그 신고로 돌아오게 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/admin/reports/report-1");
     await expect(page).toHaveURL(/\/login\?next=%2Fadmin%2Freports%2Freport-1$/);
   });
 
-  test("S118 없는 신고는 맞춤 404 화면을 보여 준다", async ({ page }) => {
+  test("S427 없는 신고는 맞춤 404 화면을 보여 준다", async ({ page }) => {
     await page.goto("/admin/reports/nope");
     await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
     /* 스트리밍 순서에 따라 Next가 noindex 메타를 두 번 넣기도 해서 개수가 아니라 있는지만 본다 */
@@ -85,7 +85,7 @@ test.describe("R24 접근 권한", () => {
 });
 
 test.describe("R25 목록", () => {
-  test("S119 검토 대기는 오래 기다린 순서다", async ({ page }) => {
+  test("S428 검토 대기는 오래 기다린 순서다", async ({ page }) => {
     await page.goto("/admin/reports");
     await expect(statusTabs(page).getByRole("link", { name: "검토 대기" })).toHaveAttribute("aria-current", "page");
     const list = rows(page);
@@ -99,7 +99,7 @@ test.describe("R25 목록", () => {
     }
   });
 
-  test("S120 처리 완료는 최근 처리 순서이고 결과와 처리 시각이 있다", async ({ page }) => {
+  test("S429 처리 완료는 최근 처리 순서이고 결과와 처리 시각이 있다", async ({ page }) => {
     await page.goto("/admin/reports");
     await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
     await expect(page).toHaveURL(/\/admin\/reports\?tab=done$/);
@@ -112,13 +112,13 @@ test.describe("R25 목록", () => {
     await expect(list.nth(0)).toContainText("처리");
   });
 
-  test("S121 신고가 없으면 빈 상태 문구가 보인다", async ({ page, context }) => {
+  test("S430 신고가 없으면 빈 상태 문구가 보인다", async ({ page, context }) => {
     await setDemo(context, { data: "empty" });
     await page.goto("/admin/reports");
     await expect(page.getByText("검토할 신고가 없어요")).toBeVisible();
   });
 
-  test("S532 대상 종류를 고르면 그 종류의 신고만 보이고 주소에 남는다", async ({ page }) => {
+  test("S528 대상 종류를 고르면 그 종류의 신고만 보이고 주소에 남는다", async ({ page }) => {
     await page.goto("/admin/reports");
     const filters = targetFilters(page);
     await expect(filters.getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
@@ -138,7 +138,7 @@ test.describe("R25 목록", () => {
     await expect(rows(page)).toHaveCount(4);
   });
 
-  test("S533 상태 탭과 대상 필터는 서로의 선택을 남긴다", async ({ page }) => {
+  test("S529 상태 탭과 대상 필터는 서로의 선택을 남긴다", async ({ page }) => {
     await page.goto("/admin/reports?target=feedback");
     await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
     await expectUrl(page, "/admin/reports", { tab: "done", target: "feedback" });
@@ -151,20 +151,20 @@ test.describe("R25 목록", () => {
     await expect(rows(page)).toHaveCount(1);
   });
 
-  test("S534 알 수 없는 대상 값은 전체로 본다", async ({ page }) => {
+  test("S530 알 수 없는 대상 값은 전체로 본다", async ({ page }) => {
     await page.goto("/admin/reports?target=nope");
     await expect(targetFilters(page).getByRole("link", { name: "전체" })).toHaveAttribute("aria-current", "page");
     await expect(rows(page)).toHaveCount(4);
   });
 
-  test("S535 필터에 맞는 검토 대기 신고를 모두 처리하면 빈 문구가 보인다", async ({ page }) => {
+  test("S531 필터에 맞는 검토 대기 신고를 모두 처리하면 빈 문구가 보인다", async ({ page }) => {
     await decide(page, "report-1", "기각");
     await decide(page, "report-2", "기각");
     await page.goto("/admin/reports?target=feedback");
     await expect(page.getByText("'피드백' 신고 중에는 검토할 신고가 없어요")).toBeVisible();
   });
 
-  test("S536 상세를 거쳐도 보던 탭과 필터가 남는다", async ({ page }) => {
+  test("S532 상세를 거쳐도 보던 탭과 필터가 남는다", async ({ page }) => {
     await page.goto("/admin/reports?target=feedback");
     await rows(page).first().getByRole("link").click();
     await expectUrl(page, "/admin/reports/report-1", { target: "feedback" });
@@ -184,8 +184,7 @@ test.describe("R25 목록", () => {
     await page.getByRole("link", { name: "목록으로" }).click();
     await expectUrl(page, "/admin/reports", { tab: "done", target: "feedback" });
   });
-
-  test("S122 행을 누르면 상세로 간다", async ({ page }) => {
+  test("S431 행을 누르면 상세로 간다", async ({ page }) => {
     await page.goto("/admin/reports");
     await rows(page).first().getByRole("link").click();
     await expect(page).toHaveURL(/\/admin\/reports\/report-1$/);
@@ -193,7 +192,7 @@ test.describe("R25 목록", () => {
 });
 
 test.describe("R26 상세", () => {
-  test("S123 피드백 신고는 대상과 피드백 원문을 보여 준다", async ({ page }) => {
+  test("S432 피드백 신고는 대상과 피드백 원문을 보여 준다", async ({ page }) => {
     await page.goto("/admin/reports/report-1");
     const main = page.getByRole("main");
     for (const text of ["요청한 기능을 써 보지 않고 제출했어요", "정하린", "오태민", "회의록 정리", "접수", "보상 보류 중"]) {
@@ -202,27 +201,27 @@ test.describe("R26 상세", () => {
     await expect(page.getByRole("region", { name: "제출된 피드백" })).toContainText("잘 되는 것 같아요");
   });
 
-  test("S124 모집 글 신고는 모집 글 링크가 있다", async ({ page }) => {
+  test("S433 모집 글 신고는 모집 글 링크가 있다", async ({ page }) => {
     await page.goto("/admin/reports/report-3");
     await expect(page.getByText("제출된 피드백")).toHaveCount(0);
     await expect(page.getByRole("link", { name: "모집 글 보기" })).toHaveAttribute("href", "/recruitments/folio-builder");
   });
 
-  test("S125 회원 신고는 대상 회원을 보여 준다", async ({ page }) => {
+  test("S434 회원 신고는 대상 회원을 보여 준다", async ({ page }) => {
     await page.goto("/admin/reports/report-4");
     await expect(page.getByRole("main")).toContainText("대상 회원");
     await expect(page.getByRole("main")).toContainText("강민서");
     await expect(page.getByText("제출된 피드백")).toHaveCount(0);
   });
 
-  test("S126 목록으로 링크가 있다", async ({ page }) => {
+  test("S435 목록으로 링크가 있다", async ({ page }) => {
     await page.goto("/admin/reports/report-1");
     await expect(page.getByRole("link", { name: "목록으로" })).toHaveAttribute("href", "/admin/reports");
   });
 });
 
 test.describe("R27 처리", () => {
-  test("S127 결과를 고르지 않으면 처리되지 않는다", async ({ page }) => {
+  test("S436 결과를 고르지 않으면 처리되지 않는다", async ({ page }) => {
     await page.goto("/admin/reports/report-1");
     await page.getByRole("button", { name: "처리하기" }).click();
     await expect(page.getByRole("main").getByRole("alert")).toHaveText("처리 결과를 골라 주세요.");
@@ -231,7 +230,7 @@ test.describe("R27 처리", () => {
     await expect(rows(page)).toHaveCount(4);
   });
 
-  test("S128 기각하면 처리 완료로 옮겨진다", async ({ page }) => {
+  test("S437 기각하면 처리 완료로 옮겨진다", async ({ page }) => {
     await decide(page, "report-1", "기각");
     await expect(page.getByRole("status")).toHaveText("신고를 기각했어요. 보류된 보상이 지급돼요.");
     await expect(rows(page)).toHaveCount(3);
@@ -242,14 +241,14 @@ test.describe("R27 처리", () => {
     await expect(page.getByRole("status")).toHaveText("신고를 기각했어요.");
   });
 
-  test("S129 인정하면 제재 이력에 반영된다는 문구가 보인다", async ({ page }) => {
+  test("S438 인정하면 제재 이력에 반영된다는 문구가 보인다", async ({ page }) => {
     await decide(page, "report-2", "인정", "같은 문장만 반복했어요");
     await expect(page.getByRole("status")).toHaveText("신고를 인정했어요. 제재 이력에 반영돼요.");
     await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
     await expect(rows(page).filter({ hasText: "북로그" })).toContainText("인정");
   });
 
-  test("S130 처리한 신고의 상세는 결과만 보여 준다", async ({ page }) => {
+  test("S439 처리한 신고의 상세는 결과만 보여 준다", async ({ page }) => {
     await decide(page, "report-2", "인정", "같은 문장만 반복했어요");
     await page.goto("/admin/reports/report-2");
     await expect(page.getByRole("button", { name: "처리하기" })).toHaveCount(0);
@@ -259,7 +258,7 @@ test.describe("R27 처리", () => {
     await expect(result).toContainText("처리");
   });
 
-  test("S137 기록을 저장할 공간이 모자라면 처리하지 않고 알린다", async ({ page, context }) => {
+  test("S446 기록을 저장할 공간이 모자라면 처리하지 않고 알린다", async ({ page, context }) => {
     /* 메모가 긴 처리 기록 3건이 이미 있어서, 80자 메모를 하나 더 담으면 쿠키 한도를 넘는 상태 */
     const review = (memo: string) => ({ decision: "dismissed", memo, processedAt: new Date().toISOString() });
     const stored = Object.fromEntries(["report-2", "report-3", "report-4"].map((key) => [key, review("가".repeat(120))]));
@@ -277,7 +276,7 @@ test.describe("R27 처리", () => {
     await expect(rows(page).first()).toContainText("회의록 정리");
   });
 
-  test("S131 처리 결과가 운영자 홈 건수에 반영된다", async ({ page }) => {
+  test("S440 처리 결과가 운영자 홈 건수에 반영된다", async ({ page }) => {
     await decide(page, "report-1", "기각");
     await page.goto("/admin");
     const card = page.getByRole("region", { name: "처리 대기" }).getByRole("link").first();
@@ -287,7 +286,7 @@ test.describe("R27 처리", () => {
 });
 
 test.describe("R28 운영자 홈 연결", () => {
-  test("S132 오래 기다린 요청의 신고는 상세로 간다", async ({ page }) => {
+  test("S441 오래 기다린 요청의 신고는 상세로 간다", async ({ page }) => {
     await page.goto("/admin");
     await page.getByRole("region", { name: "오래 기다린 요청" }).getByRole("link", { name: /회의록 정리/ }).click();
     await expect(page).toHaveURL(/\/admin\/reports\/report-1$/);
@@ -295,7 +294,7 @@ test.describe("R28 운영자 홈 연결", () => {
 });
 
 test.describe("R29 로딩과 접근성", () => {
-  test("S133 응답이 늦어도 탭은 먼저 보이고 목록은 스켈레톤이다", async ({ page, context }) => {
+  test("S442 응답이 늦어도 탭은 먼저 보이고 목록은 스켈레톤이다", async ({ page, context }) => {
     await setDemo(context, { data: "slow" });
     await page.goto("/admin/reports", { waitUntil: "commit" });
     await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
@@ -305,7 +304,7 @@ test.describe("R29 로딩과 접근성", () => {
     await expect(page.locator("[data-skeleton]")).toHaveCount(0);
   });
 
-  test("S134 처리 양식은 이름 붙은 라디오 그룹과 메모 입력창이다", async ({ page }) => {
+  test("S443 처리 양식은 이름 붙은 라디오 그룹과 메모 입력창이다", async ({ page }) => {
     await page.goto("/admin/reports/report-1");
     const group = page.getByRole("group", { name: "처리 결과" });
     await expect(group.getByRole("radio")).toHaveCount(2);
@@ -314,23 +313,21 @@ test.describe("R29 로딩과 접근성", () => {
     await expect(page.getByRole("textbox", { name: "처리 메모" })).toHaveAttribute("maxlength", "80");
   });
 
-  test("S135 좁은 화면에서 가로로 넘치지 않는다", async ({ page }) => {
+  test("S444 좁은 화면에서 가로로 넘치지 않는다", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     for (const path of ["/admin/reports", "/admin/reports/report-1"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "운영자 메뉴" })).toBeVisible();
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow, path).toBeLessThanOrEqual(0);
+      await expectNoHorizontalOverflow(page, path);
     }
   });
 
-  test("S282 공백 없는 긴 메모도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
+  test("S447 공백 없는 긴 메모도 좁은 화면에서 넘치지 않는다", async ({ page }) => {
     const longWord = "a".repeat(80);
     await decide(page, "report-1", "기각", longWord);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/admin/reports/report-1");
     await expect(page.getByRole("region", { name: "처리 결과" })).toContainText(longWord);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page);
   });
 });

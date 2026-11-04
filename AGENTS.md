@@ -20,3 +20,8 @@ AI 코딩 에이전트가 이 저장소에서 따르는 규칙입니다. 커밋 
 - push와 PR 생성은 사용자가 요청할 때만 합니다.
 - push 전에 작은 커밋을 합칠지 묻습니다.
 - PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다.
+
+## 시나리오·요구사항 번호
+
+- 번호를 새로 쓰기 전에 [docs/scenario-numbers.md](docs/scenario-numbers.md)에서 다음 빈 번호와 규칙을 확인하고, 쓴 번호는 같은 PR에서 그 문서에 적습니다.
+- 삭제한 시나리오 번호는 다시 쓰지 않고 그 문서에 결번으로 남깁니다.

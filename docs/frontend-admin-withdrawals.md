@@ -49,7 +49,7 @@ S194 비로그인
 S195 없는 요청
 - When  `/admin/withdrawals/nope`에 접속한다
 - Then  맞춤 404("찾는 페이지가 없어요")가 보이고 `noindex`가 붙는다
-- 참고: 응답 상태는 신고 상세 S118처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404).
+- 참고: 응답 상태는 신고 상세 S427처럼 테스트하지 않는다(개발 서버 200, 빌드한 서버 404).
 - 참고: 스트리밍 순서에 따라 Next가 `noindex` 메타를 두 번 넣기도 한다. 그래서 테스트는 개수가 아니라 있는지만 본다.
 
 ## 3. 목록 (R33)
@@ -213,17 +213,17 @@ S216
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  출금 처리 Server Action 안에서도 부른다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S136과 같다 (`CopyAccountButton`과 `RequestReviewForm`이 출금 요청 관리에서 쓰는 것이다)
+- Then  운영자 폴더의 목록이 `frontend-admin-reports.md` S445과 같다 (`CopyAccountButton`과 `RequestReviewForm`이 출금 요청 관리에서 쓰는 것이다)
 
 ## 기존 시나리오·문서 변경
 - `frontend-admin-home.md`
-  - S97 다음 확인: "오래 기다린 요청"의 출금 항목 링크가 목록이 아니라 상세로 바뀐다(S212).
-  - S93: 탭 이동 확인을 "출금 요청" 대신 아직 준비 중인 "모집 취소"로 바꾼다.
-  - 출금 목업을 이 문서와 함께 쓰도록 계좌 정보와 처리 완료 2건을 더한다. 처리 대기 3건과 순서는 그대로라 S94~S97은 바뀌지 않는다.
+  - S415 다음 확인: "오래 기다린 요청"의 출금 항목 링크가 목록이 아니라 상세로 바뀐다(S212).
+  - S411: 탭 이동 확인을 "출금 요청" 대신 아직 준비 중인 "모집 취소"로 바꾼다.
+  - 출금 목업을 이 문서와 함께 쓰도록 계좌 정보와 처리 완료 2건을 더한다. 처리 대기 3건과 순서는 그대로라 S412~S415은 바뀌지 않는다.
 - `e2e/links.spec.ts` S26: 운영자 하위 페이지 확인을 "준비 중 화면이 나온다"에서 "운영자에게 열리고 제목이 있다"로 바꾼다. 회원 관리(PR #13)·모집 취소 PR도 이 부분을 똑같이 고쳐서, 어느 PR이 먼저 병합돼도 충돌하지 않는다. (처음에는 준비 중 목록에서 `/admin/withdrawals`만 뺐는데, 세 PR이 같은 줄을 다르게 고쳐 충돌했다.)
 - `docs/page-urls.md`: 관리자 섹션에 `/admin/withdrawals?tab=done`(처리 완료 탭)과 `/admin/withdrawals/:withdrawalKey`(출금 요청 상세)를 "후보"로 추가한다.
-- `frontend-admin-reports.md` "번호 사용 현황": S191~S219를 이 문서로 적는다.
-- `frontend-admin-reports.md` S118: 테스트가 `noindex` 메타 개수가 아니라 있는지만 보게 바꾼다(S195와 같은 이유).
+- `scenario-numbers.md` "시나리오 번호(S)": S191~S219를 이 문서로 적는다.
+- `frontend-admin-reports.md` S427: 테스트가 `noindex` 메타 개수가 아니라 있는지만 보게 바꾼다(S195와 같은 이유).
 
 ## 데모 데이터와 가정
 - 출금 목업은 처리 대기 3건(운영자 홈과 같음)과 처리 완료 2건이다. 시각은 접속 시각 기준으로 계산한다.
@@ -282,11 +282,11 @@ S216
 ## 변경 이력
 - 2026-10-30
   - 출금 요청 관리 요구사항을 처음 정리했다.
-  - S번호를 S191부터 매겼다. 열린 PR까지 포함해 가장 큰 번호가 크레딧 문서의 S190이다.
+  - S번호를 S191부터 매겼다. 열린 PR까지 포함해 가장 큰 번호가 크레딧 문서의 S381이다.
   - 목록·상세·처리를 구현했다. S191~S215는 `e2e/admin-withdrawals.spec.ts`에 있고 S216은 grep으로 확인한다.
   - 구현하며 고친 점: 반려 "기타"에 메모가 없을 때는 `?error=note`로 돌아온다(S210의 `error=memo`는 저장 공간 부족). 운영자 홈 "최근 요청"은 행에 링크가 없어 S212에서 뺐다. 신고 목록 탭은 `StatusTabs`로 빼서 함께 쓴다. 처리 기록 쿠키 읽기·쓰기는 `reviews.ts` 하나에서 신고·출금 모두 다룬다.
   - 리뷰 반영:
-    - S195·S118이 반복 실행에서 대부분 실패했다(20번 중 4번 통과). 없는 주소에서 Next가 `noindex` 메타를 두 번 넣기도 해서, 개수 대신 있는지만 보게 고쳤다. 15번 반복해 모두 통과한다.
+    - S195·S427이 반복 실행에서 대부분 실패했다(20번 중 4번 통과). 없는 주소에서 Next가 `noindex` 메타를 두 번 넣기도 해서, 개수 대신 있는지만 보게 고쳤다. 15번 반복해 모두 통과한다.
     - 사유가 "기타"가 아니면 메모가 말없이 버려지던 것을 운영자 메모로 남기게 했다. 안내는 placeholder 대신 늘 보이는 설명으로 옮겼다(S218).
     - 막혀서 돌아오면 고른 값과 메모가 사라지던 것을 다시 채우게 했다(S210, S217).
     - 결과 문구의 금액을 주소에서 읽던 것을 요청 키로 데이터에서 꺼내게 했다(S207, S219).
@@ -295,7 +295,7 @@ S216
   - 막혔을 때 값을 주소(`decision`, `reason`, `memo`)에 실어 다시 채우던 방식을 `useActionState` 클라이언트 양식으로 바꿨다. 주소에 실으면 메모가 방문 기록에 남기 때문이다. `?error=` 주소는 더 쓰지 않는다. `"use client"` 파일은 13개가 된다(S216).
 - 2026-10-31
   - 반려 사유와 메모를 "반려"를 골랐을 때만 보이게 했다(S284). 모집 취소 처리 양식(PR #14, S279)에 먼저 넣은 방식을 출금에도 맞췄다. S214·S218은 "반려"를 고른 뒤 확인하게 고쳤다. 번호는 PR #14의 S283 다음이다.
-  - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`frontend-admin-reports.md` S282). 번호는 회원 관리(PR #13)의 S280 다음이다.
+  - PR 리뷰 반영: 공백 없는 긴 메모나 URL로 반려하면 처리 결과의 반려 사유·운영자 메모가 375px 화면에서 385px 넘쳤다. 상세의 정보 칸(`Info`)에 `overflow-wrap: anywhere`(`wrap-anywhere`)를 줘서 칸 안에서 줄을 바꾼다. `break-words`는 격자 칸의 최소 너비 계산에 반영되지 않아 1열 격자에서 그대로 넘친다. 신고 상세의 처리 메모도 같아서 함께 고쳤다(`frontend-admin-reports.md` S447). 번호는 회원 관리(PR #13)의 S280 다음이다.
   - 상세가 `params`를 Suspense 밖에서 읽어 개발 서버에 `instant-shell-url-data` 진단이 떴다. 회원 관리 PR #13 리뷰에서 같은 구조를 지적받아 신고 상세와 함께 고쳤다(`frontend-admin-reports.md` 변경 이력). 개발 서버에서 진단이 사라지고 없는 주소에서 맞춤 404가 나오는 것(S195)을 확인했다.
 - 2026-11-01
   - 처리 양식을 모집 취소와 함께 `RequestReviewForm`(`"use client"`, `useActionState`) 하나로 합쳤다. `WithdrawalForm`은 문구·사유·서버 함수만 넘기는 서버 컴포넌트가 됐다. 화면과 동작은 그대로라 기존 시나리오로 확인한다.
@@ -303,8 +303,8 @@ S216
   - `"use client"` 확인을 `src` 전체 개수에서 운영자 폴더(`src/app/admin`, `src/features/admin`) 목록으로 바꿨다. 다른 페이지 작업마다 전체 개수가 바뀌어 문서가 계속 틀려졌다.
 
 ## 참고
-- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S94 처리 대기 카드, S97 오래 기다린 요청)
-- 신고·제재 관리: `docs/frontend-admin-reports.md` (목록·상세·처리 구조, 쿠키 크기 확인 S137)
+- 운영자 홈: `docs/frontend-admin-home.md` (R15 접근 권한, S412 처리 대기 카드, S415 오래 기다린 요청)
+- 신고·제재 관리: `docs/frontend-admin-reports.md` (목록·상세·처리 구조, 쿠키 크기 확인 S446)
 - 테스터 출금 신청: `docs/2026-10-30-frontend-credits.md` (PR #9, 출금 상태·은행 목록·계좌 형식·반려 사유 표시)
 - 기획 근거: `README.md` (구독과 크레딧, 운영 원칙)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`

@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expectLoginRedirect, homeLogo, openMoreMenu, setDemo } from "./helpers";
 
 const chatList = (page: Page) => page.getByRole("list", { name: "채팅 목록" });
 const cards = (page: Page) => chatList(page).getByRole("listitem");
@@ -26,11 +26,10 @@ const TIME_TODAY = /^(오전|오후) \d{1,2}:\d{2}$/;
 /* 연초 며칠은 작년 날짜가 되므로 두 형식을 모두 받는다 */
 const DATE = /^(\d{1,2}월 \d{1,2}일|\d{4}\. \d{1,2}\. \d{1,2}\.)$/;
 
-test.describe("R1 접근 제어", () => {
+test.describe("R113 접근 제어", () => {
   test("S114 비로그인은 로그인으로 보낸다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
-    await page.goto("/my/chats");
-    await expect(page).toHaveURL("/login?next=%2Fmy%2Fchats");
+    await expectLoginRedirect(page, "/my/chats");
   });
 
   test("S115 로그인하면 채팅함이 열리고 현재 탭이며 마이페이지 메뉴는 없다", async ({ page, context }) => {
@@ -46,7 +45,7 @@ test.describe("R1 접근 제어", () => {
   });
 });
 
-test.describe("R2 채팅 카드", () => {
+test.describe("R114 채팅 카드", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -147,7 +146,7 @@ test.describe("R2 채팅 카드", () => {
   });
 });
 
-test.describe("R3 순서와 일시", () => {
+test.describe("R115 순서와 일시", () => {
   test("S120 테스터는 최근 메시지 순서이고 일시는 시각, 어제, 날짜로 쓴다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -193,7 +192,7 @@ test.describe("R3 순서와 일시", () => {
   });
 });
 
-test.describe("R4 검색·정렬·역할 탭", () => {
+test.describe("R116 검색·정렬·역할 탭", () => {
   test("S122 채팅방을 상대 닉네임으로 검색하면 탭의 수도 바뀐다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");
@@ -298,7 +297,7 @@ test.describe("R4 검색·정렬·역할 탭", () => {
 
     /* 헤더의 채팅 링크로 돌아오기 */
     await searchBox(page).fill("북로그");
-    await nav.getByRole("link", { name: "홈" }).click();
+    await homeLogo(page).click();
     await expect(page).toHaveURL("/");
     await page.waitForTimeout(600);
     await expect(page).toHaveURL("/");
@@ -309,7 +308,7 @@ test.describe("R4 검색·정렬·역할 탭", () => {
 
     /* 브라우저 뒤로 가기로 돌아오기 */
     await searchBox(page).fill("모아");
-    await nav.getByRole("link", { name: "홈" }).click();
+    await homeLogo(page).click();
     await expect(page).toHaveURL("/");
     await page.goBack();
     await expect(page).toHaveURL("/my/chats");
@@ -332,7 +331,7 @@ test.describe("R4 검색·정렬·역할 탭", () => {
   }
 });
 
-test.describe("R5 더보기", () => {
+test.describe("R117 더보기", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "tester" });
   });
@@ -367,7 +366,7 @@ test.describe("R5 더보기", () => {
 
   test("S139 대화방 이름을 바꾸면 카드·검색에 반영되고 새로고침해도 남는다", async ({ page }) => {
     await page.goto("/my/chats");
-    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "북로그 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
     const dialog = page.getByRole("dialog", { name: "대화방 이름 변경" });
     const input = dialog.getByRole("textbox", { name: "대화방 이름" });
@@ -378,7 +377,7 @@ test.describe("R5 더보기", () => {
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole("button", { name: "북로그 채팅 더보기" })).toBeFocused();
 
-    await page.getByRole("button", { name: "북로그 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "북로그 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 이름 변경" }).click();
     await input.fill("북로그 피드백 문의");
     await dialog.getByRole("button", { name: "저장" }).click();
@@ -395,7 +394,7 @@ test.describe("R5 더보기", () => {
   test("S339 카드에서 대화방을 삭제하면 포커스가 다음 카드로, 마지막 카드면 이전 카드로 간다", async ({ page }) => {
     await page.goto("/my/chats");
     const remove = async (title: string) => {
-      await page.getByRole("button", { name: `${title} 채팅 더보기` }).click();
+      await openMoreMenu(page.getByRole("button", { name: `${title} 채팅 더보기` }));
       await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
       await page.getByRole("dialog", { name: "대화방을 삭제할까요?" }).getByRole("button", { name: "삭제", exact: true }).click();
       await expect(chatList(page)).not.toContainText(title);
@@ -408,7 +407,7 @@ test.describe("R5 더보기", () => {
 
   test("S140 대화방을 삭제하면 확인 뒤 목록·탭 수에서 빠지고 새로고침해도 남는다", async ({ page }) => {
     await page.goto("/my/chats");
-    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "모아플랜 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
     const dialog = page.getByRole("dialog", { name: "대화방을 삭제할까요?" });
     await expect(dialog).toContainText('"모아플랜" 대화방이 채팅함 목록에서 사라져요.');
@@ -418,7 +417,7 @@ test.describe("R5 더보기", () => {
     await expect(dialog).toHaveCount(0);
     await expect(cards(page)).toHaveCount(5);
 
-    await page.getByRole("button", { name: "모아플랜 채팅 더보기" }).click();
+    await openMoreMenu(page.getByRole("button", { name: "모아플랜 채팅 더보기" }));
     await page.getByRole("menuitem", { name: "대화방 삭제" }).click();
     await dialog.getByRole("button", { name: "삭제", exact: true }).click();
     await expect(dialog).toHaveCount(0);
@@ -433,7 +432,7 @@ test.describe("R5 더보기", () => {
   });
 });
 
-test.describe("R6 빈 상태", () => {
+test.describe("R118 빈 상태", () => {
   test("S129 운영자는 채팅방이 없고 검색 영역도 없다", async ({ page, context }) => {
     await setDemo(context, { role: "admin" });
     await page.goto("/my/chats");
@@ -452,7 +451,7 @@ test.describe("R6 빈 상태", () => {
   });
 });
 
-test.describe("R7 로딩", () => {
+test.describe("R119 로딩", () => {
   test("S131 제목은 바로, 목록은 스켈레톤 먼저", async ({ page, context }) => {
     await setDemo(context, { role: "tester", data: "slow" });
     await page.goto("/my/chats", { waitUntil: "commit" });
@@ -464,7 +463,7 @@ test.describe("R7 로딩", () => {
   });
 });
 
-test.describe("R8 모바일", () => {
+test.describe("R120 모바일", () => {
   test("S132 좁은 화면에서도 가로 스크롤 없이 카드 요소와 역할 탭이 보인다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.setViewportSize({ width: 375, height: 812 });
@@ -487,7 +486,7 @@ test.describe("R8 모바일", () => {
   });
 });
 
-test.describe("R9 접근성", () => {
+test.describe("R121 접근성", () => {
   test("S133 목록 구조와 카드 이름, 카드 링크 다음은 더보기 버튼이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/chats");

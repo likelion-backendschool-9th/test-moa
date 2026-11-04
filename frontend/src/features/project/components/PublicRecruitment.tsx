@@ -60,7 +60,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <RecruitmentStatusBadge status={status} />
-          {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
+          {recruitment.extraReward !== undefined && <Badge tone="muted">추가 보상</Badge>}
           <Badge tone="outline">{SOFTWARE_TYPE_LABEL[recruitment.softwareType]}</Badge>
         </div>
         <h1 className="text-3xl font-extrabold tracking-[-0.03em] md:text-4xl">{detail?.title || recruitment.request}</h1>

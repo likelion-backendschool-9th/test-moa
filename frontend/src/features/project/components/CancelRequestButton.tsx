@@ -7,7 +7,7 @@ import { EMPTY_FORM_STATE, RECRUITMENT_LIMIT, type FormState } from "../types";
 import { TextField } from "./TextField";
 
 /*
- * 모집 취소 요청 버튼과 사유 입력 대화상자. 요청은 운영자가 승인하거나 반려한다(docs/frontend-admin-cancellations.md).
+ * 모집 취소 요청 버튼과 사유 입력 대화상자. 요청은 운영자가 승인하거나 반려한다(docs/frontend/admin-cancellations.md).
  * 보내고 나면 서버가 화면을 다시 그려 요청 상태(처리 대기)가 보인다.
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */

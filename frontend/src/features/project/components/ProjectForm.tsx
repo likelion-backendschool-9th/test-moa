@@ -4,10 +4,10 @@ import { useActionState, useEffect, useRef, useState, type ChangeEvent, type Rea
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES, type SoftwareType } from "@/features/recruitment/types";
 import { saveProject } from "../actions";
 import { checkImages, formatBytes, type FileMeta } from "../media";
-import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImage, type ProjectLink } from "../types";
+import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImage } from "../types";
+import { FormSection } from "./FormSection";
 import { ProjectBody } from "./ProjectDetail";
 import { TextField } from "./TextField";
 
@@ -23,15 +23,14 @@ type ProjectFormProps = {
   projectKey: string | null;
   /** 수정할 때 채워 둘 값 */
   initialValues?: Record<string, string>;
-  initialImages?: ProjectImage[];
-  initialLinks?: ProjectLink[];
+  initialImage?: ProjectImage | null;
   cancelHref: string;
 };
 
 /** 고른 이미지. 새로 고른 파일은 브라우저 임시 주소(blob:)로 보여 준다 */
 type ImageItem = FileMeta & { url: string };
 
-const TEXT_FIELDS = ["name", "summary", "softwareType", "accessUrl", "description"] as const;
+const TEXT_FIELDS = ["name", "description"] as const;
 
 /** 폼에 지금 적힌 글자 값을 읽는다. 미리보기에 쓴다 */
 function readDraft(form: HTMLFormElement) {
@@ -43,8 +42,7 @@ function readDraft(form: HTMLFormElement) {
 export function ProjectForm({
   projectKey,
   initialValues = {},
-  initialImages = [],
-  initialLinks = [],
+  initialImage = null,
   cancelHref,
 }: ProjectFormProps) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
@@ -53,41 +51,31 @@ export function ProjectForm({
   );
   const formRef = useFocusFirstError(state);
   const previewRef = useRef<HTMLDialogElement>(null);
-  const values: Record<string, string> = { softwareType: "web", ...initialValues, ...state.values };
+  const values: Record<string, string> = { ...initialValues, ...state.values };
 
   const [draft, setDraft] = useState<Record<string, string>>(values);
-  const [images, setImages] = useState<ImageItem[]>(initialImages.map((image) => ({ ...image, size: 0, type: "image/png" })));
-  const [links, setLinks] = useState<ProjectLink[]>(initialLinks);
+  const [image, setImage] = useState<ImageItem | null>(initialImage && { ...initialImage, size: 0, type: "image/png" });
   const [fileErrors, setFileErrors] = useState<{ images?: string }>({});
-
-  /* 화면을 떠나면 브라우저 임시 주소를 풀어 메모리를 돌려준다 */
-  const imagesRef = useRef(images);
-  useEffect(() => {
-    imagesRef.current = images;
-  }, [images]);
-  useEffect(() => () => imagesRef.current.forEach((image) => revoke(image.url)), []);
-
-  function addImages(event: ChangeEvent<HTMLInputElement>) {
-    const picked = [...(event.target.files ?? [])];
+  function pickImage(event: ChangeEvent<HTMLInputElement>) {
+    const [file] = event.target.files ?? [];
     event.target.value = "";
-    const error = checkImages([...images, ...picked]);
+    if (!file) return;
+    const error = checkImages([file]);
     setFileErrors((prev) => ({ ...prev, images: error }));
     if (error) return;
-    setImages((prev) => [...prev, ...picked.map((file) => ({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) }))]);
+    if (image) revoke(image.url);
+    setImage({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) });
   }
 
-  function removeImage(url: string) {
-    revoke(url);
-    setImages((prev) => prev.filter((image) => image.url !== url));
+  function removeImage() {
+    if (image) revoke(image.url);
+    setImage(null);
     setFileErrors((prev) => ({ ...prev, images: undefined }));
   }
 
-  function updateLink(index: number, field: keyof ProjectLink, value: string) {
-    setLinks((prev) => prev.map((link, i) => (i === index ? { ...link, [field]: value } : link)));
-  }
-
   const toMeta = ({ name, size, type }: FileMeta) => ({ name, size, type });
-  const imageError = fileErrors.images ?? state.errors.images;
+  /* "골라 주세요" 오류는 이미지를 고르면 바로 사라져야 한다 */
+  const imageError = fileErrors.images ?? (image ? undefined : state.errors.images);
 
   /** 지금 적은 값을 읽어 미리보기를 연다 */
   function openPreview() {
@@ -98,51 +86,8 @@ export function ProjectForm({
   return (
     <>
       <form ref={formRef} action={formAction} noValidate className="flex max-w-2xl flex-col gap-6">
+        <FormSection title="프로젝트 정보">
         <TextField name="name" label="프로젝트 이름" defaultValue={values.name} error={state.errors.name} hint="50자까지" />
-        <TextField name="summary" label="한 줄 소개" defaultValue={values.summary} error={state.errors.summary} hint="100자까지" />
-        <fieldset
-          className="flex flex-col gap-2"
-          aria-describedby={state.errors.softwareType ? "field-softwareType-error" : undefined}
-        >
-          <legend className="mb-2 text-sm font-bold">유형</legend>
-          <div className="flex flex-wrap gap-2">
-            {SOFTWARE_TYPES.map((type) => {
-              const ready = type === "web";
-              return (
-                <label
-                  key={type}
-                  className="flex items-center gap-2 rounded-full bg-surface-strong px-4 py-2 text-sm font-bold has-disabled:text-text-muted"
-                >
-                  <input
-                    type="radio"
-                    name="softwareType"
-                    value={type}
-                    defaultChecked={values.softwareType === type}
-                    disabled={!ready}
-                    className="accent-accent"
-                  />
-                  {SOFTWARE_TYPE_LABEL[type]}
-                  {!ready && <span className="text-xs font-medium">준비 중</span>}
-                </label>
-              );
-            })}
-          </div>
-          {state.errors.softwareType && (
-            <p id="field-softwareType-error" className="text-sm font-semibold">
-              {state.errors.softwareType}
-            </p>
-          )}
-        </fieldset>
-        <TextField
-          name="accessUrl"
-          label="접속 링크"
-          type="url"
-          inputMode="url"
-          placeholder="https://"
-          defaultValue={values.accessUrl}
-          error={state.errors.accessUrl}
-          hint="테스터가 이 주소로 접속해요"
-        />
         <TextField
           name="description"
           label="상세 설명 (선택)"
@@ -154,90 +99,32 @@ export function ProjectForm({
 
         <FileField
           name="images"
-          label="이미지 (선택)"
+          label="대표 이미지"
           accept={PROJECT_MEDIA_LIMIT.images.types.join(",")}
-          hint={`PNG, JPG, WEBP · 한 장에 ${formatBytes(PROJECT_MEDIA_LIMIT.images.bytes)}까지 · ${PROJECT_MEDIA_LIMIT.images.count}장까지 · 첫 장이 대표 이미지예요`}
+          hint={`PNG, JPG, WEBP · ${formatBytes(PROJECT_MEDIA_LIMIT.images.bytes)}까지 · 다시 고르면 바뀌어요`}
           error={imageError}
-          onChange={addImages}
+          onChange={pickImage}
+          buttonLabel={image ? "이미지 바꾸기" : "이미지 고르기"}
         >
-          {images.length > 0 && (
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-              {images.map((image, index) => (
-                <li key={image.url} data-testid="image-item" className="flex flex-col gap-1">
-                  <div className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-strong object-cover" />
-                    {index === 0 && (
-                      <span className="absolute top-1 left-1 rounded-md bg-surface-muted px-1.5 text-xs font-bold">대표</span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(image.url)}
-                    aria-label={`${image.name} 삭제`}
-                    className="text-xs font-semibold text-text-muted hover:text-text"
-                  >
-                    삭제
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {image && (
+            <div data-testid="image-item" className="flex w-32 flex-col gap-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-muted object-cover outline -outline-offset-1 outline-line" />
+              <button
+                type="button"
+                onClick={removeImage}
+                aria-label={`${image.name} 삭제`}
+                className="text-xs font-semibold text-text-muted hover:text-text"
+              >
+                삭제
+              </button>
+            </div>
           )}
         </FileField>
 
-        <fieldset className="flex flex-col gap-3" aria-describedby="field-links-hint">
-          <legend className="mb-2 text-sm font-bold">추가 링크 (선택)</legend>
-          <p id="field-links-hint" className="-mt-2 text-xs text-text-muted">
-            이용 가이드, 저장소, 테스트 시나리오·설명서 내려받기 링크 등 · {PROJECT_MEDIA_LIMIT.links.count}개까지
-          </p>
-          {links.map((link, index) => (
-            <div key={index} data-testid="link-row" className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] sm:items-start">
-              <TextField
-                name="linkLabel"
-                id={`field-linkLabel-${index}`}
-                label={`링크 ${index + 1} 이름`}
-                value={link.label}
-                onChange={(event) => updateLink(index, "label", event.target.value)}
-                error={state.errors[`linkLabel-${index}`]}
-                placeholder="이용 가이드"
-              />
-              <TextField
-                name="linkUrl"
-                id={`field-linkUrl-${index}`}
-                label={`링크 ${index + 1} 주소`}
-                type="url"
-                inputMode="url"
-                value={link.url}
-                onChange={(event) => updateLink(index, "url", event.target.value)}
-                error={state.errors[`linkUrl-${index}`]}
-                placeholder="https://"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="sm:mt-7"
-                onClick={() => setLinks((prev) => prev.filter((_, i) => i !== index))}
-                aria-label={`링크 ${index + 1} 삭제`}
-              >
-                삭제
-              </Button>
-            </div>
-          ))}
-          {state.errors.links && <p className="text-sm font-semibold">{state.errors.links}</p>}
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="w-fit"
-            disabled={links.length >= PROJECT_MEDIA_LIMIT.links.count}
-            onClick={() => setLinks((prev) => [...prev, { label: "", url: "" }])}
-          >
-            링크 추가
-          </Button>
-        </fieldset>
+        </FormSection>
 
-        <input type="hidden" name="imagesMeta" value={JSON.stringify(images.map(toMeta))} />
+        <input type="hidden" name="imagesMeta" value={JSON.stringify(image ? [toMeta(image)] : [])} />
 
         <div className="flex gap-2">
           <Button type="submit" disabled={pending}>
@@ -273,12 +160,8 @@ export function ProjectForm({
             titleAs="h3"
             project={{
               name: draft.name,
-              summary: draft.summary,
-              softwareType: (draft.softwareType || "web") as SoftwareType,
-              accessUrl: draft.accessUrl,
               description: draft.description,
-              images,
-              links: links.filter((link) => link.label && link.url),
+              image,
             }}
           />
         </Card>
@@ -287,7 +170,10 @@ export function ProjectForm({
   );
 }
 
-/** 브라우저 임시 주소면 풀어 준다. 저장된 이미지 주소는 그대로 둔다 */
+/**
+ * 브라우저 임시 주소면 풀어 준다. 저장된 이미지 주소는 그대로 둔다.
+ * 이미지를 바꾸거나 지울 때만 부른다. Cache Components는 화면을 떠나도 상태를 남겨 뒤로 오면 같은 주소를 다시 쓰고, 남은 주소는 탭을 닫을 때 브라우저가 푼다.
+ */
 function revoke(url: string) {
   if (url.startsWith("blob:")) URL.revokeObjectURL(url);
 }
@@ -299,31 +185,37 @@ type FileFieldProps = {
   hint: string;
   error?: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  buttonLabel: string;
   children?: ReactNode;
 };
 
 /**
- * 파일 고르기 칸. 시연용이라 파일은 폼으로 보내지 않아서 input에 name을 달지 않는다.
- * 고른 목록(children)은 입력란 아래에 그린다.
+ * 파일 고르기 칸. 브라우저 기본 버튼은 언어를 바꿀 수 없어 입력란을 숨기고 라벨을 버튼처럼 그린다. 시연용이라 파일은 폼으로 보내지 않아서 input에 name을 달지 않는다.
+ * 고른 이미지(children)는 입력란 아래에 그린다.
  */
-function FileField({ name, label, accept, hint, error, onChange, children }: FileFieldProps) {
+function FileField({ name, label, accept, hint, error, onChange, buttonLabel, children }: FileFieldProps) {
   const id = `field-${name}`;
   const describedBy = [`${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <label htmlFor={id} className="text-sm font-bold">
         {label}
       </label>
       <input
         id={id}
         type="file"
-        multiple
         accept={accept}
         onChange={onChange}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className="text-sm text-text-muted file:mr-3 file:rounded-full file:border-0 file:bg-surface-strong file:px-4 file:py-2 file:font-bold file:text-text aria-invalid:rounded-xl aria-invalid:ring-2 aria-invalid:ring-text"
+        className="peer sr-only"
       />
+      <label
+        htmlFor={id}
+        className="w-fit cursor-pointer rounded-full bg-surface-strong px-4 py-2 text-sm font-bold hover:bg-line peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+      >
+        {buttonLabel}
+      </label>
       <p id={`${id}-hint`} className="text-xs text-text-muted">
         {hint}
       </p>

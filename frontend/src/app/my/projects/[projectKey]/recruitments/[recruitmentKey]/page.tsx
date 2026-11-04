@@ -53,10 +53,11 @@ async function ManageSlot({ params, searchParams }: Props) {
         <ApplicantList
           applications={applications}
           capacity={recruitment.capacity}
-          canSelect={canSelectApplicants(recruitment)}
+          canSelect={canSelectApplicants(recruitment, detail.selectionMode)}
           projectKey={projectKey}
           recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
+          selectionMode={detail.selectionMode}
         />
       )}
       {current === "feedback" && <FeedbackList feedbacks={feedbacks} testItems={detail.testItems} />}

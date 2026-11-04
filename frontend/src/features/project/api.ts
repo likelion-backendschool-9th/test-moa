@@ -81,15 +81,15 @@ export async function findAiSummary(role: Role, recruitmentKey: string): Promise
 
 /** 모집 건의 모집 조건과 테스트 항목 */
 export async function findRecruitmentDetail(role: Role, recruitmentKey: string): Promise<RecruitmentDetail> {
-  return (await load(role)).details[recruitmentKey] ?? { conditions: "", testItems: [] };
+  return (await load(role)).details[recruitmentKey] ?? { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", testItems: [] };
 }
 
 /** 모집 건의 취소 요청. 운영자가 처리한 요청이 있으면 그것을, 아니면 시연 중 보낸 요청(처리 대기)을 돌려준다 */
 export async function findCancelRequest(role: Role, recruitmentKey: string): Promise<CancelRequest | null> {
   const processed = (await load(role)).cancelRequests[recruitmentKey];
   const sent = (await readCancelRequests())[recruitmentKey];
-  /* 반려된 뒤 다시 보낸 요청은 새 요청이 우선이다 */
-  if (sent && (!processed || (processed.status === "rejected" && sent.requestedAt > processed.requestedAt))) {
+  /* 반려된 뒤 다시 보낸 요청은 새 요청이 우선이다. 목업의 처리 시각은 요청마다 다시 계산되므로 시각을 비교하지 않는다 */
+  if (sent && (!processed || processed.status === "rejected")) {
     return { status: "pending", ...sent };
   }
   return processed ?? null;

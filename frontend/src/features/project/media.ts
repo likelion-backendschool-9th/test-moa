@@ -22,7 +22,16 @@ export function checkImages(files: FileMeta[]): string | undefined {
   const { count, bytes, types } = PROJECT_MEDIA_LIMIT.images;
   if (files.length > count) return `이미지는 ${count}장까지 올릴 수 있어요`;
   if (files.some((file) => !(types as readonly string[]).includes(file.type))) return "PNG, JPG, WEBP 이미지만 올릴 수 있어요";
-  if (files.some((file) => file.size > bytes)) return `이미지는 한 장에 ${formatBytes(bytes)}까지 올릴 수 있어요`;
+  if (files.some((file) => file.size > bytes)) return `이미지는 ${formatBytes(bytes)}까지 올릴 수 있어요`;
+}
+
+/** http(s) 주소인지. 폼 검증과 미리보기가 같이 쓴다 */
+export function isHttpUrl(value: string) {
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
 }
 
 /** 폼에 숨겨 보낸 파일 정보(JSON)를 읽는다. 모양이 다르면 null */

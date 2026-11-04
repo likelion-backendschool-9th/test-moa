@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { RecruitmentAnalytics, RecruitmentView } from "../service";
-import { CANCEL_REQUEST_LABEL, type CancelRequest, type Project, type RecruitmentDetail } from "../types";
+import { CANCEL_REQUEST_LABEL, SELECTION_MODE_LABEL, type CancelRequest, type Project, type RecruitmentDetail } from "../types";
 import { CancelRequestButton } from "./CancelRequestButton";
+import { ExternalLink } from "./ProjectDetail";
 import { RecruitmentStatusBadge } from "./StatusBadge";
 
 /* 테스트 모집 관리 화면의 머리 요약, 탭 줄, 분석 탭 */
@@ -41,6 +43,8 @@ export function RecruitmentSummary({ project, recruitment, analytics, detail, ca
     ["피드백 제출", `${analytics.feedbackCount}건`],
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
     ["제출 마감", formatDate(recruitment.submitDeadline)],
+    ["유형", SOFTWARE_TYPE_LABEL[recruitment.softwareType]],
+    ["선정 방식", SELECTION_MODE_LABEL[detail.selectionMode]],
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -69,8 +73,10 @@ export function RecruitmentSummary({ project, recruitment, analytics, detail, ca
           </span>
         )}
       </div>
-      <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{recruitment.request}</h1>
-      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-3 lg:grid-cols-6">
+      <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{detail.title || recruitment.request}</h1>
+      {detail.title && <p className="text-lg text-text-muted">{recruitment.request}</p>}
+      {detail.accessUrl && <ExternalLink href={detail.accessUrl}>{detail.accessUrl}</ExternalLink>}
+      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-4 lg:grid-cols-8">
         {facts.map(([term, value]) => (
           <div key={term} className="flex flex-col gap-1">
             <dt className="text-xs text-text-muted">{term}</dt>
@@ -121,6 +127,9 @@ function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
             {detail.testItems.map((item) => (
               <li key={item.id}>
                 <span className="font-semibold">{item.title}</span>
+                <Badge tone={item.required ? "neutral" : "outline"} className="ml-2">
+                  {item.required ? "필수" : "선택"}
+                </Badge>
                 {item.description && <span className="text-text-muted"> · {item.description}</span>}
               </li>
             ))}

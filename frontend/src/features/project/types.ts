@@ -2,27 +2,17 @@
  * 개발자 프로젝트 영역의 타입과 상수.
  * 서버와 클라이언트 컴포넌트가 함께 쓰므로 서버 전용 코드를 넣지 않는다.
  */
-import type { Recruitment, SoftwareType } from "@/features/recruitment/types";
+import type { Recruitment } from "@/features/recruitment/types";
 
 /** 프로젝트. 테스트받을 소프트웨어 하나 (GLOSSARY: 프로젝트) */
 export type Project = {
   /** URL의 projectKey */
   key: string;
   name: string;
-  /** 한 줄 소개 */
-  summary: string;
-  softwareType: SoftwareType;
-  /** 테스터가 접속할 링크 */
-  accessUrl: string;
   /** 상세 설명. 없으면 빈 문자열 */
   description: string;
-  /** 화면 이미지. 첫 장이 대표 이미지다 */
-  images: ProjectImage[];
-  /**
-   * 접속 링크 말고 더 알려 줄 링크. 이용 가이드, 저장소, 내려받을 파일(테스트 시나리오·설명서) 등.
-   * 파일은 따로 올리지 않고 개발자가 열어 둔 내려받기 링크로 받는다.
-   */
-  links: ProjectLink[];
+  /** 대표 이미지 (백엔드 project.image_url). 필수 */
+  image: ProjectImage;
   createdAt: string;
   /** 이 프로젝트의 테스트 모집 건. slug를 recruitmentKey로 쓴다 */
   recruitments: Recruitment[];
@@ -81,11 +71,24 @@ export const RECRUITMENT_STATUS_LABEL: Record<RecruitmentStatus, string> = {
   cancelled: "취소",
 };
 
-/** 테스터에게 해 달라고 할 작업 하나 (백엔드 TestItem) */
-export type TestItem = { id: string; title: string; description: string };
+/** 테스터에게 해 달라고 할 작업 하나 (백엔드 TestItem). required는 프론트에서 먼저 정했고 백엔드에는 아직 칸이 없다 */
+export type TestItem = { id: string; title: string; description: string; required: boolean };
+
+/** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원 순서대로 자동 확정, 선발형은 개발자가 직접 확정·거절 */
+export type SelectionMode = "firstCome" | "selection";
+
+export const SELECTION_MODE_LABEL: Record<SelectionMode, string> = {
+  firstCome: "선착순",
+  selection: "선발형",
+};
 
 /** 모집 건에 붙는 내용. 홈의 Recruitment 타입은 홈 담당이라 여기에 따로 둔다 */
 export type RecruitmentDetail = {
+  /** 모집글 제목 (백엔드 post.title) */
+  title: string;
+  selectionMode: SelectionMode;
+  /** 테스터가 접속할 링크 (백엔드 post.access_url) */
+  accessUrl: string;
   /** 모집 조건: 필요한 경험·관심사·사용 환경 (README). 없으면 빈 문자열 */
   conditions: string;
   testItems: TestItem[];
@@ -100,7 +103,7 @@ export const SUBMISSION_STATUS_LABEL: Record<SubmissionStatus, string> = {
   incomplete: "미완료",
 };
 
-/** 모집 취소 요청. 운영자가 승인하거나 반려한다 (docs/frontend-admin-cancellations.md) */
+/** 모집 취소 요청. 운영자가 승인하거나 반려한다 (docs/frontend/admin-cancellations.md) */
 export type CancelRequest = {
   status: "pending" | "approved" | "rejected";
   reason: string;
@@ -150,16 +153,15 @@ export type AiSummary = {
 export const AI_MIN_FEEDBACKS = 3;
 
 export type ProjectImage = { url: string; name: string };
-export type ProjectLink = { label: string; url: string };
-/** 프로젝트 등록 폼의 이미지·링크 한도. 기획 확정 전 임시값이다 */
+/** 프로젝트 등록 폼의 이미지·설명 한도 */
 export const PROJECT_MEDIA_LIMIT = {
-  images: { count: 5, bytes: 5 * 1024 * 1024, types: ["image/png", "image/jpeg", "image/webp"] },
-  links: { count: 3, labelLength: 20 },
-  descriptionLength: 1000,
+  images: { count: 1, bytes: 5 * 1024 * 1024, types: ["image/png", "image/jpeg", "image/webp"] },
+  descriptionLength: 2000,
 } as const;
 
 /** 모집 작성 폼과 취소 요청의 글자 수·개수 한도. 기획 확정 전 임시값이다 */
 export const RECRUITMENT_LIMIT = {
+  titleLength: 50,
   conditionsLength: 500,
   testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300 },
   cancelReasonLength: 300,

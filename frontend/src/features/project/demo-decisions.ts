@@ -45,8 +45,11 @@ export async function saveDecisions(ids: string[], status: Decision): Promise<bo
 
 /* ---------- 모집 취소 요청 ---------- */
 
-/* 개발자가 보낸 취소 요청. 쿠키 demo-cancel-requests에 { 모집 건 키: 요청 }을 둔다. 운영자 화면과는 아직 잇지 않는다 */
-const CANCEL_COOKIE = "demo-cancel-requests";
+/*
+ * 개발자가 보낸 취소 요청. 운영자 화면과는 아직 잇지 않는다.
+ * 쿠키 demo-cancel-request-{모집 건 키}에 모집 건마다 따로 둔다. 한글 300자 사유가 인코딩하면 2,700바이트라 한 쿠키에 모으면 금방 한도를 넘는다.
+ */
+const CANCEL_COOKIE_PREFIX = "demo-cancel-request-";
 
 export type StoredCancelRequest = { reason: string; requestedAt: string };
 
@@ -54,25 +57,33 @@ const isStoredCancel = (value: unknown): value is StoredCancelRequest =>
   typeof value === "object" &&
   value !== null &&
   typeof (value as StoredCancelRequest).reason === "string" &&
-  typeof (value as StoredCancelRequest).requestedAt === "string";
+  typeof (value as StoredCancelRequest).requestedAt === "string" &&
+  !Number.isNaN(Date.parse((value as StoredCancelRequest).requestedAt));
+
+function parseCancelRequest(raw: string): StoredCancelRequest[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isStoredCancel(parsed) ? [parsed] : [];
+  } catch {
+    return [];
+  }
+}
 
 /** 보낸 취소 요청. 깨진 값은 버린다 */
 export async function readCancelRequests(): Promise<Record<string, StoredCancelRequest>> {
-  const raw = (await cookies()).get(CANCEL_COOKIE)?.value;
-  if (!raw) return {};
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return {};
-    return Object.fromEntries(Object.entries(parsed).filter(([, request]) => isStoredCancel(request)));
-  } catch {
-    return {};
-  }
+  const stored = (await cookies()).getAll().filter(({ name }) => name.startsWith(CANCEL_COOKIE_PREFIX));
+  return Object.fromEntries(
+    stored.flatMap(({ name, value }) =>
+      parseCancelRequest(value).map((request) => [name.slice(CANCEL_COOKIE_PREFIX.length), request]),
+    ),
+  );
 }
 
 /** 취소 요청을 저장한다. Server Action에서만 부른다. 쿠키 한도를 넘으면 false */
 export async function saveCancelRequest(recruitmentKey: string, request: StoredCancelRequest): Promise<boolean> {
-  const value = JSON.stringify({ ...(await readCancelRequests()), [recruitmentKey]: request });
-  if (CANCEL_COOKIE.length + 1 + encodeURIComponent(value).length > COOKIE_MAX_BYTES) return false;
-  (await cookies()).set(CANCEL_COOKIE, value, { path: "/", maxAge: MAX_AGE_SECONDS, sameSite: "lax" });
+  const name = `${CANCEL_COOKIE_PREFIX}${recruitmentKey}`;
+  const value = JSON.stringify(request);
+  if (name.length + 1 + encodeURIComponent(value).length > COOKIE_MAX_BYTES) return false;
+  (await cookies()).set(name, value, { path: "/", maxAge: MAX_AGE_SECONDS, sameSite: "lax" });
   return true;
 }

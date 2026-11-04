@@ -29,9 +29,9 @@ export async function saveProject(projectKey: string | null, _prev: FormState, f
 
 /** 테스트 모집 작성 */
 export async function createRecruitment(projectKey: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  const { maxCapacity } = await getRecruitmentFormInfo(`/my/projects/${projectKey}/recruitments/new`, projectKey);
+  const { maxCapacity, isSubscription } = await getRecruitmentFormInfo(`/my/projects/${projectKey}/recruitments/new`, projectKey);
 
-  const result = validateRecruitmentForm(formData, maxCapacity, new Date());
+  const result = validateRecruitmentForm(formData, maxCapacity, isSubscription, new Date());
   if (Object.keys(result.errors).length > 0) return result;
   redirect(`/my/projects/${projectKey}?notice=saved`);
 }

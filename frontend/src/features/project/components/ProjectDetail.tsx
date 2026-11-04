@@ -4,21 +4,20 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
+import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { RecruitmentView } from "../service";
 import type { Project } from "../types";
+import { ProjectDescription } from "./ProjectDescription";
 import { RecruitmentStatusBadge } from "./StatusBadge";
 
 /* 프로젝트 상세 화면: 프로젝트 정보와 모집 건 목록 */
 
-export type ProjectBodyData = Pick<
-  Project,
-  "name" | "summary" | "softwareType" | "accessUrl" | "description" | "images" | "links"
->;
+/** 미리보기에서는 이미지를 고르기 전일 수 있다 */
+export type ProjectBodyData = Pick<Project, "name" | "description"> & { image: Project["image"] | null };
 
 /** 새 탭으로 여는 링크. 화면 읽기 프로그램에 새 탭임을 알린다 */
-function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
+export function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="w-fit text-sm font-semibold underline">
       {children}
@@ -28,49 +27,55 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 }
 
 /**
- * 프로젝트 내용(이미지, 이름, 소개, 링크, 설명). 상세 화면과 등록 폼 미리보기가 같이 써서 보이는 모습이 같다.
+ * 프로젝트 내용(이름, 설명, 이미지). 상세 화면과 등록 폼 미리보기가 같이 써서 보이는 모습이 같다.
  * 미리보기는 페이지 제목이 따로 있어서 이름을 h3로 내린다.
  */
-export function ProjectBody({ project, titleAs: Title = "h1" }: { project: ProjectBodyData; titleAs?: "h1" | "h3" }) {
-  const [cover, ...rest] = project.images;
+export function ProjectBody({
+  project,
+  titleAs: Title = "h1",
+  children,
+}: {
+  project: ProjectBodyData;
+  titleAs?: "h1" | "h3";
+  children?: ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-4">
-      {cover && (
-        <div className="flex flex-col gap-2">
-          {/* 등록 중인 이미지는 브라우저 안의 임시 주소(blob:)라 next/image를 쓸 수 없다 */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cover.url} alt={`${project.name || "프로젝트"} 대표 이미지`} className="aspect-video w-full rounded-2xl bg-surface-strong object-cover" />
-          {rest.length > 0 && (
-            <ul className="grid grid-cols-4 gap-2">
-              {rest.map((image) => (
-                <li key={image.url}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.url} alt={image.name} className="aspect-video w-full rounded-xl bg-surface-strong object-cover" />
-                </li>
-              ))}
-            </ul>
-          )}
+    <div data-project-body className="@container">
+      {/*
+        좁은 화면과 미리보기는 이름·설명 → 이미지 → 버튼 순서로 쌓고,
+        넓은 상세 화면은 왼쪽에 설명과 버튼, 오른쪽에 이미지를 나란히 둔다. 이미지는 이름 아래, 설명과 같은 높이에서 시작한다.
+        글이 이미지보다 짧아도 버튼이 글 바로 아래에 오도록 마지막 줄이 남는 높이를 받는다.
+      */}
+      <div
+        className={cn(
+          "flex flex-col gap-4",
+          project.image && "@3xl:grid @3xl:grid-cols-[minmax(0,1fr)_41.6667%] @3xl:grid-rows-[auto_auto_1fr] @3xl:gap-x-6",
+        )}
+      >
+        <div className="flex min-w-0 flex-col gap-4 @3xl:col-span-2">
+          <Title className={Title === "h1" ? "text-4xl font-extrabold tracking-[-0.035em]" : "text-2xl font-extrabold tracking-[-0.03em]"}>
+            {project.name || "프로젝트 이름"}
+          </Title>
         </div>
-      )}
-      <p className="text-sm text-text-muted">{SOFTWARE_TYPE_LABEL[project.softwareType]}</p>
-      <Title className={Title === "h1" ? "text-4xl font-extrabold tracking-[-0.035em]" : "text-2xl font-extrabold tracking-[-0.03em]"}>
-        {project.name || "프로젝트 이름"}
-      </Title>
-      <p className="text-lg text-text-muted">{project.summary || "한 줄 소개"}</p>
-      {project.accessUrl && <ExternalLink href={project.accessUrl}>{project.accessUrl}</ExternalLink>}
-      {project.description && <p className="whitespace-pre-line">{project.description}</p>}
-      {project.links.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-bold">링크</p>
-          <ul className="flex flex-col gap-1">
-            {project.links.map((link, index) => (
-              <li key={index}>
-                <ExternalLink href={link.url}>{link.label}</ExternalLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {project.description && (
+          <div className="min-w-0 @3xl:col-start-1 @3xl:row-start-2">
+            <ProjectDescription text={project.description} />
+          </div>
+        )}
+        {project.image && (
+          <div className="w-full max-w-md @3xl:col-start-2 @3xl:row-span-2 @3xl:row-start-2 @3xl:max-w-none">
+            {/* 등록 중인 이미지는 브라우저 안의 임시 주소(blob:)라 next/image를 쓸 수 없다 */}
+            {/* 이미지마다 비율이 달라도 잘리지 않게 칸 안에 맞춘다 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={project.image.url}
+              alt={`${project.name || "프로젝트"} 대표 이미지`}
+              className="aspect-[4/3] w-full rounded-2xl bg-surface-muted object-contain outline -outline-offset-1 outline-line"
+            />
+          </div>
+        )}
+        {children && <div className="flex min-w-0 flex-col gap-4 @3xl:col-start-1 @3xl:row-start-3">{children}</div>}
+      </div>
     </div>
   );
 }
@@ -79,15 +84,14 @@ export function ProjectBody({ project, titleAs: Title = "h1" }: { project: Proje
 export function ProjectInfo({ project }: { project: Project }) {
   const base = `/my/projects/${project.key}`;
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
-      <ProjectBody project={project} />
+    <ProjectBody project={project}>
       <div className="flex flex-wrap gap-2 pt-2">
         <LinkButton href={`${base}/recruitments/new`}>테스트 모집 작성</LinkButton>
         <LinkButton href={`${base}/edit`} variant="secondary">
           수정
         </LinkButton>
       </div>
-    </div>
+    </ProjectBody>
   );
 }
 
@@ -112,16 +116,19 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
               {item.isSubscription && <Badge tone="muted">구독 모집</Badge>}
             </div>
             <Link href={`/my/projects/${projectKey}/recruitments/${item.slug}`} className="font-bold hover:underline">
-              {item.request}
+              {item.title || item.request}
             </Link>
             <p className="text-sm text-text-muted">
               확정 {item.confirmedCount}명 · 정원 {item.capacity}명 · 모집 마감 {formatDate(item.recruitDeadline)} · 제출 마감{" "}
               {formatDate(item.submitDeadline)}
             </p>
           </div>
-          <Link href={`/recruitments/${item.slug}`} className="text-sm font-semibold text-text-muted hover:text-text">
-            공개 페이지 보기
-          </Link>
+          {/* 취소된 모집은 공개 페이지가 없다 */}
+          {item.status !== "cancelled" && (
+            <Link href={`/recruitments/${item.slug}`} className="text-sm font-semibold text-text-muted hover:text-text">
+              공개 페이지 보기
+            </Link>
+          )}
         </li>
       ))}
     </ul>

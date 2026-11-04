@@ -5,7 +5,7 @@ import { PARTICIPATION_VIEWS, VIEW_LABEL, type ParticipationTab, type Participat
 
 const VIEW_ICON = { list: ListBulletsIcon, grid: SquaresFourIcon };
 
-/** 보기 방식 선택. 채팅함 역할 탭과 같은 세그먼트 모양이고, 서버 액션 폼이라 클라이언트 코드가 없다 */
+/** 보기 방식 선택. 채팅함 역할 탭과 같은 세그먼트 모양에 아이콘만 둔다. 서버 액션 폼이라 클라이언트 코드가 없다 */
 export function ParticipationViewToggle({ active, tab }: { active: ParticipationView; tab?: ParticipationTab }) {
   return (
     <form action={setParticipationView} role="group" aria-label="보기 방식" className="ml-auto flex rounded-full bg-surface-strong p-1">
@@ -20,13 +20,14 @@ export function ParticipationViewToggle({ active, tab }: { active: Participation
             name="view"
             value={view}
             aria-pressed={current}
+            aria-label={VIEW_LABEL[view]}
+            title={VIEW_LABEL[view]}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors duration-300 ease-brand",
+              "inline-flex items-center rounded-full px-3 py-1.5 transition-colors duration-300 ease-brand",
               current ? "bg-surface-muted text-text" : "text-text-muted hover:text-text",
             )}
           >
-            <Icon aria-hidden size={16} />
-            {VIEW_LABEL[view]}
+            <Icon aria-hidden size={20} />
           </button>
         );
       })}

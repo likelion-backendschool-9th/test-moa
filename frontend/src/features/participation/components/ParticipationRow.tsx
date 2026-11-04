@@ -1,3 +1,4 @@
+import { CoinsIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -49,8 +50,20 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
       data-testid="participation-row"
       className={cn("flex flex-col gap-4", grid ? "h-full" : "lg:flex-row lg:items-center lg:gap-6")}
     >
-      <div className={grid ? "w-full" : "w-36 shrink-0 lg:w-48"}>
-        <RecruitmentThumb recruitment={recruitment} stamp={status === "paid" ? "지급 완료" : undefined} />
+      <div className={grid ? "w-full" : "w-48 shrink-0"}>
+        <RecruitmentThumb
+          recruitment={recruitment}
+          stamp={status === "paid" ? "지급 완료" : undefined}
+          badge={
+            recruitment.extraReward !== undefined && (
+              <Badge tone="accentSolid" className="gap-1 px-2.5 py-1 text-sm font-extrabold whitespace-nowrap tabular-nums">
+                {/* 좁은 썸네일에서는 글자가 먼저다 */}
+                <CoinsIcon aria-hidden size={16} weight="fill" className="hidden @3xs:block" />
+                추가 보상 +{formatCredits(recruitment.extraReward)}
+              </Badge>
+            )
+          }
+        />
       </div>
       <div className="flex flex-1 flex-col gap-3">
         <p className="text-sm font-semibold">{recruitment.request}</p>
@@ -75,9 +88,6 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
             <dd className="font-semibold tabular-nums">{formatCredits(recruitment.baseReward)}</dd>
           </div>
         </dl>
-        {recruitment.extraReward !== undefined && (
-          <p className="text-sm font-bold text-accent">추가 보상 +{formatCredits(recruitment.extraReward)}</p>
-        )}
         {status === "payoutPending" && <p className="text-xs text-text-muted">72시간 동안 신고가 없으면 자동으로 지급돼요</p>}
       </div>
       <LinkButton href={action.href} variant="secondary" size="sm" className={grid ? "self-start" : "self-start lg:self-center"}>

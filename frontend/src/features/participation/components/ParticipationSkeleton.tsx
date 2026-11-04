@@ -14,7 +14,7 @@ export function ParticipationSkeleton({ count = 3, view = "list" }: { count?: nu
           data-skeleton={grid ? "card" : "row"}
           className={cn("flex flex-col gap-4 rounded-2xl bg-surface-muted p-6", !grid && "lg:flex-row lg:items-center lg:gap-6")}
         >
-          <Skeleton className={cn("aspect-[16/10] rounded-2xl", grid ? "w-full" : "w-36 shrink-0 lg:w-48")} />
+          <Skeleton className={cn("aspect-[16/10] rounded-2xl", grid ? "w-full" : "w-48 shrink-0")} />
           <div className="flex flex-1 flex-col gap-3">
             <Skeleton className="h-5 w-2/3" />
             <Skeleton className="h-5 w-24" />

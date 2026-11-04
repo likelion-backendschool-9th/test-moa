@@ -13,8 +13,9 @@
     font-display: swap;
   }
   :root {
-    --surface: #efefec; --surface-muted: #fbfbfa; --surface-strong: #e4e4e0; --line: #d6d6d1;
-    --text: #1a1a1a; --text-muted: #5c5c58; --accent: #0f7c4a; --accent-soft: #def7eb; --on-accent: #ffffff;
+    --surface: #ffffff; --surface-muted: #ffffff; --surface-strong: #f1f3f1; --line: #d6ded7;
+    --text: #1a1a1a; --text-muted: #5c5c58; --accent: #1f5a40; --accent-soft: #def7eb; --accent-tint: #cdeedc; --on-accent-tint: #1f5a40; --on-accent: #ffffff;
+    --hero-mat: #1f5a40; --hero-grid-minor: rgb(255 255 255 / 0.09); --hero-grid-major: rgb(255 255 255 / 0.2);
     --thumb: #ffffff; --on-thumb: #1a1a1a; --mark: #1a1a1a;
     --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -22,6 +23,7 @@
     --surface: #000000; --surface-muted: #16181d; --surface-strong: #1f222a; --line: #2a3037;
     --text: #ffffff; --text-muted: #a3aab5; --accent: #129357; --accent-soft: #123625; --on-accent: #000000;
     --thumb: #e9ecf0; --on-thumb: #16181d; --mark: #3d434b;
+    --hero-mat: #16181d; --hero-grid-minor: rgb(255 255 255 / 0.03); --hero-grid-major: rgb(255 255 255 / 0.06);
   }
   * { box-sizing: border-box; margin: 0; }
   body { background: var(--surface); color: var(--text); font-family: "Wanted Sans Variable", Pretendard, system-ui, sans-serif; line-height: 1.5; word-break: keep-all; }
@@ -106,17 +108,15 @@
   .sig { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .thumb { position: relative; aspect-ratio: 16 / 10; border: 1px solid var(--line); border-radius: 16px; background: var(--thumb); color: var(--on-thumb); padding: 20px; display: flex; align-items: flex-end; overflow: hidden; container-type: inline-size; }
   .thumb h4 { font-size: 15cqw; line-height: 1.02; font-weight: 800; letter-spacing: -0.04em; text-wrap: balance; }
-  .thumb .tick { position: absolute; width: 12px; height: 12px; opacity: 0.3; border-color: currentColor; border-style: solid; }
-  .thumb .tick.a { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
-  .thumb .tick.b { right: 10px; bottom: 10px; border-width: 0 1px 1px 0; }
-  .thumb svg.stamp { position: absolute; right: 6%; top: 50%; width: 42%; transform: translateY(-50%) rotate(-12deg); color: var(--accent); mix-blend-mode: multiply; }
+  .thumb svg.stamp { position: absolute; right: 6%; top: 8%; width: 30%; transform: rotate(-8deg); color: var(--accent); mix-blend-mode: multiply; }
   .dark .thumb svg.stamp { mix-blend-mode: normal; }
-  .hero-mini { position: relative; border-radius: 16px; background: var(--surface-muted); border: 1px solid var(--line); padding: 28px; min-height: 160px; }
-  .hero-mini .c { position: absolute; width: 16px; height: 16px; border-color: var(--mark); border-style: solid; }
+  .hero-mini { position: relative; border-radius: 16px; background-color: var(--hero-mat); background-image: linear-gradient(to right, var(--hero-grid-major) 1px, transparent 1px), linear-gradient(to bottom, var(--hero-grid-major) 1px, transparent 1px), linear-gradient(to right, var(--hero-grid-minor) 1px, transparent 1px), linear-gradient(to bottom, var(--hero-grid-minor) 1px, transparent 1px); background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px; color: #fff; padding: 28px; min-height: 160px; }
+  .hero-mini .c { position: absolute; width: 16px; height: 16px; border-color: currentColor; border-style: solid; }
   .hero-mini .c1 { top: 12px; left: 12px; border-width: 1px 0 0 1px; } .hero-mini .c2 { top: 12px; right: 12px; border-width: 1px 1px 0 0; }
   .hero-mini .c3 { bottom: 12px; left: 12px; border-width: 0 0 1px 1px; } .hero-mini .c4 { bottom: 12px; right: 12px; border-width: 0 1px 1px 0; }
   .hero-mini h4 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; max-width: 70%; }
-  .hero-mini h4 em { font-style: normal; color: var(--accent); }
+  .hero-mini h4 em { font-style: normal; color: currentColor; }
+  .dark .hero-mini h4 em { color: var(--accent); }
   .sig small { display: block; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
   .sig b { display: block; margin-top: 12px; font-size: 13px; font-weight: 800; }
 
@@ -214,35 +214,35 @@
 </head>
 <body>
 <div class="page">
-  <div class="top"><span>TEST MOA / CORE SYSTEM</span><span>디자인 토큰 · 2026-10-30</span></div>
+  <div class="top"><span>TEST MOA / CORE SYSTEM</span><span>디자인 토큰 · 2026-11-04</span></div>
   <h1>써 보고 고르는 곳의 일관된 기준.</h1>
   <p class="lead">uibowl 갤러리 문법에 교정쇄 소재를 입힌 Test Moa의 토큰이에요. 값은 모두 <code>frontend/src/app/globals.css</code>와 <code>frontend/DESIGN.md</code>에서 가져왔어요. 화면을 만들 때 이 값만 쓰고, 새 값이 필요하면 토큰부터 추가해요.</p>
 
   <!-- 01 -->
   <section>
     <h2><span>01</span>로고와 색</h2>
-    <p class="desc">바탕은 차분하게, 강조는 에메랄드 하나. 라이트는 교정쇄, 다크는 uibowl 바탕이고 강조는 두 모드 모두 같은 에메랄드 계열이에요.</p>
+    <p class="desc">라이트는 흰 교정지 위 진한 초록 재단 매트, 다크는 uibowl 바탕이에요. 라이트의 매트와 강조에는 초록 한 색을 써요.</p>
     <div class="brand">
       <div>
         <div class="logo-card">
           <div class="logo">
-            <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f7c4a"/><path d="M9 22V10l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            test moa
+            <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5a40"/><text x="16" y="23" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">m</text></svg>
+            <span>test <span style="color:var(--accent)">moa</span></span>
           </div>
         </div>
-        <p class="logo-note"><b>워드마크 · 파비콘</b><span class="muted">워드마크는 소문자 "test moa", Wanted Sans 800, 자간 -0.04em. 화면 낭독기에는 "Test Moa"로 읽혀요. 파비콘은 에메랄드 칸에 흰 M이에요. 임시 자산이라 정식 로고가 생기면 바꿔요.</span></p>
+        <p class="logo-note"><b>워드마크 · 파비콘</b><span class="muted">워드마크는 소문자 "test moa"이고 moa만 진한 초록이에요. 파비콘은 같은 초록 바탕에 흰 소문자 m이에요.</span></p>
       </div>
       <div>
-        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트 · 교정쇄</p>
+        <p class="mode-label" style="margin-top:0"><i style="background:#ffffff"></i>라이트 · 교정쇄</p>
         <div class="swatches">
-          <div class="sw"><div class="chip" style="background:#0f7c4a"></div><p>강조<em>#0F7C4A</em></p><small>주 버튼 · 로고 moa · 추가 보상 · 도장 · 오늘 온 대화 · 고른 탭 수 · 포커스</small><code>--accent</code></div>
+          <div class="sw"><div class="chip" style="background:#1f5a40"></div><p>강조<em>#1F5A40</em></p><small>재단 매트 · 주 버튼 · 로고 moa · 도장 · 포커스</small><code>--accent</code></div>
           <div class="sw"><div class="chip" style="background:#def7eb"></div><p>연한 강조<em>#DEF7EB</em></p><small>현재 메뉴 항목 · 열린 더보기</small><code>--accent-soft</code></div>
           <div class="sw"><div class="chip" style="background:#1a1a1a"></div><p>글씨<em>#1A1A1A</em></p><small>제목 · 본문 · 먹 · 15.1:1</small><code>--text</code></div>
           <div class="sw"><div class="chip" style="background:#5c5c58"></div><p>보조 글씨<em>#5C5C58</em></p><small>설명 · 메타 · 5.8:1</small><code>--text-muted</code></div>
-          <div class="sw"><div class="chip" style="background:#efefec"></div><p>바탕<em>#EFEFEC</em></p><small>페이지 · 작업대 회색</small><code>--surface</code></div>
-          <div class="sw"><div class="chip" style="background:#fbfbfa"></div><p>패널<em>#FBFBFA</em></p><small>배너 · 패널 · 빈 상태 · 교정지</small><code>--surface-muted</code></div>
-          <div class="sw"><div class="chip" style="background:#e4e4e0"></div><p>칩<em>#E4E4E0</em></p><small>칩 · 검색창 · 보조 버튼</small><code>--surface-strong</code></div>
-          <div class="sw"><div class="chip" style="background:#d6d6d1"></div><p>경계<em>#D6D6D1</em></p><small>구분선 · 썸네일 테두리</small><code>--line</code></div>
+          <div class="sw"><div class="chip" style="background:#ffffff"></div><p>바탕<em>#FFFFFF</em></p><small>페이지 · 흰 바탕</small><code>--surface</code></div>
+          <div class="sw"><div class="chip" style="background:#ffffff"></div><p>패널<em>#FFFFFF</em></p><small>패널 · 빈 상태 · 교정지, 안쪽 1px 선</small><code>--surface-muted</code></div>
+          <div class="sw"><div class="chip" style="background:#f1f3f1"></div><p>칩<em>#F1F3F1</em></p><small>칩 · 검색창 · 보조 버튼</small><code>--surface-strong</code></div>
+          <div class="sw"><div class="chip" style="background:#d6ded7"></div><p>경계<em>#D6DED7</em></p><small>구분선 · 썸네일 테두리</small><code>--line</code></div>
         </div>
         <p class="mode-label"><i style="background:#000"></i>다크 · uibowl 바탕</p>
         <div class="swatches">
@@ -298,7 +298,7 @@
     <p class="desc">모든 버튼은 알약 모양(full). 기본 크기는 16px 굵게 · 위아래 12 · 좌우 20, 작은 크기는 14px · 8 · 16. 누르면 0.98로 줄고, 포커스는 강조색 2px 테두리예요.</p>
     <div class="pair">
       <div class="sheet">
-        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트</p>
+        <p class="mode-label" style="margin-top:0"><i style="background:#ffffff"></i>라이트</p>
         <div class="controls">
           <div class="ctl"><b>주요 / Primary</b><button class="btn primary">테스트 둘러보기</button><small>화면의 핵심 행동 1개</small></div>
           <div class="ctl"><b>보조 / Secondary</b><button class="btn secondary">자세히 보기</button><small>보조 행동 · 빈 상태 행동</small></div>
@@ -346,15 +346,15 @@
     <div class="pair">
       <div class="sheet">
         <div class="sig">
-          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>가계부 노트</h4></div><b>활자 썸네일</b><small>교정지 면 위 서비스 이름. 16:10, 구독 모집 3열은 2:1</small></div>
-          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>포트폴리오 빌더</h4><svg class="stamp" viewBox="0 0 160 64" role="img" aria-label="모집 완료"><rect x="3" y="3" width="154" height="58" rx="10" fill="none" stroke="currentColor" stroke-width="4"/><rect x="10" y="10" width="140" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="80" y="40" text-anchor="middle" fill="currentColor" font-size="22" font-weight="800" letter-spacing="2" font-family="inherit">모집 완료</text></svg></div><b>교정 도장</b><small>정원이 찬 모집만. 두 줄 테두리, -12° 회전, 이름 위에 겹침</small></div>
-          <div><div class="hero-mini"><i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i><h4>써 보고, 남기고, <em>받고</em></h4></div><b>재단선 히어로</b><small>네 귀퉁이 재단선. 홈 배너에만</small></div>
+          <div><div class="thumb"><h4>가계부 노트</h4></div><b>활자 썸네일</b><small>교정지 면 위 서비스 이름. 16:10, 구독 모집 3열은 2:1</small></div>
+          <div><div class="thumb"><h4>포트폴리오 빌더</h4><svg class="stamp" viewBox="0 0 160 64" role="img" aria-label="모집 완료"><rect x="3" y="3" width="154" height="58" rx="10" fill="none" stroke="currentColor" stroke-width="4"/><rect x="10" y="10" width="140" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="80" y="40" text-anchor="middle" fill="currentColor" font-size="22" font-weight="800" letter-spacing="2" font-family="inherit">모집 완료</text></svg></div><b>교정 도장</b><small>정원이 찬 모집만. 두 줄 테두리, -8° 회전, 오른쪽 위</small></div>
+          <div><div class="hero-mini"><i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i><h4>써 보고, 남기고, <em>받고</em></h4></div><b>재단선 히어로</b><small>진한 초록 매트와 흰 재단선. 홈 배너에만</small></div>
         </div>
       </div>
       <div class="sheet dark">
         <div class="sig">
-          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>가계부 노트</h4></div><b>활자 썸네일</b><small>다크에서도 밝은 교정지 면</small></div>
-          <div><div class="thumb"><i class="tick a"></i><i class="tick b"></i><h4>포트폴리오 빌더</h4><svg class="stamp" viewBox="0 0 160 64" role="img" aria-label="모집 완료"><rect x="3" y="3" width="154" height="58" rx="10" fill="none" stroke="currentColor" stroke-width="4"/><rect x="10" y="10" width="140" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="80" y="40" text-anchor="middle" fill="currentColor" font-size="22" font-weight="800" letter-spacing="2" font-family="inherit">모집 완료</text></svg></div><b>교정 도장</b><small>다크 에메랄드, 겹침 효과 없음</small></div>
+          <div><div class="thumb"><h4>가계부 노트</h4></div><b>활자 썸네일</b><small>다크에서도 밝은 교정지 면</small></div>
+          <div><div class="thumb"><h4>포트폴리오 빌더</h4><svg class="stamp" viewBox="0 0 160 64" role="img" aria-label="모집 완료"><rect x="3" y="3" width="154" height="58" rx="10" fill="none" stroke="currentColor" stroke-width="4"/><rect x="10" y="10" width="140" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="80" y="40" text-anchor="middle" fill="currentColor" font-size="22" font-weight="800" letter-spacing="2" font-family="inherit">모집 완료</text></svg></div><b>교정 도장</b><small>다크 에메랄드, 겹침 효과 없음</small></div>
           <div><div class="hero-mini"><i class="c c1"></i><i class="c c2"></i><i class="c c3"></i><i class="c c4"></i><h4>써 보고, 남기고, <em>받고</em></h4></div><b>재단선 히어로</b><small>다크도 같은 재단선</small></div>
         </div>
       </div>
@@ -367,7 +367,7 @@
     <p class="desc">채팅함(<code>/my/chats</code>)에서 처음 쓴 요소예요. 새 색은 없고, 카드 왼쪽 이미지 칸·역할 탭·역할 배지·더보기 메뉴를 기존 면과 모서리 규칙으로 만들었어요. 예시 이미지는 <code>frontend/public/sample/projects</code>의 시연용 웹·앱 화면이에요. 코드는 <code>frontend/src/features/chat/components</code>에 있어요. 아래 두 번째 예시는 채팅방(<code>/my/chats/:roomKey</code>)의 머리·날짜 구분·말풍선·메시지 입력창이에요.</p>
     <div class="pair">
       <div class="sheet page-bg">
-        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트</p>
+        <p class="mode-label" style="margin-top:0"><i style="background:#ffffff"></i>라이트</p>
         <div class="chat-list">
           <div class="chatcard">
             <div class="cthumb" aria-hidden="true"><i class="a"></i>북<img src="../frontend/public/sample/projects/booklog.svg" alt=""></div>
@@ -422,7 +422,7 @@
     <p class="gap-note">강조색은 이 화면에서 네 자리에만 써요: 오늘 온 대화의 일시와 점, hover 때 프로젝트명, 고른 역할 탭의 수, 열린 더보기. 닉네임·역할 배지·이미지처럼 카드마다 반복되는 곳에는 쓰지 않아서 강조가 드물게 남아요.</p>
     <div class="pair room-pair">
       <div class="sheet page-bg">
-        <p class="mode-label" style="margin-top:0"><i style="background:#efefec"></i>라이트</p>
+        <p class="mode-label" style="margin-top:0"><i style="background:#ffffff"></i>라이트</p>
         <div class="room">
           <p class="room-back">‹ 채팅함</p>
           <div class="room-head">
@@ -473,9 +473,9 @@
     <div class="anatomy">
       <div class="rule"><b>채팅방 머리 · ChatRoomHeader</b>위에 "채팅함"으로 돌아가는 링크. 작은 프로젝트 이미지 64×48(4:3, 모서리 12), 대화방 이름 24px 800, 그 아래 역할 배지(채팅 카드와 같아요) + 상대 닉네임 · 모집 글 링크(흐린 먹), 오른쪽 더보기. 더보기에서 삭제하면 채팅함으로 돌아가요. 앱 헤더 높이가 화면마다 달라 위에 붙이지 않아요.</div>
       <div class="rule"><b>날짜 구분 · 말풍선 · ChatMessageList</b>날짜는 가운데 12px 600 흐린 먹 + 양옆 1px 재단 회색 선. 내 말풍선은 오른쪽 강조색 바탕(메인 색), 상대는 왼쪽 교정지 바탕, 모서리 16, 안쪽 10 · 16, 최대 폭 80%. 같은 사람이 이어 보내면 4, 사람이 바뀌면 12 띄워요. 같은 분 묶음의 마지막만 꼬리 모서리 6과 시각이 붙어요.</div>
-      <div class="rule"><b>메시지 입력창 · ChatComposer</b>화면 아래에 붙는 작업대 띠 안의 교정지 면(모서리 16). 여러 줄로 늘어나서 알약 대신 담는 면 모서리를 써요. 입력란은 내용만큼 늘고 최대 128. 보내기는 40 원형 강조색(이 화면의 주 버튼), 빈 글이면 40% 비활성. 포커스 때 2px 강조색 링. Enter 보내기, Shift+Enter 줄바꿈(휴대폰은 Enter 줄바꿈, 보내기 버튼으로 보내요).</div>
+      <div class="rule"><b>메시지 입력창 · ChatComposer</b>화면 아래에 붙는 흰 바탕 띠 안의 교정지 면(모서리 16). 여러 줄로 늘어나서 알약 대신 담는 면 모서리를 써요. 입력란은 내용만큼 늘고 최대 128. 보내기는 40 원형 강조색(이 화면의 주 버튼), 빈 글이면 40% 비활성. 포커스 때 2px 강조색 링. Enter 보내기, Shift+Enter 줄바꿈(휴대폰은 Enter 줄바꿈, 보내기 버튼으로 보내요).</div>
     </div>
-    <p class="gap-note">채팅방에서 강조색은 세 자리에 써요: 보내기 버튼, 내 말풍선, 입력창 포커스 링. 내 말풍선은 내가 보낸 말을 한눈에 가르도록 둔 예외예요(대비 라이트 5.25:1, 다크 5.34:1). 상대 말풍선·날짜·닉네임에는 쓰지 않아요. 대화는 따로 높이가 정해진 상자에서 스크롤하지 않고 페이지가 스크롤돼요. 채팅방에는 사이트 푸터가 없고(채팅함에는 있어요), 대화가 짧아도 입력창은 화면 아래에 있어요.</p>
+    <p class="gap-note">채팅방에서 강조색은 세 자리에 써요: 보내기 버튼, 내 말풍선, 입력창 포커스 링. 내 말풍선은 내가 보낸 말을 한눈에 가르도록 둔 예외예요(대비 라이트 약 8:1, 다크 5.34:1). 상대 말풍선·날짜·닉네임에는 쓰지 않아요. 대화는 따로 높이가 정해진 상자에서 스크롤하지 않고 페이지가 스크롤돼요. 채팅방에는 사이트 푸터가 없고(채팅함에는 있어요), 대화가 짧아도 입력창은 화면 아래에 있어요.</p>
   </section>
 
   <!-- 06 -->
@@ -498,7 +498,7 @@
         <ul>
           <li>컴포넌트에 hex 값이나 <code>[13px]</code> 같은 임의 값을 쓰지 않아요</li>
           <li>제목 위 작은 라벨(kicker)을 달지 않아요</li>
-          <li>그라데이션 글자와 그림자를 쓰지 않아요. 흐림은 모바일 메뉴·대화상자 배경에만 써요</li>
+          <li>그라데이션 글자와 바깥 그림자를 쓰지 않아요. 흐림은 모바일 메뉴·대화상자 배경에만 써요</li>
           <li>모집 카드에 가짜 스크린샷을, 어디에도 지어낸 후기·수치를 넣지 않아요 (채팅 카드의 시연용 프로젝트 이미지는 예외)</li>
           <li>재단선을 히어로 밖에 쓰지 않아요</li>
           <li>한 화면에 주요 버튼을 둘 이상 두지 않아요</li>

@@ -425,10 +425,12 @@ export function validateRecruitmentForm(formData: FormData, maxCapacity: number,
   }
 
   /* 테스트 항목: 제목과 설명이 둘 다 빈 줄은 없는 것으로 본다 */
-  const { min, max, titleLength, descriptionLength } = RECRUITMENT_LIMIT.testItems;
+  const { min, max, titleLength, descriptionLength, imageCount } = RECRUITMENT_LIMIT.testItems;
   const titles = formData.getAll("testItemTitle").map((item) => String(item).trim());
   const descriptions = formData.getAll("testItemDescription").map((item) => String(item).trim());
-  const filled = titles.filter((title, index) => title || descriptions[index]).length;
+  /* 체크를 끈 줄처럼 빠지지 않도록 이미지 정보는 줄마다 하나씩 온다 */
+  const images = formData.getAll("testItemImagesMeta").map((item) => parseFileMeta(item));
+  const filled = titles.filter((title, index) => title || descriptions[index] || images[index]?.length).length;
   if (filled < min) {
     errors.testItems = `테스트 항목을 ${min}개 이상 적어 주세요`;
     /* 첫 칸에도 오류를 달아 포커스가 그리로 가게 한다 */
@@ -437,7 +439,10 @@ export function validateRecruitmentForm(formData: FormData, maxCapacity: number,
   else if (filled > max) errors.testItems = `테스트 항목은 ${max}개까지 적을 수 있어요`;
   titles.forEach((title, index) => {
     const description = descriptions[index] ?? "";
-    if (!title && !description) return;
+    const rowImages = images[index];
+    if (!title && !description && !rowImages?.length) return;
+    const imageError = rowImages === null ? "이미지 정보를 읽지 못했어요" : checkImages(rowImages ?? [], imageCount);
+    if (imageError) errors[`testItemImages-${index}`] = imageError;
     if (!title) errors[`testItemTitle-${index}`] = "항목 이름을 적어 주세요";
     else if (title.length > titleLength) errors[`testItemTitle-${index}`] = `항목 이름은 ${titleLength}자까지 적을 수 있어요`;
     if (description.length > descriptionLength) {

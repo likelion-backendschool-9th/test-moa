@@ -173,7 +173,7 @@ export function ProjectForm({
  * 브라우저 임시 주소면 풀어 준다. 저장된 이미지 주소는 그대로 둔다.
  * 이미지를 바꾸거나 지울 때만 부른다. Cache Components는 화면을 떠나도 상태를 남겨 뒤로 오면 같은 주소를 다시 쓰고, 남은 주소는 탭을 닫을 때 브라우저가 푼다.
  */
-function revoke(url: string) {
+export function revoke(url: string) {
   if (url.startsWith("blob:")) URL.revokeObjectURL(url);
 }
 
@@ -185,6 +185,7 @@ type FileFieldProps = {
   error?: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   buttonLabel: string;
+  multiple?: boolean;
   children?: ReactNode;
 };
 
@@ -192,7 +193,7 @@ type FileFieldProps = {
  * 파일 고르기 칸. 브라우저 기본 버튼은 언어를 바꿀 수 없어 입력란을 숨기고 라벨을 버튼처럼 그린다. 시연용이라 파일은 폼으로 보내지 않아서 input에 name을 달지 않는다.
  * 고른 이미지(children)는 입력란 아래에 그린다.
  */
-function FileField({ name, label, accept, hint, error, onChange, buttonLabel, children }: FileFieldProps) {
+export function FileField({ name, label, accept, hint, error, onChange, buttonLabel, multiple = false, children }: FileFieldProps) {
   const id = `field-${name}`;
   const describedBy = [`${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
   return (
@@ -204,6 +205,7 @@ function FileField({ name, label, accept, hint, error, onChange, buttonLabel, ch
         id={id}
         type="file"
         accept={accept}
+        multiple={multiple}
         onChange={onChange}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}

@@ -1,14 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
 import { formatCredits } from "@/lib/format";
 import { createRecruitment } from "../actions";
-import { EMPTY_FORM_STATE, RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type FormState, type SelectionMode } from "../types";
+import { checkImages, formatBytes, type FileMeta } from "../media";
+import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type FormState, type SelectionMode } from "../types";
 import { FormSection } from "./FormSection";
-import { useFocusFirstError } from "./ProjectForm";
+import { FileField, revoke, useFocusFirstError } from "./ProjectForm";
 import { TextField } from "./TextField";
 
 /*
@@ -30,6 +31,13 @@ type RecruitmentFormProps = {
   maxCapacity: number;
 };
 
+/** 항목에 고른 이미지. 브라우저 임시 주소(blob:)로 미리 보여 준다 */
+type ItemImage = FileMeta & { url: string };
+
+type ItemRow = { title: string; description: string; required: boolean; images: ItemImage[] };
+
+const emptyRow = (): ItemRow => ({ title: "", description: "", required: true, images: [] });
+
 /** 테스트 모집 작성 폼 */
 export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraReward, maxCapacity }: RecruitmentFormProps) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
@@ -39,11 +47,13 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
   const formRef = useFocusFirstError(state);
   const { values, errors } = state;
   /* 항목 줄은 화면 상태로 들고 있어서 제출 뒤 오류가 와도 적은 값이 남는다 */
-  const [items, setItems] = useState([{ title: "", description: "", required: true }]);
+  const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  /* 고를 때 나온 이미지 오류는 줄 번호로 들고 있다가 줄을 지우면 함께 지운다 */
+  const [pickErrors, setPickErrors] = useState<Record<number, string | undefined>>({});
   /* 줄 오류는 제출할 때의 순서로 찾으므로, 줄을 지우면 다음 제출까지 숨긴다 */
   const [dismissedFor, setDismissedFor] = useState<FormState | null>(null);
   const rowErrors = dismissedFor === state ? {} : errors;
-  const { max, titleLength, descriptionLength } = RECRUITMENT_LIMIT.testItems;
+  const { max, titleLength, descriptionLength, imageCount } = RECRUITMENT_LIMIT.testItems;
   const selectionMode = values.selectionMode || (isSubscription ? "selection" : "firstCome");
 
   /* 폼 액션이 끝나면 React가 폼을 초기화해 체크칸이 처음 값으로 돌아간다. 글자 칸과 달리 다시 맞춰 주지 않아 직접 되돌린다 */
@@ -57,8 +67,28 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
     });
   }, [state, formRef]);
 
-  function updateItem(index: number, change: Partial<(typeof items)[number]>) {
+  function updateItem(index: number, change: Partial<ItemRow>) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...change } : item)));
+  }
+
+  /* 한 장이라도 한도를 넘으면 이번에 고른 파일은 넣지 않고 이유를 알린다 */
+  function addImages(index: number, event: ChangeEvent<HTMLInputElement>) {
+    const picked = [...(event.target.files ?? [])];
+    event.target.value = "";
+    if (picked.length === 0) return;
+    const current = items[index].images;
+    const problem = checkImages([...current, ...picked], imageCount);
+    setPickErrors((prev) => ({ ...prev, [index]: problem }));
+    if (problem) return;
+    updateItem(index, {
+      images: [...current, ...picked.map((file) => ({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) }))],
+    });
+  }
+
+  function removeImage(index: number, url: string) {
+    revoke(url);
+    updateItem(index, { images: items[index].images.filter((image) => image.url !== url) });
+    setPickErrors((prev) => ({ ...prev, [index]: undefined }));
   }
 
   return (
@@ -191,6 +221,40 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                 error={rowErrors[`testItemDescription-${index}`]}
                 hint={`${descriptionLength}자까지`}
               />
+              <FileField
+                name={`testItemImages-${index}`}
+                label={`항목 ${index + 1} 이미지 (선택)`}
+                accept={PROJECT_MEDIA_LIMIT.images.types.join(",")}
+                multiple
+                hint={`PNG, JPG, WEBP · 한 장에 ${formatBytes(PROJECT_MEDIA_LIMIT.images.bytes)}까지 · ${imageCount}장까지 · 고른 순서대로 보여요`}
+                error={pickErrors[index] ?? rowErrors[`testItemImages-${index}`]}
+                onChange={(event) => addImages(index, event)}
+                buttonLabel="이미지 추가"
+              >
+                {item.images.length > 0 && (
+                  <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {item.images.map((image) => (
+                      <li key={image.url} data-testid="test-item-image" className="flex flex-col gap-1">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-muted object-cover outline -outline-offset-1 outline-line" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index, image.url)}
+                          aria-label={`항목 ${index + 1} ${image.name} 삭제`}
+                          className="text-xs font-semibold text-text-muted hover:text-text"
+                        >
+                          삭제
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </FileField>
+              <input
+                type="hidden"
+                name="testItemImagesMeta"
+                value={JSON.stringify(item.images.map(({ name, size, type }) => ({ name, size, type })))}
+              />
               <div className="flex flex-wrap items-center justify-between gap-3">
                 {/* 체크를 끈 줄은 값이 안 보내지므로, 몇 번째 줄이 필수인지 줄 번호로 보낸다 */}
                 <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
@@ -212,7 +276,9 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                     variant="secondary"
                     className="w-fit"
                     onClick={() => {
+                      item.images.forEach((image) => revoke(image.url));
                       setItems((prev) => prev.filter((_, i) => i !== index));
+                      setPickErrors({});
                       setDismissedFor(state);
                     }}
                     aria-label={`항목 ${index + 1} 삭제`}
@@ -230,7 +296,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
             variant="secondary"
             className="w-fit"
             disabled={items.length >= max}
-            onClick={() => setItems((prev) => [...prev, { title: "", description: "", required: true }])}
+            onClick={() => setItems((prev) => [...prev, emptyRow()])}
           >
             항목 추가
           </Button>

@@ -198,9 +198,12 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       accessUrl: "https://booklog.example.com",
       conditions: "한 달에 책을 한 권 이상 읽는 분\n휴대폰 브라우저(크롬·사파리)로 참여할 수 있는 분",
       testItems: [
-        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 검색해 내 서재에 등록해 주세요.", required: true },
-        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장해 주세요.", required: true },
-        { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요.", required: false },
+        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 검색해 내 서재에 등록해 주세요.", required: true, images: [
+            { url: "/sample/feedback/booklog-search.svg", name: "책 검색 화면" },
+            { url: "/sample/projects/booklog.svg", name: "내 서재 화면" },
+          ] },
+        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장해 주세요.", required: true, images: [] },
+        { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요.", required: false, images: [] },
       ],
     },
     "booklog-first": {
@@ -209,8 +212,8 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       accessUrl: "https://beta.booklog.example.com",
       conditions: "",
       testItems: [
-        { id: "booklog-first-t1", title: "책 검색하기", description: "제목으로 책을 찾아 보세요.", required: true },
-        { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요.", required: true },
+        { id: "booklog-first-t1", title: "책 검색하기", description: "제목으로 책을 찾아 보세요.", required: true, images: [] },
+        { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요.", required: true, images: [] },
       ],
     },
     "folio-builder": {
@@ -219,8 +222,8 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       accessUrl: "https://folio.example.com",
       conditions: "포트폴리오를 만들어 본 적이 있는 분",
       testItems: [
-        { id: "folio-t1", title: "템플릿 고르기", description: "마음에 드는 템플릿을 하나 골라 주세요.", required: true },
-        { id: "folio-t2", title: "프로젝트 추가하기", description: "프로젝트 하나를 추가하고 미리보기로 확인해 주세요.", required: true },
+        { id: "folio-t1", title: "템플릿 고르기", description: "마음에 드는 템플릿을 하나 골라 주세요.", required: true, images: [] },
+        { id: "folio-t2", title: "프로젝트 추가하기", description: "프로젝트 하나를 추가하고 미리보기로 확인해 주세요.", required: true, images: [] },
       ],
     },
     "folio-builder-old": {
@@ -228,7 +231,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       selectionMode: "firstCome",
       accessUrl: "https://old.folio.example.com",
       conditions: "",
-      testItems: [{ id: "folio-old-t1", title: "템플릿 고르기", description: "첫 버전 템플릿 화면을 써 보세요.", required: true }],
+      testItems: [{ id: "folio-old-t1", title: "템플릿 고르기", description: "첫 버전 템플릿 화면을 써 보세요.", required: true, images: [] }],
     },
   };
 

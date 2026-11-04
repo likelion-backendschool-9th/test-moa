@@ -8,6 +8,7 @@ import type { PublicRecruitmentView } from "../service";
 import { DEFAULT_PROJECT_IMAGE_URL, SELECTION_MODE_LABEL } from "../types";
 import { ProjectDescription } from "./ProjectDescription";
 import { RecruitmentStatusBadge } from "./StatusBadge";
+import { TestItemImages } from "./TestItemImages";
 
 /** 지원할 수 없을 때의 안내. 모집 중이면 지원 버튼을 보여 준다 */
 const CLOSED_MESSAGE = {
@@ -109,6 +110,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
                       <Badge tone={item.required ? "neutral" : "outline"}>{item.required ? "필수" : "선택"}</Badge>
                     </p>
                     {item.description && <p className="text-sm text-text-muted">{item.description}</p>}
+                    <TestItemImages item={item} />
                   </li>
                 ))}
               </ol>

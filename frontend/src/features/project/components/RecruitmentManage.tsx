@@ -9,6 +9,7 @@ import { CANCEL_REQUEST_LABEL, SELECTION_MODE_LABEL, type CancelRequest, type Pr
 import { CancelRequestButton } from "./CancelRequestButton";
 import { ExternalLink } from "./ProjectDetail";
 import { RecruitmentStatusBadge } from "./StatusBadge";
+import { TestItemImages } from "./TestItemImages";
 
 /* 테스트 모집 관리 화면의 머리 요약, 탭 줄, 분석 탭 */
 
@@ -131,6 +132,9 @@ function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
                   {item.required ? "필수" : "선택"}
                 </Badge>
                 {item.description && <span className="text-text-muted"> · {item.description}</span>}
+                <div className="pt-1">
+                  <TestItemImages item={item} />
+                </div>
               </li>
             ))}
           </ol>

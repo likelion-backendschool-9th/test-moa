@@ -72,7 +72,14 @@ export const RECRUITMENT_STATUS_LABEL: Record<RecruitmentStatus, string> = {
 };
 
 /** 테스터에게 해 달라고 할 작업 하나 (백엔드 TestItem). required는 ERD의 is_required이고 TestItem 엔티티에는 아직 없다 */
-export type TestItem = { id: string; title: string; description: string; required: boolean };
+export type TestItem = {
+  id: string;
+  title: string;
+  description: string;
+  required: boolean;
+  /** 항목 설명을 돕는 이미지. 배열 순서가 ERD의 sort_order다 (백엔드 ProjectImage.testItem) */
+  images: ProjectImage[];
+};
 
 /** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원 순서대로 자동 확정, 선발형은 개발자가 직접 확정·거절 */
 export type SelectionMode = "firstCome" | "selection";
@@ -166,7 +173,7 @@ export const PROJECT_MEDIA_LIMIT = {
 export const RECRUITMENT_LIMIT = {
   titleLength: 50,
   conditionsLength: 500,
-  testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300 },
+  testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300, imageCount: 5 },
   cancelReasonLength: 300,
 } as const;
 

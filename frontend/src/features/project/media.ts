@@ -18,8 +18,8 @@ export function formatBytes(bytes: number) {
 }
 
 /** 이미지 목록이 한도 안인지. 문제가 있으면 안내 문구를 돌려준다 */
-export function checkImages(files: FileMeta[]): string | undefined {
-  const { count, bytes, types } = PROJECT_MEDIA_LIMIT.images;
+export function checkImages(files: FileMeta[], count: number = PROJECT_MEDIA_LIMIT.images.count): string | undefined {
+  const { bytes, types } = PROJECT_MEDIA_LIMIT.images;
   if (files.length > count) return `이미지는 ${count}장까지 올릴 수 있어요`;
   if (files.some((file) => !(types as readonly string[]).includes(file.type))) return "PNG, JPG, WEBP 이미지만 올릴 수 있어요";
   if (files.some((file) => file.size > bytes)) return `이미지는 ${formatBytes(bytes)}까지 올릴 수 있어요`;

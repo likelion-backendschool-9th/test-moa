@@ -71,7 +71,7 @@ export const RECRUITMENT_STATUS_LABEL: Record<RecruitmentStatus, string> = {
   cancelled: "취소",
 };
 
-/** 테스터에게 해 달라고 할 작업 하나 (백엔드 TestItem). required는 프론트에서 먼저 정했고 백엔드에는 아직 칸이 없다 */
+/** 테스터에게 해 달라고 할 작업 하나 (백엔드 TestItem). required는 ERD의 is_required이고 TestItem 엔티티에는 아직 없다 */
 export type TestItem = { id: string; title: string; description: string; required: boolean };
 
 /** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원 순서대로 자동 확정, 선발형은 개발자가 직접 확정·거절 */

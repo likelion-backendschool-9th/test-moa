@@ -1,16 +1,14 @@
 /** 운영자가 처리하는 요청 종류 */
-export type AdminRequestKind = "report" | "withdrawal" | "cancellation";
+export type AdminRequestKind = "report" | "withdrawal";
 
 export const ADMIN_REQUEST_LABEL: Record<AdminRequestKind, string> = {
   report: "신고",
   withdrawal: "출금",
-  cancellation: "모집 취소",
 };
 
 export const ADMIN_REQUEST_PATH: Record<AdminRequestKind, string> = {
   report: "/admin/reports",
   withdrawal: "/admin/withdrawals",
-  cancellation: "/admin/cancellations",
 };
 
 /** 신고 대상 */
@@ -103,7 +101,7 @@ export type Report = {
   review?: ReportReview;
 };
 
-/** 관리 목록의 탭. 신고·출금(나중에 모집 취소도)이 같은 두 탭을 쓴다 */
+/** 관리 목록의 탭. 신고·출금이 같은 두 탭을 쓴다 */
 export type ListTab = "pending" | "done";
 
 /** 출금 목록 주소. 기본 탭(처리 대기)과 빈 값은 쓰지 않는다. open은 모달로 연 요청 키다 */
@@ -116,7 +114,7 @@ export function withdrawalsHref(options: { tab?: ListTab; open?: string; process
   return search ? `/admin/withdrawals?${search}` : "/admin/withdrawals";
 }
 
-/** 운영자 홈·목록에서 요청 한 건으로 가는 주소. 출금은 목록 모달(?open=), 나머지는 상세다 */
+/** 운영자 홈·목록에서 요청 한 건으로 가는 주소. 출금은 목록 모달(?open=), 신고는 상세다 */
 export function adminRequestHref(kind: AdminRequestKind, id: string) {
   if (kind === "withdrawal") return withdrawalsHref({ open: id });
   return `${ADMIN_REQUEST_PATH[kind]}/${id}`;
@@ -147,10 +145,10 @@ export function isRejectReason(value: unknown): value is RejectReason {
   return typeof value === "string" && Object.hasOwn(REJECT_REASONS, value);
 }
 
-/** 출금·모집 취소 처리 양식이 막힌 이유. 저장 공간 부족은 memo, 기타에 메모가 없으면 note */
+/** 출금 처리 양식이 막힌 이유. 저장 공간 부족은 memo, 기타에 메모가 없으면 note */
 export type RequestFormError = "decision" | "reason" | "note" | "memo";
 
-/** 출금·모집 취소 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
+/** 출금 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
 export type RequestFormState = { error: RequestFormError | null };
 
 /** 출금 처리 기록. 처리 전 요청에는 없다. 반려에만 reason이 있다 */
@@ -194,76 +192,11 @@ export function maskAccount(accountNumber: string) {
   return `****${accountNumber.slice(-4)}`;
 }
 
-/** 운영자의 모집 취소 처리 결과 */
-export type CancellationDecision = "approved" | "rejected";
-
-export const CANCELLATION_DECISION_LABEL: Record<CancellationDecision, string> = {
-  approved: "승인",
-  rejected: "반려",
-};
-
-export function isCancellationDecision(value: unknown): value is CancellationDecision {
-  return value === "approved" || value === "rejected";
-}
-
-/** 모집 취소 반려 사유. 문구는 개발자에게 보인다. "기타"는 메모가 사유가 된다 */
-export const CANCELLATION_REJECT_REASONS = {
-  testing: "이미 테스트가 진행 중이에요",
-  reason: "취소 사유가 부족해요",
-  other: "기타",
-} as const;
-
-export type CancellationRejectReason = keyof typeof CANCELLATION_REJECT_REASONS;
-
-export function isCancellationRejectReason(value: unknown): value is CancellationRejectReason {
-  return typeof value === "string" && Object.hasOwn(CANCELLATION_REJECT_REASONS, value);
-}
-
-/** 모집 취소 처리 기록. 반려에만 reason이 있다. 메모는 운영자 기록이고 "기타"일 때만 개발자에게 사유로 보인다 */
-export type CancellationReview = {
-  decision: CancellationDecision;
-  reason?: CancellationRejectReason;
-  memo: string;
-  processedAt: string;
-};
-
-/** 개발자에게 보이는 반려 사유 */
-export function cancellationRejectText(review: CancellationReview) {
-  if (!review.reason) return "";
-  return review.reason === "other" ? review.memo : CANCELLATION_REJECT_REASONS[review.reason];
-}
-
-/**
- * 모집 취소 요청. id가 상세 주소의 cancellationKey다.
- * 확정 테스터 수와 제출된 피드백 수는 요청할 때의 값이다. 보상은 테스트를 완료해야 지급되고
- * 취소는 테스트 전에 요청하므로, 승인해도 지급할 보상이 없다(docs/frontend/admin-cancellations.md).
- */
-export type CancellationRequest = {
-  id: string;
-  recruitmentName: string;
-  /** 모집 글 주소 /recruitments/:slug */
-  recruitmentSlug: string;
-  developerNickname: string;
-  /** 개발자가 적은 취소 사유 */
-  reason: string;
-  /** 이미 참여가 확정된 테스터 수. 승인하면 이들의 참여도 함께 취소된다 */
-  confirmedCount: number;
-  /** 제출된 피드백 수. 1건 이상이면 테스트가 이미 시작된 것이다 */
-  submittedFeedbackCount: number;
-  createdAt: string;
-  review?: CancellationReview;
-};
-
-/** 피드백이 제출됐으면 테스트가 이미 시작된 모집 건이다 */
-export function hasTestingStarted(request: CancellationRequest) {
-  return request.submittedFeedbackCount > 0;
-}
-
-/** 세 종류를 합친 대기열 항목 */
+/** 두 종류를 합친 대기열 항목 */
 export type PendingItem = {
   kind: AdminRequestKind;
   id: string;
-  /** 줄에 보여 줄 대상 이름. 신고·모집 취소는 모집 건, 출금은 닉네임 */
+  /** 줄에 보여 줄 대상 이름. 신고는 모집 건, 출금은 닉네임 */
   title: string;
   createdAt: string;
   /** 72시간이 지나도록 검토되지 않은 신고 */
@@ -275,9 +208,6 @@ export type AdminSummary = {
   heldRewardCount: number;
   withdrawalCount: number;
   withdrawalAmount: number;
-  cancellationCount: number;
-  /** 확정 테스터가 있는 모집 취소 요청 수 */
-  cancellationWithTestersCount: number;
 };
 
 const OVERDUE_MS = 72 * 60 * 60 * 1000;

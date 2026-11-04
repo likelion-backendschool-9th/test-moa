@@ -14,7 +14,7 @@
 | S163~S184 | 개인정보 수정 (`frontend/profile-edit.md`) | `profile.spec.ts` |
 | S191~S219, S281, S284 | 출금 요청 관리 (`frontend/admin-withdrawals.md`) | `admin-withdrawals.spec.ts` |
 | S220~S249, S280, S527 | 회원 관리 (`frontend/admin-users.md`) | `admin-users.spec.ts` |
-| S250~S279, S283 | 모집 취소 요청 관리 (`frontend/admin-cancellations.md`) | `admin-cancellations.spec.ts` |
+| S250~S279, S283 | 삭제됨(결번, #43) | — |
 | S286~S316, S347 | 로그인·회원가입 (`frontend/auth.md`) | `auth.spec.ts`, `no-js-forms.spec.ts` |
 | S323~S334, S341~S346 | 헤더 (`frontend/header.md`) | `header.spec.ts`, `header-layout.spec.ts`, `mobile-menu.spec.ts` |
 | S348~S381 | 크레딧 (`frontend/credits.md`) | `credits.spec.ts` |
@@ -60,7 +60,7 @@
 | R23~R30 | 신고·제재 관리 (`frontend/admin-reports.md`) |
 | R31~R38 | 출금 요청 관리 (`frontend/admin-withdrawals.md`) |
 | R39~R46 | 회원 관리 (`frontend/admin-users.md`) |
-| R47~R54 | 모집 취소 요청 관리 (`frontend/admin-cancellations.md`) |
+| R47~R54 | 삭제됨(결번, #43) |
 | R101~R112 | 개발자 프로젝트 (`frontend/projects.md`) |
 | R113~R122 | 채팅함 (`frontend/chats.md`) |
 | R123~R129 | 크레딧 (`frontend/credits.md`) |

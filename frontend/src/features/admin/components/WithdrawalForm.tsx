@@ -4,7 +4,7 @@ import { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "../reviews";
 import { REJECT_REASONS } from "../types";
 import { RequestReviewForm } from "./RequestReviewForm";
 
-/** 출금 처리 양식. 모양과 동작은 모집 취소와 같은 RequestReviewForm이고 문구만 출금에 맞춘다 */
+/** 출금 처리 양식. RequestReviewForm에 출금 문구·사유·서버 함수를 넘긴다 */
 export function WithdrawalForm({
   withdrawalKey,
   amount,

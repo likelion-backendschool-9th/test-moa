@@ -3,8 +3,6 @@ import { setDemo } from "./helpers";
 
 /* docs/frontend/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
-/* 등록에 필요한 대표 이미지. 시연용이라 내용은 상관없다 */
-const COVER = { name: "화면.png", mimeType: "image/png", buffer: Buffer.alloc(1024) };
 const BOOKLOG = "/my/projects/booklog";
 const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
@@ -47,14 +45,7 @@ test.describe("R103 프로젝트 등록·수정", () => {
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page.getByText("이름은 50자까지 적을 수 있어요")).toBeVisible();
 
-    /* 대표 이미지는 필수이고, 고르면 오류가 사라진다 */
     await name.fill("새 서비스");
-    await page.getByRole("button", { name: "등록" }).click();
-    await expect(page.getByText("대표 이미지를 골라 주세요")).toBeVisible();
-    await expect(page.getByLabel("대표 이미지")).toBeFocused();
-    await expect(page).toHaveURL("/my/projects/new");
-    await page.getByLabel("대표 이미지").setInputFiles(COVER);
-    await expect(page.getByText("대표 이미지를 골라 주세요")).toHaveCount(0);
 
     /* 상세 설명은 2000자까지다 */
     await page.getByLabel("상세 설명 (선택)").fill("가".repeat(2001));
@@ -69,7 +60,6 @@ test.describe("R103 프로젝트 등록·수정", () => {
   test("S491 등록하면 목록으로 가고 시연 안내가 보인다", async ({ page }) => {
     await page.goto("/my/projects/new");
     await page.getByLabel("프로젝트 이름").fill("새 서비스");
-    await page.getByLabel("대표 이미지").setInputFiles(COVER);
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page).toHaveURL("/my/projects?notice=saved");
     await expect(page.getByText("시연용이라 실제로 저장되지는 않아요")).toBeVisible();
@@ -102,7 +92,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
   });
 
   test("S145 등록 폼에 이름·상세 설명·대표 이미지만 있다", async ({ page }) => {
-    for (const label of ["프로젝트 이름", "상세 설명 (선택)", "대표 이미지"]) {
+    for (const label of ["프로젝트 이름", "상세 설명 (선택)", "대표 이미지 (선택)"]) {
       await expect(page.getByLabel(label)).toBeVisible();
     }
     await expect(page.getByLabel("한 줄 소개")).toHaveCount(0);
@@ -113,7 +103,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
   });
 
   test("S146 대표 이미지를 고르면 썸네일이 보이고, 다시 고르면 바뀌며, 한도를 넘으면 막는다", async ({ page }) => {
-    const input = page.getByLabel("대표 이미지");
+    const input = page.getByLabel("대표 이미지 (선택)");
     await expect(input).not.toHaveAttribute("multiple");
     await expect(page.getByText("이미지 고르기")).toBeVisible();
     await input.setInputFiles(png("첫화면.png"));
@@ -141,7 +131,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
   test("S363 다른 화면에 갔다가 뒤로 와도 고른 이미지가 깨지지 않는다", async ({ page }) => {
     /* 1x1 PNG. 실제로 그려지는지 봐야 해서 올바른 이미지를 쓴다 */
     const buffer = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-    await page.getByLabel("대표 이미지").setInputFiles({ name: "첫화면.png", mimeType: "image/png", buffer });
+    await page.getByLabel("대표 이미지 (선택)").setInputFiles({ name: "첫화면.png", mimeType: "image/png", buffer });
     const items = page.getByTestId("image-item");
     await expect(items).toHaveCount(1);
 
@@ -156,7 +146,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await expect.poll(() => hero.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
   });
 
-  test("S366 샘플 이미지가 상세와 수정 폼에 보이고, 수정 때 이미지를 지우면 저장할 수 없다", async ({ page }) => {
+  test("S366 샘플 이미지가 상세와 수정 폼에 보이고, 이미지가 없으면 기본 이미지가 보인다", async ({ page }) => {
     await page.goto(BOOKLOG);
     const cover = page.getByRole("img", { name: /대표 이미지$/ });
     await expect(cover).toBeVisible();
@@ -169,12 +159,20 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await expect.poll(() => cover.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
 
     await page.goto("/my/projects/todo-memo");
-    await expect(cover).toBeVisible();
+    const fallback = page.getByRole("img", { name: "기본 프로젝트 이미지" });
+    await expect(fallback).toBeVisible();
+    await expect.poll(() => fallback.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
+    await page.goto("/my/projects/todo-memo/edit");
+    await expect(page.getByTestId("image-item")).toHaveCount(0);
 
+    /* 수정에서 이미지를 지워도 저장되고, 미리보기에는 기본 이미지가 보인다 */
     await page.goto(`${BOOKLOG}/edit`);
     await page.getByRole("button", { name: /삭제$/ }).click();
+    await page.getByRole("button", { name: "미리보기" }).click();
+    await expect(page.getByRole("dialog", { name: "미리보기" }).getByRole("img", { name: "기본 프로젝트 이미지" })).toBeVisible();
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "저장" }).click();
-    await expect(page.getByText("대표 이미지를 골라 주세요")).toBeVisible();
+    await expect(page).toHaveURL(`${BOOKLOG}?notice=saved`);
   });
 
   test("S149 미리보기 버튼을 누르면 지금 적은 내용을 상세 화면 모양으로 보여 준다", async ({ page }) => {
@@ -197,7 +195,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
   });
 
   test("#62-S1 설명이 이미지보다 길면 이미지 높이까지 보이고 더 보기로 펼친다", async ({ page }) => {
-    await page.getByLabel("대표 이미지").setInputFiles(png("첫화면.png"));
+    await page.getByLabel("대표 이미지 (선택)").setInputFiles(png("첫화면.png"));
     await page.getByLabel("상세 설명 (선택)").fill("짧은 설명이에요");
     let dialog = await openPreview(page);
     await expect(dialog.getByRole("button", { name: "더 보기" })).toHaveCount(0);

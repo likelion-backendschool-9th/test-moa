@@ -17,8 +17,9 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-(--z-header) border-b border-line bg-surface">
       <Container className="flex flex-wrap items-center gap-x-6 gap-y-1 py-3 lg:flex-nowrap">
+        {/* 글자 로고. moa만 강조색 (DESIGN.md 로고) */}
         <Link href="/" aria-label="Test Moa" className="text-2xl font-extrabold tracking-[-0.04em] whitespace-nowrap">
-          test moa
+          test <span className="text-accent">moa</span>
         </Link>
         <Suspense fallback={<NavList items={getNavItems(null)} />}>
           <MainNavSlot />

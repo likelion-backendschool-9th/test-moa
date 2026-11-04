@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
-export const alt = "Test Moa · 새 서비스를 먼저 써 보고 크레딧을 받으세요";
+export const alt = "Test Moa · 써 보고, 남기고, 받고";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -31,10 +31,10 @@ export default async function Image() {
           fontFamily: "Wanted Sans Variable",
         }}
       >
-        <div style={{ fontSize: 40, color: COLORS.accent }}>test moa</div>
+        <div style={{ display: "flex", fontSize: 40 }}>test<span style={{ color: COLORS.accent, marginLeft: 10 }}>moa</span></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div style={{ fontSize: 72, lineHeight: 1.15, letterSpacing: -2 }}>새 서비스를 먼저 써 보고</div>
-          <div style={{ fontSize: 72, lineHeight: 1.15, letterSpacing: -2 }}>크레딧을 받으세요</div>
+          <div style={{ fontSize: 96, lineHeight: 1.15, letterSpacing: -3 }}>써 보고, 남기고, 받고</div>
+          <div style={{ fontSize: 40, lineHeight: 1.3, color: COLORS.muted }}>새 서비스를 써 보고 피드백을 남기면 크레딧을 받아요.</div>
         </div>
         <div style={{ fontSize: 32, color: COLORS.muted }}>개발 경험이 없어도 참여할 수 있는 테스터 모집 플랫폼</div>
       </div>

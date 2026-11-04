@@ -52,7 +52,8 @@ export function WithdrawalModal({ title, closeHref, withdrawalKey, children }: W
         skipCloseNav.current = true;
         dialog.close();
       }
-      window.scrollTo(0, scrollYRef.current);
+      /* CSS의 smooth 스크롤을 따르지 않아야 다음 layout effect도 복원된 위치를 읽는다. */
+      window.scrollTo({ top: scrollYRef.current, left: 0, behavior: "instant" });
     };
   }, []);
 

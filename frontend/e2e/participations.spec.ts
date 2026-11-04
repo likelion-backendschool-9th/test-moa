@@ -202,6 +202,15 @@ test.describe("#46-R1 보기 방식", () => {
     await expect.poll(() => columnCount(page)).toBe(3);
   });
 
+  test("#46-S13 로그인이 끊긴 채 보기 방식을 바꾸면 저장하지 않고 로그인으로 보낸다", async ({ page, context }) => {
+    await page.goto("/my/participations?tab=history");
+    await expect(viewButton(page, "그리드")).toBeVisible();
+    await setDemo(context, { role: "guest" });
+    await viewButton(page, "그리드").click();
+    await expect(page).toHaveURL(/\/login\?next=%2Fmy%2Fparticipations%3Ftab%3Dhistory$/);
+    expect((await context.cookies()).some((cookie) => cookie.name === "participation-view")).toBe(false);
+  });
+
   test("#46-S8 JS 번들을 받기 전에 눌러도 보기 방식이 바뀐다", async ({ page }) => {
     const bundle = "**/_next/static/**/*.js";
     await page.route(bundle, (route) => route.abort());

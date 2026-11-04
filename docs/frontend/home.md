@@ -2,6 +2,8 @@
 
 지금 홈 화면이 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. S번호는 `frontend/e2e`의 테스트 이름과 1:1로 맞는다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
 
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
+
 ## 한눈에
 - 스택: Next.js 16(App Router, Cache Components), Tailwind CSS v4, TypeScript, Playwright E2E. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성(위에서부터):
@@ -16,20 +18,20 @@
 ## 1. 테마와 글꼴 (R1)
 라이트·다크는 OS 설정을 따르고, 색·모션 값은 `globals.css` 토큰에만 정의하며, 글꼴은 Wanted Sans 하나다.
 
-S56 라이트
+S56 라이트 [직접]
 - Given `prefers-color-scheme: light`
 - Then  `body` 배경이 `rgb(239, 239, 236)`이다
 - Then  `--accent`가 `#0f7c4a`이다
 
-S57 다크
+S57 다크 [직접]
 - Given `prefers-color-scheme: dark`
 - Then  `body` 배경이 `rgb(0, 0, 0)`이다
 - Then  `--accent`가 `#129357`이다
 
-S58 글꼴
+S58 글꼴 [직접]
 - Then  `body`의 `font-family`가 Wanted Sans로 시작한다
 
-S80 공유 이미지
+S80 공유 이미지 [직접]
 - Then  `og:image` 메타 태그가 있다
 - Then  그 주소가 200, `image/png`로 열린다
 
@@ -38,10 +40,10 @@ S80 공유 이미지
 
 헤더 오른쪽은 로그인 상태에 따라 "로그인"·"회원가입"이나 "마이페이지"·보유 크레딧·"로그아웃"을 보여 준다.
 
-S4 쿠키 없음
+S4 쿠키 없음 [테스트]
 - Then  tester로 본다 (헤더에 "보유 크레딧 12,480" 링크)
 
-S5 알 수 없는 역할
+S5 알 수 없는 역할 [테스트]
 - Given `demo-role=foo`
 - Then  HTTP 200이고 tester로 본다
 
@@ -51,17 +53,17 @@ S5 알 수 없는 역할
 ## 4. 모바일 메뉴 (R4)
 너비 768px 미만에서는 탭 대신 메뉴 버튼이 나오고, 화면 전체 높이 패널이 열린다.
 
-S10 메뉴 버튼
+S10 메뉴 버튼 [직접]
 - Given 너비 375px
 - Then  탭 줄은 없고 "메뉴 열기" 버튼이 있다
 
-S11 열기와 닫기
+S11 열기와 닫기 [직접]
 - When  "메뉴 열기"를 누른다
 - Then  패널 높이가 뷰포트와 같고, 버튼 이름이 "메뉴 닫기"다
 - When  Esc를 누른다
 - Then  패널이 닫히고 포커스가 메뉴 버튼으로 돌아온다
 
-S12 링크 이동 후 닫힘
+S12 링크 이동 후 닫힘 [테스트]
 - When  패널에서 "참여 테스트"를 누른다
 - Then  URL이 `/my/participations`이고 패널이 닫힌다
 
@@ -73,20 +75,20 @@ S12 링크 이동 후 닫힘
 ## 6. 히어로 배너 (R6)
 배너는 서비스 소개, 이벤트, 공지를 5초마다 순환한다. hover·focus 중이거나 reduced motion이면 멈춘다.
 
-S61 첫 화면
+S61 첫 화면 [직접]
 - Then  제목이 "새 서비스를 먼저 써 보고 크레딧을 받으세요"이고 "1 / 3"이 보인다
 - Then  "테스트 둘러보기"가 `#all-tests`를 가리킨다
 
-S62 이벤트
+S62 이벤트 [직접]
 - Given `data-autoplay="on"`
 - When  5초가 지난다
 - Then  "2 / 3", "이벤트", "시연용"이 보이고 "자세히 보기"가 `/events`를 가리킨다
 
-S63 공지
+S63 공지 [직접]
 - When  소개에서 "이전"을 누른다
 - Then  "3 / 3", "공지"가 보이고 "자세히 보기"가 `/notices`를 가리킨다
 
-S64 멈춤
+S64 멈춤 [직접]
 - Given 배너 위에 마우스가 있다 (또는 `prefers-reduced-motion: reduce`)
 - When  10초가 지난다
 - Then  여전히 "1 / 3"이다
@@ -94,58 +96,58 @@ S64 멈춤
 ## 7. 마감 임박 패널 (R7)
 배너 옆 패널은 마감 전이고 정원이 남은 모집 글을 마감이 가까운 순서로 5개 보여 준다.
 
-S65
+S65 [테스트]
 - Then  목록이 5개이고 첫 항목은 "회의록 정리", "D-1"이다
 - Then  정원이 찬 "포트폴리오 빌더"는 없다
 
 ## 8. 구독 모집 (R8)
 배너 아래에는 구독 개발자의 모집 글만 모아 보여 준다. 모든 방문자에게 보인다.
 
-S66 정상
+S66 정상 [직접]
 - Then  "구독 모집" 영역에 카드 3개("북로그", "모아플랜", "레시피핏")가 있고, 모두 "추가 보상"이 있다
 
-S67 없음
+S67 없음 [직접]
 - Given `demo-data=empty`
 - Then  "구독하면 이 자리에 모집 글이 노출돼요"와 "구독 알아보기"(`/my/subscription`)가 보인다
 
 ## 9. 전체 테스트 (R9)
 전체 모집 글 그리드에서 검색, 카테고리, 모집 중만 보기, 정렬을 홈에서 바로 바꾸고, 상태는 URL(`q`, `type`, `open`, `sort`)에 남는다.
 
-S68 기본
+S68 기본 [테스트]
 - Then  카드 10개가 최신순이고 첫 카드는 "가계부 노트", "10개"가 보인다
 
-S69 검색
+S69 검색 [테스트]
 - When  그리드 검색창에 "일정"을 입력한다 (300ms 뒤 반영)
 - Then  URL에 `q=%EC%9D%BC%EC%A0%95`가 붙고 "모아플랜"만 보인다
 
-S70 카테고리와 초기화
+S70 카테고리와 초기화 [테스트]
 - When  "게임"을 누른다
 - Then  URL에 `type=game`이 붙고 "조건에 맞는 테스트가 없어요"가 보인다
 - When  "조건 초기화"를 누른다
 - Then  URL이 `/`이고 카드 10개가 다시 보인다
 
-S71 모집 중만
+S71 모집 중만 [테스트]
 - When  "모집 중만 보기"를 켠다
 - Then  URL에 `open=1`이 붙고 카드 9개, "포트폴리오 빌더"는 없다
 
-S72 정렬
+S72 정렬 [테스트]
 - When  "마감 임박순"을 누른다
 - Then  첫 카드가 "회의록 정리"다
 - When  "보상 많은순"을 누른다
 - Then  첫 카드가 "북로그"다
 
-S73 URL로 열기
+S73 URL로 열기 [테스트]
 - Given `/?type=web&open=1&sort=deadline`으로 연다
 - Then  "웹서비스", "모집 중만 보기", "마감 임박순"이 눌린 상태이고 첫 카드가 "회의록 정리"다
 
-S74 활자 썸네일과 도장
+S74 활자 썸네일과 도장 [직접]
 - Then  카드에 이미지 파일이 없다 (썸네일은 서비스 이름 활자)
 - Then  정원이 찬 카드에 "모집 완료" 도장(`role="img"`)이 있다
 
 ## 10. 로딩 (R10)
 배너는 데이터를 기다리지 않고, 목록은 카드 모양 스켈레톤을 먼저 보여 준다.
 
-S75
+S75 [직접]
 - Given `demo-data=slow` (1.5초 지연)
 - When  `/`에 접속한다 (응답 시작 직후)
 - Then  소개 배너 제목이 이미 보이고 카드 스켈레톤이 보인다
@@ -153,30 +155,46 @@ S75
 
 ## 11. 빈 링크와 404 (R11)
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
+모든 페이지는 좁은 화면에서 넘치지 않고, 보호 페이지는 권한이 없으면 열리지 않는다. 페이지마다 하던 이 확인은 `frontend/e2e/pages.spec.ts`가 페이지 목록(`PAGES`)을 돌며 한 번에 한다. 새 페이지를 만들면 목록에 한 줄 더한다. (고침 #56: 테스트 정리, `docs/test-cleanup.md`)
 
-S26 준비 중 페이지와 내부 링크
+S26 준비 중 페이지와 내부 링크 [테스트]
 - Given `/recruitments`, `/recruitments/:slug`, `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/frontend/auth.md`에서, `/my/chats`는 `docs/frontend/chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
-S27 없는 주소
+S27 없는 주소 [테스트]
 - When  `/nope`에 접속한다
 - Then  HTTP 404이고 맞춤 404에 "홈으로" 링크가 있다
+
+#56-S1 모든 페이지의 좁은 화면 [테스트]
+- Given `PAGES`의 각 페이지를 그 페이지를 볼 수 있는 역할로 연다
+- When  화면 너비가 375px이다
+- Then  HTTP 200이고 h1이 보이며 `scrollWidth`가 `clientWidth`와 같다
+
+#56-S2 보호 페이지의 비로그인 [테스트]
+- Given 비로그인
+- When  `PAGES` 중 회원 페이지에 바로 접속한다
+- Then  `/login?next=<그 주소>`로 간다
+
+#56-S3 운영자 페이지의 일반 회원 [테스트]
+- Given 테스터
+- When  `/admin`으로 시작하는 페이지에 접속한다
+- Then  "운영자만 볼 수 있는 페이지예요" 제목이 보인다
 
 ## 12. 접근성 (R12)
 키보드만으로 홈을 쓸 수 있고, 상태는 보조 기술에 알려진다.
 
-S35 본문 바로가기
+S35 본문 바로가기 [테스트]
 - When  Tab을 한 번 누른다
 - Then  "본문으로 건너뛰기"가 보이고 포커스된다
 - When  Enter를 누른다
 - Then  포커스가 `main`으로 간다
 
-S36 포커스 링
+S36 포커스 링 [테스트]
 - When  Tab으로 "참여 테스트" 탭에 간다
 - Then  `outline-style`이 `none`이 아니다
 
-S79 이름과 상태
+S79 이름과 상태 [직접]
 - Then  전체 테스트 그리드 검색창 1개의 이름이 "테스트 검색"이다 (고침 11-02: 헤더 검색 삭제)
 - Then  결과 수가 `aria-live="polite"`로 읽힌다
 - Then  카테고리 칩은 `aria-pressed`로 선택 상태를 알린다
@@ -184,7 +202,7 @@ S79 이름과 상태
 ## 13. 구조 (R13)
 필터 조작만 클라이언트에서 하고, 검색·정렬과 목업 데이터는 데이터 접근 계층에만 둔다. 확인은 grep으로 한다.
 
-S78
+S78 [명령]
 - When  `grep -rl '"use client"' src`
 - Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 20개, 모두 26개만 나온다: AccountNav(`docs/frontend/my.md`), ChatFilters·ChatCardMenu(`docs/frontend/chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/frontend/chat-room.md`), WithdrawalForm(`docs/frontend/credits.md`), 관리자 CopyAccountButton·RequestReviewForm(`docs/frontend/admin-reports.md` S445), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList(`docs/frontend/projects.md` S516), TodoScroller·FeedbackForm(`docs/frontend/participations.md` S467), ProfileForm·PasswordForm(`docs/frontend/profile-edit.md` S181), LoginForm·SignupForm(`docs/frontend/auth.md` S313), CheckoutForm(`docs/frontend/subscription.md` S533~S543) (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/frontend/header.md` S333. 구독 결제 CheckoutForm 추가)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`

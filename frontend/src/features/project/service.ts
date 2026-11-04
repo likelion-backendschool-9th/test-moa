@@ -312,11 +312,12 @@ export type AiAnalysis =
   | { state: "notEnough"; feedbackCount: number; minFeedbacks: number }
   | { state: "empty" };
 
-/** AI 분석 결과. 피드백이 최소 수보다 적으면 분석하지 않는다 */
+/** AI 분석 결과. 신고된 피드백을 뺀 피드백이 최소 수보다 적으면 분석하지 않는다 */
 export async function getAiAnalysis(path: string, projectKey: string, recruitmentKey: string): Promise<AiAnalysis> {
   const { feedbacks } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
-  if (feedbacks.length < AI_MIN_FEEDBACKS) {
-    return { state: "notEnough", feedbackCount: feedbacks.length, minFeedbacks: AI_MIN_FEEDBACKS };
+  const feedbackCount = feedbacks.filter((item) => item.status !== "reported").length;
+  if (feedbackCount < AI_MIN_FEEDBACKS) {
+    return { state: "notEnough", feedbackCount, minFeedbacks: AI_MIN_FEEDBACKS };
   }
   const summary = await findAiSummary(await requireRole(path), recruitmentKey);
   return summary ? { state: "ready", summary } : { state: "empty" };

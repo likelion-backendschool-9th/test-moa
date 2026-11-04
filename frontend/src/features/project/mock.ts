@@ -21,7 +21,7 @@ const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
 const NICKNAMES = [
-  "김하늘", "이도윤", "박서아", "최지호", "정예린", "강민준", "조하은", "윤시우", "장유나", "임건우",
+  "김하늘", "이도윤", "박서아", "최지호", "윤슬", "강민준", "조하은", "윤시우", "장유나", "임건우",
   "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안", "문서진", "배하린",
 ];
 
@@ -37,8 +37,8 @@ function buildApplications(recruitment: Recruitment, now: Date, counts: Record<A
   const statuses: ApplicationStatus[] = [
     ...Array<ApplicationStatus>(counts.confirmed).fill("confirmed"),
     ...Array<ApplicationStatus>(counts.rejected).fill("rejected"),
-    ...Array<ApplicationStatus>(counts.cancelled).fill("cancelled"),
     ...Array<ApplicationStatus>(counts.applied).fill("applied"),
+    ...Array<ApplicationStatus>(counts.cancelled).fill("cancelled"),
   ];
   const from = new Date(recruitment.createdAt).getTime();
   const to = Math.min(now.getTime(), new Date(recruitment.recruitDeadline).getTime());
@@ -129,8 +129,8 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
   const applications: Record<string, Application[]> = {
     /* 모집 중. 대기 지원자 8명이 남은 자리 7명보다 많아 일괄 확정의 정원 안내를 보여 준다 */
     booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, cancelled: 0, applied: 8 }),
-    /* 확정 5명 중 2명은 아직 피드백을 내지 않았고, 1명은 확정 뒤 참여를 취소했다 */
-    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, cancelled: 1, applied: 0 }),
+    /* 확정 5명 중 1명은 아직 피드백을 내지 않았고, 1명은 참여를 취소했다. 모집이 끝나 남은 대기 지원자 1명은 더 확정할 수 없다(일괄 확정이 없는 것을 보여 준다) */
+    "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, cancelled: 1, applied: 1 }),
     /* 무료 모집은 선착순 자동 확정이라 대기·거절이 없다 */
     "folio-builder": buildApplications(folio, now, { confirmed: folio.confirmedCount, rejected: 0, cancelled: 0, applied: 0 }),
     "folio-builder-old": buildApplications(folioOld, now, { confirmed: 0, rejected: 0, cancelled: 3, applied: 0 }),
@@ -157,19 +157,26 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
         testItemId: "booklog-first-t2",
         recommended: true,
       },
+      {
+        nickname: "최지호",
+        content: "책을 검색하면 표지가 한참 비어 있어서 맞는 책인지 헷갈렸어요.",
+        submittedHoursAgo: 110,
+        status: "paid",
+        testItemId: "booklog-first-t1",
+      },
     ]),
     "folio-builder": [],
     "folio-builder-old": [],
   };
 
-  /* 북로그 1차 모집 피드백 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
+  /* 북로그 1차 모집 피드백 중 신고된 1건을 뺀 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
   const aiSummaries: Record<string, AiSummary> = {
     "booklog-first": {
       headline: "기록 기능은 편하다는 반응이지만, 책을 찾고 저장한 문장을 다시 찾는 흐름에서 헷갈린다는 의견이 있어요.",
       issues: [
         {
           text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요",
-          feedbackCount: 1,
+          feedbackCount: 2,
           suggestion: "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
         },
         {
@@ -186,30 +193,42 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
 
   const details: Record<string, RecruitmentDetail> = {
     booklog: {
+      title: "북로그 2차 베타 테스터 모집",
+      selectionMode: "selection",
+      accessUrl: "https://booklog.example.com",
       conditions: "한 달에 책을 한 권 이상 읽는 분\n휴대폰 브라우저(크롬·사파리)로 참여할 수 있는 분",
       testItems: [
-        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 검색해 내 서재에 등록해 주세요." },
-        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장해 주세요." },
-        { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요." },
+        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 검색해 내 서재에 등록해 주세요.", required: true },
+        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장해 주세요.", required: true },
+        { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요.", required: false },
       ],
     },
     "booklog-first": {
+      title: "북로그 밑줄 저장 1차 테스트",
+      selectionMode: "selection",
+      accessUrl: "https://beta.booklog.example.com",
       conditions: "",
       testItems: [
-        { id: "booklog-first-t1", title: "책 검색하기", description: "제목으로 책을 찾아 보세요." },
-        { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요." },
+        { id: "booklog-first-t1", title: "책 검색하기", description: "제목으로 책을 찾아 보세요.", required: true },
+        { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요.", required: true },
       ],
     },
     "folio-builder": {
+      title: "포트폴리오 빌더 템플릿 테스터 모집",
+      selectionMode: "firstCome",
+      accessUrl: "https://folio.example.com",
       conditions: "포트폴리오를 만들어 본 적이 있는 분",
       testItems: [
-        { id: "folio-t1", title: "템플릿 고르기", description: "마음에 드는 템플릿을 하나 골라 주세요." },
-        { id: "folio-t2", title: "프로젝트 추가하기", description: "프로젝트 하나를 추가하고 미리보기로 확인해 주세요." },
+        { id: "folio-t1", title: "템플릿 고르기", description: "마음에 드는 템플릿을 하나 골라 주세요.", required: true },
+        { id: "folio-t2", title: "프로젝트 추가하기", description: "프로젝트 하나를 추가하고 미리보기로 확인해 주세요.", required: true },
       ],
     },
     "folio-builder-old": {
+      title: "포트폴리오 빌더 첫 버전 테스트",
+      selectionMode: "firstCome",
+      accessUrl: "https://old.folio.example.com",
       conditions: "",
-      testItems: [{ id: "folio-old-t1", title: "템플릿 고르기", description: "첫 버전 템플릿 화면을 써 보세요." }],
+      testItems: [{ id: "folio-old-t1", title: "템플릿 고르기", description: "첫 버전 템플릿 화면을 써 보세요.", required: true }],
     },
   };
 
@@ -228,41 +247,26 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     {
       key: "booklog",
       name: booklog.projectName,
-      summary: booklog.summary,
-      softwareType: booklog.softwareType,
-      accessUrl: "https://booklog.example.com",
       description:
         "읽은 책을 검색해 등록하고, 마음에 드는 문장에 밑줄을 그어 모아 두는 서비스예요.\n이번에는 책 등록부터 기록 작성까지 처음 쓰는 흐름이 자연스러운지 보고 싶어요.",
-      images: [],
-      links: [
-        { label: "이용 가이드", url: "https://booklog.example.com/guide" },
-        { label: "테스트 시나리오 (PDF)", url: "https://booklog.example.com/files/test-scenario.pdf" },
-      ],
+      image: { url: "/sample/projects/booklog.svg", name: "내 서재와 밑줄 문장 화면" },
       createdAt: daysAgo(now, 30),
       recruitments: [booklog, booklogFirst],
     },
     {
       key: "folio-builder",
       name: folio.projectName,
-      summary: folio.summary,
-      softwareType: folio.softwareType,
-      accessUrl: "https://folio.example.com",
-      description: "",
-      images: [],
-      links: [],
+      description: "템플릿을 고르고 프로젝트를 추가하면 포트폴리오 페이지를 만들어 주는 서비스예요.\n이번에는 템플릿을 고르는 화면이 이해하기 쉬운지 보고 싶어요.",
+      image: { url: "/sample/projects/folio-builder.svg", name: "템플릿 고르기 화면" },
       createdAt: daysAgo(now, 20),
       recruitments: [folio, folioOld],
     },
     {
-      /* 모집 건이 없는 프로젝트. 빈 상태를 보여 준다 */
+      /* 모집 건과 상세 설명이 없는 프로젝트. 빈 상태를 보여 준다 */
       key: "todo-memo",
       name: "할 일 메모",
-      summary: "할 일을 한 줄씩 적고 끝내면 지우는 메모 서비스",
-      softwareType: "web",
-      accessUrl: "https://todo-memo.example.com",
       description: "",
-      images: [],
-      links: [],
+      image: { url: "/sample/projects/todo-memo.svg", name: "할 일 목록 화면" },
       createdAt: daysAgo(now, 1),
       recruitments: [],
     },

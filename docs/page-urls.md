@@ -56,6 +56,7 @@
 | 크레딧 관리 | `/my/credits` | 확정 |
 | 출금 신청·내역 | `/my/credits/withdrawals` | 확정 |
 | 구독 관리 | `/my/subscription` | 확정 |
+| 구독 결제 | `/my/subscription/checkout` | 후보 |
 
 ## 채팅
 
@@ -70,8 +71,18 @@
 | --- | --- | --- |
 | 관리자 진입 | `/admin` | 후보 |
 | 회원 관리 | `/admin/users` | 후보 |
+| 회원 검색·필터 | `/admin/users?filter=sanctioned\|reported&q=:nickname` | 후보 |
+| 회원 상세 | `/admin/users/:userKey` | 후보 |
 | 신고·제재 관리 | `/admin/reports` | 후보 |
 | 처리 완료 신고 탭 | `/admin/reports?tab=done` | 후보 |
+| 신고 대상 종류 필터 | `/admin/reports?tab=…&target=feedback\|recruitment\|user` | 후보 |
 | 신고 상세 | `/admin/reports/:reportKey` | 후보 |
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
+| 처리 완료 출금 탭 | `/admin/withdrawals?tab=done` | 후보 |
+| 출금 요청 모달 | `/admin/withdrawals?open=:withdrawalKey` | 후보 |
 | 모집 취소 요청 관리 | `/admin/cancellations` | 후보 |
+| 처리 완료 모집 취소 탭 | `/admin/cancellations?tab=done` | 후보 |
+| 모집 취소 요청 상세 | `/admin/cancellations/:cancellationKey` | 후보 |
+
+## 변경 이력
+- 2026-11-03: 출금 요청 상세(`/admin/withdrawals/:withdrawalKey`)를 목록 모달(`/admin/withdrawals?open=:withdrawalKey`)로 바꿨다.

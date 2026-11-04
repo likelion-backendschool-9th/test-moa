@@ -25,6 +25,7 @@
   --proof-y: #ffe600;
 
   /* 겹침 순서. 숫자를 컴포넌트에 직접 쓰지 않는다 */
+  --z-popover: 20;
   --z-menu: 30;
   --z-header: 40;
   --z-skip: 50;

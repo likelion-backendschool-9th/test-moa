@@ -27,7 +27,7 @@ async function Withdrawals() {
   return (
     <div className="flex flex-col gap-4">
       <WithdrawalForm cashable={cashableCredits(balance)} />
-      <WithdrawalHistory withdrawals={withdrawals} />
+      <WithdrawalHistory withdrawals={withdrawals} now={new Date()} />
     </div>
   );
 }

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- 시연용 샘플: 가계부 노트 앱 화면. 실제 서비스 화면이 아니다 -->
+  <rect width="480" height="360" fill="#cdeee8"/>
+  <circle cx="400" cy="300" r="96" fill="#b5e4dc"/>
+  <circle cx="60" cy="50" r="60" fill="#b5e4dc"/>
+  <g transform="translate(150 18)">
+    <rect width="180" height="340" rx="30" fill="#1f2328"/>
+    <rect x="8" y="8" width="164" height="324" rx="23" fill="#f7fbfa"/>
+    <rect x="66" y="16" width="48" height="10" rx="5" fill="#1f2328"/>
+    <text x="22" y="56" font-family="'Wanted Sans Variable','Malgun Gothic',system-ui,sans-serif" font-size="14" font-weight="800" fill="#134e4a">가계부 노트</text>
+    <rect x="20" y="68" width="140" height="64" rx="14" fill="#0f766e"/>
+    <rect x="32" y="80" width="50" height="6" rx="3" fill="#99f6e4"/>
+    <rect x="32" y="94" width="92" height="14" rx="7" fill="#ffffff"/>
+    <rect x="32" y="116" width="62" height="6" rx="3" fill="#5eead4"/>
+    <g transform="translate(56 168)">
+      <circle r="26" fill="none" stroke="#e2efec" stroke-width="12"/>
+      <circle r="26" fill="none" stroke="#14b8a6" stroke-width="12" stroke-dasharray="70 164" transform="rotate(-90)"/>
+      <circle r="26" fill="none" stroke="#f59e0b" stroke-width="12" stroke-dasharray="44 164" stroke-dashoffset="-70" transform="rotate(-90)"/>
+      <circle r="26" fill="none" stroke="#6366f1" stroke-width="12" stroke-dasharray="30 164" stroke-dashoffset="-114" transform="rotate(-90)"/>
+    </g>
+    <rect x="98" y="150" width="8" height="8" rx="2" fill="#14b8a6"/>
+    <rect x="110" y="151" width="40" height="6" rx="3" fill="#b9cfca"/>
+    <rect x="98" y="166" width="8" height="8" rx="2" fill="#f59e0b"/>
+    <rect x="110" y="167" width="34" height="6" rx="3" fill="#b9cfca"/>
+    <rect x="98" y="182" width="8" height="8" rx="2" fill="#6366f1"/>
+    <rect x="110" y="183" width="44" height="6" rx="3" fill="#b9cfca"/>
+    <g fill="#ffffff" stroke="#e2efec">
+      <rect x="20" y="208" width="140" height="28" rx="8"/>
+      <rect x="20" y="242" width="140" height="28" rx="8"/>
+    </g>
+    <circle cx="34" cy="222" r="6" fill="#f59e0b"/>
+    <rect x="46" y="219" width="54" height="6" rx="3" fill="#475f5b"/>
+    <rect x="120" y="219" width="30" height="6" rx="3" fill="#0f766e"/>
+    <circle cx="34" cy="256" r="6" fill="#14b8a6"/>
+    <rect x="46" y="253" width="44" height="6" rx="3" fill="#475f5b"/>
+    <rect x="120" y="253" width="30" height="6" rx="3" fill="#0f766e"/>
+    <circle cx="90" cy="300" r="18" fill="#0f766e"/>
+    <rect x="82" y="294" width="16" height="12" rx="3" fill="none" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="90" cy="300" r="3" fill="#ffffff"/>
+  </g>
+</svg>

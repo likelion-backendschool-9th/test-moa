@@ -1,0 +1,30 @@
+name: 기능 요청
+description: 새 기능이나 기존 기능 개선을 시나리오로 정리합니다.
+title: "Feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경
+      description: 왜 필요한지, 지금 무엇이 불편한지 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 시나리오
+      description: 누가(사용자·운영자·시스템) 무엇을 하는지 순서대로 적어 주세요. 이 흐름이 모두 동작하면 이슈를 닫습니다.
+      placeholder: |
+        1. 테스터가 헤더의 채팅 아이콘을 눌러 채팅함에 들어간다
+        2. 대화 목록에서 마지막 메시지와 안 읽은 수를 본다
+        3. 대화를 눌러 메시지를 주고받는다
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고
+      description: 상위 이슈, 계획 문서, 이번에 하지 않는 것, 디자인 등 필요한 것만 적어 주세요.
+    validations:
+      required: false

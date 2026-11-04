@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- 시연용 샘플: 레시피핏 앱 화면. 실제 서비스 화면이 아니다 -->
+  <rect width="480" height="360" fill="#fde3cc"/>
+  <circle cx="70" cy="300" r="90" fill="#fbd2ae"/>
+  <circle cx="420" cy="60" r="70" fill="#fbd2ae"/>
+  <g transform="translate(150 18)">
+    <rect width="180" height="340" rx="30" fill="#1f2328"/>
+    <rect x="8" y="8" width="164" height="324" rx="23" fill="#fffaf5"/>
+    <rect x="66" y="16" width="48" height="10" rx="5" fill="#1f2328"/>
+    <text x="22" y="56" font-family="'Wanted Sans Variable','Malgun Gothic',system-ui,sans-serif" font-size="15" font-weight="800" fill="#7c2d12">레시피핏</text>
+    <circle cx="152" cy="51" r="9" fill="#fed7aa"/>
+    <rect x="20" y="68" width="140" height="22" rx="11" fill="#f5ebe1"/>
+    <rect x="32" y="76" width="70" height="6" rx="3" fill="#d6c3b0"/>
+    <rect x="20" y="100" width="44" height="18" rx="9" fill="#f97316"/>
+    <rect x="68" y="100" width="40" height="18" rx="9" fill="#84cc16"/>
+    <rect x="112" y="100" width="48" height="18" rx="9" fill="#facc15"/>
+    <rect x="20" y="132" width="80" height="8" rx="4" fill="#431407"/>
+    <rect x="20" y="150" width="140" height="64" rx="12" fill="#ffffff" stroke="#f3e2d1"/>
+    <circle cx="48" cy="182" r="20" fill="#fb923c"/>
+    <circle cx="42" cy="176" r="6" fill="#fde68a"/>
+    <circle cx="55" cy="186" r="5" fill="#a3e635"/>
+    <rect x="78" y="168" width="66" height="7" rx="3.5" fill="#7c2d12"/>
+    <rect x="78" y="182" width="50" height="6" rx="3" fill="#d6c3b0"/>
+    <rect x="78" y="194" width="34" height="10" rx="5" fill="#ffedd5"/>
+    <rect x="20" y="222" width="140" height="64" rx="12" fill="#ffffff" stroke="#f3e2d1"/>
+    <circle cx="48" cy="254" r="20" fill="#84cc16"/>
+    <circle cx="44" cy="248" r="6" fill="#fef9c3"/>
+    <circle cx="54" cy="259" r="5" fill="#f97316"/>
+    <rect x="78" y="240" width="60" height="7" rx="3.5" fill="#7c2d12"/>
+    <rect x="78" y="254" width="46" height="6" rx="3" fill="#d6c3b0"/>
+    <rect x="78" y="266" width="34" height="10" rx="5" fill="#ecfccb"/>
+    <rect x="8" y="296" width="164" height="36" fill="#fff3e8"/>
+    <path d="M8 320v-24h164v24a12 12 0 0 1-12 12H31a23 23 0 0 1-23-12z" fill="#fff3e8"/>
+    <circle cx="44" cy="312" r="5" fill="#f97316"/>
+    <circle cx="90" cy="312" r="5" fill="#e7d3bf"/>
+    <circle cx="136" cy="312" r="5" fill="#e7d3bf"/>
+  </g>
+</svg>

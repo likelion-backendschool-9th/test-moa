@@ -4,45 +4,41 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatElapsed } from "@/lib/format";
+import { LinkTabs } from "./LinkTabs";
 import {
   isOverdue,
+  reportDetailHref,
+  reportsHref,
   REPORT_DECISION_LABEL,
   REPORT_TARGET_LABEL,
   type Report,
   type ReportDecision,
-  type ReportTab,
+  type ReportTargetFilter,
+  type ListTab,
 } from "../types";
 
-const TABS: { tab: ReportTab; label: string; href: string }[] = [
-  { tab: "pending", label: "검토 대기", href: "/admin/reports" },
-  { tab: "done", label: "처리 완료", href: "/admin/reports?tab=done" },
+const TABS: { tab: ListTab; label: string }[] = [
+  { tab: "pending", label: "검토 대기" },
+  { tab: "done", label: "처리 완료" },
 ];
 
-/** 검토 대기·처리 완료 탭. 상태는 URL(tab)에 남는다 */
-export function ReportTabs({ current }: { current: ReportTab }) {
-  return (
-    <nav aria-label="신고 상태">
-      <ul className="flex gap-2">
-        {TABS.map((item) => {
-          const active = item.tab === current;
-          return (
-            <li key={item.tab}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-                  active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
-                )}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+const TARGET_FILTERS: { target: ReportTargetFilter; label: string }[] = [
+  { target: "all", label: "전체" },
+  { target: "feedback", label: REPORT_TARGET_LABEL.feedback },
+  { target: "recruitment", label: REPORT_TARGET_LABEL.recruitment },
+  { target: "user", label: REPORT_TARGET_LABEL.user },
+];
+
+/** 검토 대기·처리 완료 탭. 고른 대상 필터는 남긴다 */
+export function ReportTabs({ current, target }: { current: ListTab; target: ReportTargetFilter }) {
+  const tabs = TABS.map((item) => ({ ...item, href: reportsHref({ tab: item.tab, target }) }));
+  return <LinkTabs label="신고 상태" tabs={tabs} current={current} />;
+}
+
+/** 신고 대상 종류 필터(전체·피드백·모집 글·회원). 고른 상태 탭은 남긴다 */
+export function ReportTargetFilters({ tab, current }: { tab: ListTab; current: ReportTargetFilter }) {
+  const tabs = TARGET_FILTERS.map((item) => ({ tab: item.target, label: item.label, href: reportsHref({ tab, target: item.target }) }));
+  return <LinkTabs label="신고 대상" tabs={tabs} current={current} />;
 }
 
 function processedMessage(decision: ReportDecision, held: boolean) {
@@ -62,16 +58,28 @@ export function ProcessedNotice({ decision, held }: { decision: ReportDecision; 
 const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-row md:items-center md:gap-4 md:p-6";
 
 /** 신고 목록. 피드백 원문은 상세에서만 보여 준다 */
-export function ReportList({ reports, tab, now }: { reports: Report[]; tab: ReportTab; now: Date }) {
+export function ReportList({
+  reports,
+  tab,
+  target,
+  now,
+}: {
+  reports: Report[];
+  tab: ListTab;
+  target: ReportTargetFilter;
+  now: Date;
+}) {
   if (reports.length === 0) {
-    return <EmptyState title={tab === "pending" ? "검토할 신고가 없어요" : "처리한 신고가 없어요"} />;
+    const base = tab === "pending" ? "검토할 신고가 없어요" : "처리한 신고가 없어요";
+    /* 어떤 필터 때문인지 알 수 있게 대상 종류를 따옴표로 말한다 */
+    return <EmptyState title={target === "all" ? base : `'${REPORT_TARGET_LABEL[target]}' 신고 중에는 ${base}`} />;
   }
   return (
     <ul aria-label={tab === "pending" ? "검토 대기 신고" : "처리 완료 신고"} className="flex flex-col gap-3">
       {reports.map((report) => (
         <li key={report.id}>
           <Link
-            href={`/admin/reports/${report.id}`}
+            href={reportDetailHref(report.id, { tab, target })}
             className={cn(rowClass, "transition-colors duration-300 ease-brand hover:bg-surface-strong")}
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">

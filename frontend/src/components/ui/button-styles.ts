@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+/** strong: 먹 바탕 버튼. 되돌리기 어려운 행동(삭제 확인)처럼 강조색을 쓰면 안 되는 무거운 행동에 쓴다 */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "strong";
 export type ButtonSize = "md" | "sm";
 /** pill: 기본 알약. field: 금액·계좌 입력 폼 안에서 입력란과 맞춘 12px 모서리 (DESIGN.md The Money Field Rule) */
 export type ButtonShape = "pill" | "field";
@@ -12,6 +13,7 @@ const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-on-accent hover:opacity-90",
   secondary: "bg-surface-strong text-text hover:bg-line",
   ghost: "text-text hover:bg-surface-strong",
+  strong: "bg-text text-surface hover:opacity-90",
 };
 
 const sizes: Record<ButtonSize, string> = {

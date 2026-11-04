@@ -1,12 +1,13 @@
 /*
  * 크레딧 잔액, 내역, 출금 요청 (GLOSSARY: 크레딧, 승인 대기 보상)
- * 1크레딧 = 1원. 가입 크레딧은 구독 결제 전용이고 테스트로 받은 크레딧만 현금화할 수 있다.
+ * 1크레딧 = 1원. 화면에서는 테스트로 받은 크레딧을 "적립 크레딧", 가입 크레딧 같은 이벤트 지급분을 "이벤트 크레딧"이라 부른다.
+ * 이벤트 크레딧은 구독 결제 전용이고 적립 크레딧만 현금화할 수 있다.
  */
 
 export type CreditBalance = {
-  /** 테스트로 획득한 크레딧. 구독 결제와 현금화에 쓸 수 있다 */
+  /** 적립 크레딧. 테스트로 획득한 크레딧이고 구독 결제와 현금화에 쓸 수 있다 */
   earned: number;
-  /** 가입 크레딧. 구독 결제 전용이다 */
+  /** 이벤트 크레딧. 가입 크레딧 같은 이벤트 지급분이고 구독 결제 전용이다 */
   signup: number;
   /** 출금 요청 뒤 처리 중이라 잠긴 크레딧. earned에 포함된다 */
   pendingWithdrawal: number;
@@ -16,6 +17,11 @@ export type CreditBalance = {
 
 export function totalCredits({ earned, signup }: CreditBalance) {
   return earned + signup;
+}
+
+/** 구독 결제에 쓸 수 있는 크레딧. 이벤트 크레딧은 포함하고, 출금 처리 중인 크레딧과 승인 대기 보상은 뺀다 */
+export function payableCredits({ earned, signup, pendingWithdrawal }: CreditBalance) {
+  return earned - pendingWithdrawal + signup;
 }
 
 /** 지금 출금 신청할 수 있는 크레딧 */

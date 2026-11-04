@@ -16,8 +16,8 @@ export function CreditSummaryCard({ credits, title = "크레딧", showHistoryLin
   const headingId = `credit-summary-${title}`;
   const cashable = cashableCredits(credits);
   const rows = [
-    { label: "현금화 가능", value: cashable },
-    { label: "구독 결제 전용", value: credits.signup },
+    { label: "적립 크레딧", value: cashable },
+    { label: "이벤트 크레딧", value: credits.signup },
     { label: "출금 처리 중", value: credits.pendingWithdrawal },
   ];
   return (

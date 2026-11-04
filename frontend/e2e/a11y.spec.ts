@@ -13,7 +13,7 @@ test.describe("R12 접근성", () => {
 
   test("S36 Tab으로 탭에 가면 포커스 링이 보인다", async ({ page }) => {
     await page.goto("/");
-    const tab = page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "테스트 모집" });
+    const tab = page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "참여 테스트" });
     for (let i = 0; i < 15 && !(await tab.evaluate((element) => element === document.activeElement)); i++) {
       await page.keyboard.press("Tab");
     }

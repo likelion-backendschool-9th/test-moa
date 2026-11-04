@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 test.describe("#63-R1 모집글 상세", () => {
@@ -44,6 +44,77 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByRole("heading", { name: /^테스트 항목/ })).toHaveCount(0);
     await expect(page.getByRole("complementary", { name: "모집 요약" })).toContainText("+320 크레딧");
     await expect(page.getByRole("link", { name: "지원하기" })).toHaveAttribute("href", "/recruitments/moaplan/apply");
+  });
+
+  test("#63-S6 상세와 모집 관리에 항목 이미지가 순서대로 보인다", async ({ page, context }) => {
+    await page.goto("/recruitments/booklog");
+    const images = page.getByRole("list", { name: "책 검색해서 등록하기 이미지 2장" }).getByRole("img");
+    await expect(images).toHaveCount(2);
+    expect(await images.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt")))).toEqual(["책 검색 화면", "내 서재 화면"]);
+    await expect.poll(() => images.first().evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
+    await expect(page.getByRole("list", { name: /^독서 기록 쓰기 이미지/ })).toHaveCount(0);
+
+    await setDemo(context, { role: "developer" });
+    await page.goto("/my/projects/booklog/recruitments/booklog");
+    await page.getByText("모집 조건과 테스트 항목 3개").click();
+    await expect(page.getByRole("list", { name: "책 검색해서 등록하기 이미지 2장" }).getByRole("img")).toHaveCount(2);
+  });
+
+  test.describe("모집 작성", () => {
+    const NEW = "/my/projects/booklog/recruitments/new";
+    const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+    const png = (name: string) => ({ name, mimeType: "image/png", buffer: PIXEL });
+    const picker = (page: Page, index: number) => page.getByLabel(`항목 ${index} 이미지 (선택)`);
+
+    test.beforeEach(async ({ context }) => {
+      await setDemo(context, { role: "developer" });
+    });
+
+    test("#63-S7 항목 이미지는 항목당 5장까지이고 넘기면 넣지 않으며, 다른 항목과 따로 센다", async ({ page }) => {
+      await page.goto(NEW);
+      await page.getByRole("button", { name: "항목 추가" }).click();
+      const rows = page.getByTestId("test-item-row");
+      const first = rows.nth(0).getByTestId("test-item-image");
+      await picker(page, 1).setInputFiles(["1", "2", "3", "4"].map((name) => png(`${name}.png`)));
+      await expect(first).toHaveCount(4);
+
+      await picker(page, 1).setInputFiles([png("5.png"), png("6.png")]);
+      await expect(rows.nth(0).getByText("이미지는 5장까지 올릴 수 있어요")).toBeVisible();
+      await expect(first).toHaveCount(4);
+
+      await picker(page, 1).setInputFiles(png("5.png"));
+      await expect(first).toHaveCount(5);
+      await expect(rows.nth(0).getByText("이미지는 5장까지 올릴 수 있어요")).toHaveCount(0);
+
+      await picker(page, 2).setInputFiles(["a", "b"].map((name) => png(`${name}.png`)));
+      await expect(rows.nth(1).getByTestId("test-item-image")).toHaveCount(2);
+
+      await page.getByRole("button", { name: "항목 1 1.png 삭제" }).click();
+      await expect(first).toHaveCount(4);
+      expect(await first.getByRole("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt")))).toEqual(["2.png", "3.png", "4.png", "5.png"]);
+
+      /* 줄을 지우면 그 줄의 이미지도 함께 없어지고, 제출에 실패해도 남은 이미지는 그대로다 */
+      await page.getByRole("button", { name: "항목 1 삭제", exact: true }).click();
+      await expect(page.getByTestId("test-item-image")).toHaveCount(2);
+      await page.getByRole("button", { name: "모집 등록" }).click();
+      await expect(page.getByText("모집글 제목을 적어 주세요")).toBeVisible();
+      await expect(page.getByTestId("test-item-image")).toHaveCount(2);
+    });
+
+    test("#63-S8 서버도 항목 이미지 장수를 다시 확인하고, 이름 없이 이미지만 있으면 막는다", async ({ page }) => {
+      await page.goto(NEW);
+      await picker(page, 1).setInputFiles(png("화면.png"));
+      await expect(page.getByTestId("test-item-image")).toHaveCount(1);
+      await page.getByRole("button", { name: "모집 등록" }).click();
+      await expect(page.getByText("항목 이름을 적어 주세요")).toBeVisible();
+
+      await page.getByLabel("항목 1 이름").fill("회원가입하기");
+      await page.locator('input[name="testItemImagesMeta"]').evaluate((element: HTMLInputElement) => {
+        element.value = JSON.stringify(Array.from({ length: 6 }, (_, index) => ({ name: `${index}.png`, size: 1, type: "image/png" })));
+      });
+      await page.getByRole("button", { name: "모집 등록" }).click();
+      await expect(page.getByTestId("test-item-row").getByText("이미지는 5장까지 올릴 수 있어요")).toBeVisible();
+    });
   });
 
   test("#63-S4 없거나 취소된 모집 건은 404다", async ({ page }) => {

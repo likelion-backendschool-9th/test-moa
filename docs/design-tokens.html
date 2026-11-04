@@ -14,15 +14,15 @@
   }
   :root {
     --surface: #ffffff; --surface-muted: #ffffff; --surface-strong: #f1f3f1; --line: #d6ded7;
-    --text: #1a1a1a; --text-muted: #5c5c58; --accent: #1f5a40; --accent-soft: #def7eb; --accent-tint: #cdeedc; --on-accent-tint: #1f5a40; --on-accent: #ffffff;
-    --hero-mat: #1f5a40; --hero-grid-minor: rgb(255 255 255 / 0.09); --hero-grid-major: rgb(255 255 255 / 0.2);
+    --text: #1a1a1a; --text-muted: #5c5c58; --accent: #0f7c4a; --accent-soft: #def7eb; --accent-tint: #cdeedc; --on-accent-tint: #0f7c4a; --on-accent: #ffffff;
+    --hero-mat: #0f7c4a; --hero-grid-minor: rgb(255 255 255 / 0.09); --hero-grid-major: rgb(255 255 255 / 0.2);
     --thumb: #ffffff; --on-thumb: #1a1a1a; --mark: #1a1a1a;
     --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark {
     --surface: #000000; --surface-muted: #16181d; --surface-strong: #1f222a; --line: #2a3037;
     --text: #ffffff; --text-muted: #a3aab5; --accent: #129357; --accent-soft: #123625; --on-accent: #000000;
-    --thumb: #e9ecf0; --on-thumb: #16181d; --mark: #3d434b;
+    --thumb: #ffffff; --on-thumb: #16181d; --mark: #3d434b;
     --hero-mat: #16181d; --hero-grid-minor: rgb(255 255 255 / 0.03); --hero-grid-major: rgb(255 255 255 / 0.06);
   }
   * { box-sizing: border-box; margin: 0; }
@@ -226,7 +226,7 @@
       <div>
         <div class="logo-card">
           <div class="logo">
-            <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5a40"/><text x="16" y="23" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">m</text></svg>
+            <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#129357"/><text x="16" y="23" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">m</text></svg>
             <span>test <span style="color:var(--accent)">moa</span></span>
           </div>
         </div>
@@ -235,7 +235,7 @@
       <div>
         <p class="mode-label" style="margin-top:0"><i style="background:#ffffff"></i>라이트 · 교정쇄</p>
         <div class="swatches">
-          <div class="sw"><div class="chip" style="background:#1f5a40"></div><p>강조<em>#1F5A40</em></p><small>재단 매트 · 주 버튼 · 로고 moa · 도장 · 포커스</small><code>--accent</code></div>
+          <div class="sw"><div class="chip" style="background:#0f7c4a"></div><p>강조<em>#0F7C4A</em></p><small>재단 매트 · 주 버튼 · 추가 보상 · 도장 · 포커스 (로고 moa는 #129357)</small><code>--accent</code></div>
           <div class="sw"><div class="chip" style="background:#def7eb"></div><p>연한 강조<em>#DEF7EB</em></p><small>현재 메뉴 항목 · 열린 더보기</small><code>--accent-soft</code></div>
           <div class="sw"><div class="chip" style="background:#1a1a1a"></div><p>글씨<em>#1A1A1A</em></p><small>제목 · 본문 · 먹 · 15.1:1</small><code>--text</code></div>
           <div class="sw"><div class="chip" style="background:#5c5c58"></div><p>보조 글씨<em>#5C5C58</em></p><small>설명 · 메타 · 5.8:1</small><code>--text-muted</code></div>

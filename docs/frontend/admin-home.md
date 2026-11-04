@@ -26,7 +26,7 @@ S401 라이트 [직접] (고침 #60: 흰 바탕과 한 초록)
 - Given `prefers-color-scheme: light`
 - Then  `body` 배경이 `rgb(255, 255, 255)`이다
 - Then  요약 카드 배경이 `rgb(255, 255, 255)`이고 1px 안쪽 재단선으로 구분된다
-- Then  "오래 기다린 요청"의 순위 숫자 색이 `rgb(31, 90, 64)`(`--accent` `#1f5a40`)이다
+- Then  "오래 기다린 요청"의 순위 숫자 색이 `rgb(15, 124, 74)`(`--accent` `#0f7c4a`)이다
 
 S402 다크 [직접]
 - Given `prefers-color-scheme: dark`

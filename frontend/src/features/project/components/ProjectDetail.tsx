@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -118,9 +119,16 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
           </div>
           {/* 취소된 모집은 공개 페이지가 없다 */}
           {item.status !== "cancelled" && (
-            <Link href={`/recruitments/${item.slug}`} className="text-sm font-semibold text-text-muted hover:text-text">
-              공개 페이지 보기
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href={`/recruitments/${item.slug}`} className="text-sm font-semibold text-text-muted hover:text-text">
+                공개 페이지 보기
+              </Link>
+              {/* 동작은 아직 정하지 않았다 (#64) */}
+              <Button size="sm" variant="secondary">
+                <span className="sr-only">{item.title || item.request} </span>
+                분석하기
+              </Button>
+            </div>
           )}
         </li>
       ))}

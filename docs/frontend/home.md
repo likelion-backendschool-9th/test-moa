@@ -158,7 +158,7 @@ S75 [직접]
 모든 페이지는 좁은 화면에서 넘치지 않고, 보호 페이지는 권한이 없으면 열리지 않는다. 페이지마다 하던 이 확인은 `frontend/e2e/pages.spec.ts`가 페이지 목록(`PAGES`)을 돌며 한 번에 한다. 새 페이지를 만들면 목록에 한 줄 더한다. (고침 #56: 테스트 정리, `docs/test-cleanup.md`)
 
 S26 준비 중 페이지와 내부 링크 [테스트]
-- Given `/recruitments`, `/recruitments/:slug`, `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/frontend/auth.md`에서, `/my/chats`는 `docs/frontend/chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
+- Given `/recruitments`, `/recruitments/:slug/apply`(고침 #63: 상세 페이지를 만들어 지원 페이지로 바꿈), `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/frontend/auth.md`에서, `/my/chats`는 `docs/frontend/chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 

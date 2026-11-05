@@ -5,8 +5,8 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { RecruitmentAnalytics, RecruitmentView } from "../service";
-import { CANCEL_REQUEST_LABEL, SELECTION_MODE_LABEL, type CancelRequest, type Project, type RecruitmentDetail } from "../types";
-import { CancelRequestButton } from "./CancelRequestButton";
+import { SELECTION_MODE_LABEL, type Project, type RecruitmentCancellation, type RecruitmentDetail } from "../types";
+import { CancelRecruitmentButton } from "./CancelRecruitmentButton";
 import { ExternalLink } from "./ProjectDetail";
 import { RecruitmentStatusBadge } from "./StatusBadge";
 import { TestItemImages } from "./TestItemImages";
@@ -31,12 +31,13 @@ type SummaryProps = {
   recruitment: RecruitmentView;
   analytics: RecruitmentAnalytics;
   detail: RecruitmentDetail;
-  cancelRequest: CancelRequest | null;
-  canRequestCancel: boolean;
+  cancellation: RecruitmentCancellation | null;
+  canCancel: boolean;
 };
 
 /** 모집 건 요약. 탭 위에 늘 보인다 */
-export function RecruitmentSummary({ project, recruitment, analytics, detail, cancelRequest, canRequestCancel }: SummaryProps) {
+export function RecruitmentSummary({ project, recruitment, analytics, detail, cancellation, canCancel }: SummaryProps) {
+  const beforeTest = recruitment.status === "recruiting" || recruitment.status === "full";
   const facts = [
     ["확정 인원", `${recruitment.confirmedCount}명`],
     ["정원", `${recruitment.capacity}명`],
@@ -68,11 +69,12 @@ export function RecruitmentSummary({ project, recruitment, analytics, detail, ca
       <div className="flex flex-wrap items-center gap-2">
         <RecruitmentStatusBadge status={recruitment.status} />
         {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
-        {canRequestCancel && (
+        {canCancel && (
           <span className="ml-auto">
-            <CancelRequestButton projectKey={project.key} recruitmentKey={recruitment.slug} />
+            <CancelRecruitmentButton projectKey={project.key} recruitmentKey={recruitment.slug} reasonRequired={recruitment.status === "testing"} />
           </span>
         )}
+        {beforeTest && !canCancel && <span className="ml-auto text-sm text-text-muted">확정된 테스터가 있어 취소할 수 없어요</span>}
       </div>
       <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{detail.title || recruitment.request}</h1>
       {detail.title && <p className="text-lg text-text-muted">{recruitment.request}</p>}
@@ -85,29 +87,25 @@ export function RecruitmentSummary({ project, recruitment, analytics, detail, ca
           </div>
         ))}
       </dl>
-      {cancelRequest && <CancelStatus request={cancelRequest} />}
+      {cancellation && <CancelStatus cancellation={cancellation} feedbackCount={analytics.feedbackCount} />}
       <RecruitmentDetailBox detail={detail} />
     </div>
   );
 }
 
-/** 모집 취소 요청 상태. 반려면 운영자가 고른 사유를 보여 준다 */
-function CancelStatus({ request }: { request: CancelRequest }) {
-  const message = {
-    pending: "모집 취소를 요청했어요. 운영자 확인을 기다리고 있어요",
-    approved: "운영자가 모집 취소를 승인했어요. 확정된 테스터의 참여도 함께 취소됐어요",
-    rejected: "모집 취소 요청이 반려됐어요. 모집은 그대로 진행돼요",
-  }[request.status];
+/** 취소한 모집 안내. 피드백이 있으면 그 보상은 유지된다고 알린다 */
+function CancelStatus({ cancellation, feedbackCount }: { cancellation: RecruitmentCancellation; feedbackCount: number }) {
   return (
     <div data-testid="cancel-status" className="flex flex-col gap-1 rounded-2xl border border-line bg-surface-muted px-5 py-4 text-sm">
-      <p className="flex flex-wrap items-center gap-2 font-semibold">
-        <Badge tone="muted">취소 요청 {CANCEL_REQUEST_LABEL[request.status]}</Badge>
-        {message}
+      <p className="font-semibold">
+        {feedbackCount > 0
+          ? "모집을 취소했어요. 피드백을 내지 않은 테스터의 참여는 취소됐고, 이미 낸 피드백의 보상은 그대로 지급돼요"
+          : "모집을 취소했어요. 지원자와 테스터의 참여도 함께 취소됐어요"}
       </p>
       <p className="text-text-muted">
-        요청 사유: {request.reason} · {formatDate(request.requestedAt)} 요청
+        {cancellation.reason && `취소 사유: ${cancellation.reason} · `}
+        {formatDate(cancellation.cancelledAt)} 취소
       </p>
-      {request.rejectReason && <p className="text-text-muted">반려 사유: {request.rejectReason}</p>}
     </div>
   );
 }

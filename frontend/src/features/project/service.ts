@@ -5,14 +5,14 @@ import { isFull, type Recruitment } from "@/features/recruitment/types";
 import {
   findAiSummary,
   findApplications,
-  findCancelRequest,
+  findCancellation,
   findFeedbacks,
   findIsSubscribed,
   findProjects,
   findPublicRecruitment,
   findRecruitmentDetail,
   saveApplicationDecisions,
-  saveRecruitmentCancelRequest,
+  saveRecruitmentCancellation,
 } from "./api";
 import { checkImages, isHttpUrl, parseFileMeta } from "./media";
 import {
@@ -25,7 +25,6 @@ import {
   REPORT_WINDOW_HOURS,
   type AiSummary,
   type Application,
-  type CancelRequest,
   type Feedback,
   type FormState,
   type Project,
@@ -52,7 +51,7 @@ export async function requireRole(path: string) {
 
 /* ---------- 계산 ---------- */
 
-/** 모집 건 상태. 취소가 승인됐으면 취소, 모집 마감 전이면 정원으로, 마감 뒤면 제출 마감일로 나눈다 */
+/** 모집 건 상태. 개발자가 취소했으면 취소, 모집 마감 전이면 정원으로, 마감 뒤면 제출 마감일로 나눈다 */
 export function getRecruitmentStatus(recruitment: Recruitment, now: Date, cancelled = false): RecruitmentStatus {
   if (cancelled) return "cancelled";
   if (now < new Date(recruitment.recruitDeadline)) return isFull(recruitment) ? "full" : "recruiting";
@@ -119,14 +118,14 @@ export type ProjectSummary = Omit<Project, "recruitments"> & {
 
 const byLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
 
-/** 프로젝트의 모집 건에 상태를 붙인다. 취소가 승인된 모집 건은 취소 상태다 */
+/** 프로젝트의 모집 건에 상태를 붙인다. 개발자가 취소한 모집 건은 취소 상태다 */
 async function withStatus(role: Role, recruitments: Recruitment[], now: Date): Promise<RecruitmentView[]> {
-  const requests = await Promise.all(recruitments.map((item) => findCancelRequest(role, item.slug)));
+  const cancellations = await Promise.all(recruitments.map((item) => findCancellation(role, item.slug)));
   const details = await Promise.all(recruitments.map((item) => findRecruitmentDetail(role, item.slug)));
   return recruitments.map((item, index) => ({
     ...item,
     title: details[index].title,
-    status: getRecruitmentStatus(item, now, requests[index]?.status === "approved"),
+    status: getRecruitmentStatus(item, now, cancellations[index] !== null),
   }));
 }
 
@@ -244,19 +243,19 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
   const recruitment = recruitments.find((item) => item.slug === recruitmentKey);
   if (!recruitment) notFound();
   const role = await requireRole(path);
-  const [applications, feedbacks, detail, cancelRequest] = await Promise.all([
+  const [applications, feedbacks, detail, cancellation] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
-    findCancelRequest(role, recruitmentKey),
+    findCancellation(role, recruitmentKey),
   ]);
   const now = new Date();
   return {
     project,
     recruitment,
     detail,
-    cancelRequest,
-    canRequestCancel: canRequestCancel(recruitment, feedbacks, cancelRequest),
+    cancellation,
+    canCancel: canCancelRecruitment(recruitment),
     applications: [...applications]
       .sort((a, b) => a.appliedAt.localeCompare(b.appliedAt))
       .map((item) => ({ ...item, submission: getSubmissionStatus(item, feedbacks, recruitment, now) })),
@@ -270,33 +269,35 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
 export type ApplicationView = Application & { submission: SubmissionStatus | null };
 
 /**
- * 모집 취소를 요청할 수 있는지. 테스트 시작 전(모집 중·모집 완료)이고 제출된 피드백이 없어야 한다.
- * 처리 대기 중이거나 이미 승인된 요청이 있으면 다시 보낼 수 없고, 반려됐으면 다시 보낼 수 있다.
+ * 개발자가 모집을 취소할 수 있는지. 테스트 전(모집 중·모집 완료)에는 확정된 테스터가 없을 때만,
+ * 테스트 중에는 사유를 적으면 취소할 수 있다. 종료했거나 이미 취소한 모집은 취소할 수 없다.
  */
-export function canRequestCancel(recruitment: RecruitmentView, feedbacks: Feedback[], request: CancelRequest | null) {
-  if (recruitment.status !== "recruiting" && recruitment.status !== "full") return false;
-  if (feedbacks.length > 0) return false;
-  return !request || request.status === "rejected";
+export function canCancelRecruitment(recruitment: RecruitmentView) {
+  if (recruitment.status === "testing") return true;
+  return (recruitment.status === "recruiting" || recruitment.status === "full") && recruitment.confirmedCount === 0;
 }
 
-/** 모집 취소 요청. 사유를 확인하고 요청할 수 있는 상태인지 서버에서 다시 본다 */
-export async function requestRecruitmentCancel(
+/** 모집 취소. 취소할 수 있는 상태인지 서버에서 다시 보고, 테스트 중이면 사유를 받는다 */
+export async function cancelRecruitment(
   projectKey: string,
   recruitmentKey: string,
   formData: FormData,
 ): Promise<FormState & { ok?: boolean }> {
   const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
-  const { canRequestCancel: allowed } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const { recruitment, canCancel } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const testing = recruitment.status === "testing";
   const values = { reason: text(formData, "reason") };
   const errors: Record<string, string> = {};
-  if (!allowed) errors.reason = "지금은 취소를 요청할 수 없어요";
-  else if (!values.reason) errors.reason = "취소 사유를 적어 주세요";
+  if (!canCancel) errors.reason = "지금은 모집을 취소할 수 없어요";
+  /* 테스트 전에 연 대화상자에는 사유 칸이 없다. 그사이 테스트가 시작됐으면 다시 열어 사유를 적게 한다 */
+  else if (testing && !formData.has("reason")) errors.reason = "모집 상태가 바뀌었어요. 새로고침한 뒤 다시 시도해 주세요";
+  else if (testing && !values.reason) errors.reason = "취소 사유를 적어 주세요";
   else if (values.reason.length > RECRUITMENT_LIMIT.cancelReasonLength) {
     errors.reason = `취소 사유는 ${RECRUITMENT_LIMIT.cancelReasonLength}자까지 적을 수 있어요`;
   }
   if (Object.keys(errors).length > 0) return { values, errors };
-  const ok = await saveRecruitmentCancelRequest(recruitmentKey, values.reason);
-  return ok ? { values: {}, errors: {}, ok } : { values, errors: { reason: "요청을 저장하지 못했어요. 다시 시도해 주세요" } };
+  const ok = await saveRecruitmentCancellation(recruitmentKey, testing ? values.reason : "");
+  return ok ? { values: {}, errors: {}, ok } : { values, errors: { reason: "취소를 저장하지 못했어요. 다시 시도해 주세요" } };
 }
 
 /** 선발형 구독 모집이고 모집 마감 전이면 지원자를 직접 확정·거절할 수 있다 */

@@ -56,7 +56,6 @@ class AuthControllerTest {
     }
 
     @Test
-
     @DisplayName("#80-S1·S3 가입하면 로그인할 수 있고 access 토큰이 통한다")
     void 가입하면_로그인할_수_있고_access_토큰이_통한다() throws Exception {
         signup(email, nickname).andExpect(status().isCreated()).andExpect(jsonPath("$.success").value(true));
@@ -72,7 +71,6 @@ class AuthControllerTest {
     }
 
     @Test
-
     @DisplayName("#80-S2 이미 쓰는 이메일과 닉네임은 409")
     void 이미_쓰는_이메일과_닉네임은_409() throws Exception {
         signup(email, nickname);
@@ -82,7 +80,6 @@ class AuthControllerTest {
     }
 
     @Test
-
     @DisplayName("#80-S2 형식이 틀리면 칸별 문구를 준다")
     void 형식이_틀리면_칸별_문구를_준다() throws Exception {
         postJson("/api/auth/signup", """
@@ -92,11 +89,10 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.error.fields.name").value("이름을 입력해 주세요"))
                 .andExpect(jsonPath("$.error.fields.nickname").value("닉네임은 한글·영문·숫자 1~39자예요"))
                 .andExpect(jsonPath("$.error.fields.email").value("이메일 형식이 맞지 않아요"))
-                .andExpect(jsonPath("$.error.fields.password").value("영문과 숫자를 섞어 8자 이상 써 주세요"));
+                .andExpect(jsonPath("$.error.fields.password").value("영문·숫자·특수문자로, 영문과 숫자를 섞어 8~64자로 써 주세요"));
     }
 
     @Test
-
     @DisplayName("#80-S4 틀린 비밀번호와 없는 이메일은 같은 401")
     void 틀린_비밀번호와_없는_이메일은_같은_401() throws Exception {
         signup(email, nickname);
@@ -108,7 +104,21 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("#80-S8 BCrypt 한도(72바이트)를 넘는 비밀번호는 500이 아니라 칸별 400·같은 401이다")
+    void 한글이_섞인_긴_비밀번호는_가입은_400_로그인은_401() throws Exception {
+        String tooLong = "가".repeat(24) + "a1"; // 26자지만 UTF-8로 74바이트
 
+        postJson("/api/auth/signup", """
+                {"name":"김모아","nickname":"%s","email":"%s","password":"%s"}""".formatted(nickname, email, tooLong))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.password").value("영문·숫자·특수문자로, 영문과 숫자를 섞어 8~64자로 써 주세요"));
+
+        signup(email, nickname);
+        login(email, tooLong).andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("INVALID_CREDENTIALS"));
+    }
+
+    @Test
     @DisplayName("#80-S5 정지된 회원은 로그인할 수 없다")
     void 정지된_회원은_로그인할_수_없다() throws Exception {
         signup(email, nickname);
@@ -119,7 +129,6 @@ class AuthControllerTest {
     }
 
     @Test
-
     @DisplayName("#80-S6·S7 refresh 토큰은 한 번만 쓸 수 있고 로그아웃하면 못 쓴다")
     void refresh_토큰은_한_번만_쓸_수_있고_로그아웃하면_못_쓴다() throws Exception {
         signup(email, nickname);

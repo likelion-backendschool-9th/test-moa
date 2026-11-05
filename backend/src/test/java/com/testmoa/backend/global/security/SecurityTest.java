@@ -54,14 +54,12 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S3 공개 주소는 토큰 없이 열린다")
     void 공개_주소는_토큰_없이_열린다() throws Exception {
         mvc.perform(get("/api/samples")).andExpect(status().isOk());
     }
 
     @Test
-
     @DisplayName("#79-S3 토큰이 없으면 401")
     void 토큰이_없으면_401() throws Exception {
         mvc.perform(get("/api/anything"))
@@ -71,7 +69,6 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S6 회원 토큰이면 통과한다")
     void 회원_토큰이면_통과한다() throws Exception {
         String token = jwtProvider.createAccessToken(saveUser(Role.USER, UserStatus.ACTIVE));
@@ -79,7 +76,6 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S5 일반 회원은 운영자 주소에서 403")
     void 일반_회원은_운영자_주소에서_403() throws Exception {
         String token = jwtProvider.createAccessToken(saveUser(Role.USER, UserStatus.ACTIVE));
@@ -89,7 +85,6 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S5 운영자는 운영자 주소를 통과한다")
     void 운영자는_운영자_주소를_통과한다() throws Exception {
         String token = jwtProvider.createAccessToken(saveUser(Role.ADMIN, UserStatus.ACTIVE));
@@ -97,7 +92,6 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S4 정지된 회원의 토큰은 401")
     void 정지된_회원의_토큰은_401() throws Exception {
         String token = jwtProvider.createAccessToken(saveUser(Role.USER, UserStatus.SUSPENDED));
@@ -105,14 +99,12 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S4 없는 회원의 토큰은 401")
     void 없는_회원의_토큰은_401() throws Exception {
         call("/api/anything", jwtProvider.createAccessToken(Long.MAX_VALUE)).andExpect(status().isUnauthorized());
     }
 
     @Test
-
     @DisplayName("#79-S4 위조된 토큰은 401")
     void 위조된_토큰은_401() throws Exception {
         String token = jwtProvider.createAccessToken(saveUser(Role.USER, UserStatus.ACTIVE));
@@ -120,7 +112,6 @@ class SecurityTest {
     }
 
     @Test
-
     @DisplayName("#79-S4 만료된 토큰은 401")
     void 만료된_토큰은_401() throws Exception {
         Long userId = saveUser(Role.USER, UserStatus.ACTIVE);

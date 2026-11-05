@@ -41,7 +41,6 @@ class GlobalExceptionHandlerTest {
             .build();
 
     @Test
-
     @DisplayName("#79-S1 규칙 위반은 에러 코드의 상태와 코드로 응답")
     void 규칙_위반은_에러_코드의_상태와_코드로_응답한다() throws Exception {
         mvc.perform(get("/business"))
@@ -53,7 +52,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-
     @DisplayName("#79-S1 입력 검사 실패는 칸별 문구를 fields에 담는다")
     void 입력_검사_실패는_칸별_문구를_담는다() throws Exception {
         mvc.perform(post("/valid").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\"}"))
@@ -63,7 +61,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-
     @DisplayName("#79-S1 잘못된 JSON은 400 INVALID_INPUT")
     void 잘못된_JSON은_400_INVALID_INPUT이다() throws Exception {
         mvc.perform(post("/valid").contentType(MediaType.APPLICATION_JSON).content("{"))
@@ -72,7 +69,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-
     @DisplayName("#79-S2 예상하지 못한 오류는 500이고 내부 내용을 숨긴다")
     void 예상하지_못한_오류는_내부_내용을_숨긴다() throws Exception {
         mvc.perform(get("/boom"))

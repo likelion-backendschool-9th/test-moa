@@ -1,5 +1,7 @@
 # 프론트엔드 개인정보 수정 (`/my/profile/edit`)
 
+백엔드: [회원·인증 백엔드](../../backend/auth/README.md)
+
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
@@ -54,7 +56,7 @@ S168 빈 칸 [직접]
 - Then  "이름을 입력해 주세요", "닉네임을 입력해 주세요"가 보이고 두 칸에 `aria-invalid="true"`가 있다
 
 S169 형식 [직접]
-- When  이름 21자, 닉네임 40자를 넣고 저장한다 (고침 11-01: 닉네임 길이를 깃허브 사용자명과 같은 1~39자로 바꿈, `docs/frontend/auth.md` S314)
+- When  이름 21자, 닉네임 40자를 넣고 저장한다 (고침 11-01: 닉네임 길이를 깃허브 사용자명과 같은 1~39자로 바꿈, `docs/frontend/auth/auth.md` S314)
 - Then  "이름은 20자까지 쓸 수 있어요", "닉네임은 한글·영문·숫자 1~39자예요"가 보인다
 - When  닉네임 "윤슬!!"을 넣고 저장한다
 - Then  "닉네임은 한글·영문·숫자 1~39자예요"가 보인다
@@ -141,7 +143,7 @@ S181 구조 (기존 S78) [명령]
 - 실제 비밀번호 저장·암호화, 백엔드 API 연동
 
 ## 작업 순서
-0. 브랜치 — `git switch -c feature/frontend-profile origin/develop && git branch --unset-upstream`, 이 계획을 `docs/frontend/profile-edit.md`로 저장
+0. 브랜치 — `git switch -c feature/frontend-profile origin/develop && git branch --unset-upstream`, 이 계획을 `docs/frontend/auth/profile-edit.md`로 저장
 1. 데이터 계층 — S165, S166의 데이터
    - 파일: `src/features/my/api.ts`에 `getProfile(next)` 추가 (세션 확인은 `lib/auth.ts`의 `requireMember`, 시연 지연은 `lib/demo.ts`의 `waitIfSlow`를 씀) (고침 11-01: develop 병합 후 공용 함수로 바꿈)
    - 파일: `src/features/my/mock.ts`에 `DEMO_PROFILES`(시연 회원 프로필, 닉네임 중복 검사에도 씀), `DEMO_PASSWORD = "test1234"` 추가. 검사 함수 `isNicknameTaken`·`isCurrentPassword`는 `api.ts`에 둔다 (`mock.ts`는 `api.ts`만 불러온다)

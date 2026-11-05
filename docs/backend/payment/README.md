@@ -18,7 +18,7 @@
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 
-프론트: [크레딧](../../frontend/credits.md), [크레딧 구분·내역 시각](../../frontend/credit-labels.md), [구독](../../frontend/subscription.md), [출금 요청 관리](../../frontend/admin-withdrawals.md)
+프론트: [크레딧](../../frontend/payment/credits.md), [크레딧 구분·내역 시각](../../frontend/payment/credit-labels.md), [구독](../../frontend/payment/subscription.md), [출금 요청 관리](../../frontend/admin/withdrawals.md)
 
 ## 정한 것
 - 프론트 목업의 규칙을 백엔드가 갖게 한다. 인증은 당분간 `userId` 경로다.
@@ -109,20 +109,20 @@ erDiagram
 #66-S1 잔액 조회 API [직접]
 - API: `GET /api/users/{userId}/credits`
 - Then  `earnedBalance`, `eventCredit`, `lockedBalance`, `pendingReward`, `totalCredits`, `payableCredits`, `cashableCredits`
-- 화면: `/my`, `/my/credits` (`docs/frontend/credits.md` S350은 [직접]/[테스트] 해당 문서 기준)
+- 화면: `/my`, `/my/credits` (`docs/frontend/payment/credits.md` S350은 [직접]/[테스트] 해당 문서 기준)
 
 #66-S2 내역 조회 API [직접]
 - API: `GET /api/users/{userId}/credits/ledgers?type=all|in|out`
 - Then  `in`은 delta>0, `out`은 delta<0. 잘못된 type은 400
 - Then  구독 결제는 EVENT/EARNED 행을 두 줄로 응답한다 (프론트 연동 때 한 줄 목업을 고침)
-- 화면: `/my/credits` (`docs/frontend/credits.md` S352~)
+- 화면: `/my/credits` (`docs/frontend/payment/credits.md` S352~)
 
 ### #67 출금 신청·내역
 
 #67-S1 출금 내역 조회 [직접]
 - API: `GET /api/users/{userId}/credits/cashouts`
 - Then  처리 중·지급 완료·반려. 반려는 사유(OTHER면 메모) 포함
-- 화면: `/my/credits/withdrawals` (`docs/frontend/credits.md` S358~)
+- 화면: `/my/credits/withdrawals` (`docs/frontend/payment/credits.md` S358~)
 
 #67-S2 출금 신청 API [직접]
 - API: `POST /api/users/{userId}/credits/cashouts`
@@ -133,7 +133,7 @@ erDiagram
 #68-S1 운영자 API [직접]
 - `GET /api/admin/cashouts?tab=pending|done`, `POST …/pay`, `POST …/reject`
 - 트랜잭션: 지급 시 `confirmCashout` + `pay` + 장부, 반려 시 `releaseCashout` + `reject`
-- 화면: `/admin/withdrawals` (`docs/frontend/admin-withdrawals.md`)
+- 화면: `/admin/withdrawals` (`docs/frontend/admin/withdrawals.md`)
 
 ### #69 구독 플랜·내 구독 상태
 페이지는 조립 API 한 번으로 받는 것을 권장한다.
@@ -141,12 +141,12 @@ erDiagram
 #69-S1 플랜 목록 [직접]
 - API: `GET /api/plans`
 - Then  tier별 최신 version만. 무료 행 없음
-- 화면 혜택 비교 유료 열: `docs/frontend/subscription.md` S387은 **[직접]**
+- 화면 혜택 비교 유료 열: `docs/frontend/payment/subscription.md` S387은 **[직접]**
 
 #69-S2 구독 페이지 구성 [직접]
 - API: `GET /api/users/{userId}/subscription/page`
 - Then  `eligible`, `status`, `plans[]`, `benefits`, `paymentPreview`, `showExpiryHints`
-- 화면: `docs/frontend/subscription.md` S384 등은 **[직접]**
+- 화면: `docs/frontend/payment/subscription.md` S384 등은 **[직접]**
 
 #69-S3 내 구독 상태 [직접]
 - API: `GET /api/users/{userId}/subscription`
@@ -158,7 +158,7 @@ erDiagram
 - API: `GET /api/users/{userId}/subscription/checkout?planId=`
 - 응답: `plan`, `payableCredits`, `active`, `currentEndAt`, `credit {affordable, shortfall, remainingAfter}`, `period {startAt, endAt}`, `eligible`
 - 규칙: 운영자 불가, 크레딧 부족 시 `affordable=false`(현금은 가능). `period.startAt`은 CANCELLED 제외 시작식
-- 화면: `docs/frontend/subscription.md` S533~
+- 화면: `docs/frontend/payment/subscription.md` S533~
 
 ### #71 구독 결제 실행
 

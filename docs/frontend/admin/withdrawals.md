@@ -5,7 +5,7 @@
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
-- 목적: 운영자가 테스터의 출금 요청(크레딧 현금화)을 확인하고 지급 완료 또는 반려로 처리한다. 요청 금액은 처리 중 잠겨 있고, 지급하면 차감되고 반려하면 회원에게 돌아간다(크레딧 계획 문서 `credits.md` 맥락).
+- 목적: 운영자가 테스터의 출금 요청(크레딧 현금화)을 확인하고 지급 완료 또는 반려로 처리한다. 요청 금액은 처리 중 잠겨 있고, 지급하면 차감되고 반려하면 회원에게 돌아간다(크레딧 계획 문서 `payment/credits.md` 맥락).
 - 스택: 홈과 같다. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성:
   1. 목록 `/admin/withdrawals`: 운영자 하위 탭(출금 요청이 현재 탭), "처리 대기"·"처리 완료" 탭, 요청 목록
@@ -254,7 +254,7 @@ S216 [명령] (고침 #42: 상세 라우트 제거, `WithdrawalModal` 추가)
 - When  `grep -n "assertAdmin" src/features/admin/actions.ts`
 - Then  출금 처리 Server Action 안에서도 부른다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더에 `CopyAccountButton`, `RequestReviewForm`, `WithdrawalModal`이 있다 (`admin-reports.md` S445도 같이 맞춘다)
+- Then  운영자 폴더에 `CopyAccountButton`, `RequestReviewForm`, `WithdrawalModal`이 있다 (`admin/reports.md` S445도 같이 맞춘다)
 
 ## 데모 데이터와 가정
 - 출금 목업은 처리 대기 3건(운영자 홈과 같음)과 처리 완료 2건이다. 시각은 접속 시각 기준으로 계산한다.
@@ -302,15 +302,15 @@ S216 [명령] (고침 #42: 상세 라우트 제거, `WithdrawalModal` 추가)
 4. 처리 — S205~S211
    - 파일: `src/features/admin/actions.ts` (출금 처리 Server Action, `assertAdmin`, 크기 확인), `src/features/admin/components/WithdrawalForm.tsx` (출금 문구만 정하고 `RequestReviewForm`을 쓴다. 2026-11-01에 합쳤다)
 5. 운영자 홈 연결과 정리 — S212, S216, 기존 문서 변경
-   - 파일: 운영자 홈 링크, `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend/admin-home.md`, `docs/frontend/admin-reports.md`
+   - 파일: 운영자 홈 링크, `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend/admin/home.md`, `docs/frontend/admin/reports.md`
 6. 테스트 — S191~S219 (S216 제외), S281, S284
    - 파일: `e2e/admin-withdrawals.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 ## 참고
-- 운영자 홈: `docs/frontend/admin-home.md` (R15 접근 권한, S412 처리 대기 카드, S415 오래 기다린 요청)
-- 신고·제재 관리: `docs/frontend/admin-reports.md` (목록·상세·처리 구조, 쿠키 크기 확인 S446)
-- 테스터 출금 신청: `docs/frontend/credits.md` (PR #9, 출금 상태·은행 목록·계좌 형식·반려 사유 표시)
+- 운영자 홈: `docs/frontend/admin/home.md` (R15 접근 권한, S412 처리 대기 카드, S415 오래 기다린 요청)
+- 신고·제재 관리: `docs/frontend/admin/reports.md` (목록·상세·처리 구조, 쿠키 크기 확인 S446)
+- 테스터 출금 신청: `docs/frontend/payment/credits.md` (PR #9, 출금 상태·은행 목록·계좌 형식·반려 사유 표시)
 - 기획 근거: `README.md` (구독과 크레딧, 운영 원칙)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`
 - Next.js 16 문서(`frontend/node_modules/next/dist/docs/01-app/`): `02-guides/authentication.md`(Server Action 권한 확인), `02-guides/forms.md`

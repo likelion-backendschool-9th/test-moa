@@ -5,7 +5,7 @@
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
-- 목적: 운영자가 회원을 찾아 기본 정보와 제재 이력, 받은 신고를 한 화면에서 확인한다. 신고·제재 관리 문서가 "제재 이력 화면, 회원별 제재 조회"를 이 페이지로 미뤄 두었다(`admin-reports.md` 범위 밖).
+- 목적: 운영자가 회원을 찾아 기본 정보와 제재 이력, 받은 신고를 한 화면에서 확인한다. 신고·제재 관리 문서가 "제재 이력 화면, 회원별 제재 조회"를 이 페이지로 미뤄 두었다(`admin/reports.md` 범위 밖).
 - 스택: 홈과 같다. 실행 방법은 `frontend/README.md`를 본다.
 - 화면 구성:
   1. 목록 `/admin/users`: 운영자 하위 탭(회원이 현재 탭), 닉네임 검색, "전체"·"제재 이력 있음"·"검토 대기 신고 있음" 필터, 회원 목록
@@ -195,13 +195,13 @@ S247 좁은 화면 [테스트: pages.spec.ts #56-S1]
 - Then  페이지에 가로 스크롤이 없다 (하위 탭·필터 줄 안의 스크롤만 예외)
 
 ## 8. 구조 (R46)
-권한은 페이지와 데이터 함수에서 각각 확인한다. 이 페이지에는 Server Action이 없다. 검색은 GET 양식이라 `"use client"`를 늘리지 않는다. 회원 상세는 `params`를 Suspense 안에서 읽는다(이유는 `admin-reports.md` R30).
+권한은 페이지와 데이터 함수에서 각각 확인한다. 이 페이지에는 Server Action이 없다. 검색은 GET 양식이라 `"use client"`를 늘리지 않는다. 회원 상세는 `params`를 Suspense 안에서 읽는다(이유는 `admin/reports.md` R30).
 
 S248 [명령]
 - When  `grep -L "requireAdmin" src/app/admin/users/page.tsx src/app/admin/users/*/page.tsx`
 - Then  결과가 없다
 - When  `grep -rl '"use client"' src/app/admin src/features/admin`
-- Then  운영자 폴더의 목록이 `admin-reports.md` S445과 같다 (회원 관리는 더하지 않는다)
+- Then  운영자 폴더의 목록이 `admin/reports.md` S445과 같다 (회원 관리는 더하지 않는다)
 
 ## 데모 데이터와 가정
 - 회원 목업은 신고·출금 목업에 나오는 10명이다. 키는 신고(`report-1`)·출금(`withdrawal-1`) 목업처럼 `user-<번호>`이고, 가입이 오래된 회원부터 번호를 붙인다. 주소에는 아이디나 이름을 쓰지 않는다. 아이디는 회원이 바꿀 수 있어 링크가 깨지고, 이름·아이디는 개인정보라 방문 기록과 로그에 남기지 않는다.
@@ -259,15 +259,15 @@ S248 [명령]
 4. 신고 연결 — S242~S244
    - 파일: `src/features/admin/components/ReportDetail.tsx` (대상 닉네임을 링크로)
 5. 정리 — S248, 기존 문서 변경
-   - 파일: `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend/admin-reports.md`
+   - 파일: `e2e/links.spec.ts`, `docs/page-urls.md`, `docs/frontend/admin/reports.md`
 6. 테스트 — S220~S247, S249, S280
    - 파일: `e2e/admin-users.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
 ## 참고
-- 운영자 홈: `docs/frontend/admin-home.md` (R15 접근 권한, S411 탭 이동)
-- 신고·제재 관리: `docs/frontend/admin-reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
-- 출금 요청 관리: `docs/frontend/admin-withdrawals.md` (번호, `LinkTabs`)
+- 운영자 홈: `docs/frontend/admin/home.md` (R15 접근 권한, S411 탭 이동)
+- 신고·제재 관리: `docs/frontend/admin/reports.md` (신고 목업, 처리 결과 쿠키, S432·S434 대상 표시, 범위 밖의 제재 이력)
+- 출금 요청 관리: `docs/frontend/admin/withdrawals.md` (번호, `LinkTabs`)
 - 기획 근거: `README.md` (운영 원칙의 신고·제재, 관리자 영역)
 - 디자인 시스템: `frontend/DESIGN.md`, `docs/design-tokens.html`
 - Next.js 16 문서(`frontend/node_modules/next/dist/docs/01-app/`): `02-guides/authentication.md`, `02-guides/forms.md`(GET 검색 양식)

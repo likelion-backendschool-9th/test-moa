@@ -52,7 +52,7 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 
 - `RecruitmentType`(`recruitment_types`)과 `RecruitmentImage`(`recruitment_images`: `recruitment`, `url`, `sortOrder`)는 모집글을 가리킨다
 - 메서드: `cancel(String reason, LocalDateTime cancelledAt)`
-- 취소할 수 있는 시기와 사유가 필수인 경우는 확정 테스터와 일정을 함께 봐야 해서 서비스가 확인한다(`docs/frontend/projects.md` 모집 취소 표)
+- 취소할 수 있는 시기와 사유가 필수인 경우는 확정 테스터와 일정을 함께 봐야 해서 서비스가 확인한다(`docs/frontend/project/projects.md` 모집 취소 표)
 
 #89-S1 프로젝트에는 프로젝트 정보만 있다 [직접]
 - `Project`에 `user`, `title`, `description`, `imageUrl`이 있고 모집 조건·일정은 없다

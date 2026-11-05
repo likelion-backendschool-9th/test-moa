@@ -11,7 +11,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 | [#79](https://github.com/likelion-backendschool-9th/test-moa/issues/79) | 공통 에러 응답과 JWT 인증·인가 | [아래 1](#1-공통-에러-응답과-jwt-인증인가-79) |
 | [#80](https://github.com/likelion-backendschool-9th/test-moa/issues/80) | 이메일 가입·로그인·토큰 갱신 API | [아래 2](#2-이메일-가입로그인토큰-갱신-80) |
 | [#81](https://github.com/likelion-backendschool-9th/test-moa/issues/81) | 내 정보·구독 여부 확인 API | [아래 3](#3-내-정보구독-여부-확인-81) |
-| [#82](https://github.com/likelion-backendschool-9th/test-moa/issues/82) | 프론트 로그인·가입·로그아웃 백엔드 연결 | [로그인·회원가입](../../frontend/auth.md) 9장 |
+| [#82](https://github.com/likelion-backendschool-9th/test-moa/issues/82) | 프론트 로그인·가입·로그아웃 백엔드 연결 | [로그인·회원가입](../../frontend/auth/auth.md) 9장 |
 | [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | |
 | [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | |
 | [#85](https://github.com/likelion-backendschool-9th/test-moa/issues/85) | 회원 신고·증거 첨부 API | |
@@ -20,7 +20,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 진행 상태는 이슈와 PR에서 본다.
 
-프론트: [로그인·회원가입](../../frontend/auth.md), [신고·제재 관리](../../frontend/admin-reports.md), [회원 관리](../../frontend/admin-users.md)
+프론트: [로그인·회원가입](../../frontend/auth/auth.md), [신고·제재 관리](../../frontend/admin/reports.md), [회원 관리](../../frontend/admin/users.md)
 
 ## 정한 것
 - 백엔드는 브라우저에 열려 있지 않다(BFF). 브라우저 → nginx → Next → 백엔드. Next가 토큰을 httpOnly 쿠키로 들고, 백엔드를 부를 때 `Authorization: Bearer`로 붙인다.

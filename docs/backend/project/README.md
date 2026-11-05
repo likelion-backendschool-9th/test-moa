@@ -10,7 +10,7 @@
 
 Repository·Service·API는 다음 이슈에서 한다. 진행 상태는 이슈와 PR에서 본다.
 
-프론트: [개발자 프로젝트](../../frontend/projects.md), [참여 테스트](../../frontend/participations.md), [모집글 상세](../../frontend/recruitment-detail.md)
+프론트: [개발자 프로젝트](../../frontend/project/projects.md), [참여 테스트](../../frontend/project/participations.md), [모집글 상세](../../frontend/project/recruitment-detail.md)
 
 ## 정한 것
 - [결제·구독·크레딧](../payment/README.md#정한-것)과 같은 기준을 쓴다. ERD보다 복잡하게 만들지 않고, 조건이 붙는 규칙은 백엔드가 맡는다.

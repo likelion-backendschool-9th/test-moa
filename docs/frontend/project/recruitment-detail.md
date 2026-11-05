@@ -1,5 +1,7 @@
 # 프론트엔드 모집글 상세 (`/recruitments/:slug`)
 
+백엔드: [프로젝트·테스터·피드백 백엔드](../../backend/project/README.md)
+
 테스터가 지원 전에 일정, 인원, 보상, 조건을 확인하는 공개 페이지다 (이슈 #63).
 
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트(`frontend/e2e/recruitment-detail.spec.ts`)와 1:1이고, `[직접]`은 사람이 화면을 보고 확인한다.

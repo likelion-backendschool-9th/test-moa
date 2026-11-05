@@ -90,7 +90,7 @@ S112 둘 다 비었을 때 [직접]
 S86 테스터 [직접]
 - Given `demo-role=tester`
 - Then  총 잔액 "12,480 크레딧"이 보인다 (헤더 값과 같다)
-- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `credit-labels.md`)
+- Then  "적립 크레딧 9,480 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 0 크레딧"이 보인다 (고침 11-02: 크레딧 구분 이름 변경, `payment/credit-labels.md`)
 - Then  "크레딧 내역"(`/my/credits`), "출금 신청"(`/my/credits/withdrawals`) 링크가 있다
 
 S103 승인 대기 [테스트]
@@ -187,7 +187,7 @@ S113 [직접]
 - Then  "구독 알아보기" 버튼과 "구독" 제목의 세로 중심 차이가 8px 미만이다
 
 ## 범위 밖
-- 하위 페이지 실제 내용: 개인정보 수정은 `docs/frontend/profile-edit.md`, 구독 관리는 `docs/frontend/subscription.md`에서 만든다
+- 하위 페이지 실제 내용: 개인정보 수정은 `docs/frontend/auth/profile-edit.md`, 구독 관리는 `docs/frontend/payment/subscription.md`에서 만든다
 - 신고·제재 내역, 회원 탈퇴 (와이어프레임에 있으나 기획 미정)
 - 프로필 완성도 (2차에 넣었다가 3차에 뺐다)
 - 레벨·경험치, 알림

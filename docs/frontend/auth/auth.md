@@ -1,5 +1,7 @@
 # 프론트엔드 로그인·회원가입 (`/login`, `/signup`)
 
+백엔드: [회원·인증 백엔드](../../backend/auth/README.md)
+
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
@@ -12,7 +14,7 @@
 - 세션은 목업이다. `src/lib/session.ts`가 쿠키 `demo-role`(guest·tester·developer·admin)로 상태를 정하고, 값이 없으면 tester로 본다. 시연 전환기(`DemoSwitcher`)도 같은 쿠키를 쓴다.
 - 시연 회원은 셋이다 (`features/my/mock.ts` `DEMO_PROFILES`): 테스터 seoyun@example.com, 개발자 dohyun@example.com, 운영자 admin@example.com. 비밀번호는 모두 `DEMO_PASSWORD` = `test1234`.
 - 개발자와 테스터는 한 계정이다. 가입할 때 역할을 고르지 않는다.
-- 개인정보 수정(`docs/frontend/profile-edit.md`)에 이름·닉네임·비밀번호 검사 규칙과 칸(`FormField`)이 이미 있다. 같은 규칙과 문구를 쓴다. 닉네임 길이만 깃허브 사용자명(username)의 허용 범위인 1~39자로 넓히고, 글자 종류(한글·영문·숫자)는 그대로 둔다. 규칙을 함께 쓰므로 개인정보 수정도 같이 바뀐다.
+- 개인정보 수정(`docs/frontend/auth/profile-edit.md`)에 이름·닉네임·비밀번호 검사 규칙과 칸(`FormField`)이 이미 있다. 같은 규칙과 문구를 쓴다. 닉네임 길이만 깃허브 사용자명(username)의 허용 범위인 1~39자로 넓히고, 글자 종류(한글·영문·숫자)는 그대로 둔다. 규칙을 함께 쓰므로 개인정보 수정도 같이 바뀐다.
 - 백엔드는 고려하지 않는다. 가입은 데이터를 만들지 않는다.
 
 ## 모듈 배치 (고침 11-01: 구조 리뷰 반영)
@@ -236,7 +238,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 - Then  `features/member/mock.ts`, `features/member/api.ts`에서만 나온다
 
 ## 9. 백엔드 연결 (#82)
-환경 변수 `AUTH_MODE=backend`일 때만 실제 백엔드(`BACKEND_URL`)로 로그인한다. 없으면 위 1~8장의 목업 그대로다. 백엔드 API는 [백엔드 회원·인증](../backend/auth/README.md).
+환경 변수 `AUTH_MODE=backend`일 때만 실제 백엔드(`BACKEND_URL`)로 로그인한다. 없으면 위 1~8장의 목업 그대로다. 백엔드 API는 [백엔드 회원·인증](../../backend/auth/README.md).
 
 #82-S1 `AUTH_MODE=backend`일 때 실제 계정으로 로그인하면 헤더에 닉네임이 보인다 [직접]
 - Given 백엔드 실행, Swagger `POST /api/auth/signup`으로 만든 계정
@@ -269,7 +271,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 - 로그인 시도 횟수 제한
 
 ## 작업 순서
-0. 브랜치 — `git switch -c feature/frontend-auth origin/develop && git branch --unset-upstream`, 이 계획을 `docs/frontend/auth.md`로 저장
+0. 브랜치 — `git switch -c feature/frontend-auth origin/develop && git branch --unset-upstream`, 이 계획을 `docs/frontend/auth/auth.md`로 저장
 1. 공통 코드 분리 (동작 변화 없음) — S315 일부
    - `features/my/components/FormField.tsx` → `components/ui/FormField.tsx`로 옮기고 `ProfileForm`·`PasswordForm` import 수정
    - `features/my/actions.ts`의 `FormState` → `lib/form.ts`
@@ -277,7 +279,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
    - `features/my/mock.ts`의 `DEMO_PROFILES`·`DEMO_PASSWORD`와 `my/api.ts`의 `isNicknameTaken`·`isCurrentPassword` → `features/member/{types,mock,api}.ts`. `Profile` 타입도 `member/types.ts`로 옮기고 `my/types.ts`는 그것을 쓴다
    - 확인: `npx tsc --noEmit`, `npx playwright test e2e/profile.spec.ts e2e/my.spec.ts`
 2. 닉네임 길이 변경 — S314
-   - `lib/validation.ts`의 닉네임 규칙을 `/^[가-힣a-zA-Z0-9]{1,39}$/`로, `e2e/profile.spec.ts` S169, `docs/frontend/profile-edit.md` S169·가정을 고침 (고침 11-01)
+   - `lib/validation.ts`의 닉네임 규칙을 `/^[가-힣a-zA-Z0-9]{1,39}$/`로, `e2e/profile.spec.ts` S169, `docs/frontend/auth/profile-edit.md` S169·가정을 고침 (고침 11-01)
 3. 로그인 — S347, S286~S296, S316
    - 먼저 `node_modules/next/dist/docs/01-app/02-guides/authentication.md`, `forms.md`에서 서버 액션의 `cookies().set`·`redirect` 확인
    - `lib/next-path.ts` `safeNextPath`
@@ -292,7 +294,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
    - 개발 서버에서 1440px·375px·다크 모드 눈으로 확인
 6. 테스트·문서 — S312, S313, S315
    - 파일: `e2e/auth.spec.ts` 새로 만듦 (테스트 이름은 S번호로 시작, 비로그인은 `setDemo(context, { role: "guest" })`), `e2e/links.spec.ts`, `docs/frontend/home.md` S26·S78
-   - `frontend/README.md` "폴더 구조와 규칙"에 의존 방향을 공통 규칙으로 적는다: `components/ui`·`lib`는 기능을 모른다, `mock.ts`는 같은 기능의 `api.ts`에서만 import한다, 다른 기능은 `api.ts`·`types.ts`·공개 컴포넌트로만 쓴다, 여러 기능이 쓰는 코드는 `components/ui`·`lib`나 별도 기능(`member`)에 둔다, 알려진 예외 2개. `docs/frontend/projects.md` 3계층 절은 README를 가리키고 차이(`service.ts` 로직 계층)만 남기며, "`api.ts`는 `service.ts`만 import한다"를 "프로젝트 영역에서는 `service.ts`만 `api.ts`를 import하며, 페이지와 액션은 `service.ts`를 호출한다"로 고친다 (고침 11-01: 리뷰 — 앞 문구도 호출 방향이 반대로 읽혔음. 실제 코드도 `features/project/service.ts`만 `./api`를 import함)
+   - `frontend/README.md` "폴더 구조와 규칙"에 의존 방향을 공통 규칙으로 적는다: `components/ui`·`lib`는 기능을 모른다, `mock.ts`는 같은 기능의 `api.ts`에서만 import한다, 다른 기능은 `api.ts`·`types.ts`·공개 컴포넌트로만 쓴다, 여러 기능이 쓰는 코드는 `components/ui`·`lib`나 별도 기능(`member`)에 둔다, 알려진 예외 2개. `docs/frontend/project/projects.md` 3계층 절은 README를 가리키고 차이(`service.ts` 로직 계층)만 남기며, "`api.ts`는 `service.ts`만 import한다"를 "프로젝트 영역에서는 `service.ts`만 `api.ts`를 import하며, 페이지와 액션은 `service.ts`를 호출한다"로 고친다 (고침 11-01: 리뷰 — 앞 문구도 호출 방향이 반대로 읽혔음. 실제 코드도 `features/project/service.ts`만 `./api`를 import함)
    - 확인: `cd frontend && npm run test:e2e && npm run lint && npm run build`
 
 ## 가정

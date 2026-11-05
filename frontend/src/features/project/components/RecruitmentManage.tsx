@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { RecruitmentAnalytics, RecruitmentView } from "../service";
-import type { Project } from "../types";
+import { CANCEL_REQUEST_LABEL, SELECTION_MODE_LABEL, type CancelRequest, type Project, type RecruitmentDetail } from "../types";
+import { CancelRequestButton } from "./CancelRequestButton";
+import { ExternalLink } from "./ProjectDetail";
 import { RecruitmentStatusBadge } from "./StatusBadge";
+import { TestItemImages } from "./TestItemImages";
 
 /* 테스트 모집 관리 화면의 머리 요약, 탭 줄, 분석 탭 */
 
@@ -26,10 +30,13 @@ type SummaryProps = {
   project: Project;
   recruitment: RecruitmentView;
   analytics: RecruitmentAnalytics;
+  detail: RecruitmentDetail;
+  cancelRequest: CancelRequest | null;
+  canRequestCancel: boolean;
 };
 
 /** 모집 건 요약. 탭 위에 늘 보인다 */
-export function RecruitmentSummary({ project, recruitment, analytics }: SummaryProps) {
+export function RecruitmentSummary({ project, recruitment, analytics, detail, cancelRequest, canRequestCancel }: SummaryProps) {
   const facts = [
     ["확정 인원", `${recruitment.confirmedCount}명`],
     ["정원", `${recruitment.capacity}명`],
@@ -37,6 +44,8 @@ export function RecruitmentSummary({ project, recruitment, analytics }: SummaryP
     ["피드백 제출", `${analytics.feedbackCount}건`],
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
     ["제출 마감", formatDate(recruitment.submitDeadline)],
+    ["유형", SOFTWARE_TYPE_LABEL[recruitment.softwareType]],
+    ["선정 방식", SELECTION_MODE_LABEL[detail.selectionMode]],
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -59,9 +68,16 @@ export function RecruitmentSummary({ project, recruitment, analytics }: SummaryP
       <div className="flex flex-wrap items-center gap-2">
         <RecruitmentStatusBadge status={recruitment.status} />
         {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
+        {canRequestCancel && (
+          <span className="ml-auto">
+            <CancelRequestButton projectKey={project.key} recruitmentKey={recruitment.slug} />
+          </span>
+        )}
       </div>
-      <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{recruitment.request}</h1>
-      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-3 lg:grid-cols-6">
+      <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{detail.title || recruitment.request}</h1>
+      {detail.title && <p className="text-lg text-text-muted">{recruitment.request}</p>}
+      {detail.accessUrl && <ExternalLink href={detail.accessUrl}>{detail.accessUrl}</ExternalLink>}
+      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-muted p-5 sm:grid-cols-4 lg:grid-cols-8">
         {facts.map(([term, value]) => (
           <div key={term} className="flex flex-col gap-1">
             <dt className="text-xs text-text-muted">{term}</dt>
@@ -69,7 +85,62 @@ export function RecruitmentSummary({ project, recruitment, analytics }: SummaryP
           </div>
         ))}
       </dl>
+      {cancelRequest && <CancelStatus request={cancelRequest} />}
+      <RecruitmentDetailBox detail={detail} />
     </div>
+  );
+}
+
+/** 모집 취소 요청 상태. 반려면 운영자가 고른 사유를 보여 준다 */
+function CancelStatus({ request }: { request: CancelRequest }) {
+  const message = {
+    pending: "모집 취소를 요청했어요. 운영자 확인을 기다리고 있어요",
+    approved: "운영자가 모집 취소를 승인했어요. 확정된 테스터의 참여도 함께 취소됐어요",
+    rejected: "모집 취소 요청이 반려됐어요. 모집은 그대로 진행돼요",
+  }[request.status];
+  return (
+    <div data-testid="cancel-status" className="flex flex-col gap-1 rounded-2xl border border-line bg-surface-muted px-5 py-4 text-sm">
+      <p className="flex flex-wrap items-center gap-2 font-semibold">
+        <Badge tone="muted">취소 요청 {CANCEL_REQUEST_LABEL[request.status]}</Badge>
+        {message}
+      </p>
+      <p className="text-text-muted">
+        요청 사유: {request.reason} · {formatDate(request.requestedAt)} 요청
+      </p>
+      {request.rejectReason && <p className="text-text-muted">반려 사유: {request.rejectReason}</p>}
+    </div>
+  );
+}
+
+/** 모집 조건과 테스트 항목. 길어질 수 있어 접어 두고 필요할 때 연다 */
+function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
+  return (
+    <details className="rounded-2xl bg-surface-muted px-5 py-4">
+      <summary className="cursor-pointer text-sm font-bold">모집 조건과 테스트 항목 {detail.testItems.length}개</summary>
+      <div className="flex flex-col gap-4 pt-4 text-sm">
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">모집 조건</p>
+          <p className="whitespace-pre-line text-text-muted">{detail.conditions || "따로 정한 조건이 없어요"}</p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">테스트 항목</p>
+          <ol className="flex list-decimal flex-col gap-4 pl-5">
+            {detail.testItems.map((item) => (
+              <li key={item.id}>
+                <span className="font-semibold">{item.title}</span>
+                <Badge tone={item.required ? "neutral" : "outline"} className="ml-2">
+                  {item.required ? "필수" : "선택"}
+                </Badge>
+                {item.description && <span className="break-words text-text-muted"> · {item.description}</span>}
+                <div className="pt-3 empty:hidden">
+                  <TestItemImages item={item} />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </details>
   );
 }
 

@@ -3,10 +3,11 @@ import { connection } from "next/server";
 import { cache } from "react";
 import { getDemoDataMode } from "@/lib/demo";
 import type { Role } from "@/lib/session";
-import { buildGeneralRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
-import { readDecisions, saveDecisions, type Decision } from "./demo-decisions";
+import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
+import type { Recruitment } from "@/features/recruitment/types";
+import { readCancelRequests, readDecisions, saveCancelRequest, saveDecisions, type Decision } from "./demo-decisions";
 import { buildDeveloperProjects, type ProjectSeedData } from "./mock";
-import type { AiSummary, Application, Feedback, Project } from "./types";
+import type { AiSummary, Application, CancelRequest, Feedback, Project, RecruitmentDetail } from "./types";
 
 /*
  * 데이터 계층. 프로젝트·지원·피드백 데이터를 가져온다. 지금은 목업을 돌려준다.
@@ -15,7 +16,7 @@ import type { AiSummary, Application, Feedback, Project } from "./types";
  */
 
 const SLOW_DELAY_MS = 1500;
-const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {} };
+const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {}, details: {}, cancelRequests: {} };
 
 /** 한 요청 안에서는 목업을 한 번만 만든다 */
 const load = cache(async (role: Role): Promise<ProjectSeedData> => {
@@ -53,6 +54,33 @@ export async function saveApplicationDecisions(ids: string[], status: Decision):
   return saveDecisions(ids, status);
 }
 
+export type PublicRecruitmentData = {
+  recruitment: Recruitment;
+  /** 모집글 제목, 모집 조건, 테스트 항목. 샘플이 없는 모집 건은 null */
+  detail: RecruitmentDetail | null;
+  /** 이 모집 건의 프로젝트. 샘플이 없는 모집 건은 null */
+  project: Pick<Project, "description" | "image"> | null;
+};
+
+/**
+ * 누구나 볼 수 있는 모집글 하나. 역할과 상관없이 읽는다. 없거나 취소가 승인된 모집 건은 null.
+ * 시연용 상세 샘플은 개발자 데모 계정의 모집 건에만 있다.
+ */
+export async function findPublicRecruitment(slug: string): Promise<PublicRecruitmentData | null> {
+  const mode = await getDemoDataMode();
+  if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+  await connection();
+  const now = new Date();
+  const home = [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)];
+  const seed = buildDeveloperProjects(now, home);
+  if (seed.cancelRequests[slug]?.status === "approved") return null;
+  const owner = seed.projects.find((project) => project.recruitments.some((item) => item.slug === slug));
+  const recruitment =
+    owner?.recruitments.find((item) => item.slug === slug) ?? [...home, ...buildPastRecruitments(now)].find((item) => item.slug === slug);
+  if (!recruitment) return null;
+  return { recruitment, detail: seed.details[slug] ?? null, project: owner ?? null };
+}
+
 /** 회원의 프로젝트 전체 */
 export async function findProjects(role: Role): Promise<Project[]> {
   return (await load(role)).projects;
@@ -77,6 +105,27 @@ export async function findAiSummary(role: Role, recruitmentKey: string): Promise
   /* 느린 응답 시연: 숫자 카드보다 늦게 도착하는 모습을 보여 준다 */
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
   return (await load(role)).aiSummaries[recruitmentKey] ?? null;
+}
+
+/** 모집 건의 모집 조건과 테스트 항목 */
+export async function findRecruitmentDetail(role: Role, recruitmentKey: string): Promise<RecruitmentDetail> {
+  return (await load(role)).details[recruitmentKey] ?? { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", testItems: [] };
+}
+
+/** 모집 건의 취소 요청. 운영자가 처리한 요청이 있으면 그것을, 아니면 시연 중 보낸 요청(처리 대기)을 돌려준다 */
+export async function findCancelRequest(role: Role, recruitmentKey: string): Promise<CancelRequest | null> {
+  const processed = (await load(role)).cancelRequests[recruitmentKey];
+  const sent = (await readCancelRequests())[recruitmentKey];
+  /* 반려된 뒤 다시 보낸 요청은 새 요청이 우선이다. 목업의 처리 시각은 요청마다 다시 계산되므로 시각을 비교하지 않는다 */
+  if (sent && (!processed || processed.status === "rejected")) {
+    return { status: "pending", ...sent };
+  }
+  return processed ?? null;
+}
+
+/** 모집 취소 요청을 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
+export async function saveRecruitmentCancelRequest(recruitmentKey: string, reason: string): Promise<boolean> {
+  return saveCancelRequest(recruitmentKey, { reason, requestedAt: new Date().toISOString() });
 }
 
 /** 회원이 지금 구독 중인지. 시연에서는 개발자 역할만 구독 중이다 */

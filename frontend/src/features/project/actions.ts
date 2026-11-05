@@ -5,6 +5,7 @@ import {
   decideApplicants as decide,
   getMyProject,
   getRecruitmentFormInfo,
+  requestRecruitmentCancel,
   requireRole,
   validateProjectForm,
   validateRecruitmentForm,
@@ -28,9 +29,9 @@ export async function saveProject(projectKey: string | null, _prev: FormState, f
 
 /** 테스트 모집 작성 */
 export async function createRecruitment(projectKey: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  const { maxCapacity } = await getRecruitmentFormInfo(`/my/projects/${projectKey}/recruitments/new`, projectKey);
+  const { maxCapacity, isSubscription } = await getRecruitmentFormInfo(`/my/projects/${projectKey}/recruitments/new`, projectKey);
 
-  const result = validateRecruitmentForm(formData, maxCapacity, new Date());
+  const result = validateRecruitmentForm(formData, maxCapacity, isSubscription, new Date());
   if (Object.keys(result.errors).length > 0) return result;
   redirect(`/my/projects/${projectKey}?notice=saved`);
 }
@@ -44,4 +45,14 @@ export async function decideApplicants(
 ): Promise<{ ok: boolean }> {
   if (status !== "confirmed" && status !== "rejected") return { ok: false };
   return decide(projectKey, recruitmentKey, ids, status);
+}
+
+/** 모집 취소 요청. 시연용이라 브라우저 쿠키에 남고, 화면에 "처리 대기"로 보인다 */
+export async function requestCancel(
+  projectKey: string,
+  recruitmentKey: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState & { ok?: boolean }> {
+  return requestRecruitmentCancel(projectKey, recruitmentKey, formData);
 }

@@ -32,7 +32,7 @@ export default function RecruitmentManagePage({ params, searchParams }: Props) {
 async function ManageSlot({ params, searchParams }: Props) {
   const { projectKey, recruitmentKey } = await params;
   const basePath = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
-  const [{ project, recruitment, applications, feedbacks, analytics }, { tab }] = await Promise.all([
+  const [{ project, recruitment, applications, feedbacks, analytics, detail, cancelRequest, canRequestCancel }, { tab }] = await Promise.all([
     getRecruitmentDetail(basePath, projectKey, recruitmentKey),
     searchParams,
   ]);
@@ -40,19 +40,27 @@ async function ManageSlot({ params, searchParams }: Props) {
 
   return (
     <div className="flex flex-col gap-8">
-      <RecruitmentSummary project={project} recruitment={recruitment} analytics={analytics} />
+      <RecruitmentSummary
+        project={project}
+        recruitment={recruitment}
+        analytics={analytics}
+        detail={detail}
+        cancelRequest={cancelRequest}
+        canRequestCancel={canRequestCancel}
+      />
       <RecruitmentTabs basePath={basePath} current={current} />
       {current === "testers" && (
         <ApplicantList
           applications={applications}
           capacity={recruitment.capacity}
-          canSelect={canSelectApplicants(recruitment)}
+          canSelect={canSelectApplicants(recruitment, detail.selectionMode)}
           projectKey={projectKey}
           recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
+          selectionMode={detail.selectionMode}
         />
       )}
-      {current === "feedback" && <FeedbackList feedbacks={feedbacks} />}
+      {current === "feedback" && <FeedbackList feedbacks={feedbacks} testItems={detail.testItems} />}
       {current === "analytics" && <AnalyticsPanel isSubscription={recruitment.isSubscription} analytics={analytics} />}
       {/* AI 분석은 느릴 수 있어서 숫자 카드와 따로 기다린다. 구독 모집에서만 보인다 */}
       {current === "analytics" && recruitment.isSubscription && (

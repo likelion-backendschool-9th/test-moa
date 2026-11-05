@@ -182,6 +182,7 @@ test.describe("#90-R1 테스트 항목별 피드백", () => {
     await expect(field(page)).toBeVisible();
     await expect(field(page, OTHER)).toBeVisible();
     await expect(page.getByTestId("feedback-field").last()).toContainText(OTHER);
+    await expect(page.getByTestId("feedback-number")).toHaveText(["1", "2", "3"]);
   });
 
   test("#90-S2 기타 의견은 비워도 제출되고, 적으면 제출한 피드백에 보인다", async ({ page }) => {

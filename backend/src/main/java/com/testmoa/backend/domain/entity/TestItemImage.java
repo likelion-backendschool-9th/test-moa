@@ -7,24 +7,19 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-@Entity(name = "project_images")
+@Entity(name = "test_item_images")
 @Getter
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProjectImage {
+public class TestItemImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 대상 프로젝트
+    // 대상 테스트 항목
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
-    private Project project;
-
-    // 연결된 테스트 작업. 프로젝트 공통 이미지는 null
-    @ToString.Exclude
-    @ManyToOne(fetch = FetchType.LAZY)
     private TestItem testItem;
 
     // 이미지 URL
@@ -46,21 +41,18 @@ public class ProjectImage {
     private LocalDateTime updatedAt;
 
     /**
-     * 프로젝트 이미지 등록 시 새로운 ProjectImage 엔티티 생성하기 위해 사용하는 빌더 생성자.
+     * 테스트 항목 이미지 등록 시 새로운 TestItemImage 엔티티 생성하기 위해 사용하는 빌더 생성자.
      *
-     * @param project       대상 프로젝트
-     * @param testItem      연결된 테스트 작업 (프로젝트 공통 이미지는 null)
+     * @param testItem      대상 테스트 항목
      * @param url           이미지 URL
      * @param sortOrder     화면 배치 순서
      */
     @Builder
-    public ProjectImage(
-            Project project,
+    public TestItemImage(
             TestItem testItem,
             String url,
             Integer sortOrder
     ){
-        this.project = project;
         this.testItem = testItem;
         this.url = url;
         this.sortOrder = sortOrder;

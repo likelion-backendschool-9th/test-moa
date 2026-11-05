@@ -16,11 +16,11 @@ public class TestItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 대상 프로젝트
+    // 대상 모집글
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
-    private Project project;
+    private Recruitment recruitment;
 
     // 테스트 작업 제목
     @Column(nullable = false)
@@ -29,6 +29,10 @@ public class TestItem {
     // 테스트 작업 설명
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    // 필수 여부. 필수 항목은 피드백을 써야 제출할 수 있다
+    @Column(name = "is_required", nullable = false)
+    private boolean required;
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
@@ -41,20 +45,23 @@ public class TestItem {
     private LocalDateTime updatedAt;
 
     /**
-     * 필수 테스트 작업 등록 시 새로운 TestItem 엔티티 생성하기 위해 사용하는 빌더 생성자.
+     * 테스트 작업 등록 시 새로운 TestItem 엔티티 생성하기 위해 사용하는 빌더 생성자.
      *
-     * @param project       대상 프로젝트
+     * @param recruitment   대상 모집글
      * @param title         테스트 작업 제목
      * @param description   테스트 작업 설명
+     * @param required      필수 여부
      */
     @Builder
     public TestItem(
-            Project project,
+            Recruitment recruitment,
             String title,
-            String description
+            String description,
+            boolean required
     ){
-        this.project = project;
+        this.recruitment = recruitment;
         this.title = title;
         this.description = description;
+        this.required = required;
     }
 }

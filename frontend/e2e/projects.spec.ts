@@ -76,7 +76,7 @@ test.describe("R103 프로젝트 등록·수정", () => {
   });
 });
 
-test.describe("R113 프로젝트 이미지·미리보기", () => {
+test.describe("#62-R1 프로젝트 이미지·미리보기", () => {
   /* 시연용 파일. 내용은 상관없고 이름·형식·크기만 본다 */
   const file = (name: string, mimeType: string, bytes = 1024) => ({ name, mimeType, buffer: Buffer.alloc(bytes) });
   const png = (name: string) => file(name, "image/png");
@@ -260,7 +260,7 @@ test.describe("R105 테스트 모집 작성", () => {
   });
 });
 
-test.describe("R119 모집글 제목과 선정 조건", () => {
+test.describe("#62-R7 모집글 제목과 선정 조건", () => {
   const NEW = `${BOOKLOG}/recruitments/new`;
 
   test.beforeEach(async ({ context }) => {
@@ -532,7 +532,7 @@ test.describe("R109 분석 탭", () => {
   });
 });
 
-test.describe("R114 모집 조건과 테스트 항목", () => {
+test.describe("#62-R2 모집 조건과 테스트 항목", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
@@ -603,7 +603,7 @@ test.describe("R114 모집 조건과 테스트 항목", () => {
   });
 });
 
-test.describe("R115 모집 취소", () => {
+test.describe("#62-R3 모집 취소", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
@@ -715,7 +715,7 @@ test.describe("R115 모집 취소", () => {
   });
 });
 
-test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
+test.describe("#62-R4 테스터 제출 현황·채팅·참여 취소", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
@@ -747,7 +747,7 @@ test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
   });
 });
 
-test.describe("R117 항목별 피드백과 스크린샷", () => {
+test.describe("#62-R5 항목별 피드백과 스크린샷", () => {
   test("#62-S23 채팅 바로가기는 그 테스터와의 채팅으로 이어진다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(FIRST_MANAGE);
@@ -768,7 +768,7 @@ test.describe("R117 항목별 피드백과 스크린샷", () => {
   });
 });
 
-test.describe("R118 피드백 추천", () => {
+test.describe("#62-R6 피드백 추천", () => {
   test("#62-S26 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);

@@ -33,7 +33,7 @@ public class Account {
     @ToString.Exclude
     private String password;
 
-    // 로그인 방식(LOCAL, GOOGLE, GITHUB)
+    // 로그인 방식(LOCAL, NAVER, KAKAO, GOOGLE, GITHUB)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Provider provider;

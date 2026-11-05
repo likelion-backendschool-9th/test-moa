@@ -264,14 +264,19 @@ erDiagram
 
 ## 5. 프로젝트·모집 작성 API (#92-R1)
 
-| 동작 | API | 성공 |
-| --- | --- | --- |
-| 프로젝트 등록 | `POST /api/projects` | 201 |
-| 내 프로젝트 목록(모집글 포함) | `GET /api/projects` | 200 |
-| 프로젝트 상세(모집글 포함) | `GET /api/projects/{projectId}` | 200 |
-| 프로젝트 수정 | `PUT /api/projects/{projectId}` | 200 |
-| 모집 작성 | `POST /api/projects/{projectId}/recruitments` | 201 |
+주소는 WBS를 따른다. `{projectKey}`는 프로젝트 ID다(ERD에 slug가 없다).
 
+| WBS | 동작 | API | 성공 |
+| --- | --- | --- | --- |
+| 5.3 | 내 프로젝트 목록 | `GET /api/v1/developer/projects` | 200 |
+| 5.4 | 프로젝트 등록 | `POST /api/v1/developer/projects` | 201 |
+| 5.5 | 프로젝트 정보 조회 | `GET /api/v1/developer/projects/{projectKey}` | 200 |
+| 5.6 | 프로젝트 모집 건 목록 조회 | `GET /api/v1/developer/projects/{projectKey}/recruitments` | 200 |
+| 5.7 | 프로젝트 수정 | `PUT /api/v1/developer/projects/{projectKey}` | 200 |
+| 5.9 | 테스트 모집 작성 | `POST /api/v1/developer/recruitments` (본문의 `projectId`) | 201 |
+
+- WBS와 일부러 다른 내용: 프로젝트 항목은 ERD대로 이름·설명·대표 이미지이고, 유형과 접속 링크는 모집글에 있다. 정원과 모집 인원은 없다(#78)
+- 5.8 모집 작성 정보(보상액)는 보상액 기준이 정해진 뒤에 만든다
 - 인증과 실패 응답은 #88을 쓴다: 회원 id는 토큰의 `@AuthenticationPrincipal Long userId`, 실패는 `BusinessException`과 `ApiResponse.fail`
 - 값끼리 비교한 결과도 칸별로 알리도록 `BusinessException`에 `fields`를 더했다. 기존 생성자의 동작은 그대로다
 - 구조는 다른 API와 같다: Controller → Service 인터페이스 → `impl` → Repository, DTO는 `domain/dto`
@@ -309,11 +314,11 @@ erDiagram
 - Then  201이고 프로젝트 ID를 돌려준다. 설명과 이미지는 null이다
 
 #92-S2 내 프로젝트 목록 [테스트]
-- Given 프로젝트 2개, 그중 하나에 모집글 2개
-- Then  두 프로젝트와 각자의 모집글이 온다. 모집글이 없으면 빈 배열이다
+- Given 프로젝트 2개, 그중 하나에 모집 중·지난·취소한 모집글
+- Then  내 프로젝트만 최신순으로 오고, 모집 수는 2, 모집 중인 수는 1이다. 취소한 모집은 세지 않는다. 프로젝트가 없으면 빈 배열이다
 
 #92-S3 프로젝트 상세 [테스트]
-- Then  이름, 설명, 대표 이미지, 등록일, 모집글이 온다
+- Then  이름, 설명, 대표 이미지, 등록일, 모집 수가 온다
 
 #92-S4 프로젝트 수정 [테스트]
 - When  이름, 설명, 대표 이미지를 바꿔 보낸다
@@ -355,8 +360,12 @@ erDiagram
 
 #92-S12 실제 DB에서 저장 흐름 [직접]
 - Given 빈 로컬 DB
-- When  등록, 모집 작성, 목록 조회를 차례로 부른다
+- When  등록, 모집 작성, 모집 건 목록 조회를 차례로 부른다
 - Then  앞에서 저장한 값이 조회된다
+
+#92-S14 프로젝트 모집 건 목록 [테스트]
+- Given 프로젝트에 모집글 2개, 확정 1명과 대기 1명이 있는 모집글
+- Then  모집글이 최신순으로 오고, 확정 수는 확정만 센다. 상태와 선정 방식은 프론트 이름이다
 
 #92-S13 유형은 처음 쓸 때 만든다 [테스트]
 - When  모집글을 두 번 작성한다
@@ -367,7 +376,7 @@ erDiagram
 | 이슈 항목 | 시나리오 |
 | --- | --- |
 | 1 프로젝트 등록 | #92-S1 |
-| 2 내 프로젝트 목록 | #92-S2 |
+| 2 내 프로젝트 목록과 모집글 | #92-S2, #92-S14 |
 | 3 프로젝트 상세 | #92-S3 |
 | 4 프로젝트 수정 | #92-S4 |
 | 5 없거나 다른 회원의 프로젝트 | #92-S5 |

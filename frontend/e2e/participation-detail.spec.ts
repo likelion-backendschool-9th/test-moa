@@ -34,7 +34,7 @@ test.describe("R192 상세 접근", () => {
 });
 
 test.describe("R193 제출 전 상세와 피드백 작성", () => {
-  test("S475 필수 항목을 비우거나 짧으면 칸마다 오류를 보여 주고 입력을 남긴다", async ({ page }) => {
+  test("S475 필수 항목을 비우면 칸마다 오류를 보여 주고 입력을 남긴다", async ({ page }) => {
     await page.goto(DETAIL);
     await submit(page).click();
     await expect(section(page)).toContainText("피드백을 적어 주세요");
@@ -43,11 +43,10 @@ test.describe("R193 제출 전 상세와 피드백 작성", () => {
     await expect(field(page)).toBeFocused();
     await expect(field(page)).toHaveAttribute("aria-invalid", "true");
 
-    await field(page).fill("짧아요");
+    await field(page).fill("   ");
     await field(page, SECOND).fill(FEEDBACK_2);
     await submit(page).click();
-    await expect(section(page)).toContainText("10자 이상 적어 주세요");
-    await expect(field(page)).toHaveValue("짧아요");
+    await expect(section(page).getByTestId("feedback-error")).toHaveText("피드백을 적어 주세요");
     await expect(field(page, SECOND)).toHaveValue(FEEDBACK_2);
     await expect(page).not.toHaveURL(/notice=submitted/);
   });
@@ -201,19 +200,21 @@ test.describe("#90-R1 테스트 항목별 피드백", () => {
     await expect(submitted(page, OTHER)).toContainText("전체적으로 화면이 깔끔해서 쓰기 편했어요.");
   });
 
-  test("#90-S3 선택 항목은 비우면 제출한 피드백에 없고, 적으면 글자 수를 검사한다", async ({ page }) => {
+  test("#90-S3 선택 항목은 비우면 제출한 피드백에 없고, 짧게 적어도 제출된다", async ({ page }) => {
     await page.goto(DETAIL);
     await fillRequired(page);
-    await field(page, OPTIONAL).fill("짧아요");
-    await submit(page).click();
-    await expect(section(page, OPTIONAL).getByTestId("feedback-error")).toHaveText("10자 이상 적어 주세요");
-    await expect(field(page, OPTIONAL)).toBeFocused();
-
-    await field(page, OPTIONAL).fill("");
     await submit(page).click();
     await expect(page).toHaveURL(/\?notice=submitted$/);
     await expect(submitted(page, OPTIONAL)).toHaveCount(0);
     await expect(submitted(page, FIRST)).toBeVisible();
+
+    await page.goto("/my/participations/p-used-books");
+    await field(page, "책 등록하기").fill("좋아요");
+    await field(page, "거래 요청 보내기").fill("됨");
+    await submit(page).click();
+    await expect(page).toHaveURL(/\?notice=submitted$/);
+    await expect(submitted(page, "책 등록하기")).toContainText("좋아요");
+    await expect(submitted(page, "거래 요청 보내기")).toContainText("됨");
   });
 
   test("#90-S4 서버도 최대 글자 수를 확인하고 입력을 남긴다", async ({ page }) => {

@@ -64,4 +64,17 @@ public class Project {
         this.description = description;
         this.imageUrl = imageUrl;
     }
+
+    /**
+     * 프로젝트 정보 수정.
+     *
+     * @param title         소프트웨어 이름
+     * @param description   프로젝트 설명 (없으면 null)
+     * @param imageUrl      대표 이미지 URL (없으면 null)
+     */
+    public void update(String title, String description, String imageUrl) {
+        this.title = title;
+        this.description = description;
+        this.imageUrl = imageUrl;
+    }
 }

@@ -34,17 +34,21 @@ export function FeedbackForm({ participationKey, testItems }: { participationKey
     <form ref={form} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <p className="text-sm text-text-muted">해 본 일, 써 보며 느낀 점, 발견한 버그를 항목마다 적어 주세요. 버그를 찾지 못했다면 그렇다고 적어도 괜찮아요.</p>
 
-      {testItems.map((item) => (
-        <FeedbackField
-          key={item.id}
-          fieldKey={item.id}
-          title={item.title}
-          description={item.description}
-          required={item.required}
-          error={errors[item.id]}
-        />
-      ))}
-      <FeedbackField fieldKey={OTHER_FEEDBACK_KEY} title="기타 의견" description="항목에 속하지 않는 의견이 있으면 적어 주세요." required={false} error={errors[OTHER_FEEDBACK_KEY]} />
+      {/* 모집글 상세의 테스트 항목과 같은 번호와 구분선으로 칸을 나눈다 */}
+      <ol className="flex flex-col divide-y divide-line">
+        {testItems.map((item, index) => (
+          <FeedbackField
+            key={item.id}
+            fieldKey={item.id}
+            number={index + 1}
+            title={item.title}
+            description={item.description}
+            required={item.required}
+            error={errors[item.id]}
+          />
+        ))}
+        <FeedbackField fieldKey={OTHER_FEEDBACK_KEY} title="기타 의견" description="항목에 속하지 않는 의견이 있으면 적어 주세요." required={false} error={errors[OTHER_FEEDBACK_KEY]} />
+      </ol>
 
       {formError && (
         <p role="alert" className="text-sm font-semibold">

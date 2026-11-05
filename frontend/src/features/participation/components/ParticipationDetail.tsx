@@ -10,6 +10,7 @@ import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentT
 import { formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
 import { payoutAt, STATUS_LABEL, tabOf, TAB_LABEL, type FeedbackEntry, type ParticipationItem } from "../types";
 import { FeedbackForm } from "./FeedbackForm";
+import { FeedbackMarker } from "./FeedbackMarker";
 
 type ParticipationDetailProps = {
   item: ParticipationItem;
@@ -78,38 +79,43 @@ function infoRows(item: ParticipationItem): Array<[string, ReactNode]> {
   return rows;
 }
 
-function feedbackTitle(item: ParticipationItem, feedback: FeedbackEntry) {
-  return item.testItems.find((testItem) => testItem.id === feedback.testItemId)?.title ?? "기타 의견";
-}
-
 /** 제출한 피드백 한 건. 항목 이름 아래에 내용과 첨부 이미지를 둔다 */
-function SubmittedFeedback({ feedback, title }: { feedback: FeedbackEntry; title: string }) {
+function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedback: FeedbackEntry }) {
+  const index = item.testItems.findIndex((testItem) => testItem.id === feedback.testItemId);
+  const testItem = item.testItems[index];
+  const title = testItem?.title ?? "기타 의견";
   return (
-    <section aria-label={title} data-testid="submitted-feedback" className="flex flex-col gap-2">
-      <h3 className="text-sm font-bold">{title}</h3>
-      {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
-      <p className="text-sm whitespace-pre-wrap wrap-anywhere">{feedback.content}</p>
-      {feedback.imageNames.length > 0 && (
-        <div className="flex flex-col gap-3 pt-2">
-          <h4 className="text-sm font-bold">
-            첨부 이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{feedback.imageNames.length}</span>
-          </h4>
-          {/* 작성할 때의 미리 보기와 같은 칸. 시연용이라 파일이 없어 이미지 자리에 아이콘과 이름을 둔다 */}
-          <ul data-testid="feedback-image-names" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {feedback.imageNames.map((name, index) => (
-              <li
-                key={`${name}-${index}`}
-                title={name}
-                className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-surface-strong p-3 text-text-muted"
-              >
-                <ImageIcon aria-hidden size={24} className="shrink-0" />
-                <span className="w-full truncate text-center text-xs font-semibold">{name}</span>
-              </li>
-            ))}
-          </ul>
+    <li className="flex gap-3 py-6 first:pt-0 last:pb-0 md:gap-4">
+      <FeedbackMarker number={testItem ? index + 1 : undefined} />
+      <section aria-label={title} className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex min-h-8 flex-wrap items-center gap-2">
+          <h3 className="text-lg font-bold">{title}</h3>
+          <Badge tone={testItem?.required ? "neutral" : "outline"}>{testItem?.required ? "필수" : "선택"}</Badge>
         </div>
-      )}
-    </section>
+        {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
+        <p className="text-sm whitespace-pre-wrap wrap-anywhere">{feedback.content}</p>
+        {feedback.imageNames.length > 0 && (
+          <div className="flex flex-col gap-3 pt-2">
+            <h4 className="text-sm font-bold">
+              첨부 이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{feedback.imageNames.length}</span>
+            </h4>
+            {/* 작성할 때의 미리 보기와 같은 칸. 시연용이라 파일이 없어 이미지 자리에 아이콘과 이름을 둔다 */}
+            <ul data-testid="feedback-image-names" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {feedback.imageNames.map((name, index) => (
+                <li
+                  key={`${name}-${index}`}
+                  title={name}
+                  className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-surface-strong p-3 text-text-muted"
+                >
+                  <ImageIcon aria-hidden size={24} className="shrink-0" />
+                  <span className="w-full truncate text-center text-xs font-semibold">{name}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+    </li>
   );
 }
 
@@ -199,9 +205,11 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
         {item.feedbacks.length > 0 && (
           <Card className="flex flex-col gap-6 md:p-8">
             <h2 className="text-lg font-extrabold">제출한 피드백</h2>
-            {item.feedbacks.map((feedback) => (
-              <SubmittedFeedback key={feedback.testItemId ?? "other"} feedback={feedback} title={feedbackTitle(item, feedback)} />
-            ))}
+            <ol className="flex flex-col divide-y divide-line">
+              {item.feedbacks.map((feedback) => (
+                <SubmittedFeedback key={feedback.testItemId ?? "other"} item={item} feedback={feedback} />
+              ))}
+            </ol>
           </Card>
         )}
       </div>

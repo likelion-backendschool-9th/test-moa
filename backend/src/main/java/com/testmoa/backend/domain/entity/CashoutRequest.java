@@ -2,6 +2,7 @@ package com.testmoa.backend.domain.entity;
 
 import com.testmoa.backend.global.common.CashoutRejectReason;
 import com.testmoa.backend.global.common.CashoutStatus;
+import com.testmoa.backend.global.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -32,12 +33,14 @@ public class CashoutRequest {
     @Column(nullable = false)
     private String bank;
 
-    // 계좌번호. 숫자 10~14자리. 응답 시 완료 건은 마스킹할 수 있다
-    @Column(nullable = false)
+    // 계좌번호. 숫자 10~14자리. DB에는 AES-GCM 암호문으로 저장한다(#67)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, length = 255)
     private String accountNumber;
 
-    // 입금 예금주. 회원 실명과 다르면 운영자가 확인한다
-    @Column(nullable = false)
+    // 입금 예금주. 회원 실명과 다르면 운영자가 확인한다. 계좌와 같이 암호화
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, length = 255)
     private String accountHolder;
 
     // 처리 상태(REQUESTED, PAID, REJECTED). 지급 완료는 PAID

@@ -52,7 +52,6 @@ async function ManageSlot({ params, searchParams }: Props) {
       {current === "testers" && (
         <ApplicantList
           applications={applications}
-          capacity={recruitment.capacity}
           canSelect={canSelectApplicants(recruitment, detail.selectionMode)}
           projectKey={projectKey}
           recruitmentKey={recruitmentKey}

@@ -24,8 +24,7 @@ export function AppFooter() {
           </Link>
         </nav>
       </Container>
-      {/* 실제 로그인(AUTH_MODE=backend)에서는 역할을 쿠키로 바꿀 수 없어 숨긴다 */}
-      {process.env.NODE_ENV === "development" && !isBackendAuth && (
+      {process.env.NODE_ENV === "development" && (
         <Container className="pb-8">
           <Suspense fallback={null}>
             <DemoSwitcherSlot />
@@ -38,5 +37,6 @@ export function AppFooter() {
 
 async function DemoSwitcherSlot() {
   const [session, data] = await Promise.all([getSession(), getDemoDataMode()]);
-  return <DemoSwitcher role={session.role} data={data} />;
+  /* 실제 로그인(AUTH_MODE=backend)에서는 로그인·운영자는 백엔드가 정해서, 회원의 화면(테스터·개발자)만 고른다 */
+  return <DemoSwitcher role={session.role} data={data} personaOnly={isBackendAuth} />;
 }

@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.testmoa.backend.domain.entity.User;
 import com.testmoa.backend.domain.repository.UserRepository;
 import com.testmoa.backend.global.common.UserStatus;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,6 +56,8 @@ class AuthControllerTest {
     }
 
     @Test
+
+    @DisplayName("#80-S1·S3 가입하면 로그인할 수 있고 access 토큰이 통한다")
     void 가입하면_로그인할_수_있고_access_토큰이_통한다() throws Exception {
         signup(email, nickname).andExpect(status().isCreated()).andExpect(jsonPath("$.success").value(true));
 
@@ -69,6 +72,8 @@ class AuthControllerTest {
     }
 
     @Test
+
+    @DisplayName("#80-S2 이미 쓰는 이메일과 닉네임은 409")
     void 이미_쓰는_이메일과_닉네임은_409() throws Exception {
         signup(email, nickname);
 
@@ -77,6 +82,8 @@ class AuthControllerTest {
     }
 
     @Test
+
+    @DisplayName("#80-S2 형식이 틀리면 칸별 문구를 준다")
     void 형식이_틀리면_칸별_문구를_준다() throws Exception {
         postJson("/api/auth/signup", """
                 {"name":"","nickname":"윤슬!!","email":"moa","password":"abc"}""")
@@ -89,6 +96,8 @@ class AuthControllerTest {
     }
 
     @Test
+
+    @DisplayName("#80-S4 틀린 비밀번호와 없는 이메일은 같은 401")
     void 틀린_비밀번호와_없는_이메일은_같은_401() throws Exception {
         signup(email, nickname);
 
@@ -99,6 +108,8 @@ class AuthControllerTest {
     }
 
     @Test
+
+    @DisplayName("#80-S5 정지된 회원은 로그인할 수 없다")
     void 정지된_회원은_로그인할_수_없다() throws Exception {
         signup(email, nickname);
         User user = userRepository.findAll().stream().filter(found -> found.getEmail().equals(email)).findFirst().orElseThrow();
@@ -108,6 +119,8 @@ class AuthControllerTest {
     }
 
     @Test
+
+    @DisplayName("#80-S6·S7 refresh 토큰은 한 번만 쓸 수 있고 로그아웃하면 못 쓴다")
     void refresh_토큰은_한_번만_쓸_수_있고_로그아웃하면_못_쓴다() throws Exception {
         signup(email, nickname);
         String first = field(login(email, "moa2026pw"), "$.data.refreshToken");

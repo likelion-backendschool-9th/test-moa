@@ -12,6 +12,7 @@ import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.service.SubscriptionChecker;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -71,6 +72,8 @@ class UserControllerTest {
     }
 
     @Test
+
+    @DisplayName("#81-S1 구독하지 않은 회원의 내 정보")
     void 구독하지_않은_회원() throws Exception {
         User user = saveUser(Role.USER);
 
@@ -85,6 +88,8 @@ class UserControllerTest {
     }
 
     @Test
+
+    @DisplayName("#81-S2 구독 중인 회원")
     void 구독_중인_회원() throws Exception {
         User user = saveUser(Role.USER);
         subscribe(user, SubscriptionStatus.ACTIVE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(29));
@@ -96,6 +101,8 @@ class UserControllerTest {
     }
 
     @Test
+
+    @DisplayName("#81-S3 기간이 끝난 구독은 상태가 ACTIVE여도 구독이 아니다")
     void 기간이_끝난_구독은_상태가_ACTIVE여도_구독이_아니다() throws Exception {
         User user = saveUser(Role.USER);
         subscribe(user, SubscriptionStatus.ACTIVE, LocalDateTime.now().minusDays(31), LocalDateTime.now().minusDays(1));
@@ -104,6 +111,8 @@ class UserControllerTest {
     }
 
     @Test
+
+    @DisplayName("#81-S3 해지한 구독은 구독이 아니다")
     void 해지한_구독은_구독이_아니다() throws Exception {
         User user = saveUser(Role.USER);
         subscribe(user, SubscriptionStatus.CANCELLED, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(29));
@@ -112,6 +121,8 @@ class UserControllerTest {
     }
 
     @Test
+
+    @DisplayName("#81-S4 운영자는 구독 정보가 없다")
     void 운영자는_구독_정보가_없다() throws Exception {
         me(saveUser(Role.ADMIN))
                 .andExpect(jsonPath("$.data.role").value("ADMIN"))
@@ -119,6 +130,8 @@ class UserControllerTest {
     }
 
     @Test
+
+    @DisplayName("#79-S3 토큰이 없으면 401")
     void 토큰이_없으면_401() throws Exception {
         mvc.perform(get("/api/users/me")).andExpect(status().isUnauthorized());
     }

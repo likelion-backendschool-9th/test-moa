@@ -27,6 +27,10 @@ public class CashoutResponse {
     private LocalDateTime processedAt;
 
     public static CashoutResponse of(CashoutRequest request) {
+        // 회원에게는 OTHER 메모만 보인다. HOLDER/ACCOUNT 운영자 메모는 숨긴다(entities).
+        String memberMemo = request.getRejectReason() == CashoutRejectReason.OTHER
+                ? request.getRejectMemo()
+                : null;
         return CashoutResponse.builder()
                 .id(request.getId())
                 .amount(request.getAmount())
@@ -35,7 +39,7 @@ public class CashoutResponse {
                 .accountNumber(AccountMasking.mask(request.getAccountNumber(), request.getStatus()))
                 .accountHolder(request.getAccountHolder())
                 .rejectReason(request.getRejectReason())
-                .rejectMemo(request.getRejectMemo())
+                .rejectMemo(memberMemo)
                 .requestedAt(request.getCreatedAt())
                 .processedAt(request.getProcessedAt())
                 .build();

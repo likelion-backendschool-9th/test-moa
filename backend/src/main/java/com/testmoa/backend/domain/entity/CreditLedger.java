@@ -27,11 +27,11 @@ public class CreditLedger {
     @Column(nullable = false)
     private Integer delta;
 
-    // 변동 원인(이벤트, 현금화 등)
+    // 변동 원인(구독 결제(이벤트 크레딧), 출금 지급, 가입 크레딧 등). 결제 ID는 남기지 않는다
     @Column(nullable = false)
     private String description;
 
-    // 변동 크레딧 종류(EVENT, EARNED, LOCKED)
+    // 변동 크레딧 종류(EVENT, EARNED). 총잔액이 바뀐 일만 남기므로 잠금/해제는 ledger에 남기지 않는다
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CreditType type;

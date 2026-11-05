@@ -8,6 +8,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity(name = "plans")
+@Table(uniqueConstraints = @UniqueConstraint(
+        name = "uk_plans_tier_version",
+        columnNames = {"tier", "version"}
+))
 @Getter
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -32,7 +36,8 @@ public class Plan {
     @Column(nullable = false)
     private Integer monthlyRecruitLimit;
 
-    // 플랜 정보가 바뀌면 기록하는 버전
+    // 같은 tier의 몇 번째 조건인지. 가격·한도가 바뀌면 이 행을 고치지 않고 version을 1 올린 새 행을 만든다.
+    // 구독 행은 산 당시의 플랜 행을 가리켜서, 예전 구독의 조건이 그대로 남는다.
     @Column(nullable = false)
     private Integer version;
 

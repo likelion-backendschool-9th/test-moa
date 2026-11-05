@@ -18,10 +18,10 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 결제 대상 구독
+    // 이 결제로 산 이용 기간. 결제 1건 = 구독 1건이라 구독 1 : 결제 1
     @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(nullable = false, unique = true)
     private Subscription subscription;
 
     // 결제 방식(CASH, CREDIT)
@@ -55,24 +55,24 @@ public class Payment {
     /**
      * 구독 결제 시 새로운 Payment 엔티티 생성하기 위해 사용하는 빌더 생성자.
      *
-     * @param subscription  결제 대상 구독
+     * @param subscription  이 결제로 산 이용 기간(구독)
      * @param method        결제 방식
      * @param amount        결제 금액
      * @param paidAt        결제 일시
-     * @param status        결제 상태
+     *
+     * 상태는 밖에서 받지 않고 항상 COMPLETED로 시작한다. 환불하면 REFUNDED로 바꾼다.
      */
     @Builder
     public Payment(
             Subscription subscription,
             PaymentMethod method,
             Integer amount,
-            LocalDateTime paidAt,
-            PaymentStatus status
+            LocalDateTime paidAt
     ){
         this.subscription = subscription;
         this.method = method;
         this.amount = amount;
         this.paidAt = paidAt;
-        this.status = status;
+        this.status = PaymentStatus.COMPLETED;
     }
 }

@@ -13,6 +13,7 @@ AI 코딩 에이전트가 이 저장소에서 따르는 규칙입니다. 커밋 
 ## 문서
 
 - 프론트엔드 페이지의 계획·요구사항 문서는 `docs/frontend/<페이지>.md`에 날짜 없이 둡니다(예: `docs/frontend/chat-room.md`). 계획 스킬이 `docs/YYYY-MM-DD-작업이름.md`를 권해도 이 규칙을 따르고, 그 페이지 문서가 이미 있으면 그 문서를 고칩니다.
+- 백엔드 도메인·유스케이스 계획·요구사항 문서는 `docs/backend/<이름>.md`에 날짜 없이 둡니다(예: `docs/backend/payment-subscription-credit.md`). 계획 스킬이 `docs/YYYY-MM-DD-작업이름.md`를 권해도 이 규칙을 따르고, 그 문서가 이미 있으면 그 문서를 고칩니다.
 - 여러 페이지가 함께 쓰는 문서는 `docs/` 바로 아래에 둡니다(예: `docs/page-urls.md`).
 
 ## 브랜치

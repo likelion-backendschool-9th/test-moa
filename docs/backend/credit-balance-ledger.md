@@ -8,7 +8,7 @@
 - 끝나면: `GET`으로 잔액 구성·승인 대기·장부 내역을 내려 `/my`·`/my/credits`가 쓸 수 있다. 프론트 목업 제거는 이후 별 PR.
 - 인증은 당분간 `userId` 경로.
 - 브랜치: `feature/backend-credit-balance-ledger`
-- 화면: `docs/frontend/credits.md`, `docs/frontend/credit-labels.md`
+- 화면: `docs/frontend/payment/credits.md`, `docs/frontend/payment/credit-labels.md`
 
 ## API
 
@@ -73,7 +73,7 @@ Feedback 상태와 화면에 쓰는 말:
 
 `pendingReward`에 넣어도 지갑에 들어오거나 출금·결제에 쓰이지는 않는다. 잔액과 별도 숫자다.
 
-### 계산 요약
+### 계산 요약 (지금 구현)
 
 1. 해당 유저의 Register 중 **`status = CONFIRMED`** 이고  
 2. `Feedback.status = SUBMITTED`인 행이 **하나라도** 있고  
@@ -81,6 +81,17 @@ Feedback 상태와 화면에 쓰는 말:
 4. `SUM(baseRewardSnapshot + extraRewardSnapshot)` (참가당 1회)
 
 `CANCELLED`·`REJECTED`는 넣지 않는다. 확정 뒤 취소된 참가에 Feedback이 남아 있어도 승인 대기에서 빠진다.
+
+### 아직 정하지 않은 것: SUBMITTED와 REPORTED가 한 참가에 섞일 때
+
+테스트 항목이 여러 개면 Feedback 행도 여러 개다. 그중 일부만 신고되면 같은 Register에 `SUBMITTED`와 `REPORTED`가 같이 남을 수 있다.
+
+| 안 | 조건 | 결과 |
+| --- | --- | --- |
+| A (지금 코드) | `EXISTS SUBMITTED` | 신고되지 않은 항목이 있으면 pending에 **포함** |
+| B (프로젝트 추천) | `EXISTS SUBMITTED` 이고 `NOT EXISTS REPORTED` | 한 건이라도 신고면 참가 전체 pending에서 **제외**(지급 보류) |
+
+보상은 참가당 한 번이라, 프로젝트 문서([project/README.md](project/README.md) 「아직 정하지 않은 것」 2번)는 B를 추천한다. `#66`은 A로 두었고, 신고·보상 담당과 B로 맞출지 정한 뒤 JPQL·`#66-S3`에 혼합 케이스를 더한다.
 
 ```mermaid
 flowchart LR

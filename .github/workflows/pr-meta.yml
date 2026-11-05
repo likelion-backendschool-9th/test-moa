@@ -32,12 +32,16 @@ jobs:
             gh pr edit "$PR" --repo "$REPO" --add-assignee "$AUTHOR"
           fi
 
-          # README의 커밋 유형과 기존 라벨을 맞춘다. 맞는 라벨이 없는 유형은 붙이지 않는다
+          # README의 커밋 유형을 라벨로 바꾼다. 유형이 아닌 제목에는 붙이지 않는다
           case "$TITLE" in
-            Feat:*|Design:*) label=enhancement ;;
-            Fix:*)           label=bug ;;
-            Docs:*)          label=documentation ;;
-            *)               label="" ;;
+            Feat:*|Design:*)                        label=enhancement ;;
+            Fix:*|'!HOTFIX:'*)                      label=bug ;;
+            Docs:*)                                 label=documentation ;;
+            Test:*)                                 label=test ;;
+            Refactor:*)                             label=refactor ;;
+            Chore:*|Style:*|Comment:*|Rename:*|Remove:*) label=chore ;;
+            '!BREAKING CHANGE:'*)                   label="breaking change" ;;
+            *)                                      label="" ;;
           esac
 
           # 붙이기만 하고 지우지 않는다. 사람이 직접 붙인 라벨은 그대로 둔다

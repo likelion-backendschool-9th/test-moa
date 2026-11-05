@@ -6,7 +6,7 @@ import { ADMIN_REQUEST_LABEL, adminRequestHref, type PendingItem } from "../type
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 
-/** 세 종류 요청을 합친 순위 패널. 홈의 마감 임박 패널과 같은 모양이다. 출금은 목록 모달로, 나머지는 상세로 간다 */
+/** 세 종류 요청을 합친 순위 패널. 출금은 목록 모달로, 나머지는 상세로 간다 */
 export function OldestPendingPanel({ items, now }: { items: PendingItem[]; now: Date }) {
   return (
     <section aria-labelledby="oldest-heading" className={panelClass}>

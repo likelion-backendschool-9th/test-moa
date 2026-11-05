@@ -1,34 +1,55 @@
 import Link from "next/link";
-import { formatCredits, formatDate } from "@/lib/format";
+import Image from "next/image";
+import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
+import { Badge } from "@/components/ui/Badge";
+import { formatDate } from "@/lib/format";
 import { isFull, SOFTWARE_TYPE_LABEL, type Recruitment } from "../types";
-import { RecruitmentThumb } from "./RecruitmentThumb";
+import { ProofStamp } from "./ProofStamp";
 
-/** 갤러리 카드. 썸네일 아래 이름, 유형·보상, 모집 마감과 인원을 같은 자리에 둔다 */
+/**
+ * 모집 카드. 프로젝트명을 본문 제목으로 표시하고, 보상은 추가 보상 배지만 보여 준다.
+ * 날짜에는 짧은 마감 라벨을 표시하고 인원 항목 이름은 보조 기술에 남긴다.
+ * relative는 절대 배치되는 sr-only 라벨도 카드 안에 묶어 가로 스크롤 밖으로 빠지지 않게 한다.
+ */
 export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
   return (
     <Link
       href={`/recruitments/${recruitment.slug}`}
       data-testid="recruitment-card"
-      className="group flex flex-col gap-3 rounded-2xl outline-offset-4"
+      className="group relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl bg-surface-card outline-offset-4 inset-ring inset-ring-line transition-transform duration-500 ease-brand hover:-translate-y-1"
     >
-      <div className="transition-transform duration-500 ease-brand group-hover:-translate-y-1">
-        <RecruitmentThumb recruitment={recruitment} stamp={isFull(recruitment) ? "모집 완료" : undefined} />
-      </div>
-      <div className="flex flex-col gap-1 px-1">
-        <p className="line-clamp-2 text-sm font-semibold">{recruitment.request}</p>
-        <p className="text-sm text-text-muted">
-          {SOFTWARE_TYPE_LABEL[recruitment.softwareType]} · {formatCredits(recruitment.baseReward)}
-        </p>
-        {recruitment.extraReward !== undefined && (
-          <p className="text-sm font-bold text-accent">추가 보상 +{formatCredits(recruitment.extraReward)}</p>
+      <div data-thumb className="relative aspect-[16/10] overflow-hidden bg-surface-strong">
+        {recruitment.projectImage ? (
+          <Image
+            src={recruitment.projectImage}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 75vw"
+            className={isFull(recruitment) ? "object-cover opacity-25" : "object-cover"}
+          />
+        ) : (
+          <div aria-hidden className="flex h-full items-center justify-center text-text-muted">
+            <ImageSquareIcon size={32} weight="light" />
+          </div>
         )}
-        <dl className="mt-1 flex gap-5 text-sm">
-          <div>
-            <dt className="text-xs text-text-muted">모집 마감</dt>
+        <div className="absolute top-3 left-3 right-3 flex flex-wrap items-start gap-1.5">
+          <Badge tone="outline" className="bg-surface-muted font-bold">{SOFTWARE_TYPE_LABEL[recruitment.softwareType]}</Badge>
+          {recruitment.extraReward !== undefined && (
+            <Badge tone="accentSolid" className="font-bold">추가 보상</Badge>
+          )}
+        </div>
+        {isFull(recruitment) && <ProofStamp label="모집 완료" placement="bottomRight" paper />}
+      </div>
+      <div className="flex flex-1 flex-col gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
+        <h3 className="line-clamp-2 text-base leading-snug font-bold tracking-[-0.03em]">{recruitment.projectName}</h3>
+        <p className="line-clamp-2 min-h-[2lh] text-sm text-text-muted">{recruitment.request}</p>
+        <dl className="mt-auto flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-sm text-text-muted sm:gap-x-5">
+          <div className="flex items-baseline gap-1">
+            <dt>마감</dt>
             <dd className="font-semibold tabular-nums">{formatDate(recruitment.recruitDeadline)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-text-muted">인원</dt>
+            <dt className="sr-only">인원</dt>
             <dd className="font-semibold tabular-nums">
               {recruitment.confirmedCount} / {recruitment.capacity}명
             </dd>

@@ -7,8 +7,6 @@ import { Button } from "./Button";
 
 export type CarouselSlide = {
   key: string;
-  /** 조작 영역에 보이는 슬라이드 종류 (예: 소개, 이벤트, 공지) */
-  label: string;
   content: ReactNode;
 };
 
@@ -88,7 +86,7 @@ export function Carousel({ slides, label, intervalMs = 5000, className, ...props
       className={cn("relative flex flex-col gap-6", className)}
       {...props}
     >
-      <div className="grid" aria-live={paused ? "polite" : "off"}>
+      <div className="grid flex-1" aria-live={paused ? "polite" : "off"}>
         {slides.map((slide, slideIndex) => {
           const active = slideIndex === index % count;
           return (
@@ -108,7 +106,6 @@ export function Carousel({ slides, label, intervalMs = 5000, className, ...props
       </div>
       {count > 1 && (
         <div className="flex items-center justify-end gap-2 md:absolute md:right-10 md:bottom-10">
-          <span className="text-sm font-bold">{slides[index % count].label}</span>
           <Button variant="ghost" size="sm" aria-label="이전 슬라이드" onClick={() => move(-1)}>
             <CaretLeftIcon aria-hidden size={16} weight="bold" />
           </Button>

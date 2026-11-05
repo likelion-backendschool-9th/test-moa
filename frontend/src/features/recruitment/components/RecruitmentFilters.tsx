@@ -1,6 +1,6 @@
 "use client";
 
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
@@ -31,7 +31,8 @@ export function RecruitmentFilters({ query }: { query: RecruitmentQuery }) {
   }
 
   function navigate(next: Partial<RecruitmentQuery>) {
-    const params = toSearchParams({ ...query, ...next });
+    /* 조건이 바뀌면 1페이지부터 다시 본다 */
+    const params = toSearchParams({ ...query, ...next, page: 1 });
     const href = params.size ? `/?${params}` : "/";
     startTransition(() => router.replace(href, { scroll: false }));
   }
@@ -52,51 +53,61 @@ export function RecruitmentFilters({ query }: { query: RecruitmentQuery }) {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <label className="flex max-w-xl items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent">
-        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="text-text-muted" />
+    <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap lg:gap-4">
+      <label className="order-1 flex min-w-0 flex-1 items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent lg:w-64 lg:flex-none xl:w-96">
+        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="shrink-0 text-text-muted" />
         <input
           type="search"
           aria-label="테스트 검색"
-          placeholder="서비스 이름이나 해 볼 일로 찾아보세요"
+          placeholder="이름이나 할 일로 검색"
           value={value}
           onChange={(event) => onSearch(event.target.value)}
-          className="w-full bg-transparent outline-none"
+          className="w-full min-w-0 bg-transparent outline-none"
         />
       </label>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <div role="group" aria-label="소프트웨어 유형" className="flex flex-wrap gap-2">
+      {/* 좁은 화면에서는 칩 줄이 둘째 줄로 내려가 가로로 넘어간다 */}
+      <div className="order-3 flex w-full gap-2 overflow-x-auto [scrollbar-width:none] lg:order-2 lg:w-auto lg:min-w-0 lg:flex-1">
+        <div role="group" aria-label="소프트웨어 유형" className="flex shrink-0 gap-2">
           {categories.map((category) => (
             <button
               key={category.label}
               type="button"
               aria-pressed={query.type === category.value}
               onClick={() => navigate({ type: category.value })}
-              className={chipClass(query.type === category.value)}
+              className={cn(chipClass(query.type === category.value), "shrink-0 whitespace-nowrap")}
             >
               {category.label}
             </button>
           ))}
         </div>
-        <button type="button" aria-pressed={query.open} onClick={() => navigate({ open: !query.open })} className={chipClass(query.open)}>
+        <button
+          type="button"
+          aria-pressed={query.open}
+          onClick={() => navigate({ open: !query.open })}
+          className={cn(chipClass(query.open), "shrink-0 whitespace-nowrap")}
+        >
           모집 중만 보기
         </button>
-        <div role="group" aria-label="정렬" className="flex gap-4 text-sm md:ml-auto">
+      </div>
+      <div className="relative order-2 shrink-0 lg:order-3">
+        <select
+          aria-label="정렬"
+          value={query.sort}
+          onChange={(event) => navigate({ sort: event.target.value as RecruitmentSort })}
+          className="select-field rounded-full bg-surface-strong py-3 pr-10 pl-5 text-sm font-bold text-text transition-colors duration-300 ease-brand hover:bg-line focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+        >
           {(Object.keys(SORT_LABEL) as RecruitmentSort[]).map((sort) => (
-            <button
-              key={sort}
-              type="button"
-              aria-pressed={query.sort === sort}
-              onClick={() => navigate({ sort })}
-              className={cn(
-                "font-bold transition-colors duration-300 ease-brand",
-                query.sort === sort ? "text-text" : "text-text-muted hover:text-text",
-              )}
-            >
+            <option key={sort} value={sort}>
               {SORT_LABEL[sort]}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
+        <CaretDownIcon
+          aria-hidden
+          size={14}
+          weight="bold"
+          className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-text-muted"
+        />
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ web
 ## Evidence on Hand
 - 실제 사용자, 후기, 고객사, 이용 수치는 아직 없다. 지어내지 않는다.
 - 화면의 모집 글과 보상 숫자는 시연용 샘플이다 (`src/features/recruitment/mock.ts`).
-- 로고나 브랜드 자산은 없다. 임시 파비콘(`src/app/icon.svg`)만 있다.
+- 로고는 글자 로고 'test moa'('moa'만 강조색)이고, 파비콘(`src/app/icon.svg`)은 강조색 바탕의 흰 'm'이다. 그 밖의 브랜드 자산(심볼, 사진)은 없다. (고침 #60)
 
 ## Product Principles
 1. 테스터의 진입 장벽을 낮춘다. 개발 용어 없이 무엇을 하고 무엇을 받는지 바로 알 수 있어야 한다.

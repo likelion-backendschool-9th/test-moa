@@ -12,6 +12,8 @@ import com.testmoa.backend.global.common.CreditType;
 import com.testmoa.backend.global.common.FeedbackStatus;
 import com.testmoa.backend.global.common.LedgerFlow;
 import com.testmoa.backend.global.common.RegisterStatus;
+import com.testmoa.backend.global.exception.BusinessException;
+import com.testmoa.backend.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +21,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -123,11 +124,11 @@ class CreditServiceImplTest {
     void missingUserNotFound() {
         when(userRepository.existsById(99L)).thenReturn(false);
 
-        ResponseStatusException ex = assertThrows(
-                ResponseStatusException.class,
+        BusinessException ex = assertThrows(
+                BusinessException.class,
                 () -> creditService.getBalance(99L)
         );
-        assertEquals(404, ex.getStatusCode().value());
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
     }
 
     @Test

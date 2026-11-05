@@ -11,11 +11,11 @@ import com.testmoa.backend.domain.repository.UserRepository;
 import com.testmoa.backend.global.common.FeedbackStatus;
 import com.testmoa.backend.global.common.LedgerFlow;
 import com.testmoa.backend.global.common.RegisterStatus;
+import com.testmoa.backend.global.exception.BusinessException;
+import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.CreditService;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -85,7 +85,7 @@ public class CreditServiceImpl implements CreditService {
 
     private void requireUser(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다: " + userId);
+            throw new BusinessException(ErrorCode.NOT_FOUND);
         }
     }
 }

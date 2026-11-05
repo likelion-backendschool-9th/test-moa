@@ -1,27 +1,37 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession, type Role } from "@/lib/session";
 import { isFull, type Recruitment } from "@/features/recruitment/types";
 import {
   findAiSummary,
   findApplications,
+  findCancelRequest,
   findFeedbacks,
   findIsSubscribed,
   findProjects,
+  findPublicRecruitment,
+  findRecruitmentDetail,
   saveApplicationDecisions,
+  saveRecruitmentCancelRequest,
 } from "./api";
+import { checkImages, isHttpUrl, parseFileMeta } from "./media";
 import {
   AI_MIN_FEEDBACKS,
   BASE_REWARD,
   EXTRA_REWARD,
   MAX_CAPACITY,
+  PROJECT_MEDIA_LIMIT,
+  RECRUITMENT_LIMIT,
   REPORT_WINDOW_HOURS,
   type AiSummary,
   type Application,
+  type CancelRequest,
   type Feedback,
   type FormState,
   type Project,
   type RecruitmentStatus,
+  type SelectionMode,
+  type SubmissionStatus,
 } from "./types";
 
 /*
@@ -42,8 +52,9 @@ export async function requireRole(path: string) {
 
 /* ---------- 계산 ---------- */
 
-/** 모집 건 상태. 모집 마감 전이면 정원으로, 마감 뒤면 제출 마감일로 나눈다 */
-export function getRecruitmentStatus(recruitment: Recruitment, now: Date): RecruitmentStatus {
+/** 모집 건 상태. 취소가 승인됐으면 취소, 모집 마감 전이면 정원으로, 마감 뒤면 제출 마감일로 나눈다 */
+export function getRecruitmentStatus(recruitment: Recruitment, now: Date, cancelled = false): RecruitmentStatus {
+  if (cancelled) return "cancelled";
   if (now < new Date(recruitment.recruitDeadline)) return isFull(recruitment) ? "full" : "recruiting";
   return now < new Date(recruitment.submitDeadline) ? "testing" : "closed";
 }
@@ -55,36 +66,68 @@ export function getHoursUntilPaid(feedback: Feedback, now: Date) {
   return Math.max(0, Math.ceil((until - now.getTime()) / HOUR_MS));
 }
 
+/**
+ * 확정된 테스터의 피드백 제출 현황. 테스트가 시작되기 전(모집 중·모집 완료)에는 보여 주지 않으므로 null.
+ * 피드백을 냈으면 제출함, 제출 마감이 지났으면 미완료, 아니면 미제출이다.
+ */
+export function getSubmissionStatus(
+  application: Application,
+  feedbacks: Feedback[],
+  recruitment: RecruitmentView,
+  now: Date,
+): SubmissionStatus | null {
+  if (application.status !== "confirmed") return null;
+  if (recruitment.status !== "testing" && recruitment.status !== "closed") return null;
+  /* ponytail: 목업은 지원 id가 피드백에 없어 닉네임으로 잇는다. API를 붙이면 지원(Register) id로 잇는다 */
+  if (feedbacks.some((item) => item.testerNickname === application.testerNickname)) return "submitted";
+  return now >= new Date(recruitment.submitDeadline) ? "incomplete" : "pending";
+}
+
 export type RecruitmentAnalytics = {
   applicationCount: number;
   confirmedCount: number;
   feedbackCount: number;
-  /** 제출 수 ÷ 확정 수 백분율. 확정이 0이면 0 */
+  /** 피드백을 낸 확정 테스터 수 ÷ 확정 수 백분율. 확정이 0이면 0 */
   submitRate: number;
   reportCount: number;
 };
 
 /** 분석 탭 숫자 */
 export function getAnalytics(applications: Application[], feedbacks: Feedback[]): RecruitmentAnalytics {
-  const confirmedCount = applications.filter((item) => item.status === "confirmed").length;
+  const confirmed = applications.filter((item) => item.status === "confirmed");
+  const confirmedCount = confirmed.length;
+  /* 피드백은 테스트 항목마다 낼 수 있어 건수가 아니라 낸 사람을 센다. 닉네임으로 잇는 이유는 getSubmissionStatus와 같다 */
+  const submitters = new Set(feedbacks.map((item) => item.testerNickname));
+  const submittedCount = confirmed.filter((item) => submitters.has(item.testerNickname)).length;
   return {
     applicationCount: applications.length,
     confirmedCount,
     feedbackCount: feedbacks.length,
-    submitRate: confirmedCount === 0 ? 0 : Math.round((feedbacks.length / confirmedCount) * 100),
+    submitRate: confirmedCount === 0 ? 0 : Math.round((submittedCount / confirmedCount) * 100),
     reportCount: feedbacks.filter((item) => item.status === "reported").length,
   };
 }
 
 /* ---------- 조회 ---------- */
 
-export type RecruitmentView = Recruitment & { status: RecruitmentStatus };
-export type ProjectSummary = Project & { recruitmentCount: number; openRecruitmentCount: number };
+export type RecruitmentView = Recruitment & { status: RecruitmentStatus; title: string };
+export type ProjectSummary = Omit<Project, "recruitments"> & {
+  recruitments: RecruitmentView[];
+  recruitmentCount: number;
+  openRecruitmentCount: number;
+};
 
 const byLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
 
-function toView(recruitment: Recruitment, now: Date): RecruitmentView {
-  return { ...recruitment, status: getRecruitmentStatus(recruitment, now) };
+/** 프로젝트의 모집 건에 상태를 붙인다. 취소가 승인된 모집 건은 취소 상태다 */
+async function withStatus(role: Role, recruitments: Recruitment[], now: Date): Promise<RecruitmentView[]> {
+  const requests = await Promise.all(recruitments.map((item) => findCancelRequest(role, item.slug)));
+  const details = await Promise.all(recruitments.map((item) => findRecruitmentDetail(role, item.slug)));
+  return recruitments.map((item, index) => ({
+    ...item,
+    title: details[index].title,
+    status: getRecruitmentStatus(item, now, requests[index]?.status === "approved"),
+  }));
 }
 
 /** 내 프로젝트 목록. 최신 등록순이고 모집 건 수와 모집 중인 건 수를 붙인다 */
@@ -92,11 +135,17 @@ export async function getMyProjects(path: string): Promise<ProjectSummary[]> {
   const role = await requireRole(path);
   const projects = await findProjects(role);
   const now = new Date();
-  return [...projects].sort(byLatest).map((project) => ({
-    ...project,
-    recruitmentCount: project.recruitments.length,
-    openRecruitmentCount: project.recruitments.filter((item) => getRecruitmentStatus(item, now) === "recruiting").length,
-  }));
+  return Promise.all(
+    [...projects].sort(byLatest).map(async (project) => {
+      const recruitments = await withStatus(role, project.recruitments, now);
+      return {
+        ...project,
+        recruitments,
+        recruitmentCount: recruitments.filter((item) => item.status !== "cancelled").length,
+        openRecruitmentCount: recruitments.filter((item) => item.status === "recruiting").length,
+      };
+    }),
+  );
 }
 
 /** 내 프로젝트 화면 맨 위 "지금 확인할 일" 한 줄 */
@@ -108,8 +157,8 @@ export type TodoItem = {
   text: string;
 };
 
-/** 모든 프로젝트를 합친 숫자. 모집 건은 상태별로 센다 */
-export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed">, number> & { waitingReports: number };
+/** 모든 프로젝트를 합친 숫자. 진행 중인 모집 건을 상태별로 센다(종료·취소는 세지 않는다) */
+export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed" | "cancelled">, number> & { waitingReports: number };
 
 /**
  * 내 프로젝트 화면 전체: 할 일, 전체 현황, 프로젝트 카드.
@@ -130,7 +179,8 @@ export async function getMyDashboard(path: string) {
         findApplications(role, recruitment.slug),
         findFeedbacks(role, recruitment.slug),
       ]);
-      const status = getRecruitmentStatus(recruitment, now);
+      const { status } = recruitment;
+      if (status === "cancelled") continue;
       const base = `/my/projects/${project.key}/recruitments/${recruitment.slug}`;
       const confirmed = applications.filter((item) => item.status === "confirmed").length;
       const pending = applications.filter((item) => item.status === "applied").length;
@@ -173,9 +223,18 @@ export async function getMyProject(path: string, projectKey: string) {
   const role = await requireRole(path);
   const project = (await findProjects(role)).find((item) => item.key === projectKey);
   if (!project) notFound();
-  const now = new Date();
-  return { project, recruitments: [...project.recruitments].sort(byLatest).map((item) => toView(item, now)) };
+  return { project, recruitments: await withStatus(role, [...project.recruitments].sort(byLatest), new Date()) };
 }
+
+/** 공개 모집글에 필요한 값. 없거나 취소된 모집 건이면 null */
+export async function getPublicRecruitment(slug: string) {
+  const data = await findPublicRecruitment(slug);
+  if (!data) return null;
+  const now = new Date();
+  return { ...data, now, status: getRecruitmentStatus(data.recruitment, now) as Exclude<RecruitmentStatus, "cancelled"> };
+}
+
+export type PublicRecruitmentView = NonNullable<Awaited<ReturnType<typeof getPublicRecruitment>>>;
 
 export type FeedbackView = Feedback & { hoursUntilPaid: number };
 
@@ -185,15 +244,22 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
   const recruitment = recruitments.find((item) => item.slug === recruitmentKey);
   if (!recruitment) notFound();
   const role = await requireRole(path);
-  const [applications, feedbacks] = await Promise.all([
+  const [applications, feedbacks, detail, cancelRequest] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
+    findRecruitmentDetail(role, recruitmentKey),
+    findCancelRequest(role, recruitmentKey),
   ]);
   const now = new Date();
   return {
     project,
     recruitment,
-    applications: [...applications].sort((a, b) => a.appliedAt.localeCompare(b.appliedAt)),
+    detail,
+    cancelRequest,
+    canRequestCancel: canRequestCancel(recruitment, feedbacks, cancelRequest),
+    applications: [...applications]
+      .sort((a, b) => a.appliedAt.localeCompare(b.appliedAt))
+      .map((item) => ({ ...item, submission: getSubmissionStatus(item, feedbacks, recruitment, now) })),
     feedbacks: [...feedbacks]
       .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
       .map((item) => ({ ...item, hoursUntilPaid: getHoursUntilPaid(item, now) })),
@@ -201,9 +267,41 @@ export async function getRecruitmentDetail(path: string, projectKey: string, rec
   };
 }
 
-/** 구독 모집이고 모집 마감 전이면 지원자를 직접 확정·거절할 수 있다 */
-export function canSelectApplicants(recruitment: RecruitmentView) {
-  return recruitment.isSubscription && (recruitment.status === "recruiting" || recruitment.status === "full");
+export type ApplicationView = Application & { submission: SubmissionStatus | null };
+
+/**
+ * 모집 취소를 요청할 수 있는지. 테스트 시작 전(모집 중·모집 완료)이고 제출된 피드백이 없어야 한다.
+ * 처리 대기 중이거나 이미 승인된 요청이 있으면 다시 보낼 수 없고, 반려됐으면 다시 보낼 수 있다.
+ */
+export function canRequestCancel(recruitment: RecruitmentView, feedbacks: Feedback[], request: CancelRequest | null) {
+  if (recruitment.status !== "recruiting" && recruitment.status !== "full") return false;
+  if (feedbacks.length > 0) return false;
+  return !request || request.status === "rejected";
+}
+
+/** 모집 취소 요청. 사유를 확인하고 요청할 수 있는 상태인지 서버에서 다시 본다 */
+export async function requestRecruitmentCancel(
+  projectKey: string,
+  recruitmentKey: string,
+  formData: FormData,
+): Promise<FormState & { ok?: boolean }> {
+  const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
+  const { canRequestCancel: allowed } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const values = { reason: text(formData, "reason") };
+  const errors: Record<string, string> = {};
+  if (!allowed) errors.reason = "지금은 취소를 요청할 수 없어요";
+  else if (!values.reason) errors.reason = "취소 사유를 적어 주세요";
+  else if (values.reason.length > RECRUITMENT_LIMIT.cancelReasonLength) {
+    errors.reason = `취소 사유는 ${RECRUITMENT_LIMIT.cancelReasonLength}자까지 적을 수 있어요`;
+  }
+  if (Object.keys(errors).length > 0) return { values, errors };
+  const ok = await saveRecruitmentCancelRequest(recruitmentKey, values.reason);
+  return ok ? { values: {}, errors: {}, ok } : { values, errors: { reason: "요청을 저장하지 못했어요. 다시 시도해 주세요" } };
+}
+
+/** 선발형 구독 모집이고 모집 마감 전이면 지원자를 직접 확정·거절할 수 있다 */
+export function canSelectApplicants(recruitment: RecruitmentView, selectionMode: SelectionMode) {
+  return recruitment.isSubscription && selectionMode === "selection" && (recruitment.status === "recruiting" || recruitment.status === "full");
 }
 
 /**
@@ -217,10 +315,10 @@ export async function decideApplicants(
   status: "confirmed" | "rejected",
 ): Promise<{ ok: boolean }> {
   const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
-  const { recruitment, applications } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const { recruitment, applications, detail } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
   const pendingIds = new Set(applications.filter((item) => item.status === "applied").map((item) => item.id));
   const unique = [...new Set(ids)];
-  if (!canSelectApplicants(recruitment) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
+  if (!canSelectApplicants(recruitment, detail.selectionMode) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
   const confirmed = applications.filter((item) => item.status === "confirmed").length;
   if (status === "confirmed" && confirmed + unique.length > recruitment.capacity) return { ok: false };
   return { ok: await saveApplicationDecisions(unique, status) };
@@ -258,31 +356,28 @@ export async function getRecruitmentFormInfo(path: string, projectKey: string) {
 
 /* ---------- 폼 검증 ---------- */
 
-const text = (formData: FormData, name: string) => String(formData.get(name) ?? "").trim();
+/* 브라우저는 폼을 보낼 때 줄바꿈을 두 글자(\r\n)로 바꾼다. 화면에서 센 글자 수와 맞도록 되돌린다 */
+const text = (formData: FormData, name: string) => String(formData.get(name) ?? "").replace(/\r\n/g, "\n").trim();
 
-function isHttpUrl(value: string) {
-  try {
-    return ["http:", "https:"].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
-}
-
-/** 프로젝트 등록·수정 폼 검증. 첫 지원 대상이 웹서비스라 유형은 web만 받는다 */
+/**
+ * 프로젝트 등록·수정 폼 검증. 대표 이미지는 선택이고, 없으면 화면에 기본 이미지가 나온다.
+ * 이미지는 화면에서도 거르지만 요청은 조작될 수 있어서 여기서 다시 확인한다.
+ */
 export function validateProjectForm(formData: FormData): FormState {
   const values = {
     name: text(formData, "name"),
-    summary: text(formData, "summary"),
-    softwareType: text(formData, "softwareType"),
-    accessUrl: text(formData, "accessUrl"),
+    description: text(formData, "description"),
   };
   const errors: Record<string, string> = {};
   if (!values.name) errors.name = "프로젝트 이름을 적어 주세요";
   else if (values.name.length > 50) errors.name = "이름은 50자까지 적을 수 있어요";
-  if (!values.summary) errors.summary = "한 줄 소개를 적어 주세요";
-  else if (values.summary.length > 100) errors.summary = "한 줄 소개는 100자까지 적을 수 있어요";
-  if (values.softwareType !== "web") errors.softwareType = "지금은 웹서비스만 등록할 수 있어요";
-  if (!isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
+  if (values.description.length > PROJECT_MEDIA_LIMIT.descriptionLength) {
+    errors.description = `상세 설명은 ${PROJECT_MEDIA_LIMIT.descriptionLength}자까지 적을 수 있어요`;
+  }
+
+  const images = parseFileMeta(formData.get("imagesMeta"));
+  const imageError = images ? checkImages(images) : "이미지 정보를 읽지 못했어요";
+  if (imageError) errors.images = imageError;
   return { values, errors };
 }
 
@@ -292,16 +387,29 @@ function todayInSeoul(now: Date) {
 }
 
 /** 모집 작성 폼 검증. 날짜는 "YYYY-MM-DD" 문자열로 비교한다 */
-export function validateRecruitmentForm(formData: FormData, maxCapacity: number, now: Date): FormState {
+export function validateRecruitmentForm(formData: FormData, maxCapacity: number, isSubscription: boolean, now: Date): FormState {
   const values = {
+    title: text(formData, "title"),
     request: text(formData, "request"),
+    softwareType: text(formData, "softwareType"),
+    selectionMode: text(formData, "selectionMode"),
+    accessUrl: text(formData, "accessUrl"),
+    conditions: text(formData, "conditions"),
     recruitDeadline: text(formData, "recruitDeadline"),
     submitDeadline: text(formData, "submitDeadline"),
     capacity: text(formData, "capacity"),
   };
   const errors: Record<string, string> = {};
-  if (!values.request) errors.request = "요청 내용을 적어 주세요";
-  else if (values.request.length > 200) errors.request = "요청 내용은 200자까지 적을 수 있어요";
+  if (!values.title) errors.title = "모집글 제목을 적어 주세요";
+  else if (values.title.length > RECRUITMENT_LIMIT.titleLength) errors.title = `모집글 제목은 ${RECRUITMENT_LIMIT.titleLength}자까지 적을 수 있어요`;
+  if (!values.request) errors.request = "모집 설명을 적어 주세요";
+  else if (values.request.length > 200) errors.request = "모집 설명은 200자까지 적을 수 있어요";
+  /* 첫 지원 대상이 웹서비스라 유형은 web만 받는다 */
+  if (values.softwareType !== "web") errors.softwareType = "지금은 웹서비스만 모집할 수 있어요";
+  if (!isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
+  /* 화면에서 막아도 요청은 조작될 수 있어서 여기서 다시 확인한다 */
+  if (values.selectionMode !== "firstCome" && values.selectionMode !== "selection") errors.selectionMode = "선정 방식을 골라 주세요";
+  else if (values.selectionMode === "selection" && !isSubscription) errors.selectionMode = "선발형은 구독 모집에서만 쓸 수 있어요";
   if (!values.recruitDeadline) errors.recruitDeadline = "모집 마감일을 골라 주세요";
   else if (values.recruitDeadline < todayInSeoul(now)) errors.recruitDeadline = "모집 마감일은 오늘 이후로 골라 주세요";
   if (!values.submitDeadline) errors.submitDeadline = "피드백 제출 마감일을 골라 주세요";
@@ -312,5 +420,34 @@ export function validateRecruitmentForm(formData: FormData, maxCapacity: number,
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > maxCapacity) {
     errors.capacity = `1~${maxCapacity}명까지 모집할 수 있어요`;
   }
+  if (values.conditions.length > RECRUITMENT_LIMIT.conditionsLength) {
+    errors.conditions = `모집 조건은 ${RECRUITMENT_LIMIT.conditionsLength}자까지 적을 수 있어요`;
+  }
+
+  /* 테스트 항목: 제목과 설명이 둘 다 빈 줄은 없는 것으로 본다 */
+  const { min, max, titleLength, descriptionLength, imageCount } = RECRUITMENT_LIMIT.testItems;
+  const titles = formData.getAll("testItemTitle").map((item) => String(item).trim());
+  const descriptions = formData.getAll("testItemDescription").map((item) => String(item).trim());
+  /* 체크를 끈 줄처럼 빠지지 않도록 이미지 정보는 줄마다 하나씩 온다 */
+  const images = formData.getAll("testItemImagesMeta").map((item) => parseFileMeta(item));
+  const filled = titles.filter((title, index) => title || descriptions[index] || images[index]?.length).length;
+  if (filled < min) {
+    errors.testItems = `테스트 항목을 ${min}개 이상 적어 주세요`;
+    /* 첫 칸에도 오류를 달아 포커스가 그리로 가게 한다 */
+    errors["testItemTitle-0"] = "항목 이름을 적어 주세요";
+  }
+  else if (filled > max) errors.testItems = `테스트 항목은 ${max}개까지 적을 수 있어요`;
+  titles.forEach((title, index) => {
+    const description = descriptions[index] ?? "";
+    const rowImages = images[index];
+    if (!title && !description && !rowImages?.length) return;
+    const imageError = rowImages === null ? "이미지 정보를 읽지 못했어요" : checkImages(rowImages ?? [], imageCount);
+    if (imageError) errors[`testItemImages-${index}`] = imageError;
+    if (!title) errors[`testItemTitle-${index}`] = "항목 이름을 적어 주세요";
+    else if (title.length > titleLength) errors[`testItemTitle-${index}`] = `항목 이름은 ${titleLength}자까지 적을 수 있어요`;
+    if (description.length > descriptionLength) {
+      errors[`testItemDescription-${index}`] = `항목 설명은 ${descriptionLength}자까지 적을 수 있어요`;
+    }
+  });
   return { values, errors };
 }

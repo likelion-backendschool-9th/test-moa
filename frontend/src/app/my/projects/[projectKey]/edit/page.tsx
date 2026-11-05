@@ -25,11 +25,12 @@ export default function EditProjectPage({ params }: Props) {
 async function FormSlot({ params }: Pick<Props, "params">) {
   const { projectKey } = await params;
   const { project } = await getMyProject(`/my/projects/${projectKey}/edit`, projectKey);
-  const { name, summary, softwareType, accessUrl } = project;
+  const { name, description } = project;
   return (
     <ProjectForm
       projectKey={project.key}
-      initialValues={{ name, summary, softwareType, accessUrl }}
+      initialValues={{ name, description }}
+      initialImage={project.image}
       cancelHref={`/my/projects/${project.key}`}
     />
   );

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+  <!-- 시연용 테스트 항목 이미지: 내 서재 -->
+  <rect width="640" height="480" fill="#e8e6df"/>
+  <rect x="48" y="48" width="544" height="56" rx="12" fill="#ffffff"/>
+  <text x="72" y="84" font-family="sans-serif" font-size="20" font-weight="700" fill="#1d1d1b">내 서재</text>
+  <rect x="48" y="132" width="544" height="20" rx="10" fill="#ffffff"/>
+  <rect x="48" y="172" width="480" height="20" rx="10" fill="#ffffff"/>
+  <rect x="48" y="212" width="512" height="20" rx="10" fill="#ffffff"/>
+  <rect x="48" y="272" width="544" height="160" rx="16" fill="#ffffff"/>
+</svg>

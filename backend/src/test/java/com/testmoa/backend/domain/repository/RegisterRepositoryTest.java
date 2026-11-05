@@ -41,11 +41,7 @@ class RegisterRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        Integer pending = registerRepository.sumPendingRewardByUserId(
-                tester.getId(),
-                RegisterStatus.CONFIRMED,
-                FeedbackStatus.SUBMITTED
-        );
+        Integer pending = sumPending(tester);
 
         assertEquals(1350, pending);
     }
@@ -60,13 +56,21 @@ class RegisterRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        Integer pending = registerRepository.sumPendingRewardByUserId(
-                tester.getId(),
-                RegisterStatus.CONFIRMED,
-                FeedbackStatus.SUBMITTED
-        );
+        assertEquals(0, sumPending(tester));
+    }
 
-        assertEquals(0, pending);
+    @Test
+    @DisplayName("#66-S3 SUBMITTED와 REPORTED가 섞이면 참가 전체를 승인 대기에서 제외")
+    void excludesWhenSubmittedAndReportedMixed() {
+        User tester = persistTester("pending-mixed@example.com");
+        Register register = persistConfirmedRegister(tester, 1000, 350);
+        persistSubmittedFeedback(register, "정상 항목");
+        Feedback reported = persistSubmittedFeedback(register, "신고된 항목");
+        reported.report();
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(0, sumPending(tester));
     }
 
     @Test
@@ -79,13 +83,16 @@ class RegisterRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        Integer pending = registerRepository.sumPendingRewardByUserId(
+        assertEquals(0, sumPending(tester));
+    }
+
+    private Integer sumPending(User tester) {
+        return registerRepository.sumPendingRewardByUserId(
                 tester.getId(),
                 RegisterStatus.CONFIRMED,
-                FeedbackStatus.SUBMITTED
+                FeedbackStatus.SUBMITTED,
+                FeedbackStatus.REPORTED
         );
-
-        assertEquals(0, pending);
     }
 
     private User persistTester(String email) {

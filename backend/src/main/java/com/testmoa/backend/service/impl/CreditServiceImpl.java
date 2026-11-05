@@ -42,7 +42,8 @@ public class CreditServiceImpl implements CreditService {
 
     /**
      * 잔액 구성과 파생 값.
-     * 승인 대기는 CONFIRMED + Feedback(SUBMITTED) 참가의 Register 스냅샷을 참가당 1회 합산한다.
+     * 승인 대기는 CONFIRMED이고 SUBMITTED가 있으며 REPORTED가 없는 참가의
+     * Register 스냅샷을 참가당 1회 합산한다.
      */
     @Override
     public CreditBalanceResponse getBalance(Long userId) {
@@ -78,7 +79,8 @@ public class CreditServiceImpl implements CreditService {
         Integer sum = registerRepository.sumPendingRewardByUserId(
                 userId,
                 RegisterStatus.CONFIRMED,
-                FeedbackStatus.SUBMITTED
+                FeedbackStatus.SUBMITTED,
+                FeedbackStatus.REPORTED
         );
         return sum == null ? 0 : sum;
     }

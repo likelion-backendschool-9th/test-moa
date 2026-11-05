@@ -10,8 +10,9 @@ import org.springframework.data.repository.query.Param;
 public interface RegisterRepository extends JpaRepository<Register, Long> {
 
     /**
-     * 승인 대기 보상. Feedback(SUBMITTED)가 있는 CONFIRMED 참가의 스냅샷을 참가당 1회만 합산한다.
-     * REPORTED(검토 중)·CANCELLED·REJECTED는 포함하지 않는다.
+     * 승인 대기 보상. Feedback(SUBMITTED)가 있고 Feedback(REPORTED)가 없는 CONFIRMED 참가의
+     * 스냅샷을 참가당 1회만 합산한다. 한 건이라도 신고되면 참가 전체 지급을 보류한다.
+     * CANCELLED·REJECTED 참가는 제외한다.
      */
     @Query("""
             select coalesce(sum(r.baseRewardSnapshot + r.extraRewardSnapshot), 0)
@@ -23,12 +24,18 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
               and exists (
                   select 1 from feedbacks f
                   where f.register = r
-                    and f.status = :feedbackStatus
+                    and f.status = :submittedStatus
+              )
+              and not exists (
+                  select 1 from feedbacks blocked
+                  where blocked.register = r
+                    and blocked.status = :reportedStatus
               )
             """)
     Integer sumPendingRewardByUserId(
             @Param("userId") Long userId,
             @Param("registerStatus") RegisterStatus registerStatus,
-            @Param("feedbackStatus") FeedbackStatus feedbackStatus
+            @Param("submittedStatus") FeedbackStatus submittedStatus,
+            @Param("reportedStatus") FeedbackStatus reportedStatus
     );
 }

@@ -59,7 +59,7 @@ class CreditServiceImplTest {
         wallet.lockForCashout(5000);
         when(creditWalletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(wallet));
         when(registerRepository.sumPendingRewardByUserId(
-                USER_ID, RegisterStatus.CONFIRMED, FeedbackStatus.SUBMITTED
+                USER_ID, RegisterStatus.CONFIRMED, FeedbackStatus.SUBMITTED, FeedbackStatus.REPORTED
         )).thenReturn(1350);
 
         CreditBalanceResponse response = creditService.getBalance(USER_ID);
@@ -72,17 +72,20 @@ class CreditServiceImplTest {
         assertEquals(7480, response.getPayableCredits());
         assertEquals(4480, response.getCashableCredits());
         verify(registerRepository).sumPendingRewardByUserId(
-                eq(USER_ID), eq(RegisterStatus.CONFIRMED), eq(FeedbackStatus.SUBMITTED)
+                eq(USER_ID),
+                eq(RegisterStatus.CONFIRMED),
+                eq(FeedbackStatus.SUBMITTED),
+                eq(FeedbackStatus.REPORTED)
         );
     }
 
     @Test
-    @DisplayName("승인 대기 조회는 CONFIRMED·SUBMITTED로 리포지토리를 부른다")
+    @DisplayName("승인 대기 조회는 CONFIRMED·SUBMITTED·REPORTED 조건으로 리포지토리를 부른다")
     void pendingRewardDelegatesToRegisterRepository() {
         when(userRepository.existsById(USER_ID)).thenReturn(true);
         when(creditWalletRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
         when(registerRepository.sumPendingRewardByUserId(
-                USER_ID, RegisterStatus.CONFIRMED, FeedbackStatus.SUBMITTED
+                USER_ID, RegisterStatus.CONFIRMED, FeedbackStatus.SUBMITTED, FeedbackStatus.REPORTED
         )).thenReturn(1350);
 
         CreditBalanceResponse response = creditService.getBalance(USER_ID);
@@ -90,7 +93,7 @@ class CreditServiceImplTest {
         assertEquals(1350, response.getPendingReward());
         assertEquals(0, response.getEarnedBalance());
         verify(registerRepository).sumPendingRewardByUserId(
-                USER_ID, RegisterStatus.CONFIRMED, FeedbackStatus.SUBMITTED
+                USER_ID, RegisterStatus.CONFIRMED, FeedbackStatus.SUBMITTED, FeedbackStatus.REPORTED
         );
     }
 

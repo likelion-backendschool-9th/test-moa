@@ -9,7 +9,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity(name = "chat_participants")
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"room_id", "user_id"}))
+// 한 방에 같은 회원은 한 번만, 역할마다 한 명만(개발자 1명, 테스터 1명) 들어간다
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"room_id", "user_id"}),
+        @UniqueConstraint(columnNames = {"room_id", "role"})
+})
 @Getter
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

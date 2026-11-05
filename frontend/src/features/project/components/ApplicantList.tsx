@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { unstable_rethrow, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
@@ -7,20 +8,24 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/format";
 import { decideApplicants } from "../actions";
-import { APPLICATION_STATUS_LABEL, type Application, type ApplicationStatus } from "../types";
+import type { ApplicationView } from "../service";
+import { APPLICATION_STATUS_LABEL, SUBMISSION_STATUS_LABEL, type Application, type ApplicationStatus, type SelectionMode } from "../types";
 
 /*
- * 테스터 관리 탭. 구독 모집은 지원자를 직접 확정·거절하고, 무료 모집은 보기만 한다.
+ * 테스터 관리 탭. 선발형 모집은 지원자를 직접 확정·거절하고, 선착순 모집은 보기만 한다.
  * 구독 모집은 체크박스로 여러 명을 골라 한 번에 확정할 수도 있다.
+ * 테스트가 시작되면 확정된 테스터마다 피드백 제출 현황(제출함·미제출·미완료)을 보여 준다.
+ * 구독 모집은 확정된 테스터와 채팅할 수 있어 채팅함으로 가는 바로가기를 둔다.
  * 확정·거절은 화면에 바로 반영하고 서버에 저장한다. 저장하면 요약·분석·내 프로젝트 화면도 같이 바뀐다.
  */
 
 type ApplicantListProps = {
-  applications: Application[];
+  applications: ApplicationView[];
   capacity: number;
   /** 구독 모집이고 모집 마감 전이면 true */
   canSelect: boolean;
   isSubscription: boolean;
+  selectionMode: SelectionMode;
   projectKey: string;
   recruitmentKey: string;
 };
@@ -29,6 +34,7 @@ const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
   applied: "neutral",
   confirmed: "accent",
   rejected: "muted",
+  cancelled: "muted",
 };
 
 /** 응답을 받지 못했고 서버 목록을 다시 받은 뒤의 안내 */
@@ -53,7 +59,7 @@ async function canReachServer() {
 }
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
-export function ApplicantList({ applications, capacity, canSelect, isSubscription, projectKey, recruitmentKey }: ApplicantListProps) {
+export function ApplicantList({ applications, capacity, canSelect, isSubscription, selectionMode, projectKey, recruitmentKey }: ApplicantListProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
@@ -157,14 +163,23 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
 
   if (applications.length === 0) return <EmptyState title="아직 지원자가 없어요" />;
 
+  /* 제출 현황은 테스트가 시작된 뒤에만 값이 있다 */
+  const submissions = rows.map((item) => item.submission).filter((value) => value !== null);
+  const countOf = (status: keyof typeof SUBMISSION_STATUS_LABEL) => submissions.filter((value) => value === status).length;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <p className="font-bold" data-testid="confirmed-count">
           확정 {confirmedCount}명 · 정원 {capacity}명
         </p>
-        {!isSubscription && <p className="text-text-muted">선착순 모집이라 지원 순서대로 자동 확정돼요</p>}
+        {selectionMode === "firstCome" && <p className="text-text-muted">선착순 모집이라 지원 순서대로 자동 확정돼요</p>}
         {canSelect && full && <p className="text-text-muted">정원이 다 찼어요</p>}
+        {submissions.length > 0 && (
+          <p data-testid="submission-summary" className="text-text-muted">
+            피드백 제출 {countOf("submitted")}명 · 미제출 {countOf("pending")}명 · 미완료 {countOf("incomplete")}명
+          </p>
+        )}
       </div>
 
       {canBulk && (
@@ -212,9 +227,19 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
                   className="size-4 accent-accent"
                 />
               )}
-              <span className="font-bold">{item.testerNickname}</span>
+              <span className="min-w-16 font-bold">{item.testerNickname}</span>
               <Badge tone={TONE[item.status]}>{APPLICATION_STATUS_LABEL[item.status]}</Badge>
               <span className="text-sm text-text-muted">{formatDate(item.appliedAt)} 지원</span>
+              {item.submission && <Badge tone="muted">{SUBMISSION_STATUS_LABEL[item.submission]}</Badge>}
+              {isSubscription && item.status === "confirmed" && (
+                <Link
+                  href={`/my/chats?q=${encodeURIComponent(item.testerNickname)}`}
+                  aria-label={`${item.testerNickname}님과 채팅`}
+                  className="ml-auto text-sm font-semibold text-text-muted hover:text-text"
+                >
+                  채팅
+                </Link>
+              )}
               {canSelect && pending && (
                 <span className="ml-auto flex gap-2">
                   <Button size="sm" disabled={full} onClick={() => decide([item], "confirmed")}>

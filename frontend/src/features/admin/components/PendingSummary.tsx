@@ -32,12 +32,6 @@ export function PendingSummary({ summary }: { summary: AdminSummary }) {
       href: ADMIN_REQUEST_PATH.withdrawal,
       detail: <>요청 금액 {formatCredits(summary.withdrawalAmount)}</>,
     },
-    {
-      label: "모집 취소 요청",
-      count: summary.cancellationCount,
-      href: ADMIN_REQUEST_PATH.cancellation,
-      detail: <>확정 테스터가 있는 모집 {summary.cancellationWithTestersCount}건</>,
-    },
   ];
 
   return (
@@ -45,7 +39,7 @@ export function PendingSummary({ summary }: { summary: AdminSummary }) {
       <h2 id="pending-heading" className="text-2xl font-extrabold tracking-[-0.03em]">
         처리 대기
       </h2>
-      <ul className="grid gap-4 md:grid-cols-3">
+      <ul className="grid gap-4 md:grid-cols-2">
         {cards.map((card) => (
           <li key={card.href}>
             <Link
@@ -76,8 +70,8 @@ export function PendingSummarySkeleton() {
   return (
     <div aria-busy="true" aria-label="처리 대기 불러오는 중" className="flex flex-col gap-6">
       <Skeleton className="h-8 w-28" />
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }, (_, index) => (
+      <div className="grid gap-4 md:grid-cols-2">
+        {Array.from({ length: 2 }, (_, index) => (
           <div key={index} className={cardClass} data-skeleton="summary">
             <Skeleton className="h-5 w-20" />
             <Skeleton className="h-10 w-16" />

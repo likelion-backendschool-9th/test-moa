@@ -1,25 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
-  <!-- 시연용 포트폴리오 빌더 화면. 실제 서비스 화면이 아니다 -->
-  <rect width="480" height="360" fill="#e8ecef"/>
+  <!-- 시연용 샘플: 포트폴리오 빌더 웹 화면. 실제 서비스 화면이 아니다 -->
+  <rect width="480" height="360" fill="#dfe6ee"/>
   <g transform="translate(28 30)">
-    <rect width="424" height="300" rx="12" fill="#fff"/>
-    <path d="M0 12a12 12 0 0 1 12-12h400a12 12 0 0 1 12 12v18H0z" fill="#dce3e8"/>
-    <circle cx="16" cy="15" r="4" fill="#8797a3"/>
-    <circle cx="30" cy="15" r="4" fill="#a3b0ba"/>
-    <circle cx="44" cy="15" r="4" fill="#bdc8d0"/>
-    <rect x="116" y="8" width="192" height="14" rx="7" fill="#f3f5f7"/>
-    <text x="20" y="64" font-family="'Wanted Sans Variable',system-ui,sans-serif" font-size="18" font-weight="800" fill="#233846">포트폴리오 빌더</text>
-    <rect x="20" y="80" width="176" height="7" rx="3" fill="#b1bec7"/>
-    <rect x="20" y="108" width="244" height="164" rx="8" fill="#f1f4f6"/>
-    <rect x="36" y="124" width="212" height="72" rx="6" fill="#c9d5dd"/>
-    <rect x="36" y="208" width="116" height="10" rx="5" fill="#526f82"/>
-    <rect x="36" y="230" width="192" height="6" rx="3" fill="#b1bec7"/>
-    <rect x="36" y="244" width="148" height="6" rx="3" fill="#b1bec7"/>
-    <rect x="280" y="108" width="124" height="76" rx="8" fill="#edf1f4"/>
-    <rect x="294" y="122" width="96" height="36" rx="4" fill="#c9d5dd"/>
-    <rect x="294" y="168" width="64" height="5" rx="2" fill="#8797a3"/>
-    <rect x="280" y="196" width="124" height="76" rx="8" fill="#edf1f4"/>
-    <rect x="294" y="210" width="96" height="36" rx="4" fill="#c9d5dd"/>
-    <rect x="294" y="256" width="72" height="5" rx="2" fill="#8797a3"/>
+    <rect width="424" height="300" rx="12" fill="#f8fafc"/>
+    <path d="M0 12a12 12 0 0 1 12-12h400a12 12 0 0 1 12 12v18H0z" fill="#cdd8e4"/>
+    <circle cx="16" cy="15" r="4" fill="#d9705f"/>
+    <circle cx="30" cy="15" r="4" fill="#e4b450"/>
+    <circle cx="44" cy="15" r="4" fill="#7eae6c"/>
+    <rect x="116" y="8" width="192" height="14" rx="7" fill="#eef2f7"/>
+    <text x="20" y="60" font-family="'Wanted Sans Variable','Malgun Gothic',system-ui,sans-serif" font-size="17" font-weight="800" fill="#24364b">포트폴리오 빌더</text>
+    <rect x="332" y="42" width="72" height="20" rx="10" fill="#2f5f8f"/>
+    <rect x="20" y="82" width="140" height="10" rx="5" fill="#24364b"/>
+    <rect x="20" y="98" width="200" height="7" rx="3.5" fill="#c3cfdb"/>
+    <g transform="translate(20 122)">
+      <rect width="120" height="150" rx="8" fill="#2f5f8f"/>
+      <rect x="14" y="16" width="60" height="8" rx="4" fill="#dce8f4"/>
+      <rect x="14" y="34" width="92" height="56" rx="4" fill="#5d86ad"/>
+      <rect x="14" y="102" width="88" height="6" rx="3" fill="#a9c2da"/>
+      <rect x="14" y="116" width="70" height="6" rx="3" fill="#a9c2da"/>
+      <rect x="132" width="120" height="150" rx="8" fill="#e7edf4"/>
+      <rect x="146" y="16" width="60" height="8" rx="4" fill="#24364b"/>
+      <rect x="146" y="34" width="92" height="56" rx="4" fill="#c3cfdb"/>
+      <rect x="146" y="102" width="88" height="6" rx="3" fill="#9fb0c2"/>
+      <rect x="146" y="116" width="70" height="6" rx="3" fill="#9fb0c2"/>
+      <rect x="264" width="120" height="150" rx="8" fill="#e7edf4"/>
+      <rect x="278" y="16" width="60" height="8" rx="4" fill="#24364b"/>
+      <rect x="278" y="34" width="92" height="56" rx="4" fill="#c3cfdb"/>
+      <rect x="278" y="102" width="88" height="6" rx="3" fill="#9fb0c2"/>
+      <rect x="278" y="116" width="70" height="6" rx="3" fill="#9fb0c2"/>
+    </g>
   </g>
 </svg>

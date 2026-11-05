@@ -1,16 +1,28 @@
 # 백엔드 회원관리·인증 인가·회원 신고
 
+JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·GitHub 가입·연동, 내 정보 수정·탈퇴, 회원 신고, 운영자 제재·해제의 백엔드 계획([#37](https://github.com/likelion-backendschool-9th/test-moa/issues/37)). 여러 이슈에 걸친 결정은 이 문서에 두고, 이슈별 계획은 이 폴더의 `<기능>.md`로 나눈다. 시나리오는 `#이슈-S1`부터 센다.
+
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 이 문서 시나리오와 백엔드 테스트가 1:1이고(테스트 `@DisplayName`이 시나리오 번호로 시작), `[테스트: 파일 번호]`는 **다른** 테스트가 대신 확인할 때 쓴다. `[직접]`은 사람이 API·화면·코드로 확인한다.
 
-이슈: 상위 `#37`, 하위 `#79`~`#87`. 시나리오는 `#이슈-S1`부터 센다.
+## 이슈와 문서
 
-## 한눈에
-- 끝나면: JWT로 로그인하고, 서버가 요청마다 회원 상태와 유료 구독 여부를 DB에서 확인한다. Google·GitHub 가입·연동, 내 정보 수정·탈퇴, 회원 신고, 운영자 제재·해제까지 백엔드가 맡는다.
-- 지금: 1단계(`#79`~`#81`) 완료. 프론트 연결(`#82`)은 로그인·세션까지.
-- 브랜치: `feature/auth-backend`
-- 프론트: `docs/frontend/auth.md`(9. 백엔드 연결), `docs/frontend/admin-reports.md`, `docs/frontend/admin-users.md`
+| 이슈 | 내용 | 문서 |
+| --- | --- | --- |
+| [#79](https://github.com/likelion-backendschool-9th/test-moa/issues/79) | 공통 에러 응답과 JWT 인증·인가 | [아래 1](#1-공통-에러-응답과-jwt-인증인가-79) |
+| [#80](https://github.com/likelion-backendschool-9th/test-moa/issues/80) | 이메일 가입·로그인·토큰 갱신 API | [아래 2](#2-이메일-가입로그인토큰-갱신-80) |
+| [#81](https://github.com/likelion-backendschool-9th/test-moa/issues/81) | 내 정보·구독 여부 확인 API | [아래 3](#3-내-정보구독-여부-확인-81) |
+| [#82](https://github.com/likelion-backendschool-9th/test-moa/issues/82) | 프론트 로그인·가입·로그아웃 백엔드 연결 | [로그인·회원가입](../../frontend/auth/auth.md) 9장 |
+| [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | |
+| [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | |
+| [#85](https://github.com/likelion-backendschool-9th/test-moa/issues/85) | 회원 신고·증거 첨부 API | |
+| [#86](https://github.com/likelion-backendschool-9th/test-moa/issues/86) | 운영자 제재·해제 API (#34와 역할 나누기 확정 후) | |
+| [#87](https://github.com/likelion-backendschool-9th/test-moa/issues/87) | 테스트 서버 `JWT_SECRET`과 스키마 생성 방식 | |
 
-## 맥락
+진행 상태는 이슈와 PR에서 본다.
+
+프론트: [로그인·회원가입](../../frontend/auth/auth.md), [신고·제재 관리](../../frontend/admin/reports.md), [회원 관리](../../frontend/admin/users.md)
+
+## 정한 것
 - 백엔드는 브라우저에 열려 있지 않다(BFF). 브라우저 → nginx → Next → 백엔드. Next가 토큰을 httpOnly 쿠키로 들고, 백엔드를 부를 때 `Authorization: Bearer`로 붙인다.
 - access 토큰(30분)에는 회원 id(`sub`)만 넣는다. 권한·상태·구독은 요청마다 DB에서 읽어서 바뀌면 바로 반영된다.
 - refresh 토큰(14일)은 무작위 32바이트이고, SHA-256 해시만 `refresh_tokens`에 저장한다. 쓰면 버리고 새로 준다.
@@ -74,7 +86,7 @@
 #81-S1 `GET /api/users/me`로 내 정보, 연동된 로그인 방식, 비밀번호 유무, 구독 상태를 받는다 [테스트]
 
 #81-S2 지금 시각이 기간 안에 들어가는 ACTIVE 구독이 있으면 `subscription.active`가 true이고 플랜·만료일이 온다 [테스트]
-- 판단 기준은 `docs/backend/payment-subscription-credit.md`와 같다(#69와 `SubscriptionChecker`를 같이 쓰자는 제안)
+- 판단 기준은 [결제·구독·크레딧](../payment/entities.md#6-내-구독-45-r6)과 같다(#69와 `SubscriptionChecker`를 같이 쓰자는 제안)
 
 #81-S3 기간이 끝났거나 해지(CANCELLED)한 구독은 구독이 아니다 [테스트]
 
@@ -82,13 +94,6 @@
 
 #81-S5 구독자 전용 기능은 `subscriptionChecker.require(userId)`로 막고, 아니면 403 `SUBSCRIPTION_REQUIRED` [직접]
 - 아직 부르는 API가 없다. 첫 사용처가 생기면 그 기능 테스트가 확인한다
-
-## 남은 단계
-- `#82` 프론트 연결: 가입·로그아웃·자동 갱신 (`docs/frontend/auth.md` 9장)
-- `#83` Google·GitHub 로그인과 계정 연동
-- `#84` 내 정보 수정·비밀번호·탈퇴
-- `#85` 회원 신고·증거 첨부, `#86` 운영자 제재·해제 (#34와 역할 나누기 확정 후)
-- `#87` 테스트 서버 `JWT_SECRET`과 스키마 생성 방식
 
 ## 범위 밖
 - 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

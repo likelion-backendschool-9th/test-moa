@@ -1,6 +1,8 @@
 # 크레딧 구분 이름 변경과 내역 시각 표시
 
-시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
+백엔드: [결제·구독·크레딧 백엔드](../../backend/payment/README.md)
+
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
 - 끝나면: 마이페이지 홈, `/my/credits`, `/my/credits/withdrawals`에서 크레딧 구성이 "적립 크레딧 / 이벤트 크레딧 / 출금 처리 중"으로 보이고, 크레딧 내역과 출금 내역의 각 행에 날짜와 시각("11월 2일" + "오후 3:12")이 함께 보인다.
@@ -79,16 +81,8 @@ S547 신청 직후 행 [테스트]
    - 파일: `frontend/e2e/credits.spec.ts`, `frontend/e2e/my.spec.ts`
    - 확인: `npm run test:e2e -- my.spec.ts credits.spec.ts`
 3. 전체 확인과 문서
-   - 파일: `docs/frontend/my.md`(S86), `docs/frontend/credits.md`(S350, S361, S378), `docs/frontend/subscription.md`(S390)에 고침 반영
+   - 파일: `docs/frontend/my.md`(S86), `docs/frontend/payment/credits.md`(S350, S361, S378), `docs/frontend/payment/subscription.md`(S390)에 고침 반영
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
-
-## 브랜치·커밋
-- 브랜치: `feature/frontend-credit-labels` (`origin/develop`에서 분기, upstream 해제함)
-- 커밋:
-  - `Feat: 크레딧 구분을 적립 크레딧, 이벤트 크레딧으로 변경` — 단계 1
-  - `Feat: 크레딧 내역과 출금 내역에 시각 표시` — 단계 2
-  - `Test: 크레딧 구분 이름과 내역 시각 시나리오` — 단계 1~2의 e2e
-  - `Docs: 크레딧 구분 이름 변경과 내역 시각 계획` — 단계 3
 
 ## 결정 (2026-11-02)
 - 적립 크레딧은 테스트로 적립한 크레딧만 센다. 출금 처리 중인 크레딧과 이벤트 크레딧은 뺀다. 그래서 세 줄(적립, 이벤트, 출금 처리 중)을 더하면 총 잔액이다.
@@ -102,6 +96,6 @@ S547 신청 직후 행 [테스트]
 - S번호는 S544~S548을 쓴다 (크레딧 본문 필터 S352~S356·구독 결제 S533~S543과 겹치지 않게 재배정). R은 R200~R202.
 
 ## 참고 (2026-11-02 확인)
-- 크레딧 규칙과 기존 시나리오: `docs/frontend/credits.md`, `docs/frontend/my.md` R134, `docs/frontend/subscription.md` S390
+- 크레딧 규칙과 기존 시나리오: `docs/frontend/payment/credits.md`, `docs/frontend/my.md` R134, `docs/frontend/payment/subscription.md` S390
 - 시각 포맷: `frontend/src/lib/format.ts`의 `formatDate`("11월 6일"), `formatClock`("오후 3:12"), 둘 다 서울 시간 기준
 - `LedgerRow`는 `/my/credits`와 마이페이지 홈 "최근 크레딧 내역"이 함께 쓴다

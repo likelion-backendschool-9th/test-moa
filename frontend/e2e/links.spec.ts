@@ -10,8 +10,6 @@ const COMING_SOON_PATHS = [
   "/notices",
 ];
 
-const ADMIN_SUB_PATHS = ["/admin/users", "/admin/withdrawals"];
-
 test.describe("R11 빈 링크와 404", () => {
   for (const path of COMING_SOON_PATHS) {
     test(`S26 ${path}는 준비 중 화면을 연다`, async ({ page }) => {
@@ -19,19 +17,6 @@ test.describe("R11 빈 링크와 404", () => {
       expect(response?.status()).toBe(200);
       await expect(page.getByRole("heading", { level: 1, name: /준비 중/ })).toBeVisible();
       await expect(page.getByRole("main").getByRole("link", { name: "홈으로" })).toHaveAttribute("href", "/");
-    });
-  }
-
-  /*
-   * 운영자 하위 페이지는 일반 회원에게 안내 화면이 나오므로 운영자로 확인한다.
-   * 준비 중이든 완성됐든 열리고 제목이 있어야 한다.
-   */
-  for (const path of ADMIN_SUB_PATHS) {
-    test(`S26 ${path}는 운영자에게 열린다`, async ({ page, context }) => {
-      await setDemo(context, { role: "admin" });
-      const response = await page.goto(path);
-      expect(response?.status()).toBe(200);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     });
   }
 

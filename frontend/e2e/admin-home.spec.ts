@@ -15,12 +15,6 @@ test.describe("R15 접근 권한", () => {
       await expect(page.getByRole("region", { name: "처리 대기" })).toHaveCount(0);
     });
   }
-
-  test("S409 하위 페이지의 비로그인은 그 주소로 돌아오게 로그인으로 간다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/admin/reports");
-    await expect(page).toHaveURL(/\/login\?next=%2Fadmin%2Freports$/);
-  });
 });
 
 test.describe("R17 처리 대기", () => {

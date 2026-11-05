@@ -41,7 +41,7 @@ erDiagram
 | --- | --- | --- |
 | 1 | 피드백은 테스트 항목별 행으로 저장하고 한 번에 제출한다 | ERD와 개발자 화면이 항목별이다. 같은 `submittedAt`을 넣어 72시간 기준을 하나로 둔다 |
 | 2 | 보상 스냅샷은 `Register`에 둔다 | ERD와 같다. 확정할 때 금액을 고정할 수 있고, 피드백이 여러 행이어도 보상은 참가당 한 번이다 |
-| 3 | `recruit_count`는 null을 허용하고 남긴다 | ERD는 이미 null 허용이다. #78로 입력이 없어지고, 보상 상한 대책이 아직 없다 |
+| 3 | `recruit_count`를 뺀다 | 팀에서 모집 인원을 아예 빼기로 했고 ERD에서도 지웠다. 화면은 #78에서 뺀다 |
 | 4 | `Feedback.testItem`은 null을 허용한다 | ERD 내보내기는 `NOT NULL`이지만 기타 의견을 null로 표현한다 |
 | 5 | `ProjectImage`는 `TestItemImage`로 이름을 바꾼다 | 프로젝트 이미지는 `projects.image_url`, 모집글 이미지는 `recruitment_images`가 맡아 테스트 항목 이미지만 남는다 |
 | 6 | ERD에 `cancel_reason`, `cancelled_at`, `is_recommended`를 더한다 | 프론트 화면에 필요하고 ERD에 없다. 코드와 함께 ERD도 고친다 |
@@ -85,7 +85,6 @@ erDiagram
 | --- | --- | --- | --- | --- |
 | `project` | `project_id` | FK → projects | 불가 | `user` 대신 프로젝트를 가리킨다 |
 | `title`, `description`, `conditions`, `accessUrl` | 같은 이름 | 지금과 같음 | 지금과 같음 | 그대로 옮긴다 |
-| `recruitCount` | `recruit_count` | Integer | **가능** | 지금은 불가 |
 | `recruitDeadline`, `feedbackDeadline` | 같은 이름 | LocalDateTime | 불가 | 그대로 옮긴다 |
 | `status` | `status` | enum `RecruitmentStatus` | 불가 | `ProjectStatus`에서 이름을 바꿈. `RECRUITING`으로 시작 |
 | `selectionMode` | `selection_mode` | enum `SelectionMode` | 불가 | 그대로 옮긴다 |
@@ -109,7 +108,7 @@ erDiagram
 - DDL의 `recruitment_types`, `recruitment_images`에 `recruitment_id`가 있다
 
 #89-S4 모집 인원 없이 저장 [직접]
-- DDL의 `recruitments.recruit_count`에 `not null`이 없다
+- DDL의 `recruitments`에 `recruit_count`가 없다
 
 #89-S5 사유를 적고 취소 [테스트]
 - Given `RECRUITING` 모집글
@@ -279,7 +278,7 @@ erDiagram
 | 1 | 72시간 자동 지급 담당 | 크레딧 계획 문서는 프로젝트 도메인으로 적었다. 팀에서 확정한다 |
 | 2 | 항목별 피드백 중 한 건만 신고되면 보상을 어떻게 할지 | 보상은 참가당 한 번이므로 그 참가의 지급 전체를 처리 때까지 보류한다. 신고 담당과 맞춘다 |
 | 3 | `RecruitmentStatus.CLOSED` | 화면 상태는 날짜로 계산하므로 지금은 저장하지 않고 남겨 둔다. API를 만들 때 지울지 정한다 |
-| 4 | 보상 상한 | `recruit_count`가 없으면 선착순 지급에 상한이 없다. 팀에서 정한다 |
+| 4 | 보상 상한 | 모집 인원이 없어 선착순 지급에 상한이 없다. 팀에서 정한다 |
 
 ## 바로 다음
 1. 엔티티와 단위 테스트를 구현한다

@@ -159,13 +159,6 @@ S181 구조 (기존 S78) [명령]
    - 파일: `e2e/profile.spec.ts` 새로 만듦 (테스트 이름은 S번호로 시작), `e2e/links.spec.ts`, `docs/frontend/home.md` S26·S78, `docs/frontend/my.md` 범위 밖에서 "개인정보 수정" 제거
    - 확인: `cd frontend && npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px·다크 모드 눈으로 확인
 
-## 브랜치·커밋
-- 브랜치: `feature/frontend-profile` (`origin/develop`에서 분기, upstream 해제)
-- 커밋:
-  - `Feat: 개인정보 수정 화면` — 단계 1~4
-  - `Test: 개인정보 수정 E2E 시나리오` — 단계 5 테스트
-  - `Docs: 개인정보 수정 계획 문서, 홈 문서 S26·S78 갱신` — 문서
-
 ## 가정
 - 화면: h1 아래 한 장의 면에 "기본 정보" 줄, 그 아래 "비밀번호 변경" 줄. 폼이 둘이고 버튼도 각자 있다 (한쪽 오류가 다른 쪽 저장을 막지 않게). 넓은 화면은 Tailwind Plus 설정 화면처럼 제목·한 줄 설명 왼쪽, 칸 오른쪽이다. (고침 10-30: 빈 공간 피드백)
 - 모양: 금액 폼이 아니므로 DESIGN.md 기본 규칙(누르는 것은 알약)을 따른다. 입력 칸도 검색창과 같은 알약, 높이 48px. 새 hex·px 값은 넣지 않는다.

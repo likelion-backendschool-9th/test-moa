@@ -32,6 +32,7 @@ class ChatControllerTest {
     @Autowired EntityManager em;
     @Autowired JwtProvider jwt;
     @Autowired ObjectMapper json;
+    @Autowired com.testmoa.backend.service.ChatService chatService;
     ChatFixtures fixtures;
     User developer, tester;
     ChatRoom room;
@@ -60,9 +61,7 @@ class ChatControllerTest {
     }
     void messages(int count) {
         for (int i = 0; i < count; i++) {
-            var message = ChatMessage.builder().sender(i % 2 == 0 ? testerSide : developerSide)
-                    .seq(room.getLastSeq() + 1).content("메시지" + (i + 1)).build();
-            room.nextSeq(message.getSentAt());
+            var message = room.createMessage(i % 2 == 0 ? testerSide : developerSide, "메시지" + (i + 1));
             em.persist(message);
         }
         em.flush();
@@ -238,4 +237,23 @@ class ChatControllerTest {
         assertThat(em.find(ChatParticipant.class, testerSide.getId()).isHidden()).isTrue();
         assertThat(em.find(ChatRoom.class, room.getId()).getLastSeq()).isZero();
     }
+    @Test @DisplayName("#49-S1 방 상세 정보는 지연 로딩 없이 쿼리 한 번으로 조회")
+    void roomSingleQuery() {
+        em.flush();
+        em.clear();
+        var statistics = em.getEntityManagerFactory().unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        boolean enabled = statistics.isStatisticsEnabled();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        try {
+            var result = chatService.getRoom(room.getRoomKey(), tester.getId());
+            assertThat(result.projectName()).isEqualTo("북로그");
+            assertThat(result.partner().nickname()).isEqualTo("모아개발");
+            assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+            assertThat(statistics.getEntityLoadCount()).isZero();
+        } finally {
+            statistics.setStatisticsEnabled(enabled);
+        }
+    }
+
 }

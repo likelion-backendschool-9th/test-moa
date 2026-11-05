@@ -78,4 +78,9 @@ public class ChatRoom {
         this.participants.add(new ChatParticipant(this, recruitment.getProject().getUser(), ChatRole.DEVELOPER));
         this.participants.add(new ChatParticipant(this, register.getUser(), ChatRole.TESTER));
     }
+    public long nextSeq(LocalDateTime sentAt) {
+        this.lastMessageAt = sentAt;
+        return ++this.lastSeq;
+    }
+
 }

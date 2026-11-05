@@ -65,7 +65,7 @@
 - Then  `IllegalArgumentException`
 
 #45-S21 승인 대기 보상은 지갑 컬럼이 아님 [직접]
-- `CreditWallet`에 `pendingReward` 필드가 없다. 조회 규칙은 [../credit-balance-ledger.md](../credit-balance-ledger.md) (#66-S1, #66-S3, #91)
+- `CreditWallet`에 `pendingReward` 필드가 없다. 조회 규칙은 [credit-balance-ledger.md](credit-balance-ledger.md) (#66-S1, #66-S3, #91)
 
 ## 2. 크레딧 내역 (#45-R2)
 
@@ -98,8 +98,8 @@
 | `user` | `user_id` | FK → users | 불가 | 요청자 |
 | `amount` | `amount` | Integer | 불가 | 현금화 크레딧. 1크레딧=1원 |
 | `bank` | `bank` | String | 불가 | 입금 은행 |
-| `accountNumber` | `account_number` | String | 불가 | 계좌 숫자 10~14자리. 저장 방식은 [README.md](README.md#아직-정하지-않은-것)의 1번 |
-| `accountHolder` | `account_holder` | String | 불가 | 예금주 |
+| `accountNumber` | `account_number` | String | 불가 | 계좌 숫자 10~14자리. **A 컬럼 암호화**([cashout.md](cashout.md)). length 넉넉히 |
+| `accountHolder` | `account_holder` | String | 불가 | 예금주. 계좌와 같이 암호화 |
 | `status` | `status` | enum `CashoutStatus` | 불가 | `REQUESTED` / `PAID` / `REJECTED` |
 | `rejectReason` | `reject_reason` | enum (DB String) | 가능 | `HOLDER` / `ACCOUNT` / `OTHER` |
 | `rejectMemo` | `reject_memo` | String | 가능 | OTHER면 회원 사유(필수), 그 외 운영자 메모 |
@@ -134,7 +134,7 @@
 
 ## 4. 운영자 출금 (#45-R4)
 
-운영자가 지급·반려한다. 대기 건만 계좌 전체, 완료는 끝 4자리(저장 방식은 [README.md](README.md#아직-정하지-않은-것)의 1번).
+운영자가 지급·반려한다. 대기 건만 계좌 전체, 완료는 끝 4자리(저장은 A 암호화, [cashout.md](cashout.md)).
 
 ### 반려 사유 `CashoutRejectReason`
 

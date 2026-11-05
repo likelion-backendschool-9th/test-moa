@@ -9,8 +9,8 @@
 | 이슈 | 내용 | 문서 |
 | --- | --- | --- |
 | [#45](https://github.com/likelion-backendschool-9th/test-moa/issues/45) | 결제·구독·크레딧 엔티티 | [entities.md](entities.md) |
-| [#66](https://github.com/likelion-backendschool-9th/test-moa/issues/66) | 크레딧 잔액·내역 조회 API | [아래 #66](#66-크레딧-잔액내역-조회) |
-| [#67](https://github.com/likelion-backendschool-9th/test-moa/issues/67) | 출금 신청·내역 API | [아래 #67](#67-출금-신청내역) |
+| [#66](https://github.com/likelion-backendschool-9th/test-moa/issues/66) | 크레딧 잔액·내역 조회 API | [credit-balance-ledger.md](credit-balance-ledger.md) |
+| [#67](https://github.com/likelion-backendschool-9th/test-moa/issues/67) | 출금 신청·내역 API | [cashout.md](cashout.md) |
 | [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [아래 #69](#69-구독-플랜내-구독-상태) |
 | [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [아래 #70](#70-구독-결제-화면-조회) |
 | [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [아래 #71](#71-구독-결제-실행) |
@@ -37,8 +37,9 @@
 | 구독 | 플랜·상태·페이지 조립 | `/my/subscription` |
 | 결제 | checkout 조회·실행 | `/my/subscription/checkout` |
 
-- 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [../credit-balance-ledger.md](../credit-balance-ledger.md).
+- 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
 - 구독 중인지는 날짜로 판단하고, `EXPIRED`로 바꾸는 배치는 두지 않는다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다.
+- 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체·완료=끝 4자리. (#67, 2026-11-05)
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):
 
@@ -106,7 +107,7 @@ erDiagram
 
 ### #66 크레딧 잔액·내역 조회
 
-시나리오·승인 대기 규칙은 [../credit-balance-ledger.md](../credit-balance-ledger.md)에 있다.
+시나리오·승인 대기 규칙은 [credit-balance-ledger.md](credit-balance-ledger.md)에 있다.
 
 #66-S1 잔액 조회 API [직접]
 - API: `GET /api/users/{userId}/credits`
@@ -120,6 +121,8 @@ erDiagram
 - 화면: `/my/credits` (`docs/frontend/payment/credits.md` S352~)
 
 ### #67 출금 신청·내역
+
+시나리오·계좌 암호화(A)·신청 트랜잭션은 [cashout.md](cashout.md)에 있다.
 
 #67-S1 출금 내역 조회 [직접]
 - API: `GET /api/users/{userId}/credits/cashouts`
@@ -222,18 +225,9 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 
 | # | 무엇을 | 고를 것 |
 | --- | --- | --- |
-| 1 | 계좌번호·예금주 저장 | A 컬럼 암호화 / B 평문+응답 마스킹 / C 처리 뒤 파기 |
-| 2 | `SubscriptionStatus.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
-| 3 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
+| 1 | `SubscriptionStatus.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
+| 2 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
 
-**1번: 민감한 개인 정보.** 계좌번호·예금주는 개인 정보라 평문 저장 여부를 정해야 한다.
-
-| 안 | 내용 | 장단점 |
-| --- | --- | --- |
-| A. 컬럼 암호화 | JPA `AttributeConverter`로 저장 때 암호화, 읽을 때 복호화. 필드 타입은 그대로 | 코드 변화가 작다. 키 관리가 필요하고, 암호화 컬럼은 검색·정렬이 안 된다 |
-| B. 평문 + 응답 마스킹 | 저장은 평문, 완료 건은 응답에서 끝 4자리만 | 구현이 가장 쉽다. DB 유출 시 그대로 보인다 |
-| C. 처리 뒤 파기 | 지급·반려 뒤 일정 기간이 지나면 지우거나 마스킹 값으로 덮음 | 오래 보관하지 않는다. 지난 건 확인이 어려워진다 |
-
-지금 프론트는 대기 건만 계좌 전체, 완료는 끝 4자리다. 어느 안이든 응답 마스킹은 한다. 컬럼은 늘리지 않는다. 암호화하면 `length`를 넉넉히 잡는다.
+계좌번호·예금주 저장은 **A 컬럼 암호화**로 정했다 (#67, [cashout.md](cashout.md)). 응답 마스킹(대기=전체, 완료=끝 4자리)은 유지한다.
 
 - ERD와 코드의 테이블·PK 이름(단수/복수, `id` vs `*_id`)을 맞추는 일. ERD 그림에서는 payment와 subscription 사이를 **1:1**로 그리고 값 설명만 고치면 된다.

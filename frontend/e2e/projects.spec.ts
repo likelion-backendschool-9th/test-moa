@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
-/* docs/frontend/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
+/* docs/frontend/project/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
 const BOOKLOG = "/my/projects/booklog";
 const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;

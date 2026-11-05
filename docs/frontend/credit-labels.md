@@ -82,14 +82,6 @@ S547 신청 직후 행 [테스트]
    - 파일: `docs/frontend/my.md`(S86), `docs/frontend/credits.md`(S350, S361, S378), `docs/frontend/subscription.md`(S390)에 고침 반영
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
-## 브랜치·커밋
-- 브랜치: `feature/frontend-credit-labels` (`origin/develop`에서 분기, upstream 해제함)
-- 커밋:
-  - `Feat: 크레딧 구분을 적립 크레딧, 이벤트 크레딧으로 변경` — 단계 1
-  - `Feat: 크레딧 내역과 출금 내역에 시각 표시` — 단계 2
-  - `Test: 크레딧 구분 이름과 내역 시각 시나리오` — 단계 1~2의 e2e
-  - `Docs: 크레딧 구분 이름 변경과 내역 시각 계획` — 단계 3
-
 ## 결정 (2026-11-02)
 - 적립 크레딧은 테스트로 적립한 크레딧만 센다. 출금 처리 중인 크레딧과 이벤트 크레딧은 뺀다. 그래서 세 줄(적립, 이벤트, 출금 처리 중)을 더하면 총 잔액이다.
 - 구독 페이지 안내도 "이벤트 크레딧"으로 바꾼다.

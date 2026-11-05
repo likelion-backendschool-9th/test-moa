@@ -154,17 +154,6 @@ S333 구조 [명령]
    - `docs/frontend/home.md` R2~R5·R12 갱신, `docs/frontend/auth.md` 범위 밖 갱신
    - 확인: `cd frontend && npm run lint && npx tsc --noEmit && npm run test:e2e`, 개발 서버에서 375·1024·1280·1440px와 다크 모드 확인
 
-## 브랜치·커밋
-- 브랜치: `feature/frontend-header` (`feature/frontend-auth`에서 분기)
-- 커밋:
-  - `Docs: 헤더 정리와 로그아웃 계획 문서`
-  - `Feat: 로그아웃 액션` — 단계 2
-  - `Feat: 헤더 탭·검색 정리, 마이페이지·로그아웃 계정 영역` — 단계 1·3 (고침 11-02: 탭 정리와 계정 영역이 같은 파일을 고쳐 한 커밋으로)
-  - `Fix: 로그인 상태에서 헤더 글자가 줄바꿈되지 않게 배치 변경` — 단계 4
-  - `Test: 헤더 정리·로그아웃·배치 E2E 시나리오`
-  - `Docs: 홈 문서 헤더·검색 시나리오 갱신`
-- PR: base `feature/frontend-auth`, Draft. 본문 맨 위에 "auth PR 병합 후 병합, base 변경 금지"
-
 ## 가정
 - 로그아웃 버튼은 보조(ghost) 버튼이다. 헤더의 주 버튼은 비로그인일 때 "회원가입" 하나뿐이다 (DESIGN.md The One Green Rule).
 - 768px 미만에서 크레딧 버튼은 헤더에 남긴다. 테스터가 가장 자주 보는 값이라서다.

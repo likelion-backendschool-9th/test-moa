@@ -316,10 +316,6 @@ S216 [명령] (고침 #42: 상세 라우트 제거, `WithdrawalModal` 추가)
    - 파일: `e2e/admin-withdrawals.spec.ts`
    - 확인: `npm run test:e2e && npm run lint && npm run build`, 개발 서버에서 1440px·375px 눈으로 확인
 
-## 브랜치·커밋
-- 브랜치: `feature/admin-withdrawals` (`origin/develop`에서 분기, upstream 해제함)
-- 커밋 메시지: README의 `유형: 변경 내용` 규칙. 기능·테스트·문서는 나눈다(AGENTS.md).
-
 ## 변경 이력
 - 2026-10-30
   - 출금 요청 관리 요구사항을 처음 정리했다.

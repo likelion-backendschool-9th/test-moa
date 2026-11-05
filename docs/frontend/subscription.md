@@ -245,13 +245,6 @@ S543 기록 보관 기간 (리뷰 반영) [테스트]
    - 파일: `types.ts`(`PlanTerms`, `RecruitQuota`, 월간 모집 인원은 숫자 필드로), `mock.ts`(`FREE_PLAN`, 상품 `monthlyLimit`, 사용량), `api.ts`(한도·사용량·다시 채워지는 날 계산), `SubscriptionStatus.tsx`(사용량 칸), `PlanComparison.tsx`
    - 확인: `npm run test:e2e && npm run lint`
 
-## 브랜치·커밋
-- 브랜치: `feature/frontend-subscription` (`origin/develop`에서 분기, upstream 해제)
-- 커밋:
-  - `Feat: 구독 관리 화면` — 단계 1~4
-  - `Test: 구독 관리 E2E 시나리오` — 단계 5 테스트
-  - `Docs: 구독 관리 계획 문서, 홈 문서 S26 갱신` — 문서
-
 ## 가정
 - 화면 순서: 내 구독 → 혜택 비교 → 결제 안내 → 만료되면(구독 중일 때만). 1024px 이상에서 내 구독과 결제 안내를 나란히 두고 혜택 비교는 아래 전체 너비. (배치는 구현 뒤 스크린샷으로 확인)
 - 제목은 메뉴 이름과 같은 "구독"이다. URL 목록의 "구독 관리"는 페이지 종류 이름이다.

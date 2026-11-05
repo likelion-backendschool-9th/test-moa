@@ -107,10 +107,5 @@
 - Postgres는 제약 위반이 난 트랜잭션을 중단시켜 같은 테스트 안에서 다시 조회할 수 없다. 그래서 #47-S2, #47-S6은 예외가 나는 것까지만 확인한다
 
 ## 참고
-- 지금 엔티티(#91 이후): `Project`(프로젝트, 주인 `user`) 1:N `Recruitment`(모집 건) 1:N `Register`(참가, 테스터 `user`). `Register`는 `APPLIED`로 시작하고 `confirm(...)`으로 `CONFIRMED`가 된다. `Subscription`의 구독 중은 날짜로 판단한다. 서비스·컨트롤러는 `Sample`만 있다([프로젝트·테스터·피드백](../project-tester-feedback.md)) (11-05)
 - 채팅방은 프로젝트가 아니라 모집 건(`recruitment_id`)을 가리킨다. 채팅은 모집 건 × 선정된 테스터마다 하나이고, 프로젝트명·이미지는 `recruitment.project`에서 찾는다. 프론트 `ChatRoom.recruitmentSlug` 자리에는 팀 문서대로 `recruitment_id`를 넘긴다(#48) (11-05)
-- develop의 백엔드 테스트는 DB 없이 도는 엔티티 단위 테스트(`domain/entity/*Test`)와 `contextLoads`뿐이고, 테스트용 설정(`src/test/resources`)은 없다 (11-05)
-- `application.yml`에 `ddl-auto`가 없어 Postgres에서는 Hibernate가 테이블을 만들지 않는다. 스키마 관리 도구도 없다. 서버는 `local` 프로필로 뜨지만 `application-local.yml`은 커밋하지 않는 파일이라, 배포된 DB에는 백엔드 테이블이 없다(`compose.prod.yaml`, `deploy.yml`, `.env.example`, `backend/Dockerfile`에도 스키마 설정이 없다) (11-05)
-- CI(`.github/workflows/deploy.yml`의 Backend test)는 postgres:17 서비스를 띄우고 `./gradlew test`를 돌린다 (11-05)
-- 컬럼 이름은 `PhysicalNamingStrategySnakeCaseImpl`로 snake_case가 된다 (11-05)
 - Spring Boot 4.1.2에서 `@DataJpaTest`는 `org.springframework.boot.data.jpa.test.autoconfigure`, `@AutoConfigureTestDatabase`는 `org.springframework.boot.jdbc.test.autoconfigure`, `TestEntityManager`는 `org.springframework.boot.jpa.test.autoconfigure` 패키지에 있다 (11-05)

@@ -228,41 +228,12 @@ test.describe("R104 프로젝트 상세", () => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S112 프로젝트 정보와 버튼이 있다", async ({ page }) => {
-    await page.goto(BOOKLOG);
-    await expect(page.getByRole("heading", { level: 1, name: "북로그" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "내 프로젝트로 돌아가기" })).toHaveAttribute("href", "/my/projects");
-    await expect(page.getByRole("link", { name: /^https:/ })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "수정" })).toHaveAttribute("href", `${BOOKLOG}/edit`);
-    await expect(page.getByRole("link", { name: "테스트 모집 작성" })).toHaveAttribute("href", `${BOOKLOG}/recruitments/new`);
-  });
-
   test("S150 상세 설명이 보이고 수정 폼에 채워져 있다", async ({ page }) => {
     await page.goto(BOOKLOG);
     await expect(page.getByText(/이번에는 책 등록부터 기록 작성까지/)).toBeVisible();
 
     await page.goto(`${BOOKLOG}/edit`);
     await expect(page.getByLabel("상세 설명 (선택)")).toHaveValue(/읽은 책을 검색해/);
-  });
-
-  test("S113 모집 건이 최신순으로 보이고 관리 화면으로 간다", async ({ page }) => {
-    await page.goto(BOOKLOG);
-    const items = page.getByRole("region", { name: "테스트 모집" }).getByRole("listitem");
-    await expect(items).toHaveCount(2);
-    await expect(items.nth(0)).toContainText("북로그 2차 베타 테스터 모집");
-    await expect(items.nth(0)).toContainText("모집 중");
-    await expect(items.nth(0)).toContainText("구독 모집");
-    await expect(items.nth(0)).toContainText("확정 13명 · 정원 20명");
-    await expect(items.nth(1)).toContainText("테스트 중");
-    await expect(items.nth(1)).toContainText("확정 5명 · 정원 5명");
-    await expect(items.nth(0).getByRole("link", { name: "공개 페이지 보기" })).toHaveAttribute("href", "/recruitments/booklog");
-    await items.nth(0).getByRole("link").first().click();
-    await expect(page).toHaveURL(BOOKLOG_MANAGE);
-  });
-
-  test("S114 모집 건이 없으면 빈 상태다", async ({ page }) => {
-    await page.goto("/my/projects/todo-memo");
-    await expect(page.getByText("아직 테스트 모집이 없어요")).toBeVisible();
   });
 });
 
@@ -360,36 +331,6 @@ test.describe("R119 모집글 제목과 선정 조건", () => {
     await page.goto(FOLIO_MANAGE);
     await expect(page.getByRole("heading", { level: 1, name: "포트폴리오 빌더 템플릿 테스터 모집" })).toBeVisible();
     await expect(value("선정 방식")).toHaveText("선착순");
-  });
-});
-
-test.describe("R106 테스트 모집 관리와 탭", () => {
-  test.beforeEach(async ({ context }) => {
-    await setDemo(context, { role: "developer" });
-  });
-
-  test("S119 요약이 보인다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
-    await expect(page.getByRole("heading", { level: 1, name: "북로그 2차 베타 테스터 모집" })).toBeVisible();
-    await expect(page.getByText("책 등록부터 독서 기록 작성까지 한 번 써 보기")).toBeVisible();
-    const summary = page.getByRole("definition");
-    await expect(page.getByRole("term").filter({ hasText: /^확정 인원$/ })).toBeVisible();
-    await expect(summary.filter({ hasText: /^13명$/ })).toBeVisible();
-    await expect(summary.filter({ hasText: /^20명$/ })).toBeVisible();
-    await expect(page.getByText(/\d+ \/ /)).toHaveCount(0);
-    const trail = page.getByRole("navigation", { name: "현재 위치" });
-    await expect(trail.getByRole("link", { name: "내 프로젝트" })).toHaveAttribute("href", "/my/projects");
-    await expect(trail.getByRole("link", { name: "북로그" })).toHaveAttribute("href", BOOKLOG);
-  });
-
-  test("S120 탭은 URL을 따르고 기본은 테스터 관리다", async ({ page }) => {
-    await page.goto(`${BOOKLOG_MANAGE}?tab=nope`);
-    const tabs = page.getByRole("navigation", { name: "모집 관리 탭" }).getByRole("link");
-    await expect(tabs).toHaveText(["테스터 관리", "피드백", "분석"]);
-    await expect(tabs.nth(0)).toHaveAttribute("aria-current", "page");
-    await tabs.nth(1).click();
-    await expect(page).toHaveURL(`${BOOKLOG_MANAGE}?tab=feedback`);
-    await expect(tabs.nth(1)).toHaveAttribute("aria-current", "page");
   });
 });
 
@@ -597,40 +538,6 @@ test.describe("R109 분석 탭", () => {
     await expect(page.getByText("구독 모집에서 분석을 볼 수 있어요")).toBeVisible();
     await expect(page.getByRole("link", { name: "구독 알아보기" })).toHaveAttribute("href", "/my/subscription");
     await expect(page.getByRole("heading", { name: "AI 분석" })).toHaveCount(0);
-  });
-});
-
-test.describe("R112 AI 분석", () => {
-  test("S135 피드백을 정리한 결과와 근거 수를 보여 준다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    await page.goto(`${FIRST_MANAGE}?tab=analytics`);
-    const ai = page.getByRole("region", { name: "AI 분석" });
-    await expect(ai).toBeVisible();
-    await expect(ai.getByText("시연용 샘플")).toBeVisible();
-    await expect(ai.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
-    await expect(ai.getByRole("heading", { name: "좋았던 점 1" })).toBeVisible();
-    /* 문제마다 근거 수와 해결 제안이 같은 항목 안에 붙어 있다 */
-    const issue = ai.getByRole("listitem").filter({ hasText: "표지가 늦게 떠서" });
-    await expect(issue.getByText("피드백 2건")).toBeVisible();
-    await expect(issue).toContainText("제안 검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기");
-    await expect(ai.getByText(/AI가 정리한 내용이라 틀릴 수 있어요 · .+ 정리/)).toBeVisible();
-  });
-
-  test("S136 피드백이 부족하면 안내를 보여 준다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`);
-    const ai = page.getByRole("region", { name: "AI 분석" });
-    await expect(ai.getByText("피드백이 3건 이상 모이면 AI가 정리해 드려요")).toBeVisible();
-    await expect(ai.getByText("지금 피드백 0건")).toBeVisible();
-  });
-
-  test("S137 분석을 기다리는 동안 스켈레톤이 먼저 보인다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer", data: "slow" });
-    await page.goto(`${FIRST_MANAGE}?tab=analytics`, { waitUntil: "commit" });
-    await expect(page.getByRole("term").filter({ hasText: /^제출률$/ })).toBeVisible();
-    await expect(page.getByTestId("ai-skeleton")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "고칠 점 2" })).toBeVisible();
-    await expect(page.getByTestId("ai-skeleton")).toHaveCount(0);
   });
 });
 

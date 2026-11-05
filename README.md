@@ -136,6 +136,8 @@ PR 제목은 커밋 메시지와 같은 `유형: 변경 내용` 형식으로 작
 
 PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. 필수 섹션은 비우지 않고, 해당 없는 선택 섹션은 지웁니다.
 
+PR을 열면 [PR meta 워크플로](.github/workflows/pr-meta.yml)가 연 사람을 담당자로 넣고, 제목 유형으로 라벨을 붙입니다(`Feat`·`Design` → `enhancement`, `Fix` → `bug`, `Docs` → `documentation`). 다른 유형은 라벨이 붙지 않습니다.
+
 | 섹션 | 구분 | 내용 |
 | --- | --- | --- |
 | 변경 요약 | 필수 | 무엇이 왜 바뀌었는지 사용자·화면 기준으로 한두 문장 |

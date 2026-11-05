@@ -99,8 +99,6 @@ export type FeedbackEntry = {
   imageNames: string[];
 };
 
-/** 칸마다 적용한다. 칸이 여러 개라 한 칸에 쓸 양이 줄어 임시로 10자로 정했다 */
-export const FEEDBACK_MIN_LENGTH = 10;
 /** 칸마다 적용하는 최대 글자 수. 기획에서 미정이다. 시연용 저장 한도는 칸을 모두 합쳐 따로 확인한다(demo-feedback.ts) */
 export const FEEDBACK_MAX_LENGTH = 500;
 

@@ -1,5 +1,5 @@
 import { checkFeedbackImages, parseFileMeta } from "./feedback-images";
-import { FEEDBACK_MAX_LENGTH, FEEDBACK_MIN_LENGTH, type FeedbackEntry, type FeedbackTestItem } from "./types";
+import { FEEDBACK_MAX_LENGTH, type FeedbackEntry, type FeedbackTestItem } from "./types";
 
 /*
  * 항목별 피드백 칸의 이름과 제출 값 검사.
@@ -27,7 +27,6 @@ export function parseFeedbackForm(testItems: FeedbackTestItem[], formData: FormD
     const problem = images ? checkFeedbackImages(images) : "이미지 정보를 읽지 못했어요. 이미지를 다시 골라 주세요";
 
     if (content.length > FEEDBACK_MAX_LENGTH) errors[key] = `${FEEDBACK_MAX_LENGTH}자까지 적을 수 있어요`;
-    else if (content && content.length < FEEDBACK_MIN_LENGTH) errors[key] = `${FEEDBACK_MIN_LENGTH}자 이상 적어 주세요`;
     else if (!content && required) errors[key] = "피드백을 적어 주세요";
     else if (problem) errors[key] = problem;
     else if (!content && images?.length) errors[key] = "내용을 적어야 이미지를 넣을 수 있어요";

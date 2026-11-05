@@ -103,6 +103,9 @@ public class CreditServiceImpl implements CreditService {
     public CashoutResponse requestCashout(Long userId, CashoutCreateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (request.amount() == null || request.amount() < 1) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "1 크레딧 이상 입력해 주세요");
+        }
         if (!CashoutBanks.isAllowed(request.bank())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "은행을 골라 주세요");
         }

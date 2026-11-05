@@ -34,11 +34,13 @@ public class CashoutRequest {
     private String bank;
 
     // 계좌번호. 숫자 10~14자리. DB에는 AES-GCM 암호문으로 저장한다(#67)
+    @ToString.Exclude
     @Convert(converter = EncryptedStringConverter.class)
     @Column(nullable = false, length = 255)
     private String accountNumber;
 
     // 입금 예금주. 회원 실명과 다르면 운영자가 확인한다. 계좌와 같이 암호화
+    @ToString.Exclude
     @Convert(converter = EncryptedStringConverter.class)
     @Column(nullable = false, length = 255)
     private String accountHolder;

@@ -8,12 +8,13 @@
 |---|---|---|
 | [#47](https://github.com/likelion-backendschool-9th/test-moa/issues/47) | 채팅 엔티티 | [entities.md](entities.md) |
 | [#49](https://github.com/likelion-backendschool-9th/test-moa/issues/49) | 메시지 조회·보내기 | [messages.md](messages.md) |
-| [#48](https://github.com/likelion-backendschool-9th/test-moa/issues/48) | 채팅함 조회 | inbox.md |
+| [#48](https://github.com/likelion-backendschool-9th/test-moa/issues/48) | 채팅함 조회 | [inbox.md](inbox.md) |
 | [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | rooms.md |
 | [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | read.md |
 | [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | realtime.md |
 | [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |
 | [#54](https://github.com/likelion-backendschool-9th/test-moa/issues/54) | 화면을 실제 API로 연결 | [채팅함](../../frontend/chat/chats.md), [채팅방](../../frontend/chat/chat-room.md) |
+| [#105](https://github.com/likelion-backendschool-9th/test-moa/issues/105) | 채팅방 메시지 검색 | search.md |
 
 진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다. 진행 상태는 이슈와 PR에서 본다.
 
@@ -27,6 +28,7 @@
 - 실시간 전송은 SSE로 한다. Spring `SseEmitter`의 스트림을 Next Route Handler가 중계하고, 브라우저는 `EventSource`로 받는다. 보내기는 서버 액션(POST)으로 한다. SSE는 "새 메시지가 왔다", "읽었다"는 알림으로만 쓰고, 다시 연결되면 화면이 보고 있는 방마다 REST로 `after={그 방의 마지막 순번}`을 조회하며 채팅함·헤더는 요약을 다시 받는다(#51) (11-05)
 - SSE 연결은 방마다가 아니라 회원마다 하나 연다. 그 연결로 모든 방의 알림을 받아 채팅함과 헤더의 안 읽은 표시도 실시간으로 바꾼다(#51·#52) (11-05)
 - 상대가 내 메시지를 읽었는지 보여 주는 읽음 표시를 범위에 넣는다. 상대의 `last_read_seq`가 내 메시지의 `seq` 이상이면 읽음이다. #52 이슈의 "범위 밖" 문구는 고쳐야 한다(이슈 수정은 따로 허가를 받는다) (11-05)
+- 참여자의 바꾼 대화방 이름 컬럼 `custom_name`을 `custom_room_name`으로 바꾼다(엔티티 필드는 `customRoomName`). `custom_name`만으로는 무엇의 이름인지 알기 어렵다. 이 컬럼을 실제로 쓰는 #50에서 바꾸고, 배포 DB에 채팅 테이블이 생기기 전이라 옮길 데이터는 없다. ERD에는 먼저 `custom_room_name`으로 넣는다(#50) (11-06)
 
 ## 데이터 구조
 #47에서 만든 테이블. 자세한 시나리오와 가정은 [entities.md](entities.md)에 있다.
@@ -34,7 +36,7 @@
 | 테이블 | 한 행이 뜻하는 것 | 주요 컬럼 | 제약 |
 |---|---|---|---|
 | `chat_rooms` | 참가 한 건(모집 건 × 선정된 테스터)의 대화방 | `room_key`, `recruitment_id`, `register_id`, `last_seq`, `last_message_at` | `room_key` unique, `register_id` unique |
-| `chat_participants` | 방에 들어간 회원 한 명(방마다 개발자·테스터 2행) | `room_id`, `user_id`, `role`, `custom_name`, `hidden`, `last_read_seq` | `(room_id, user_id)` unique, `(room_id, role)` unique |
+| `chat_participants` | 방에 들어간 회원 한 명(방마다 개발자·테스터 2행) | `room_id`, `user_id`, `role`, `custom_name`(#50에서 `custom_room_name`으로), `hidden`, `last_read_seq` | `(room_id, user_id)` unique, `(room_id, role)` unique |
 | `chat_messages` | 메시지 하나 | `room_id`, `seq`, `sender_id`(참여자), `content`, `sent_at` | `(room_id, seq)` unique |
 
 ## 아직 정하지 않은 것

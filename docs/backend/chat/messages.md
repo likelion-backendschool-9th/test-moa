@@ -144,23 +144,13 @@
    - 파일: `ChatServiceImpl.java`(참여자 찾기: roomKey와 내 회원 id로 숨기지 않은 참여자, 없으면 `NOT_FOUND`), 같은 테스트
    - 확인: 같은 명령
 4. 보내기와 검증 — #49-S7, #49-S8, #49-S9, #49-S11, #49-S12, #49-S13~S15의 보내기 부분
-   - 파일: `domain/dto/request/ChatMessageSendRequest.java`(`@NotBlank`·`@Size(max = 500)`), `ChatRoomRepository`(방 행 `PESSIMISTIC_WRITE` 잠금 조회), `ChatRoom.java`(`nextSeq(sentAt)`), `ChatParticipantRepository`(상대 삭제만 푸는 update 쿼리), 같은 테스트
+   - 파일: `domain/dto/request/ChatMessageSendRequest.java`(`@NotBlank`·`@Size(max = 500)`), `ChatRoomRepository`(방 행 `PESSIMISTIC_WRITE` 잠금 조회), `ChatRoom.java`(`createMessage(sender, content)`로 순번·메시지 생성·최근 일시 갱신), `ChatParticipantRepository`(상대 삭제만 푸는 update 쿼리), 같은 테스트
    - 확인: 같은 명령
 5. 동시 전송 — #49-S10
    - 파일: 테스트 `service/ChatSendConcurrencyTest.java`(트랜잭션 없는 `@SpringBootTest`, 끝나면 만든 행을 지운다)
    - 확인: `./gradlew test`
 6. 문서 — README 이슈 표에 이 문서 링크, README의 프론트 문서 링크를 `docs/frontend/chat/`으로 고침, "아직 정하지 않은 것"의 동시 갱신 항목에 #49에서 정한 방법을 적음
 
-## 브랜치·커밋
-- 브랜치: `feature/chat-messages`
-- 커밋
-  - `Docs: 채팅 메시지 조회·보내기 계획 추가 (#49)` — 이 문서
-  - `Feat: 채팅방 정보 조회 API 추가 (#49)` — 단계 1
-  - `Feat: 채팅 메시지 조회 API 추가 (#49)` — 단계 2
-  - `Feat: 참여자가 아니거나 삭제한 방의 조회를 404로 거절 (#49)` — 단계 3
-  - `Feat: 채팅 메시지 보내기 API 추가 (#49)` — 단계 4
-  - 테스트는 단계마다 `Test: … (#49-S1~S4)`처럼 따로 커밋한다. 단계 5는 `Test: 동시 전송 순번 테스트 추가 (#49-S10)`
-  - `Docs: 채팅 README에 #49에서 정한 것을 반영 (#49)` — 단계 6
 
 ## 가정
 - 주소는 `/api/v1/chats/{roomKey}`(방 정보 GET), `/api/v1/chats/{roomKey}/messages`(메시지 GET, 보내기 POST)다. 채팅방 화면을 열면 Next 서버가 두 GET을 동시에 부른다. 방 조회는 프론트 `getChatRoomTitle`(문서 제목)에도 그대로 쓴다. #51의 `after={seq}`는 메시지 조회에 붙인다. 채팅함(#48)은 `GET /api/v1/chats`, 이름 변경·삭제(#50)는 `PATCH`·`DELETE /api/v1/chats/{roomKey}`로 이어 쓴다. 지금 있는 `/api/auth`, `/api/users`에는 `v1`이 없지만, 원래 붙어야 하는 것이라 나중에 따로 고친다(11-05 사용자 확인)

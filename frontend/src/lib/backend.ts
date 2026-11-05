@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { ACCESS_TOKEN_COOKIE, BACKEND_URL, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "./auth-tokens";
 
 /*
  * 백엔드(Spring) 호출. 브라우저는 백엔드를 직접 부르지 않고, Next 서버가 쿠키의 토큰을 Bearer로 붙여 부른다(BFF).
@@ -10,10 +11,7 @@ import { cookies } from "next/headers";
 
 export const isBackendAuth = process.env.AUTH_MODE === "backend";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
-
-export const ACCESS_TOKEN_COOKIE = "access_token";
-export const REFRESH_TOKEN_COOKIE = "refresh_token";
+export type { Tokens };
 
 export type BackendError = {
   ok: false;
@@ -64,23 +62,17 @@ export async function backendFetch<T>(path: string, { method = "GET", body, with
   };
 }
 
-/** 백엔드 로그인·갱신 응답 (TokenResponse) */
-export type Tokens = {
-  accessToken: string;
-  refreshToken: string;
-  /** 초 */
-  accessTokenExpiresIn: number;
-  /** 초 */
-  refreshTokenExpiresIn: number;
-};
-
-/**
- * 토큰을 httpOnly 쿠키에 넣는다. Server Action·Route Handler에서만 부른다.
- * 쿠키 수명을 토큰 수명과 같게 둬서, access 쿠키가 없으면 곧 만료된 것으로 볼 수 있다
- */
+/** 토큰을 httpOnly 쿠키에 넣는다. Server Action·Route Handler에서만 부른다 */
 export async function saveTokens(tokens: Tokens) {
   const store = await cookies();
-  const base = { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" } as const;
-  store.set(ACCESS_TOKEN_COOKIE, tokens.accessToken, { ...base, maxAge: tokens.accessTokenExpiresIn });
-  store.set(REFRESH_TOKEN_COOKIE, tokens.refreshToken, { ...base, maxAge: tokens.refreshTokenExpiresIn });
+  for (const cookie of tokenCookies(tokens)) store.set(cookie);
+}
+
+/** 로그아웃: 백엔드에 refresh 토큰을 버리게 하고 두 쿠키를 지운다. 백엔드가 꺼져 있어도 쿠키는 지운다 */
+export async function clearTokens() {
+  const store = await cookies();
+  const refreshToken = store.get(REFRESH_TOKEN_COOKIE)?.value;
+  if (refreshToken) await backendFetch("/api/auth/logout", { method: "POST", body: { refreshToken }, withToken: false });
+  store.delete(ACCESS_TOKEN_COOKIE);
+  store.delete(REFRESH_TOKEN_COOKIE);
 }

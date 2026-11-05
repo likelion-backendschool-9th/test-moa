@@ -71,23 +71,46 @@ public class ProjectServiceImpl implements ProjectService {
                 .description(blankToNull(request.description()))
                 .imageUrl(blankToNull(request.imageUrl()))
                 .build());
-        return ProjectResponse.of(project, List.of());
+        return ProjectResponse.of(project, 0, 0);
     }
 
     /**
-     * 내 프로젝트 전체와 각자의 모집글
+     * 내 프로젝트 전체와 각자의 모집 수
      */
     @Override
     public List<ProjectResponse> findMine(Long userId) {
-        return withRecruitments(projectRepository.findByUserIdOrderByCreatedAtDescIdDesc(userId));
+        return withCounts(projectRepository.findByUserIdOrderByCreatedAtDescIdDesc(userId));
     }
 
     /**
-     * 내 프로젝트 하나와 그 모집글
+     * 내 프로젝트 하나
      */
     @Override
     public ProjectResponse findMine(Long userId, Long projectId) {
-        return withRecruitments(List.of(findOwned(userId, projectId))).getFirst();
+        return withCounts(List.of(findOwned(userId, projectId))).getFirst();
+    }
+
+    /**
+     * 내 프로젝트의 모집 건 전체. 최신순
+     */
+    @Override
+    public List<RecruitmentSummaryResponse> findRecruitments(Long userId, Long projectId) {
+        findOwned(userId, projectId);
+        List<Recruitment> recruitments = recruitmentRepository.findByProjectIdInOrderByCreatedAtDescIdDesc(List.of(projectId));
+        List<Long> recruitmentIds = recruitments.stream().map(Recruitment::getId).toList();
+
+        Map<Long, TypeCode> types = recruitmentTypeRepository.findByRecruitmentIdIn(recruitmentIds).stream()
+                .collect(Collectors.toMap(item -> item.getRecruitment().getId(), item -> item.getType().getCode(), (first, second) -> first));
+        Map<Long, Long> confirmed = registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED).stream()
+                .collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
+
+        LocalDateTime now = LocalDateTime.now(SEOUL);
+        return recruitments.stream().map(item -> RecruitmentSummaryResponse.of(
+                item,
+                statusOf(item, now),
+                selectionModeName(item.getSelectionMode()),
+                softwareTypeName(types.get(item.getId())),
+                confirmed.getOrDefault(item.getId(), 0L))).toList();
     }
 
     /**
@@ -98,7 +121,7 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectResponse update(Long userId, Long projectId, ProjectSaveRequest request) {
         Project project = findOwned(userId, projectId);
         project.update(request.name().trim(), blankToNull(request.description()), blankToNull(request.imageUrl()));
-        return withRecruitments(List.of(project)).getFirst();
+        return withCounts(List.of(project)).getFirst();
     }
 
     /**
@@ -106,8 +129,8 @@ public class ProjectServiceImpl implements ProjectService {
      */
     @Override
     @Transactional
-    public RecruitmentCreateResponse createRecruitment(Long userId, Long projectId, RecruitmentCreateRequest request) {
-        Project project = findOwned(userId, projectId);
+    public RecruitmentCreateResponse createRecruitment(Long userId, RecruitmentCreateRequest request) {
+        Project project = findOwned(userId, request.projectId());
         checkDeadlines(request.recruitDeadline(), request.submitDeadline());
         SelectionMode selectionMode = selectionModeOf(request.selectionMode());
         if (selectionMode == SelectionMode.MANUAL && !subscriptionChecker.isActive(userId)) {
@@ -133,30 +156,19 @@ public class ProjectServiceImpl implements ProjectService {
         return projectRepository.findByIdAndUserId(projectId, userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 
-    // 프로젝트들의 모집글, 유형, 확정 수를 한 번에 읽어 묶는다
-    private List<ProjectResponse> withRecruitments(List<Project> projects) {
+    // 프로젝트마다 모집 수와 모집 중인 수를 센다. 취소한 모집은 세지 않는다
+    private List<ProjectResponse> withCounts(List<Project> projects) {
         List<Long> projectIds = projects.stream().map(Project::getId).toList();
-        List<Recruitment> recruitments = recruitmentRepository.findByProjectIdInOrderByCreatedAtDescIdDesc(projectIds);
-        List<Long> recruitmentIds = recruitments.stream().map(Recruitment::getId).toList();
-
-        Map<Long, TypeCode> types = recruitmentTypeRepository.findByRecruitmentIdIn(recruitmentIds).stream()
-                .collect(Collectors.toMap(item -> item.getRecruitment().getId(), item -> item.getType().getCode(), (first, second) -> first));
-        Map<Long, Long> confirmed = registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED).stream()
-                .collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
-
         LocalDateTime now = LocalDateTime.now(SEOUL);
-        Map<Long, List<RecruitmentSummaryResponse>> byProject = recruitments.stream().collect(Collectors.groupingBy(
-                item -> item.getProject().getId(),
-                Collectors.mapping(item -> RecruitmentSummaryResponse.of(
-                        item,
-                        statusOf(item, now),
-                        selectionModeName(item.getSelectionMode()),
-                        softwareTypeName(types.get(item.getId())),
-                        confirmed.getOrDefault(item.getId(), 0L)), Collectors.toList())));
+        Map<Long, List<Recruitment>> byProject = recruitmentRepository.findByProjectIdInOrderByCreatedAtDescIdDesc(projectIds).stream()
+                .filter(item -> item.getStatus() != RecruitmentStatus.CANCELLED)
+                .collect(Collectors.groupingBy(item -> item.getProject().getId()));
 
-        return projects.stream()
-                .map(project -> ProjectResponse.of(project, byProject.getOrDefault(project.getId(), List.of())))
-                .toList();
+        return projects.stream().map(project -> {
+            List<Recruitment> recruitments = byProject.getOrDefault(project.getId(), List.of());
+            long open = recruitments.stream().filter(item -> statusOf(item, now).equals("recruiting")).count();
+            return ProjectResponse.of(project, recruitments.size(), open);
+        }).toList();
     }
 
     // 모집 상태. 취소만 저장된 값을 쓰고, 나머지는 프론트처럼 마감일로 계산한다

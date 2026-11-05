@@ -16,6 +16,9 @@ import java.util.List;
  * 형식 검사(@Pattern)는 빈 값을 통과시켜서, 빈 칸에는 "적어 주세요" 문구 하나만 나가게 한다
  */
 public record RecruitmentCreateRequest(
+        @NotNull(message = "프로젝트를 골라 주세요")
+        Long projectId,
+
         @NotBlank(message = "모집글 제목을 적어 주세요")
         @Size(max = 50, message = "모집글 제목은 50자까지 적을 수 있어요")
         String title,

@@ -36,7 +36,9 @@ public class CreditWallet {
 
     /*
      * 승인 대기 보상(pendingReward)은 wallet 컬럼으로 두지 않는다.
-     * Feedback.status=SUBMITTED 인 건의 base+extra 합으로 조회한다.
+     * Register.status=CONFIRMED 이고 Feedback.status=SUBMITTED 인 참가의
+     * baseRewardSnapshot+extraRewardSnapshot 을 참가당 1회로 합산한다(#91).
+     * REPORTED(검토 중)·CANCELLED·REJECTED는 승인 대기에 넣지 않는다.
      */
 
     // 생성 일시. 저장 시 자동 기록

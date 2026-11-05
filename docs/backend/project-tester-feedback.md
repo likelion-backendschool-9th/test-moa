@@ -266,7 +266,7 @@ erDiagram
 
 | 담당 | 맞출 것 |
 | --- | --- |
-| 크레딧(#66) | 승인 대기 보상을 `Feedback(SUBMITTED)` 행의 합이 아니라 제출된 참가 건의 `Register` 스냅샷 합으로 계산한다. 피드백 행마다 더하면 중복된다. `payment-subscription-credit.md`의 관련 문장도 고친다 |
+| 크레딧(#66) | 승인 대기 보상을 `Feedback(SUBMITTED)` 행의 합이 아니라 제출된 참가 건의 `Register` 스냅샷 합으로 계산한다. 피드백 행마다 더하면 중복된다. 규칙은 [credit-balance-ledger.md](credit-balance-ledger.md) |
 | 신고 | 신고가 접수되면 `report()`, 처리되면 `reward()` 또는 `exclude()`를 부른다 |
 | 보상액 | `confirm`에 넘길 기본·추가 보상액을 정한다 |
 | AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 이번에 컬럼만 만든다 |

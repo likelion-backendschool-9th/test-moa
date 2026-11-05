@@ -9,7 +9,7 @@
 - 엔티티(`Plan`, `Subscription`, `Payment`, `CreditWallet`, `CreditLedger`, `CashoutRequest`) P0는 반영됨. 없는 것은 Repository, Service, API, 트랜잭션.
 - 결정 필요: 계좌 저장 방식, `SubscriptionStatus.EXPIRED` 유지 여부, 미리 결제 기간 상한(아래 정해야 할 것).
 - 규모: 크레딧 → 구독 페이지 구성 → 결제 → 운영자 출금.
-- 브랜치: `feature/backend-payment-subscription-credit-entities`
+- 브랜치: `feature/backend-credit-balance-ledger` (#66)
 - 프론트: `docs/frontend/credits.md`, `docs/frontend/credit-labels.md`, `docs/frontend/subscription.md`, `docs/frontend/admin-withdrawals.md`
 
 ## 맥락
@@ -29,7 +29,7 @@
 | 구독 | 플랜·상태·페이지 조립 | `/my/subscription` |
 | 결제 | checkout 조회·실행 | `/my/subscription/checkout` |
 
-승인 대기 보상은 wallet 컬럼이 아니라 `Feedback(SUBMITTED)`의 기본·추가 보상 합이다.
+승인 대기(`pendingReward`)는 wallet 컬럼이 아니다. `CONFIRMED` 참가 중 `Feedback(SUBMITTED)`가 있는 Register 스냅샷을 참가당 1회 합산한다(#91). 규칙·API 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
 
 ```mermaid
 flowchart TB
@@ -47,7 +47,7 @@ flowchart TB
     Pay[Payment]
     Checkout[CheckoutPage]
   end
-  Feedback[Feedback_SUBMITTED] -.pendingReward.-> Wallet
+  Register[Register_snapshot] -.pendingReward.-> Wallet
   Page --> PlanEntity
   Page --> Sub
   Page --> Wallet
@@ -144,12 +144,9 @@ erDiagram
 - Then  `IllegalArgumentException`
 
 #45-S21 승인 대기 보상은 지갑 컬럼이 아님 [직접]
-- `CreditWallet`에 `pendingReward` 필드가 없다. 승인 대기 보상은 `Feedback(SUBMITTED)`의 보상 합으로 구한다(#66-S1)
+- `CreditWallet`에 `pendingReward` 필드가 없다. 조회 규칙은 [credit-balance-ledger.md](credit-balance-ledger.md) (#66-S1, #66-S3, #91)
 
-#66-S1 잔액 조회 API [직접]
-- API: `GET /api/users/{userId}/credits`
-- Then  `earnedBalance`, `eventCredit`, `lockedBalance`, `pendingReward`, `totalCredits`, `payableCredits`, `cashableCredits`
-- 화면: `/my`, `/my/credits` (`docs/frontend/credits.md` S350은 [직접]/[테스트] 해당 문서 기준)
+잔액·내역 조회 API(#66-S1~S3)는 [credit-balance-ledger.md](credit-balance-ledger.md)에 둔다.
 
 ---
 
@@ -176,11 +173,7 @@ erDiagram
 #45-S22 장부에는 종류와 변동량만 [직접]
 - `CreditLedger`에 `payment` 필드가 없고, `CreditType`은 `EVENT`, `EARNED` 두 값이다
 
-#66-S2 내역 조회 API [직접]
-- API: `GET /api/users/{userId}/credits/ledgers?type=all|in|out`
-- Then  `in`은 delta>0, `out`은 delta<0. 잘못된 type은 400
-- Then  구독 결제는 EVENT/EARNED 행을 두 줄로 응답한다 (프론트 연동 때 한 줄 목업을 고침)
-- 화면: `/my/credits` (`docs/frontend/credits.md` S352~)
+내역 조회 API(#66-S2)는 [credit-balance-ledger.md](credit-balance-ledger.md)에 둔다.
 
 ---
 
@@ -542,7 +535,7 @@ flowchart LR
 ---
 
 ## 브랜치·커밋
-- 브랜치: `feature/backend-payment-subscription-credit-entities`
+- 브랜치: `feature/backend-credit-balance-ledger` (#66). 엔티티 P0는 `feature/backend-payment-subscription-credit-entities`에서 반영됨
 - 커밋은 기능·테스트·문서를 나눈다 (`AGENTS.md`).
 - 구현 PR에서 이 문서를 같이 갱신한다.
 
@@ -573,5 +566,5 @@ flowchart LR
 지금 프론트는 대기 건만 계좌 전체, 완료는 끝 4자리다. 어느 안이든 응답 마스킹은 한다. 컬럼은 늘리지 않는다. 암호화하면 `length`를 넉넉히 잡는다.
 
 ## 바로 다음
-1. 위 세 가지 결정
-2. #66 크레딧 잔액·내역 API부터 구현
+1. #66 크레딧 잔액·내역 API 구현 (계좌·EXPIRED·결제 상한은 #67·#69·#70에서)
+2. 위 세 가지 결정은 #67 전에 계좌, #69·#70 전에 구독·결제 쪽을 정한다

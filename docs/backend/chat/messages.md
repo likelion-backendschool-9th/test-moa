@@ -179,4 +179,4 @@
 - 프론트 `getChatRoom`은 비로그인이면 로그인으로, 없거나 삭제했거나 내가 없는 방이면 404로 보낸다
 - 인증: Next 서버가 `Authorization: Bearer`로 부르고, 컨트롤러는 `@AuthenticationPrincipal Long userId`로 회원 id를 받는다. 401·403·404는 `GlobalExceptionHandler`가 `ApiResponse.fail` 모양으로 바꾼다
 - 토큰 인증에서도 `ACTIVE` 회원인지 확인한다. 정지·탈퇴 회원의 추가 정책은 #86 범위다
-- 프론트 채팅 문서는 `docs/frontend/chat/chats.md`, `docs/frontend/chat/chat-room.md`로 옮겨졌고, README의 링크는 옛 경로를 가리킨다
+- 프론트 채팅 문서는 `docs/frontend/chat/chats.md`, `docs/frontend/chat/chat-room.md`에 있다

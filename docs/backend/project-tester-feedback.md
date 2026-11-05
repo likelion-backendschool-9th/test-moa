@@ -266,18 +266,23 @@ erDiagram
 
 | 동작 | API | 성공 |
 | --- | --- | --- |
-| 프로젝트 등록 | `POST /api/users/{userId}/projects` | 201 |
-| 내 프로젝트 목록(모집글 포함) | `GET /api/users/{userId}/projects` | 200 |
-| 프로젝트 상세(모집글 포함) | `GET /api/users/{userId}/projects/{projectId}` | 200 |
-| 프로젝트 수정 | `PUT /api/users/{userId}/projects/{projectId}` | 200 |
-| 모집 작성 | `POST /api/users/{userId}/projects/{projectId}/recruitments` | 201 |
+| 프로젝트 등록 | `POST /api/projects` | 201 |
+| 내 프로젝트 목록(모집글 포함) | `GET /api/projects` | 200 |
+| 프로젝트 상세(모집글 포함) | `GET /api/projects/{projectId}` | 200 |
+| 프로젝트 수정 | `PUT /api/projects/{projectId}` | 200 |
+| 모집 작성 | `POST /api/projects/{projectId}/recruitments` | 201 |
 
-- **인증은 임시다.** #37 전까지 크레딧 API와 같이 경로의 `userId`를 쓴다. 누구나 다른 회원의 ID로 요청할 수 있어 인증이 붙으면 바꾼다
-- 구조는 `SampleController`와 같다: Controller → Service 인터페이스 → `impl` → Repository, DTO는 `domain/dto`
-- 요청 값 검사는 프론트 `validateProjectForm`, `validateRecruitmentForm`과 같게 맞춘다. 의존성 `spring-boot-starter-validation`을 더한다
+- 인증과 실패 응답은 #88을 쓴다: 회원 id는 토큰의 `@AuthenticationPrincipal Long userId`, 실패는 `BusinessException`과 `ApiResponse.fail`
+- 값끼리 비교한 결과도 칸별로 알리도록 `BusinessException`에 `fields`를 더했다. 기존 생성자의 동작은 그대로다
+- 구조는 다른 API와 같다: Controller → Service 인터페이스 → `impl` → Repository, DTO는 `domain/dto`
+- 요청 값 검사와 문구는 프론트 `validateProjectForm`, `validateRecruitmentForm`과 맞춘다. 모집 인원은 #78에서 프론트에서도 빠졌다
 - 프론트 값 변환: 선정 방식 `firstCome` ↔ `FIRST_COME`, `selection` ↔ `MANUAL`, 유형 `web` ↔ `WEB`
-- 날짜: 프론트는 `YYYY-MM-DD`를 보낸다. 요청은 `LocalDate`로 받아 비교하고, 저장할 때 그날 23:59:59(한국 시간)로 바꾼다. 오늘을 마감일로 고를 수 있다
-- 유형: 지금은 `WEB`만 받는다. `types` 테이블이 비어 있으면 앱 시작 때 `TypeCode` 값마다 한 줄씩 넣는다. 이미 있으면 넣지 않는다
+- 프로젝트 이름은 요청과 응답에서 `name`이고 엔티티에서는 `title`이다
+- 날짜: 요청은 `YYYY-MM-DD`로 받아 한국 시간 기준 오늘과 비교하고, 그날 23:59:59로 저장한다. 오늘을 모집 마감일로 고를 수 있다
+- 응답의 `status`는 프론트 상태 이름(`recruiting`, `testing`, `closed`, `cancelled`)이다. 취소만 저장된 값을 쓰고 나머지는 마감일로 계산한다
+- 유형: 지금은 `WEB`만 받는다. `types` 행은 처음 쓸 때 만든다. 앱 시작 때 만들면 테이블이 없는 환경에서 앱이 뜨지 못하기 때문이다
+- 선발형은 `SubscriptionChecker`로 구독 회원만 쓴다. 화면처럼 칸 오류(400)로 알린다
+- 보상액과 구독 모집 표시는 저장 위치가 정해지지 않아 이번 응답에 넣지 않았다
 
 | 입력 | 필수 | 한도 |
 | --- | --- | --- |
@@ -288,27 +293,15 @@ erDiagram
 | 모집 설명 | 필수 | 200자 |
 | 접속 링크 | 필수 | `http://` 또는 `https://`로 시작 |
 | 모집 조건 | 선택 | 500자 |
-| 테스트 항목 | 필수 | 1~10개, 이름 50자(필수), 설명 300자(선택), 이미지 URL 5개 |
+| 테스트 항목 | 필수 | 1~10개, 이름 50자(필수), 설명 300자(선택), 필수 여부(필수), 이미지 URL 5개 |
 
-실패 응답은 기존 성공 응답을 바꾸지 않도록 `ApiErrorResponse`를 따로 둔다. 전역 예외 처리는 다른 담당도 쓰므로 공통으로 만든다.
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "message": "입력값을 확인해 주세요",
-    "fields": [{ "field": "title", "message": "모집글 제목을 적어 주세요" }]
-  }
-}
-```
-
-| 상황 | 상태 | `code` |
+| 상황 | 상태 | `error.code` |
 | --- | --- | --- |
-| 입력값 오류 | 400 | `VALIDATION_FAILED` |
-| 없는 회원, 없는 프로젝트, 다른 회원의 프로젝트 | 404 | `NOT_FOUND` |
+| 입력값 오류 | 400 | `INVALID_INPUT` (`error.fields`에 칸별 문구) |
+| 로그인하지 않음 | 401 | `UNAUTHORIZED` |
+| 없는 프로젝트, 다른 회원의 프로젝트 | 404 | `NOT_FOUND` |
 
-테스트는 DB 없이 돈다: Service는 Mockito, Controller는 `@WebMvcTest`. 실제 DB 저장은 `[직접]`으로 확인한다.
+테스트는 다른 컨트롤러 테스트와 같이 `@SpringBootTest`, `MockMvc`, 실제 DB로 돈다.
 
 #92-S1 프로젝트 등록 [테스트]
 - Given 이름만 적은 요청
@@ -330,14 +323,16 @@ erDiagram
 - Given 없는 프로젝트, 또는 다른 회원의 프로젝트
 - When  조회, 수정, 모집 작성
 - Then  404 `NOT_FOUND`이고 저장하지 않는다. 다른 회원의 프로젝트가 있는지 알려 주지 않는다
+- Given 토큰이 없다
+- Then  401이다
 
 #92-S6 모집 작성 [테스트]
 - Given 내 프로젝트, 올바른 요청, 항목 2개(이미지 있음·없음)
 - When  작성한다
 - Then  201이고 모집글, 유형 1줄, 항목 2줄, 항목 이미지가 저장된다. 항목 순서와 이미지 순서는 요청 순서다
 
-#92-S7 함께 저장되거나 함께 실패 [직접]
-- Given 항목 저장 중 오류가 나도록 한 요청
+#92-S7 함께 저장되거나 함께 실패 [테스트]
+- Given 항목 저장이 실패한다
 - Then  실제 DB에 모집글도 남지 않는다
 
 #92-S8 일정과 링크 검사 [테스트]
@@ -353,18 +348,19 @@ erDiagram
 - Then  400이고 해당 칸의 오류가 온다
 
 #92-S11 유형과 선정 방식 [테스트]
-- When  유형이 `web`이 아니거나, 선정 방식이 정해진 값이 아니다
-- Then  400이다. `selection`은 `MANUAL`, `firstCome`은 `FIRST_COME`으로 저장한다
+- When  유형이 `web`이 아니거나, 선정 방식이 정해진 값이 아니거나, 구독하지 않은 회원이 `selection`을 고른다
+- Then  400이고 해당 칸의 오류가 온다
+- When  구독 회원이 `selection`을 고른다
+- Then  `MANUAL`로 저장한다
 
 #92-S12 실제 DB에서 저장 흐름 [직접]
-- Given 로컬 Docker DB
+- Given 빈 로컬 DB
 - When  등록, 모집 작성, 목록 조회를 차례로 부른다
 - Then  앞에서 저장한 값이 조회된다
 
-#92-S13 유형 초기 데이터 [테스트]
-- Given 빈 `types`, 또는 이미 값이 있는 `types`
-- When  앱이 시작한다
-- Then  비어 있으면 4줄이 들어가고, 있으면 늘어나지 않는다
+#92-S13 유형은 처음 쓸 때 만든다 [테스트]
+- When  모집글을 두 번 작성한다
+- Then  `WEB` 행은 하나다
 
 ### 이슈 #92 시나리오 확인
 

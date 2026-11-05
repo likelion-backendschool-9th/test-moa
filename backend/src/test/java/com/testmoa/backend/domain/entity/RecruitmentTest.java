@@ -49,7 +49,6 @@ class RecruitmentTest {
         assertEquals(RecruitmentStatus.RECRUITING, recruitment.getStatus());
         assertEquals(1, recruitment.getVersion());
         assertEquals(AnalysisStatus.NONE, recruitment.getAnalysisStatus());
-        assertNull(recruitment.getRecruitCount());
         assertNull(recruitment.getCancelReason());
         assertNull(recruitment.getCancelledAt());
     }

@@ -5,13 +5,14 @@
 
 export const NAME_MAX = 20;
 const NICKNAME_PATTERN = /^[가-힣a-zA-Z0-9]{1,39}$/;
-const PASSWORD_PATTERN = /^(?=.*[a-zA-Z])(?=.*\d).{8,64}$/;
+/* 영문·숫자·특수문자(ASCII)만. 한 글자가 1바이트라 64자여도 BCrypt 한도(72바이트) 안이다. 백엔드 SignupRequest와 같다 */
+const PASSWORD_PATTERN = /^(?=.*[a-zA-Z])(?=.*\d)[\x21-\x7E]{8,64}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** 닉네임 칸 아래 안내 문구 */
 export const NICKNAME_HINT = "한글·영문·숫자 1~39자";
 /** 비밀번호 칸 아래 안내 문구 */
-export const PASSWORD_HINT = "영문과 숫자를 섞어 8자 이상";
+export const PASSWORD_HINT = "영문·숫자·특수문자, 영문과 숫자를 섞어 8~64자";
 
 /** 이름: 필수, 앞뒤 공백을 뺀 1~20자. 공백은 부르는 쪽에서 뺀다 */
 export function validateName(name: string): string | undefined {
@@ -31,8 +32,8 @@ export function validateEmail(email: string): string | undefined {
   if (!EMAIL_PATTERN.test(email)) return "이메일 형식이 맞지 않아요";
 }
 
-/** 새 비밀번호: 영문과 숫자를 모두 넣은 8~64자. 빈 칸 문구는 칸마다 달라 부르는 쪽에서 넘긴다 */
+/** 새 비밀번호: 영문·숫자·특수문자로, 영문과 숫자를 모두 넣은 8~64자. 빈 칸 문구는 칸마다 달라 부르는 쪽에서 넘긴다 */
 export function validateNewPassword(password: string, emptyMessage: string): string | undefined {
   if (!password) return emptyMessage;
-  if (!PASSWORD_PATTERN.test(password)) return "영문과 숫자를 섞어 8자 이상 써 주세요";
+  if (!PASSWORD_PATTERN.test(password)) return "영문·숫자·특수문자로, 영문과 숫자를 섞어 8~64자로 써 주세요";
 }

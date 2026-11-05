@@ -7,6 +7,8 @@ type Option = { value: string; label: string };
 type DemoSwitcherProps = {
   role: string;
   data: string;
+  /** 실제 로그인일 때: 비로그인·운영자는 고를 수 없고 테스터·개발자 화면만 고른다 */
+  personaOnly?: boolean;
 };
 
 const ROLE_OPTIONS: Option[] = [
@@ -24,7 +26,7 @@ const DATA_OPTIONS: Option[] = [
 ];
 
 /** 개발 환경에서만 보이는 시연용 상태 전환기 */
-export function DemoSwitcher({ role, data }: DemoSwitcherProps) {
+export function DemoSwitcher({ role, data, personaOnly = false }: DemoSwitcherProps) {
   const router = useRouter();
 
   function update(name: string, value: string) {
@@ -42,7 +44,7 @@ export function DemoSwitcher({ role, data }: DemoSwitcherProps) {
           onChange={(event) => update("demo-role", event.target.value)}
           className="rounded-md bg-surface-strong px-2 py-1 text-text"
         >
-          {ROLE_OPTIONS.map((option) => (
+          {ROLE_OPTIONS.filter((option) => !personaOnly || option.value === "tester" || option.value === "developer").map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

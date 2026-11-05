@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { findRoleByCredentials, isEmailTaken, isNicknameTaken } from "@/features/member/api";
+import { backendFetch, isBackendAuth, saveTokens, type Tokens } from "@/lib/backend";
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/lib/session";
@@ -45,6 +46,14 @@ export async function login(_prev: FormState<LoginField>, formData: FormData): P
   if (emailError) errors.email = emailError;
   if (!password) errors.password = "비밀번호를 입력해 주세요";
   if (Object.keys(errors).length > 0) return { status: "error", errors };
+
+  if (isBackendAuth) {
+    const result = await backendFetch<Tokens>("/api/auth/login", { method: "POST", body: { email, password }, withToken: false });
+    /* 틀린 계정·정지 계정·서버 오류 모두 백엔드 문구를 그대로 보여 준다 */
+    if (!result.ok) return { status: "error", errors: { form: result.message } };
+    await saveTokens(result.data);
+    redirect(safeNextPath(formData.get("next")));
+  }
 
   const role = findRoleByCredentials(email, password);
   if (!role) return { status: "error", errors: { form: "이메일 또는 비밀번호가 맞지 않아요" } };

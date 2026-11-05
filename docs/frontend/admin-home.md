@@ -67,7 +67,7 @@ S408 하위 페이지의 일반 회원 [테스트: pages.spec.ts #56-S3]
 - When  `/admin/reports`에 접속한다
 - Then  S407와 같은 안내 화면이 보인다
 
-S409 하위 페이지의 비로그인 [테스트]
+S409 하위 페이지의 비로그인 [테스트: pages.spec.ts #56-S2] (고침 #96: 같은 확인을 페이지 목록 테스트가 해서 테스트를 지움)
 - Given `demo-role=guest`
 - When  `/admin/reports`에 접속한다
 - Then  URL이 `/login?next=%2Fadmin%2Freports`이다

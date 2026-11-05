@@ -70,7 +70,7 @@ S289 테스터 [테스트]
 - Then  URL이 `/`다
 - Then  헤더에 "내 정보"가 있고 "로그인"이 없다
 
-S290 돌아가기 [테스트]
+S290 돌아가기 [테스트: auth.spec.ts S316] (고침 #96: 쿼리가 있는 next로 돌아가는 S316이 함께 확인해서 테스트를 지움)
 - Given `demo-role=guest`, `/login?next=%2Fmy%2Fcredits`
 - When  dohyun@example.com / test1234로 로그인한다
 - Then  URL이 `/my/credits`다

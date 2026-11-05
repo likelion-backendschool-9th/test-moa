@@ -38,7 +38,7 @@ README의 흐름(지원 → 참여 확정 → 테스트 → 피드백 제출 →
 ## 1. 접근과 역할 (R182)
 로그인한 사용자만 들어오고, 데모 테스터에게는 샘플 참여 내역이 보인다.
 
-S448 비로그인 [테스트]
+S448 비로그인 [테스트: pages.spec.ts #56-S2] (고침 #96: 쿼리가 있는 주소(`/admin/withdrawals?open=`)까지 페이지 목록 테스트가 확인해서 테스트를 지움)
 - Given `demo-role=guest`
 - When  `/my/participations?tab=history`에 접속한다
 - Then  URL이 `/login?next=%2Fmy%2Fparticipations%3Ftab%3Dhistory`이다 (탭까지 기억한다)

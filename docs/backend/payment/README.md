@@ -37,7 +37,7 @@
 | 구독 | 플랜·상태·페이지 조립 | `/my/subscription` |
 | 결제 | checkout 조회·실행 | `/my/subscription/checkout` |
 
-- 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [../credit-balance-ledger.md](../credit-balance-ledger.md).
+- 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [../credit-balance-ledger.md](../credit-balance-ledger.md).
 - 구독 중인지는 날짜로 판단하고, `EXPIRED`로 바꾸는 배치는 두지 않는다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다.
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):

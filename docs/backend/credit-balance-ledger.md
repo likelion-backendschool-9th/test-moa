@@ -73,30 +73,22 @@ Feedback 상태와 화면에 쓰는 말:
 
 `pendingReward`에 넣어도 지갑에 들어오거나 출금·결제에 쓰이지는 않는다. 잔액과 별도 숫자다.
 
-### 계산 요약 (지금 구현)
+### 계산 요약
 
 1. 해당 유저의 Register 중 **`status = CONFIRMED`** 이고  
 2. `Feedback.status = SUBMITTED`인 행이 **하나라도** 있고  
-3. 스냅샷이 있는 참가만  
-4. `SUM(baseRewardSnapshot + extraRewardSnapshot)` (참가당 1회)
+3. `Feedback.status = REPORTED`인 행이 **없고**  
+4. 스냅샷이 있는 참가만  
+5. `SUM(baseRewardSnapshot + extraRewardSnapshot)` (참가당 1회)
 
 `CANCELLED`·`REJECTED`는 넣지 않는다. 확정 뒤 취소된 참가에 Feedback이 남아 있어도 승인 대기에서 빠진다.
 
-### 아직 정하지 않은 것: SUBMITTED와 REPORTED가 한 참가에 섞일 때
-
-테스트 항목이 여러 개면 Feedback 행도 여러 개다. 그중 일부만 신고되면 같은 Register에 `SUBMITTED`와 `REPORTED`가 같이 남을 수 있다.
-
-| 안 | 조건 | 결과 |
-| --- | --- | --- |
-| A (지금 코드) | `EXISTS SUBMITTED` | 신고되지 않은 항목이 있으면 pending에 **포함** |
-| B (프로젝트 추천) | `EXISTS SUBMITTED` 이고 `NOT EXISTS REPORTED` | 한 건이라도 신고면 참가 전체 pending에서 **제외**(지급 보류) |
-
-보상은 참가당 한 번이라, 프로젝트 문서([project/README.md](project/README.md) 「아직 정하지 않은 것」 2번)는 B를 추천한다. `#66`은 A로 두었고, 신고·보상 담당과 B로 맞출지 정한 뒤 JPQL·`#66-S3`에 혼합 케이스를 더한다.
+테스트 항목이 여러 개여서 같은 참가에 `SUBMITTED`와 `REPORTED`가 섞이면, 보상은 참가당 한 번이므로 **참가 전체를 승인 대기에서 뺀다**(지급 보류). [project/README.md](project/README.md)와 같다.
 
 ```mermaid
 flowchart LR
   F[Feedback_SUBMITTED] -->|참가 식별| R[Register_snapshot]
-  R -->|참가당 1회 합| P[pendingReward]
+  R -->|REPORTED 없음| P[pendingReward]
   P -.->|잔액 아님| W[CreditWallet]
 ```
 
@@ -117,12 +109,14 @@ flowchart LR
 - Then  구독 결제는 EVENT/EARNED 행을 두 줄로 응답한다 (프론트 연동 때 한 줄 목업을 고침)
 - 화면: `/my/credits`
 
-#66-S3 승인 대기는 참가당 1회·SUBMITTED만 [테스트]
+#66-S3 승인 대기는 참가당 1회·SUBMITTED만·REPORTED 보류 [테스트]
 - Given 같은 `Register(CONFIRMED)` 스냅샷 1,000+350, `Feedback(SUBMITTED)` 2줄
 - When  `RegisterRepository.sumPendingRewardByUserId`
 - Then  합은 1,350이다 (피드백 행 합 2,700이 아니다)
 - Given 같은 참가의 피드백이 `REPORTED`만 있을 때
 - Then  합은 0이다 (검토 중은 승인 대기에 넣지 않는다)
+- Given 같은 참가에 `SUBMITTED` 1줄과 `REPORTED` 1줄이 섞여 있을 때
+- Then  합은 0이다 (한 건이라도 신고면 참가 전체 지급 보류)
 
 #66-S4 취소된 참가는 승인 대기에서 제외 [테스트]
 - Given `Register`를 확정·피드백 제출 뒤 `cancel()`한 참가
@@ -133,7 +127,7 @@ flowchart LR
 
 ## 구현 메모
 - Repository / Service / Controller. 읽기 전용 트랜잭션.
-- 승인 대기 합산은 `RegisterRepository` 조회(`CONFIRMED` + EXISTS SUBMITTED + 스냅샷 SUM). `#66-S3`·`#66-S4`는 `@DataJpaTest`로 JPQL을 확인한다.
+- 승인 대기 합산은 `RegisterRepository` 조회(`CONFIRMED` + EXISTS SUBMITTED + NOT EXISTS REPORTED + 스냅샷 SUM). `#66-S3`·`#66-S4`는 `@DataJpaTest`로 JPQL을 확인한다.
 - 지갑이 없으면 잔액 필드는 0, 승인 대기는 그래도 계산한다.
 - 없는 `userId`는 404.
 - `CreditWallet` 주석·이 문서·[payment/entities.md](payment/entities.md) 요약이 같은 규칙을 가리킨다.

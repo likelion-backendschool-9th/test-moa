@@ -75,4 +75,4 @@ e2e/                   시나리오(S번호)와 1:1로 맞춘 Playwright 테스�
 - 알려진 예외(고칠 예정): `features/project/api.ts → features/recruitment/mock`, `features/credit/components → features/my/components/card-styles`.
 - 페이지 URL은 [`../docs/page-urls.md`](../docs/page-urls.md)를 따른다.
 
-요구사항과 시나리오: [`../docs/frontend/home.md`](../docs/frontend/home.md) · [`../docs/frontend/admin-home.md`](../docs/frontend/admin-home.md) · [`../docs/frontend/admin-reports.md`](../docs/frontend/admin-reports.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)
+요구사항과 시나리오: [`../docs/frontend/home.md`](../docs/frontend/home.md) · [`../docs/frontend/admin/home.md`](../docs/frontend/admin/home.md) · [`../docs/frontend/admin/reports.md`](../docs/frontend/admin/reports.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)

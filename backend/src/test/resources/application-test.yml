@@ -1,0 +1,7 @@
+# 테스트 전용 설정. @ActiveProfiles("test")를 붙인 테스트가 main의 application.yml 위에 겹쳐 읽는다
+# 이름을 application.yml로 하면 main 설정을 통째로 가려 snake_case 이름 규칙이 빠지므로 프로필 파일로 둔다
+# 스키마 관리 방식이 아직 없어서 테스트에서만 엔티티로 테이블을 만들고 끝나면 지운다
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop

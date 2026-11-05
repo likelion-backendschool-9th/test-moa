@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
+import { isBackendAuth } from "@/lib/backend";
 import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
 import { DemoSwitcher } from "./DemoSwitcher";
@@ -36,5 +37,6 @@ export function AppFooter() {
 
 async function DemoSwitcherSlot() {
   const [session, data] = await Promise.all([getSession(), getDemoDataMode()]);
-  return <DemoSwitcher role={session.role} data={data} />;
+  /* 실제 로그인(AUTH_MODE=backend)에서는 로그인·운영자는 백엔드가 정해서, 회원의 화면(테스터·개발자)만 고른다 */
+  return <DemoSwitcher role={session.role} data={data} personaOnly={isBackendAuth} />;
 }

@@ -2,7 +2,7 @@
 
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 이 문서 시나리오와 백엔드 테스트가 1:1이고, `[직접]`은 사람이 API·화면·코드로 확인한다.
 
-이슈: `#66`. 요구·시나리오는 `#66-R…`, `#66-S…`부터 센다. 엔티티·출금·구독·결제 전체는 [payment-subscription-credit.md](payment-subscription-credit.md). 참가·피드백은 [project-tester-feedback.md](project-tester-feedback.md).
+이슈: `#66`. 요구·시나리오는 `#66-R…`, `#66-S…`부터 센다. 엔티티·출금·구독·결제 전체는 [payment/README.md](payment/README.md)·[payment/entities.md](payment/entities.md). 참가·피드백은 [project/entities.md](project/entities.md).
 
 ## 한눈에
 - 끝나면: `GET`으로 잔액 구성·승인 대기·장부 내역을 내려 `/my`·`/my/credits`가 쓸 수 있다. 프론트 목업 제거는 이후 별 PR.
@@ -125,7 +125,7 @@ flowchart LR
 - 승인 대기 합산은 `RegisterRepository` 조회(`CONFIRMED` + EXISTS SUBMITTED + 스냅샷 SUM). `#66-S3`·`#66-S4`는 `@DataJpaTest`로 JPQL을 확인한다.
 - 지갑이 없으면 잔액 필드는 0, 승인 대기는 그래도 계산한다.
 - 없는 `userId`는 404.
-- `CreditWallet` 주석·이 문서·[payment-subscription-credit.md](payment-subscription-credit.md) 요약이 같은 규칙을 가리킨다.
+- `CreditWallet` 주석·이 문서·[payment/entities.md](payment/entities.md) 요약이 같은 규칙을 가리킨다.
 
 ## 범위 밖
 - 출금 신청·내역 (#67), 운영자 출금 (#68)

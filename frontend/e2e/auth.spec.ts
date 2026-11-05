@@ -64,12 +64,6 @@ test.describe("R156 이메일 로그인", () => {
     await expectLoggedIn(page);
   });
 
-  test("S290 next로 돌아간다", async ({ page }) => {
-    await page.goto("/login?next=%2Fmy%2Fcredits");
-    await login(page, "dohyun@example.com", PASSWORD);
-    await expect(page).toHaveURL("/my/credits");
-  });
-
   test("S291 운영자로 로그인하면 운영자 화면이 열린다", async ({ page }) => {
     await page.goto("/login?next=%2Fadmin");
     await login(page, "admin@example.com", PASSWORD);

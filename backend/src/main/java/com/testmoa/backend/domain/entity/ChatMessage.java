@@ -37,7 +37,8 @@ public class ChatMessage {
     @JoinColumn(nullable = false)
     private ChatParticipant sender;
 
-    // 내용. 줄바꿈을 그대로 담는다
+    // 내용. 줄바꿈을 그대로 담는다. 개인 대화라 엔티티를 로그에 찍어도 남지 않게 toString에서 뺀다
+    @ToString.Exclude
     @Column(nullable = false, length = CONTENT_MAX)
     private String content;
 

@@ -11,6 +11,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 이메일 가입·로그인·토큰 갱신·로그아웃. 로그인 없이 부를 수 있다(SecurityConfig.PUBLIC_PATHS)
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

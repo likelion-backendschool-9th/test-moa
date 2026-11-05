@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 회원 본인 정보. 모두 로그인이 필요하고, 요청한 회원 id는 토큰에서 꺼낸다(@AuthenticationPrincipal)
+ */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

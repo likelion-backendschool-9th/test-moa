@@ -8,6 +8,7 @@ import { LoginForm } from "@/features/auth/components/LoginForm";
 import { SocialButtons } from "@/features/auth/components/SocialButtons";
 import { withNext } from "@/features/auth/types";
 import { getDemoAccounts } from "@/features/member/api";
+import { isBackendAuth } from "@/lib/backend";
 import { safeNextPath } from "@/lib/next-path";
 import { getSession } from "@/lib/session";
 
@@ -20,7 +21,11 @@ const ROLE_LABEL = { tester: "테스터", developer: "개발자", admin: "운영
 /* 제목은 정적 셸에 두고, 세션과 주소의 next를 읽는 폼만 Suspense 안에서 스트리밍한다 */
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <AuthCard title="로그인" description="테스트에 참여하거나 모집 글을 올리려면 로그인해 주세요." after={<DemoAccounts />}>
+    <AuthCard
+      title="로그인"
+      description="테스트에 참여하거나 모집 글을 올리려면 로그인해 주세요."
+      after={isBackendAuth ? undefined : <DemoAccounts />}
+    >
       <Suspense fallback={<AuthFormSkeleton fields={2} />}>
         <LoginSlot searchParams={searchParams} />
       </Suspense>
@@ -49,7 +54,7 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-/** 시연용 계정 안내. 목업이라 세 회원 모두 같은 비밀번호를 쓴다 */
+/** 시연용 계정 안내. 목업이라 세 회원 모두 같은 비밀번호를 쓴다. 실제 백엔드 로그인(AUTH_MODE=backend)에서는 숨긴다 */
 function DemoAccounts() {
   const { accounts, password } = getDemoAccounts();
   return (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
+import { isBackendAuth } from "@/lib/backend";
 import { getDemoDataMode } from "@/lib/demo";
 import { getSession } from "@/lib/session";
 import { DemoSwitcher } from "./DemoSwitcher";
@@ -23,7 +24,8 @@ export function AppFooter() {
           </Link>
         </nav>
       </Container>
-      {process.env.NODE_ENV === "development" && (
+      {/* 실제 로그인(AUTH_MODE=backend)에서는 역할을 쿠키로 바꿀 수 없어 숨긴다 */}
+      {process.env.NODE_ENV === "development" && !isBackendAuth && (
         <Container className="pb-8">
           <Suspense fallback={null}>
             <DemoSwitcherSlot />

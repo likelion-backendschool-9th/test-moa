@@ -33,9 +33,6 @@ public class Recruitment {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // 모집 인원. 입력받지 않으면 null
-    private Integer recruitCount;
-
     // 모집 조건
     @Column(columnDefinition = "TEXT")
     private String conditions;
@@ -94,7 +91,6 @@ public class Recruitment {
      * @param project           대상 프로젝트
      * @param title             모집글 제목
      * @param description       모집 설명
-     * @param recruitCount      모집 인원 (없으면 null)
      * @param conditions        모집 조건
      * @param accessUrl         테스트 대상 접속 링크
      * @param recruitDeadline   모집 마감 일시
@@ -108,7 +104,6 @@ public class Recruitment {
             Project project,
             String title,
             String description,
-            Integer recruitCount,
             String conditions,
             String accessUrl,
             LocalDateTime recruitDeadline,
@@ -118,7 +113,6 @@ public class Recruitment {
         this.project = project;
         this.title = title;
         this.description = description;
-        this.recruitCount = recruitCount;
         this.conditions = conditions;
         this.accessUrl = accessUrl;
         this.recruitDeadline = recruitDeadline;

@@ -38,7 +38,7 @@ export function ServiceIntroSlide({ recent = [] }: { recent?: Recruitment[] }) {
             <RecruitmentThumb recruitment={recent[0]} showImage />
           </Link>
         )}
-        <div>
+        <div className="hero-action">
           <LinkButton href="#all-tests">테스트 둘러보기</LinkButton>
         </div>
       </div>

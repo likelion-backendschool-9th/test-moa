@@ -43,12 +43,13 @@ test.describe("R9 전체 테스트", () => {
 
   test("S72 정렬을 바꾼다", async ({ page }) => {
     await page.goto("/");
+    await expect(sortSelect(page).getByRole("option")).toHaveText(["최신순", "마감 임박순"]);
     await sortSelect(page).selectOption({ label: "마감 임박순" });
     await expect(page).toHaveURL(/sort=deadline/);
     await expect.poll(async () => (await names(page))[0]).toBe("회의록 정리");
-    await sortSelect(page).selectOption({ label: "보상 많은순" });
-    await expect(page).toHaveURL(/sort=reward/);
-    await expect.poll(async () => (await names(page))[0]).toBe("북로그");
+    await page.goto("/?sort=reward");
+    await expect(sortSelect(page)).toHaveValue("latest");
+    expect((await names(page))[0]).toBe("가계부 노트");
   });
 
   test("S73 URL로 바로 열면 조건이 선택돼 있다", async ({ page }) => {
@@ -74,10 +75,10 @@ test.describe("R9 전체 테스트", () => {
   test("#60-S5 조건을 바꾸면 1페이지로 돌아간다", async ({ page }) => {
     await page.goto("/?page=2");
     await expect(allCards(page)).toHaveCount(2);
-    await sortSelect(page).selectOption({ label: "보상 많은순" });
-    await expect(page).toHaveURL(/sort=reward/);
+    await sortSelect(page).selectOption({ label: "마감 임박순" });
+    await expect(page).toHaveURL(/sort=deadline/);
     expect(page.url()).not.toContain("page=");
-    await expect.poll(async () => (await names(page))[0]).toBe("북로그");
+    await expect.poll(async () => (await names(page))[0]).toBe("회의록 정리");
     await allSection(page).getByRole("searchbox", { name: "테스트 검색" }).fill("일정");
     await expect(allCards(page)).toHaveCount(1);
     expect(await names(page)).toEqual(["모아플랜"]);

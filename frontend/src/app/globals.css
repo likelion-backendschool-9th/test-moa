@@ -78,10 +78,12 @@
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 다크에서도 교정지는 밝으므로 체크·도장 색을 밝히지 않는다. */
+/* 다크에서도 교정지·썸네일 위 체크·도장·배지는 밝히지 않고 진한 초록에 흰 글씨로 테마와 관계없이 같게 둔다. */
 .hero-paper,
-[data-thumb].bg-thumb {
+[data-thumb] {
   --accent: var(--paper-accent);
+  /* 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
+  --on-accent: #ffffff;
 }
 
 /* 라이트의 흰 패널은 재단선으로 나누고, 홈 배너 격자는 CSS로 그려 SVG 패턴 ID 충돌을 피한다. */
@@ -125,6 +127,12 @@
 
 @media (prefers-color-scheme: dark) {
   .hero-banner { background-color: var(--surface-muted); }
+
+  /* 배너 주 버튼은 교정지·썸네일과 같은 진한 초록에 흰 글씨. 제목의 초록 글자는 남회색 위에서 읽히게 밝은 초록을 둔다 */
+  .hero-banner .hero-action {
+    --accent: var(--paper-accent);
+    --on-accent: #ffffff;
+  }
 }
 
 @layer base {

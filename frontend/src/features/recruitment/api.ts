@@ -29,7 +29,6 @@ async function loadAll() {
 
 const byLatest = (a: Recruitment, b: Recruitment) => b.createdAt.localeCompare(a.createdAt);
 const byDeadline = (a: Recruitment, b: Recruitment) => a.recruitDeadline.localeCompare(b.recruitDeadline);
-const byReward = (a: Recruitment, b: Recruitment) => b.baseReward - a.baseReward;
 
 /** 구독 개발자의 모집 건 (상단 노출 혜택) */
 export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
@@ -37,11 +36,11 @@ export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
   return [...subscription].sort(byLatest);
 }
 
-/** 정원이 남은 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
+/** 정원이 남고 모집 마감 전인 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
 export async function getLatestOpenRecruitments(limit = 3): Promise<Recruitment[]> {
-  const { subscription, general } = await loadAll();
+  const { now, subscription, general } = await loadAll();
   return [...subscription, ...general]
-    .filter((item) => !isFull(item))
+    .filter((item) => !isFull(item) && new Date(item.recruitDeadline) > now)
     .sort(byLatest)
     .slice(0, limit);
 }
@@ -52,7 +51,7 @@ export const RECRUITMENT_PAGE_SIZE = 20;
 export async function searchRecruitments(query: RecruitmentQuery): Promise<RecruitmentPage> {
   const { subscription, general } = await loadAll();
   const keyword = query.q.toLowerCase();
-  const sorter = { latest: byLatest, deadline: byDeadline, reward: byReward }[query.sort];
+  const sorter = { latest: byLatest, deadline: byDeadline }[query.sort];
   const matched = [...subscription, ...general]
     .filter((item) => !query.type || item.softwareType === query.type)
     .filter((item) => !query.open || !isFull(item))

@@ -1,7 +1,10 @@
 import { SOFTWARE_TYPES, type SoftwareType } from "./types";
 
-/** 전체 테스트 그리드의 검색 조건. URL 검색 파라미터와 1:1로 대응한다 */
-export type RecruitmentSort = "latest" | "deadline" | "reward";
+/**
+ * 전체 테스트 그리드의 검색 조건. URL 검색 파라미터와 1:1로 대응한다.
+ * 카드에 금액이 없어 보상순 정렬은 두지 않는다. 옛 `sort=reward` 주소는 최신순으로 연다.
+ */
+export type RecruitmentSort = "latest" | "deadline";
 
 export type RecruitmentQuery = {
   q: string;
@@ -15,7 +18,6 @@ export type RecruitmentQuery = {
 export const SORT_LABEL: Record<RecruitmentSort, string> = {
   latest: "최신순",
   deadline: "마감 임박순",
-  reward: "보상 많은순",
 };
 
 const SORTS = Object.keys(SORT_LABEL) as RecruitmentSort[];

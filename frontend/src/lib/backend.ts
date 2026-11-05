@@ -69,11 +69,14 @@ export async function saveTokens(tokens: Tokens) {
   for (const cookie of tokenCookies(tokens)) store.set(cookie);
 }
 
-/** 로그아웃: 백엔드에 refresh 토큰을 버리게 하고 두 쿠키를 지운다. 백엔드가 꺼져 있어도 쿠키는 지운다 */
+/** 쿠키의 refresh 토큰. 로그아웃할 때 백엔드에 버리게 하려고 읽는다 */
+export async function getRefreshToken(): Promise<string | undefined> {
+  return (await cookies()).get(REFRESH_TOKEN_COOKIE)?.value;
+}
+
+/** 토큰 쿠키 두 개를 지운다. 백엔드는 부르지 않는다 */
 export async function clearTokens() {
   const store = await cookies();
-  const refreshToken = store.get(REFRESH_TOKEN_COOKIE)?.value;
-  if (refreshToken) await backendFetch("/api/auth/logout", { method: "POST", body: { refreshToken }, withToken: false });
   store.delete(ACCESS_TOKEN_COOKIE);
   store.delete(REFRESH_TOKEN_COOKIE);
 }

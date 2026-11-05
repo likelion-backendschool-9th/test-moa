@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { findRoleByCredentials, isEmailTaken, isNicknameTaken } from "@/features/member/api";
-import { backendFetch, clearTokens, isBackendAuth, saveTokens, type Tokens } from "@/lib/backend";
+import { backendFetch, clearTokens, getRefreshToken, isBackendAuth, saveTokens, type Tokens } from "@/lib/backend";
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/lib/session";
@@ -30,12 +30,17 @@ async function signIn(role: Exclude<Role, "guest">, next: FormDataEntryValue | n
 
 /**
  * 로그아웃. 끝나면 홈으로 간다.
- * 실제 로그인: 백엔드에서 refresh 토큰을 버리고 토큰 쿠키를 지운다.
+ * 실제 로그인: 백엔드에서 refresh 토큰을 버린 뒤 토큰 쿠키를 지운다. 백엔드가 꺼져 있어도 쿠키는 지운다.
  * 목업: 쿠키가 없으면 테스터로 보기 때문에 지우지 않고 guest를 넣는다
  */
 export async function logout(): Promise<void> {
-  if (isBackendAuth) await clearTokens();
-  else await setRole("guest");
+  if (isBackendAuth) {
+    const refreshToken = await getRefreshToken();
+    if (refreshToken) await backendFetch("/api/auth/logout", { method: "POST", body: { refreshToken }, withToken: false });
+    await clearTokens();
+  } else {
+    await setRole("guest");
+  }
   redirect("/");
 }
 

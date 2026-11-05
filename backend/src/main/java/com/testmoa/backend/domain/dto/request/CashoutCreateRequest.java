@@ -19,7 +19,7 @@ public record CashoutCreateRequest(
         String bank,
 
         @NotBlank(message = "계좌번호를 입력해 주세요")
-        @Pattern(regexp = "^$|^\\d{10,14}$", message = "계좌번호는 숫자 10~14자리예요")
+        @Pattern(regexp = "^\\d{10,14}$", message = "계좌번호는 숫자 10~14자리예요")
         String accountNumber,
 
         @NotBlank(message = "예금주를 입력해 주세요")

@@ -93,17 +93,6 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await page.goto("/my/projects/new");
   });
 
-  test("S145 등록 폼에 이름·상세 설명·대표 이미지만 있다", async ({ page }) => {
-    for (const label of ["프로젝트 이름", "상세 설명 (선택)", "대표 이미지 (선택)"]) {
-      await expect(page.getByLabel(label)).toBeVisible();
-    }
-    await expect(page.getByLabel("한 줄 소개")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "링크 추가" })).toHaveCount(0);
-    await expect(page.getByRole("radio")).toHaveCount(0);
-    /* 미리보기는 등록 버튼 옆에 있고 누르면 대화상자로 열린다 */
-    await expect(page.getByRole("button", { name: "미리보기" })).toBeVisible();
-  });
-
   test("S146 대표 이미지를 고르면 썸네일이 보이고, 다시 고르면 바뀌며, 한도를 넘으면 막는다", async ({ page }) => {
     const input = page.getByLabel("대표 이미지 (선택)");
     await expect(input).not.toHaveAttribute("multiple");

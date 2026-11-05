@@ -243,7 +243,7 @@ class CreditServiceImplTest {
     }
 
     @Test
-    @DisplayName("#67-S5 신청은 지갑 FOR UPDATE를 쓴다")
+    @DisplayName("신청은 지갑 FOR UPDATE를 쓴다")
     void requestCashoutUsesPessimisticWalletLock() {
         User user = user();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));

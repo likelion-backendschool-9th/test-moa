@@ -23,6 +23,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // 요청 DTO 검사(@Valid)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 인증·인가. JWT 발급·검증은 resource-server에 든 Nimbus를 쓴다
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
     // lombok
     compileOnly 'org.projectlombok:lombok'

@@ -1,6 +1,6 @@
 # 전체 서비스를 한 번에 띄운다: docker compose up --build
 # 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다
-# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, NEXT_PUBLIC_SITE_URL, TEAM_PORT
+# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, JWT_SECRET, NEXT_PUBLIC_SITE_URL, TEAM_PORT
 # 로컬 HTTPS(--profile https)를 쓸 때: HTTP_PORT, HTTPS_PORT
 services:
   db:
@@ -37,6 +37,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       db:
         condition: service_healthy

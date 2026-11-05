@@ -55,6 +55,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ProjectControllerTest {
 
+    private static final String PROJECTS = "/api/v1/developer/projects";
+    private static final String RECRUITMENTS = "/api/v1/developer/recruitments";
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -134,7 +136,8 @@ class ProjectControllerTest {
     }
 
     private ResultActions create(Project project, Map<String, Object> body) throws Exception {
-        return send(me, post("/api/projects/" + project.getId() + "/recruitments"), body);
+        body.put("projectId", project.getId());
+        return send(me, post(RECRUITMENTS), body);
     }
 
     private long recruitmentCount(Project project) {
@@ -153,59 +156,80 @@ class ProjectControllerTest {
     @Test
     @DisplayName("#92-S1 프로젝트 등록")
     void 이름만_적어도_프로젝트를_등록한다() throws Exception {
-        send(me, post("/api/projects"), Map.of("name", " 북로그 "))
+        send(me, post(PROJECTS), Map.of("name", " 북로그 "))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.id").isNumber())
                 .andExpect(jsonPath("$.data.name").value("북로그"))
                 .andExpect(jsonPath("$.data.description").value(nullValue()))
                 .andExpect(jsonPath("$.data.imageUrl").value(nullValue()))
-                .andExpect(jsonPath("$.data.recruitments", hasSize(0)));
+                .andExpect(jsonPath("$.data.recruitmentCount").value(0));
     }
 
     @Test
     @DisplayName("#92-S2 내 프로젝트 목록")
-    void 내_프로젝트와_모집글만_온다() throws Exception {
+    void 내_프로젝트와_모집_수만_온다() throws Exception {
         Project first = saveProject(me, "북로그");
         Project second = saveProject(me, "모아플랜");
         saveProject(other, "다른 회원 프로젝트");
-        Recruitment open = saveRecruitment(first, "1차");
-        saveRecruitment(first, "2차");
-        Register confirmed = Register.builder().recruitment(open).user(other).build();
-        confirmed.confirm(1000, 300, LocalDateTime.now());
-        em.persist(confirmed);
-        em.persist(Register.builder().recruitment(open).user(me).build());
+        saveRecruitment(first, "모집 중");
+        Recruitment ended = saveRecruitment(first, "지난 모집");
+        Recruitment cancelled = saveRecruitment(first, "취소한 모집");
+        cancelled.cancel(null, LocalDateTime.now(SEOUL));
+        em.flush();
+        /* 모집 마감일을 바꾸는 메서드가 없어 DB에서 바꾼다 */
+        em.createQuery("update recruitments r set r.recruitDeadline = :past where r.id = :id")
+                .setParameter("past", LocalDateTime.now(SEOUL).minusDays(1)).setParameter("id", ended.getId()).executeUpdate();
+        em.clear();
 
-        send(me, get("/api/projects"), null)
+        send(me, get(PROJECTS), null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[*].name", contains("모아플랜", "북로그")))
                 .andExpect(jsonPath("$.data[0].id").value(second.getId()))
-                .andExpect(jsonPath("$.data[0].recruitments", hasSize(0)))
-                .andExpect(jsonPath("$.data[1].recruitments[*].title", contains("2차", "1차")))
-                .andExpect(jsonPath("$.data[1].recruitments[0].confirmedCount").value(0))
-                .andExpect(jsonPath("$.data[1].recruitments[1].confirmedCount").value(1))
-                .andExpect(jsonPath("$.data[1].recruitments[1].status").value("recruiting"));
+                .andExpect(jsonPath("$.data[0].recruitmentCount").value(0))
+                .andExpect(jsonPath("$.data[1].recruitmentCount").value(2))
+                .andExpect(jsonPath("$.data[1].openRecruitmentCount").value(1));
     }
 
     @Test
     @DisplayName("#92-S2 프로젝트가 없으면 빈 목록")
     void 프로젝트가_없으면_빈_목록이다() throws Exception {
-        send(me, get("/api/projects"), null)
+        send(me, get(PROJECTS), null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(0)));
     }
 
     @Test
-    @DisplayName("#92-S3 프로젝트 상세")
-    void 프로젝트_하나와_모집글이_온다() throws Exception {
+    @DisplayName("#92-S3 프로젝트 정보 조회")
+    void 프로젝트_정보가_온다() throws Exception {
         Project project = saveProject(me, "북로그");
         saveRecruitment(project, "1차");
 
-        send(me, get("/api/projects/" + project.getId()), null)
+        send(me, get(PROJECTS + "/" + project.getId()), null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name").value("북로그"))
                 .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.data.recruitments[0].title").value("1차"))
-                .andExpect(jsonPath("$.data.recruitments[0].selectionMode").value("firstCome"));
+                .andExpect(jsonPath("$.data.recruitmentCount").value(1))
+                .andExpect(jsonPath("$.data.openRecruitmentCount").value(1));
+    }
+
+    @Test
+    @DisplayName("#92-S14 프로젝트 모집 건 목록 조회")
+    void 모집_건이_최신순으로_확정_수와_함께_온다() throws Exception {
+        Project project = saveProject(me, "북로그");
+        Recruitment first = saveRecruitment(project, "1차");
+        saveRecruitment(project, "2차");
+        Register confirmed = Register.builder().recruitment(first).user(other).build();
+        confirmed.confirm(1000, 300, LocalDateTime.now());
+        em.persist(confirmed);
+        em.persist(Register.builder().recruitment(first).user(me).build());
+
+        send(me, get(PROJECTS + "/" + project.getId() + "/recruitments"), null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", contains("2차", "1차")))
+                .andExpect(jsonPath("$.data[0].confirmedCount").value(0))
+                .andExpect(jsonPath("$.data[1].confirmedCount").value(1))
+                .andExpect(jsonPath("$.data[1].status").value("recruiting"))
+                .andExpect(jsonPath("$.data[1].selectionMode").value("firstCome"));
     }
 
     @Test
@@ -218,7 +242,7 @@ class ProjectControllerTest {
         body.put("name", "북로그 2");
         body.put("description", "새 설명");
         body.put("imageUrl", null);
-        send(me, put("/api/projects/" + project.getId()), body)
+        send(me, put(PROJECTS + "/" + project.getId()), body)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name").value("북로그 2"))
                 .andExpect(jsonPath("$.data.description").value("새 설명"))
@@ -232,11 +256,14 @@ class ProjectControllerTest {
     void 없거나_다른_회원의_프로젝트는_404다() throws Exception {
         Project others = saveProject(other, "다른 회원 프로젝트");
         for (Long id : List.of(others.getId(), 999_999_999L)) {
-            send(me, get("/api/projects/" + id), null)
+            send(me, get(PROJECTS + "/" + id), null)
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
-            send(me, put("/api/projects/" + id), Map.of("name", "바꾼 이름")).andExpect(status().isNotFound());
-            send(me, post("/api/projects/" + id + "/recruitments"), recruitment()).andExpect(status().isNotFound());
+            send(me, put(PROJECTS + "/" + id), Map.of("name", "바꾼 이름")).andExpect(status().isNotFound());
+            send(me, get(PROJECTS + "/" + id + "/recruitments"), null).andExpect(status().isNotFound());
+            Map<String, Object> body = recruitment();
+            body.put("projectId", id);
+            send(me, post(RECRUITMENTS), body).andExpect(status().isNotFound());
         }
         assertThat(em.find(Project.class, others.getId()).getTitle()).isEqualTo("다른 회원 프로젝트");
         assertThat(recruitmentCount(others)).isZero();
@@ -245,7 +272,7 @@ class ProjectControllerTest {
     @Test
     @DisplayName("#92-S5 로그인하지 않으면 401")
     void 로그인하지_않으면_401이다() throws Exception {
-        mvc.perform(get("/api/projects")).andExpect(status().isUnauthorized());
+        mvc.perform(get(PROJECTS)).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -318,12 +345,12 @@ class ProjectControllerTest {
     void 한도를_넘거나_필수_값이_없으면_저장하지_않는다() throws Exception {
         Project project = saveProject(me, "북로그");
 
-        send(me, post("/api/projects"), Map.of("name", " "))
+        send(me, post(PROJECTS), Map.of("name", " "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.fields.name").value("프로젝트 이름을 적어 주세요"));
-        send(me, post("/api/projects"), Map.of("name", "가".repeat(51)))
+        send(me, post(PROJECTS), Map.of("name", "가".repeat(51)))
                 .andExpect(jsonPath("$.error.fields.name").value("이름은 50자까지 적을 수 있어요"));
-        send(me, post("/api/projects"), Map.of("name", "북로그", "description", "가".repeat(2001)))
+        send(me, post(PROJECTS), Map.of("name", "북로그", "description", "가".repeat(2001)))
                 .andExpect(jsonPath("$.error.fields.description").value("상세 설명은 2000자까지 적을 수 있어요"));
 
         Map<String, Object> title = recruitment();

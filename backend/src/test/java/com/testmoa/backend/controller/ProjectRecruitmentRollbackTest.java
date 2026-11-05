@@ -47,13 +47,13 @@ class ProjectRecruitmentRollbackTest {
                 .role(Role.USER).status(UserStatus.ACTIVE).build());
         Project project = projectRepository.save(Project.builder().user(user).title("북로그").build());
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        RecruitmentCreateRequest request = new RecruitmentCreateRequest("모집", "설명", "web", "firstCome", "https://example.com", null,
+        RecruitmentCreateRequest request = new RecruitmentCreateRequest(project.getId(), "모집", "설명", "web", "firstCome", "https://example.com", null,
                 today.plusDays(1), today.plusDays(2), List.of(new RecruitmentCreateRequest.TestItemRequest("항목", null, true, null)));
         long before = recruitmentRepository.count();
         doThrow(new IllegalStateException("저장 실패")).when(testItemRepository).save(any(TestItem.class));
 
         try {
-            assertThatThrownBy(() -> projectService.createRecruitment(user.getId(), project.getId(), request))
+            assertThatThrownBy(() -> projectService.createRecruitment(user.getId(), request))
                     .isInstanceOf(IllegalStateException.class);
 
             assertThat(recruitmentRepository.count()).isEqualTo(before);

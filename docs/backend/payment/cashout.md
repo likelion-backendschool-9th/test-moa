@@ -42,7 +42,7 @@
 | `accountNumber` | 마스킹 규칙 아래 |
 | `accountHolder` | 예금주 (회원 내역에서는 그대로 또는 정책에 따름. 프론트 목업은 계좌만 마스킹) |
 | `rejectReason` | 반려일 때만. `OTHER`면 `rejectMemo`를 회원에게 보이는 사유로 |
-| `rejectMemo` | 반려 메모 (OTHER면 필수였던 값) |
+| `rejectMemo` | 회원 응답에서는 `OTHER`일 때만. HOLDER/ACCOUNT 운영자 메모는 null |
 | `requestedAt` | 신청 시각 (`createdAt`) |
 | `processedAt` | 처리 시각. 미처리면 null |
 

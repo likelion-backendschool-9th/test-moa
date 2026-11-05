@@ -4,18 +4,18 @@
 
 ## 이슈와 문서
 
-| 이슈 | 내용 | 문서 | 상태 |
-|---|---|---|---|
-| #47 | 채팅 엔티티 | [entities.md](entities.md) | 구현 완료, PR 전 |
-| #49 | 메시지 조회·보내기 | messages.md | 시작 전 |
-| #48 | 채팅함 조회 | inbox.md | 시작 전 |
-| #50 | 대화방 이름 변경·삭제 | rooms.md | 시작 전 |
-| #52 | 읽음 처리·안 읽은 수·읽음 표시 | read.md | 시작 전 |
-| #51 | 실시간 전송(SSE) | realtime.md | 시작 전 |
-| #53 | 채팅 시작 | start.md | 시작 전 |
-| #54 | 화면을 실제 API로 연결 | [채팅함](../../frontend/chats.md), [채팅방](../../frontend/chat-room.md) | 시작 전 |
+| 이슈 | 내용 | 문서 |
+|---|---|---|
+| [#47](https://github.com/likelion-backendschool-9th/test-moa/issues/47) | 채팅 엔티티 | [entities.md](entities.md) |
+| [#49](https://github.com/likelion-backendschool-9th/test-moa/issues/49) | 메시지 조회·보내기 | messages.md |
+| [#48](https://github.com/likelion-backendschool-9th/test-moa/issues/48) | 채팅함 조회 | inbox.md |
+| [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | rooms.md |
+| [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | read.md |
+| [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | realtime.md |
+| [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |
+| [#54](https://github.com/likelion-backendschool-9th/test-moa/issues/54) | 화면을 실제 API로 연결 | [채팅함](../../frontend/chats.md), [채팅방](../../frontend/chat-room.md) |
 
-진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다.
+진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다. 진행 상태는 이슈와 PR에서 본다.
 
 ## 정한 것
 - 저장소는 기존 PostgreSQL이다. 채팅은 구조가 고정된 1대1 대화이고 참가·모집 건·회원에 연결되며, 별도 저장소가 필요한 요구나 성능 근거가 없다. 메시지 순서·중복 방지·동시 갱신은 제약 조건과 트랜잭션으로 보장한다 (11-05)

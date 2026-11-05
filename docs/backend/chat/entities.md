@@ -95,14 +95,6 @@
    - 파일: `domain/entity/ChatMessage.java`(`(room_id, seq)` unique), `domain/repository/ChatMessageRepository.java`, 테스트 `domain/repository/ChatMessageRepositoryTest.java`
    - 확인: `./gradlew test`
 
-## 브랜치·커밋
-- 브랜치: `feature/chat-entity`
-- 커밋
-  - `Docs: 채팅 백엔드 계획과 #47 엔티티 시나리오 추가 (#47)`
-  - `Chore: 백엔드 테스트에서 스키마를 만들도록 테스트 설정 추가 (#47)` — 단계 1
-  - `Feat: 채팅방·참여자·메시지 엔티티와 repository 추가 (#47)` — 단계 2~4
-  - `Test: 채팅 엔티티 repository 테스트 추가 (#47)` — 단계 2~4
-
 ## 가정
 - 테이블 이름은 기존 관례(`@Entity(name = "...")`, 복수형)를 따라 `chat_rooms`, `chat_participants`, `chat_messages`로 한다
 - 채팅방을 열면 참여자 두 명이 함께 저장된다(cascade). 개발자는 모집 건을 올린 프로젝트의 주인(`register.recruitment.project.user`), 테스터는 `register.user`다. `(room_id, user_id)`와 `(room_id, role)`은 unique다. 그래서 한 방에는 개발자 한 명과 테스터 한 명만 들어간다

@@ -22,6 +22,7 @@ public record SignupRequest(
         String email,
 
         @NotBlank(message = "비밀번호를 입력해 주세요")
-        @Pattern(regexp = "^$|^(?=.*[a-zA-Z])(?=.*\\d).{8,64}$", message = "영문과 숫자를 섞어 8자 이상 써 주세요")
+        // 영문·숫자·특수문자(ASCII)만 받는다. 한 글자가 1바이트라 64자여도 BCrypt 한도(72바이트) 안이다
+        @Pattern(regexp = "^$|^(?=.*[a-zA-Z])(?=.*\\d)[\\x21-\\x7E]{8,64}$", message = "영문·숫자·특수문자로, 영문과 숫자를 섞어 8~64자로 써 주세요")
         String password
 ) {}

@@ -5,9 +5,9 @@ import { getDemoDataMode } from "@/lib/demo";
 import type { Role } from "@/lib/session";
 import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
 import type { Recruitment } from "@/features/recruitment/types";
-import { readCancelRequests, readDecisions, saveCancelRequest, saveDecisions, type Decision } from "./demo-decisions";
+import { readCancellations, readDecisions, saveCancellation, saveDecisions, type Decision } from "./demo-decisions";
 import { buildDeveloperProjects, type ProjectSeedData } from "./mock";
-import type { AiSummary, Application, CancelRequest, Feedback, Project, RecruitmentDetail } from "./types";
+import type { AiSummary, Application, Feedback, Project, RecruitmentCancellation, RecruitmentDetail } from "./types";
 
 /*
  * 데이터 계층. 프로젝트·지원·피드백 데이터를 가져온다. 지금은 목업을 돌려준다.
@@ -16,7 +16,7 @@ import type { AiSummary, Application, CancelRequest, Feedback, Project, Recruitm
  */
 
 const SLOW_DELAY_MS = 1500;
-const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {}, details: {}, cancelRequests: {} };
+const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {}, details: {}, cancellations: {} };
 
 /** 한 요청 안에서는 목업을 한 번만 만든다 */
 const load = cache(async (role: Role): Promise<ProjectSeedData> => {
@@ -28,7 +28,7 @@ const load = cache(async (role: Role): Promise<ProjectSeedData> => {
   if (mode === "empty" || role !== "developer") return EMPTY;
   const now = new Date();
   const seed = buildDeveloperProjects(now, [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)]);
-  return applyDecisions(seed, await readDecisions());
+  return applyCancellations(applyDecisions(seed, await readDecisions()), await readCancellations());
 });
 
 /** 시연 중 확정·거절한 결과를 덮어쓰고, 모집 건의 확정 인원을 지원 목록에서 다시 센다 */
@@ -39,14 +39,41 @@ function applyDecisions(seed: ProjectSeedData, decisions: Record<string, Decisio
       list.map((item) => (item.status === "applied" && decisions[item.id] ? { ...item, status: decisions[item.id] } : item)),
     ]),
   );
-  const projects = seed.projects.map((project) => ({
+  return { ...seed, applications, projects: recountConfirmed(seed.projects, applications) };
+}
+
+/** 모집 건의 확정 인원을 지원 목록에서 다시 센다 */
+function recountConfirmed(projects: Project[], applications: ProjectSeedData["applications"]): Project[] {
+  return projects.map((project) => ({
     ...project,
     recruitments: project.recruitments.map((recruitment) => {
       const list = applications[recruitment.slug];
       return list ? { ...recruitment, confirmedCount: list.filter((item) => item.status === "confirmed").length } : recruitment;
     }),
   }));
-  return { ...seed, applications, projects };
+}
+
+/**
+ * 시연 중 취소한 모집 건을 반영한다. 피드백을 낸 확정 테스터는 보상 대상이라 그대로 두고, 나머지 참여와 대기 지원은 취소한다.
+ * 목업은 지원 id가 피드백에 없어 닉네임으로 잇는다. 거절된 지원은 그대로 둔다.
+ */
+function applyCancellations(seed: ProjectSeedData, cancelled: Record<string, RecruitmentCancellation>): ProjectSeedData {
+  const applications = { ...seed.applications };
+  for (const slug of Object.keys(cancelled)) {
+    const submitted = new Set((seed.feedbacks[slug] ?? []).map((item) => item.testerNickname));
+    applications[slug] = (applications[slug] ?? []).map((item) => {
+      if (item.status === "applied" || (item.status === "confirmed" && !submitted.has(item.testerNickname))) {
+        return { ...item, status: "cancelled" as const };
+      }
+      return item;
+    });
+  }
+  return {
+    ...seed,
+    applications,
+    cancellations: { ...seed.cancellations, ...cancelled },
+    projects: recountConfirmed(seed.projects, applications),
+  };
 }
 
 /** 지원자 확정·거절을 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
@@ -63,7 +90,7 @@ export type PublicRecruitmentData = {
 };
 
 /**
- * 누구나 볼 수 있는 모집글 하나. 역할과 상관없이 읽는다. 없거나 취소가 승인된 모집 건은 null.
+ * 누구나 볼 수 있는 모집글 하나. 역할과 상관없이 읽는다. 없거나 취소된 모집 건은 null.
  * 시연용 상세 샘플은 개발자 데모 계정의 모집 건에만 있다.
  */
 export async function findPublicRecruitment(slug: string): Promise<PublicRecruitmentData | null> {
@@ -73,7 +100,7 @@ export async function findPublicRecruitment(slug: string): Promise<PublicRecruit
   const now = new Date();
   const home = [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)];
   const seed = buildDeveloperProjects(now, home);
-  if (seed.cancelRequests[slug]?.status === "approved") return null;
+  if (seed.cancellations[slug] || (await readCancellations())[slug]) return null;
   const owner = seed.projects.find((project) => project.recruitments.some((item) => item.slug === slug));
   const recruitment =
     owner?.recruitments.find((item) => item.slug === slug) ?? [...home, ...buildPastRecruitments(now)].find((item) => item.slug === slug);
@@ -112,20 +139,14 @@ export async function findRecruitmentDetail(role: Role, recruitmentKey: string):
   return (await load(role)).details[recruitmentKey] ?? { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", testItems: [] };
 }
 
-/** 모집 건의 취소 요청. 운영자가 처리한 요청이 있으면 그것을, 아니면 시연 중 보낸 요청(처리 대기)을 돌려준다 */
-export async function findCancelRequest(role: Role, recruitmentKey: string): Promise<CancelRequest | null> {
-  const processed = (await load(role)).cancelRequests[recruitmentKey];
-  const sent = (await readCancelRequests())[recruitmentKey];
-  /* 반려된 뒤 다시 보낸 요청은 새 요청이 우선이다. 목업의 처리 시각은 요청마다 다시 계산되므로 시각을 비교하지 않는다 */
-  if (sent && (!processed || processed.status === "rejected")) {
-    return { status: "pending", ...sent };
-  }
-  return processed ?? null;
+/** 모집 건의 취소 기록. 취소하지 않았으면 null */
+export async function findCancellation(role: Role, recruitmentKey: string): Promise<RecruitmentCancellation | null> {
+  return (await load(role)).cancellations[recruitmentKey] ?? null;
 }
 
-/** 모집 취소 요청을 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
-export async function saveRecruitmentCancelRequest(recruitmentKey: string, reason: string): Promise<boolean> {
-  return saveCancelRequest(recruitmentKey, { reason, requestedAt: new Date().toISOString() });
+/** 모집 취소를 저장한다. 서버 액션에서만 부른다. 저장하지 못하면 false */
+export async function saveRecruitmentCancellation(recruitmentKey: string, reason: string): Promise<boolean> {
+  return saveCancellation(recruitmentKey, { reason, cancelledAt: new Date().toISOString() });
 }
 
 /** 회원이 지금 구독 중인지. 시연에서는 개발자 역할만 구독 중이다 */

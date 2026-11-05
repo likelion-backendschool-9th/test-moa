@@ -1,9 +1,9 @@
 import "server-only";
 import { cookies } from "next/headers";
-import type { ApplicationStatus } from "./types";
+import type { ApplicationStatus, RecruitmentCancellation } from "./types";
 
 /*
- * 시연용 지원자 확정·거절 기록과 모집 취소 요청. 실제 저장소가 없어서 쿠키에 JSON으로 둔다.
+ * 시연용 지원자 확정·거절 기록과 모집 취소. 실제 저장소가 없어서 쿠키에 JSON으로 둔다.
  * 확정·거절은 쿠키 demo-applications에 { 지원 id: 상태 }로 둔다.
  * 확정 결과가 요약·분석·내 프로젝트 화면에 함께 반영되게 하려고 둔다.
  * 같은 브라우저 안에서만 유지되고, 쿠키를 지우면 처음 상태로 돌아간다. 실제 API를 붙이면 이 파일을 지운다.
@@ -43,46 +43,44 @@ export async function saveDecisions(ids: string[], status: Decision): Promise<bo
   return true;
 }
 
-/* ---------- 모집 취소 요청 ---------- */
+/* ---------- 모집 취소 ---------- */
 
 /*
- * 개발자가 보낸 취소 요청. 운영자 화면과는 아직 잇지 않는다.
- * 쿠키 demo-cancel-request-{모집 건 키}에 모집 건마다 따로 둔다. 한글 300자 사유가 인코딩하면 2,700바이트라 한 쿠키에 모으면 금방 한도를 넘는다.
+ * 개발자가 직접 취소한 기록.
+ * 쿠키 demo-recruitment-cancel-{모집 건 키}에 모집 건마다 따로 둔다. 한글 300자 사유가 인코딩하면 2,700바이트라 한 쿠키에 모으면 금방 한도를 넘는다.
  */
-const CANCEL_COOKIE_PREFIX = "demo-cancel-request-";
+const CANCEL_COOKIE_PREFIX = "demo-recruitment-cancel-";
 
-export type StoredCancelRequest = { reason: string; requestedAt: string };
-
-const isStoredCancel = (value: unknown): value is StoredCancelRequest =>
+const isStoredCancellation = (value: unknown): value is RecruitmentCancellation =>
   typeof value === "object" &&
   value !== null &&
-  typeof (value as StoredCancelRequest).reason === "string" &&
-  typeof (value as StoredCancelRequest).requestedAt === "string" &&
-  !Number.isNaN(Date.parse((value as StoredCancelRequest).requestedAt));
+  typeof (value as RecruitmentCancellation).reason === "string" &&
+  typeof (value as RecruitmentCancellation).cancelledAt === "string" &&
+  !Number.isNaN(Date.parse((value as RecruitmentCancellation).cancelledAt));
 
-function parseCancelRequest(raw: string): StoredCancelRequest[] {
+function parseCancellation(raw: string): RecruitmentCancellation[] {
   try {
     const parsed: unknown = JSON.parse(raw);
-    return isStoredCancel(parsed) ? [parsed] : [];
+    return isStoredCancellation(parsed) ? [parsed] : [];
   } catch {
     return [];
   }
 }
 
-/** 보낸 취소 요청. 깨진 값은 버린다 */
-export async function readCancelRequests(): Promise<Record<string, StoredCancelRequest>> {
+/** 취소한 모집 건. 깨진 값은 버린다 */
+export async function readCancellations(): Promise<Record<string, RecruitmentCancellation>> {
   const stored = (await cookies()).getAll().filter(({ name }) => name.startsWith(CANCEL_COOKIE_PREFIX));
   return Object.fromEntries(
     stored.flatMap(({ name, value }) =>
-      parseCancelRequest(value).map((request) => [name.slice(CANCEL_COOKIE_PREFIX.length), request]),
+      parseCancellation(value).map((cancellation) => [name.slice(CANCEL_COOKIE_PREFIX.length), cancellation]),
     ),
   );
 }
 
-/** 취소 요청을 저장한다. Server Action에서만 부른다. 쿠키 한도를 넘으면 false */
-export async function saveCancelRequest(recruitmentKey: string, request: StoredCancelRequest): Promise<boolean> {
+/** 모집 취소를 저장한다. Server Action에서만 부른다. 쿠키 한도를 넘으면 false */
+export async function saveCancellation(recruitmentKey: string, cancellation: RecruitmentCancellation): Promise<boolean> {
   const name = `${CANCEL_COOKIE_PREFIX}${recruitmentKey}`;
-  const value = JSON.stringify(request);
+  const value = JSON.stringify(cancellation);
   if (name.length + 1 + encodeURIComponent(value).length > COOKIE_MAX_BYTES) return false;
   (await cookies()).set(name, value, { path: "/", maxAge: MAX_AGE_SECONDS, sameSite: "lax" });
   return true;

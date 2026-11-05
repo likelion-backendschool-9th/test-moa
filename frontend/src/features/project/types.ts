@@ -60,7 +60,7 @@ export type Feedback = {
   status: FeedbackStatus;
 };
 
-/** 모집 건 상태. 저장하지 않고 마감일과 인원으로 계산한다. 취소 요청이 승인되면 취소다 */
+/** 모집 건 상태. 저장하지 않고 마감일과 인원으로 계산한다. 개발자가 취소하면 취소다 */
 export type RecruitmentStatus = "recruiting" | "full" | "testing" | "closed" | "cancelled";
 
 export const RECRUITMENT_STATUS_LABEL: Record<RecruitmentStatus, string> = {
@@ -110,19 +110,10 @@ export const SUBMISSION_STATUS_LABEL: Record<SubmissionStatus, string> = {
   incomplete: "미완료",
 };
 
-/** 모집 취소 요청. 운영자가 승인하거나 반려한다 (docs/frontend/admin-cancellations.md) */
-export type CancelRequest = {
-  status: "pending" | "approved" | "rejected";
+/** 개발자가 직접 취소한 기록. 운영자 승인 없이 바로 취소된다. 테스트 전 취소는 사유를 받지 않아 빈 문자열이다 */
+export type RecruitmentCancellation = {
   reason: string;
-  requestedAt: string;
-  /** 반려 사유. 개발자에게 보인다 */
-  rejectReason?: string;
-};
-
-export const CANCEL_REQUEST_LABEL: Record<CancelRequest["status"], string> = {
-  pending: "처리 대기",
-  approved: "승인",
-  rejected: "반려",
+  cancelledAt: string;
 };
 
 /** README: 제출 후 72시간 동안 신고가 없으면 자동 지급 */
@@ -169,7 +160,7 @@ export const PROJECT_MEDIA_LIMIT = {
   descriptionLength: 2000,
 } as const;
 
-/** 모집 작성 폼과 취소 요청의 글자 수·개수 한도. 기획 확정 전 임시값이다 */
+/** 모집 작성 폼과 모집 취소의 글자 수·개수 한도. 기획 확정 전 임시값이다 */
 export const RECRUITMENT_LIMIT = {
   titleLength: 50,
   conditionsLength: 500,

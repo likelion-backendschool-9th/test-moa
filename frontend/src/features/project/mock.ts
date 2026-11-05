@@ -9,10 +9,10 @@ import type {
   AiSummary,
   Application,
   ApplicationStatus,
-  CancelRequest,
   Feedback,
   FeedbackStatus,
   Project,
+  RecruitmentCancellation,
   ProjectImage,
   RecruitmentDetail,
 } from "./types";
@@ -85,8 +85,8 @@ export type ProjectSeedData = {
   aiSummaries: Record<string, AiSummary>;
   /** recruitmentKey별 모집 조건과 테스트 항목 */
   details: Record<string, RecruitmentDetail>;
-  /** recruitmentKey별 모집 취소 요청. 운영자가 이미 처리한 것만 둔다 */
-  cancelRequests: Record<string, CancelRequest>;
+  /** recruitmentKey별 모집 취소 기록 */
+  cancellations: Record<string, RecruitmentCancellation>;
 };
 
 /**
@@ -114,7 +114,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     confirmedCount: 5,
   };
 
-  /* 운영자가 취소 요청을 승인한 지난 무료 모집. 확정됐던 테스터의 참여도 함께 취소됐다 */
+  /* 개발자가 취소한 지난 무료 모집. 확정됐던 테스터의 참여도 함께 취소됐다 */
   const folioOld: Recruitment = {
     ...folio,
     slug: "folio-builder-old",
@@ -122,6 +122,18 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 15),
     recruitDeadline: daysAgo(now, 9),
     submitDeadline: daysAgo(now, 2),
+    capacity: 10,
+    confirmedCount: 0,
+  };
+
+  /* 확정된 테스터가 아직 없는 무료 모집. 개발자가 바로 취소할 수 있는 모습을 보여 준다 */
+  const folioNext: Recruitment = {
+    ...folio,
+    slug: "folio-builder-next",
+    request: "새 템플릿 미리 보기 화면 써 보기",
+    createdAt: daysAgo(now, 1),
+    recruitDeadline: inDays(now, 5),
+    submitDeadline: inDays(now, 12),
     capacity: 10,
     confirmedCount: 0,
   };
@@ -238,15 +250,8 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     },
   };
 
-  /* 운영자가 이미 처리한 취소 요청. 반려 사유 문구는 운영자 화면(admin/types.ts)과 같다 */
-  const cancelRequests: Record<string, CancelRequest> = {
-    "folio-builder": {
-      status: "rejected",
-      reason: "모집 인원을 바꾸고 싶어요",
-      requestedAt: daysAgo(now, 1),
-      rejectReason: "취소 사유가 부족해요",
-    },
-    "folio-builder-old": { status: "approved", reason: "서비스 화면을 크게 바꿔서 다시 모집할게요", requestedAt: daysAgo(now, 10) },
+  const cancellations: Record<string, RecruitmentCancellation> = {
+    "folio-builder-old": { reason: "서비스 화면을 크게 바꿔서 다시 모집할게요", cancelledAt: daysAgo(now, 10) },
   };
 
   const projects: Project[] = [
@@ -265,7 +270,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       description: "템플릿을 고르고 프로젝트를 추가하면 포트폴리오 페이지를 만들어 주는 서비스예요.\n이번에는 템플릿을 고르는 화면이 이해하기 쉬운지 보고 싶어요.",
       image: { url: "/sample/projects/folio-builder.svg", name: "템플릿 고르기 화면" },
       createdAt: daysAgo(now, 20),
-      recruitments: [folio, folioOld],
+      recruitments: [folioNext, folio, folioOld],
     },
     {
       /* 모집 건, 상세 설명, 대표 이미지가 없는 프로젝트. 빈 상태와 기본 이미지를 보여 준다 */
@@ -278,5 +283,5 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     },
   ];
 
-  return { projects, applications, feedbacks, aiSummaries, details, cancelRequests };
+  return { projects, applications, feedbacks, aiSummaries, details, cancellations };
 }

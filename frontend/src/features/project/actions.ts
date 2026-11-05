@@ -2,10 +2,10 @@
 
 import { redirect } from "next/navigation";
 import {
+  cancelRecruitment as cancel,
   decideApplicants as decide,
   getMyProject,
   getRecruitmentFormInfo,
-  requestRecruitmentCancel,
   requireRole,
   validateProjectForm,
   validateRecruitmentForm,
@@ -47,12 +47,12 @@ export async function decideApplicants(
   return decide(projectKey, recruitmentKey, ids, status);
 }
 
-/** 모집 취소 요청. 시연용이라 브라우저 쿠키에 남고, 화면에 "처리 대기"로 보인다 */
-export async function requestCancel(
+/** 모집 취소. 운영자 승인 없이 바로 취소된다. 시연용이라 브라우저 쿠키에 남는다 */
+export async function cancelRecruitment(
   projectKey: string,
   recruitmentKey: string,
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState & { ok?: boolean }> {
-  return requestRecruitmentCancel(projectKey, recruitmentKey, formData);
+  return cancel(projectKey, recruitmentKey, formData);
 }

@@ -235,6 +235,28 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 - When  `grep -rn "DEMO_PROFILES\|DEMO_PASSWORD" src`
 - Then  `features/member/mock.ts`, `features/member/api.ts`에서만 나온다
 
+## 9. 백엔드 연결 (#82)
+환경 변수 `AUTH_MODE=backend`일 때만 실제 백엔드(`BACKEND_URL`)로 로그인한다. 없으면 위 1~8장의 목업 그대로다. 백엔드 API는 `docs/backend/auth.md`.
+
+#82-S1 `AUTH_MODE=backend`일 때 실제 계정으로 로그인하면 헤더에 닉네임이 보인다 [직접]
+- Given 백엔드 실행, Swagger `POST /api/auth/signup`으로 만든 계정
+- When  `/login`에서 그 이메일·비밀번호로 로그인
+- Then  돌아갈 경로로 가고 헤더에 그 닉네임이 보인다. 시연 계정 안내와 시연 전환기는 보이지 않는다
+
+#82-S2 토큰은 Next 서버가 httpOnly 쿠키(`access_token`, `refresh_token`)로 들고, 백엔드를 부를 때 Bearer로 붙인다 [직접]
+
+#82-S3 세션 역할은 운영자면 admin, 구독 중이면 developer, 그 외는 tester다 [직접]
+- 백엔드에 닿지 못하거나 토큰이 틀리면 비로그인으로 본다. 헤더 크레딧은 크레딧 API가 생길 때까지 0
+
+#82-S4 `/signup`에서 가입하면 실제 회원이 생기고, 중복·형식 오류가 칸 아래에 보인다 [직접] (남음)
+
+#82-S5 로그아웃하면 쿠키가 지워지고 refresh 토큰이 버려진다 [직접] (남음)
+
+#82-S6 access 토큰이 만료돼도 `proxy.ts`가 refresh로 갱신해 로그인이 유지된다 [직접] (남음)
+
+#82-S7 `AUTH_MODE`가 없으면 목업으로 동작하고 기존 e2e가 그대로 통과한다 [명령]
+- `npm run test:e2e` 전체 통과 (e2e 서버는 `.env.development.local`을 읽지 않는다)
+
 ## 범위 밖
 - 로그아웃 (고침 11-02: `docs/frontend/header.md`에서 만들었다)
 - 비밀번호 찾기·재설정, 이메일 인증

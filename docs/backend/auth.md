@@ -1,0 +1,90 @@
+# 백엔드 회원관리·인증 인가·회원 신고
+
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 이 문서 시나리오와 백엔드 테스트가 1:1이고(테스트 `@DisplayName`이 시나리오 번호로 시작), `[테스트: 파일 번호]`는 **다른** 테스트가 대신 확인할 때 쓴다. `[직접]`은 사람이 API·화면·코드로 확인한다.
+
+이슈: 상위 `#37`, 하위 `#79`~`#87`. 시나리오는 `#이슈-S1`부터 센다.
+
+## 한눈에
+- 끝나면: JWT로 로그인하고, 서버가 요청마다 회원 상태와 유료 구독 여부를 DB에서 확인한다. Google·GitHub 가입·연동, 내 정보 수정·탈퇴, 회원 신고, 운영자 제재·해제까지 백엔드가 맡는다.
+- 지금: 1단계(`#79`~`#81`) 완료. 프론트 연결(`#82`)은 로그인·세션까지.
+- 브랜치: `feature/auth-backend`
+- 프론트: `docs/frontend/auth.md`(9. 백엔드 연결), `docs/frontend/admin-reports.md`, `docs/frontend/admin-users.md`
+
+## 맥락
+- 백엔드는 브라우저에 열려 있지 않다(BFF). 브라우저 → nginx → Next → 백엔드. Next가 토큰을 httpOnly 쿠키로 들고, 백엔드를 부를 때 `Authorization: Bearer`로 붙인다.
+- access 토큰(30분)에는 회원 id(`sub`)만 넣는다. 권한·상태·구독은 요청마다 DB에서 읽어서 바뀌면 바로 반영된다.
+- refresh 토큰(14일)은 무작위 32바이트이고, SHA-256 해시만 `refresh_tokens`에 저장한다. 쓰면 버리고 새로 준다.
+- 서명 키는 환경 변수 `JWT_SECRET`(32바이트 이상)으로만 넘긴다.
+
+| 계층 | 위치 |
+| --- | --- |
+| 공통 | `global/exception`(`ErrorCode`, `BusinessException`, `GlobalExceptionHandler`), `global/security`(`SecurityConfig`, `JwtProvider`, `UserAuthenticationConverter`) |
+| API | `AuthController`(`/api/auth/**`), `UserController`(`/api/users/me`) |
+| 서비스 | `AuthService`, `UserService`, `SubscriptionChecker` |
+
+### 다른 기능에서 쓰는 법
+- 요청한 회원: 컨트롤러 인자에 `@AuthenticationPrincipal Long userId`
+- 실패: `throw new BusinessException(ErrorCode.X)` → `{"success":false,"data":null,"error":{"code","message","fields?"}}`
+- 구독 여부: `subscriptionChecker.isActive(userId)`, 구독자 전용이면 `subscriptionChecker.require(userId)`
+- 로그인 없이 여는 조회 API: `SecurityConfig.PUBLIC_PATHS`에 더한다
+
+## 1. 공통 에러 응답과 JWT 인증·인가 (#79)
+
+#79-S1 실패는 같은 모양이고, 입력 검사 실패는 칸별 문구를 담는다 [테스트]
+- Then `BusinessException`은 `ErrorCode`의 상태·코드로, `@Valid` 실패와 잘못된 JSON은 400 `INVALID_INPUT`으로 응답한다. 칸별 문구는 `error.fields`에 칸마다 첫 문구 하나
+
+#79-S2 예상하지 못한 오류는 500이고 내부 내용을 숨긴다 [테스트]
+
+#79-S3 토큰 없이 로그인이 필요한 API를 부르면 401 `UNAUTHORIZED` [테스트]
+- 공개 주소(`/api/auth/**`, Swagger)는 토큰 없이 열린다
+
+#79-S4 위조·만료 토큰, 없는 회원·정지 회원의 토큰은 401 [테스트]
+- 탈퇴 회원도 ACTIVE가 아니라 같은 경로로 막힌다
+
+#79-S5 일반 회원이 `/api/admin/**`을 부르면 403 `FORBIDDEN`, 운영자는 통과 [테스트]
+
+#79-S6 컨트롤러는 `@AuthenticationPrincipal Long userId`로 회원 id를 받는다 [테스트]
+
+#79-S7 Swagger의 Authorize에 access 토큰을 넣으면 로그인이 필요한 API를 시험할 수 있다 [직접]
+- `/swagger-ui.html` → `POST /api/auth/login` → 받은 `accessToken`을 Authorize에 넣고 `GET /api/users/me`
+
+## 2. 이메일 가입·로그인·토큰 갱신 (#80)
+
+#80-S1 가입하면 회원과 이메일 로그인 계정이 함께 생기고, 비밀번호는 BCrypt로 저장한다 [테스트]
+
+#80-S2 이미 쓰는 이메일·닉네임은 409 `EMAIL_TAKEN`·`NICKNAME_TAKEN`, 형식이 틀리면 프론트와 같은 문구 [테스트]
+- 형식 규칙과 문구는 프론트 `lib/validation.ts`와 같다
+
+#80-S3 로그인하면 access·refresh 토큰과 유효 시간(1800초, 1209600초)을 받는다. 이메일 대소문자는 가리지 않는다 [테스트]
+
+#80-S4 이메일이 없거나 비밀번호가 틀리면 같은 401 `INVALID_CREDENTIALS` [테스트]
+
+#80-S5 정지 회원은 403 `SUSPENDED`, 탈퇴 회원은 없는 계정과 같다 [테스트]
+
+#80-S6 refresh 토큰으로 새 토큰 쌍을 받고, 쓴 refresh 토큰은 다시 쓸 수 없다 [테스트]
+
+#80-S7 로그아웃하면 refresh 토큰이 버려진다 [테스트]
+
+## 3. 내 정보·구독 여부 확인 (#81)
+
+#81-S1 `GET /api/users/me`로 내 정보, 연동된 로그인 방식, 비밀번호 유무, 구독 상태를 받는다 [테스트]
+
+#81-S2 지금 시각이 기간 안에 들어가는 ACTIVE 구독이 있으면 `subscription.active`가 true이고 플랜·만료일이 온다 [테스트]
+- 판단 기준은 `docs/backend/payment-subscription-credit.md`와 같다(#69와 `SubscriptionChecker`를 같이 쓰자는 제안)
+
+#81-S3 기간이 끝났거나 해지(CANCELLED)한 구독은 구독이 아니다 [테스트]
+
+#81-S4 운영자는 구독 대상이 아니라서 `subscription`이 null이다 [테스트]
+
+#81-S5 구독자 전용 기능은 `subscriptionChecker.require(userId)`로 막고, 아니면 403 `SUBSCRIPTION_REQUIRED` [직접]
+- 아직 부르는 API가 없다. 첫 사용처가 생기면 그 기능 테스트가 확인한다
+
+## 남은 단계
+- `#82` 프론트 연결: 가입·로그아웃·자동 갱신 (`docs/frontend/auth.md` 9장)
+- `#83` Google·GitHub 로그인과 계정 연동
+- `#84` 내 정보 수정·비밀번호·탈퇴
+- `#85` 회원 신고·증거 첨부, `#86` 운영자 제재·해제 (#34와 역할 나누기 확정 후)
+- `#87` 테스트 서버 `JWT_SECRET`과 스키마 생성 방식
+
+## 범위 밖
+- 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

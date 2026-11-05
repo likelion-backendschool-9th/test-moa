@@ -8,7 +8,7 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentThumb";
 import { formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
-import { payoutAt, STATUS_LABEL, tabOf, TAB_LABEL, type ParticipationItem } from "../types";
+import { payoutAt, STATUS_LABEL, tabOf, TAB_LABEL, type FeedbackEntry, type ParticipationItem } from "../types";
 import { FeedbackForm } from "./FeedbackForm";
 
 type ParticipationDetailProps = {
@@ -76,6 +76,41 @@ function infoRows(item: ParticipationItem): Array<[string, ReactNode]> {
   if (item.status === "paid" && item.paidAt) rows.push(["지급일", formatDate(item.paidAt)]);
   if (item.status === "excluded" && item.reviewedAt) rows.push(["검토 완료", formatDate(item.reviewedAt)]);
   return rows;
+}
+
+function feedbackTitle(item: ParticipationItem, feedback: FeedbackEntry) {
+  return item.testItems.find((testItem) => testItem.id === feedback.testItemId)?.title ?? "기타 의견";
+}
+
+/** 제출한 피드백 한 건. 항목 이름 아래에 내용과 첨부 이미지를 둔다 */
+function SubmittedFeedback({ feedback, title }: { feedback: FeedbackEntry; title: string }) {
+  return (
+    <section aria-label={title} data-testid="submitted-feedback" className="flex flex-col gap-2">
+      <h3 className="text-sm font-bold">{title}</h3>
+      {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
+      <p className="text-sm whitespace-pre-wrap wrap-anywhere">{feedback.content}</p>
+      {feedback.imageNames.length > 0 && (
+        <div className="flex flex-col gap-3 pt-2">
+          <h4 className="text-sm font-bold">
+            첨부 이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{feedback.imageNames.length}</span>
+          </h4>
+          {/* 작성할 때의 미리 보기와 같은 칸. 시연용이라 파일이 없어 이미지 자리에 아이콘과 이름을 둔다 */}
+          <ul data-testid="feedback-image-names" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {feedback.imageNames.map((name, index) => (
+              <li
+                key={`${name}-${index}`}
+                title={name}
+                className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-surface-strong p-3 text-text-muted"
+              >
+                <ImageIcon aria-hidden size={24} className="shrink-0" />
+                <span className="w-full truncate text-center text-xs font-semibold">{name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
 }
 
 /** 내 참여 상세. 지금 단계와 다음 일, 피드백 작성 또는 제출한 내용, 모집 정보를 한 화면에 둔다 */
@@ -157,35 +192,16 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
         {status === "beforeSubmit" && (
           <Card className="flex flex-col gap-4 md:p-8">
             <h2 className="text-lg font-extrabold">피드백 쓰기</h2>
-            <FeedbackForm participationKey={item.key} />
+            <FeedbackForm participationKey={item.key} testItems={item.testItems} />
           </Card>
         )}
 
-        {item.feedback && (
-          <Card className="flex flex-col gap-4 md:p-8">
+        {item.feedbacks.length > 0 && (
+          <Card className="flex flex-col gap-6 md:p-8">
             <h2 className="text-lg font-extrabold">제출한 피드백</h2>
-            {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
-            <p className="text-sm whitespace-pre-wrap wrap-anywhere">{item.feedback}</p>
-            {item.feedbackImages && item.feedbackImages.length > 0 && (
-              <div className="flex flex-col gap-3 pt-2">
-                <h3 className="text-sm font-bold">
-                  첨부 이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{item.feedbackImages.length}</span>
-                </h3>
-                {/* 작성할 때의 미리 보기와 같은 칸. 시연용이라 파일이 없어 이미지 자리에 아이콘과 이름을 둔다 */}
-                <ul data-testid="feedback-image-names" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {item.feedbackImages.map((name, index) => (
-                    <li
-                      key={`${name}-${index}`}
-                      title={name}
-                      className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-surface-strong p-3 text-text-muted"
-                    >
-                      <ImageIcon aria-hidden size={24} className="shrink-0" />
-                      <span className="w-full truncate text-center text-xs font-semibold">{name}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {item.feedbacks.map((feedback) => (
+              <SubmittedFeedback key={feedback.testItemId ?? "other"} feedback={feedback} title={feedbackTitle(item, feedback)} />
+            ))}
           </Card>
         )}
       </div>

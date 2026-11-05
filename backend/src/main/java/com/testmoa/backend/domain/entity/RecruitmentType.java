@@ -7,11 +7,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-@Entity(name = "project_types")
+@Entity(name = "recruitment_types")
 @Getter
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProjectType {
+public class RecruitmentType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,11 +22,11 @@ public class ProjectType {
     @JoinColumn(nullable = false)
     private Type type;
 
-    // 대상 프로젝트
+    // 대상 모집글
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
-    private Project project;
+    private Recruitment recruitment;
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
@@ -39,17 +39,17 @@ public class ProjectType {
     private LocalDateTime updatedAt;
 
     /**
-     * 프로젝트에 테스트 타입 지정 시 새로운 ProjectType 엔티티 생성하기 위해 사용하는 빌더 생성자.
+     * 모집글에 테스트 타입 지정 시 새로운 RecruitmentType 엔티티 생성하기 위해 사용하는 빌더 생성자.
      *
-     * @param type      테스트 타입
-     * @param project   대상 프로젝트
+     * @param type          테스트 타입
+     * @param recruitment   대상 모집글
      */
     @Builder
-    public ProjectType(
+    public RecruitmentType(
             Type type,
-            Project project
+            Recruitment recruitment
     ){
         this.type = type;
-        this.project = project;
+        this.recruitment = recruitment;
     }
 }

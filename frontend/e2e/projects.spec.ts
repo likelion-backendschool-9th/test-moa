@@ -648,7 +648,7 @@ test.describe("R115 모집 취소", () => {
     await expect(tile.getByRole("definition")).toHaveText("1건");
   });
 
-  test("S355 확정 테스터가 있는 테스트 전 모집과 종료·취소된 모집은 취소할 수 없다", async ({ page }) => {
+  test("S355 확정 테스터가 있는 테스트 전 모집과 이미 취소한 모집은 취소할 수 없다", async ({ page }) => {
     for (const manage of [BOOKLOG_MANAGE, FOLIO_MANAGE]) {
       await page.goto(manage);
       await expect(page.getByText("확정된 테스터가 있어 취소할 수 없어요")).toBeVisible();

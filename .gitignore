@@ -3,3 +3,6 @@
 
 # mkcert로 만든 로컬 HTTPS 인증서·개인 키
 nginx/certs/
+
+### VS Code ###
+.vscode/

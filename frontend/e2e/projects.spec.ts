@@ -8,8 +8,10 @@ const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
 const FIRST_MANAGE = `${BOOKLOG}/recruitments/booklog-first`;
 const FOLIO_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder";
-/* 운영자가 취소를 승인한 지난 무료 모집 */
+/* 개발자가 취소한 지난 무료 모집 */
 const FOLIO_OLD_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder-old";
+/* 확정 테스터가 아직 없는 무료 모집 */
+const FOLIO_NEXT_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder-next";
 
 test.describe("R101 접근", () => {
   for (const path of ["/my/projects/nope", `${BOOKLOG}/recruitments/nope`]) {
@@ -612,99 +614,107 @@ test.describe("R114 모집 조건과 테스트 항목", () => {
   });
 });
 
-test.describe("R115 모집 취소 요청", () => {
+test.describe("R115 모집 취소", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S354 테스트 전 모집은 사유를 적어 취소를 요청하고, 처리 대기 상태가 남는다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
-    const button = page.getByRole("button", { name: "모집 취소 요청" });
-    await button.click();
-    const dialog = page.getByRole("dialog", { name: "모집 취소 요청" });
+  test("S354 확정 테스터가 없는 테스트 전 모집은 확인만 받고 바로 취소한다", async ({ page }) => {
+    await page.goto(FOLIO_NEXT_MANAGE);
+    await page.getByRole("button", { name: "모집 취소", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "모집을 취소할까요?" });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await expect(dialog.getByLabel("취소 사유")).toHaveCount(0);
+    await dialog.getByRole("button", { name: "닫기" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId("cancel-status")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "모집 취소", exact: true }).click();
+    await dialog.getByRole("button", { name: "모집 취소하기" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId("cancel-status")).toContainText("모집을 취소했어요");
+    await expect(page.getByRole("main").getByText("취소", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByTestId("cancel-status")).toContainText("모집을 취소했어요");
+
+    /* 공개 페이지는 없어지고, 전체 현황의 모집 중 숫자에서 빠진다 */
+    await page.goto("/recruitments/folio-builder-next");
+    await expect(page.getByText("찾는 페이지가 없어요")).toBeVisible();
+    await page.goto("/my/projects");
+    const overview = page.getByRole("region", { name: "전체 현황" });
+    const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 중$/ }) });
+    await expect(tile.getByRole("definition")).toHaveText("1건");
+  });
+
+  test("S355 확정 테스터가 있는 테스트 전 모집과 종료·취소된 모집은 취소할 수 없다", async ({ page }) => {
+    for (const manage of [BOOKLOG_MANAGE, FOLIO_MANAGE]) {
+      await page.goto(manage);
+      await expect(page.getByText("확정된 테스터가 있어 취소할 수 없어요")).toBeVisible();
+      await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toHaveCount(0);
+    }
+    await page.goto(FOLIO_OLD_MANAGE);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toHaveCount(0);
+  });
+
+  test("#74-S1 테스트 중에는 사유를 적어야 취소하고, 낸 피드백의 보상은 유지한다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await page.getByRole("button", { name: "모집 취소", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "모집을 취소할까요?" });
+    await dialog.getByRole("button", { name: "모집 취소하기" }).click();
     await expect(dialog.getByText("취소 사유를 적어 주세요")).toBeVisible();
     await expect(dialog.getByLabel("취소 사유")).toBeFocused();
 
-    await dialog.getByLabel("취소 사유").fill("서비스 점검 일정이 바뀌었어요");
-    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await dialog.getByLabel("취소 사유").fill("심각한 장애로 테스트를 이어갈 수 없어요");
+    await dialog.getByRole("button", { name: "모집 취소하기" }).click();
     await expect(dialog).toBeHidden();
     const status = page.getByTestId("cancel-status");
-    await expect(status).toContainText("취소 요청 처리 대기");
-    await expect(status).toContainText("요청 사유: 서비스 점검 일정이 바뀌었어요");
-    await expect(button).toHaveCount(0);
+    await expect(status).toContainText("이미 낸 피드백의 보상은 그대로 지급돼요");
+    await expect(status).toContainText("취소 사유: 심각한 장애로 테스트를 이어갈 수 없어요");
 
-    await page.reload();
-    await expect(page.getByTestId("cancel-status")).toContainText("처리 대기");
+    /* 피드백을 낸 4명은 확정으로 남고, 안 낸 윤슬과 대기 지원자는 참여 취소다 */
+    await expect(page.getByTestId("applicant").filter({ hasText: "김하늘" })).toContainText("확정");
+    await expect(page.getByTestId("applicant").filter({ hasText: "윤슬" })).toContainText("참여 취소");
+    await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(3);
+    await expect(page.getByTestId("confirmed-count")).toContainText("확정 4명");
   });
 
-  test("S355 테스트가 시작된 모집은 취소를 요청할 수 없다", async ({ page }) => {
-    await page.goto(FIRST_MANAGE);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
-  });
-
-  test("S356 반려된 요청은 반려 사유를 보여 주고 다시 요청할 수 있다", async ({ page }) => {
-    await page.goto(FOLIO_MANAGE);
-    const status = page.getByTestId("cancel-status");
-    await expect(status).toContainText("취소 요청 반려");
-    await expect(status).toContainText("반려 사유: 취소 사유가 부족해요");
-    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toBeVisible();
-  });
-
-  test("S372 쿠키의 요청 시각이 깨져 있어도 화면이 열리고 그 요청은 버린다", async ({ page, context }) => {
+  test("S372 쿠키의 취소 시각이 깨져 있어도 화면이 열리고 그 기록은 버린다", async ({ page, context }) => {
     await context.addCookies([
       {
-        name: "demo-cancel-request-booklog",
-        value: encodeURIComponent(JSON.stringify({ reason: "일정이 바뀌었어요", requestedAt: "bad" })),
+        name: "demo-recruitment-cancel-folio-builder-next",
+        value: encodeURIComponent(JSON.stringify({ reason: "", cancelledAt: "bad" })),
         url: "http://localhost:3100",
       },
     ]);
-    await page.goto(BOOKLOG_MANAGE);
-    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toBeVisible();
+    await page.goto(FOLIO_NEXT_MANAGE);
+    await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toBeVisible();
     await expect(page.getByTestId("cancel-status")).toHaveCount(0);
   });
 
-  test("S364 반려 뒤 다시 보낸 요청은 시간이 지나도 처리 대기로 남는다", async ({ page, context }) => {
-    /* 목업의 반려 시각은 요청마다 '1일 전'으로 계산되므로, 그보다 오래된 재요청을 쿠키로 만든다 */
-    const requestedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-    await context.addCookies([
-      {
-        name: "demo-cancel-request-folio-builder",
-        value: encodeURIComponent(JSON.stringify({ reason: "일정이 바뀌었어요", requestedAt })),
-        url: "http://localhost:3100",
-      },
-    ]);
-    await page.goto(FOLIO_MANAGE);
-    await expect(page.getByTestId("cancel-status")).toContainText("취소 요청 처리 대기");
-    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
+  test("S365 긴 사유로 취소해도 저장된다", async ({ page }) => {
+    await page.goto(FIRST_MANAGE);
+    await page.getByRole("button", { name: "모집 취소", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "모집을 취소할까요?" });
+    await dialog.getByLabel("취소 사유").fill("가".repeat(300));
+    await dialog.getByRole("button", { name: "모집 취소하기" }).click();
+    await expect(dialog).toBeHidden();
+    await page.reload();
+    await expect(page.getByTestId("cancel-status")).toContainText("가".repeat(300));
   });
 
-  test("S365 긴 사유로 여러 모집에 요청해도 모두 저장된다", async ({ page }) => {
-    for (const manage of [BOOKLOG_MANAGE, FOLIO_MANAGE]) {
-      await page.goto(manage);
-      await page.getByRole("button", { name: "모집 취소 요청" }).click();
-      const dialog = page.getByRole("dialog", { name: "모집 취소 요청" });
-      await dialog.getByLabel("취소 사유").fill("가".repeat(300));
-      await dialog.getByRole("button", { name: "요청 보내기" }).click();
-      await expect(dialog).toBeHidden();
-      await expect(page.getByTestId("cancel-status")).toContainText("취소 요청 처리 대기");
-    }
-    await page.goto(BOOKLOG_MANAGE);
-    await expect(page.getByTestId("cancel-status")).toContainText("취소 요청 처리 대기");
-  });
-
-  test("S357 승인된 모집은 취소 상태이고 진행 숫자에서 빠진다", async ({ page }) => {
+  test("S357 취소한 모집은 취소 상태이고 진행 숫자에서 빠진다", async ({ page }) => {
     await page.goto(FOLIO_OLD_MANAGE);
-    await expect(page.getByTestId("cancel-status")).toContainText("운영자가 모집 취소를 승인했어요");
+    await expect(page.getByTestId("cancel-status")).toContainText("모집을 취소했어요");
+    await expect(page.getByTestId("cancel-status")).toContainText("취소 사유: 서비스 화면을 크게 바꿔서 다시 모집할게요");
     await expect(page.getByRole("main").getByText("취소", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "모집 취소 요청" })).toHaveCount(0);
     await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(3);
 
     await page.goto("/my/projects");
     const folio = page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem").filter({ hasText: "포트폴리오 빌더" });
-    await expect(folio).toContainText("모집 1건 · 모집 중 0건");
+    await expect(folio).toContainText("모집 2건 · 모집 중 1건");
     const overview = page.getByRole("region", { name: "전체 현황" });
     const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 완료$/ }) });
     await expect(tile.getByRole("definition")).toHaveText("1건");

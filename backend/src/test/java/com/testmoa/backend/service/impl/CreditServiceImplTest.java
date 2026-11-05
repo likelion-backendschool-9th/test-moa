@@ -208,6 +208,22 @@ class CreditServiceImplTest {
     }
 
     @Test
+    @DisplayName("#67-S3 금액 1 미만은 BusinessException·잠금 없음")
+    void requestCashoutRejectsNonPositiveAmount() {
+        User user = user();
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> creditService.requestCashout(USER_ID, validRequest(0))
+        );
+
+        assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
+        verify(creditWalletRepository, never()).findByUserIdForUpdate(any());
+        verify(cashoutRequestRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("#67-S4 이벤트 크레딧만 있으면 출금 불가")
     void requestCashoutRejectsEventOnly() {
         User user = user();

@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { BACKEND_URL, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "@/lib/auth-tokens";
+import { BACKEND_TIMEOUT_MS, BACKEND_URL, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "@/lib/auth-tokens";
 
 /*
  * access 토큰(30분)이 만료되면 refresh 토큰으로 새 토큰 쌍을 받아 로그인을 이어 준다.
- * 쿠키 수명이 토큰 수명과 같아서 access 쿠키가 없으면 만료된 것이다. 아래 matcher가 그때만 이 함수를 부른다.
+ * access 쿠키는 토큰보다 1분 먼저 만료돼서, 쿠키가 없으면 곧 만료될 것이다. 아래 matcher가 그때만 이 함수를 부른다.
  * 새 토큰은 응답 쿠키(브라우저)와 요청 쿠키(이번 렌더링·서버 액션) 양쪽에 넣는다.
  */
 export async function proxy(request: NextRequest) {
@@ -32,6 +32,7 @@ async function refresh(refreshToken: string): Promise<Tokens | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
       cache: "no-store",
+      signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS),
     });
     const json = await response.json();
     return response.ok && json?.success ? (json.data as Tokens) : null;

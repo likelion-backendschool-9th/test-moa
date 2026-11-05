@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { ACCESS_TOKEN_COOKIE, BACKEND_URL, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "./auth-tokens";
+import { ACCESS_TOKEN_COOKIE, BACKEND_TIMEOUT_MS, BACKEND_URL, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "./auth-tokens";
 
 /*
  * 백엔드(Spring) 호출. 브라우저는 백엔드를 직접 부르지 않고, Next 서버가 쿠키의 토큰을 Bearer로 붙여 부른다(BFF).
@@ -32,7 +32,7 @@ type Options = {
   withToken?: boolean;
 };
 
-/** 백엔드를 부르고 ApiResponse를 성공·실패로 나눠 돌려준다. 백엔드가 꺼져 있어도 던지지 않는다 */
+/** 백엔드를 부르고 ApiResponse를 성공·실패로 나눠 돌려준다. 백엔드가 꺼져 있거나 응답이 늦어도 던지지 않는다 */
 export async function backendFetch<T>(path: string, { method = "GET", body, withToken = true }: Options = {}): Promise<BackendResult<T>> {
   const token = withToken ? (await cookies()).get(ACCESS_TOKEN_COOKIE)?.value : undefined;
   const headers: Record<string, string> = {};
@@ -46,6 +46,7 @@ export async function backendFetch<T>(path: string, { method = "GET", body, with
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
+      signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS),
     });
   } catch {
     return { ok: false, status: 503, code: "BACKEND_UNAVAILABLE", message: "잠시 후 다시 시도해 주세요" };

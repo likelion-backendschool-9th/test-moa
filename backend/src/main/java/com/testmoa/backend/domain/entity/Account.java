@@ -9,6 +9,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity(name = "accounts")
+@Table(uniqueConstraints = {
+        // 같은 소셜 계정은 한 회원에만 연동된다
+        @UniqueConstraint(columnNames = {"provider", "provider_code"}),
+        // 한 회원은 로그인 방식마다 계정을 하나만 가진다
+        @UniqueConstraint(columnNames = {"user_id", "provider"})
+})
 @Getter
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -27,7 +33,7 @@ public class Account {
     @ToString.Exclude
     private String password;
 
-    // 로그인 방식(LOCAL, NAVER, KAKAO, GOOGLE)
+    // 로그인 방식(LOCAL, NAVER, KAKAO, GOOGLE, GITHUB)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Provider provider;

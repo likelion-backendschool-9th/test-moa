@@ -220,8 +220,12 @@ test.describe("#83 소셜 가입 이름 입력", () => {
     await expect(main(page).getByText("이용이 정지된 계정이에요")).toBeVisible();
     await page.goto("/login?error=linkRequired");
     await expect(main(page).getByText("이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요")).toBeVisible();
-    await page.goto("/login?error=%3Cscript%3E");
-    await expect(main(page).getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
-    await expect(main(page).locator("[role=alert]")).toHaveCount(0);
+    /* 객체에 원래 있는 이름(constructor 등)도 모르는 값이다 */
+    for (const key of ["%3Cscript%3E", "constructor", "toString"]) {
+      await page.goto(`/login?error=${key}`);
+      await expect(main(page).getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
+      await expect(main(page).getByLabel("이메일")).toBeVisible();
+      await expect(main(page).locator("[role=alert]")).toHaveCount(0);
+    }
   });
 });

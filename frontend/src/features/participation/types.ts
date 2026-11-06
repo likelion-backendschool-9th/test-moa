@@ -1,3 +1,4 @@
+import type { TestItem } from "@/features/project/types";
 import type { Recruitment } from "@/features/recruitment/types";
 
 /**
@@ -80,17 +81,25 @@ export type Participation = {
   reviewedAt?: string;
   /** 받은 크레딧. 지급 완료가 아니면 0 */
   earnedCredits: number;
-  /** 제출한 피드백 내용. 제출 전이거나 미제출이면 없다 */
-  feedback?: string;
-  /** 제출한 피드백의 이미지 이름. 시연용이라 파일은 없다 */
-  feedbackImages?: string[];
+  /** 테스터가 해 볼 작업. 항목마다 피드백을 쓴다 */
+  testItems: FeedbackTestItem[];
+  /** 제출한 항목별 피드백. 제출 전이거나 미제출이면 비어 있다 */
+  feedbacks: FeedbackEntry[];
 };
 
-export const FEEDBACK_MIN_LENGTH = 20;
-/**
- * 피드백 최대 글자 수. 기획에서 미정이라 시연용 저장(쿠키) 한도에 맞췄다.
- * 한글 한 글자가 저장할 때 4바이트라, 제출 전 참여를 모두 이 길이로 내도 요청 헤더가 넉넉하다.
- */
+/** 피드백을 쓸 테스트 항목 (백엔드 TestItem) */
+export type FeedbackTestItem = Pick<TestItem, "id" | "title" | "description" | "required">;
+
+/** 제출한 피드백 한 건 (백엔드 Feedback). 항목마다 한 건이다 */
+export type FeedbackEntry = {
+  /** 기타 의견은 null (백엔드 Feedback.testItem) */
+  testItemId: string | null;
+  content: string;
+  /** 첨부한 이미지 이름. 시연용이라 파일은 없다 */
+  imageNames: string[];
+};
+
+/** 칸마다 적용하는 최대 글자 수. 기획에서 미정이다. 시연용 저장 한도는 칸을 모두 합쳐 따로 확인한다(demo-feedback.ts) */
 export const FEEDBACK_MAX_LENGTH = 500;
 
 /** 화면에 그릴 참여. 모집 마감일·제출 마감일·보상은 가리키는 모집 글의 값을 쓴다 */

@@ -3,12 +3,11 @@ import Image from "next/image";
 import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
-import { isFull, SOFTWARE_TYPE_LABEL, type Recruitment } from "../types";
-import { ProofStamp } from "./ProofStamp";
+import { SOFTWARE_TYPE_LABEL, type Recruitment } from "../types";
 
 /**
  * 모집 카드. 프로젝트명을 본문 제목으로 표시하고, 보상은 추가 보상 배지만 보여 준다.
- * 날짜에는 짧은 마감 라벨을 표시하고 인원 항목 이름은 보조 기술에 남긴다.
+ * 날짜에는 짧은 마감 라벨을 표시한다.
  * relative는 절대 배치되는 sr-only 라벨도 카드 안에 묶어 가로 스크롤 밖으로 빠지지 않게 한다.
  */
 export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
@@ -25,7 +24,7 @@ export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
             alt=""
             fill
             sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 75vw"
-            className={isFull(recruitment) ? "object-cover opacity-25" : "object-cover"}
+            className="object-cover"
           />
         ) : (
           <div aria-hidden className="flex h-full items-center justify-center text-text-muted">
@@ -38,7 +37,6 @@ export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
             <Badge tone="accentSolid" className="font-bold">추가 보상</Badge>
           )}
         </div>
-        {isFull(recruitment) && <ProofStamp label="모집 완료" placement="bottomRight" paper />}
       </div>
       <div className="flex flex-1 flex-col gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
         <h3 className="line-clamp-2 text-base leading-snug font-bold tracking-[-0.03em]">{recruitment.projectName}</h3>
@@ -47,12 +45,6 @@ export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
           <div className="flex items-baseline gap-1">
             <dt>마감</dt>
             <dd className="font-semibold tabular-nums">{formatDate(recruitment.recruitDeadline)}</dd>
-          </div>
-          <div>
-            <dt className="sr-only">인원</dt>
-            <dd className="font-semibold tabular-nums">
-              {recruitment.confirmedCount} / {recruitment.capacity}명
-            </dd>
           </div>
         </dl>
       </div>

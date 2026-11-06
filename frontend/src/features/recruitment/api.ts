@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { getDemoDataMode } from "@/lib/demo";
 import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "./mock";
 import type { RecruitmentQuery } from "./query";
-import { isFull, type Recruitment, type RecruitmentPage } from "./types";
+import type { Recruitment, RecruitmentPage } from "./types";
 
 /*
  * 모집 데이터 접근. 지금은 목업을 돌려준다.
@@ -36,11 +36,11 @@ export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
   return [...subscription].sort(byLatest);
 }
 
-/** 정원이 남고 모집 마감 전인 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
+/** 모집 마감 전인 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
 export async function getLatestOpenRecruitments(limit = 3): Promise<Recruitment[]> {
   const { now, subscription, general } = await loadAll();
   return [...subscription, ...general]
-    .filter((item) => !isFull(item) && new Date(item.recruitDeadline) > now)
+    .filter((item) => new Date(item.recruitDeadline) > now)
     .sort(byLatest)
     .slice(0, limit);
 }
@@ -49,12 +49,15 @@ export const RECRUITMENT_PAGE_SIZE = 20;
 
 /** 전체 모집 건을 검색 조건으로 거르고 한 페이지만 잘라 준다. 검색 대상은 이름, 소개, 요청 내용이다 */
 export async function searchRecruitments(query: RecruitmentQuery): Promise<RecruitmentPage> {
-  const { subscription, general } = await loadAll();
+  const { now, subscription, general } = await loadAll();
   const keyword = query.q.toLowerCase();
-  const sorter = { latest: byLatest, deadline: byDeadline }[query.sort];
+  const isClosed = (item: Recruitment) => new Date(item.recruitDeadline) <= now;
+  /* 마감 임박순에서 이미 마감한 모집은 맨 뒤로 보낸다 */
+  const byUpcomingDeadline = (a: Recruitment, b: Recruitment) => Number(isClosed(a)) - Number(isClosed(b)) || byDeadline(a, b);
+  const sorter = { latest: byLatest, deadline: byUpcomingDeadline }[query.sort];
   const matched = [...subscription, ...general]
     .filter((item) => !query.type || item.softwareType === query.type)
-    .filter((item) => !query.open || !isFull(item))
+    .filter((item) => !query.open || !isClosed(item))
     .filter((item) => !keyword || [item.projectName, item.summary, item.request].some((text) => text.toLowerCase().includes(keyword)))
     .sort(sorter);
   const pageCount = Math.max(1, Math.ceil(matched.length / RECRUITMENT_PAGE_SIZE));

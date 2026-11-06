@@ -16,6 +16,7 @@
 | S220~S249, S280, S527 | 회원 관리 (`frontend/admin/users.md`) | `admin-users.spec.ts` |
 | S250~S279, S283 | 삭제됨(결번, #43) | — |
 | S356, S364 | 삭제됨(결번, #74) | — |
+| S499, S505 | 삭제됨(결번, #78) | — |
 | S286~S316, S347 | 로그인·회원가입 (`frontend/auth/auth.md`) | `auth.spec.ts`, `no-js-forms.spec.ts` |
 | S323~S334, S341~S346 | 헤더 (`frontend/header.md`) | `header.spec.ts`, `header-layout.spec.ts`, `mobile-menu.spec.ts` |
 | S348~S381 | 크레딧 (`frontend/payment/credits.md`) | `credits.spec.ts` |

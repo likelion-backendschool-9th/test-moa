@@ -1,13 +1,13 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.entity.Account;
-import com.testmoa.backend.domain.entity.Plan;
-import com.testmoa.backend.domain.entity.Subscription;
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.global.common.Provider;
-import com.testmoa.backend.global.common.Role;
-import com.testmoa.backend.global.common.SubscriptionStatus;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.entity.Account;
+import com.testmoa.backend.entity.Plan;
+import com.testmoa.backend.entity.Subscription;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.global.security.Provider;
+import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.entity.enums.SubscriptionStatus;
+import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.service.SubscriptionChecker;

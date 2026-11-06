@@ -1,8 +1,8 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.dto.request.CashoutRejectRequest;
-import com.testmoa.backend.domain.dto.response.AdminCashoutResponse;
-import com.testmoa.backend.global.common.CashoutTab;
+import com.testmoa.backend.dto.request.CashoutRejectRequest;
+import com.testmoa.backend.dto.response.AdminCashoutResponse;
+import com.testmoa.backend.entity.enums.CashoutTab;
 
 import java.util.List;
 

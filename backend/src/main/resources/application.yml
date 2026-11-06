@@ -2,11 +2,20 @@ spring:
   application:
     name: backend
 
+  config:
+    # 로컬 실행용 backend/.env(JWT_SECRET 등)를 읽음. 없으면 건너뛰고, 같은 이름의 환경 변수가 있으면 환경 변수가 이김
+    # 앞은 backend 폴더에서 실행할 때(gradlew bootRun), 뒤는 저장소 최상위에서 실행할 때(IDE)의 경로
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:backend/.env[.properties]
+
   profiles:
     # 실행 환경. local이면 application-local.yml 설정을 함께 읽음
     active: local
 
   jpa:
+    # 요청이 끝날 때까지 DB 연결을 잡고 있지 않음. 켜 두면 분석 서버를 기다리는 동안에도 연결이 묶임
+    open-in-view: false
     hibernate:
       naming:
         # 필드명(camelCase)을 컬럼명(snake_case)으로 자동 변환. 예) imageUrl -> image_url
@@ -24,3 +33,23 @@ cashout:
   # 출금 계좌·예금주 AES-256 키. Base64로 인코딩한 32바이트. 환경 변수만 쓰고 커밋하지 않는다
   account-crypto-key: ${CASHOUT_ACCOUNT_CRYPTO_KEY}
 
+# AI 분석 서버(파이썬 analysis-server, 별도 EC2)
+analysis:
+  # 분석 서버 주소. 배포한 주소로 바꾸거나 환경 변수 ANALYSIS_BASE_URL로 넘김
+  base-url: ${ANALYSIS_BASE_URL:http://localhost:8000}
+  # 분석 서버의 내부 토큰(X-Internal-Token, 32자 이상). 환경 변수 ANALYSIS_INTERNAL_TOKEN으로만 넘기고 커밋하지 않음
+  internal-token: ${ANALYSIS_INTERNAL_TOKEN:}
+  # 연결 대기 시간
+  connect-timeout: 5s
+  # 응답 대기 시간. nginx의 응답 대기(60초)보다 짧게 둬서 사용자에게 503 안내가 먼저 감
+  read-timeout: 30s
+
+# 소셜 로그인(OAuth) 앱 값. 환경 변수로만 넘기고 커밋하지 않는다. 비어 있으면 그 제공자로 로그인할 때 실패한다
+# 내 컴퓨터에서는 backend/config/application-local.yml(커밋하지 않음)에 같은 이름으로 넣어도 된다
+oauth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+  github:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}

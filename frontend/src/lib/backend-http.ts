@@ -26,10 +26,12 @@ export type RequestOptions = {
   body?: unknown;
   /** Bearer로 붙일 access 토큰 */
   token?: string;
+  /** 기다리는 시간(ms). 기본 5초. 백엔드가 바깥 서비스(소셜 로그인 제공자)를 부르는 요청만 늘린다 */
+  timeoutMs?: number;
 };
 
 /** 백엔드를 부르고 ApiResponse를 성공·실패로 나눠 돌려준다. 백엔드가 꺼져 있거나 응답이 늦어도 던지지 않는다 */
-export async function requestBackend<T>(path: string, { method = "GET", body, token }: RequestOptions = {}): Promise<BackendResult<T>> {
+export async function requestBackend<T>(path: string, { method = "GET", body, token, timeoutMs = BACKEND_TIMEOUT_MS }: RequestOptions = {}): Promise<BackendResult<T>> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -41,7 +43,7 @@ export async function requestBackend<T>(path: string, { method = "GET", body, to
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
-      signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
     return { ok: false, status: 503, code: "BACKEND_UNAVAILABLE", message: "잠시 후 다시 시도해 주세요" };

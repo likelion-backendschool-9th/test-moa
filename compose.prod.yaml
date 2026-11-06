@@ -37,8 +37,16 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD를 .env에 설정하세요}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET을 .env에 설정하세요}
       CASHOUT_ACCOUNT_CRYPTO_KEY: ${CASHOUT_ACCOUNT_CRYPTO_KEY:?CASHOUT_ACCOUNT_CRYPTO_KEY를 .env에 설정하세요}
+      # 소셜 로그인(OAuth) 앱 값. 없으면 소셜 로그인만 실패하고 나머지는 그대로 돈다
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       # 엔티티를 보고 테이블을 만들고 바뀐 컬럼을 더한다(지우지는 않음). 실제 서비스 전에 Flyway 같은 마이그레이션으로 바꾼다
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # AI 분석 서버(별도 EC2). 비어 있으면 AI 기능만 503이고 나머지는 그대로 뜸
+      ANALYSIS_BASE_URL: ${ANALYSIS_BASE_URL:-http://localhost:8000}
+      ANALYSIS_INTERNAL_TOKEN: ${ANALYSIS_INTERNAL_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy

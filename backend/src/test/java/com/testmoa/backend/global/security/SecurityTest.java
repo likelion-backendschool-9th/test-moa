@@ -1,9 +1,8 @@
 package com.testmoa.backend.global.security;
 
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.domain.repository.UserRepository;
-import com.testmoa.backend.global.common.Role;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.entity.enums.UserStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

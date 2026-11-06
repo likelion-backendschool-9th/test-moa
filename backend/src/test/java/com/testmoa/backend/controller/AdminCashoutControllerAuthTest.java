@@ -1,14 +1,14 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.entity.CashoutRequest;
-import com.testmoa.backend.domain.entity.CreditWallet;
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.domain.repository.CashoutRequestRepository;
-import com.testmoa.backend.domain.repository.CreditWalletRepository;
-import com.testmoa.backend.domain.repository.UserRepository;
-import com.testmoa.backend.global.common.CashoutStatus;
-import com.testmoa.backend.global.common.Role;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.CreditWallet;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CreditWalletRepository;
+import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.entity.enums.CashoutStatus;
+import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.JwtProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

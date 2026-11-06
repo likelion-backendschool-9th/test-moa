@@ -75,12 +75,12 @@ export function ProjectBody({
   );
 }
 
-/** 프로젝트 정보와 수정·모집 작성 버튼 */
+/** 프로젝트 정보와 수정·모집글 작성 버튼 */
 export function ProjectInfo({ project }: { project: Project }) {
   return (
     <ProjectBody project={project}>
       <div className="flex flex-wrap gap-2 pt-2">
-        <LinkButton href={recruitmentCreatePath(project.key)}>테스트 모집 작성</LinkButton>
+        <LinkButton href={recruitmentCreatePath(project.key)}>모집글 작성</LinkButton>
         <LinkButton href={projectEditPath(project.key)} variant="secondary">
           수정
         </LinkButton>
@@ -96,7 +96,7 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
       <EmptyState
         title="아직 테스트 모집이 없어요"
         description="모집 조건과 일정을 정해 테스터를 모아 보세요."
-        action={<LinkButton href={recruitmentCreatePath(projectKey)}>테스트 모집 작성</LinkButton>}
+        action={<LinkButton href={recruitmentCreatePath(projectKey)}>모집글 작성</LinkButton>}
       />
     );
   }

@@ -7,6 +7,7 @@
 | 홈 | `/` | 후보 |
 | 로그인 | `/login` | 확정 |
 | 회원가입 | `/signup` | 확정 |
+| 소셜 가입(이름 입력) | `/signup/social` | 후보 |
 
 ## 소식
 
@@ -23,7 +24,7 @@
 | 모집 게시글 상세 | `/recruitments/:slug` | 확정 (`docs/frontend/project/recruitment-detail.md`) |
 | 테스트 지원 | `/recruitments/:slug/apply` | 우선 채택 |
 
-## 참여 테스트(테스터)
+## 참여 테스트(테스터) (고침 #101: 역할 경로로 이동)
 
 | 페이지 | URL | 상태 |
 | --- | --- | --- |
@@ -33,7 +34,7 @@
 | 참여했던 테스트 탭 | `/testers/recruitments?tab=history` | 확정 |
 | 내 참여 상세 | `/testers/recruitments/:participationKey` | 후보 |
 
-## 개발자 프로젝트(개발자)
+## 개발자 프로젝트(개발자) (고침 #101: 역할 경로로 이동)
 
 | 페이지 | URL | 상태 |
 | --- | --- | --- |
@@ -80,7 +81,3 @@
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
 | 처리 완료 출금 탭 | `/admin/withdrawals?tab=done` | 후보 |
 | 출금 요청 모달 | `/admin/withdrawals?open=:withdrawalKey` | 후보 |
-
-## 변경 이력
-
-- 2026-11-06: 참여 테스트를 /testers/recruitments로, 개발자 프로젝트·모집을 /developer/...로 옮겼다(#101).

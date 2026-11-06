@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { participationsPath } from "@/lib/participation-paths";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { PARTICIPATION_TABS, TAB_LABEL, type ParticipationCounts, type ParticipationTab } from "../types";
@@ -20,7 +21,7 @@ export function ParticipationTabs({ active, counts }: ParticipationTabsProps) {
           return (
             <li key={tab}>
               <Link
-                href={`/testers/recruitments?tab=${tab}`}
+                href={participationsPath(tab)}
                 scroll={false}
                 aria-current={current ? "page" : undefined}
                 className={cn(

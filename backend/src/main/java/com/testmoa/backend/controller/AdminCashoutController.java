@@ -1,9 +1,9 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.dto.request.CashoutRejectRequest;
-import com.testmoa.backend.domain.dto.response.AdminCashoutResponse;
-import com.testmoa.backend.global.common.ApiResponse;
-import com.testmoa.backend.global.common.CashoutTab;
+import com.testmoa.backend.dto.request.CashoutRejectRequest;
+import com.testmoa.backend.dto.response.AdminCashoutResponse;
+import com.testmoa.backend.global.util.ApiResponse;
+import com.testmoa.backend.entity.enums.CashoutTab;
 import com.testmoa.backend.service.AdminCashoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;

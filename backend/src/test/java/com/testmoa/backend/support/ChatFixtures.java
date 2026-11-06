@@ -1,15 +1,15 @@
 package com.testmoa.backend.support;
 
-import com.testmoa.backend.domain.entity.ChatParticipant;
-import com.testmoa.backend.domain.entity.ChatRoom;
-import com.testmoa.backend.domain.entity.Project;
-import com.testmoa.backend.domain.entity.Recruitment;
-import com.testmoa.backend.domain.entity.Register;
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.global.common.ChatRole;
-import com.testmoa.backend.global.common.Role;
-import com.testmoa.backend.global.common.SelectionMode;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.entity.ChatParticipant;
+import com.testmoa.backend.entity.ChatRoom;
+import com.testmoa.backend.entity.Project;
+import com.testmoa.backend.entity.Recruitment;
+import com.testmoa.backend.entity.Register;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.ChatRole;
+import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.entity.enums.SelectionMode;
+import com.testmoa.backend.entity.enums.UserStatus;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.time.LocalDateTime;

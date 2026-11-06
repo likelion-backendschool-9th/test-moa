@@ -1,16 +1,16 @@
 package com.testmoa.backend.service.impl;
 
-import com.testmoa.backend.domain.dto.request.CashoutRejectRequest;
-import com.testmoa.backend.domain.dto.response.AdminCashoutResponse;
-import com.testmoa.backend.domain.entity.CashoutRequest;
-import com.testmoa.backend.domain.entity.CreditLedger;
-import com.testmoa.backend.domain.entity.CreditWallet;
-import com.testmoa.backend.domain.repository.CashoutRequestRepository;
-import com.testmoa.backend.domain.repository.CreditLedgerRepository;
-import com.testmoa.backend.domain.repository.CreditWalletRepository;
-import com.testmoa.backend.global.common.CashoutStatus;
-import com.testmoa.backend.global.common.CashoutTab;
-import com.testmoa.backend.global.common.CreditType;
+import com.testmoa.backend.dto.request.CashoutRejectRequest;
+import com.testmoa.backend.dto.response.AdminCashoutResponse;
+import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.CreditLedger;
+import com.testmoa.backend.entity.CreditWallet;
+import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CreditLedgerRepository;
+import com.testmoa.backend.repository.CreditWalletRepository;
+import com.testmoa.backend.entity.enums.CashoutStatus;
+import com.testmoa.backend.entity.enums.CashoutTab;
+import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.AdminCashoutService;

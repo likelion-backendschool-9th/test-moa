@@ -32,6 +32,8 @@ const REPORT_CLOSED = "신고는 제출 후 72시간 안에만 할 수 있어요
 const FOLLOWUP_NETWORK_ERROR = "연결이 불안정해 질문을 받지 못했어요. 잠시 후 다시 시도해 주세요";
 
 const icon = { "aria-hidden": true, size: 16, weight: "bold" } as const;
+/* 다크에서는 흰 글씨가 무거워 보여 카드 버튼 4개만 굵기를 보통으로 낮춘다 */
+const CARD_ACTION = "dark:font-normal";
 
 type FeedbackListProps = {
   feedbacks: FeedbackView[];
@@ -169,6 +171,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                 <Button
                   size="sm"
                   variant={liked ? "like" : "secondary"}
+                  className={CARD_ACTION}
                   aria-pressed={liked}
                   aria-label={`${nickname}님의 피드백이 유용해요`}
                   onClick={() => toggleRecommend(item, !liked)}
@@ -181,6 +184,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   <Button
                     size="sm"
                     variant="secondary"
+                    className={CARD_ACTION}
                     aria-label={`${nickname}님의 피드백 신고 정보`}
                     onClick={() => showNotice(item, REPORT_INFO_NOT_READY)}
                   >
@@ -192,6 +196,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   <Button
                     size="sm"
                     variant="secondary"
+                    className={CARD_ACTION}
                     aria-label={`${nickname}님의 피드백 신고하기`}
                     onClick={() => (status === "waiting" && item.hoursUntilPaid > 0 ? openReport(item) : showNotice(item, REPORT_CLOSED))}
                   >
@@ -262,13 +267,13 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
 function PaidAction({ subscribed, label, onClick, children }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode }) {
   if (!subscribed) {
     return (
-      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="paid" aria-label={`${label}, 구독하면 쓸 수 있어요`}>
+      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="paid" className={CARD_ACTION} aria-label={`${label}, 구독하면 쓸 수 있어요`}>
         {children}
       </LinkButton>
     );
   }
   return (
-    <Button size="sm" variant="paid" aria-label={label} onClick={onClick}>
+    <Button size="sm" variant="paid" className={CARD_ACTION} aria-label={label} onClick={onClick}>
       {children}
     </Button>
   );

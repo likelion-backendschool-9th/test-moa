@@ -32,6 +32,8 @@
   --paid-end: #eeeaf4;
   /* 민트를 30%까지 그대로 두고 65%에서 옅어지게 해 초록 쪽 비중을 늘린다 */
   --paid-gradient: linear-gradient(to right, var(--paid-start) 30%, var(--paid-mid) 65%, var(--paid-end));
+  /* 그라데이션 위 글씨. 라이트는 강조색, 다크는 흰색 */
+  --paid-text: var(--brand-green);
   /* 활자 썸네일의 교정지 면과 재단선 */
   --thumb: #ffffff;
   --on-thumb: #1a1a1a;
@@ -67,10 +69,11 @@
     /* 남회색 패널에서 튀지 않게 어두운 장미색 바탕에 밝힌 분홍 글씨, 대비 6.42:1 */
     --like: #f47c97;
     --like-soft: #341520;
-    /* 같은 민트→라벤더 흐름을 어둡게 낮춘 바탕 */
+    /* 같은 민트→라벤더 흐름을 어둡게 낮춘 바탕. 글씨는 흰색 */
     --paid-start: #123625;
     --paid-mid: #1a2a26;
     --paid-end: #241f36;
+    --paid-text: #ffffff;
     --thumb: #ffffff;
     --on-thumb: #16181d;
     --mark: #3d434b;
@@ -94,6 +97,7 @@
   --color-paid-start: var(--paid-start);
   --color-paid-mid: var(--paid-mid);
   --color-paid-end: var(--paid-end);
+  --color-paid-text: var(--paid-text);
   --color-thumb: var(--thumb);
   --color-on-thumb: var(--on-thumb);
   --color-paper-accent: var(--paper-accent);

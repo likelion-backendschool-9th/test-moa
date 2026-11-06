@@ -11,11 +11,11 @@ import {
 import { participationPath } from "@/features/participation/types";
 import { requireMember } from "@/lib/auth";
 
-/* 내 참여 상세 (/my/participations/:participationKey) */
+/* 내 참여 상세 (/testers/recruitments/:participationKey) */
 
 export const metadata: Metadata = { title: "내 참여 상세" };
 
-type Props = PageProps<"/my/participations/[participationKey]">;
+type Props = PageProps<"/testers/recruitments/[participationKey]">;
 
 export default function ParticipationPage({ params, searchParams }: Props) {
   return (

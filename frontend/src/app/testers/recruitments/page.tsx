@@ -21,10 +21,10 @@ import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "참여 테스트" };
 
-type SearchParams = PageProps<"/my/participations">["searchParams"];
+type SearchParams = PageProps<"/testers/recruitments">["searchParams"];
 
 /* 제목과 탭은 데이터를 기다리지 않고, 요약·마감 일정·목록만 Suspense 안에서 스트리밍된다 */
-export default function ParticipationsPage({ searchParams }: PageProps<"/my/participations">) {
+export default function ParticipationsPage({ searchParams }: PageProps<"/testers/recruitments">) {
   return (
     <Container className="flex flex-col gap-8 pt-8">
       <Suspense fallback={null}>
@@ -57,7 +57,7 @@ async function LoginGate({ searchParams }: { searchParams: SearchParams }) {
   const [session, params] = await Promise.all([getSession(), searchParams]);
   if (session.role !== "guest") return null;
   const tab = parseParticipationTab(params.tab);
-  const path = params.tab === tab ? `/my/participations?tab=${tab}` : "/my/participations";
+  const path = params.tab === tab ? `/testers/recruitments?tab=${tab}` : "/testers/recruitments";
   redirect(`/login?next=${encodeURIComponent(path)}`);
 }
 

@@ -25,7 +25,6 @@ type ApplicantListProps = {
   canSelect: boolean;
   isSubscription: boolean;
   selectionMode: SelectionMode;
-  projectKey: string;
   recruitmentKey: string;
 };
 
@@ -58,7 +57,7 @@ async function canReachServer() {
 }
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
-export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, projectKey, recruitmentKey }: ApplicantListProps) {
+export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, recruitmentKey }: ApplicantListProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
@@ -128,7 +127,7 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
     setAnnouncement(targets.length === 1 ? `${targets[0].testerNickname}님을 ${label}했어요` : `${targets.length}명을 ${label}했어요`);
     startTransition(async () => {
       try {
-        const { ok } = await decideApplicants(projectKey, recruitmentKey, ids, status);
+        const { ok } = await decideApplicants(recruitmentKey, ids, status);
         if (ok) return;
         undo();
         setAnnouncement("");

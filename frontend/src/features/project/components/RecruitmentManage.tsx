@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PROJECTS_PATH, projectPath } from "@/lib/project-paths";
 import { Badge } from "@/components/ui/Badge";
 import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -53,13 +54,13 @@ export function RecruitmentSummary({ project, recruitment, analytics, detail, ca
       <nav aria-label="현재 위치">
         <ol className="flex flex-wrap items-center gap-2 text-sm font-semibold text-text-muted">
           <li>
-            <Link href="/my/projects" className="hover:text-text">
+            <Link href={PROJECTS_PATH} className="hover:text-text">
               내 프로젝트
             </Link>
           </li>
           <li aria-hidden="true">›</li>
           <li>
-            <Link href={`/my/projects/${project.key}`} className="hover:text-text">
+            <Link href={projectPath(project.key)} className="hover:text-text">
               {project.name}
             </Link>
           </li>
@@ -70,7 +71,7 @@ export function RecruitmentSummary({ project, recruitment, analytics, detail, ca
         {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
         {canCancel && (
           <span className="ml-auto">
-            <CancelRecruitmentButton projectKey={project.key} recruitmentKey={recruitment.slug} reasonRequired={recruitment.status === "testing"} />
+            <CancelRecruitmentButton recruitmentKey={recruitment.slug} reasonRequired={recruitment.status === "testing"} />
           </span>
         )}
         {beforeTest && !canCancel && <span className="ml-auto text-sm text-text-muted">확정된 테스터가 있어 취소할 수 없어요</span>}

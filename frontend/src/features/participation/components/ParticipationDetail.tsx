@@ -129,7 +129,7 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
       <Link
-        href={`/my/participations?tab=${tab}`}
+        href={`/testers/recruitments?tab=${tab}`}
         className="inline-flex items-center gap-1 self-start rounded-full text-sm font-bold text-text-muted transition-colors duration-300 ease-brand hover:text-text"
       >
         <CaretLeftIcon aria-hidden size={16} weight="bold" />

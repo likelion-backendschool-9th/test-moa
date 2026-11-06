@@ -113,6 +113,16 @@ export async function findProjects(role: Role): Promise<Project[]> {
   return (await load(role)).projects;
 }
 
+/** 내 모집 하나와 소유 프로젝트. 전체 탐색은 목업에만 해당하고, API에서는 모집 키로 소유권을 확인한다 */
+export async function findOwnedRecruitment(role: Role, recruitmentKey: string) {
+  const { projects } = await load(role);
+  for (const project of projects) {
+    const recruitment = project.recruitments.find((item) => item.slug === recruitmentKey);
+    if (recruitment) return { project, recruitment };
+  }
+  return null;
+}
+
 /** 모집 건 하나의 지원 목록 */
 export async function findApplications(role: Role, recruitmentKey: string): Promise<Application[]> {
   return (await load(role)).applications[recruitmentKey] ?? [];

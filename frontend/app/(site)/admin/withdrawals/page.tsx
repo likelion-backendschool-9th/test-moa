@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
-import { getWithdrawal, getWithdrawals, isWithdrawalKey, requireAdmin } from "@/features/admin/api";
+import { getAdminWithdrawal as getWithdrawal, getAdminWithdrawals as getWithdrawals, isWithdrawalKey } from "@/features/credit/api";
+import { requireAdmin } from "@/features/session/guard";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import {
   WithdrawalList,
@@ -12,7 +13,8 @@ import {
   WithdrawalTabs,
 } from "@/app/(site)/admin/withdrawals/_components/WithdrawalList";
 import { WithdrawalModalContent } from "@/app/(site)/admin/withdrawals/_components/WithdrawalModalContent";
-import { withdrawalsHref, type ListTab } from "@/features/admin/types";
+import { withdrawalsHref } from "@/features/credit/paths";
+import { type ListTab } from "@/features/credit/paths";
 
 export const metadata: Metadata = { title: "출금 요청 관리" };
 

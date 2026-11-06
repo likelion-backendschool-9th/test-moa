@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatElapsed } from "@/lib/format";
-import { ADMIN_REQUEST_LABEL, adminRequestHref, type PendingItem } from "../../../../features/admin/types";
+import { ADMIN_REQUEST_LABEL, adminRequestHref, type PendingItem } from "@/app/(site)/admin/_lib/paths";
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 

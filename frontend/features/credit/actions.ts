@@ -54,3 +54,43 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
     submittedAt: Date.now(),
   };
 }
+
+import { getAdminWithdrawal as getWithdrawal,isWithdrawalKey,saveAdminWithdrawalReview } from "@/features/credit/api";
+import { withdrawalsHref } from "@/features/credit/paths";
+import { isRejectReason,isWithdrawalDecision,REVIEW_MEMO_MAX_LENGTH,type RequestFormState,type WithdrawalReview } from "@/features/credit/types";
+import { assertAdmin } from "@/features/session/guard";
+import { redirect } from "next/navigation";
+
+
+/**
+ * 출금 처리. 신고 처리와 같은 이유로 권한을 다시 확인한다.
+ * 반려는 사유가 있어야 하고, "기타"는 메모가 회원에게 보이는 사유가 되므로 메모도 있어야 한다.
+ * 메모는 반려라면 사유와 관계없이 운영자 기록으로 남긴다.
+ * 막히면 오류만 돌려주고 페이지를 옮기지 않아서, 고른 값과 메모가 화면에 그대로 남는다(useActionState).
+ * 처리하면 목록에 요청 키를 넘기고, 목록은 그 요청이 실제로 처리됐는지 확인한 뒤 금액을 데이터에서 꺼낸다.
+ */
+export async function processWithdrawal(_prev: RequestFormState, formData: FormData): Promise<RequestFormState> {
+  await assertAdmin();
+  const withdrawalKey = String(formData.get("withdrawalKey") ?? "");
+  if (!isWithdrawalKey(withdrawalKey)) redirect(withdrawalsHref());
+
+  const decision = formData.get("decision");
+  if (!isWithdrawalDecision(decision)) return { error: "decision" };
+  let review: WithdrawalReview = { decision, memo: "", processedAt: new Date().toISOString() };
+  if (decision === "rejected") {
+    const reason = formData.get("reason");
+    if (!isRejectReason(reason)) return { error: "reason" };
+    const memo = String(formData.get("memo") ?? "").trim().slice(0, REVIEW_MEMO_MAX_LENGTH);
+    if (reason === "other" && !memo) return { error: "note" };
+    review = { ...review, reason, memo };
+  }
+
+  const tab = formData.get("tab") === "done" ? "done" : undefined;
+
+  /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
+  const { withdrawal } = await getWithdrawal(withdrawalKey);
+  if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
+
+  if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
+  redirect(withdrawalsHref({ tab, processed: withdrawalKey }));
+}

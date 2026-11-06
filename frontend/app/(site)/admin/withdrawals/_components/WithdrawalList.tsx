@@ -4,13 +4,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatElapsed, formatWon } from "@/lib/format";
-import {
-  isHolderMismatch,
-  withdrawalsHref,
-  WITHDRAWAL_DECISION_LABEL,
-  type WithdrawalRequest,
-  type ListTab,
-} from "../../../../../features/admin/types";
+import { isHolderMismatch, WITHDRAWAL_DECISION_LABEL, type WithdrawalRequest } from "@/features/credit/types";
+import { withdrawalsHref } from "@/features/credit/paths";
+import { type ListTab } from "@/features/credit/paths";
 import { LinkTabs } from "../../_components/LinkTabs";
 
 /* 탭을 바꾸면 open을 지워서 모달이 닫힌다 */

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { requireAdmin } from "@/features/admin/api";
+import { requireAdmin } from "@/features/session/guard";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import { UserDetailSkeleton, UserDetailView } from "@/app/(site)/admin/users/[userKey]/_components/UserDetail";
 import { getUser, getUserKeys, isUserKey } from "@/features/member/api";

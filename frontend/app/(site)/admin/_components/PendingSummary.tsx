@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatCredits } from "@/lib/format";
-import { ADMIN_REQUEST_PATH, type AdminSummary } from "../../../../features/admin/types";
+import { ADMIN_REQUEST_PATH, type AdminSummary } from "@/app/(site)/admin/_lib/paths";
 
 const cardClass = "flex flex-col gap-3 rounded-2xl bg-surface-muted p-6 md:p-8";
 

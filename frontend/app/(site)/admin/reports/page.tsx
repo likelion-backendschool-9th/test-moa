@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
-import { getReports, requireAdmin } from "@/features/admin/api";
+import { getReports } from "@/features/report/api";
+import { requireAdmin } from "@/features/session/guard";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import { ProcessedNotice, ReportList, ReportListSkeleton, ReportTabs, ReportTargetFilters } from "@/app/(site)/admin/reports/_components/ReportList";
-import { isReportDecision, parseReportTargetFilter, type ListTab, type ReportTargetFilter } from "@/features/admin/types";
+import { isReportDecision } from "@/features/report/types";
+import { parseReportTargetFilter, type ListTab, type ReportTargetFilter } from "@/features/report/paths";
 
 export const metadata: Metadata = { title: "신고·제재 관리" };
 

@@ -4,8 +4,9 @@ import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { getReport, getReportKeys, isReportKey, requireAdmin } from "@/features/admin/api";
-import { parseListTab, parseReportTargetFilter, type ReportListView } from "@/features/admin/types";
+import { getReport, getReportKeys, isReportKey } from "@/features/report/api";
+import { requireAdmin } from "@/features/session/guard";
+import { parseListTab, parseReportTargetFilter, type ReportListView } from "@/features/report/paths";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import {
   ReportDetail,

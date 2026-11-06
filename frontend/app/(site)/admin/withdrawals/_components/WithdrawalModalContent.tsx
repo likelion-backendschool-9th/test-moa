@@ -1,5 +1,7 @@
 import { formatWon } from "@/lib/format";
-import { withdrawalsHref, type ListTab, type WithdrawalRequest } from "../../../../../features/admin/types";
+import { withdrawalsHref } from "@/features/credit/paths";
+import { type ListTab } from "@/features/credit/paths";
+import { type WithdrawalRequest } from "@/features/credit/types";
 import { WithdrawalDetail, WithdrawalResult } from "./WithdrawalDetail";
 import { WithdrawalForm } from "./WithdrawalForm";
 import { WithdrawalModal } from "./WithdrawalModal";

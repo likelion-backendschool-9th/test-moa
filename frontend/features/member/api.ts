@@ -47,8 +47,8 @@ export function getDemoAccounts(): { accounts: DemoAccount[]; password: string }
 }
 
 import { getDemoDataMode } from "@/demo/mode";
-import { loadAll } from "@/features/admin/api";
-import type { Report } from "@/features/admin/types";
+import { loadReports as loadAll } from "@/features/report/api";
+import type { Report } from "@/features/report/types";
 import "server-only";
 
 import { buildUsers } from "@/demo/member";

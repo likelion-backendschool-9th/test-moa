@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
-import { REPORT_DECISION_LABEL, type Report } from "../../../../../../features/admin/types";
+import { REPORT_DECISION_LABEL, type Report } from "@/features/report/types";
 import { maskEmail, maskName, type UserActivity, type UserDetail } from "@/features/member/admin";
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";

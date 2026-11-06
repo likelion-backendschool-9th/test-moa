@@ -5,16 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatElapsed } from "@/lib/format";
-import { processReport } from "../../../../../../features/admin/actions";
-import {
-  isOverdue,
-  REPORT_DECISION_LABEL,
-  REPORT_TARGET_LABEL,
-  reportsHref,
-  REVIEW_MEMO_MAX_LENGTH,
-  type Report,
-  type ReportListView,
-} from "../../../../../../features/admin/types";
+import { processReport } from "@/features/report/actions";
+import { isOverdue, REPORT_DECISION_LABEL, REPORT_TARGET_LABEL, REVIEW_MEMO_MAX_LENGTH, type Report } from "@/features/report/types";
+import { reportsHref, type ReportListView } from "@/features/report/paths";
 
 export type ReviewFormError = "decision" | "memo";
 

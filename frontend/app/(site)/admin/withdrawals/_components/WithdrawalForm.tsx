@@ -1,7 +1,7 @@
 import { formatWon } from "@/lib/format";
-import { processWithdrawal } from "../../../../../features/admin/actions";
-import { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "@/features/admin/api";
-import { REJECT_REASONS } from "../../../../../features/admin/types";
+import { processWithdrawal } from "@/features/credit/actions";
+import { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "@/features/credit/api";
+import { REJECT_REASONS } from "@/features/credit/types";
 import { RequestReviewForm } from "./RequestReviewForm";
 
 /** 출금 처리 양식. RequestReviewForm에 출금 문구·사유·서버 함수를 넘긴다 */

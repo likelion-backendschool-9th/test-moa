@@ -1,9 +1,5 @@
-import type { WithdrawalRequest } from "@/features/admin/types";
-import {
-isRejectReason,
-isWithdrawalDecision,
-type WithdrawalReview
-} from "@/features/admin/types";
+import type { WithdrawalRequest } from "@/features/credit/types";
+import { isRejectReason, isWithdrawalDecision, type WithdrawalReview } from "@/features/credit/types";
 import type { CreditBalance,CreditEntry,Withdrawal } from "@/features/credit/types";
 import type { Role } from "@/features/session/session";
 import { cookies } from "next/headers";

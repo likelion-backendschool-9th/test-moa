@@ -1,8 +1,5 @@
-import type { Report } from "@/features/admin/types";
-import {
-isReportDecision,
-type ReportReview
-} from "@/features/admin/types";
+import type { Report } from "@/features/report/types";
+import { isReportDecision, type ReportReview } from "@/features/report/types";
 import { cookies } from "next/headers";
 import "server-only";
 

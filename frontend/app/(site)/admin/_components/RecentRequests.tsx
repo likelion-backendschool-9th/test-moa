@@ -3,13 +3,9 @@ import type { ReactNode } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatCredits, formatElapsed } from "@/lib/format";
-import {
-  ADMIN_REQUEST_PATH,
-  REPORT_TARGET_LABEL,
-  adminRequestHref,
-  type Report,
-  type WithdrawalRequest,
-} from "../../../../features/admin/types";
+import { ADMIN_REQUEST_PATH, adminRequestHref } from "@/app/(site)/admin/_lib/paths";
+import { REPORT_TARGET_LABEL, type Report } from "@/features/report/types";
+import { type WithdrawalRequest } from "@/features/credit/types";
 
 const columnClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6";
 

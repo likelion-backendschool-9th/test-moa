@@ -1,4 +1,4 @@
-import type { Report } from "@/features/admin/types";
+import type { Report } from "@/features/report/types";
 import "server-only";
 
 

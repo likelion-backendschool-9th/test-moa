@@ -2,7 +2,8 @@
 
 import { type FormEvent, type ReactNode, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
-import { REVIEW_MEMO_MAX_LENGTH, type RequestFormError, type RequestFormState } from "../../../../../features/admin/types";
+import { REVIEW_MEMO_MAX_LENGTH } from "@/features/report/types";
+import { type RequestFormError, type RequestFormState } from "@/features/credit/types";
 
 const initialState: RequestFormState = { error: null };
 

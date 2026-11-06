@@ -37,12 +37,16 @@ public class FollowupQuestionLimiter {
     public LocalDate acquire(Long userId) {
         LocalDate today = LocalDate.now(clock);
         pruneBefore(today);
+        LocalDate[] countedOn = new LocalDate[1];
         usages.compute(userId, (id, usage) -> {
-            int used = usage == null || !usage.date().equals(today) ? 0 : usage.count();
+            // 날짜를 읽은 뒤 멈췄다 재개한 요청이면 이미 다음 날 기록이 있을 수 있음. 그 기록을 덮어쓰지 않고 그 날에 셈
+            LocalDate day = usage != null && usage.date().isAfter(today) ? usage.date() : today;
+            int used = usage == null || !usage.date().equals(day) ? 0 : usage.count();
             if (used >= DAILY_LIMIT) throw new BusinessException(ErrorCode.FOLLOWUP_LIMIT_EXCEEDED);
-            return new Usage(today, used + 1);
+            countedOn[0] = day;
+            return new Usage(day, used + 1);
         });
-        return today;
+        return countedOn[0];
     }
 
     /**
@@ -56,10 +60,15 @@ public class FollowupQuestionLimiter {
     }
 
     // 날이 바뀐 뒤 처음 셀 때 지난 날짜의 기록을 지움. 쓴 적 있는 회원이 계속 쌓이지 않게
+    // 오늘보다 앞선 기록만 지우고, 정리한 날은 앞으로만 감. 지연된 이전 날짜 요청이 새 날짜 기록을 지우거나 정리한 날을 되돌리지 못하게
     private void pruneBefore(LocalDate today) {
-        if (today.equals(prunedOn)) return;
-        usages.values().removeIf(usage -> !usage.date().equals(today));
-        prunedOn = today;
+        LocalDate pruned = prunedOn;
+        if (pruned != null && !today.isAfter(pruned)) return;
+        synchronized (this) {
+            if (prunedOn != null && !today.isAfter(prunedOn)) return;
+            usages.values().removeIf(usage -> usage.date().isBefore(today));
+            prunedOn = today;
+        }
     }
 
     // 테스트에서 지난 기록이 지워졌는지 볼 때 씀

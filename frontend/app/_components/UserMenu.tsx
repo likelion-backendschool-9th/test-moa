@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { logout } from "@/features/auth/actions";
 import { formatNumber } from "@/lib/format";
-import type { Session } from "@/lib/session";
+import type { Session } from "@/features/session/session";
 import { MyPageLink } from "./MyPageLink";
 
 /*

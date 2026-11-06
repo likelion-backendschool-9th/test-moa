@@ -1,33 +1,41 @@
+import "server-only";
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
  * 날짜는 기준 시각에서 상대적으로 만들어 언제 시연해도 같은 상태로 보인다.
  * 북로그와 포트폴리오 빌더 모집 건은 홈의 샘플(recruitment/mock.ts)을 그대로 받아 쓴다. 둘 다 아직 모집 마감 전이라 피드백이 없다.
  * 날짜 순서는 항상 모집 생성 → 지원 → 모집 마감 → 피드백 제출이다. 피드백은 테스트 중인 북로그 1차 모집에만 있다.
  */
-import type { Recruitment } from "@/features/recruitment/types";
 import type {
-  AiSummary,
-  Application,
-  ApplicationStatus,
-  Feedback,
-  FeedbackStatus,
-  Project,
-  RecruitmentCancellation,
-  ProjectImage,
-  RecruitmentDetail,
-} from "./types";
+AiSummary,
+Application,
+ApplicationStatus,
+Feedback,
+FeedbackStatus,
+Project,
+ProjectImage,
+RecruitmentCancellation,
+RecruitmentDetail,
+} from "@/features/project/types";
+import type { Recruitment } from "@/features/recruitment/types";
+
 
 const HOUR_MS = 60 * 60 * 1000;
+
 const DAY_MS = 24 * HOUR_MS;
+
 
 const NICKNAMES = [
   "김하늘", "이도윤", "박서아", "최지호", "윤슬", "강민준", "조하은", "윤시우", "장유나", "임건우",
   "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안", "문서진", "배하린",
 ];
 
+
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
+
 const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
+
 const inDays = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
+
 
 /**
  * 상태별 인원 수로 지원 목록을 만든다. 먼저 지원한 사람부터 확정, 거절, 참여 취소, 대기 순이다.
@@ -51,6 +59,7 @@ function buildApplications(recruitment: Recruitment, now: Date, counts: Record<A
   }));
 }
 
+
 type FeedbackSeed = {
   nickname: string;
   content: string;
@@ -61,6 +70,7 @@ type FeedbackSeed = {
   images?: ProjectImage[];
   recommended?: boolean;
 };
+
 
 function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedback[] {
   return seeds.map((seed, index) => ({
@@ -75,6 +85,7 @@ function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedbac
   }));
 }
 
+
 export type ProjectSeedData = {
   projects: Project[];
   /** recruitmentKey별 지원 목록 */
@@ -88,6 +99,7 @@ export type ProjectSeedData = {
   /** recruitmentKey별 모집 취소 기록 */
   cancellations: Record<string, RecruitmentCancellation>;
 };
+
 
 /**
  * 개발자(박도현)의 프로젝트 3개를 만든다.
@@ -292,6 +304,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
 
   return { projects, applications, feedbacks, aiSummaries, details, cancellations };
 }
+
 
 /**
  * 시연용 AI 후속 질문 3개. 실제로는 백엔드가 AI 분석 서버에서 받아 온다(POST /api/v1/developer/feedbacks/{id}/followup-questions).

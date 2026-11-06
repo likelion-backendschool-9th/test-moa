@@ -1,4 +1,4 @@
-import type { Role } from "@/lib/session";
+import type { Role } from "@/features/session/session";
 import type { ChatMessage, ChatRoom } from "./types";
 
 /*

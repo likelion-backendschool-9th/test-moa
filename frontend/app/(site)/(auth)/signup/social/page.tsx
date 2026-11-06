@@ -6,7 +6,7 @@ import { SocialSignupForm } from "@/app/(site)/(auth)/signup/social/_components/
 import { readSignup } from "@/features/auth/oauth";
 import { isBackendAuth } from "@/lib/backend";
 import { safeNextPath } from "@/lib/next-path";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/features/session/session";
 
 export const metadata: Metadata = { title: "소셜 가입" };
 

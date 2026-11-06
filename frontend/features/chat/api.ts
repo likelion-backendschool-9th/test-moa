@@ -2,8 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
-import { getDemoDataMode } from "@/lib/demo";
-import { getSession, type Role } from "@/lib/session";
+import { getDemoDataMode } from "@/demo/mode";
+import { getSession, type Role } from "@/features/session/session";
 import { buildChatThreads, chatMemberNickname, type ChatThreadSeed } from "./mock";
 import { CHATS_PATH, type ChatQuery } from "./query";
 import {

@@ -1,7 +1,7 @@
 import "server-only";
 import { connection } from "next/server";
-import { getDemoDataMode } from "@/lib/demo";
-import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "./mock";
+import { getDemoDataMode } from "@/demo/mode";
+import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/demo/recruitment";
 import type { RecruitmentQuery } from "./query";
 import type { Recruitment, RecruitmentPage } from "./types";
 

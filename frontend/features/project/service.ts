@@ -1,7 +1,7 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { recruitmentManagePath } from "@/lib/project-paths";
-import { getSession, type Role } from "@/lib/session";
+import { getSession, type Role } from "@/features/session/session";
 import type { Recruitment } from "@/features/recruitment/types";
 import {
   findAiSummary,

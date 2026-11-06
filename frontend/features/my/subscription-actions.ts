@@ -1,10 +1,9 @@
 "use server";
 
+import { getSession } from "@/features/session/session";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addDemoSubscriptionPayment, getDemoSubscriptionPayments, MAX_DEMO_PAYMENTS } from "@/lib/demo-subscription";
-import { getSession } from "@/lib/session";
-import { getSubscriptionOverview } from "./api";
+import { canPayForSubscription,getSubscriptionOverview,saveSubscriptionPayment } from "./api";
 import { renewedExpiry } from "./types";
 
 /*
@@ -28,11 +27,11 @@ export async function payForSubscription(_prev: CheckoutFormState, formData: For
   if (method === "credit" && payableCredits < plan.creditPrice) {
     return { status: "error", error: "구독 결제에 쓸 수 있는 크레딧이 모자라요. 현금 결제를 골라 주세요" };
   }
-  if ((await getDemoSubscriptionPayments(session.role)).length >= MAX_DEMO_PAYMENTS) {
+  if (!(await canPayForSubscription(session.role))) {
     return { status: "error", error: "시연용 결제 기록이 가득 차서 더 결제할 수 없어요" };
   }
 
-  await addDemoSubscriptionPayment(session.role, {
+  await saveSubscriptionPayment(session.role, {
     planId: plan.id,
     method,
     amount: method === "credit" ? plan.creditPrice : plan.cashPrice,

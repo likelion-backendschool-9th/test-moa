@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
-import { USER_FILTERS, USER_QUERY_MAX_LENGTH, type UserFilter, type UserSummary } from "../../../../../features/admin/users";
+import { USER_FILTERS, USER_QUERY_MAX_LENGTH, type UserFilter, type UserSummary } from "@/features/member/admin";
 import { LinkTabs } from "../../_components/LinkTabs";
 
 /** 필터를 바꿔도 검색어는 남긴다 */

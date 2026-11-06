@@ -18,7 +18,7 @@ import { ParticipationTabs } from "@/app/(site)/testers/recruitments/_components
 import { parseParticipationTab, type ParticipationTab, type ParticipationView } from "@/features/participation/types";
 import { readParticipationView } from "@/features/participation/view-preference";
 import { formatCredits } from "@/lib/format";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/features/session/session";
 
 export const metadata: Metadata = { title: "참여 테스트" };
 

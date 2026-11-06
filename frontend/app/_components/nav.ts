@@ -1,6 +1,6 @@
 import { PARTICIPATIONS_PATH } from "@/lib/participation-paths";
 import { DEVELOPER_RECRUITMENTS_PATH, PROJECTS_PATH } from "@/lib/project-paths";
-import type { Session } from "@/lib/session";
+import type { Session } from "@/features/session/session";
 
 /** 카테고리 탭. test-moa/docs/page-urls.md의 섹션 순서를 따른다. */
 type NavDefinition = {

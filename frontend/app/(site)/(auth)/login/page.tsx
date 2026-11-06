@@ -11,7 +11,7 @@ import { withNext } from "@/features/auth/types";
 import { getDemoAccounts } from "@/features/member/api";
 import { isBackendAuth } from "@/lib/backend";
 import { safeNextPath } from "@/lib/next-path";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/features/session/session";
 
 export const metadata: Metadata = { title: "로그인" };
 

@@ -2,12 +2,12 @@ import "server-only";
 import { connection } from "next/server";
 import { cache } from "react";
 import { backendFetch, isBackendAuth, type BackendResult } from "@/lib/backend";
-import { getDemoDataMode, waitIfSlow } from "@/lib/demo";
-import type { Role } from "@/lib/session";
-import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
+import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
+import type { Role } from "@/features/session/session";
+import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/demo/recruitment";
 import type { Recruitment } from "@/features/recruitment/types";
-import { readCancellations, readDecisions, saveCancellation, saveDecisions, type Decision } from "./demo-decisions";
-import { buildDeveloperProjects, buildFollowupQuestions, type ProjectSeedData } from "./mock";
+import { readCancellations, readDecisions, saveCancellation, saveDecisions, type Decision } from "@/demo/recruitment";
+import { buildDeveloperProjects, buildFollowupQuestions, type ProjectSeedData } from "@/demo/project";
 import type { AiSummary, Application, Feedback, Project, RecruitmentCancellation, RecruitmentDetail } from "./types";
 
 /*

@@ -1,11 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/features/session/guard";
 import { formatWon } from "@/lib/format";
-import { getCreditBalance } from "./api";
-import { addDemoWithdrawal } from "./demo-requests";
-import { BANKS, cashableCredits } from "./types";
+import { revalidatePath } from "next/cache";
+import { getCreditBalance,saveWithdrawalRequest } from "./api";
+import { BANKS,cashableCredits } from "./types";
 
 /*
  * 출금 신청. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo-requests.ts)에 남긴다.
@@ -24,7 +23,7 @@ export type WithdrawalFormState =
 const ACCOUNT_PATTERN = /^\d{10,14}$/;
 
 export async function requestWithdrawal(_prev: WithdrawalFormState, formData: FormData): Promise<WithdrawalFormState> {
-  const session = await requireMember(PATH);
+  await requireMember(PATH);
   const cashable = cashableCredits(await getCreditBalance(PATH));
   if (cashable <= 0) return { status: "error", errors: { form: "출금할 수 있는 크레딧이 없어요" } };
 
@@ -46,7 +45,7 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
   if (!holder) errors.holder = "예금주를 입력해 주세요";
 
   if (Object.keys(errors).length > 0) return { status: "error", errors };
-  await addDemoWithdrawal(session.role, { amount, bank, account });
+  await saveWithdrawalRequest( { amount, bank, account });
   /* 출금 내역, 크레딧 잔액, 마이페이지 대시보드가 새 잠금 금액을 보여 주게 한다 */
   revalidatePath("/my", "layout");
   return {

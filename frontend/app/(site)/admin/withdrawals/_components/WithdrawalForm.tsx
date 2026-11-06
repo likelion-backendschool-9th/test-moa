@@ -1,6 +1,6 @@
 import { formatWon } from "@/lib/format";
 import { processWithdrawal } from "../../../../../features/admin/actions";
-import { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "../../../../../features/admin/reviews";
+import { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "@/features/admin/api";
 import { REJECT_REASONS } from "../../../../../features/admin/types";
 import { RequestReviewForm } from "./RequestReviewForm";
 

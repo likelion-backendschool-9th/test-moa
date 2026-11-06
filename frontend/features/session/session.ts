@@ -1,8 +1,8 @@
-import "server-only";
+import { getDemoSubscriptionCreditSpent } from "@/demo/subscription";
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { backendFetch, isBackendAuth } from "./backend";
-import { getDemoSubscriptionCreditSpent } from "./demo-subscription";
+import "server-only";
+import { backendFetch,isBackendAuth } from "../../lib/backend";
 
 /*
  * 세션. 화면들은 role(guest·tester·developer·admin)로 그리므로 모양은 그대로 둔다.
@@ -13,7 +13,8 @@ import { getDemoSubscriptionCreditSpent } from "./demo-subscription";
  *   유료 기능의 권한(구독)은 백엔드가 그 기능 API에서 따로 확인한다.
  */
 
-export const DEMO_ROLE_COOKIE = "demo-role";
+import { DEMO_ROLE_COOKIE } from "@/demo/mode";
+export { DEMO_ROLE_COOKIE } from "@/demo/mode";
 
 export const ROLES = ["guest", "tester", "developer", "admin"] as const;
 export type Role = (typeof ROLES)[number];

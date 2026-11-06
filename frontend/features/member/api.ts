@@ -1,6 +1,6 @@
+import { DEMO_PASSWORD,DEMO_PROFILES } from "@/demo/member";
+import type { Role } from "@/features/session/session";
 import "server-only";
-import type { Role } from "@/lib/session";
-import { DEMO_PASSWORD, DEMO_PROFILES } from "./mock";
 import type { Profile } from "./types";
 
 /*
@@ -44,4 +44,68 @@ export type DemoAccount = { role: MemberRole; email: string };
 export function getDemoAccounts(): { accounts: DemoAccount[]; password: string } {
   const accounts = (Object.entries(DEMO_PROFILES) as [MemberRole, Profile][]).map(([role, profile]) => ({ role, email: profile.email }));
   return { accounts, password: DEMO_PASSWORD };
+}
+
+import { getDemoDataMode } from "@/demo/mode";
+import { loadAll } from "@/features/admin/api";
+import type { Report } from "@/features/admin/types";
+import "server-only";
+
+import { buildUsers } from "@/demo/member";
+import type { UserDetail,UserFilter,UserSummary } from "./admin";
+
+
+/** 상세 주소의 회원 키 목록. 신고·출금 키와 같이 목업에서 뽑아 두어, 쿠키를 읽기 전에 없는 회원인지 안다 */
+const USER_KEYS = buildUsers(new Date(0)).map((user) => user.id);
+
+
+export function isUserKey(userKey: string) {
+  return USER_KEYS.includes(userKey);
+}
+
+
+export function getUserKeys() {
+  return [...USER_KEYS];
+}
+
+
+/* 신고는 신고·제재 관리와 같은 loadAll()로 읽는다. 권한 확인과 시연 모드(slow·empty)도 거기서 한다 */
+async function loadUsersAndReports() {
+  const { now, reports } = await loadAll();
+  const users = (await getDemoDataMode()) === "empty" ? [] : buildUsers(now);
+  return { now, users, reports };
+}
+
+
+const reportsFor = (reports: Report[], userKey: string) => reports.filter((report) => report.targetUserKey === userKey);
+
+
+/** 최근 가입 순서. 필터와 닉네임 검색(부분 일치)을 함께 쓸 수 있다 */
+export async function getUsers(filter: UserFilter, query: string): Promise<UserSummary[]> {
+  const { users, reports } = await loadUsersAndReports();
+  return users
+    .map((user) => {
+      const received = reportsFor(reports, user.id);
+      return {
+        ...user,
+        sanctionCount: received.filter((report) => report.review?.decision === "upheld").length,
+        pendingReportCount: received.filter((report) => !report.review).length,
+      };
+    })
+    .filter((user) => filter !== "sanctioned" || user.sanctionCount > 0)
+    .filter((user) => filter !== "reported" || user.pendingReportCount > 0)
+    .filter((user) => !query || user.nickname.includes(query))
+    .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+}
+
+
+export async function getUser(userKey: string): Promise<{ now: Date; user: UserDetail | null }> {
+  const { now, users, reports } = await loadUsersAndReports();
+  const user = users.find((item) => item.id === userKey);
+  if (!user) return { now, user: null };
+  const receivedReports = reportsFor(reports, userKey).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const sanctions = receivedReports
+    .filter((report) => report.review?.decision === "upheld")
+    .sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt));
+  return { now, user: { ...user, sanctions, receivedReports } };
 }

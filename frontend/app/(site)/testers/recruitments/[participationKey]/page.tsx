@@ -9,7 +9,7 @@ import {
   ParticipationDetail,
   ParticipationDetailSkeleton,
 } from "@/app/(site)/testers/recruitments/[participationKey]/_components/ParticipationDetail";
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/features/session/guard";
 
 /* 내 참여 상세 (/testers/recruitments/:participationKey) */
 

@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { requireAdmin } from "@/features/admin/api";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import { UserDetailSkeleton, UserDetailView } from "@/app/(site)/admin/users/[userKey]/_components/UserDetail";
-import { getUser, getUserKeys, isUserKey } from "@/features/admin/users";
+import { getUser, getUserKeys, isUserKey } from "@/features/member/api";
 
 export const metadata: Metadata = { title: "회원 상세" };
 

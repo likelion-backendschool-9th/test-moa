@@ -1,12 +1,11 @@
-import "server-only";
+import { buildCreditData,type CreditData,getDemoWithdrawals } from "@/demo/credit";
+import { waitIfSlow } from "@/demo/mode";
+import { type DemoSubscriptionPayment,getDemoSubscriptionPayments } from "@/demo/subscription";
+import { requireMember } from "@/features/session/guard";
+import type { Role } from "@/features/session/session";
 import { connection } from "next/server";
-import { requireMember } from "@/lib/auth";
-import { waitIfSlow } from "@/lib/demo";
-import { type DemoSubscriptionPayment, getDemoSubscriptionPayments } from "@/lib/demo-subscription";
-import type { Role } from "@/lib/session";
-import { getDemoWithdrawals } from "./demo-requests";
-import { buildCreditData, type CreditData } from "./mock";
-import type { CreditBalance, CreditEntry, LedgerType, Withdrawal } from "./types";
+import "server-only";
+import type { CreditBalance,CreditEntry,LedgerType,Withdrawal } from "./types";
 
 /*
  * 크레딧 데이터 접근. 지금은 목업을 돌려준다.
@@ -68,4 +67,12 @@ export async function getCreditLedger(next: string, type: LedgerType = "all", li
 /** 출금 요청, 최신순 */
 export async function getWithdrawals(next: string): Promise<Withdrawal[]> {
   return (await load(next)).withdrawals;
+}
+
+
+import { addDemoWithdrawal } from "@/demo/credit";
+
+export async function saveWithdrawalRequest(request: Parameters<typeof addDemoWithdrawal>[1]) {
+  const session = await requireMember("/my/credits/withdrawals");
+  return addDemoWithdrawal(session.role, request);
 }

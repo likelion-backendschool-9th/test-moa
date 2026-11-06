@@ -1,4 +1,11 @@
-import type { Report, WithdrawalRequest } from "./types";
+import type { Report } from "@/features/admin/types";
+import {
+isReportDecision,
+type ReportReview
+} from "@/features/admin/types";
+import { cookies } from "next/headers";
+import "server-only";
+
 
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
@@ -7,7 +14,9 @@ import type { Report, WithdrawalRequest } from "./types";
  */
 
 const HOUR_MS = 60 * 60 * 1000;
+
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
+
 
 /** 검토 대기 4건과 이미 처리한 2건 */
 export function buildReports(now: Date): Report[] {
@@ -91,66 +100,69 @@ export function buildReports(now: Date): Report[] {
   ];
 }
 
+
 /** 신고 키 목록. 없는 신고인지 쿠키를 읽기 전에 알 수 있게 목업에서 키만 뽑아 둔다 */
 export const REPORT_KEYS = buildReports(new Date(0)).map((report) => report.id);
 
-/** 처리 대기 3건과 이미 처리한 2건. 김민준은 예금주가 회원 이름과 다르다 */
-export function buildWithdrawals(now: Date): WithdrawalRequest[] {
-  return [
-    {
-      id: "withdrawal-1",
-      nickname: "이지우",
-      memberName: "이지우",
-      amount: 5000,
-      bank: "국민",
-      accountNumber: "123456789012",
-      accountHolder: "이지우",
-      createdAt: hoursAgo(now, 60),
-    },
-    {
-      id: "withdrawal-2",
-      nickname: "김민준",
-      memberName: "김민준",
-      amount: 8200,
-      bank: "신한",
-      accountNumber: "110234567890",
-      accountHolder: "김민지",
-      createdAt: hoursAgo(now, 26),
-    },
-    {
-      id: "withdrawal-3",
-      nickname: "한서윤",
-      memberName: "한서윤",
-      amount: 12000,
-      bank: "토스뱅크",
-      accountNumber: "100012345678",
-      accountHolder: "한서윤",
-      createdAt: hoursAgo(now, 3),
-    },
-    {
-      id: "withdrawal-4",
-      nickname: "오태민",
-      memberName: "오태민",
-      amount: 3000,
-      bank: "카카오뱅크",
-      accountNumber: "3333015678",
-      accountHolder: "오태민",
-      createdAt: hoursAgo(now, 80),
-      review: { decision: "paid", memo: "", processedAt: hoursAgo(now, 50) },
-    },
-    {
-      id: "withdrawal-5",
-      nickname: "윤소희",
-      memberName: "윤소희",
-      amount: 2000,
-      bank: "우리",
-      accountNumber: "1002345670",
-      accountHolder: "윤소희",
-      createdAt: hoursAgo(now, 120),
-      review: { decision: "rejected", reason: "account", memo: "", processedAt: hoursAgo(now, 98) },
-    },
-  ];
+
+/*
+ * 시연용 처리 기록. 실제 저장소가 없어서 쿠키에 { 요청 키: 처리 기록 }을 JSON으로 둔다.
+ * 신고는 demo-reports, 출금은 demo-admin-withdrawals다. 출금 쪽은 테스터 신청 기록(demo-withdrawals-<role>)과 이름이 겹치지 않게 했다.
+ * 같은 브라우저 안에서만 유지되고, 쿠키를 지우면 처음 상태로 돌아간다. 실제 API를 붙이면 이 파일을 지운다.
+ */
+
+export const DEMO_REPORTS_COOKIE = "demo-reports";
+
+
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
+/* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
+const COOKIE_MAX_BYTES = 4000;
+
+
+type Validator<T> = (value: unknown) => value is T;
+
+
+function isReview(value: unknown): value is ReportReview {
+  if (typeof value !== "object" || value === null) return false;
+  const review = value as Record<string, unknown>;
+  return isReportDecision(review.decision) && typeof review.memo === "string" && typeof review.processedAt === "string";
 }
 
-/** 출금 요청 키 목록. 신고 키와 같은 이유로 목업에서 뽑아 둔다 */
-export const WITHDRAWAL_KEYS = buildWithdrawals(new Date(0)).map((request) => request.id);
+
+/** 깨진 값은 버리고 올바른 기록만 돌려준다 */
+async function readStore<T>(name: string, isValid: Validator<T>): Promise<Record<string, T>> {
+  const raw = (await cookies()).get(name)?.value;
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return {};
+    return Object.fromEntries(Object.entries(parsed).filter(([, record]) => isValid(record)));
+  } catch {
+    return {};
+  }
+}
+
+
+/**
+ * Server Action에서만 부른다. 쿠키는 렌더링 중에 쓸 수 없다.
+ * Next는 쿠키 값을 encodeURIComponent로 인코딩하므로 인코딩한 길이로 한도를 확인하고, 넘으면 저장하지 않고 false를 돌려준다.
+ */
+async function saveToStore<T>(name: string, isValid: Validator<T>, key: string, record: T): Promise<boolean> {
+  const records = await readStore(name, isValid);
+  const value = JSON.stringify({ ...records, [key]: record });
+  if (name.length + 1 + encodeURIComponent(value).length > COOKIE_MAX_BYTES) return false;
+  (await cookies()).set(name, value, {
+    path: "/",
+    maxAge: MAX_AGE_SECONDS,
+    sameSite: "lax",
+  });
+  return true;
+}
+
+
+export const readReviews = () => readStore(DEMO_REPORTS_COOKIE, isReview);
+
+
+export const saveReview = (reportKey: string, review: ReportReview) =>
+  saveToStore(DEMO_REPORTS_COOKIE, isReview, reportKey, review);

@@ -1,20 +1,21 @@
 "use server";
 
+import { saveAdminWithdrawalReview,saveReportReview } from "./api";
+
 import { redirect } from "next/navigation";
-import { assertAdmin, getReport, getWithdrawal, isReportKey, isWithdrawalKey } from "./api";
-import { saveReview, saveWithdrawalReview } from "./reviews";
+import { assertAdmin,getReport,getWithdrawal,isReportKey,isWithdrawalKey } from "./api";
 import {
-  isRejectReason,
-  isReportDecision,
-  parseListTab,
-  parseReportTargetFilter,
-  reportDetailHref,
-  reportsHref,
-  isWithdrawalDecision,
-  REVIEW_MEMO_MAX_LENGTH,
-  withdrawalsHref,
-  type RequestFormState,
-  type WithdrawalReview,
+isRejectReason,
+isReportDecision,
+isWithdrawalDecision,
+parseListTab,
+parseReportTargetFilter,
+reportDetailHref,
+reportsHref,
+REVIEW_MEMO_MAX_LENGTH,
+withdrawalsHref,
+type RequestFormState,
+type WithdrawalReview,
 } from "./types";
 
 /**
@@ -37,7 +38,7 @@ export async function processReport(formData: FormData) {
   if (!report || report.review) redirect(reportDetailHref(reportKey, view));
 
   const memo = String(formData.get("memo") ?? "").trim().slice(0, REVIEW_MEMO_MAX_LENGTH);
-  const saved = await saveReview(reportKey, { decision, memo, processedAt: new Date().toISOString() });
+  const saved = await saveReportReview(reportKey, { decision, memo, processedAt: new Date().toISOString() });
   if (!saved) redirect(reportDetailHref(reportKey, view, { error: "memo" }));
   redirect(reportsHref(view, report.holdsReward ? { processed: decision, held: "1" } : { processed: decision }));
 }
@@ -71,6 +72,6 @@ export async function processWithdrawal(_prev: RequestFormState, formData: FormD
   const { withdrawal } = await getWithdrawal(withdrawalKey);
   if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
 
-  if (!(await saveWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
+  if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
   redirect(withdrawalsHref({ tab, processed: withdrawalKey }));
 }

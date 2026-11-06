@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getNavItems } from "@/app/_components/nav";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/features/session/session";
 import { MainNav } from "./MainNav";
 import { MobileMenu } from "./MobileMenu";
 import { NavList } from "./NavList";

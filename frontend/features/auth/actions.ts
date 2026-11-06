@@ -6,7 +6,7 @@ import { findRoleByCredentials, isEmailTaken, isNicknameTaken } from "@/features
 import { backendFetch, clearTokens, getRefreshToken, isBackendAuth, saveTokens, type Tokens } from "@/lib/backend";
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
-import { DEMO_ROLE_COOKIE, type Role } from "@/lib/session";
+import { DEMO_ROLE_COOKIE, type Role } from "@/features/session/session";
 import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/lib/validation";
 import { callbackUrl, clearSignup, readSignup, saveState } from "./oauth";
 import { type LoginField, type SignupField, SOCIAL_PROVIDERS, type SocialSignupField, withNext } from "./types";

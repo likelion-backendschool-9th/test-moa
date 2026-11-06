@@ -1,21 +1,20 @@
-import "server-only";
+import { getDemoDataMode } from "@/demo/mode";
+import { buildParticipations,readDemoFeedback } from "@/demo/participation";
+import { getRecruitmentsBySlugs } from "@/features/recruitment/api";
+import { getSession } from "@/features/session/session";
 import { connection } from "next/server";
 import { cache } from "react";
-import { getRecruitmentsBySlugs } from "@/features/recruitment/api";
-import { getDemoDataMode } from "@/lib/demo";
-import { getSession } from "@/lib/session";
-import { readDemoFeedback } from "./demo-feedback";
-import { buildParticipations } from "./mock";
+import "server-only";
 import {
-  keyDateOf,
-  PARTICIPATION_TABS,
-  rewardOf,
-  tabOf,
-  TAB_STATUSES,
-  type ParticipationCounts,
-  type ParticipationItem,
-  type ParticipationSummary,
-  type ParticipationTab,
+keyDateOf,
+PARTICIPATION_TABS,
+rewardOf,
+TAB_STATUSES,
+tabOf,
+type ParticipationCounts,
+type ParticipationItem,
+type ParticipationSummary,
+type ParticipationTab,
 } from "./types";
 
 /*
@@ -81,4 +80,14 @@ export async function getParticipation(key: string): Promise<ParticipationItem |
 /** 이 회원의 제출 전 참여를 피드백 제출 마감이 가까운 순서로. 없으면 빈 배열 */
 export async function getUpcomingDeadlines(): Promise<ParticipationItem[]> {
   return (await loadAll()).filter((item) => item.status === "beforeSubmit").sort(byKeyDate);
+}
+
+
+import { saveDemoFeedback } from "@/demo/participation";
+import { requireMember } from "@/features/session/guard";
+import { participationPath } from "@/lib/participation-paths";
+
+export async function saveFeedback(participationKey: string, entries: Parameters<typeof saveDemoFeedback>[1]) {
+  await requireMember(participationPath(participationKey));
+  return saveDemoFeedback(participationKey, entries);
 }

@@ -5,7 +5,8 @@ import { Container } from "@/components/ui/Container";
 import { requireAdmin } from "@/features/admin/api";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import { UserFilters, UserList, UserListSkeleton, UserSearch } from "@/app/(site)/admin/users/_components/UserList";
-import { getUsers, parseUserFilter, parseUserQuery, type UserFilter } from "@/features/admin/users";
+import { getUsers } from "@/features/member/api";
+import { parseUserFilter, parseUserQuery, type UserFilter } from "@/features/member/admin";
 
 export const metadata: Metadata = { title: "회원 관리" };
 

@@ -1,5 +1,5 @@
-import "server-only";
 import { cookies } from "next/headers";
+import "server-only";
 
 /*
  * 시연용 데이터 상황 전환. 쿠키 demo-data 값에 따라 목업 응답을 바꾼다.
@@ -22,3 +22,5 @@ const SLOW_DELAY_MS = 1500;
 export async function waitIfSlow() {
   if ((await getDemoDataMode()) === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
 }
+
+export const DEMO_ROLE_COOKIE = "demo-role";

@@ -7,7 +7,7 @@ import { SignupForm } from "@/app/(site)/(auth)/signup/_components/SignupForm";
 import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons";
 import { withNext } from "@/features/auth/types";
 import { safeNextPath } from "@/lib/next-path";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/features/session/session";
 
 export const metadata: Metadata = { title: "회원가입" };
 

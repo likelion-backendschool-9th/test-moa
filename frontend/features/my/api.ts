@@ -1,16 +1,16 @@
-import "server-only";
-import { connection } from "next/server";
+import { buildMyPageSummary } from "@/demo/member";
+import { waitIfSlow } from "@/demo/mode";
+import { FREE_PLAN,getDemoSubscriptionPayments,monthlyRecruitUsed,SUBSCRIPTION_PLANS } from "@/demo/subscription";
 import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
-import { requireMember } from "@/lib/auth";
-import { waitIfSlow } from "@/lib/demo";
-import { getDemoSubscriptionPayments } from "@/lib/demo-subscription";
-import type { Role } from "@/lib/session";
-import { formatDday } from "@/lib/format";
 import { getMemberProfile } from "@/features/member/api";
 import type { Profile } from "@/features/member/types";
-import { buildMyPageSummary, FREE_PLAN, monthlyRecruitUsed, SUBSCRIPTION_PLANS } from "./mock";
-import type { MyPageSummary, Subscription, SubscriptionOverview, Todo } from "./types";
+import { requireMember } from "@/features/session/guard";
+import type { Role } from "@/features/session/session";
+import { formatDday } from "@/lib/format";
+import { connection } from "next/server";
+import "server-only";
+import type { MyPageSummary,Subscription,SubscriptionOverview,Todo } from "./types";
 
 /*
  * 마이페이지 데이터 접근. 지금은 목업을 돌려준다.
@@ -96,4 +96,17 @@ async function subscriptionFor(role: Exclude<Role, "guest">, now: Date): Promise
   const last = (await getDemoSubscriptionPayments(role)).at(-1);
   if (!last) return subscription;
   return new Date(last.expiresAt) > now ? { status: "active", planId: last.planId, expiresAt: last.expiresAt } : { status: "none" };
+}
+
+
+import { addDemoSubscriptionPayment,MAX_DEMO_PAYMENTS } from "@/demo/subscription";
+
+export async function canPayForSubscription(role: Parameters<typeof getDemoSubscriptionPayments>[0]) {
+  await requireMember("/my/subscription/checkout");
+  return (await getDemoSubscriptionPayments(role)).length < MAX_DEMO_PAYMENTS;
+}
+
+export async function saveSubscriptionPayment(role: Parameters<typeof addDemoSubscriptionPayment>[0], payment: Parameters<typeof addDemoSubscriptionPayment>[1]) {
+  await requireMember("/my/subscription/checkout");
+  return addDemoSubscriptionPayment(role, payment);
 }

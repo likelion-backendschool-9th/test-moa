@@ -1,18 +1,18 @@
-import "server-only";
+import { buildWithdrawals,readWithdrawalReviews,WITHDRAWAL_KEYS } from "@/demo/credit";
+import { getDemoDataMode } from "@/demo/mode";
+import { buildReports,readReviews,REPORT_KEYS } from "@/demo/report";
+import { getSession } from "@/features/session/session";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { getDemoDataMode } from "@/lib/demo";
-import { getSession } from "@/lib/session";
-import { buildReports, buildWithdrawals, REPORT_KEYS, WITHDRAWAL_KEYS } from "./mock";
-import { readReviews, readWithdrawalReviews } from "./reviews";
+import "server-only";
 import {
-  isOverdue,
-  type AdminSummary,
-  type ListTab,
-  type PendingItem,
-  type Report,
-  type ReportTargetFilter,
-  type WithdrawalRequest,
+isOverdue,
+type AdminSummary,
+type ListTab,
+type PendingItem,
+type Report,
+type ReportTargetFilter,
+type WithdrawalRequest,
 } from "./types";
 
 /*
@@ -153,4 +153,21 @@ export async function getWithdrawals(tab: ListTab): Promise<{ now: Date; withdra
 export async function getWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null }> {
   const { now, withdrawals } = await loadAll();
   return { now, withdrawal: withdrawals.find((request) => request.id === withdrawalKey) ?? null };
+}
+
+
+import { saveWithdrawalReview } from "@/demo/credit";
+import { saveReview } from "@/demo/report";
+import type { ReportReview,WithdrawalReview } from "./types";
+
+export { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "@/demo/credit";
+
+export async function saveReportReview(reportKey: string, review: ReportReview) {
+  await assertAdmin();
+  return saveReview(reportKey, review);
+}
+
+export async function saveAdminWithdrawalReview(withdrawalKey: string, review: WithdrawalReview) {
+  await assertAdmin();
+  return saveWithdrawalReview(withdrawalKey, review);
 }

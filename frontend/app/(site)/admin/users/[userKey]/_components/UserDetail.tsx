@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { REPORT_DECISION_LABEL, type Report } from "../../../../../../features/admin/types";
-import { maskEmail, maskName, type UserActivity, type UserDetail } from "../../../../../../features/admin/users";
+import { maskEmail, maskName, type UserActivity, type UserDetail } from "@/features/member/admin";
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 const infoGridClass = "grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]";

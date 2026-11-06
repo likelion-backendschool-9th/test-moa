@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import { SiteFooter } from "@/app/_components/SiteFooter";
 import { Container } from "@/components/ui/Container";
 import { isBackendAuth } from "@/lib/backend";
-import { getDemoDataMode } from "@/lib/demo";
-import { getSession } from "@/lib/session";
-import { DemoSwitcher } from "../../components/layout/DemoSwitcher";
+import { getDemoDataMode } from "@/demo/mode";
+import { getSession } from "@/features/session/session";
+import { DemoSwitcher } from "../../demo/DemoSwitcher";
 
 /** 사이트 푸터와 개발용 시연 전환기. 푸터를 보여 주는 화면만 사용한다 */
 export function AppFooter() {

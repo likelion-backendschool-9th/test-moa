@@ -16,14 +16,23 @@ import java.time.LocalDateTime;
 
 /** 채팅 테스트에 필요한 회원, 모집 건(프로젝트 포함), 선정된 참가를 저장한다 */
 public class ChatFixtures {
-    private final TestEntityManager em;
+    private final jakarta.persistence.EntityManager em;
 
     public ChatFixtures(TestEntityManager em) {
+        this(em.getEntityManager());
+    }
+
+    public ChatFixtures(jakarta.persistence.EntityManager em) {
         this.em = em;
     }
 
+    private <T> T persist(T entity) {
+        em.persist(entity);
+        return entity;
+    }
+
     public User user(String nickname) {
-        return em.persist(User.builder()
+        return persist(User.builder()
                 .nickname(nickname)
                 .email(nickname + "@test.com")
                 .role(Role.USER)
@@ -33,12 +42,17 @@ public class ChatFixtures {
 
     /** 개발자의 프로젝트와 그 프로젝트의 모집 건 */
     public Recruitment recruitment(User developer, String title) {
-        Project project = em.persist(Project.builder()
+        return recruitment(developer, title, null);
+    }
+
+    public Recruitment recruitment(User developer, String title, String imageUrl) {
+        Project project = persist(Project.builder()
                 .user(developer)
                 .title(title)
+                .imageUrl(imageUrl)
                 .build());
         LocalDateTime now = LocalDateTime.now();
-        return em.persist(Recruitment.builder()
+        return persist(Recruitment.builder()
                 .project(project)
                 .title(title + " 모집")
                 .recruitDeadline(now.plusDays(7))
@@ -54,7 +68,7 @@ public class ChatFixtures {
                 .user(tester)
                 .build();
         register.confirm(0, 0, LocalDateTime.now());
-        return em.persist(register);
+        return persist(register);
     }
 
     public static ChatParticipant participantWithRole(ChatRoom room, ChatRole role) {

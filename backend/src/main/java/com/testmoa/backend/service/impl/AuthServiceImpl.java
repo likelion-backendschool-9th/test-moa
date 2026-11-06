@@ -101,6 +101,7 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() == UserStatus.WITHDRAWN) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
 
+        refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
         return issueTokens(user, UUID.randomUUID().toString());
     }
 
@@ -147,7 +148,8 @@ public class AuthServiceImpl implements AuthService {
         }, () -> refreshTokenRepository.deleteByTokenHash(tokenHash));
     }
 
-    // ponytail: 쓴 토큰 행은 만료(14일)까지 남아 세션마다 갱신 횟수만큼 쌓인다(30분마다 갱신하면 최대 약 670행). 로그아웃하지 않고 끝난 세션의 행도 남는다. 많아지면 만료 행을 지우는 스케줄러를 더한다
+    // ponytail: 쓴 토큰 행은 만료(14일)까지 남아 세션마다 갱신 횟수만큼 쌓인다(30분마다 갱신하면 최대 약 670행).
+    // 만료 행은 갱신(그 세션)과 로그인(그 회원) 때 지운다. 다시 오지 않는 회원의 행은 남으니, 많아지면 만료 행을 지우는 스케줄러를 더한다
     private TokenResponse issueTokens(User user, String sessionId) {
         String refreshToken = newRefreshToken();
         refreshTokenRepository.save(RefreshToken.builder()

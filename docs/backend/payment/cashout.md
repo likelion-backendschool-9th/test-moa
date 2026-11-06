@@ -40,8 +40,8 @@
 | `bank` | 은행 |
 | `accountNumber` | 마스킹 규칙 아래 |
 | `accountHolder` | 예금주. 마스킹 규칙은 아래 |
-| `rejectReason` | 반려일 때만. `OTHER`면 `rejectMemo`를 회원에게 보이는 사유로 |
-| `rejectMemo` | 회원 응답에서는 `OTHER`일 때만. HOLDER/ACCOUNT 운영자 메모는 null |
+| `rejectReason` | 반려일 때만. 고정 문구 라벨(`OTHER`는 "기타") |
+| `rejectMemo` | 사유와 상관없이 있으면 그대로 내려준다. `OTHER`만 필수 |
 | `requestedAt` | 신청 시각 (`createdAt`) |
 | `processedAt` | 처리 시각. 미처리면 null |
 
@@ -102,7 +102,7 @@ flowchart LR
 #67-S1 출금 내역 조회 [직접]
 - API: `GET /api/v1/my/credits/withdrawals`
 - Then  최신순. 처리 중·지급 완료·반려
-- Then  반려는 사유 포함. `OTHER`면 메모가 회원에게 보이는 사유
+- Then  반려는 사유 포함. 메모가 있으면 사유와 상관없이 함께 보인다
 - Then  `REQUESTED`는 계좌·예금주 전체, `PAID`·`REJECTED`는 계좌 끝 4자리·예금주 가운데 가림 (고침 #67: 완료 건 예금주도 가린다)
 - 화면: `/my/credits/withdrawals`
 
@@ -126,10 +126,10 @@ flowchart LR
 - When  같은 사용자가 5,000씩 두 요청을 거의 동시에
 - Then  성공은 하나뿐이거나, 합친 잠김이 5,000을 넘지 않는다 (지갑 행 잠금)
 
-#67-S6 내역 상태·반려 사유 [직접]
-- Given `REQUESTED`·`PAID`·`REJECTED(OTHER)` 행
+#67-S6 내역 상태·반려 사유 [테스트]
+- Given `REQUESTED`·`PAID`·`REJECTED(HOLDER, 메모 있음)`·`REJECTED(OTHER)` 행
 - When  내역 조회
-- Then  상태 라벨과 OTHER 메모가 보인다. 완료 건 계좌는 마스킹
+- Then  상태 라벨과 반려 메모가 보인다(HOLDER·OTHER 모두). 완료 건 계좌는 마스킹
 
 #67-S7 토큰 없이 출금 내역을 보면 401 [테스트]
 - When  토큰 없이 `GET /api/v1/my/credits/withdrawals`
@@ -142,7 +142,7 @@ flowchart LR
 - Service: 신청·목록. 예외는 `BusinessException` (#66과 동일)
 - Converter + 키 설정. `.env.example`·`application-local` 예시·CI 테스트 키
 - 은행 허용 목록은 프론트 `BANKS`와 맞춤
-- 단위 테스트: Converter 암·복호화, #67-S2~S5·S7. S1·S6은 [직접] 또는 MockMvc
+- 단위 테스트: Converter 암·복호화, #67-S2~S5·S7. S6 응답 변환, S1은 [직접] 또는 MockMvc
 
 ## 범위 밖
 - 운영자 지급·반려·장부 (#68)

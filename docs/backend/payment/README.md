@@ -126,7 +126,7 @@ erDiagram
 
 #67-S1 출금 내역 조회 [직접]
 - API: `GET /api/v1/my/credits/withdrawals`
-- Then  처리 중·지급 완료·반려. 반려는 사유(OTHER면 메모) 포함
+- Then  처리 중·지급 완료·반려. 반려는 사유와 메모(있으면) 포함
 - 화면: `/my/credits/withdrawals` (`docs/frontend/payment/credits.md` S358~)
 
 #67-S2 출금 신청 API [테스트: cashout.md #67-S2]

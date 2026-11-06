@@ -31,7 +31,7 @@ class CreditControllerCashoutValidationTest {
     @Test
     @DisplayName("#67-S3 금액 1 미만·계좌 형식이 틀리면 400·서비스 미호출")
     void invalidCashoutBodyReturns400() throws Exception {
-        mvc.perform(post("/api/users/1/credits/cashouts")
+        mvc.perform(post("/api/v1/my/credits/withdrawals")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"amount":0,"bank":"토스뱅크","accountNumber":"12-34","accountHolder":"한서윤"}

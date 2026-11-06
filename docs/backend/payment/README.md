@@ -14,7 +14,7 @@
 | [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [아래 #69](#69-구독-플랜내-구독-상태) |
 | [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [아래 #70](#70-구독-결제-화면-조회) |
 | [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [아래 #71](#71-구독-결제-실행) |
-| [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [아래 #68](#68-운영자-출금) |
+| [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 
@@ -135,10 +135,7 @@ erDiagram
 
 ### #68 운영자 출금
 
-#68-S1 운영자 API [직접]
-- `GET /api/admin/cashouts?tab=pending|done`, `POST …/pay`, `POST …/reject`
-- 트랜잭션: 지급 시 `confirmCashout` + `pay` + 장부, 반려 시 `releaseCashout` + `reject`
-- 화면: `/admin/withdrawals` (`docs/frontend/admin/withdrawals.md`)
+시나리오·API·처리 트랜잭션은 [admin-cashout.md](admin-cashout.md)에 있다. 화면: `/admin/withdrawals` ([withdrawals.md](../../frontend/admin/withdrawals.md))
 
 ### #69 구독 플랜·내 구독 상태
 페이지는 조립 API 한 번으로 받는 것을 권장한다.

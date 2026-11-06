@@ -6,17 +6,16 @@
 
 ## 한눈에
 - 끝나면: 회원이 금액·계좌로 출금을 신청하고, 내 출금 내역(처리 중·지급 완료·반려)을 본다. 신청 시 적립→잠김만 옮기고 장부는 없다. 프론트 목업 제거는 이후 별 PR.
-- 인증은 당분간 `userId` 경로 (#66과 같음).
-- 선행: #66 (지갑·`cashable`·예외 패턴). 이 브랜치는 `#66` 브랜치 위에 쌓는다.
-- 브랜치: `feature/backend-credit-cashout`
+- 인증은 토큰의 회원 id다 (#66과 같음). 경로는 `/api/v1/my/credits`.
+- 선행: #66 (지갑·`cashable`·예외 패턴).
 - 화면: `/my/credits/withdrawals` — [credits.md](../../frontend/payment/credits.md)
 
 ## API
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| `GET` | `/api/users/{userId}/credits/cashouts` | 내 출금 내역. 최신순 |
-| `POST` | `/api/users/{userId}/credits/cashouts` | 출금 신청 |
+| `GET` | `/api/v1/my/credits/withdrawals` | 내 출금 내역. 최신순. 로그인 필요 |
+| `POST` | `/api/v1/my/credits/withdrawals` | 출금 신청 |
 
 컨트롤러는 `#66`의 `CreditController`에 메서드를 더하거나, 같은 `/credits` 아래 `CashoutController`로 나눈다. 경로는 위와 같다.
 
@@ -87,7 +86,7 @@
 
 ```mermaid
 flowchart LR
-  POST[POST cashouts] --> Lock[wallet FOR UPDATE]
+  POST[POST withdrawals] --> Lock[wallet FOR UPDATE]
   Lock --> LockBal[lockForCashout]
   LockBal --> Row[CashoutRequest REQUESTED]
   Row --> Enc[Converter encrypt]
@@ -101,7 +100,7 @@ flowchart LR
 이슈 본문 조건을 `#67-S…`로 옮긴다.
 
 #67-S1 출금 내역 조회 [직접]
-- API: `GET /api/users/{userId}/credits/cashouts`
+- API: `GET /api/v1/my/credits/withdrawals`
 - Then  최신순. 처리 중·지급 완료·반려
 - Then  반려는 사유 포함. `OTHER`면 메모가 회원에게 보이는 사유
 - Then  `REQUESTED`는 계좌 전체, `PAID`·`REJECTED`는 끝 4자리
@@ -132,6 +131,10 @@ flowchart LR
 - When  내역 조회
 - Then  상태 라벨과 OTHER 메모가 보인다. 완료 건 계좌는 마스킹
 
+#67-S7 토큰 없이 출금 내역을 보면 401 [테스트]
+- When  토큰 없이 `GET /api/v1/my/credits/withdrawals`
+- Then  401이다
+
 ---
 
 ## 구현 메모
@@ -139,13 +142,12 @@ flowchart LR
 - Service: 신청·목록. 예외는 `BusinessException` (#66과 동일)
 - Converter + 키 설정. `.env.example`·`application-local` 예시·CI 테스트 키
 - 은행 허용 목록은 프론트 `BANKS`와 맞춤
-- 단위 테스트: Converter 암·복호화, #67-S2~S5. S1·S6은 [직접] 또는 MockMvc
+- 단위 테스트: Converter 암·복호화, #67-S2~S5·S7. S1·S6은 [직접] 또는 MockMvc
 
 ## 범위 밖
 - 운영자 지급·반려·장부 (#68)
 - 실제 송금·실명 확인·PG
 - 프론트 목업 제거·API 연동
-- 인증 본구현 (path `userId`와 JWT 주체 일치)
 - 키 로테이션·KMS
 - 처리 후 계좌 파기(C안)
 
@@ -158,4 +160,3 @@ flowchart LR
 
 ## 가정
 - `CashoutRequest`·`CashoutStatus`·`lockForCashout`는 #45에 있다
-- #66이 머지되기 전에는 `#66` 브랜치 위에서 작업하고, 머지 뒤 `develop`에 rebase한다

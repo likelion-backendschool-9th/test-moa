@@ -21,7 +21,7 @@
 프론트: [크레딧](../../frontend/payment/credits.md), [크레딧 구분·내역 시각](../../frontend/payment/credit-labels.md), [구독](../../frontend/payment/subscription.md), [출금 요청 관리](../../frontend/admin/withdrawals.md)
 
 ## 정한 것
-- 프론트 목업의 규칙을 백엔드가 갖게 한다. 크레딧 잔액·내역은 토큰의 회원만 본다(`/api/v1/my/credits`).
+- 프론트 목업의 규칙을 백엔드가 갖게 한다. 크레딧 조회·출금은 토큰의 회원만 본다(`/api/v1/my/credits`). 구독 API는 만들 때 같은 방식으로 맞춘다.
 - **DB는 지금 ERD보다 복잡하게 만들지 않는다.** 테이블을 늘리지 않고, 컬럼도 꼭 필요한 것(`reject_memo`)만 더한다.
 - **조건이 붙는 규칙은 DB가 아니라 백엔드가 맡는다.**
 
@@ -125,12 +125,12 @@ erDiagram
 시나리오·계좌 암호화(A)·신청 트랜잭션은 [cashout.md](cashout.md)에 있다.
 
 #67-S1 출금 내역 조회 [직접]
-- API: `GET /api/users/{userId}/credits/cashouts`
+- API: `GET /api/v1/my/credits/withdrawals`
 - Then  처리 중·지급 완료·반려. 반려는 사유(OTHER면 메모) 포함
 - 화면: `/my/credits/withdrawals` (`docs/frontend/payment/credits.md` S358~)
 
 #67-S2 출금 신청 API [직접]
-- API: `POST /api/users/{userId}/credits/cashouts`
+- API: `POST /api/v1/my/credits/withdrawals`
 - Then  `CashoutRequest(REQUESTED)` + `lockForCashout` (구현 후 `[테스트]`)
 
 ### #68 운영자 출금

@@ -79,6 +79,10 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testmoa
           SPRING_DATASOURCE_USERNAME: testmoa
           SPRING_DATASOURCE_PASSWORD: testmoa
+          # 빈 테스트 DB에 엔티티 테이블을 만들고 끝나면 지운다 (로컬은 application-local.yml의 update)
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          # 테스트 전용 서명 키. 테스트 서버의 키는 서버 .env에 따로 있다
+          JWT_SECRET: ci-test-secret-0123456789abcdef0123456789
 
   # PR에서만: 운영 이미지가 빌드되는지 확인하고 올리지 않는다
   docker:

@@ -12,3 +12,11 @@ spring:
         # 필드명(camelCase)을 컬럼명(snake_case)으로 자동 변환. 예) imageUrl -> image_url
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
 
+jwt:
+  # 서명 키(HS256). 32바이트 이상. 값은 환경 변수 JWT_SECRET으로만 넘기고 커밋하지 않는다
+  secret: ${JWT_SECRET}
+  # access 토큰 유효 시간
+  access-token-ttl: 30m
+  # refresh 토큰 유효 시간. 이 기간 동안 다시 로그인하지 않아도 된다
+  refresh-token-ttl: 14d
+

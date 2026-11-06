@@ -33,7 +33,7 @@ public class ClusterGroup {
     // 확인 우선순위(= 심각도). 1 = 치명 ~ 4 = 사소. 칭찬·미분류 그룹은 null
     private Integer improvementRank;
 
-    // 카테고리(BUG, PRAISE, UNCLASSIFIED)
+    // 카테고리(BUG, UX, REQUEST, PRAISE, UNCLASSIFIED)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ClusterCategory category;
@@ -87,5 +87,40 @@ public class ClusterGroup {
      */
     public void updateGroupCode(String groupCode) {
         this.groupCode = groupCode;
+    }
+
+    /**
+     * 개발자가 그룹 이름을 고친다.
+     *
+     * @param name 새 이름. 비어 있으면 안 된다(요청에서 확인)
+     */
+    public void rename(String name) {
+        this.name = name;
+    }
+
+    /**
+     * 개발자가 확인 우선순위(심각도)를 고친다. 칭찬·미분류 그룹에는 심각도가 없다.
+     *
+     * @param improvementRank 1 = 치명 ~ 4 = 사소
+     */
+    public void changeImprovementRank(Integer improvementRank) {
+        if (!category.hasIssue()) {
+            throw new IllegalStateException("칭찬·미분류 그룹에는 심각도가 없습니다.");
+        }
+        this.improvementRank = improvementRank;
+    }
+
+    /**
+     * 개발자가 GitHub 이슈 초안을 고친다. 칭찬·미분류 그룹에는 이슈 초안이 없다.
+     *
+     * @param gitIssueTitle   이슈 제목
+     * @param gitIssueContent 이슈 내용(개선해야 하는 내용)
+     */
+    public void editIssueDraft(String gitIssueTitle, String gitIssueContent) {
+        if (!category.hasIssue()) {
+            throw new IllegalStateException("칭찬·미분류 그룹에는 이슈 초안이 없습니다.");
+        }
+        this.gitIssueTitle = gitIssueTitle;
+        this.gitIssueContent = gitIssueContent;
     }
 }

@@ -7,7 +7,6 @@ import com.testmoa.backend.entity.ClusterGroup;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.VersionComparison;
 import com.testmoa.backend.entity.enums.AnalysisStatus;
-import com.testmoa.backend.entity.enums.ClusterCategory;
 import com.testmoa.backend.global.client.AnalysisClient;
 import com.testmoa.backend.global.client.AnalysisClient.ComparisonRequest;
 import com.testmoa.backend.global.client.AnalysisClient.GroupItem;
@@ -86,12 +85,11 @@ public class VersionComparisonReader {
 
     // 다른 회원의 모집글은 없는 모집글과 같이 404
     private Recruitment findMine(Long userId, Long recruitmentId) {
-        return recruitmentRepository.findWithProjectById(recruitmentId)
-                .filter(found -> found.getProject().getUser().getId().equals(userId))
+        return recruitmentRepository.findMineWithProject(recruitmentId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 
-    // 그룹 이름과 대표 리뷰는 분석 서버의 글자 수에 맞춰 자름. 심각도는 고쳐야 할 문제(BUG)에만 보냄
+    // 그룹 이름과 대표 리뷰는 분석 서버의 글자 수에 맞춰 자름. 칭찬·미분류는 심각도를 보내지 않음
     private VersionGroups toVersionGroups(Recruitment recruitment) {
         Map<Long, String> samples = feedbackClusterRepository.findRepresentativeSamples(recruitment.getId()).stream()
                 .collect(Collectors.toMap(RepresentativeSample::groupId, RepresentativeSample::content, (first, second) -> first));
@@ -100,7 +98,7 @@ public class VersionComparisonReader {
                         group.getId(),
                         AnalysisClient.cut(group.getName(), AnalysisClient.TITLE_MAX),
                         group.getCategory().name(),
-                        group.getCategory() == ClusterCategory.BUG ? group.getImprovementRank() : null,
+                        group.getCategory().hasIssue() ? group.getImprovementRank() : null,
                         AnalysisClient.cut(samples.get(group.getId()), AnalysisClient.CONTENT_MAX)))
                 .toList();
         return new VersionGroups(recruitment.getVersion(), groups);

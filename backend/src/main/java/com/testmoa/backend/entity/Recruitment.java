@@ -71,6 +71,10 @@ public class Recruitment {
     // 피드백 분석 완료 일시. 분석 전에는 null. 버전 비교가 이보다 이르면 오래된 비교다
     private LocalDateTime analyzedAt;
 
+    // 칭찬 리뷰 한 줄 요약. 분석 전이거나 칭찬이 없으면 null
+    @Column(columnDefinition = "TEXT")
+    private String praiseSummary;
+
     // 취소 사유. 사유 없이 취소하면 null
     @Column(columnDefinition = "TEXT")
     private String cancelReason;
@@ -144,12 +148,15 @@ public class Recruitment {
     }
 
     /**
-     * 피드백 분석 완료. 분석 상태를 DONE으로 바꾸고 완료 일시를 남긴다.
+     * 피드백 분석 완료. 분석 상태를 DONE으로 바꾸고 칭찬 요약과 완료 일시를 남긴다.
+     * 분석 시작(PENDING)과 실패(FAILED)는 동시에 두 번 시작하지 않도록 조건부 UPDATE로 바꾼다(RecruitmentRepository).
      *
-     * @param now 분석 완료 일시
+     * @param praiseSummary 칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null
+     * @param now           분석 완료 일시
      */
-    public void completeAnalysis(LocalDateTime now) {
+    public void completeAnalysis(String praiseSummary, LocalDateTime now) {
         this.analysisStatus = AnalysisStatus.DONE;
+        this.praiseSummary = praiseSummary;
         this.analyzedAt = now;
     }
 }

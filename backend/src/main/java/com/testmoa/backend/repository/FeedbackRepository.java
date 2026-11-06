@@ -1,10 +1,12 @@
 package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.Feedback;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
@@ -19,4 +21,22 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             where f.id = :id
             """)
     Optional<Feedback> findWithRecruitmentById(@Param("id") Long id);
+
+    // 모집글의 분석할 리뷰. 최근 제출 순이고, 작성자와 테스트 항목 이름을 보내므로 참가·테스트 항목을 함께 읽음
+    @Query("""
+            select f from feedbacks f
+            join fetch f.register r
+            left join fetch f.testItem
+            where r.recruitment.id = :recruitmentId
+            order by f.submittedAt desc, f.id desc
+            """)
+    List<Feedback> findForAnalysis(@Param("recruitmentId") Long recruitmentId, Limit limit);
+
+    // 모집글 리뷰 중 어느 분석 그룹에도 들지 않은 수
+    @Query("""
+            select count(f) from feedbacks f
+            where f.register.recruitment.id = :recruitmentId
+              and not exists (select fc.id from feedback_clusters fc where fc.feedback = f)
+            """)
+    long countUnanalyzed(@Param("recruitmentId") Long recruitmentId);
 }

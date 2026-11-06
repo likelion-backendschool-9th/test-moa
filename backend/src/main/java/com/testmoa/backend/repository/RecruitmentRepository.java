@@ -1,7 +1,9 @@
 package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.Recruitment;
+import com.testmoa.backend.entity.enums.AnalysisStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,10 +15,27 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> 
     // 여러 프로젝트의 모집글. 최신순
     List<Recruitment> findByProjectIdInOrderByCreatedAtDescIdDesc(Collection<Long> projectIds);
 
-    // 모집글과 그 프로젝트를 한 번에 읽음. 프로젝트 주인을 확인할 때 씀
-    @Query("select r from recruitments r join fetch r.project where r.id = :id")
-    Optional<Recruitment> findWithProjectById(@Param("id") Long id);
+    // 내 모집글과 그 프로젝트. 다른 회원의 모집글은 없는 것과 같다
+    @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
+    Optional<Recruitment> findMineWithProject(@Param("id") Long id, @Param("userId") Long userId);
 
     // 같은 프로젝트에서 version보다 작은 버전 중 가장 큰 것(직전 버전)
     Optional<Recruitment> findFirstByProjectIdAndVersionLessThanOrderByVersionDesc(Long projectId, Integer version);
+
+    /**
+     * 분석 시작. 진행 중(PENDING)이 아닐 때만 PENDING으로 바꿔, 동시에 두 번 눌러도 한 번만 바뀐다. 바뀐 행 수를 돌려준다
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update recruitments r set r.analysisStatus = :pending where r.id = :id and r.analysisStatus <> :pending")
+    int markAnalysisPending(@Param("id") Long id, @Param("pending") AnalysisStatus pending);
+
+    // 분석 실패. 진행 중(PENDING)일 때만 바꾼다
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update recruitments r set r.analysisStatus = :failed where r.id = :id and r.analysisStatus = :pending")
+    int markAnalysisFailed(@Param("id") Long id, @Param("pending") AnalysisStatus pending, @Param("failed") AnalysisStatus failed);
+
+    // 서버가 다시 시작되면 끝나지 않는 진행 중 분석을 모두 실패로 바꾼다
+    @Modifying
+    @Query("update recruitments r set r.analysisStatus = :failed where r.analysisStatus = :pending")
+    int failAllPendingAnalyses(@Param("pending") AnalysisStatus pending, @Param("failed") AnalysisStatus failed);
 }

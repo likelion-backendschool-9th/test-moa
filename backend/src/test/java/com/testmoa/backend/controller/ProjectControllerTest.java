@@ -90,7 +90,7 @@ class ProjectControllerTest {
 
     private Recruitment saveRecruitment(Project project, String title) {
         Recruitment recruitment = Recruitment.builder().project(project).title(title)
-                .recruitDeadline(LocalDateTime.now(SEOUL).plusDays(3)).feedbackDeadline(LocalDateTime.now(SEOUL).plusDays(9))
+                .recruitDeadline(LocalDateTime.now().plusDays(3)).feedbackDeadline(LocalDateTime.now().plusDays(9))
                 .selectionMode(SelectionMode.FIRST_COME).build();
         em.persist(recruitment);
         return recruitment;
@@ -175,11 +175,11 @@ class ProjectControllerTest {
         saveRecruitment(first, "모집 중");
         Recruitment ended = saveRecruitment(first, "지난 모집");
         Recruitment cancelled = saveRecruitment(first, "취소한 모집");
-        cancelled.cancel(null, LocalDateTime.now(SEOUL));
+        cancelled.cancel(null, LocalDateTime.now());
         em.flush();
         /* 모집 마감일을 바꾸는 메서드가 없어 DB에서 바꾼다 */
         em.createQuery("update recruitments r set r.recruitDeadline = :past where r.id = :id")
-                .setParameter("past", LocalDateTime.now(SEOUL).minusDays(1)).setParameter("id", ended.getId()).executeUpdate();
+                .setParameter("past", LocalDateTime.now().minusDays(1)).setParameter("id", ended.getId()).executeUpdate();
         em.clear();
 
         send(me, get(PROJECTS), null)
@@ -337,8 +337,11 @@ class ProjectControllerTest {
         String response = create(project, body).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
 
         Recruitment saved = em.find(Recruitment.class, JSON.readTree(response).at("/data/id").asLong());
-        assertThat(saved.getRecruitDeadline()).isEqualTo(today.atTime(23, 59, 59));
-        assertThat(saved.getFeedbackDeadline()).isEqualTo(today.plusDays(1).atTime(23, 59, 59));
+        /* 저장값은 서버 시간대의 시각이고, 한국 시간 그날 23:59:59와 같은 순간이다 */
+        assertThat(saved.getRecruitDeadline().atZone(ZoneId.systemDefault()).toInstant())
+                .isEqualTo(today.atTime(23, 59, 59).atZone(SEOUL).toInstant());
+        assertThat(saved.getFeedbackDeadline().atZone(ZoneId.systemDefault()).toInstant())
+                .isEqualTo(today.plusDays(1).atTime(23, 59, 59).atZone(SEOUL).toInstant());
     }
 
     @Test

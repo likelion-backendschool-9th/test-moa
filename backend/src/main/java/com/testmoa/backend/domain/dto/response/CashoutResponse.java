@@ -10,7 +10,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * 출금 내역 한 줄. 계좌번호는 상태에 따라 마스킹한다.
+ * 출금 내역 한 줄. 계좌번호·예금주는 상태에 따라 마스킹한다.
  */
 @Getter
 @Builder
@@ -37,7 +37,7 @@ public class CashoutResponse {
                 .status(request.getStatus())
                 .bank(request.getBank())
                 .accountNumber(AccountMasking.mask(request.getAccountNumber(), request.getStatus()))
-                .accountHolder(request.getAccountHolder())
+                .accountHolder(AccountMasking.maskHolder(request.getAccountHolder(), request.getStatus()))
                 .rejectReason(request.getRejectReason())
                 .rejectMemo(memberMemo)
                 .requestedAt(request.getCreatedAt())

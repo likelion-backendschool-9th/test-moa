@@ -1,3 +1,4 @@
+import { SiteFrame } from "@/app/_components/SiteFrame";
 import { Container } from "@/components/ui/Container";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { CHATS_PATH } from "@/features/chat/query";
@@ -5,6 +6,7 @@ import { CHATS_PATH } from "@/features/chat/query";
 /** 없거나 삭제했거나 내가 들어가 있지 않은 대화방. 대화 화면이 아니라서 푸터를 그대로 둔다 */
 export default function ChatRoomNotFound() {
   return (
+    <SiteFrame>
     <Container className="py-8">
       <div className="mx-auto flex max-w-3xl flex-col items-start gap-3 rounded-2xl bg-surface-muted p-8">
         <h1 className="text-lg font-semibold">대화방을 찾을 수 없어요</h1>
@@ -14,5 +16,6 @@ export default function ChatRoomNotFound() {
         </LinkButton>
       </div>
     </Container>
+    </SiteFrame>
   );
 }

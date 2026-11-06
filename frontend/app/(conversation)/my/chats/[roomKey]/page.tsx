@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { HideFooter } from "@/components/layout/HideFooter";
+import { Main } from "@/app/_components/Main";
 import { Container } from "@/components/ui/Container";
 import { getChatRoom, getChatRoomTitle } from "@/features/chat/api";
 import { ChatRoomSkeleton, ChatRoomView } from "@/features/chat/components/ChatRoomView";
@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: RoomPageProps): Promise<Metad
  */
 export default function ChatRoomPage({ params }: RoomPageProps) {
   return (
+    <Main className="flex flex-col">
     <Container className="flex flex-1 flex-col pt-6 md:pt-8">
-      <HideFooter />
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
         <ChatsBackLink />
         <Suspense fallback={<ChatRoomSkeleton />}>
@@ -29,6 +29,7 @@ export default function ChatRoomPage({ params }: RoomPageProps) {
         </Suspense>
       </div>
     </Container>
+    </Main>
   );
 }
 

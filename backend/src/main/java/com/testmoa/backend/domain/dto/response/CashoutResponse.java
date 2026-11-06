@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 /**
  * 출금 내역 한 줄. 계좌번호·예금주는 상태에 따라 마스킹한다.
+ * 반려 메모는 사유와 상관없이 회원에게 그대로 보인다(OTHER만 필수).
  */
 @Getter
 @Builder
@@ -27,10 +28,6 @@ public class CashoutResponse {
     private LocalDateTime processedAt;
 
     public static CashoutResponse of(CashoutRequest request) {
-        // 회원에게는 OTHER 메모만 보인다. HOLDER/ACCOUNT 운영자 메모는 숨긴다(entities).
-        String memberMemo = request.getRejectReason() == CashoutRejectReason.OTHER
-                ? request.getRejectMemo()
-                : null;
         return CashoutResponse.builder()
                 .id(request.getId())
                 .amount(request.getAmount())
@@ -39,7 +36,7 @@ public class CashoutResponse {
                 .accountNumber(AccountMasking.mask(request.getAccountNumber(), request.getStatus()))
                 .accountHolder(AccountMasking.maskHolder(request.getAccountHolder(), request.getStatus()))
                 .rejectReason(request.getRejectReason())
-                .rejectMemo(memberMemo)
+                .rejectMemo(request.getRejectMemo())
                 .requestedAt(request.getCreatedAt())
                 .processedAt(request.getProcessedAt())
                 .build();

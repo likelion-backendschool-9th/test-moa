@@ -54,7 +54,7 @@ public class CashoutRequest {
     @Enumerated(EnumType.STRING)
     private CashoutRejectReason rejectReason;
 
-    // 반려 메모. 기타(OTHER)면 회원에게 보이는 사유이고 필수, 그 외에는 운영자 메모(선택)
+    // 반려 메모. 사유와 상관없이 회원에게 그대로 보인다. 기타(OTHER)면 필수, 그 외에는 선택
     private String rejectMemo;
 
     // 처리 일시. 처리 전에는 null
@@ -114,7 +114,7 @@ public class CashoutRequest {
      * 반려 처리. 요청 중일 때만 할 수 있고, 사유가 기타(OTHER)면 메모가 있어야 한다.
      *
      * @param reason 반려 사유
-     * @param memo   반려 메모. 기타면 회원에게 보이는 사유, 그 외에는 운영자 메모. 비어 있으면 저장하지 않는다
+     * @param memo   반려 메모. 회원에게 보이는 안내다. 기타면 필수, 그 외에는 선택. 비어 있으면 저장하지 않는다
      * @param now    처리 일시
      */
     public void reject(CashoutRejectReason reason, String memo, LocalDateTime now) {

@@ -415,6 +415,13 @@ export function validateRecruitmentForm(formData: FormData, isSubscription: bool
     errors.conditions = `모집 조건은 ${RECRUITMENT_LIMIT.conditionsLength}자까지 적을 수 있어요`;
   }
 
+  /* 모집글 이미지는 선택이고 테스트 항목 이미지와 따로 센다 (#124) */
+  const recruitmentImages = parseFileMeta(formData.get("recruitmentImagesMeta"));
+  const recruitmentImageError = recruitmentImages
+    ? checkImages(recruitmentImages, RECRUITMENT_LIMIT.imageCount)
+    : "이미지 정보를 읽지 못했어요";
+  if (recruitmentImageError) errors.recruitmentImages = recruitmentImageError;
+
   /* 테스트 항목: 제목과 설명이 둘 다 빈 줄은 없는 것으로 본다 */
   const { min, max, titleLength, descriptionLength, imageCount } = RECRUITMENT_LIMIT.testItems;
   const titles = formData.getAll("testItemTitle").map((item) => String(item).trim());

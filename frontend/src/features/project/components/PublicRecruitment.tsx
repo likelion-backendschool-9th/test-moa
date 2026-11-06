@@ -43,14 +43,14 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
   const conditions = detail?.conditions.split("\n").filter((line) => line.trim()) ?? [];
   const testItems = detail?.testItems ?? [];
   const requiredCount = testItems.filter((item) => item.required).length;
-  /* 대표 이미지 다음에 테스트 항목 이미지를 항목 순서대로 잇는다 */
+  /* 대표 이미지 다음에 모집글 이미지를 등록한 순서대로 잇는다. 테스트 항목 이미지는 각 항목 아래에만 둔다 (#124) */
   const gallery: GalleryImage[] = [
     {
       url: project?.image?.url ?? DEFAULT_PROJECT_IMAGE_URL,
       alt: project?.image ? `${recruitment.projectName} 대표 이미지` : "기본 프로젝트 이미지",
       badge: project?.image ? "대표 이미지" : undefined,
     },
-    ...testItems.flatMap((item) => item.images.map((image) => ({ url: image.url, alt: image.name }))),
+    ...(detail?.images ?? []).map((image) => ({ url: image.url, alt: image.name })),
   ];
 
   return (

@@ -152,6 +152,25 @@ class AuthControllerTest {
         me(otherDevice).andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("#80-S10 여러 번 갱신한 뒤에도 처음 토큰으로 로그아웃하면 그 세션이 끝난다")
+    void 여러_번_갱신한_뒤_처음_토큰으로_로그아웃해도_세션이_끝난다() throws Exception {
+        signup(email, nickname);
+        String r0 = field(login(email, "moa2026pw"), "$.data.refreshToken");
+
+        // R0 → R1 → R2로 두 번 갱신한다(다른 탭·요청이 먼저 갱신한 상황)
+        String r1 = field(postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r0 + "\"}"), "$.data.refreshToken");
+        ResultActions second = postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r1 + "\"}").andExpect(status().isOk());
+        String r2 = field(second, "$.data.refreshToken");
+        String a2 = field(second, "$.data.accessToken");
+
+        // R0를 담고 있던 늦은 로그아웃 요청
+        postJson("/api/auth/logout", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+
+        postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r2 + "\"}").andExpect(status().isUnauthorized());
+        me(a2).andExpect(status().isUnauthorized());
+    }
+
     private ResultActions me(String accessToken) throws Exception {
         return mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + accessToken));
     }

@@ -1,9 +1,13 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.domain.dto.request.ChatInboxQuery;
 import com.testmoa.backend.domain.dto.response.*;
 import com.testmoa.backend.domain.entity.ChatMessage;
 import com.testmoa.backend.domain.entity.ChatParticipant;
 import com.testmoa.backend.domain.repository.*;
+import com.testmoa.backend.domain.repository.projection.ChatInboxEntry;
+import com.testmoa.backend.global.common.ChatInboxSort;
+import com.testmoa.backend.global.common.ChatRole;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ChatService;
@@ -11,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Comparator;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +29,38 @@ public class ChatServiceImpl implements ChatService {
     private final ChatMessageRepository messageRepository;
 
     @Override
+    public ChatInboxResponse getInbox(Long userId, ChatInboxQuery query) {
+        var entries = participantRepository.findInboxByUserId(userId);
+        String keyword = query.q().toLowerCase(Locale.ROOT);
+        var matched = entries.stream().filter(entry -> matches(entry, keyword)).toList();
+        long testers = matched.stream().filter(entry -> entry.myRole() == ChatRole.TESTER).count();
+        var order = Comparator.comparing(ChatInboxEntry::lastMessageAt);
+        if (query.sort() == ChatInboxSort.LATEST) order = order.reversed();
+        // 일시가 같으면 정렬 방향과 무관하게 나중에 만든 방이 먼저 온다.
+        order = order.thenComparing(ChatInboxEntry::roomId, Comparator.reverseOrder());
+        var rooms = matched.stream()
+                .filter(entry -> query.role() == null || entry.myRole() == query.role())
+                .sorted(order).map(ChatInboxResponse.Room::of).toList();
+        return new ChatInboxResponse(rooms, entries.size(),
+                new ChatInboxResponse.Counts(matched.size(), testers, matched.size() - testers));
+    }
+
+    private boolean matches(ChatInboxEntry entry, String keyword) {
+        return keyword.isEmpty()
+                || contains(entry.roomName(), keyword)
+                || contains(entry.projectName(), keyword)
+                || contains(entry.partnerNickname(), keyword);
+    }
+
+    private boolean contains(String value, String keyword) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(keyword);
+    }
+
+    @Override
     public ChatRoomResponse getRoom(String roomKey, Long userId) {
-        return ChatRoomResponse.of(requireParticipant(roomKey, userId));
+        var entry = participantRepository.findRoomByRoomKeyAndUserId(roomKey, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return ChatRoomResponse.of(entry);
     }
 
     @Override
@@ -47,8 +83,7 @@ public class ChatServiceImpl implements ChatService {
         var room = roomRepository.findLockedByRoomKey(roomKey)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         var me = requireParticipant(roomKey, userId);
-        var message = ChatMessage.builder().sender(me).seq(room.getLastSeq() + 1).content(text).build();
-        room.nextSeq(message.getSentAt());
+        var message = room.createMessage(me, text);
         messageRepository.save(message);
         participantRepository.unhidePartner(room.getId(), me.getId());
         return ChatMessageResponse.of(message, me.getId());

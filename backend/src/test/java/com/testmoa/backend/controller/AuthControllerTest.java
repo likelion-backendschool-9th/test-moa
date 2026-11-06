@@ -129,6 +129,53 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("#80-S9 로그아웃하면 그 로그인 세션이 끝나서, 로그아웃 전에 갱신으로 받은 토큰도 쓸 수 없다")
+    void 로그아웃하면_로그아웃_전에_갱신한_토큰도_못_쓴다() throws Exception {
+        signup(email, nickname);
+        String r0 = field(login(email, "moa2026pw"), "$.data.refreshToken");
+        String otherDevice = field(login(email, "moa2026pw"), "$.data.accessToken"); // 다른 기기의 로그인
+
+        // 요청 A: R0로 갱신해 R1·A1을 받는다(브라우저에는 아직 도착하지 않은 응답)
+        ResultActions refreshed = postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+        String r1 = field(refreshed, "$.data.refreshToken");
+        String a1 = field(refreshed, "$.data.accessToken");
+        me(a1).andExpect(status().isOk());
+
+        // 요청 B: 브라우저 쿠키에 남은 R0로 로그아웃한다
+        postJson("/api/auth/logout", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+
+        // A의 늦은 응답이 쿠키에 R1·A1을 다시 넣어도 쓸 수 없다
+        postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r1 + "\"}").andExpect(status().isUnauthorized());
+        me(a1).andExpect(status().isUnauthorized());
+
+        // 다른 기기의 로그인은 그대로다
+        me(otherDevice).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("#80-S10 여러 번 갱신한 뒤에도 처음 토큰으로 로그아웃하면 그 세션이 끝난다")
+    void 여러_번_갱신한_뒤_처음_토큰으로_로그아웃해도_세션이_끝난다() throws Exception {
+        signup(email, nickname);
+        String r0 = field(login(email, "moa2026pw"), "$.data.refreshToken");
+
+        // R0 → R1 → R2로 두 번 갱신한다(다른 탭·요청이 먼저 갱신한 상황)
+        String r1 = field(postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r0 + "\"}"), "$.data.refreshToken");
+        ResultActions second = postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r1 + "\"}").andExpect(status().isOk());
+        String r2 = field(second, "$.data.refreshToken");
+        String a2 = field(second, "$.data.accessToken");
+
+        // R0를 담고 있던 늦은 로그아웃 요청
+        postJson("/api/auth/logout", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+
+        postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r2 + "\"}").andExpect(status().isUnauthorized());
+        me(a2).andExpect(status().isUnauthorized());
+    }
+
+    private ResultActions me(String accessToken) throws Exception {
+        return mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + accessToken));
+    }
+
+    @Test
     @DisplayName("#80-S6·S7 refresh 토큰은 한 번만 쓸 수 있고 로그아웃하면 못 쓴다")
     void refresh_토큰은_한_번만_쓸_수_있고_로그아웃하면_못_쓴다() throws Exception {
         signup(email, nickname);

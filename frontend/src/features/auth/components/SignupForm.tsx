@@ -4,7 +4,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, FormMessage } from "@/components/ui/FormField";
 import type { FormState } from "@/lib/form";
 import { NICKNAME_HINT, PASSWORD_HINT } from "@/lib/validation";
 import { signup } from "../actions";
@@ -32,6 +32,8 @@ export function SignupForm({ next }: { next: string }) {
   /* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */
   return (
     <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+      {/* 칸에 붙지 않는 오류(백엔드 연결 실패·시간 초과·서버 오류) */}
+      {errors.form && <FormMessage status="error" message={errors.form} />}
       <input type="hidden" name="next" value={next} />
       <div className="flex flex-col gap-5">
         <FormField id="signup-name" name="name" label="이름" autoComplete="name" error={errors.name} />

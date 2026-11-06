@@ -1,7 +1,7 @@
 "use server";
 
 import { requireMember } from "@/features/session/guard";
-import { participationPath,PARTICIPATIONS_PATH,participationsPath } from "@/lib/participation-paths";
+import { participationPath,PARTICIPATIONS_PATH,participationsPath } from "@/features/participation/paths";
 import { revalidatePath } from "next/cache";
 import { redirect,RedirectType } from "next/navigation";
 import { getParticipation,saveFeedback } from "./api";

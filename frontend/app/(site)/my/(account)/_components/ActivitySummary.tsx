@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { participationsPath } from "@/lib/participation-paths";
-import { PROJECTS_PATH } from "@/lib/project-paths";
+import { participationsPath } from "@/features/participation/paths";
+import { PROJECTS_PATH } from "@/features/project/paths";
 import { LinkButton } from "@/components/ui/LinkButton";
-import type { Activity } from "../../../../../features/my/types";
+import type { Activity } from "@/features/member/types";
 import { ActivityGroup } from "./ActivityGroup";
 import { cardClass, cardTitleClass } from "./card-styles";
 

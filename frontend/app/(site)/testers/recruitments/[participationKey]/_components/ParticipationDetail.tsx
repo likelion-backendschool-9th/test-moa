@@ -2,7 +2,7 @@ import { ImageIcon } from "@phosphor-icons/react/ssr";
 import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { participationsPath } from "@/lib/participation-paths";
+import { participationsPath } from "@/features/participation/paths";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";

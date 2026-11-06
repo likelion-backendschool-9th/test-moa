@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { PROJECTS_PATH, PROJECT_NEW_PATH, projectPath, projectEditPath, recruitmentCreatePath } from "@/lib/project-paths";
+import { PROJECTS_PATH, PROJECT_NEW_PATH, projectPath, projectEditPath, recruitmentCreatePath } from "@/features/project/paths";
 import {
   cancelRecruitment as cancel,
   decideApplicants as decide,

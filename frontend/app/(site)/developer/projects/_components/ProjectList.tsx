@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PROJECT_NEW_PATH, projectPath } from "@/lib/project-paths";
+import { PROJECT_NEW_PATH, projectPath } from "@/features/project/paths";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { formatDate } from "@/lib/format";
-import type { Subscription } from "../../../../../features/my/types";
+import type { Subscription } from "@/features/subscription/types";
 import { cardClass, cardHeaderClass, cardTitleClass } from "./card-styles";
 
 /** 계정 단위 구독 상태. 가격과 주기는 기획에서 미정이라 보여 주지 않는다 */

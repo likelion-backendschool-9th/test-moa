@@ -1,4 +1,4 @@
-import type { PlanTerms,SubscriptionPlan } from "@/features/my/types";
+import type { PlanTerms, SubscriptionPlan } from "@/features/subscription/types";
 import type { Role } from "@/features/session/session";
 import { cookies } from "next/headers";
 import "server-only";

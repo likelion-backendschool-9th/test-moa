@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { recruitmentCreatePath } from "@/lib/project-paths";
+import { recruitmentCreatePath } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
 import { RecruitmentForm } from "@/app/(site)/developer/recruitments/new/_components/RecruitmentForm";

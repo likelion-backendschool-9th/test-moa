@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PROJECTS_PATH, projectPath } from "@/lib/project-paths";
+import { PROJECTS_PATH, projectPath } from "@/features/project/paths";
 import { Badge } from "@/components/ui/Badge";
 import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton";

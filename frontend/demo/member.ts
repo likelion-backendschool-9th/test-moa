@@ -1,9 +1,9 @@
 import type { AdminUser,DeveloperActivity,TesterActivity } from "@/features/member/admin";
 import type { Profile } from "@/features/member/types";
-import type { MyPageSummary,Todo } from "@/features/my/types";
+import type { MyPageSummary, Todo } from "@/features/member/types";
 import type { Role } from "@/features/session/session";
-import { participationsPath } from "@/lib/participation-paths";
-import { PROJECTS_PATH } from "@/lib/project-paths";
+import { participationsPath } from "@/features/participation/paths";
+import { PROJECTS_PATH } from "@/features/project/paths";
 import "server-only";
 
 

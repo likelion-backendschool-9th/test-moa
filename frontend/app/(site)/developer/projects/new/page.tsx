@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/lib/project-paths";
+import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
 import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm";

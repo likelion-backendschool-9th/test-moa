@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { recruitmentManagePath } from "@/lib/project-paths";
+import { recruitmentManagePath } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList";
 import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList";

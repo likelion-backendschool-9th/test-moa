@@ -1,6 +1,6 @@
 import { LinkButton } from "@/components/ui/LinkButton";
 import { formatCredits, formatWon } from "@/lib/format";
-import type { SubscriptionPlan } from "../../../../../../features/my/types";
+import type { SubscriptionPlan } from "@/features/subscription/types";
 import { cardClass, cardHeaderClass, cardTitleClass } from "../../_components/card-styles";
 
 type SubscriptionPaymentProps = {

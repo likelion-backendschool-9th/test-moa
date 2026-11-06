@@ -1,4 +1,4 @@
-import { EXPIRY_KEEPS, EXPIRY_STOPS } from "../../../../../../features/my/types";
+import { EXPIRY_KEEPS, EXPIRY_STOPS } from "@/features/subscription/types";
 import { cardClass, cardTitleClass } from "../../_components/card-styles";
 
 const GROUPS = [

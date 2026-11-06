@@ -1,5 +1,5 @@
 import { formatDate, formatDday } from "@/lib/format";
-import type { RecruitQuota, Subscription, SubscriptionPlan } from "../../../../../../features/my/types";
+import type { RecruitQuota, Subscription, SubscriptionPlan } from "@/features/subscription/types";
 import { cardClass, cardHeaderClass, cardTitleClass } from "../../_components/card-styles";
 
 /** 값은 모두 같은 크기로, 이름은 그 위에 작게 둔다 */

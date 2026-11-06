@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { projectPath } from "@/lib/project-paths";
+import { projectPath } from "@/features/project/paths";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
@@ -11,7 +11,7 @@ import { checkImages, formatBytes, type FileMeta } from "../../../../../../featu
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type FormState, type SelectionMode } from "../../../../../../features/project/types";
 import { FormSection } from "../../../_components/FormSection";
 import { FileField, revoke, useFocusFirstError } from "../../../_components/ProjectForm";
-import { TextField } from "../../../../../../features/project/components/TextField";
+import { TextField } from "../../../../../../components/ui/TextField";
 
 /*
  * 테스트 모집 작성 폼. 보상은 서비스가 정하므로 입력받지 않고 안내만 한다.

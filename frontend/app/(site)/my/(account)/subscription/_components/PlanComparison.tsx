@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
 import { formatWon } from "@/lib/format";
-import { BENEFIT_ROWS, type PlanTerms, type SubscriptionPlan } from "../../../../../../features/my/types";
+import { BENEFIT_ROWS, type PlanTerms, type SubscriptionPlan } from "@/features/subscription/types";
 import { cardClass, cardTitleClass } from "../../_components/card-styles";
 
 type Column = PlanTerms & { id: string; name: string; price: string };

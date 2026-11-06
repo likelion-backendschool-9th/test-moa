@@ -1,10 +1,10 @@
 "use server";
 
 import { getSession } from "@/features/session/session";
+import { canPayForSubscription,getSubscriptionOverview,saveSubscriptionPayment } from "@/features/subscription/api";
+import { renewedExpiry } from "@/features/subscription/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { canPayForSubscription,getSubscriptionOverview,saveSubscriptionPayment } from "./api";
-import { renewedExpiry } from "./types";
 
 /*
  * 구독 결제. 지금은 목업이라 고른 상품과 결제 수단을 검사한 뒤 시연용 쿠키(lib/demo-subscription.ts)에 남긴다.

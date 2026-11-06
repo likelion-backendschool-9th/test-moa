@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { projectEditPath, recruitmentCreatePath, recruitmentManagePath } from "@/lib/project-paths";
+import { projectEditPath, recruitmentCreatePath, recruitmentManagePath } from "@/features/project/paths";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";

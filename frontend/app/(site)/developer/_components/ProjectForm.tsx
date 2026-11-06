@@ -9,7 +9,7 @@ import { checkImages, formatBytes, type FileMeta } from "../../../../features/pr
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImage } from "../../../../features/project/types";
 import { FormSection } from "./FormSection";
 import { ProjectBody } from "./ProjectDetail";
-import { TextField } from "../../../../features/project/components/TextField";
+import { TextField } from "../../../../components/ui/TextField";
 
 /*
  * 프로젝트 등록·수정 폼과 미리보기. 검증은 서버 액션이 하고, 오류가 오면 첫 오류 칸으로 포커스를 옮긴다.

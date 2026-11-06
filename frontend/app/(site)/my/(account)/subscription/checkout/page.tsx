@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getSubscriptionOverview } from "@/features/my/api";
+import { getSubscriptionOverview } from "@/features/subscription/api";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
 import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm";
 

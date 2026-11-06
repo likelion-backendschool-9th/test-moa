@@ -4,8 +4,8 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { formatCredits, formatDate, formatWon } from "@/lib/format";
-import { payForSubscription, type CheckoutFormState } from "../../../../../../../features/my/subscription-actions";
-import type { SubscriptionPlan } from "../../../../../../../features/my/types";
+import { payForSubscription, type CheckoutFormState } from "../../../../../../../features/subscription/actions";
+import type { SubscriptionPlan } from "@/features/subscription/types";
 import { cardClass, cardTitleClass } from "../../../_components/card-styles";
 
 const initialState: CheckoutFormState = { status: "idle" };

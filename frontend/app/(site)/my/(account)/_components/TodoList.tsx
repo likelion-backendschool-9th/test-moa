@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { PROJECTS_PATH } from "@/lib/project-paths";
+import { PROJECTS_PATH } from "@/features/project/paths";
 import { LinkButton } from "@/components/ui/LinkButton";
-import type { Todo, TodoCategory } from "../../../../../features/my/types";
+import type { Todo, TodoCategory } from "@/features/member/types";
 import { ActivityGroup } from "./ActivityGroup";
 import { cardClass, cardTitleClass } from "./card-styles";
 

@@ -1,4 +1,4 @@
-import { participationPath } from "@/lib/participation-paths";
+import { participationPath } from "@/features/participation/paths";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { participationPath } from "@/lib/participation-paths";
+import { participationPath } from "@/features/participation/paths";
 import { Container } from "@/components/ui/Container";
 import { getParticipation } from "@/features/participation/api";
 import {

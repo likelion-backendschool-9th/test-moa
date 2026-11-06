@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { PARTICIPATIONS_PATH, participationsPath } from "@/lib/participation-paths";
+import { PARTICIPATIONS_PATH, participationsPath } from "@/features/participation/paths";
 import { Container } from "@/components/ui/Container";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { PROJECTS_PATH, projectPath } from "@/lib/project-paths";
+import { PROJECTS_PATH, projectPath } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/app/(site)/developer/_components/ProjectDetail";
 import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";

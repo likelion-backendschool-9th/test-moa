@@ -7,7 +7,7 @@ import { backendFetch, clearTokens, getRefreshToken, isBackendAuth, saveTokens, 
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/features/session/session";
-import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/lib/validation";
+import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/features/member/validation";
 import { callbackUrl, clearSignup, readSignup, saveState } from "./oauth";
 import { type LoginField, type SignupField, SOCIAL_PROVIDERS, type SocialSignupField, withNext } from "./types";
 

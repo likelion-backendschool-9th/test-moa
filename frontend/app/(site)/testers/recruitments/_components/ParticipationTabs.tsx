@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { participationsPath } from "@/lib/participation-paths";
+import { participationsPath } from "@/features/participation/paths";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { PARTICIPATION_TABS, TAB_LABEL, type ParticipationCounts, type ParticipationTab } from "../../../../../features/participation/types";

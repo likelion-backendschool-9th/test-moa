@@ -1,6 +1,6 @@
 import { FlaskIcon, FolderSimpleIcon } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
-import { TODO_CATEGORY_LABEL, type TodoCategory } from "../../../../../features/my/types";
+import { TODO_CATEGORY_LABEL, type TodoCategory } from "@/features/member/types";
 
 const ICONS: Record<TodoCategory, typeof FlaskIcon> = {
   participation: FlaskIcon,

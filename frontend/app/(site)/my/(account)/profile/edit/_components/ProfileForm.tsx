@@ -4,8 +4,8 @@ import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FormField, FormMessage } from "@/components/ui/FormField";
 import type { FormState } from "@/lib/form";
-import { NICKNAME_HINT } from "@/lib/validation";
-import { type ProfileField, updateProfile } from "../../../../../../../features/my/actions";
+import { NICKNAME_HINT } from "@/features/member/validation";
+import { type ProfileField, updateProfile } from "../../../../../../../features/member/actions";
 import type { Profile } from "@/features/member/types";
 import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "../../../_components/card-styles";
 

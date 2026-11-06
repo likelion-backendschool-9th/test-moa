@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getMyPageSummary } from "@/features/my/api";
+import { getMyPageSummary } from "@/features/member/api";
 import { ActivitySummary } from "@/app/(site)/my/(account)/_components/ActivitySummary";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
 import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard";

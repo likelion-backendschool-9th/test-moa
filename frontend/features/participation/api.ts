@@ -85,7 +85,7 @@ export async function getUpcomingDeadlines(): Promise<ParticipationItem[]> {
 
 import { saveDemoFeedback } from "@/demo/participation";
 import { requireMember } from "@/features/session/guard";
-import { participationPath } from "@/lib/participation-paths";
+import { participationPath } from "@/features/participation/paths";
 
 export async function saveFeedback(participationKey: string, entries: Parameters<typeof saveDemoFeedback>[1]) {
   await requireMember(participationPath(participationKey));

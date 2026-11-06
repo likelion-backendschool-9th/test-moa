@@ -1,9 +1,8 @@
 "use server";
 
-import { isCurrentPassword, isNicknameTaken } from "@/features/member/api";
+import { getProfile,isCurrentPassword,isNicknameTaken } from "@/features/member/api";
+import { validateName,validateNewPassword,validateNickname } from "@/features/member/validation";
 import type { FormState } from "@/lib/form";
-import { validateName, validateNewPassword, validateNickname } from "@/lib/validation";
-import { getProfile } from "./api";
 
 /*
  * 개인정보 수정. 지금은 목업이라 입력만 검사하고 데이터는 바꾸지 않는다.

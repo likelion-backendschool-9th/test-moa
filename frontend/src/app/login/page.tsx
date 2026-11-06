@@ -39,8 +39,9 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
   const [session, params] = await Promise.all([getSession(), searchParams]);
   const next = safeNextPath(params.next);
   if (session.role !== "guest") redirect(next);
-  /* 소셜 로그인 실패(/auth/callback에서 돌아옴). 주소에는 키만 있고 문구는 여기서 고른다 */
-  const oauthError = typeof params.error === "string" ? OAUTH_ERRORS[params.error as OAuthErrorKey] : undefined;
+  /* 소셜 로그인 실패(/auth/callback에서 돌아옴). 주소에는 키만 있고 문구는 여기서 고른다. constructor 같은 객체 기본 이름은 무시한다 */
+  const oauthError =
+    typeof params.error === "string" && Object.hasOwn(OAUTH_ERRORS, params.error) ? OAUTH_ERRORS[params.error as OAuthErrorKey] : undefined;
   return (
     <>
       {params.joined === "1" && <FormMessage status="success" message="가입했어요. 로그인해 주세요" />}

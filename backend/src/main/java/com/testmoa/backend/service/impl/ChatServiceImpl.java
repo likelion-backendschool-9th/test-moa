@@ -1,13 +1,18 @@
 package com.testmoa.backend.service.impl;
 
-import com.testmoa.backend.domain.dto.request.ChatInboxQuery;
-import com.testmoa.backend.domain.dto.response.*;
-import com.testmoa.backend.domain.entity.ChatMessage;
-import com.testmoa.backend.domain.entity.ChatParticipant;
-import com.testmoa.backend.domain.repository.*;
-import com.testmoa.backend.domain.repository.projection.ChatInboxEntry;
-import com.testmoa.backend.global.common.ChatInboxSort;
-import com.testmoa.backend.global.common.ChatRole;
+import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.dto.response.ChatInboxResponse;
+import com.testmoa.backend.dto.response.ChatMessageResponse;
+import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
+import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.entity.ChatMessage;
+import com.testmoa.backend.entity.ChatParticipant;
+import com.testmoa.backend.repository.ChatMessageRepository;
+import com.testmoa.backend.repository.ChatParticipantRepository;
+import com.testmoa.backend.repository.ChatRoomRepository;
+import com.testmoa.backend.repository.projection.ChatInboxEntry;
+import com.testmoa.backend.entity.enums.ChatInboxSort;
+import com.testmoa.backend.entity.enums.ChatRole;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ChatService;

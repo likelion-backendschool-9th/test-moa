@@ -1,6 +1,6 @@
 package com.testmoa.backend.global.security;
 
-import com.testmoa.backend.domain.dto.AuthenticatedUser;
+import com.testmoa.backend.dto.AuthenticatedUser;
 import com.testmoa.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.convert.converter.Converter;

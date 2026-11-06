@@ -1,6 +1,6 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.entity.ChatRoom;
+import com.testmoa.backend.entity.ChatRoom;
 import com.testmoa.backend.support.ChatFixtures;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;

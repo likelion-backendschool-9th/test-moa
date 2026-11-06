@@ -1,11 +1,11 @@
 package com.testmoa.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
-import com.testmoa.backend.domain.entity.RefreshToken;
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.domain.repository.RefreshTokenRepository;
-import com.testmoa.backend.domain.repository.UserRepository;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.entity.RefreshToken;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.repository.RefreshTokenRepository;
+import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.entity.enums.UserStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

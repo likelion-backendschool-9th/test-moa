@@ -1,11 +1,11 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.dto.request.CashoutCreateRequest;
-import com.testmoa.backend.domain.dto.response.CashoutResponse;
-import com.testmoa.backend.domain.dto.response.CreditBalanceResponse;
-import com.testmoa.backend.domain.dto.response.CreditLedgerResponse;
-import com.testmoa.backend.global.common.ApiResponse;
-import com.testmoa.backend.global.common.LedgerFlow;
+import com.testmoa.backend.dto.request.CashoutCreateRequest;
+import com.testmoa.backend.dto.response.CashoutResponse;
+import com.testmoa.backend.dto.response.CreditBalanceResponse;
+import com.testmoa.backend.dto.response.CreditLedgerResponse;
+import com.testmoa.backend.global.util.ApiResponse;
+import com.testmoa.backend.entity.enums.LedgerFlow;
 import com.testmoa.backend.service.CreditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

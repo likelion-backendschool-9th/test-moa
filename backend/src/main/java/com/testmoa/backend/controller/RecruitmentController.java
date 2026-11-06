@@ -1,8 +1,8 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.dto.request.RecruitmentCreateRequest;
-import com.testmoa.backend.domain.dto.response.RecruitmentCreateResponse;
-import com.testmoa.backend.global.common.ApiResponse;
+import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
+import com.testmoa.backend.dto.response.RecruitmentCreateResponse;
+import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

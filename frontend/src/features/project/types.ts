@@ -80,7 +80,7 @@ export type TestItem = {
   images: ProjectImage[];
 };
 
-/** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원 순서대로 자동 확정, 선발형은 개발자가 직접 확정·거절 */
+/** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원하면 바로 확정, 선발형은 개발자가 직접 확정·거절 */
 export type SelectionMode = "firstCome" | "selection";
 
 export const SELECTION_MODE_LABEL: Record<SelectionMode, string> = {

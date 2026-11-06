@@ -33,7 +33,6 @@ export type Recruitment = {
   extraReward?: number;
 };
 
-
 /** 전체 테스트 그리드의 한 페이지 */
 export type RecruitmentPage = {
   items: Recruitment[];

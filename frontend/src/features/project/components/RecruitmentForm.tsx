@@ -19,7 +19,7 @@ import { TextField } from "./TextField";
  */
 
 const SELECTION_MODE_HINT: Record<SelectionMode, string> = {
-  firstCome: "지원 순서대로 자동 확정돼요",
+  firstCome: "지원하면 바로 확정돼요",
   selection: "지원자를 직접 확정하고 거절해요",
 };
 

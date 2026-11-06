@@ -8,7 +8,6 @@ import com.testmoa.backend.global.client.AnalysisClient.GroupMatch;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.ClusterGroupRepository;
-import com.testmoa.backend.repository.ProjectRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.repository.VersionComparisonRepository;
 import com.testmoa.backend.service.VersionComparisonReader.ComparisonTarget;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class VersionComparisonWriter {
-    private final ProjectRepository projectRepository;
+    private final GroupCodeIssuer groupCodeIssuer;
     private final RecruitmentRepository recruitmentRepository;
     private final ClusterGroupRepository clusterGroupRepository;
     private final VersionComparisonRepository versionComparisonRepository;
@@ -42,9 +41,8 @@ public class VersionComparisonWriter {
      */
     @Transactional
     public void save(ComparisonTarget target, ComparisonResponse response) {
-        // 같은 프로젝트의 비교가 동시에 저장되면 같은 새 코드를 낼 수 있어 끝날 때까지 프로젝트 행을 잠금
-        projectRepository.findByIdForUpdate(target.projectId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        // 같은 프로젝트의 저장이 동시에 같은 새 코드를 내지 않도록 끝날 때까지 프로젝트 행을 잠금
+        GroupCodeIssuer.Codes codes = groupCodeIssuer.open(target.projectId());
         Recruitment current = recruitmentRepository.findById(target.currentRecruitmentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         Recruitment previous = recruitmentRepository.findById(target.previousRecruitmentId())
@@ -66,11 +64,10 @@ public class VersionComparisonWriter {
             currentGroup.updateGroupCode(previousGroup.getGroupCode());
         }
 
-        long nextCode = nextGroupCode(target.projectId());
         for (Long groupId : response.newGroupIds()) {
             ClusterGroup currentGroup = currentGroups.get(groupId);
             if (currentGroup == null || !pairedCurrent.add(currentGroup.getId())) continue;
-            currentGroup.updateGroupCode(String.valueOf(nextCode++));
+            currentGroup.updateGroupCode(codes.next());
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -81,23 +78,6 @@ public class VersionComparisonWriter {
                         .previousRecruitment(previous)
                         .summary(response.summary())
                         .build()));
-    }
-
-    // 그룹 코드는 프로젝트 안에서 1부터 세는 숫자 문자열. 문자열 컬럼이라 DB의 max로는 "9"가 "10"보다 커서 숫자로 읽어 셈
-    private long nextGroupCode(Long projectId) {
-        return clusterGroupRepository.findGroupCodesByProjectId(projectId).stream()
-                .mapToLong(VersionComparisonWriter::parseCode)
-                .max()
-                .orElse(0) + 1;
-    }
-
-    // 숫자로 읽히지 않는 코드는 최대값 계산에서 뺌
-    private static long parseCode(String code) {
-        try {
-            return Long.parseLong(code.trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 
     private static Map<Long, ClusterGroup> byId(List<ClusterGroup> groups) {

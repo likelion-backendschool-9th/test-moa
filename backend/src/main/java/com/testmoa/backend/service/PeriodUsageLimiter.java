@@ -4,7 +4,9 @@ import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,6 +29,11 @@ public abstract class PeriodUsageLimiter {
 
     // 오늘이 속한 기간의 첫날
     protected abstract LocalDate periodStart(LocalDate today);
+
+    // 월요일부터 일요일까지를 한 주로 셀 때 그 주의 월요일
+    protected static LocalDate mondayOf(LocalDate day) {
+        return day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+    }
 
     /**
      * 한 번 쓰고, 센 기간을 돌려줌. 이번 기간에 다 썼으면 limitExceeded 오류.

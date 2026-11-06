@@ -4,10 +4,8 @@ import com.testmoa.backend.global.exception.ErrorCode;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 
 /**
  * AI 버전 비교의 한 주 사용 횟수(개발자 1인당 3번). 서울 시간 월요일 0시에 다시 셈.
@@ -25,9 +23,8 @@ public class VersionComparisonLimiter extends PeriodUsageLimiter {
         super(clock, WEEKLY_LIMIT, ErrorCode.COMPARISON_LIMIT_EXCEEDED);
     }
 
-    // 월요일부터 일요일까지를 한 주로 셈
     @Override
     protected LocalDate periodStart(LocalDate today) {
-        return today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        return mondayOf(today);
     }
 }

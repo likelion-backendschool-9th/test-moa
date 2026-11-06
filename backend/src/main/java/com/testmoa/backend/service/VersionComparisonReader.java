@@ -49,7 +49,7 @@ public class VersionComparisonReader {
     public ComparisonTarget readTarget(Long userId, Long recruitmentId) {
         Recruitment current = findMine(userId, recruitmentId);
         Recruitment previous = recruitmentRepository
-                .findFirstByProjectIdAndVersionLessThanOrderByVersionDesc(current.getProject().getId(), current.getVersion())
+                .findFirstByProjectIdAndVersionLessThanOrderByVersionDescIdDesc(current.getProject().getId(), current.getVersion())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NO_PREVIOUS_VERSION));
         if (current.getAnalysisStatus() != AnalysisStatus.DONE || previous.getAnalysisStatus() != AnalysisStatus.DONE) {
             throw new BusinessException(ErrorCode.ANALYSIS_NOT_DONE);

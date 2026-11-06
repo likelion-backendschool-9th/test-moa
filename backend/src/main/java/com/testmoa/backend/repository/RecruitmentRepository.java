@@ -19,8 +19,8 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> 
     @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
     Optional<Recruitment> findMineWithProject(@Param("id") Long id, @Param("userId") Long userId);
 
-    // 같은 프로젝트에서 version보다 작은 버전 중 가장 큰 것(직전 버전)
-    Optional<Recruitment> findFirstByProjectIdAndVersionLessThanOrderByVersionDesc(Long projectId, Integer version);
+    // 같은 프로젝트에서 version보다 작은 버전 중 가장 큰 것(직전 버전). 같은 버전이 여럿이면 나중에 만든 모집글
+    Optional<Recruitment> findFirstByProjectIdAndVersionLessThanOrderByVersionDescIdDesc(Long projectId, Integer version);
 
     /**
      * 분석 시작. 진행 중(PENDING)이 아닐 때만 PENDING으로 바꿔, 동시에 두 번 눌러도 한 번만 바뀐다. 바뀐 행 수를 돌려준다

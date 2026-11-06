@@ -35,8 +35,9 @@ public class ReviewAnalysisWorker {
             reviewAnalysisWriter.save(target, response);
         } catch (RuntimeException e) {
             log.warn("리뷰 분석 실패 recruitmentId={}", target.recruitmentId(), e);
-            reviewAnalysisWriter.markFailed(target.recruitmentId());
+            // 실패 기록이 DB 오류로 실패해도 횟수는 돌려주도록 먼저 되돌림
             reviewAnalysisLimiter.release(userId, countedIn);
+            reviewAnalysisWriter.markFailed(target.recruitmentId());
         }
     }
 }

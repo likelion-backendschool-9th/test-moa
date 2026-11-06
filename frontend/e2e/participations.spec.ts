@@ -217,3 +217,33 @@ test.describe("#46-R1 보기 방식", () => {
     await expect.poll(() => columnCount(page)).toBe(3);
   });
 });
+
+test.describe("#138-R1 추가 보상 배지는 홈 모집 카드와 같다", () => {
+  for (const view of ["list", "grid"] as const) {
+    test(`#138-S1 추가 보상 배지와 도장 (${view === "list" ? "리스트" : "그리드"})`, async ({ page, context }) => {
+      await context.addCookies([{ name: "participation-view", value: view, url: "http://localhost:3100" }]);
+      await page.goto("/testers/recruitments?tab=history");
+      expect(await rowNames(page)).toEqual(["메모 정원", "카페 지도", "주차 알리미"]);
+      /* 유형 배지는 없다 */
+      await expect(rows(page).locator("[data-thumb]").getByText("웹서비스", { exact: true })).toHaveCount(0);
+
+      const parking = rows(page).filter({ hasText: "주차 알리미" });
+      const thumb = parking.locator("[data-thumb]");
+      const badge = thumb.getByText("추가 보상", { exact: true });
+      await expect(badge).toBeVisible();
+      await expect(rows(page).locator("[data-thumb]").getByText("추가 보상", { exact: true })).toHaveCount(1);
+      await expect(parking.getByRole("definition").filter({ hasText: "+300 크레딧" })).toBeVisible();
+
+      /* 배지는 왼쪽 위, 도장은 배지가 있어도 오른쪽 위에 같은 크기로 겹치지 않게 찍힌다 */
+      const box = (await thumb.boundingBox())!;
+      const badgeBox = (await badge.boundingBox())!;
+      const stamp = (await thumb.getByRole("img", { name: "지급 완료" }).boundingBox())!;
+      const plainStamp = (await rows(page).filter({ hasText: "메모 정원" }).getByRole("img", { name: "지급 완료" }).boundingBox())!;
+      expect(badgeBox.x - box.x).toBeLessThan(box.width / 4);
+      expect(stamp.x + stamp.width / 2).toBeGreaterThan(box.x + box.width / 2);
+      expect(stamp.y + stamp.height / 2).toBeLessThan(box.y + box.height / 2);
+      expect(Math.abs(stamp.width - plainStamp.width)).toBeLessThan(1);
+      expect(badgeBox.x + badgeBox.width <= stamp.x || badgeBox.y + badgeBox.height <= stamp.y).toBe(true);
+    });
+  }
+});

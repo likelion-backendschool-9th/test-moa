@@ -47,11 +47,12 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `selectionMode` | `selection_mode` | enum `SelectionMode` | 불가 | 선정 방식 |
 | `version` | `version` | Integer | 불가 | 1로 시작 |
 | `analysisStatus` | `analysis_status` | enum `AnalysisStatus` | 불가 | `NONE`/`PENDING`/`DONE`/`FAILED`. `NONE`으로 시작 |
+| `analyzedAt` | `analyzed_at` | LocalDateTime | 가능 | 피드백 분석 완료 시각. 분석 전에는 null (#108) |
 | `cancelReason` | `cancel_reason` | TEXT | 가능 | 테스트 전 취소는 비어 있다 |
 | `cancelledAt` | `cancelled_at` | LocalDateTime | 가능 | 취소 시각 |
 
 - `RecruitmentType`(`recruitment_types`)과 `RecruitmentImage`(`recruitment_images`: `recruitment`, `url`, `sortOrder`)는 모집글을 가리킨다
-- 메서드: `cancel(String reason, LocalDateTime cancelledAt)`
+- 메서드: `cancel(String reason, LocalDateTime cancelledAt)`, `completeAnalysis(LocalDateTime now)`(#108)
 - 취소할 수 있는 시기와 사유가 필수인 경우는 확정 테스터와 일정을 함께 봐야 해서 서비스가 확인한다(`docs/frontend/project/projects.md` 모집 취소 표)
 
 #89-S1 프로젝트에는 프로젝트 정보만 있다 [직접]

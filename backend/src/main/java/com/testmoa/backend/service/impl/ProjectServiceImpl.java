@@ -7,11 +7,13 @@ import com.testmoa.backend.domain.dto.response.RecruitmentCreateResponse;
 import com.testmoa.backend.domain.dto.response.RecruitmentSummaryResponse;
 import com.testmoa.backend.domain.entity.Project;
 import com.testmoa.backend.domain.entity.Recruitment;
+import com.testmoa.backend.domain.entity.RecruitmentImage;
 import com.testmoa.backend.domain.entity.RecruitmentType;
 import com.testmoa.backend.domain.entity.TestItem;
 import com.testmoa.backend.domain.entity.TestItemImage;
 import com.testmoa.backend.domain.entity.Type;
 import com.testmoa.backend.domain.repository.ProjectRepository;
+import com.testmoa.backend.domain.repository.RecruitmentImageRepository;
 import com.testmoa.backend.domain.repository.RecruitmentRepository;
 import com.testmoa.backend.domain.repository.RecruitmentTypeRepository;
 import com.testmoa.backend.domain.repository.RegisterRepository;
@@ -51,6 +53,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
     private final RecruitmentRepository recruitmentRepository;
+    private final RecruitmentImageRepository recruitmentImageRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
     private final RegisterRepository registerRepository;
     private final TestItemRepository testItemRepository;
@@ -125,7 +128,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
-     * 모집 작성. 모집글, 유형, 테스트 항목, 항목 이미지를 함께 저장한다. 하나라도 실패하면 모두 저장되지 않는다
+     * 모집 작성. 모집글, 모집글 이미지, 유형, 테스트 항목, 항목 이미지를 함께 저장한다. 하나라도 실패하면 모두 저장되지 않는다
      */
     @Override
     @Transactional
@@ -147,6 +150,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .feedbackDeadline(endOf(request.submitDeadline()))
                 .selectionMode(selectionMode)
                 .build());
+        saveRecruitmentImages(recruitment, request.imageUrls());
         recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());
         request.testItems().forEach(item -> saveTestItem(recruitment, item));
         return new RecruitmentCreateResponse(recruitment.getId());
@@ -185,6 +189,14 @@ public class ProjectServiceImpl implements ProjectService {
         }
         if (!submitDeadline.isAfter(recruitDeadline)) {
             throw invalid("submitDeadline", "제출 마감일은 모집 마감일보다 뒤여야 해요");
+        }
+    }
+
+    // 모집글 이미지는 보낸 순서대로 0부터 sortOrder를 매긴다. 상세에서 프로젝트 대표 이미지 다음에 이 순서로 놓인다
+    private void saveRecruitmentImages(Recruitment recruitment, List<String> imageUrls) {
+        if (imageUrls == null) return;
+        for (int index = 0; index < imageUrls.size(); index++) {
+            recruitmentImageRepository.save(RecruitmentImage.builder().recruitment(recruitment).url(imageUrls.get(index).trim()).sortOrder(index).build());
         }
     }
 

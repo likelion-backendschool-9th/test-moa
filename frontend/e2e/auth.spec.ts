@@ -190,3 +190,36 @@ test.describe("R160 가입 성공", () => {
     await expect(page).toHaveURL("/login?joined=1");
   });
 });
+
+test.describe("#83 소셜 가입 이름 입력", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "guest" });
+  });
+
+  test("#83-S9 이름과 약관 동의가 없으면 칸 아래에 알린다", async ({ page }) => {
+    await page.goto("/signup/social");
+    await expect(main(page).getByText("social@example.com")).toBeVisible();
+    await main(page).getByRole("button", { name: "가입하기" }).click();
+    await expect(main(page).getByText("이름을 입력해 주세요")).toBeVisible();
+    await expect(main(page).getByText("이용약관과 개인정보처리방침에 동의해 주세요")).toBeVisible();
+    await expect(main(page).getByLabel("이름")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("#83-S10 이름을 입력하고 동의하면 로그인한 채 돌아갈 곳으로 간다", async ({ page }) => {
+    await page.goto("/signup/social?next=%2Fmy");
+    await main(page).getByLabel("이름").fill("김소셜");
+    await main(page).getByLabel("이용약관 동의(필수)").check();
+    await main(page).getByLabel("개인정보처리방침 동의(필수)").check();
+    await main(page).getByRole("button", { name: "가입하기" }).click();
+    await expect(page).toHaveURL("/my");
+    await expectLoggedIn(page);
+  });
+
+  test("#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 값은 무시한다", async ({ page }) => {
+    await page.goto("/login?error=suspended");
+    await expect(main(page).getByText("이용이 정지된 계정이에요")).toBeVisible();
+    await page.goto("/login?error=%3Cscript%3E");
+    await expect(main(page).getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
+    await expect(main(page).locator("[role=alert]")).toHaveCount(0);
+  });
+});

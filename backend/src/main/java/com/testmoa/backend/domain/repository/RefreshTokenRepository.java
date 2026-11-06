@@ -1,6 +1,7 @@
 package com.testmoa.backend.domain.repository;
 
 import com.testmoa.backend.domain.entity.RefreshToken;
+import com.testmoa.backend.domain.entity.User;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -24,6 +25,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     // 로그아웃: 그 로그인 세션의 토큰을 모두 버린다
     void deleteBySessionId(String sessionId);
+
+    // 로그인할 때 그 회원의 만료된 토큰 행을 지운다. 로그아웃하지 않고 끝난 세션의 행이 쌓이지 않게 한다
+    void deleteByUserAndExpiresAtBefore(User user, LocalDateTime now);
 
     // access 토큰의 세션이 아직 살아 있는지(로그아웃하지 않았고 만료되지 않은 토큰이 있는지)
     boolean existsBySessionIdAndExpiresAtAfter(String sessionId, LocalDateTime now);

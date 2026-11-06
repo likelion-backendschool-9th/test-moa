@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { findActivePath, type NavItem } from "@/lib/nav";
+import { findActivePath, type NavItem } from "@/app/_components/nav";
 
 /** 마이페이지 하위 페이지 메뉴. test-moa/docs/page-urls.md의 마이페이지 섹션을 따른다 */
 const ACCOUNT_NAV: NavItem[] = [

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { logout } from "@/features/auth/actions";
 import { cn } from "@/lib/cn";
-import { findActivePath, isMyPagePath, MY_PAGE_PATH, type NavItem } from "@/lib/nav";
+import { findActivePath, isMyPagePath, MY_PAGE_PATH, type NavItem } from "@/app/_components/nav";
 
 type MobileMenuProps = {
   items: NavItem[];

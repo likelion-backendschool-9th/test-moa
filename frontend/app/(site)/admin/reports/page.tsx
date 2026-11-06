@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AccessDenied } from "@/components/AccessDenied";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { getReports, requireAdmin } from "@/features/admin/api";
 import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";

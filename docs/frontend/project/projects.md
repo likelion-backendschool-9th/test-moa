@@ -251,16 +251,17 @@ S494 정보 [직접] (고침 #62: 유형을 모집글로 옮김)
 - When  `/developer/projects/booklog`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  맨 위에 "내 프로젝트로 돌아가기" 링크(`/developer/projects`)가 있다 (고침 #101: 역할 경로로 이동)
 - Then  이름, 상세 설명, 대표 이미지가 보인다. 접속 링크와 유형은 모집글마다 있어 여기에는 없다(#62-S13, #62-S11)
-- Then  "수정"(`/developer/projects/booklog/edit`), "테스트 모집 작성"(`/developer/recruitments/new?project=booklog`) 버튼이 있다 (고침 #101: 역할 경로로 이동)
+- Then  "수정"(`/developer/projects/booklog/edit`), "모집글 작성"(`/developer/recruitments/new?project=booklog`) 버튼이 있다 (고침 #101: 역할 경로로 이동, #130: 문구 변경)
 
 S495 모집 건 목록 [직접]
+- Then  목록 제목(h2)은 "모집글 관리"다 (고침 #130: 문구 변경)
 - Then  모집 건이 최신순으로 보이고, 각 항목에 상태 배지, 요청 내용, "확정 n명", 모집 마감일, 제출 마감일, "구독 모집" 여부가 있다
 - Then  항목은 관리 화면(`.../recruitments/:recruitmentKey`)으로 이동한다
 - Then  "공개 페이지 보기"는 `/recruitments/:slug`를 가리킨다. 취소된 모집에는 없다
 
 S496 모집 건 없음 [직접]
 - Given 모집 건이 없는 프로젝트
-- Then  "아직 테스트 모집이 없어요"와 "테스트 모집 작성" 버튼이 보인다
+- Then  "아직 테스트 모집이 없어요"와 "모집글 작성" 버튼이 보인다 (고침 #130: 문구 변경)
 
 #64-S1 분석하기 버튼 [직접]
 - Given `/developer/projects/booklog` (고침 #101: 역할 경로로 이동)

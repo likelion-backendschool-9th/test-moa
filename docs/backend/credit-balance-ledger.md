@@ -6,7 +6,7 @@
 
 ## 한눈에
 - 끝나면: `GET`으로 잔액 구성·승인 대기·장부 내역을 내려 `/my`·`/my/credits`가 쓸 수 있다. 프론트 목업 제거는 이후 별 PR.
-- 인증은 당분간 `userId` 경로.
+- 인증은 토큰의 회원 id다. 경로는 `/api/v1/my/credits`이고, 주소에 회원 id가 없다.
 - 브랜치: `feature/backend-credit-balance-ledger`
 - 화면: `docs/frontend/payment/credits.md`, `docs/frontend/payment/credit-labels.md`
 
@@ -14,8 +14,8 @@
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| `GET` | `/api/users/{userId}/credits` | 잔액·승인 대기·파생 값 |
-| `GET` | `/api/users/{userId}/credits/ledgers?type=all\|in\|out` | 장부. 최신순. 잘못된 type은 400 |
+| `GET` | `/api/v1/my/credits` | 잔액·승인 대기·파생 값. 로그인 필요 |
+| `GET` | `/api/v1/my/credits/ledger?type=all\|in\|out` | 장부. 최신순. 잘못된 type은 400 |
 
 ### 잔액 응답 필드
 
@@ -97,14 +97,14 @@ flowchart LR
 ## 시나리오
 
 #66-S1 잔액 조회 API [직접]
-- API: `GET /api/users/{userId}/credits`
+- API: `GET /api/v1/my/credits`
 - Then  `earnedBalance`, `eventCredit`, `lockedBalance`, `pendingReward`, `totalCredits`, `payableCredits`, `cashableCredits`
 - Then  `cashableCredits` = `earnedBalance`, `payableCredits` = `earnedBalance + eventCredit`, `totalCredits` = `earnedBalance + eventCredit + lockedBalance`
 - Then  `pendingReward`는 잔액 필드에 포함되지 않는다
 - 화면: `/my`, `/my/credits`
 
 #66-S2 내역 조회 API [직접]
-- API: `GET /api/users/{userId}/credits/ledgers?type=all|in|out`
+- API: `GET /api/v1/my/credits/ledger?type=all|in|out`
 - Then  `in`은 delta>0, `out`은 delta<0. 잘못된 type은 400
 - Then  구독 결제는 EVENT/EARNED 행을 두 줄로 응답한다 (프론트 연동 때 한 줄 목업을 고침)
 - 화면: `/my/credits`
@@ -123,17 +123,26 @@ flowchart LR
 - When  `sumPendingRewardByUserId`
 - Then  합은 0이다
 
+#66-S5 토큰의 회원만 자기 크레딧을 본다 [테스트]
+- Given 회원 B의 장부에 한 줄이 있다. 주소에는 회원 id가 없다
+- When  A의 토큰으로 `GET /api/v1/my/credits`, `GET /api/v1/my/credits/ledger`
+- Then  잔액의 `userId`는 A다. 내역에 B의 장부 id가 없다
+- When  B의 토큰으로 `GET /api/v1/my/credits/ledger`
+- Then  그 장부 id가 보인다
+- When  토큰 없이 `GET /api/v1/my/credits`
+- Then  401이다
+
 ---
 
 ## 구현 메모
 - Repository / Service / Controller. 읽기 전용 트랜잭션.
 - 승인 대기 합산은 `RegisterRepository` 조회(`CONFIRMED` + EXISTS SUBMITTED + NOT EXISTS REPORTED + 스냅샷 SUM). `#66-S3`·`#66-S4`는 `@DataJpaTest`로 JPQL을 확인한다.
 - 지갑이 없으면 잔액 필드는 0, 승인 대기는 그래도 계산한다.
-- 없는 `userId`는 404.
+- 회원 id는 `@AuthenticationPrincipal`로 받는다. 토큰이 없거나 쓸 수 없는 회원이면 401이다.
 - `CreditWallet` 주석·이 문서·[payment/entities.md](payment/entities.md) 요약이 같은 규칙을 가리킨다.
 
 ## 범위 밖
 - 출금 신청·내역 (#67), 운영자 출금 (#68)
 - 구독·checkout (#69~#71)
 - `REPORTED`용 「검토 중」 금액 필드·화면
-- 프론트 목업 제거·인증 본구현
+- 프론트 목업 제거

@@ -21,7 +21,7 @@
 프론트: [크레딧](../../frontend/payment/credits.md), [크레딧 구분·내역 시각](../../frontend/payment/credit-labels.md), [구독](../../frontend/payment/subscription.md), [출금 요청 관리](../../frontend/admin/withdrawals.md)
 
 ## 정한 것
-- 프론트 목업의 규칙을 백엔드가 갖게 한다. 인증은 당분간 `userId` 경로다.
+- 프론트 목업의 규칙을 백엔드가 갖게 한다. 크레딧 잔액·내역은 토큰의 회원만 본다(`/api/v1/my/credits`).
 - **DB는 지금 ERD보다 복잡하게 만들지 않는다.** 테이블을 늘리지 않고, 컬럼도 꼭 필요한 것(`reject_memo`)만 더한다.
 - **조건이 붙는 규칙은 DB가 아니라 백엔드가 맡는다.**
 
@@ -109,12 +109,12 @@ erDiagram
 시나리오·승인 대기 규칙은 [../credit-balance-ledger.md](../credit-balance-ledger.md)에 있다.
 
 #66-S1 잔액 조회 API [직접]
-- API: `GET /api/users/{userId}/credits`
+- API: `GET /api/v1/my/credits`
 - Then  `earnedBalance`, `eventCredit`, `lockedBalance`, `pendingReward`, `totalCredits`, `payableCredits`, `cashableCredits`
 - 화면: `/my`, `/my/credits` (`docs/frontend/payment/credits.md` S350은 [직접]/[테스트] 해당 문서 기준)
 
 #66-S2 내역 조회 API [직접]
-- API: `GET /api/users/{userId}/credits/ledgers?type=all|in|out`
+- API: `GET /api/v1/my/credits/ledger?type=all|in|out`
 - Then  `in`은 delta>0, `out`은 delta<0. 잘못된 type은 400
 - Then  구독 결제는 EVENT/EARNED 행을 두 줄로 응답한다 (프론트 연동 때 한 줄 목업을 고침)
 - 화면: `/my/credits` (`docs/frontend/payment/credits.md` S352~)

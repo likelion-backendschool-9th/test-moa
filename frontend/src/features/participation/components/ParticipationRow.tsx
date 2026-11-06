@@ -1,4 +1,3 @@
-import { CoinsIcon } from "@phosphor-icons/react/ssr";
 import { participationPath } from "@/lib/participation-paths";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -54,15 +53,8 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
         <RecruitmentThumb
           recruitment={recruitment}
           stamp={status === "paid" ? "지급 완료" : undefined}
-          badge={
-            recruitment.extraReward !== undefined && (
-              <Badge tone="accentSolid" className="gap-1 px-2.5 py-1 text-sm font-extrabold whitespace-nowrap tabular-nums">
-                {/* 좁은 썸네일에서는 글자가 먼저다 */}
-                <CoinsIcon aria-hidden size={16} weight="fill" className="hidden @3xs:block" />
-                추가 보상 +{formatCredits(recruitment.extraReward)}
-              </Badge>
-            )
-          }
+          /* 홈 모집 카드와 같은 배지(#138). 금액은 보상 줄에 있다 */
+          badge={recruitment.extraReward !== undefined && <Badge tone="accentSolid" className="font-bold">추가 보상</Badge>}
         />
       </div>
       <div className="flex flex-1 flex-col gap-3">
@@ -87,6 +79,12 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
             <dt className="text-xs text-text-muted">기본 보상</dt>
             <dd className="font-semibold tabular-nums">{formatCredits(recruitment.baseReward)}</dd>
           </div>
+          {recruitment.extraReward !== undefined && (
+            <div>
+              <dt className="text-xs text-text-muted">추가 보상</dt>
+              <dd className="font-bold text-accent tabular-nums">+{formatCredits(recruitment.extraReward)}</dd>
+            </div>
+          )}
         </dl>
         {status === "payoutPending" && <p className="text-xs text-text-muted">72시간 동안 신고가 없으면 자동으로 지급돼요</p>}
       </div>

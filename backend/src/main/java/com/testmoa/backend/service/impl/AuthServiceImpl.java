@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -99,45 +100,54 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() == UserStatus.WITHDRAWN) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
 
-        return issueTokens(user);
+        return issueTokens(user, UUID.randomUUID().toString());
     }
 
     /**
-     * 토큰 갱신. 쓴 refresh 토큰은 지우고 새 쌍을 준다. 같은 토큰을 두 번 쓰면 두 번째는 실패한다
+     * 토큰 갱신. 같은 세션의 새 쌍을 주고, 쓴 토큰은 다시 쓸 수 없게 표시한다. 같은 토큰을 두 번 쓰면 두 번째는 실패한다.
+     * 쓴 토큰은 하나만 남겨 둔다. 갱신 응답이 브라우저에 닿기 전에 그 토큰으로 로그아웃해도 세션을 찾아 끝내기 위해서다
      */
     @Override
     public TokenResponse refresh(String refreshToken) {
         RefreshToken saved = refreshTokenRepository.findByTokenHash(hash(refreshToken))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
-        refreshTokenRepository.delete(saved);
 
+        LocalDateTime now = LocalDateTime.now();
         User user = saved.getUser();
-        if (saved.isExpired(LocalDateTime.now()) || user.getStatus() != UserStatus.ACTIVE) {
+        if (saved.isUsed() || saved.isExpired(now) || saved.getSessionId() == null || user.getStatus() != UserStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        return issueTokens(user);
+        refreshTokenRepository.deleteBySessionIdAndUsedAtIsNotNull(saved.getSessionId());
+        saved.markUsed(now);
+        return issueTokens(user, saved.getSessionId());
     }
 
     /**
-     * 로그아웃. 이미 없는 토큰이어도 성공으로 본다
+     * 로그아웃. 그 토큰의 로그인 세션을 통째로 끝낸다. 로그아웃 전에 시작한 갱신이 나중에 끝나도 그 토큰은 쓸 수 없다.
+     * 다른 기기의 로그인(다른 세션)은 그대로다. 이미 없는 토큰이어도 성공으로 본다
      */
     @Override
     public void logout(String refreshToken) {
-        refreshTokenRepository.deleteByTokenHash(hash(refreshToken));
+        String tokenHash = hash(refreshToken);
+        refreshTokenRepository.findByTokenHash(tokenHash)
+                .map(RefreshToken::getSessionId)
+                .ifPresentOrElse(refreshTokenRepository::deleteBySessionId,
+                        () -> refreshTokenRepository.deleteByTokenHash(tokenHash));
     }
 
-    // ponytail: 만료된 refresh 토큰 행은 지우지 않고 쌓인다. 많아지면 만료 행을 지우는 스케줄러를 더한다
-    private TokenResponse issueTokens(User user) {
+    // ponytail: 로그아웃하지 않고 만료된 refresh 토큰 행은 쌓인다(세션마다 최대 2행). 많아지면 만료 행을 지우는 스케줄러를 더한다
+    private TokenResponse issueTokens(User user, String sessionId) {
         String refreshToken = newRefreshToken();
         refreshTokenRepository.save(RefreshToken.builder()
                 .user(user)
+                .sessionId(sessionId)
                 .tokenHash(hash(refreshToken))
                 .expiresAt(LocalDateTime.now().plus(refreshTokenTtl))
                 .build());
 
         return new TokenResponse(
-                jwtProvider.createAccessToken(user.getId()),
+                jwtProvider.createAccessToken(user.getId(), sessionId),
                 refreshToken,
                 jwtProvider.getAccessTokenTtl().toSeconds(),
                 refreshTokenTtl.toSeconds());

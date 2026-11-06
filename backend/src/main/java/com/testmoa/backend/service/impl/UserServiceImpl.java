@@ -5,6 +5,7 @@ import com.testmoa.backend.domain.dto.response.MeResponse;
 import com.testmoa.backend.domain.dto.response.MeResponse.SubscriptionStatusResponse;
 import com.testmoa.backend.domain.entity.User;
 import com.testmoa.backend.domain.repository.AccountRepository;
+import com.testmoa.backend.domain.repository.RefreshTokenRepository;
 import com.testmoa.backend.domain.repository.UserRepository;
 import com.testmoa.backend.global.common.Role;
 import com.testmoa.backend.global.common.UserStatus;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -25,6 +27,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final SubscriptionChecker subscriptionChecker;
 
     /**
@@ -46,7 +49,10 @@ public class UserServiceImpl implements UserService {
      * 토큰 인증은 ACTIVE 회원만 통과한다. 로그인(AuthService)과 달리 정지 회원도 403이 아니라 빈 값(→ 401)이다
      */
     @Override
-    public Optional<AuthenticatedUser> findAuthenticatable(Long userId) {
+    public Optional<AuthenticatedUser> findAuthenticatable(Long userId, String sessionId) {
+        if (sessionId != null && !refreshTokenRepository.existsBySessionIdAndExpiresAtAfter(sessionId, LocalDateTime.now())) {
+            return Optional.empty();
+        }
         return userRepository.findById(userId)
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
                 .map(user -> new AuthenticatedUser(user.getId(), user.getRole()));

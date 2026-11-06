@@ -123,7 +123,9 @@ class OAuthControllerTest {
         saveEmailUser("taken" + email, UserStatus.ACTIVE);
         String taken = userRepository.findByEmail("taken" + email).orElseThrow().getNickname();
         provider("dup", Provider.GOOGLE, "g-" + suffix, email, true, taken);
-        String signupToken = field(oauthLogin("google", "dup"), "$.data.signupToken");
+        ResultActions first = oauthLogin("google", "dup");
+        String signupToken = field(first, "$.data.signupToken");
+        String shown = field(first, "$.data.nickname"); // 이름 입력 화면에 보이는 닉네임
 
         oauthSignup(signupToken, " ").andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.fields.name").value("이름을 입력해 주세요"));
@@ -131,6 +133,8 @@ class OAuthControllerTest {
         String access = field(oauthSignup(signupToken, "김소셜"), "$.data.accessToken");
         String nickname = field(me(access), "$.data.nickname");
         assertThat(nickname).startsWith(taken).hasSize(taken.length() + 4).isNotEqualTo(taken);
+        // 화면에 보인 닉네임 그대로 가입된다
+        assertThat(nickname).isEqualTo(shown);
 
         // 닉네임으로 쓸 글자가 하나도 없으면 "회원"에서 시작한다
         provider("emoji", Provider.GOOGLE, "g2-" + suffix, "emoji" + email, true, "🙂 !!");

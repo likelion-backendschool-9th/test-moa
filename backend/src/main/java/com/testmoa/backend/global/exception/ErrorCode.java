@@ -25,7 +25,10 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "다시 로그인해 주세요"),
 
     // 구독
-    SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요");
+    SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
+
+    // 출금
+    CASHOUT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리한 출금 요청이에요");
 
     private final HttpStatus status;
     private final String message;

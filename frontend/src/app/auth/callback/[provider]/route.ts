@@ -28,6 +28,8 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/auth/
     method: "POST",
     body: { code: query.get("code"), redirectUri: callbackUrl(saved.provider) },
     withToken: false,
+    /* 백엔드가 제공자에게 2~3번(한 번에 5초까지) 묻는다. 5초에 끊으면 백엔드는 연동했는데 화면은 실패가 될 수 있다 */
+    timeoutMs: 20_000,
   });
   if (!result.ok) redirect(withNext("/login", next, { error: oauthErrorKey(result.code) }));
 

@@ -292,7 +292,9 @@ class CreditServiceImplTest {
         List<CashoutResponse> responses = creditService.getCashouts(USER_ID);
 
         assertEquals("100012345678", responses.get(0).getAccountNumber());
+        assertEquals("한서윤", responses.get(0).getAccountHolder());
         assertEquals("****9012", responses.get(1).getAccountNumber());
+        assertEquals("한*윤", responses.get(1).getAccountHolder());
         assertNull(responses.get(0).getProcessedAt());
         assertEquals(CashoutStatus.PAID, responses.get(1).getStatus());
     }

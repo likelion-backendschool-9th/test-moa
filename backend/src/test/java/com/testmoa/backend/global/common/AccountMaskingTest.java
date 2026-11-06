@@ -19,4 +19,18 @@ class AccountMaskingTest {
         assertEquals("****5678", AccountMasking.mask("100012345678", CashoutStatus.PAID));
         assertEquals("****5678", AccountMasking.mask("100012345678", CashoutStatus.REJECTED));
     }
+
+    @Test
+    @DisplayName("REQUESTED는 예금주 전체")
+    void requestedShowsFullHolder() {
+        assertEquals("한서윤", AccountMasking.maskHolder("한서윤", CashoutStatus.REQUESTED));
+    }
+
+    @Test
+    @DisplayName("PAID·REJECTED는 예금주 가운데를 가린다")
+    void completedMasksHolder() {
+        assertEquals("한*윤", AccountMasking.maskHolder("한서윤", CashoutStatus.PAID));
+        assertEquals("김*", AccountMasking.maskHolder("김철", CashoutStatus.REJECTED));
+        assertEquals("*", AccountMasking.maskHolder("오", CashoutStatus.PAID));
+    }
 }

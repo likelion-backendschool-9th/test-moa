@@ -22,6 +22,11 @@
   /* 피드백 "유용해요"를 누른 상태. 연한 분홍 바탕에 빨강 글씨, 대비 4.82:1 */
   --like: #c4264a;
   --like-soft: #fde8ed;
+  /* 피드백의 유료 기능 버튼(채팅하기·AI 질문 받기). 민트에서 라벤더로 옅게 번지는 바탕, 글씨 아래 대비 4.51:1 이상 */
+  --paid-start: #ddf5ea;
+  --paid-mid: #edf5ee;
+  --paid-end: #eeeaf4;
+  --paid-text: var(--brand-green);
   /* 활자 썸네일의 교정지 면과 재단선 */
   --thumb: #ffffff;
   --on-thumb: #1a1a1a;
@@ -57,6 +62,11 @@
     /* 남회색 패널에서 튀지 않게 어두운 장미색 바탕에 밝힌 분홍 글씨, 대비 6.42:1 */
     --like: #f47c97;
     --like-soft: #341520;
+    /* 같은 민트→라벤더 흐름을 어둡게 낮춘 바탕. 기본 강조 초록은 이 바탕에서 대비가 낮아 글씨만 한 단계 밝힌다(4.93:1 이상) */
+    --paid-start: #123625;
+    --paid-mid: #1a2a26;
+    --paid-end: #241f36;
+    --paid-text: #34b27a;
     --thumb: #ffffff;
     --on-thumb: #16181d;
     --mark: #3d434b;
@@ -77,6 +87,10 @@
   --color-on-accent: var(--on-accent);
   --color-like: var(--like);
   --color-like-soft: var(--like-soft);
+  --color-paid-start: var(--paid-start);
+  --color-paid-mid: var(--paid-mid);
+  --color-paid-end: var(--paid-end);
+  --color-paid-text: var(--paid-text);
   --color-thumb: var(--thumb);
   --color-on-thumb: var(--on-thumb);
   --color-paper-accent: var(--paper-accent);

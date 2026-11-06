@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatsIcon, FlagIcon, HeartIcon, SparkleIcon, ThumbsUpIcon } from "@phosphor-icons/react";
+import { ChatsIcon, FlagIcon, HeartIcon, SparkleIcon } from "@phosphor-icons/react";
 import { unstable_rethrow } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
@@ -16,8 +16,9 @@ import { inputClass } from "./TextField";
 
 /*
  * 피드백 탭. 피드백마다 어느 테스트 항목에 대한 것인지(없으면 기타 의견)와 붙인 스크린샷을 보여 준다.
- * 카드 아래 버튼 줄: 채팅하기·AI 질문 받기(유료 기능), 유용해요(예전 "추천"), 신고하기·신고 정보.
- * - 상태 배지 대신 신고 버튼이 상태를 보여 준다. 신고 대기 중(72시간 안)이면 "신고하기", 신고됐으면 "신고 정보", 지급 완료면 없다.
+ * 카드 아래 버튼 줄은 언제나 4개다: 채팅하기, AI 질문 받기(둘은 유료 기능), 유용해요(예전 "추천"), 신고.
+ * - 상태 배지 대신 신고 버튼이 상태를 보여 준다. 신고했으면 "신고 정보", 아니면 "신고하기"다.
+ *   신고하기는 제출 후 72시간 안에만 대화상자를 열고, 지난 피드백은 신고 기간이 지났다고 안내한다.
  * - 무료 모집에서는 채팅하기·AI 질문 받기가 구독 안내로 이어진다.
  * - 채팅방 생성, 추천 저장, 신고, 신고 정보 조회는 백엔드 API가 아직 없다. 추천과 신고는 화면에서만 바뀌고 새로고침하면 돌아오며,
  *   채팅하기와 신고 정보는 준비 중 안내만 보여 준다.
@@ -26,6 +27,8 @@ import { inputClass } from "./TextField";
 
 const SUBSCRIPTION_PATH = "/my/subscription";
 const REPORT_INFO_NOT_READY = "신고 정보는 준비 중이에요";
+/* README: 제출 후 72시간 동안 신고가 없으면 자동 지급되고, 그 뒤에는 신고할 수 없다 */
+const REPORT_CLOSED = "신고는 제출 후 72시간 안에만 할 수 있어요";
 const FOLLOWUP_NETWORK_ERROR = "연결이 불안정해 질문을 받지 못했어요. 잠시 후 다시 시도해 주세요";
 
 const icon = { "aria-hidden": true, size: 16, weight: "bold" } as const;
@@ -107,7 +110,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
     ["기타 의견", feedbacks.filter((feedback) => !testItems.some((item) => item.id === feedback.testItemId)).length] as const,
   ].filter(([title, count]) => title !== "기타 의견" || count > 0);
   const isRecommended = (item: FeedbackView) => recommended[item.id] ?? item.recommended;
-  const recommendedCount = feedbacks.filter((item) => isRecommended(item) && (statuses[item.id] ?? item.status) !== "reported").length;
+  const recommendedCount = feedbacks.filter(isRecommended).length;
 
   return (
     <>
@@ -121,7 +124,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
       <ul className="flex flex-col gap-3">
         {feedbacks.map((item) => {
           const status = statuses[item.id] ?? item.status;
-          const liked = isRecommended(item) && status !== "reported";
+          const liked = isRecommended(item);
           const nickname = item.testerNickname;
           return (
             <li key={item.id} data-testid="feedback" className="flex flex-col gap-4 rounded-2xl bg-surface-muted p-5 md:p-6">
@@ -163,26 +166,17 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   <SparkleIcon {...icon} />
                   AI 질문 받기
                 </PaidAction>
-                {/* 신고된 피드백은 유용해요를 누를 수 없다 */}
-                {status !== "reported" && (
-                  <Button
-                    size="sm"
-                    variant={liked ? "like" : "secondary"}
-                    aria-pressed={liked}
-                    aria-label={`${nickname}님의 피드백이 유용해요`}
-                    onClick={() => toggleRecommend(item, !liked)}
-                  >
-                    {liked ? <HeartIcon {...icon} /> : <ThumbsUpIcon {...icon} />}
-                    유용해요
-                  </Button>
-                )}
-                {status === "waiting" && item.hoursUntilPaid > 0 && (
-                  <Button size="sm" variant="secondary" aria-label={`${nickname}님의 피드백 신고하기`} onClick={() => openReport(item)}>
-                    <FlagIcon {...icon} />
-                    신고하기
-                  </Button>
-                )}
-                {status === "reported" && (
+                <Button
+                  size="sm"
+                  variant={liked ? "like" : "secondary"}
+                  aria-pressed={liked}
+                  aria-label={`${nickname}님의 피드백이 유용해요`}
+                  onClick={() => toggleRecommend(item, !liked)}
+                >
+                  <HeartIcon {...icon} />
+                  유용해요
+                </Button>
+                {status === "reported" ? (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -191,6 +185,16 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   >
                     <FlagIcon {...icon} />
                     신고 정보
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    aria-label={`${nickname}님의 피드백 신고하기`}
+                    onClick={() => (status === "waiting" && item.hoursUntilPaid > 0 ? openReport(item) : showNotice(item, REPORT_CLOSED))}
+                  >
+                    <FlagIcon {...icon} />
+                    신고하기
                   </Button>
                 )}
               </div>
@@ -256,13 +260,13 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
 function PaidAction({ subscribed, label, onClick, children }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode }) {
   if (!subscribed) {
     return (
-      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="soft" aria-label={`${label}, 구독하면 쓸 수 있어요`}>
+      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="paid" aria-label={`${label}, 구독하면 쓸 수 있어요`}>
         {children}
       </LinkButton>
     );
   }
   return (
-    <Button size="sm" variant="soft" aria-label={label} onClick={onClick}>
+    <Button size="sm" variant="paid" aria-label={label} onClick={onClick}>
       {children}
     </Button>
   );

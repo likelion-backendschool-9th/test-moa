@@ -34,7 +34,7 @@ S344 마이페이지 현재 위치 [직접]
 - Given `demo-role=tester`
 - When  `/my` 또는 `/my/profile/edit`에 접속한다
 - Then  헤더의 "마이페이지"에 `aria-current="page"`가 있다
-- When  `/my/credits` 또는 `/my/projects`에 접속한다
+- When  `/my/credits` 또는 `/developer/projects`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "마이페이지"에 `aria-current`가 없다 (크레딧은 별도 버튼, 내 프로젝트는 탭이 따로 있다)
 - Then  `docs/frontend/my.md` S84의 "마이페이지 탭이 현재 탭"은 헤더 "마이페이지"로 확인한다
 
@@ -54,14 +54,14 @@ S346 로그아웃 뒤 보호 페이지 [테스트]
 ## 3. 카테고리 탭 (R177)
 S323 일반 사용자 [테스트]
 - Given `demo-role=tester`
-- Then  "주요 메뉴" 탭은 "참여 테스트"(`/my/participations`), "내 프로젝트"(`/my/projects`), "채팅"(`/my/chats`) 3개다
+- Then  "주요 메뉴" 탭은 "참여 테스트"(`/testers/recruitments`), "내 프로젝트"(`/developer/projects`), "채팅"(`/my/chats`) 3개다 (고침 #101: 역할 경로로 이동)
 - Then  "홈", "테스트 모집", "마이페이지" 탭은 없다
 - Then  "Test Moa" 로고 링크가 `/`로 간다
 
 S334 홈에서는 현재 탭이 없다 [테스트]
 - Given `demo-role=tester`, `/`
 - Then  "주요 메뉴"의 어떤 탭에도 `aria-current`가 없다
-- When  `/my/projects`에 접속한다
+- When  `/developer/projects`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "내 프로젝트"에 `aria-current="page"`가 있다
 
 S324 운영자 [테스트]
@@ -71,7 +71,7 @@ S324 운영자 [테스트]
 S325 비로그인 보호 탭 (기존 S9 유지) [테스트: pages.spec.ts #56-S2]
 - Given `demo-role=guest`
 - When  "참여 테스트" 탭을 누른다
-- Then  URL이 `/login?next=%2Fmy%2Fparticipations`다
+- Then  URL이 `/login?next=%2Ftesters%2Frecruitments`다 (고침 #101: 역할 경로로 이동)
 
 ## 4. 검색 진입점 정리 (R178)
 S326 헤더·모바일 메뉴 검색 없음 [직접]

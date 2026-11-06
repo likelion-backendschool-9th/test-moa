@@ -7,6 +7,7 @@
 | 홈 | `/` | 후보 |
 | 로그인 | `/login` | 확정 |
 | 회원가입 | `/signup` | 확정 |
+| 소셜 가입(이름 입력) | `/signup/social` | 후보 |
 
 ## 소식
 
@@ -23,29 +24,29 @@
 | 모집 게시글 상세 | `/recruitments/:slug` | 확정 (`docs/frontend/project/recruitment-detail.md`) |
 | 테스트 지원 | `/recruitments/:slug/apply` | 우선 채택 |
 
-## 참여 테스트
+## 참여 테스트(테스터) (고침 #101: 역할 경로로 이동)
 
 | 페이지 | URL | 상태 |
 | --- | --- | --- |
-| 참여 테스트 목록 | `/my/participations` | 확정 |
-| 지원한 테스트 탭 | `/my/participations?tab=applied` | 확정 |
-| 참여 중인 테스트 탭 | `/my/participations?tab=ongoing` | 확정 |
-| 참여했던 테스트 탭 | `/my/participations?tab=history` | 확정 |
-| 내 참여 상세 | `/my/participations/:participationKey` | 후보 |
+| 참여 테스트 목록 | `/testers/recruitments` | 확정 |
+| 지원한 테스트 탭 | `/testers/recruitments?tab=applied` | 확정 |
+| 참여 중인 테스트 탭 | `/testers/recruitments?tab=ongoing` | 확정 |
+| 참여했던 테스트 탭 | `/testers/recruitments?tab=history` | 확정 |
+| 내 참여 상세 | `/testers/recruitments/:participationKey` | 후보 |
 
-## 개발자 프로젝트
+## 개발자 프로젝트(개발자) (고침 #101: 역할 경로로 이동)
 
 | 페이지 | URL | 상태 |
 | --- | --- | --- |
-| 내 프로젝트 목록 | `/my/projects` | 확정 |
-| 프로젝트 등록 | `/my/projects/new` | 후보 |
-| 프로젝트 상세 | `/my/projects/:projectKey` | 확정 |
-| 프로젝트 수정 | `/my/projects/:projectKey/edit` | 후보 |
-| 테스트 모집 작성 | `/my/projects/:projectKey/recruitments/new` | 확정 |
-| 테스트 모집 관리 | `/my/projects/:projectKey/recruitments/:recruitmentKey` | 확정 |
-| 테스터 관리 탭 | `/my/projects/:projectKey/recruitments/:recruitmentKey?tab=testers` | 후보 |
-| 피드백 탭 | `/my/projects/:projectKey/recruitments/:recruitmentKey?tab=feedback` | 후보 |
-| 분석 탭 | `/my/projects/:projectKey/recruitments/:recruitmentKey?tab=analytics` | 후보 |
+| 내 프로젝트 목록 | `/developer/projects` | 확정 |
+| 프로젝트 등록 | `/developer/projects/new` | 후보 |
+| 프로젝트 상세 | `/developer/projects/:projectKey` | 확정 |
+| 프로젝트 수정 | `/developer/projects/:projectKey/edit` | 후보 |
+| 테스트 모집 작성 | `/developer/recruitments/new?project=:projectKey` | 확정 |
+| 테스트 모집 관리 | `/developer/recruitments/:recruitmentKey` | 확정 |
+| 테스터 관리 탭 | `/developer/recruitments/:recruitmentKey?tab=testers` | 후보 |
+| 피드백 탭 | `/developer/recruitments/:recruitmentKey?tab=feedback` | 후보 |
+| 분석 탭 | `/developer/recruitments/:recruitmentKey?tab=analytics` | 후보 |
 
 ## 마이페이지
 

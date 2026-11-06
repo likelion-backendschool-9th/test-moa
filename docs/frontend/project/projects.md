@@ -1,4 +1,4 @@
-# 프론트엔드 개발자 프로젝트 (`/my/projects`)
+# 프론트엔드 개발자 프로젝트 (`/developer/projects`)
 
 백엔드: [프로젝트·테스터·피드백 백엔드](../../backend/project/README.md)
 
@@ -12,12 +12,12 @@
 
 | 페이지 | URL | 상태 |
 | --- | --- | --- |
-| 내 프로젝트 목록 | `/my/projects` | 확정 |
-| 프로젝트 등록 | `/my/projects/new` | 후보 |
-| 프로젝트 상세 | `/my/projects/:projectKey` | 확정 |
-| 프로젝트 수정 | `/my/projects/:projectKey/edit` | 후보 |
-| 테스트 모집 작성 | `/my/projects/:projectKey/recruitments/new` | 확정 |
-| 테스트 모집 관리 | `/my/projects/:projectKey/recruitments/:recruitmentKey` | 확정 |
+| 내 프로젝트 목록 | `/developer/projects` | 확정 |
+| 프로젝트 등록 | `/developer/projects/new` | 후보 |
+| 프로젝트 상세 | `/developer/projects/:projectKey` | 확정 |
+| 프로젝트 수정 | `/developer/projects/:projectKey/edit` | 후보 |
+| 테스트 모집 작성 | `/developer/recruitments/new?project=:projectKey` | 확정 |
+| 테스트 모집 관리 | `/developer/recruitments/:recruitmentKey` | 확정 |
 | 테스터 관리 탭 | `...?tab=testers` | 후보 |
 | 피드백 탭 | `...?tab=feedback` | 후보 |
 | 분석 탭 | `...?tab=analytics` | 후보 |
@@ -33,7 +33,7 @@
 
 | 계층 | 위치 | 하는 일 | 하지 않는 일 |
 | --- | --- | --- | --- |
-| 화면 | `src/app/my/projects/**/page.tsx`, `src/features/project/components/`, `actions.ts`(폼·버튼 요청을 받는 서버 액션) | 로직 계층을 불러 받은 값을 그린다. 버튼·폼 같은 상호작용 | 계산, 검증 규칙, 목업 직접 접근 |
+| 화면 | `src/app/developer/**/page.tsx`, `src/features/project/components/`, `actions.ts`(폼·버튼 요청을 받는 서버 액션) | 로직 계층을 불러 받은 값을 그린다. 버튼·폼 같은 상호작용 | 계산, 검증 규칙, 목업 직접 접근 |
 | 로직 | `src/features/project/service.ts` | 모집 건 상태, 제출률, 남은 신고 시간 계산, 폼 검증, 구독 여부에 따른 기능 허용 판단 | 화면 그리기, 데이터 저장소 접근 방식 알기 |
 | 데이터 | `src/features/project/api.ts` (+ `mock.ts`, `demo-decisions.ts`) | 프로젝트·지원·피드백 데이터를 가져오고 확정·거절을 저장한다. 지금은 목업과 쿠키, 나중에 실제 API | 계산, 화면 문구 |
 
@@ -118,9 +118,9 @@ S484 탭 표시 [직접]
 - Then  카테고리 탭 "내 프로젝트"에 `aria-current="page"`가 있다
 
 S485 없는 프로젝트·모집 건 [테스트]
-- When  `/my/projects/nope`이나 `/my/projects/booklog/recruitments/nope`에 접속한다
+- When  `/developer/projects/nope`이나 `/developer/recruitments/nope`에 접속한다 (고침 #101: 모집 관리 주소에서 프로젝트 키를 뺌)
 - Then  맞춤 404 화면("찾는 페이지가 없어요")이다
-- Then  다른 회원의 프로젝트도 같은 404 화면이다 (403으로 할지 보류)
+- Then  다른 회원의 프로젝트도 같은 404 화면이다 (403으로 할지 보류). 테스터로 `/developer/recruitments/booklog`에 접속해도 같은 화면이다 (고침 #101: 모집 관리 주소에서 프로젝트 키를 뺌)
 - 참고: 세션을 읽고 나서 404를 판단하므로 화면을 스트리밍하는 중이라 HTTP 상태는 200이다. 실제 API를 붙일 때 다시 본다.
 
 ## 2. 내 프로젝트 목록 (R102)
@@ -150,9 +150,9 @@ S524 순서 [직접]
 
 S486 목록 [직접] (고침 #62: 카드에서 한 줄 소개와 유형을 뺌)
 - Given `demo-role=developer`
-- Then  제목 "내 프로젝트"와 "프로젝트 등록" 버튼(`/my/projects/new`)이 있다
+- Then  제목 "내 프로젝트"와 "프로젝트 등록" 버튼(`/developer/projects/new`)이 있다 (고침 #101: 역할 경로로 이동)
 - Then  카드 3개가 최신순이다: "할 일 메모", "포트폴리오 빌더", "북로그"
-- Then  각 카드에 이름과 "모집 n건 · 모집 중 n건"이 보이고 상세(`/my/projects/:projectKey`)로 이동한다 (북로그는 "모집 2건 · 모집 중 1건")
+- Then  각 카드에 이름과 "모집 n건 · 모집 중 n건"이 보이고 상세(`/developer/projects/:projectKey`)로 이동한다 (북로그는 "모집 2건 · 모집 중 1건") (고침 #101: 역할 경로로 이동)
 - Then  카드는 페이지 바탕과 다른 카드 바탕(`surface-muted`)과 테두리(`line`)가 있어 다크 모드에서도 카드끼리 구분된다
 
 S487 빈 목록 [직접]
@@ -167,7 +167,7 @@ S488 로딩 [직접]
 등록과 수정은 같은 폼을 쓴다. 목업이라 저장되지 않고, 성공하면 안내와 함께 이동한다.
 
 S489 등록 폼 [직접] (고침 #62: 등록 항목을 이름, 상세 설명, 대표 이미지로 줄임)
-- When  `/my/projects/new`에 접속한다
+- When  `/developer/projects/new`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "프로젝트 이름", "상세 설명 (선택)", "대표 이미지 (선택)" 입력란이 레이블과 함께 있다. 한 줄 소개, 추가 링크, 유형은 없다. 유형은 모집글에서 고른다(#62-S11)
 
 S490 검증 [테스트] (고침 #62: 상세 설명 2000자)
@@ -177,22 +177,22 @@ S490 검증 [테스트] (고침 #62: 상세 설명 2000자)
 
 S491 등록 성공 [테스트]
 - When  올바른 값으로 "등록"을 누른다
-- Then  `/my/projects`로 이동하고 "시연용이라 실제로 저장되지는 않아요" 안내가 보인다
+- Then  `/developer/projects`로 이동하고 "시연용이라 실제로 저장되지는 않아요" 안내가 보인다 (고침 #101: 역할 경로로 이동)
 
 S492 수정 폼 [직접]
-- When  `/my/projects/booklog/edit`에 접속한다
+- When  `/developer/projects/booklog/edit`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  같은 폼에 북로그의 값이 채워져 있고 버튼 이름은 "저장"이다
-- Then  "취소"는 `/my/projects/booklog`로 간다
+- Then  "취소"는 `/developer/projects/booklog`로 간다 (고침 #101: 역할 경로로 이동)
 
 S493 수정 성공 [테스트] (고침 #62: 한 줄 소개를 없앰)
 - When  설명을 바꾸고 "저장"을 누른다
-- Then  `/my/projects/booklog`로 이동하고 저장 안내가 보인다
+- Then  `/developer/projects/booklog`로 이동하고 저장 안내가 보인다 (고침 #101: 역할 경로로 이동)
 
 ### 이미지·미리보기 (#62-R1)
 테스터가 프로젝트를 잘 이해하도록 대표 이미지와 상세 설명을 넣고, 제출 전에 상세 화면에서 어떻게 보일지 미리 본다. 대표 이미지와 상세 설명은 선택이고, 이미지가 없으면 기본 이미지가 나온다. 한도는 기획 확정 전 임시값이다(`types.ts`의 `PROJECT_MEDIA_LIMIT`).
 
 #62-S4 입력란 (고침 #62: 등록 항목을 줄임) [테스트: projects.spec.ts #62-S5·#62-S9] (고침 #96: 두 테스트가 같은 입력란과 미리보기 버튼을 쓰고 확인해서 테스트를 지움)
-- When  `/my/projects/new`에 접속한다
+- When  `/developer/projects/new`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  이름 아래에 "상세 설명 (선택)", "대표 이미지 (선택)"가 있다
 - Then  "등록"(수정은 "저장") 버튼 바로 옆에 "미리보기" 버튼이 있다
 
@@ -248,22 +248,23 @@ S493 수정 성공 [테스트] (고침 #62: 한 줄 소개를 없앰)
 프로젝트 정보와 그 프로젝트의 모집 건 목록을 보여 준다.
 
 S494 정보 [직접] (고침 #62: 유형을 모집글로 옮김)
-- When  `/my/projects/booklog`에 접속한다
-- Then  맨 위에 "내 프로젝트로 돌아가기" 링크(`/my/projects`)가 있다
+- When  `/developer/projects/booklog`에 접속한다 (고침 #101: 역할 경로로 이동)
+- Then  맨 위에 "내 프로젝트로 돌아가기" 링크(`/developer/projects`)가 있다 (고침 #101: 역할 경로로 이동)
 - Then  이름, 상세 설명, 대표 이미지가 보인다. 접속 링크와 유형은 모집글마다 있어 여기에는 없다(#62-S13, #62-S11)
-- Then  "수정"(`/my/projects/booklog/edit`), "테스트 모집 작성"(`/my/projects/booklog/recruitments/new`) 버튼이 있다
+- Then  "수정"(`/developer/projects/booklog/edit`), "모집글 작성"(`/developer/recruitments/new?project=booklog`) 버튼이 있다 (고침 #101: 역할 경로로 이동, #130: 문구 변경)
 
 S495 모집 건 목록 [직접]
+- Then  목록 제목(h2)은 "모집글 관리"다 (고침 #130: 문구 변경)
 - Then  모집 건이 최신순으로 보이고, 각 항목에 상태 배지, 요청 내용, "확정 n명", 모집 마감일, 제출 마감일, "구독 모집" 여부가 있다
 - Then  항목은 관리 화면(`.../recruitments/:recruitmentKey`)으로 이동한다
 - Then  "공개 페이지 보기"는 `/recruitments/:slug`를 가리킨다. 취소된 모집에는 없다
 
 S496 모집 건 없음 [직접]
 - Given 모집 건이 없는 프로젝트
-- Then  "아직 테스트 모집이 없어요"와 "테스트 모집 작성" 버튼이 보인다
+- Then  "아직 테스트 모집이 없어요"와 "모집글 작성" 버튼이 보인다 (고침 #130: 문구 변경)
 
 #64-S1 분석하기 버튼 [직접]
-- Given `/my/projects/booklog`
+- Given `/developer/projects/booklog` (고침 #101: 역할 경로로 이동)
 - Then  취소되지 않은 모집 줄의 "공개 페이지 보기" 옆에 "분석하기" 버튼이 있다
 - When  버튼을 누른다
 - Then  아무 일도 일어나지 않는다. 분석 실행과 화면 연결은 아직 정하지 않았다
@@ -272,8 +273,9 @@ S496 모집 건 없음 [직접]
 모집 조건과 일정을 정한다. 보상은 개발자가 정하지 않고 서비스가 정한다(README: 개발자 보상 예산 충전 없음).
 
 S497 작성 폼 [직접]
-- When  `/my/projects/booklog/recruitments/new`에 접속한다
+- When  `/developer/recruitments/new?project=booklog`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "모집글 제목", "모집 설명", "접속 링크", "모집 선정 조건", "모집 마감일", "피드백 제출 마감일" 입력란이 있다. 모집 인원은 받지 않는다 (고침 #78)
+- Then  "모집글 이미지 (선택)"이 테스트 항목 이미지와 따로 있다. 한도와 확인은 [모집글 상세 #124-R1](recruitment-detail.md#모집글-이미지-124-r1) (고침 #124: 모집글 이미지 칸을 더함)
 - Then  보상은 입력란이 아니라 "기본 보상 n 크레딧"으로 안내만 한다
 - Then  구독 중이면 "구독 모집이라 추가 보상 n 크레딧이 붙어요"가 보인다
 
@@ -299,16 +301,16 @@ S498 일정 검증 [테스트]
 
 S500 작성 성공 [테스트]
 - When  올바른 값(테스트 항목 1개 이상 포함)으로 "모집 등록"을 누른다
-- Then  `/my/projects/booklog`로 이동하고 "시연용이라 실제로 저장되지는 않아요" 안내가 보인다
+- Then  `/developer/projects/booklog`로 이동하고 "시연용이라 실제로 저장되지는 않아요" 안내가 보인다 (고침 #101: 역할 경로로 이동)
 
 ## 6. 테스트 모집 관리와 탭 (R106)
 모집 건 요약을 위에 두고, 아래에서 테스터 관리·피드백·분석 탭을 바꾼다. 탭 상태는 URL(`tab`)에 남는다.
 
 S501 요약 [직접]
-- When  `/my/projects/booklog/recruitments/booklog`에 접속한다
+- When  `/developer/recruitments/booklog`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  프로젝트 이름, 요청 내용, 상태 배지, 확정 인원, 지원 수, 피드백 제출 수, 두 마감일이 각각 이름과 함께 보인다
 - Then  인원은 "확정 13명"처럼 이름을 앞에 붙여 쓴다. "13 / 20" 같은 빗금 표기는 쓰지 않는다 (요약, 모집 건 목록, 테스터 관리 탭 모두)
-- Then  맨 위 "현재 위치"에 "내 프로젝트 › 북로그"가 있다. "내 프로젝트"는 `/my/projects`, "북로그"는 `/my/projects/booklog`를 가리킨다. 할 일에서 바로 들어와도 목록까지 한 번에 돌아간다
+- Then  맨 위 "현재 위치"에 "내 프로젝트 › 북로그"가 있다. "내 프로젝트"는 `/developer/projects`, "북로그"는 `/developer/projects/booklog`를 가리킨다. 할 일에서 바로 들어와도 목록까지 한 번에 돌아간다 (고침 #101: 역할 경로로 이동)
 
 #62-S13 접속 링크 (#62-R7) [테스트]
 - Then  접속 링크는 프로젝트 등록에 없고 모집 작성의 필수 칸이다. `abc`처럼 적으면 "http:// 또는 https://로 시작하는 주소를 적어 주세요"가 보인다
@@ -372,7 +374,7 @@ S501 요약 [직접]
 - Then  피드백을 낸 4명은 "확정"으로 남고, 내지 않은 1명과 대기 지원자는 "참여 취소"가 되며 확정 수는 4명이다
 
 #74-S2 요청 방식 안내 없음 [명령]
-- When  `grep -rnE "처리 대기|운영자가 확인한 뒤|취소 요청|CancelRequest" frontend/src/features/project frontend/src/app/my/projects`를 실행한다
+- When  `grep -rnE "처리 대기|운영자가 확인한 뒤|취소 요청|CancelRequest" frontend/src/features/project frontend/src/app/developer`를 실행한다 (고침 #101: 역할 경로로 이동)
 - Then  아무것도 나오지 않는다
 
 #62-S18 깨진 쿠키 [테스트] (고침 #74: 요청 쿠키를 취소 쿠키로 바꿈)
@@ -572,7 +574,7 @@ S516 [명령]
 - Then  `src/features/project`의 컴포넌트에 hex 색이나 `[13px]` 같은 임의 값이 없다
 - Then  `mock.ts`는 `api.ts`만 불러온다
 - Then  `api.ts`를 import하는 파일은 `service.ts`뿐이다 (3계층 구조)
-- Then  `src/app/my/projects`와 `src/features/project/components`는 `api.ts`, `mock.ts`를 import하지 않는다
+- Then  `src/app/developer`와 `src/features/project/components`는 `api.ts`, `mock.ts`를 import하지 않는다 (고침 #101: 역할 경로로 이동)
 - Then  `src/features/project`의 각 파일 맨 위(import 바로 아래 포함)에 한글 주석이 있다
 - 참고: 코드 구조 규칙이라 E2E는 없고, 위 명령과 코드 리뷰로 확인한다
 

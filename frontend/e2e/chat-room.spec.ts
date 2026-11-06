@@ -140,6 +140,8 @@ test.describe("R166 메시지 보내기", () => {
 
   test("S151 한글을 조합하는 중에 누른 Enter로는 보내지 않는다", async ({ page }) => {
     await page.goto("/my/chats/booklog-yunseul");
+    /* 채팅방은 스트리밍으로 늦게 그려진다. 기존 메시지가 보인 뒤에 세야 0으로 읽지 않는다 */
+    await expect(messages(page).first()).toBeVisible();
     const count = await messages(page).count();
     const pressEnter = (isComposing: boolean) =>
       messageInput(page).evaluate((element, composing) => {

@@ -1,7 +1,9 @@
 package com.testmoa.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
+import com.testmoa.backend.domain.entity.RefreshToken;
 import com.testmoa.backend.domain.entity.User;
+import com.testmoa.backend.domain.repository.RefreshTokenRepository;
 import com.testmoa.backend.domain.repository.UserRepository;
 import com.testmoa.backend.global.common.UserStatus;
 import org.junit.jupiter.api.DisplayName;
@@ -15,8 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,6 +36,7 @@ class AuthControllerTest {
 
     @Autowired MockMvc mvc;
     @Autowired UserRepository userRepository;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
 
     private final String suffix = UUID.randomUUID().toString().substring(0, 8);
     private final String email = "moa" + suffix + "@example.com";
@@ -169,6 +174,25 @@ class AuthControllerTest {
 
         postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r2 + "\"}").andExpect(status().isUnauthorized());
         me(a2).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("#80-S12 로그인하면 그 회원의 만료된 refresh 토큰 행을 지운다")
+    void 로그인하면_만료된_토큰_행을_지운다() throws Exception {
+        signup(email, nickname);
+        String access = field(login(email, "moa2026pw"), "$.data.accessToken");
+        Integer userId = JsonPath.read(me(access).andReturn().getResponse().getContentAsString(), "$.data.id");
+        User user = userRepository.findById(userId.longValue()).orElseThrow();
+        RefreshToken expired = refreshTokenRepository.save(RefreshToken.builder()
+                .user(user)
+                .sessionId(UUID.randomUUID().toString())
+                .tokenHash("0".repeat(56) + suffix)
+                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .build());
+
+        login(email, "moa2026pw").andExpect(status().isOk());
+
+        assertThat(refreshTokenRepository.findById(expired.getId())).isEmpty();
     }
 
     private ResultActions me(String accessToken) throws Exception {

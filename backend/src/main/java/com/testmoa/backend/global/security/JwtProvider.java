@@ -1,29 +1,42 @@
 package com.testmoa.backend.global.security;
 
+import com.testmoa.backend.global.common.Provider;
+import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 /**
- * access 토큰 발급. 검증은 SecurityConfig의 JwtDecoder가 요청마다 한다.
+ * access 토큰과 소셜 가입 토큰 발급. access 토큰 검증은 SecurityConfig의 JwtDecoder가 요청마다 한다.
  * 토큰에는 회원 id(sub)와 로그인 세션 id(sid)만 넣는다. 권한·상태·구독·세션은 요청마다 DB에서 읽어서, 바뀌면 바로 반영된다
  */
 @Component
 public class JwtProvider {
     private final JwtEncoder jwtEncoder;
+    private final JwtDecoder jwtDecoder;
     private final Duration accessTokenTtl;
 
-    public JwtProvider(JwtEncoder jwtEncoder, @Value("${jwt.access-token-ttl}") Duration accessTokenTtl) {
+    public JwtProvider(JwtEncoder jwtEncoder, JwtDecoder jwtDecoder, @Value("${jwt.access-token-ttl}") Duration accessTokenTtl) {
         this.jwtEncoder = jwtEncoder;
+        this.jwtDecoder = jwtDecoder;
         this.accessTokenTtl = accessTokenTtl;
     }
+
+    // 소셜 가입 토큰: 처음 소셜 로그인한 사람이 이름을 입력하는 동안 제공자 정보를 들고 있는다
+    private static final String PURPOSE_CLAIM = "purpose";
+    private static final String SIGNUP_PURPOSE = "oauth-signup";
+    private static final Duration SIGNUP_TOKEN_TTL = Duration.ofMinutes(10);
 
     public static final String SESSION_CLAIM = "sid";
 
@@ -47,6 +60,41 @@ public class JwtProvider {
      */
     public String createAccessToken(Long userId) {
         return createAccessToken(userId, null);
+    }
+
+    /**
+     * 소셜 가입 토큰. 서명돼 있어서 프론트가 내용을 바꿀 수 없다.
+     * 회원 id(sub)가 없어서 access 토큰으로 쓰면 401이고, access 토큰에는 purpose가 없어서 가입 토큰으로 쓸 수 없다
+     */
+    public String createSignupToken(OAuthProfile profile) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .claim(PURPOSE_CLAIM, SIGNUP_PURPOSE)
+                .claim("provider", profile.provider().name())
+                .claim("providerCode", profile.providerCode())
+                .claim("email", profile.email())
+                .claim("nickname", profile.nickname() == null ? "" : profile.nickname())
+                .issuedAt(now)
+                .expiresAt(now.plus(SIGNUP_TOKEN_TTL))
+                .build();
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    /** 소셜 가입 토큰을 읽는다. 서명이 틀렸거나 만료됐거나 가입 토큰이 아니면 빈 값. 확인된 이메일로만 만들어서 emailVerified는 true다 */
+    public Optional<OAuthProfile> readSignupToken(String token) {
+        try {
+            Jwt jwt = jwtDecoder.decode(token);
+            if (!SIGNUP_PURPOSE.equals(jwt.getClaimAsString(PURPOSE_CLAIM))) return Optional.empty();
+            return Optional.of(new OAuthProfile(
+                    Provider.valueOf(jwt.getClaimAsString("provider")),
+                    jwt.getClaimAsString("providerCode"),
+                    jwt.getClaimAsString("email"),
+                    true,
+                    jwt.getClaimAsString("nickname")));
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     public Duration getAccessTokenTtl() {

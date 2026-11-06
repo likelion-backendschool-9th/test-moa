@@ -15,6 +15,8 @@ colors:
   paper-accent: "#0f7c4a"
   accent-soft: "#def7eb"
   on-accent: "#ffffff"
+  like: "#c4264a"
+  like-soft: "#fde8ed"
   thumb: "#ffffff"
   on-thumb: "#1a1a1a"
   mark: "#1a1a1a"
@@ -32,6 +34,8 @@ colors:
   accent-dark: "#129357"
   accent-soft-dark: "#123625"
   on-accent-dark: "#000000"
+  like-dark: "#f47c97"
+  like-soft-dark: "#341520"
   thumb-dark: "#ffffff"
   on-thumb-dark: "#16181d"
   mark-dark: "#3d434b"
@@ -299,6 +303,7 @@ components:
 - **재단선 먹** (mark): 히어로의 재단선.
 
 ### Tertiary
+- **유용해요 분홍 / 빨강** (like-soft, like): 피드백 "유용해요"를 누른 상태(`Button`의 `like`)에만 쓴다. 라이트는 연한 분홍 `#fde8ed` 위 빨강 `#c4264a`(대비 4.82:1), 다크는 남회색 패널에서 튀지 않게 어두운 장미색 `#341520` 위 밝힌 분홍 `#f47c97`(대비 6.42:1). 위험·오류 색으로 쓰지 않는다. (#134)
 
 ### Named Rules
 **The Token-Only Rule.** 색·모션 값은 `globals.css` 토큰에서만 정의한다. `src/components`, `src/features`에는 hex도, 임의 px도 쓰지 않는다.
@@ -372,6 +377,8 @@ components:
 - **Secondary:** 칩 회색 바탕, 먹 글씨. '자세히 보기', 헤더의 크레딧 잔액.
 - **Ghost:** 바탕 없음. 로그인, 내 정보, 슬라이드 이전·다음, 대화상자의 취소.
 - **Strong:** 먹 바탕, 작업대 글씨, hover 때 불투명도 90%. 대화방 삭제 확인처럼 되돌리기 어려운 무거운 행동에 쓴다. 위험 색(빨강)이 없어서 강조색 대신 먹을 쓴다.
+- **Soft:** 연한 강조 바탕, 강조색 글씨, hover 때 불투명도 80%. 유료 기능으로 이어지는 버튼(피드백의 채팅하기·AI 질문 받기)에 쓴다. (#134)
+- **Like:** 유용해요 분홍 바탕, 빨강 글씨. 피드백 "유용해요"를 누른 상태에만 쓰고, 누르지 않았으면 secondary다. (#134)
 - `Button`과 `LinkButton`은 같은 `buttonClass`를 쓴다. 새 버튼 스타일을 만들지 말고 variant를 고른다.
 
 ### Chips

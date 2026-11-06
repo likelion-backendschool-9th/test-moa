@@ -129,9 +129,9 @@ erDiagram
 - Then  처리 중·지급 완료·반려. 반려는 사유(OTHER면 메모) 포함
 - 화면: `/my/credits/withdrawals` (`docs/frontend/payment/credits.md` S358~)
 
-#67-S2 출금 신청 API [직접]
+#67-S2 출금 신청 API [테스트: cashout.md #67-S2]
 - API: `POST /api/v1/my/credits/withdrawals`
-- Then  `CashoutRequest(REQUESTED)` + `lockForCashout` (구현 후 `[테스트]`)
+- Then  `CashoutRequest(REQUESTED)` + `lockForCashout`. 자세한 시나리오는 [cashout.md](cashout.md)
 
 ### #68 운영자 출금
 

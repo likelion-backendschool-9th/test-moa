@@ -218,6 +218,8 @@ test.describe("#83 소셜 가입 이름 입력", () => {
   test("#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 값은 무시한다", async ({ page }) => {
     await page.goto("/login?error=suspended");
     await expect(main(page).getByText("이용이 정지된 계정이에요")).toBeVisible();
+    await page.goto("/login?error=linkRequired");
+    await expect(main(page).getByText("이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요")).toBeVisible();
     await page.goto("/login?error=%3Cscript%3E");
     await expect(main(page).getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
     await expect(main(page).locator("[role=alert]")).toHaveCount(0);

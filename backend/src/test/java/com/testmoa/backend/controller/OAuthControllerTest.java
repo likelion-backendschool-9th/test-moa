@@ -142,20 +142,42 @@ class OAuthControllerTest {
     }
 
     @Test
-    @DisplayName("#83-S3 제공자가 확인한 이메일과 같은 회원에 연동해 로그인하고, 확인되지 않은 이메일로는 연동하지 않는다")
-    void 확인된_이메일이_같은_회원에_연동한다() throws Exception {
-        User user = saveEmailUser(email, UserStatus.ACTIVE);
+    @DisplayName("#83-S3 제공자가 확인한 이메일과 같은 소셜 회원에 연동해 로그인하고, 확인되지 않은 이메일로는 연동하지 않는다")
+    void 확인된_이메일이_같은_소셜_회원에_연동한다() throws Exception {
+        // 구글로 가입한 회원(비밀번호 없음)
+        provider("google", Provider.GOOGLE, "g-" + suffix, email, true, "구글");
+        String signupToken = field(oauthLogin("google", "google"), "$.data.signupToken");
+        String access = field(oauthSignup(signupToken, "김소셜"), "$.data.accessToken");
+        Integer userId = JsonPath.read(me(access).andReturn().getResponse().getContentAsString(), "$.data.id");
 
         provider("unverified", Provider.GITHUB, "gh-" + suffix, email, false, "moa");
         oauthLogin("github", "unverified").andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("OAUTH_EMAIL_REQUIRED"));
-        assertThat(accountRepository.findByUserId(user.getId())).isEmpty();
+        assertThat(accountRepository.findByUserId(userId.longValue())).extracting("provider").containsExactly(Provider.GOOGLE);
 
+        // 같은 이메일의 GitHub으로 오면 그 회원에 연동해 로그인
         provider("verified", Provider.GITHUB, "gh-" + suffix, email.toUpperCase(), true, "moa");
-        String access = field(oauthLogin("github", "verified").andExpect(jsonPath("$.data.signupRequired").value(false)),
+        String viaGithub = field(oauthLogin("github", "verified").andExpect(jsonPath("$.data.signupRequired").value(false)),
                 "$.data.tokens.accessToken");
-        me(access).andExpect(jsonPath("$.data.id").value(user.getId()));
-        assertThat(accountRepository.findByUserId(user.getId())).extracting("provider").containsExactly(Provider.GITHUB);
+        me(viaGithub).andExpect(jsonPath("$.data.id").value(userId));
+        assertThat(accountRepository.findByUserId(userId.longValue())).extracting("provider")
+                .containsExactlyInAnyOrder(Provider.GOOGLE, Provider.GITHUB);
+    }
+
+    @Test
+    @DisplayName("#83-S13 이메일 가입(비밀번호가 있는) 회원에는 같은 이메일이어도 자동 연동하지 않는다")
+    void 이메일_가입_회원에는_자동_연동하지_않는다() throws Exception {
+        // 이메일 인증이 없어서, 남이 이 이메일로 먼저 가입해 두었을 수 있다
+        postJson("/api/auth/signup", """
+                {"name":"김이메일","nickname":"이메일%s","email":"%s","password":"moa2026pw"}""".formatted(suffix, email))
+                .andExpect(status().isCreated());
+        User user = userRepository.findByEmail(email).orElseThrow();
+
+        provider("google", Provider.GOOGLE, "g-" + suffix, email, true, "구글");
+        oauthLogin("google", "google").andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("EMAIL_ACCOUNT_EXISTS"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+        assertThat(accountRepository.findByUserId(user.getId())).extracting("provider").containsExactly(Provider.LOCAL);
     }
 
     @Test

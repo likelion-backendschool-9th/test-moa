@@ -28,7 +28,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
         ErrorCode code = e.getErrorCode();
-        return ResponseEntity.status(code.getStatus()).body(ApiResponse.fail(code, e.getMessage(), null));
+        return ResponseEntity.status(code.getStatus()).body(ApiResponse.fail(code, e.getMessage(), e.getFields()));
     }
 
     // 예상하지 못한 오류. 내용은 로그에만 남기고 응답에는 싣지 않는다

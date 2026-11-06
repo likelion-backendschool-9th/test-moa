@@ -7,11 +7,12 @@
 | 이슈 | 내용 | 문서 |
 | --- | --- | --- |
 | [#89](https://github.com/likelion-backendschool-9th/test-moa/issues/89) | 프로젝트·테스터·피드백 엔티티 | [entities.md](entities.md) |
+| [#92](https://github.com/likelion-backendschool-9th/test-moa/issues/92) | 프로젝트 등록·조회·수정과 모집 작성 API | [project-recruitment-api.md](project-recruitment-api.md) |
 | [#107](https://github.com/likelion-backendschool-9th/test-moa/issues/107) | AI 리뷰 묶기·우선순위와 GitHub 이슈 초안 | |
 | [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | |
 | [#109](https://github.com/likelion-backendschool-9th/test-moa/issues/109) | AI 후속 질문 추천 | [ai-followup.md](ai-followup.md) |
 
-Repository·Service·API는 다음 이슈에서 한다. 진행 상태는 이슈와 PR에서 본다.
+진행 상태는 이슈와 PR에서 본다.
 
 프론트: [개발자 프로젝트](../../frontend/project/projects.md), [참여 테스트](../../frontend/project/participations.md), [모집글 상세](../../frontend/project/recruitment-detail.md)
 
@@ -31,7 +32,11 @@ Repository·Service·API는 다음 이슈에서 한다. 진행 상태는 이슈�
 | 4 | `Feedback.testItem`은 null을 허용한다 | ERD 내보내기는 `NOT NULL`이지만 기타 의견을 null로 표현한다 |
 | 5 | 테스트 항목 이미지는 `TestItemImage`다 | 프로젝트 이미지는 `projects.image_url`, 모집글 이미지는 `recruitment_images`가 맡아 테스트 항목 이미지만 남는다 |
 | 6 | ERD에 `cancel_reason`, `cancelled_at`, `is_recommended`를 더한다 | 프론트 화면에 필요하고 ERD에 없다. 코드와 함께 ERD도 고친다 |
-| 7 | 모집글의 주소 키로 slug를 저장하지 않는다 | ERD에 없다. API를 만들 때 프론트의 slug 자리에 `recruitment_id`를 넘긴다 |
+| 7 | 모집글의 주소 키로 slug를 저장하지 않는다 | ERD에 없다. 백엔드 API는 `recruitment_id`를 주소에 쓰고(11-06 팀 결정: 백엔드는 id), 프론트 페이지 URL의 key 자리에는 같은 id 값을 넣는다. slug는 필요해지면 더한다 (고침 #92: 백엔드 주소는 id로 통일) |
+| 8 | 이미지는 프로젝트 대표(`projects.image_url`)·모집글(`recruitment_images`)·테스트 항목(`test_item_images`) 세 가지로 나눈다 (#92, 11-06) | 모집글 상세 이미지 띠와 항목별 이미지를 따로 보여 준다. 자세히는 [project-recruitment-api.md](project-recruitment-api.md#1-프로젝트모집-작성-api-92-r1) |
+| 9 | 시각은 다른 코드처럼 서버 시간대로 저장하고 비교한다(`LocalDateTime.now()`). 한국 날짜 기준 규칙(마감은 그날 23:59:59까지)은 서버 시간대의 시각으로 바꿔 저장한다 (#92, 11-06) | 다른 담당 코드가 모두 서버 시간대(컨테이너는 UTC)를 써서, #92만 한국 시각으로 저장하면 한 행 안에서 9시간 차이가 났다(#92-S12 확인 중 발견). 서버 설정을 바꾸지 않고 #92에서 맞췄다 |
+| 10 | 모집 마감일·피드백 마감일은 날짜로 받고, 한국 시간 그날 23:59:59까지로 본다 (#92, 11-06 팀 결정) | 마감일 당일까지 지원·제출할 수 있게 한다. 저장은 9를 따라 서버 시간대의 시각으로 바꾼다 |
+| 11 | 모집 상태는 취소만 저장하고, 모집 중·테스트 중·종료는 마감일로 계산한다 (#92, 11-06 팀 결정) | 프론트가 같은 방식이고, 마감일이 지나면 따로 바꾸지 않아도 상태가 맞는다. 공개 목록·상세, 지원, 보상 지급 판단이 같은 계산을 쓴다 |
 
 ### AI 분석 서버 연동 (#107~#109)
 리뷰 묶기·버전 비교·후속 질문은 파이썬 분석 서버(`analysis-server`, 별도 EC2)가 만들고, 메인 백엔드는 데이터를 모아 보내고 결과를 받는다. 분석 서버는 DB에 연결하지 않는다.

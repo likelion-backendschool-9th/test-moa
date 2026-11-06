@@ -1,4 +1,5 @@
 import { DEMO_ROLE_COOKIE } from "@/demo/mode";
+import { DEMO_USERS } from "@/demo/session";
 import { getDemoSubscriptionCreditSpent } from "@/demo/subscription";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
 import { cookies } from "next/headers";
@@ -28,12 +29,6 @@ export type Session =
   | { role: "guest"; user: null; }
   | { role: Exclude<Role, "guest">; user: SessionUser; };
 
-const DEMO_USERS: Record<Exclude<Role, "guest">, SessionUser> = {
-  tester: { nickname: "한서윤", credits: 12480 },
-  developer: { nickname: "박도현", credits: 3260 },
-  admin: { nickname: "운영자", credits: 0 },
-};
-
 function parseRole(value: string | undefined): Role {
   return ROLES.find((role) => role === value) ?? "tester";
 }
@@ -47,19 +42,19 @@ type Me = {
 /** 토큰이 없거나 만료·정지됐거나 백엔드에 닿지 못하면 비로그인으로 본다 */
 async function getBackendSession(): Promise<Session> {
   const me = await backendFetch<Me>("/api/users/me");
-  if (!me.ok) return { role: "guest", user: null };
+  if(!me.ok) return { role: "guest", user: null };
   const { nickname, role } = me.data;
   /* ponytail: 크레딧 API가 아직 없어 0으로 둔다. 크레딧 담당 API가 생기면 그 값을 읽는다 */
   const user = { nickname, credits: 0 };
-  if (role === "ADMIN") return { role: "admin", user };
+  if(role === "ADMIN") return { role: "admin", user };
   const persona = (await cookies()).get(DEMO_ROLE_COOKIE)?.value;
   return { role: persona === "developer" ? "developer" : "tester", user };
 }
 
 export const getSession = cache(async (): Promise<Session> => {
-  if (isBackendAuth) return getBackendSession();
+  if(isBackendAuth) return getBackendSession();
   const role = parseRole((await cookies()).get(DEMO_ROLE_COOKIE)?.value);
-  if (role === "guest") return { role, user: null };
+  if(role === "guest") return { role, user: null };
   /* 시연용 구독 결제를 크레딧으로 냈으면 헤더 잔액에서도 뺀다 */
   const user = DEMO_USERS[role];
   return { role, user: { ...user, credits: user.credits - (await getDemoSubscriptionCreditSpent(role)) } };

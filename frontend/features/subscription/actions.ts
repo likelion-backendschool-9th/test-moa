@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 /*
- * 구독 결제. 지금은 목업이라 고른 상품과 결제 수단을 검사한 뒤 시연용 쿠키(lib/demo-subscription.ts)에 남긴다.
+ * 구독 결제. 지금은 목업이라 고른 상품과 결제 수단을 검사한 뒤 시연용 쿠키(demo/subscription.ts)에 남긴다.
  * 실제 API를 붙일 때는 addDemoSubscriptionPayment 대신 결제를 요청한다.
  */
 

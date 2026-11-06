@@ -5,9 +5,9 @@ import "server-only";
 
 /*
  * 시연용 구독 결제 기록. 실제 결제가 없어서 결제를 브라우저 쿠키 demo-subscription-<역할>에만 남긴다.
- * 구독 만료일(features/my), 크레딧 잔액·내역(features/credit), 헤더 크레딧(session.ts)이 이 기록을 함께 읽는다.
+ * 구독 만료일(features/subscription), 크레딧 잔액·내역(features/credit), 헤더 크레딧(session.ts)이 이 기록을 함께 읽는다.
  * 쿠키라서 다른 브라우저·다른 시연 회원과 섞이지 않고, 병렬 E2E도 서로의 결제를 보지 않는다.
- * 실제 API를 붙이면 이 파일과 읽는 세 곳, 저장하는 한 곳(features/my/subscription-actions.ts)을 지운다.
+ * 실제 API를 붙이면 이 파일과 읽는 세 곳, 저장하는 한 곳(features/subscription/actions.ts)을 지운다.
  */
 
 type MemberRole = Exclude<Role, "guest">;

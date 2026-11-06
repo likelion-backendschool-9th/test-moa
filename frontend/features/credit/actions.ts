@@ -23,7 +23,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 /*
- * 출금 신청. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo-requests.ts)에 남긴다.
+ * 출금 신청. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo/credit.ts)에 남긴다.
  * 실제 API를 붙일 때는 addDemoWithdrawal 대신 요청을 저장한다.
  */
 

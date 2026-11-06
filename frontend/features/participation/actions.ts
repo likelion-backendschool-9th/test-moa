@@ -10,7 +10,7 @@ import { parseParticipationTab,parseParticipationView } from "@/features/partici
 import { saveParticipationView } from "@/features/participation/view-preference";
 
 /*
- * 피드백 제출. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo-feedback.ts)에 남긴다.
+ * 피드백 제출. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo/participation.ts)에 남긴다.
  * 실제 API를 붙일 때는 saveDemoFeedback 대신 제출을 저장한다.
  */
 

@@ -99,7 +99,7 @@ export type FeedbackEntry = {
   imageNames: string[];
 };
 
-/** 칸마다 적용하는 최대 글자 수. 기획에서 미정이다. 시연용 저장 한도는 칸을 모두 합쳐 따로 확인한다(demo-feedback.ts) */
+/** 칸마다 적용하는 최대 글자 수. 기획에서 미정이다. 시연용 저장 한도는 칸을 모두 합쳐 따로 확인한다(demo/participation.ts) */
 export const FEEDBACK_MAX_LENGTH = 500;
 
 /** 화면에 그릴 참여. 모집 마감일·제출 마감일·보상은 가리키는 모집 글의 값을 쓴다 */

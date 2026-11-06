@@ -8,7 +8,7 @@ import { requireRole } from "@/features/session/guard";
 import { redirect } from "next/navigation";
 
 /*
- * 폼 제출을 받는 서버 액션. 화면 계층의 입구라 service.ts만 부른다.
+ * 폼 제출을 받는 서버 액션. 입력을 검사하고 데이터 접근 함수로 권한을 확인한다.
  * 목업이라 저장하지 않고, 검증을 통과하면 안내와 함께 이동한다.
  */
 

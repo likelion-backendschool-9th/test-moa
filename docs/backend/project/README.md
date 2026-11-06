@@ -75,5 +75,6 @@ erDiagram
 | 2 | 항목별 피드백 중 한 건만 신고되면 보상을 어떻게 할지 | **정함(#66):** 참가 전체 지급을 보류한다. 승인 대기는 `EXISTS SUBMITTED`이고 `NOT EXISTS REPORTED`일 때만 합산한다 |
 | 3 | `RecruitmentStatus.CLOSED` | 화면 상태는 날짜로 계산하므로 지금은 저장하지 않고 남겨 둔다. API를 만들 때 지울지 정한다 |
 | 4 | 보상 상한 | 모집 인원이 없어 선착순 지급에 상한이 없다. 팀에서 정한다 |
+| 5 | 마감 시각과 모집 상태 계산 | #92는 마감일을 한국 시간 23:59:59로 저장하고 상태를 마감일로 계산한다. [project-recruitment-api.md 가정](project-recruitment-api.md#가정-확인-필요) 1·2를 팀이 확인한다 |
 
 - ERD에 `cancel_reason`, `cancelled_at`, `is_recommended`와 `test_item_images` 이름을 반영하는 일

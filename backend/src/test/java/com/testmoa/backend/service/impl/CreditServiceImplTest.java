@@ -265,7 +265,7 @@ class CreditServiceImplTest {
     }
 
     @Test
-    @DisplayName("출금 내역은 최신순·완료 건 계좌 마스킹")
+    @DisplayName("#67-S6 출금 내역은 최신순·완료 건 계좌 마스킹")
     void getCashoutsMasksCompletedAccounts() {
         when(userRepository.existsById(USER_ID)).thenReturn(true);
         User user = user();

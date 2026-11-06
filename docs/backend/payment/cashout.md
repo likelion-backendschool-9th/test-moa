@@ -103,7 +103,7 @@ flowchart LR
 - API: `GET /api/v1/my/credits/withdrawals`
 - Then  최신순. 처리 중·지급 완료·반려
 - Then  반려는 사유 포함. 메모가 있으면 사유와 상관없이 함께 보인다
-- Then  `REQUESTED`는 계좌·예금주 전체, `PAID`·`REJECTED`는 계좌 끝 4자리·예금주 가운데 가림 (고침 #67: 완료 건 예금주도 가린다)
+- Then  `REQUESTED`는 계좌·예금주 전체, `PAID`·`REJECTED`는 계좌 끝 4자리·예금주 가운데 가림
 - 화면: `/my/credits/withdrawals`
 
 #67-S2 출금 신청 성공 [테스트]
@@ -128,7 +128,7 @@ flowchart LR
 
 #67-S6 내역 상태·반려 사유 [테스트]
 - Given `REQUESTED`·`PAID`·`REJECTED(HOLDER, 메모 있음)`·`REJECTED(OTHER)` 행
-- When  내역 조회
+- When  내역 조회 (서비스) 후 각 행을 응답으로 바꾼다
 - Then  상태 라벨과 반려 메모가 보인다(HOLDER·OTHER 모두). 완료 건 계좌는 마스킹
 
 #67-S7 토큰 없이 출금 내역을 보면 401 [테스트]

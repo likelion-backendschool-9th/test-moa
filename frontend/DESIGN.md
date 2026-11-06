@@ -20,7 +20,7 @@ colors:
   paid-start: "#ddf5ea"
   paid-mid: "#edf5ee"
   paid-end: "#eeeaf4"
-  paid-gradient: "linear-gradient(to right, {colors.paid-start}, {colors.paid-mid} 55%, {colors.paid-end})"
+  paid-gradient: "linear-gradient(to right, {colors.paid-start} 30%, {colors.paid-mid} 65%, {colors.paid-end})"
   thumb: "#ffffff"
   on-thumb: "#1a1a1a"
   mark: "#1a1a1a"
@@ -311,7 +311,7 @@ components:
 
 ### Tertiary
 - **유용해요 분홍 / 빨강** (like-soft, like): 피드백 "유용해요"를 누른 상태(`Button`의 `like`)에만 쓴다. 라이트는 연한 분홍 `#fde8ed` 위 빨강 `#c4264a`(대비 4.82:1), 다크는 남회색 패널에서 튀지 않게 어두운 장미색 `#341520` 위 밝힌 분홍 `#f47c97`(대비 6.42:1). 위험·오류 색으로 쓰지 않는다. (#134)
-- **유료 기능 그라데이션** (paid-start, paid-mid, paid-end, paid-gradient): 유료 기능으로 이어지는 면의 바탕. 그라데이션 전체는 `--paid-gradient` 토큰 하나이고 `bg-paid-gradient` 유틸리티로 쓴다. 지금은 피드백의 채팅하기·AI 질문 받기 버튼(`Button`의 `paid`)이 쓰고, 구독 화면 같은 다른 유료 기능 컴포넌트도 같은 유틸리티를 가져다 쓴다. 라이트는 시안 그대로 민트 `#ddf5ea` → 55% `#edf5ee` → 라벤더 `#eeeaf4`(sRGB로 섞음), 다크는 같은 흐름을 낮춘 `#123625` → `#1a2a26` → `#241f36`이다. 위 글씨는 강조색이다. 라이트는 글씨 아래 대비 4.51:1 이상이고, 다크는 3.38~4.03:1이라 큰 글씨나 굵은 짧은 글씨에만 올린다. (#134)
+- **유료 기능 그라데이션** (paid-start, paid-mid, paid-end, paid-gradient): 유료 기능으로 이어지는 면의 바탕. 그라데이션 전체는 `--paid-gradient` 토큰 하나이고 `bg-paid-gradient` 유틸리티로 쓴다. 지금은 피드백의 채팅하기·AI 질문 받기 버튼(`Button`의 `paid`)이 쓰고, 구독 화면 같은 다른 유료 기능 컴포넌트도 같은 유틸리티를 가져다 쓴다. 라이트는 시안 색 그대로 민트 `#ddf5ea`(30%까지) → 65% `#edf5ee` → 라벤더 `#eeeaf4`이고, 초록 쪽 비중을 늘리려고 민트를 30%까지 그대로 둔다(sRGB로 섞음), 다크는 같은 흐름을 낮춘 `#123625` → `#1a2a26` → `#241f36`이다. 위 글씨는 강조색이다. 라이트는 글씨 아래 대비 4.51:1 이상이고, 다크는 3.38~4.03:1이라 큰 글씨나 굵은 짧은 글씨에만 올린다. (#134)
 
 ### Named Rules
 **The Token-Only Rule.** 색·모션 값은 `globals.css` 토큰에서만 정의한다. `src/components`, `src/features`에는 hex도, 임의 px도 쓰지 않는다.
@@ -463,7 +463,7 @@ components:
 4:3 칸(12px 모서리)에 이미지가 잘리지 않게 담아 2열(md 3열)로 나열한다. 오른쪽 아래의 32px 원형 돋보기와 zoom-in 커서로 누를 수 있음을 알리고, hover 때 4px 올라간다. 누르면 `<dialog>`(교정지 면, 16px 모서리, 최대 폭 64rem, 뒤 배경은 대화상자와 같다)에 이미지를 확대하고, 위 줄에 이름과 n / 전체, 닫기 버튼을 둔다. 넘기기 버튼은 이미지 띠와 같다.
 
 ### Motion
-이징은 하나, `--ease-brand`(cubic-bezier(0.22, 1, 0.36, 1)). 상태 전환 300ms, 이동 500ms, 등장 `rise-in` 500ms, 순차 등장은 60ms씩 최대 340ms. 스켈레톤은 2초 `soft-pulse`. 피드백 "유용해요"를 누르면 하트가 500ms `heart-pop`(1.35배로 커졌다 0.9배를 거쳐 제자리)으로 한 번 튀어 오르고, 처음부터 눌려 있던 하트는 움직이지 않는다 (#134). `prefers-reduced-motion`이면 모두 1ms로 줄인다.
+이징은 하나, `--ease-brand`(cubic-bezier(0.22, 1, 0.36, 1)). 상태 전환 300ms, 이동 500ms, 등장 `rise-in` 500ms, 순차 등장은 60ms씩 최대 340ms. 스켈레톤은 2초 `soft-pulse`. 피드백 "유용해요"를 누르면 하트가 채워지며 500ms `heart-pop`(1.35배로 커졌다 0.9배를 거쳐 제자리)으로 한 번 튀어 오르고, 처음부터 눌려 있던 하트는 움직이지 않는다 (#134). `prefers-reduced-motion`이면 모두 1ms로 줄인다.
 
 ## Do's and Don'ts
 

@@ -9,6 +9,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -89,6 +94,67 @@ class FollowupQuestionLimiterTest {
         limiter.acquire(1L);
         limiter.release(1L, countedOnA); // A가 실패해도 다음 날의 B는 그대로
 
+        assertLimitExceeded(1L);
+    }
+
+    @Test
+    @DisplayName("#109-S8 자정 전에 날짜를 읽고 멈췄던 요청이 재개돼도 다음 날 사용 기록은 그대로다")
+    void 지연된_이전_날짜_요청() throws Exception {
+        CountDownLatch staleReadDate = new CountDownLatch(1);
+        CountDownLatch resume = new CountDownLatch(1);
+        Instant beforeMidnight = Instant.parse("2026-11-06T14:59:59Z"); // 서울 23:59:59
+        Instant afterMidnight = Instant.parse("2026-11-06T15:00:05Z"); // 서울 다음 날 00:00:05
+        // 이름이 stale인 스레드만 이전 날짜를 읽고 resume까지 멈춤
+        Clock gated = new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return SEOUL;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                if (!"stale".equals(Thread.currentThread().getName())) return afterMidnight;
+                staleReadDate.countDown();
+                try {
+                    resume.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return beforeMidnight;
+            }
+        };
+        FollowupQuestionLimiter gatedLimiter = new FollowupQuestionLimiter(gated);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "stale"));
+        try {
+            Future<LocalDate> stale = executor.submit(() -> gatedLimiter.acquire(2L)); // 다른 회원의 지연 요청
+            assertThat(staleReadDate.await(5, TimeUnit.SECONDS)).isTrue();
+
+            for (int i = 0; i < FollowupQuestionLimiter.DAILY_LIMIT; i++) gatedLimiter.acquire(1L); // 다음 날 3번 모두 씀
+            resume.countDown();
+            stale.get(5, TimeUnit.SECONDS);
+
+            assertThatThrownBy(() -> gatedLimiter.acquire(1L)).isInstanceOfSatisfying(BusinessException.class,
+                    e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.FOLLOWUP_LIMIT_EXCEEDED));
+        } finally {
+            resume.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    @DisplayName("#109-S8 같은 회원의 지연된 이전 날짜 요청도 다음 날 기록을 덮어쓰지 않고 그 날 횟수로 센다")
+    void 지연된_같은_회원_요청() {
+        clock.set(Instant.parse("2026-11-06T15:00:05Z"));
+        useUp(1L);
+
+        // 이전 날짜로 읽은 요청은 시계를 되돌려 흉내냄
+        clock.set(Instant.parse("2026-11-06T14:59:59Z"));
         assertLimitExceeded(1L);
     }
 

@@ -202,7 +202,7 @@ test.describe("R35 처리", () => {
   test("#68-S11 반려 메모는 회원에게 그대로 보인다고 안내한다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
     await modal(page).getByRole("radio", { name: /^반려/ }).check();
-    await expect(modal(page)).toContainText("이 메모는 회원에게 그대로 보여요. \u201c기타\u201d는 꼭 적고, 다른 사유는 덧붙일 말이 있을 때만 적어요.");
+    await expect(modal(page)).toContainText("메모는 회원에게 그대로 보여요. 사유가 \u201c기타\u201d이면 꼭 적고, 다른 사유는 필요할 때만 적어요.");
     await expect(modal(page)).not.toContainText("운영자 기록");
   });
 

@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import { PARTICIPATIONS_PATH, participationPath, participationsPath } from "@/lib/participation-paths";
 import { requireMember } from "@/lib/auth";
 import { getParticipation } from "./api";
 import { saveDemoFeedback } from "./demo-feedback";
 import { parseFeedbackForm, type FeedbackFieldErrors } from "./feedback-fields";
-import { parseParticipationTab, parseParticipationView, participationPath } from "./types";
+import { parseParticipationTab, parseParticipationView } from "./types";
 import { saveParticipationView } from "./view-preference";
 
 /*
@@ -35,7 +36,7 @@ export async function submitFeedback(
     return { status: "error", errors: {}, error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용이나 이미지를 줄여 다시 제출해 주세요" };
   }
   /* 목록의 탭 개수·마감 일정·요약 줄도 제출을 반영하게 한다 */
-  revalidatePath("/my/participations", "layout");
+  revalidatePath(PARTICIPATIONS_PATH, "layout");
   redirect(`${path}?notice=submitted`);
 }
 
@@ -45,7 +46,7 @@ export async function submitFeedback(
  */
 export async function setParticipationView(formData: FormData) {
   const tab = formData.get("tab");
-  const path = typeof tab === "string" ? `/my/participations?tab=${parseParticipationTab(tab)}` : "/my/participations";
+  const path = typeof tab === "string" ? participationsPath(parseParticipationTab(tab)) : PARTICIPATIONS_PATH;
   await requireMember(path);
   await saveParticipationView(parseParticipationView(formData.get("view")));
   redirect(path, RedirectType.replace);

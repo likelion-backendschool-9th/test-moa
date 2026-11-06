@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { setDemo } from "./helpers";
 
-const DETAIL = "/my/participations/p-meeting-notes";
+const DETAIL = "/testers/recruitments/p-meeting-notes";
 const status = (page: Page) => page.getByRole("region", { name: "진행 상황" });
 /* 회의록 정리의 테스트 항목. 첫 두 칸이 필수다 */
 const FIRST = "회의 메모로 회의록 만들기";
@@ -22,7 +22,7 @@ async function fillRequired(page: Page) {
 
 test.describe("R192 상세 접근", () => {
   for (const [role, path] of [
-    ["tester", "/my/participations/nope"],
+    ["tester", "/testers/recruitments/nope"],
     ["developer", DETAIL],
   ]) {
     test(`S473 ${role}가 ${path}에 가면 404 화면이다`, async ({ page, context }) => {
@@ -66,7 +66,7 @@ test.describe("R193 제출 전 상세와 피드백 작성", () => {
     await expect(submitted(page, SECOND)).toContainText(FEEDBACK_2);
     await expect(page.getByTestId("feedback-field")).toHaveCount(0);
 
-    await page.goto("/my/participations");
+    await page.goto("/testers/recruitments");
     await expect(page.getByRole("region", { name: /^마감 임박 테스트/ }).getByRole("heading")).toHaveText("마감 임박 테스트 3");
     await expect(page.getByTestId("participation-row").filter({ hasText: "회의록 정리" })).toContainText("지급 대기");
   });
@@ -167,7 +167,7 @@ test.describe("#90-R1 테스트 항목별 피드백", () => {
   const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
   const png = (name: string) => ({ name, mimeType: "image/png", buffer: PIXEL });
   const picker = (page: Page, name: string) => page.getByLabel(`${name} 이미지 추가`);
-  const MOAPLAN = "/my/participations/p-moaplan";
+  const MOAPLAN = "/testers/recruitments/p-moaplan";
   const OTHER = "기타 의견";
 
   test("#90-S1 테스트 항목마다 이름, 설명, 필수 여부, 칸이 있고 기타 의견 칸이 있다", async ({ page }) => {
@@ -208,7 +208,7 @@ test.describe("#90-R1 테스트 항목별 피드백", () => {
     await expect(submitted(page, OPTIONAL)).toHaveCount(0);
     await expect(submitted(page, FIRST)).toBeVisible();
 
-    await page.goto("/my/participations/p-used-books");
+    await page.goto("/testers/recruitments/p-used-books");
     await field(page, "책 등록하기").fill("좋아요");
     await field(page, "거래 요청 보내기").fill("됨");
     await submit(page).click();
@@ -257,7 +257,7 @@ test.describe("#90-R1 테스트 항목별 피드백", () => {
   });
 
   test("#90-S7 모두 선택 항목이어도 아무것도 적지 않으면 제출되지 않는다", async ({ page }) => {
-    await page.goto("/my/participations/p-ledger-note");
+    await page.goto("/testers/recruitments/p-ledger-note");
     await submit(page).click();
     await expect(section(page, "영수증 올리기").getByTestId("feedback-error")).toHaveText("피드백을 적어 주세요");
     await expect(field(page, "영수증 올리기")).toBeFocused();

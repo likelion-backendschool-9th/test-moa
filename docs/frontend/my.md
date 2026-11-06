@@ -45,7 +45,7 @@ S96 현재 페이지 [테스트]
 - Then  "출금"에만 `aria-current="page"`가 있다 ("크레딧"에는 없다)
 
 S97 메뉴가 없는 페이지 [직접]
-- When  `/my/participations`에 접속한다
+- When  `/testers/recruitments`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "마이페이지 메뉴"가 없다
 
 S108 모바일 [직접]
@@ -67,17 +67,17 @@ S85 프로필 [직접]
 S100 테스트 참여 [테스트]
 - Given `demo-role=tester`
 - Then  "지금 할 일"에 "테스트 참여" 묶음만 있고 항목은 2개다
-- Then  1번은 "북로그 피드백 제출", "D-2"이고 `/my/participations?tab=ongoing`을 가리킨다
+- Then  1번은 "북로그 피드백 제출", "D-2"이고 `/testers/recruitments?tab=ongoing`을 가리킨다 (고침 #101: 역할 경로로 이동)
 - Then  2번은 "모아플랜 참여 확정, 테스트 시작하기", "D-9"이다
 - Then  "크레딧"이라는 말이 없다
 
 S101 내 프로젝트 [직접]
 - Given `demo-role=developer`
-- Then  "내 프로젝트" 묶음에 "가계부 노트 지원자 선정", "D-3"과 "회의록 정리 새 피드백 확인", "3건"(`/my/projects`)이 순서대로 있다
+- Then  "내 프로젝트" 묶음에 "가계부 노트 지원자 선정", "D-3"과 "회의록 정리 새 피드백 확인", "3건"(`/developer/projects`)이 순서대로 있다 (고침 #101: 역할 경로로 이동)
 
 S102 묶음 하나가 비었을 때 [직접]
 - Given `demo-role=tester`
-- Then  "내 프로젝트" 묶음에 "지금 할 프로젝트 일이 없어요"와 "내 프로젝트"(`/my/projects`)가 보인다
+- Then  "내 프로젝트" 묶음에 "지금 할 프로젝트 일이 없어요"와 "내 프로젝트"(`/developer/projects`)가 보인다 (고침 #101: 역할 경로로 이동)
 
 S112 둘 다 비었을 때 [직접]
 - Given `demo-role=admin`
@@ -124,14 +124,14 @@ S91 운영자 [직접]
 
 S104 테스트 참여 [직접]
 - Given `demo-role=tester`
-- Then  "지원 2" → `/my/participations?tab=applied`, "참여 중 1" → `?tab=ongoing`, "완료 5" → `?tab=history`
+- Then  "지원 2" → `/testers/recruitments?tab=applied`, "참여 중 1" → `?tab=ongoing`, "완료 5" → `?tab=history` (고침 #101: 역할 경로로 이동)
 
 S105 프로젝트 없음 [직접]
-- Then  "아직 등록한 프로젝트가 없어요"와 "내 프로젝트"(`/my/projects`) 링크가 보인다
+- Then  "아직 등록한 프로젝트가 없어요"와 "내 프로젝트"(`/developer/projects`) 링크가 보인다 (고침 #101: 역할 경로로 이동)
 
 S109 프로젝트 있음 [직접]
 - Given `demo-role=developer`
-- Then  "프로젝트 2", "모집 중 1", "새 피드백 3"이 보이고 모두 `/my/projects`를 가리킨다
+- Then  "프로젝트 2", "모집 중 1", "새 피드백 3"이 보이고 모두 `/developer/projects`를 가리킨다 (고침 #101: 역할 경로로 이동)
 
 S110 운영자 [직접]
 - Given `demo-role=admin`

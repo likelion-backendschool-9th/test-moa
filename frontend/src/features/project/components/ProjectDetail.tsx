@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { projectEditPath, recruitmentCreatePath, recruitmentManagePath } from "@/lib/project-paths";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -74,14 +75,13 @@ export function ProjectBody({
   );
 }
 
-/** 프로젝트 정보와 수정·모집 작성 버튼 */
+/** 프로젝트 정보와 수정·모집글 작성 버튼 */
 export function ProjectInfo({ project }: { project: Project }) {
-  const base = `/my/projects/${project.key}`;
   return (
     <ProjectBody project={project}>
       <div className="flex flex-wrap gap-2 pt-2">
-        <LinkButton href={`${base}/recruitments/new`}>테스트 모집 작성</LinkButton>
-        <LinkButton href={`${base}/edit`} variant="secondary">
+        <LinkButton href={recruitmentCreatePath(project.key)}>모집글 작성</LinkButton>
+        <LinkButton href={projectEditPath(project.key)} variant="secondary">
           수정
         </LinkButton>
       </div>
@@ -96,7 +96,7 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
       <EmptyState
         title="아직 테스트 모집이 없어요"
         description="모집 조건과 일정을 정해 테스터를 모아 보세요."
-        action={<LinkButton href={`/my/projects/${projectKey}/recruitments/new`}>테스트 모집 작성</LinkButton>}
+        action={<LinkButton href={recruitmentCreatePath(projectKey)}>모집글 작성</LinkButton>}
       />
     );
   }
@@ -109,7 +109,7 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
               <RecruitmentStatusBadge status={item.status} />
               {item.isSubscription && <Badge tone="muted">구독 모집</Badge>}
             </div>
-            <Link href={`/my/projects/${projectKey}/recruitments/${item.slug}`} className="font-bold hover:underline">
+            <Link href={recruitmentManagePath(item.slug)} className="font-bold hover:underline">
               {item.title || item.request}
             </Link>
             <p className="text-sm text-text-muted">

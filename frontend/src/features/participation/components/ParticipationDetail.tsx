@@ -2,6 +2,7 @@ import { ImageIcon } from "@phosphor-icons/react/ssr";
 import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { participationsPath } from "@/lib/participation-paths";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -129,7 +130,7 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
       <Link
-        href={`/my/participations?tab=${tab}`}
+        href={participationsPath(tab)}
         className="inline-flex items-center gap-1 self-start rounded-full text-sm font-bold text-text-muted transition-colors duration-300 ease-brand hover:text-text"
       >
         <CaretLeftIcon aria-hidden size={16} weight="bold" />

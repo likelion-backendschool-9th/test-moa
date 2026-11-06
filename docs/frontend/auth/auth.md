@@ -105,9 +105,9 @@ S295 바깥 주소로 보내지 않음 [테스트]
 - Then  이미 로그인한 상태로 같은 `/login?next=…`에 접속해도 `/`로 간다
 
 S316 쿼리가 있는 경로 (고침 11-01: 리뷰) [테스트]
-- Given `/login?next=%2Fmy%2Fparticipations%3Ftab%3Dongoing%26sort%3Drecent`
+- Given `/login?next=%2Ftesters%2Frecruitments%3Ftab%3Dongoing%26sort%3Drecent` (고침 #101: 역할 경로로 이동)
 - When  seoyun@example.com / test1234로 로그인한다
-- Then  URL이 `/my/participations?tab=ongoing&sort=recent`다
+- Then  URL이 `/testers/recruitments?tab=ongoing&sort=recent`다 (고침 #101: 역할 경로로 이동)
 
 ## 3. 소셜 로그인 (R157)
 깃허브·구글 버튼은 목업이다. 누르면 테스터 시연 계정으로 로그인하고 `next`로 보낸다. 제공자는 추후 바뀔 수 있어 목록 한 곳(`SOCIAL_PROVIDERS`)만 고치면 버튼이 바뀌게 한다. (고침 11-01: 카카오·구글 → 깃허브·구글)
@@ -274,15 +274,49 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 - Then  로그인 화면으로 가지 않고 `/my`가 보이며, 새 `access_token`과 새 `refresh_token` 쿠키가 생긴다
 - `proxy.ts`는 `access_token` 쿠키가 없고 `refresh_token` 쿠키가 있을 때만 돈다. 미리 불러오기(prefetch)는 갱신하지 않는다
 - 백엔드가 5초 안에 응답하지 않으면 백엔드에 닿지 못한 것으로 보고 비로그인으로 보인다
-- 갱신에 실패하면 쿠키를 지우지 않고 그 요청만 비로그인으로 보인다. 동시에 온 요청 중 하나가 먼저 갱신해 같은 refresh 토큰이 버려진 경우, 먼저 받은 새 쿠키를 지우지 않기 위해서다
+- 갱신에 실패하면 쿠키를 지우지 않고 그 요청만 비로그인으로 보인다. 다른 곳에서 먼저 갱신해 같은 refresh 토큰이 버려진 경우, 먼저 받은 새 쿠키를 지우지 않기 위해서다
+
+#82-S8 탭 여러 개(병렬 요청)가 같은 refresh 쿠키로 동시에 갱신해도 모두 로그인이 유지된다 [직접]
+- Given 로그인한 뒤 `access_token` 쿠키만 없는 상태다
+- When  같은 `refresh_token` 쿠키로 `/my`를 동시에 두 번 부른다
+- Then  두 요청 모두 로그인 상태로 보이고 둘 다 새 토큰 쿠키를 받는다
+- 같은 refresh 토큰으로 10초 안에 온 갱신은 `proxy.ts`가 백엔드를 한 번만 부르고 결과를 함께 쓴다. 백엔드는 같은 토큰을 한 번만 받아 주므로(`docs/backend/auth/README.md` #80-S11) 따로 부르면 하나가 비로그인으로 보였다
+- 결과는 프론트 서버 한 대의 메모리에만 둔다. 프론트 서버를 여러 대로 늘리면 공용 저장소가 필요하다
 
 #82-S7 `AUTH_MODE`가 없으면 목업으로 동작하고 기존 e2e가 그대로 통과한다 [명령]
 - `npm run test:e2e` 전체 통과 (e2e 서버는 `.env.development.local`을 읽지 않는다)
 
+## 10. 소셜 로그인 백엔드 연결 (#83)
+`AUTH_MODE=backend`일 때 깃허브·구글 버튼이 실제 제공자로 간다. 목업(S296)은 그대로다. 백엔드 API와 규칙은 `docs/backend/auth/README.md` 4장.
+
+1. 버튼(서버 액션 `socialLogin`): 무작위 state를 httpOnly 쿠키 `oauth_state`(10분, 제공자·`next`도 함께)에 넣고, 백엔드에서 받은 동의 화면 주소로 보낸다
+2. 제공자 → `/auth/callback/{provider}?code=…&state=…` (Route Handler)
+3. state가 쿠키와 같으면 쿠키를 지우고 code를 백엔드 `POST /api/auth/oauth/{provider}`에 넘긴다
+4. 가입한 회원이면 토큰 쿠키를 넣고 `next`로, 처음이면 가입 토큰을 httpOnly 쿠키 `oauth_signup`(10분)에 넣고 `/signup/social`로
+5. `/signup/social`에서 이름과 약관 동의를 받아 `POST /api/auth/oauth/signup` → 토큰 쿠키를 넣고 `next`로
+
+- 콜백에서 백엔드를 부를 때는 20초까지 기다린다. 백엔드가 제공자에게 2~3번 물어서 기본 5초면 백엔드는 로그인했는데 화면은 실패가 될 수 있다
+- 돌아올 주소는 `NEXT_PUBLIC_SITE_URL` + `/auth/callback/{provider}`(없으면 `http://localhost:3000`). 제공자 앱에 등록한 주소와 글자까지 같아야 한다
+- 실패하면 `/login?error=<키>`로 보내고 로그인 화면이 키에 맞는 문구를 보인다(`oauth`, `suspended`, `email`, `expired`, `linkRequired`). 주소에 문구를 넣지 않아 남이 만든 문구가 보이지 않는다
+
+#83-S9 `/signup/social`에서 이름과 약관 동의가 없으면 칸 아래에 알린다 [테스트]
+- 목업에서는 시연 이메일·닉네임으로 화면이 보인다
+
+#83-S10 이름을 입력하고 동의하면 로그인한 채 돌아갈 곳으로 간다 [테스트]
+- 목업은 테스터로 로그인한다
+
+#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 키는 무시한다 [테스트]
+
+#83-S12 `AUTH_MODE=backend`에서 버튼을 누르면 제공자 동의 화면으로 가고, 돌아오면 로그인되거나 이름 입력 화면이 나온다 [직접]
+- 동의 화면 주소의 `client_id`·`redirect_uri`·`state`가 맞고, state 쿠키는 httpOnly다
+- 틀린 state로 돌아오면 `/login?error=oauth`, 동의 화면에서 취소하면 문구 없이 `/login`
+- 소셜 로그인 없이 `/signup/social`에 오면 `/login?error=expired`
+
 ## 범위 밖
 - 로그아웃 (고침 11-02: `docs/frontend/header.md`에서 만들었다)
 - 비밀번호 찾기·재설정, 이메일 인증
-- 실제 소셜 로그인(OAuth) 연동, 카카오·네이버 등 다른 제공자, 가입 데이터 저장, 비밀번호 암호화 (목업 기준. `AUTH_MODE=backend`의 가입·저장은 9장)
+- 실제 소셜 로그인(OAuth) 연동, 카카오·네이버 등 다른 제공자, 가입 데이터 저장, 비밀번호 암호화 (목업 기준. `AUTH_MODE=backend`의 가입·저장은 9장, 소셜 로그인은 10장)
+- 마이페이지의 소셜 계정 연동·해제 화면 (#84 내 정보 수정에서. API는 #83에 있다)
 - 가입 크레딧 지급 표시 (금액 미정)
 - 이용약관·개인정보처리방침 본문 (`/terms`, `/privacy`는 준비 중 그대로)
 - 로그인 시도 횟수 제한

@@ -145,8 +145,3 @@ export function keyDateOf(item: ParticipationItem): { label: string; at: string 
       return { label: "검토 완료", at: item.reviewedAt ?? item.appliedAt };
   }
 }
-
-/** 내 참여 상세 주소 */
-export function participationPath(key: string) {
-  return `/my/participations/${key}`;
-}

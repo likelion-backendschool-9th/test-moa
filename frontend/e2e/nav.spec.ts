@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 const BASE_TABS = [
-  ["참여 테스트", "/my/participations"],
-  ["내 프로젝트", "/my/projects"],
+  ["참여 테스트", "/testers/recruitments"],
+  ["내 프로젝트", "/developer/projects"],
   ["채팅", "/my/chats"],
 ] as const;
 
@@ -38,7 +38,15 @@ test.describe("R3 카테고리 탭", () => {
     const nav = page.getByRole("navigation", { name: "주요 메뉴" });
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
     await nav.getByRole("link", { name: "내 프로젝트" }).click();
-    await expect(page).toHaveURL("/my/projects");
+    await expect(page).toHaveURL("/developer/projects");
     await expect(nav.getByRole("link", { name: "내 프로젝트" })).toHaveAttribute("aria-current", "page");
   });
+});
+
+test("#101-S8 모집 관리에서도 내 프로젝트가 현재 탭이다", async ({ page, context }) => {
+  await setDemo(context, { role: "developer" });
+  await page.goto("/developer/recruitments/booklog");
+  const nav = page.getByRole("navigation", { name: "주요 메뉴" });
+  await expect(nav.getByRole("link", { name: "내 프로젝트" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
 });

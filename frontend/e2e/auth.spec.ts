@@ -104,9 +104,9 @@ test.describe("R156 이메일 로그인", () => {
   }
 
   test("S316 쿼리가 있는 경로로 돌아간다", async ({ page }) => {
-    await page.goto(`/login?next=${encodeURIComponent("/my/participations?tab=ongoing&sort=recent")}`);
+    await page.goto(`/login?next=${encodeURIComponent("/testers/recruitments?tab=ongoing&sort=recent")}`);
     await login(page, "seoyun@example.com", PASSWORD);
-    await expect(page).toHaveURL("/my/participations?tab=ongoing&sort=recent");
+    await expect(page).toHaveURL("/testers/recruitments?tab=ongoing&sort=recent");
   });
 });
 
@@ -188,5 +188,44 @@ test.describe("R160 가입 성공", () => {
     await page.goto(`/signup?next=${encodeURIComponent("/\\evil.com")}`);
     await signup(page);
     await expect(page).toHaveURL("/login?joined=1");
+  });
+});
+
+test.describe("#83 소셜 가입 이름 입력", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "guest" });
+  });
+
+  test("#83-S9 이름과 약관 동의가 없으면 칸 아래에 알린다", async ({ page }) => {
+    await page.goto("/signup/social");
+    await expect(main(page).getByText("social@example.com")).toBeVisible();
+    await main(page).getByRole("button", { name: "가입하기" }).click();
+    await expect(main(page).getByText("이름을 입력해 주세요")).toBeVisible();
+    await expect(main(page).getByText("이용약관과 개인정보처리방침에 동의해 주세요")).toBeVisible();
+    await expect(main(page).getByLabel("이름")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("#83-S10 이름을 입력하고 동의하면 로그인한 채 돌아갈 곳으로 간다", async ({ page }) => {
+    await page.goto("/signup/social?next=%2Fmy");
+    await main(page).getByLabel("이름").fill("김소셜");
+    await main(page).getByLabel("이용약관 동의(필수)").check();
+    await main(page).getByLabel("개인정보처리방침 동의(필수)").check();
+    await main(page).getByRole("button", { name: "가입하기" }).click();
+    await expect(page).toHaveURL("/my");
+    await expectLoggedIn(page);
+  });
+
+  test("#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 값은 무시한다", async ({ page }) => {
+    await page.goto("/login?error=suspended");
+    await expect(main(page).getByText("이용이 정지된 계정이에요")).toBeVisible();
+    await page.goto("/login?error=linkRequired");
+    await expect(main(page).getByText("이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요")).toBeVisible();
+    /* 객체에 원래 있는 이름(constructor 등)도 모르는 값이다 */
+    for (const key of ["%3Cscript%3E", "constructor", "toString"]) {
+      await page.goto(`/login?error=${key}`);
+      await expect(main(page).getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
+      await expect(main(page).getByLabel("이메일")).toBeVisible();
+      await expect(main(page).locator("[role=alert]")).toHaveCount(0);
+    }
   });
 });

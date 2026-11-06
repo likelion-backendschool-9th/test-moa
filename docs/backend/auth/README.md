@@ -12,7 +12,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 | [#80](https://github.com/likelion-backendschool-9th/test-moa/issues/80) | 이메일 가입·로그인·토큰 갱신 API | [아래 2](#2-이메일-가입로그인토큰-갱신-80) |
 | [#81](https://github.com/likelion-backendschool-9th/test-moa/issues/81) | 내 정보·구독 여부 확인 API | [아래 3](#3-내-정보구독-여부-확인-81) |
 | [#82](https://github.com/likelion-backendschool-9th/test-moa/issues/82) | 프론트 로그인·가입·로그아웃 백엔드 연결 | [로그인·회원가입](../../frontend/auth/auth.md) 9장 |
-| [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | |
+| [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | [아래 4](#4-googlegithub-로그인과-계정-연동-83) |
 | [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | |
 | [#85](https://github.com/likelion-backendschool-9th/test-moa/issues/85) | 회원 신고·증거 첨부 API | |
 | [#86](https://github.com/likelion-backendschool-9th/test-moa/issues/86) | 운영자 제재·해제 API (#34와 역할 나누기 확정 후) | |
@@ -34,7 +34,8 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 | 계층 | 위치 |
 | --- | --- |
 | 공통 | `global/exception`(`ErrorCode`, `BusinessException`, `GlobalExceptionHandler`), `global/security`(`SecurityConfig`, `JwtProvider`, `UserAuthenticationConverter`) |
-| API | `AuthController`(`/api/auth/**`), `UserController`(`/api/users/me`) |
+| API | `AuthController`(`/api/auth/**`), `UserController`(`/api/users/me`, `/api/users/me/accounts/{provider}`) |
+| 소셜 로그인 | `global/security/OAuthClient`(제공자와 통신), `JwtProvider`(소셜 가입 토큰) |
 | 서비스 | `AuthService`, `UserService`, `SubscriptionChecker` |
 
 ### 다른 기능에서 쓰는 법
@@ -99,6 +100,12 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 - When  같은 토큰으로 갱신과 로그아웃을 동시에 보낸다
 - Then  로그아웃은 200이다. 갱신이 먼저 끝나 200을 받았어도 그 새 access·refresh 토큰은 401이다
 - PR #102 리뷰에서 찾았다. 확인과 사용 표시 사이에 잠금이 없어 같은 토큰으로 동시에 갱신하면 모두 성공했다
+- 여러 탭이 같은 토큰으로 갱신하는 것은 프론트(`proxy.ts`)가 한 번으로 모아 보낸다(`docs/frontend/auth/auth.md` #82-S8)
+
+#80-S12 로그인하면 그 회원의 만료된 refresh 토큰 행을 지운다 [테스트]
+- Given 회원에게 만료된 refresh 토큰 행이 있다(로그아웃하지 않고 끝난 세션)
+- When  그 회원이 로그인한다
+- Then  만료된 행이 지워진다. 쓴 토큰 행을 만료까지 남기므로 행이 끝없이 쌓이지 않게 한다
 
 #80-S8 BCrypt 한도(72바이트)를 넘는 비밀번호는 500이 아니다 [테스트]
 - 가입: 비밀번호는 영문·숫자·특수문자(ASCII)만 받아 64자여도 64바이트다. 한글이 섞이면 칸별 400 "영문·숫자·특수문자로, 영문과 숫자를 섞어 8~64자로 써 주세요"
@@ -117,6 +124,55 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 #81-S5 구독자 전용 기능은 `subscriptionChecker.require(userId)`로 막고, 아니면 403 `SUBSCRIPTION_REQUIRED` [직접]
 - 아직 부르는 API가 없다. 첫 사용처가 생기면 그 기능 테스트가 확인한다
+
+## 4. Google·GitHub 로그인과 계정 연동 (#83)
+
+백엔드는 브라우저에 열려 있지 않아서 제공자 콜백은 Next(`/auth/callback/{provider}`)가 받고, 받은 code를 백엔드에 넘겨 백엔드가 제공자와 교환한다. 제공자 토큰은 저장하지 않고, 회원 정보만 읽고 버린다. 프론트 흐름은 [로그인·회원가입](../../frontend/auth/auth.md) 10장.
+
+- API
+  - `GET /api/auth/oauth/{provider}/authorize-url?redirectUri=&state=`: 제공자 동의 화면 주소. 앱 id는 백엔드만 안다
+  - `POST /api/auth/oauth/{provider}` `{code, redirectUri}`: 로그인. 처음 온 사람이면 `signupRequired: true`와 가입 토큰
+  - `POST /api/auth/oauth/signup` `{signupToken, name}`: 소셜 가입하고 로그인
+  - `POST·DELETE /api/users/me/accounts/{provider}`: 로그인한 회원의 연동·해제 (화면은 #84의 내 정보 수정에서)
+- `provider`는 `google`, `github`. 그 밖은 404
+- 앱 값은 환경 변수 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`. 비어 있으면 소셜 로그인만 실패한다. 내 컴퓨터에서는 `backend/config/application-local.yml`(커밋하지 않음)에 같은 이름으로 넣어도 된다
+- 소셜 가입 토큰은 서명한 JWT(10분)이고 제공자·제공자 회원 id·확인된 이메일·닉네임 후보를 담는다. 회원 id(`sub`)가 없어 access 토큰으로 쓸 수 없고, access 토큰은 가입 토큰으로 쓸 수 없다
+- GitHub 이메일은 확인된 대표 이메일(`/user/emails`의 primary·verified)만 쓴다
+
+#83-S1 이미 연동된 소셜 계정으로 오면 바로 로그인된다 [테스트]
+
+#83-S2 처음 온 사람은 이름을 입력해 가입한다 [테스트]
+- Given 제공자가 확인한 이메일이 있고, 그 이메일·제공자 계정으로 가입한 회원이 없다
+- When  소셜 로그인한다
+- Then  `signupRequired: true`와 가입 토큰·이메일·닉네임이 온다. 가입 토큰과 이름으로 가입하면 로그인 토큰이 온다
+- 이름은 필수(20자까지), 닉네임은 입력받지 않는다. GitHub 사용자명이나 Google 이름에서 닉네임 규칙(한글·영문·숫자 1~39자)에 맞는 글자만 남기고, 비면 "회원", 겹치면 숫자 네 자리를 붙인다
+- 닉네임은 소셜 로그인 때 한 번 정해 가입 토큰에 넣어서, 이름 입력 화면에 보인 닉네임 그대로 가입된다(그사이 누가 가져갔을 때만 숫자를 다시 붙인다)
+
+#83-S3 제공자가 확인한 이메일과 같은 소셜 회원이 있으면 그 회원에 연동해 로그인한다 [테스트]
+- 예: 구글로 가입한 회원이 같은 이메일의 GitHub으로 오면 GitHub을 연동한다
+- 확인되지 않은 이메일이면 연동도 가입도 하지 않고 400 `OAUTH_EMAIL_REQUIRED`
+- 이메일 가입(비밀번호가 있는) 회원은 #83-S13
+
+#83-S4 로그인한 회원이 소셜 계정을 연동·해제한다 [테스트]
+- 마지막 로그인 방법은 해제할 수 없다(409 `LAST_LOGIN_METHOD`). 제공자마다 계정 하나(같은 제공자의 다른 계정이 있으면 409 `PROVIDER_ALREADY_LINKED`)
+
+#83-S5 다른 회원에 이미 연동된 소셜 계정은 연동할 수 없다(409 `ACCOUNT_ALREADY_LINKED`) [테스트]
+
+#83-S6 가입 토큰은 위조하거나 access 토큰과 바꿔 쓸 수 없다 [테스트]
+- 위조·만료는 401 `INVALID_SIGNUP_TOKEN`, 가입 토큰을 Bearer로 쓰면 401, 이미 가입한 가입 토큰을 다시 쓰면 409
+
+#83-S7 정지된 회원은 소셜 로그인도 403 `SUSPENDED` [테스트]
+- 탈퇴 유예 회원은 401 `OAUTH_FAILED`로 막기만 한다. 되돌리기는 #84
+
+#83-S13 이메일 가입(비밀번호가 있는) 회원에는 같은 이메일이어도 자동 연동하지 않는다 [테스트]
+- Given 어떤 이메일로 이메일 가입한 회원이 있다
+- When  같은 이메일이 확인된 구글·GitHub 계정으로 소셜 로그인한다
+- Then  409 `EMAIL_ACCOUNT_EXISTS`("이메일로 로그인한 뒤 마이페이지에서 연동해 주세요")이고 연동하지 않는다
+- 이메일 가입은 이메일 인증이 없어서, 남이 그 이메일로 먼저 가입해 두었을 수 있다. 자동 연동하면 그 사람이 비밀번호로 같은 계정에 들어올 수 있다. 이메일 인증이 생기면 인증된 계정에는 자동 연동해도 된다
+- 연동은 이메일로 로그인한 뒤 마이페이지에서 한다(#83-S4, 화면은 #84)
+
+#83-S8 동의 화면 주소에는 앱 id·돌아올 주소·state·scope가 들어가고 비밀번호는 없다 [테스트]
+- scope: Google `openid email profile`, GitHub `read:user user:email`
 
 ## 범위 밖
 - 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

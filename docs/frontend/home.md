@@ -71,7 +71,7 @@ S11 열기와 닫기 [직접]
 
 S12 링크 이동 후 닫힘 [테스트]
 - When  패널에서 "참여 테스트"를 누른다
-- Then  URL이 `/my/participations`이고 패널이 닫힌다
+- Then  URL이 `/testers/recruitments`이고 패널이 닫힌다 (고침 #101: 역할 경로로 이동)
 
 계정 영역(마이페이지·로그아웃)은 `docs/frontend/header.md` R179.
 

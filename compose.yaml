@@ -1,6 +1,9 @@
 # 전체 서비스를 한 번에 띄운다: docker compose up --build
-# 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다
-# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, JWT_SECRET, NEXT_PUBLIC_SITE_URL, TEAM_PORT
+# 환경 변수는 셸이나 같은 폴더의 .env에서 읽는다.
+
+# 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, JWT_SECRET, CASHOUT_ACCOUNT_CRYPTO_KEY, NEXT_PUBLIC_SITE_URL, TEAM_PORT
+# 선택 값: ANALYSIS_BASE_URL, ANALYSIS_INTERNAL_TOKEN (AI 분석 서버. 없으면 AI 기능만 503)
+
 # 로컬 HTTPS(--profile https)를 쓸 때: HTTP_PORT, HTTPS_PORT
 services:
   db:
@@ -38,8 +41,16 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      CASHOUT_ACCOUNT_CRYPTO_KEY: ${CASHOUT_ACCOUNT_CRYPTO_KEY}
+      # 소셜 로그인(OAuth) 앱 값. 없으면 소셜 로그인만 실패하고 나머지는 그대로 돈다
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       # 엔티티를 보고 테이블을 만들고 바뀐 컬럼을 더한다(지우지는 않음)
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      ANALYSIS_BASE_URL: ${ANALYSIS_BASE_URL:-http://localhost:8000}
+      ANALYSIS_INTERNAL_TOKEN: ${ANALYSIS_INTERNAL_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy

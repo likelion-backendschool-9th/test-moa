@@ -3,18 +3,18 @@ import { setDemo } from "./helpers";
 
 /* docs/frontend/project/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
-const BOOKLOG = "/my/projects/booklog";
-const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
+const BOOKLOG = "/developer/projects/booklog";
+const BOOKLOG_MANAGE = "/developer/recruitments/booklog";
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
-const FIRST_MANAGE = `${BOOKLOG}/recruitments/booklog-first`;
-const FOLIO_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder";
+const FIRST_MANAGE = "/developer/recruitments/booklog-first";
+const FOLIO_MANAGE = "/developer/recruitments/folio-builder";
 /* 개발자가 취소한 지난 무료 모집 */
-const FOLIO_OLD_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder-old";
+const FOLIO_OLD_MANAGE = "/developer/recruitments/folio-builder-old";
 /* 확정 테스터가 아직 없는 무료 모집 */
-const FOLIO_NEXT_MANAGE = "/my/projects/folio-builder/recruitments/folio-builder-next";
+const FOLIO_NEXT_MANAGE = "/developer/recruitments/folio-builder-next";
 
 test.describe("R101 접근", () => {
-  for (const path of ["/my/projects/nope", `${BOOKLOG}/recruitments/nope`]) {
+  for (const path of ["/developer/projects/nope", "/developer/recruitments/nope"]) {
     test(`S485 ${path}는 404 화면이다`, async ({ page, context }) => {
       await setDemo(context, { role: "developer" });
       await page.goto(path);
@@ -24,8 +24,10 @@ test.describe("R101 접근", () => {
 
   test("S485 다른 회원의 프로젝트도 404 화면이다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
-    await page.goto(BOOKLOG);
-    await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
+    for (const path of [BOOKLOG, BOOKLOG_MANAGE]) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
+    }
   });
 });
 
@@ -35,13 +37,13 @@ test.describe("R103 프로젝트 등록·수정", () => {
   });
 
   test("S490 잘못 입력하면 오류를 보여 주고 첫 오류 칸으로 포커스가 간다", async ({ page }) => {
-    await page.goto("/my/projects/new");
+    await page.goto("/developer/projects/new");
     await page.getByRole("button", { name: "등록" }).click();
     await expect(page.getByText("프로젝트 이름을 적어 주세요")).toBeVisible();
     const name = page.getByLabel("프로젝트 이름");
     await expect(name).toBeFocused();
     await expect(name).toHaveAttribute("aria-describedby", /field-name-error/);
-    await expect(page).toHaveURL("/my/projects/new");
+    await expect(page).toHaveURL("/developer/projects/new");
 
     await name.fill("가".repeat(51));
     await page.getByRole("button", { name: "등록" }).click();
@@ -56,14 +58,14 @@ test.describe("R103 프로젝트 등록·수정", () => {
     /* 줄바꿈도 한 글자로 센다 */
     await page.getByLabel("상세 설명 (선택)").fill(`${"가".repeat(1000)}\n${"나".repeat(999)}`);
     await page.getByRole("button", { name: "등록" }).click();
-    await expect(page).toHaveURL("/my/projects?notice=saved");
+    await expect(page).toHaveURL("/developer/projects?notice=saved");
   });
 
   test("S491 등록하면 목록으로 가고 시연 안내가 보인다", async ({ page }) => {
-    await page.goto("/my/projects/new");
+    await page.goto("/developer/projects/new");
     await page.getByLabel("프로젝트 이름").fill("새 서비스");
     await page.getByRole("button", { name: "등록" }).click();
-    await expect(page).toHaveURL("/my/projects?notice=saved");
+    await expect(page).toHaveURL("/developer/projects?notice=saved");
     await expect(page.getByText("시연용이라 실제로 저장되지는 않아요")).toBeVisible();
   });
 
@@ -90,7 +92,7 @@ test.describe("#62-R1 프로젝트 이미지·미리보기", () => {
 
   test.beforeEach(async ({ context, page }) => {
     await setDemo(context, { role: "developer" });
-    await page.goto("/my/projects/new");
+    await page.goto("/developer/projects/new");
   });
 
   test("#62-S5 대표 이미지를 고르면 썸네일이 보이고, 다시 고르면 바뀌며, 한도를 넘으면 막는다", async ({ page }) => {
@@ -146,14 +148,14 @@ test.describe("#62-R1 프로젝트 이미지·미리보기", () => {
     await page.goto(`${BOOKLOG}/edit`);
     await expect(page.getByTestId("image-item")).toHaveCount(1);
 
-    await page.goto("/my/projects/folio-builder");
+    await page.goto("/developer/projects/folio-builder");
     await expect.poll(() => cover.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
 
-    await page.goto("/my/projects/todo-memo");
+    await page.goto("/developer/projects/todo-memo");
     const fallback = page.getByRole("img", { name: "기본 프로젝트 이미지" });
     await expect(fallback).toBeVisible();
     await expect.poll(() => fallback.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
-    await page.goto("/my/projects/todo-memo/edit");
+    await page.goto("/developer/projects/todo-memo/edit");
     await expect(page.getByTestId("image-item")).toHaveCount(0);
 
     /* 수정에서 이미지를 지워도 저장되고, 미리보기에는 기본 이미지가 보인다 */
@@ -229,7 +231,7 @@ test.describe("R104 프로젝트 상세", () => {
 });
 
 test.describe("R105 테스트 모집 작성", () => {
-  const NEW = `${BOOKLOG}/recruitments/new`;
+  const NEW = "/developer/recruitments/new?project=booklog";
 
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
@@ -260,7 +262,7 @@ test.describe("R105 테스트 모집 작성", () => {
 });
 
 test.describe("#62-R7 모집글 제목과 선정 조건", () => {
-  const NEW = `${BOOKLOG}/recruitments/new`;
+  const NEW = "/developer/recruitments/new?project=booklog";
 
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
@@ -299,7 +301,7 @@ test.describe("#62-R7 모집글 제목과 선정 조건", () => {
   });
 
   test("#62-S13 접속 링크는 모집글마다 적고 모집 관리에서 새 탭으로 열린다", async ({ page }) => {
-    await page.goto("/my/projects/new");
+    await page.goto("/developer/projects/new");
     await expect(page.getByLabel("접속 링크")).toHaveCount(0);
 
     await page.goto(NEW);
@@ -449,7 +451,7 @@ test.describe("R107 테스터 관리 탭", () => {
     await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`);
     await expect(summaryValue("확정 수")).toHaveText("20명");
 
-    await page.goto("/my/projects");
+    await page.goto("/developer/projects");
     await expect(page.getByTestId("todo").filter({ hasText: "지원자 1명이 확정을 기다려요" })).toHaveCount(1);
     const overview = page.getByRole("region", { name: "전체 현황" });
     await expect(overview.getByRole("term")).toHaveText(["모집 중", "테스트 중", "신고 대기"]);
@@ -524,7 +526,7 @@ test.describe("#62-R2 모집 조건과 테스트 항목", () => {
   });
 
   test("#62-S11 모집 작성에 모집 조건과 테스트 항목이 있고 항목은 1개 이상이다", async ({ page }) => {
-    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await page.goto("/developer/recruitments/new?project=booklog");
     await expect(page.getByLabel("모집 조건 (선택)")).toBeVisible();
     await expect(page.getByTestId("test-item-row")).toHaveCount(1);
     const add = page.getByRole("button", { name: "항목 추가" });
@@ -555,7 +557,7 @@ test.describe("#62-R2 모집 조건과 테스트 항목", () => {
   });
 
   test("#62-S2 테스트 항목은 처음부터 필수이고, 끈 값은 줄을 지우거나 제출에 실패해도 남으며 모집 관리에 배지로 보인다", async ({ page }) => {
-    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await page.goto("/developer/recruitments/new?project=booklog");
     await expect(page.getByRole("checkbox", { name: "항목 1 필수" })).toBeChecked();
     const add = page.getByRole("button", { name: "항목 추가" });
     await add.click();
@@ -577,7 +579,7 @@ test.describe("#62-R2 모집 조건과 테스트 항목", () => {
   });
 
   test("#62-S3 유형은 모집 작성에서 고르고 모집 관리에 보인다", async ({ page }) => {
-    await page.goto(`${BOOKLOG}/recruitments/new`);
+    await page.goto("/developer/recruitments/new?project=booklog");
     await expect(page.getByRole("radio", { name: /웹서비스/ })).toBeChecked();
     for (const label of ["모바일앱", "게임", "API·라이브러리"]) {
       await expect(page.getByRole("radio", { name: new RegExp(label) })).toBeDisabled();
@@ -616,7 +618,7 @@ test.describe("#62-R3 모집 취소", () => {
     /* 공개 페이지는 없어지고, 전체 현황의 모집 중 숫자에서 빠진다 */
     await page.goto("/recruitments/folio-builder-next");
     await expect(page.getByText("찾는 페이지가 없어요")).toBeVisible();
-    await page.goto("/my/projects");
+    await page.goto("/developer/projects");
     const overview = page.getByRole("region", { name: "전체 현황" });
     const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 중$/ }) });
     await expect(tile.getByRole("definition")).toHaveText("2건");
@@ -686,14 +688,14 @@ test.describe("#62-R3 모집 취소", () => {
     await expect(page.getByRole("main").getByText("취소", { exact: true })).toBeVisible();
     await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(3);
 
-    await page.goto("/my/projects");
+    await page.goto("/developer/projects");
     const folio = page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem").filter({ hasText: "포트폴리오 빌더" });
     await expect(folio).toContainText("모집 2건 · 모집 중 2건");
     const overview = page.getByRole("region", { name: "전체 현황" });
     const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 중$/ }) });
     await expect(tile.getByRole("definition")).toHaveText("3건");
 
-    await page.goto("/my/projects/folio-builder");
+    await page.goto("/developer/projects/folio-builder");
     const cancelled = page.getByRole("listitem").filter({ hasText: "포트폴리오 빌더 첫 버전 테스트" });
     await expect(cancelled).toBeVisible();
     await expect(cancelled.getByRole("link", { name: "공개 페이지 보기" })).toHaveCount(0);
@@ -773,4 +775,48 @@ test.describe("#62-R6 피드백 추천", () => {
 
     await expect(page.getByRole("button", { name: "이도윤님의 피드백 추천" })).toHaveCount(0);
   });
+});
+
+test.describe("#101 역할별 페이지 주소", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("#101-S4 옛 주소는 404 화면이다", async ({ page }) => {
+    for (const path of ["/my/projects", "/my/participations"]) {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(404);
+      await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
+    }
+  });
+
+  test("#101-S5 프로젝트에서 모집 작성을 누르면 프로젝트 쿼리로 폼을 연다", async ({ page }) => {
+    await page.goto(BOOKLOG);
+    await page.getByRole("link", { name: "모집글 작성", exact: true }).click();
+    await expect(page).toHaveURL("/developer/recruitments/new?project=booklog");
+    await expect(page.getByRole("main").getByRole("paragraph").filter({ hasText: /^북로그$/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: "취소", exact: true })).toHaveAttribute("href", BOOKLOG);
+  });
+
+  test("#101-S6 프로젝트 키가 없거나 남의 프로젝트면 404 화면이다", async ({ page, context }) => {
+    for (const path of [
+      "/developer/recruitments/new",
+      "/developer/recruitments/new?project=nope",
+      "/developer/recruitments/new?project=booklog&project=folio-builder",
+    ]) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
+    }
+    await setDemo(context, { role: "tester" });
+    await page.goto("/developer/recruitments/new?project=booklog");
+    await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
+  });
+});
+
+test("#101-S7 모집 관리의 현재 위치 링크가 프로젝트를 가리킨다", async ({ page, context }) => {
+  await setDemo(context, { role: "developer" });
+  await page.goto(BOOKLOG_MANAGE);
+  const breadcrumb = page.getByRole("navigation", { name: "현재 위치" });
+  await expect(breadcrumb.getByRole("link", { name: "내 프로젝트", exact: true })).toHaveAttribute("href", "/developer/projects");
+  await expect(breadcrumb.getByRole("link", { name: "북로그", exact: true })).toHaveAttribute("href", "/developer/projects/booklog");
 });

@@ -1,5 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
+import { recruitmentManagePath } from "@/lib/project-paths";
 import { getSession, type Role } from "@/lib/session";
 import type { Recruitment } from "@/features/recruitment/types";
 import {
@@ -8,6 +9,7 @@ import {
   findCancellation,
   findFeedbacks,
   findIsSubscribed,
+  findOwnedRecruitment,
   findProjects,
   findPublicRecruitment,
   findRecruitmentDetail,
@@ -179,7 +181,7 @@ export async function getMyDashboard(path: string) {
       ]);
       const { status } = recruitment;
       if (status === "cancelled") continue;
-      const base = `/my/projects/${project.key}/recruitments/${recruitment.slug}`;
+      const base = recruitmentManagePath(recruitment.slug);
       const pending = applications.filter((item) => item.status === "applied").length;
       const waitingHours = feedbacks.map((item) => getHoursUntilPaid(item, now)).filter((hours) => hours > 0);
 
@@ -235,18 +237,29 @@ export type PublicRecruitmentView = NonNullable<Awaited<ReturnType<typeof getPub
 
 export type FeedbackView = Feedback & { hoursUntilPaid: number };
 
-/** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
-export async function getRecruitmentDetail(path: string, projectKey: string, recruitmentKey: string) {
-  const { project, recruitments } = await getMyProject(path, projectKey);
-  const recruitment = recruitments.find((item) => item.slug === recruitmentKey);
-  if (!recruitment) notFound();
+/** 내 모집의 소유권과 현재 상태. 화면 목록이나 통계는 읽지 않는다 */
+async function getMyRecruitment(path: string, recruitmentKey: string) {
   const role = await requireRole(path);
-  const [applications, feedbacks, detail, cancellation] = await Promise.all([
+  const owned = await findOwnedRecruitment(role, recruitmentKey);
+  if (!owned) notFound();
+  const cancellation = await findCancellation(role, recruitmentKey);
+  return {
+    role,
+    project: owned.project,
+    recruitment: { ...owned.recruitment, status: getRecruitmentStatus(owned.recruitment, new Date(), cancellation !== null) },
+    cancellation,
+  };
+}
+
+/** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
+export async function getRecruitmentDetail(path: string, recruitmentKey: string) {
+  const { role, project, recruitment: currentRecruitment, cancellation } = await getMyRecruitment(path, recruitmentKey);
+  const [applications, feedbacks, detail] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
-    findCancellation(role, recruitmentKey),
   ]);
+  const recruitment = { ...currentRecruitment, title: detail.title };
   const now = new Date();
   return {
     project,
@@ -270,19 +283,19 @@ export type ApplicationView = Application & { submission: SubmissionStatus | nul
  * 개발자가 모집을 취소할 수 있는지. 테스트 전(모집 중)에는 확정된 테스터가 없을 때만,
  * 테스트 중에는 사유를 적으면 취소할 수 있다. 종료했거나 이미 취소한 모집은 취소할 수 없다.
  */
-export function canCancelRecruitment(recruitment: RecruitmentView) {
+export function canCancelRecruitment(recruitment: Pick<RecruitmentView, "status" | "confirmedCount">) {
   if (recruitment.status === "testing") return true;
   return recruitment.status === "recruiting" && recruitment.confirmedCount === 0;
 }
 
 /** 모집 취소. 취소할 수 있는 상태인지 서버에서 다시 보고, 테스트 중이면 사유를 받는다 */
 export async function cancelRecruitment(
-  projectKey: string,
   recruitmentKey: string,
   formData: FormData,
 ): Promise<FormState & { ok?: boolean }> {
-  const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
-  const { recruitment, canCancel } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const path = recruitmentManagePath(recruitmentKey);
+  const { recruitment } = await getMyRecruitment(path, recruitmentKey);
+  const canCancel = canCancelRecruitment(recruitment);
   const testing = recruitment.status === "testing";
   const values = { reason: text(formData, "reason") };
   const errors: Record<string, string> = {};
@@ -299,7 +312,7 @@ export async function cancelRecruitment(
 }
 
 /** 선발형 구독 모집이고 모집 마감 전이면 지원자를 직접 확정·거절할 수 있다 */
-export function canSelectApplicants(recruitment: RecruitmentView, selectionMode: SelectionMode) {
+export function canSelectApplicants(recruitment: Pick<RecruitmentView, "status" | "isSubscription">, selectionMode: SelectionMode) {
   return recruitment.isSubscription && selectionMode === "selection" && recruitment.status === "recruiting";
 }
 
@@ -308,13 +321,16 @@ export function canSelectApplicants(recruitment: RecruitmentView, selectionMode:
  * 이 모집 건의 대기 지원만 바꿀 수 있다.
  */
 export async function decideApplicants(
-  projectKey: string,
   recruitmentKey: string,
   ids: string[],
   status: "confirmed" | "rejected",
 ): Promise<{ ok: boolean }> {
-  const path = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
-  const { recruitment, applications, detail } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+  const path = recruitmentManagePath(recruitmentKey);
+  const { role, recruitment } = await getMyRecruitment(path, recruitmentKey);
+  const [applications, detail] = await Promise.all([
+    findApplications(role, recruitmentKey),
+    findRecruitmentDetail(role, recruitmentKey),
+  ]);
   const pendingIds = new Set(applications.filter((item) => item.status === "applied").map((item) => item.id));
   const unique = [...new Set(ids)];
   if (!canSelectApplicants(recruitment, detail.selectionMode) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
@@ -328,13 +344,14 @@ export type AiAnalysis =
   | { state: "empty" };
 
 /** AI 분석 결과. 신고된 피드백을 뺀 피드백이 최소 수보다 적으면 분석하지 않는다 */
-export async function getAiAnalysis(path: string, projectKey: string, recruitmentKey: string): Promise<AiAnalysis> {
-  const { feedbacks } = await getRecruitmentDetail(path, projectKey, recruitmentKey);
+export async function getAiAnalysis(path: string, recruitmentKey: string): Promise<AiAnalysis> {
+  const { role } = await getMyRecruitment(path, recruitmentKey);
+  const feedbacks = await findFeedbacks(role, recruitmentKey);
   const feedbackCount = feedbacks.filter((item) => item.status !== "reported").length;
   if (feedbackCount < AI_MIN_FEEDBACKS) {
     return { state: "notEnough", feedbackCount, minFeedbacks: AI_MIN_FEEDBACKS };
   }
-  const summary = await findAiSummary(await requireRole(path), recruitmentKey);
+  const summary = await findAiSummary(role, recruitmentKey);
   return summary ? { state: "ready", summary } : { state: "empty" };
 }
 
@@ -414,6 +431,13 @@ export function validateRecruitmentForm(formData: FormData, isSubscription: bool
   if (values.conditions.length > RECRUITMENT_LIMIT.conditionsLength) {
     errors.conditions = `모집 조건은 ${RECRUITMENT_LIMIT.conditionsLength}자까지 적을 수 있어요`;
   }
+
+  /* 모집글 이미지는 선택이고 테스트 항목 이미지와 따로 센다 (#124) */
+  const recruitmentImages = parseFileMeta(formData.get("recruitmentImagesMeta"));
+  const recruitmentImageError = recruitmentImages
+    ? checkImages(recruitmentImages, RECRUITMENT_LIMIT.imageCount)
+    : "이미지 정보를 읽지 못했어요";
+  if (recruitmentImageError) errors.recruitmentImages = recruitmentImageError;
 
   /* 테스트 항목: 제목과 설명이 둘 다 빈 줄은 없는 것으로 본다 */
   const { min, max, titleLength, descriptionLength, imageCount } = RECRUITMENT_LIMIT.testItems;

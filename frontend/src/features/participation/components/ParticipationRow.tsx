@@ -1,4 +1,5 @@
 import { CoinsIcon } from "@phosphor-icons/react/ssr";
+import { participationPath } from "@/lib/participation-paths";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -7,7 +8,6 @@ import { cn } from "@/lib/cn";
 import { daysUntil, formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
 import {
   keyDateOf,
-  participationPath,
   STATUS_LABEL,
   tabOf,
   type ParticipationItem,

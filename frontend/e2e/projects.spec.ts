@@ -478,10 +478,12 @@ test.describe("R108 피드백 탭", () => {
     }
     await expect(rows.nth(0)).toContainText(/\d+시간 뒤 자동 지급/);
     await expect(rows.nth(0).getByRole("button", { name: "신고하기" })).toBeVisible();
-    /* 신고된 피드백은 신고하기 대신 신고 정보, 지급 완료는 신고 버튼이 없다 (#134) */
+    /* 신고된 피드백은 신고하기 대신 신고 정보, 지급 완료는 신고하기를 눌러도 기간이 지났다고만 알린다 (#134) */
     await expect(rows.nth(1).getByRole("button", { name: "신고하기" })).toHaveCount(0);
     await expect(rows.nth(1).getByRole("button", { name: "신고 정보" })).toBeVisible();
-    await expect(rows.nth(2).getByRole("button", { name: /신고/ })).toHaveCount(0);
+    await rows.nth(2).getByRole("button", { name: "신고하기" }).click();
+    await expect(rows.nth(2)).toContainText("신고는 제출 후 72시간 안에만 할 수 있어요");
+    await expect(page.getByRole("dialog", { name: "피드백 신고" })).toBeHidden();
   });
 
   test("S509 사유를 적어 신고하고, Esc로 닫으면 포커스가 돌아온다", async ({ page }) => {
@@ -757,7 +759,7 @@ test.describe("#62-R5 항목별 피드백과 스크린샷", () => {
 });
 
 test.describe("#62-R6 피드백 추천", () => {
-  test("#62-S26 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
+  test("#62-S26 도움이 된 피드백을 유용해요로 표시하고 다시 누르면 뺀다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     const count = page.getByTestId("recommended-count");
@@ -773,7 +775,8 @@ test.describe("#62-R6 피드백 추천", () => {
     await like.click();
     await expect(count).toHaveText("· 유용해요 1건");
 
-    await expect(page.getByRole("button", { name: "이도윤님의 피드백이 유용해요" })).toHaveCount(0);
+    /* 신고된 피드백에도 버튼이 있다 (#134: 버튼 4개는 언제나 보인다) */
+    await expect(page.getByRole("button", { name: "이도윤님의 피드백이 유용해요" })).toBeVisible();
   });
 });
 

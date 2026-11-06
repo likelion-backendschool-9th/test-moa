@@ -1,4 +1,4 @@
-# 프론트엔드 참여 테스트 (`/my/participations`)
+# 프론트엔드 참여 테스트 (`/testers/recruitments`)
 
 백엔드: [프로젝트·테스터·피드백 백엔드](../../backend/project/README.md)
 
@@ -15,8 +15,8 @@
   3. 마감 캘린더와 마감 임박 테스트: 왼쪽은 내 피드백 제출 마감을 표시한 달력, 오른쪽은 제출 전 테스트를 마감 순으로 모은 목록이다. 좁은 화면에서는 위아래로 쌓인다. 주 버튼은 목록 맨 위에만
   4. 탭 3개: 지원한 테스트 / 참여 중인 테스트 / 참여했던 테스트 (개수 표시)
   5. 선택한 탭의 참여 목록(행 카드)
-  6. 상세(`/my/participations/:participationKey`): 진행 상황, 피드백 작성 또는 제출한 피드백, 테스트 정보
-- URL: `docs/page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/my/participations/:participationKey`(`docs/page-urls.md`에서는 아직 후보).
+  6. 상세(`/testers/recruitments/:participationKey`): 진행 상황, 피드백 작성 또는 제출한 피드백, 테스트 정보
+- URL: `docs/page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/testers/recruitments/:participationKey`(`docs/page-urls.md`에서는 아직 후보).
 - 디자인: `frontend/DESIGN.md`와 `docs/design-tokens.html`의 토큰·컴포넌트를 그대로 쓴다. 새 색이나 새 버튼 스타일을 만들지 않는다.
 - 데이터: 목업이다. `demo-role`, `demo-data` 쿠키로 상태를 바꾼다(홈과 같은 장치).
 
@@ -42,8 +42,8 @@ README의 흐름(지원 → 참여 확정 → 테스트 → 피드백 제출 →
 
 S448 비로그인 [테스트: pages.spec.ts #56-S2] (고침 #96: 쿼리가 있는 주소(`/admin/withdrawals?open=`)까지 페이지 목록 테스트가 확인해서 테스트를 지움)
 - Given `demo-role=guest`
-- When  `/my/participations?tab=history`에 접속한다
-- Then  URL이 `/login?next=%2Fmy%2Fparticipations%3Ftab%3Dhistory`이다 (탭까지 기억한다)
+- When  `/testers/recruitments?tab=history`에 접속한다 (고침 #101: 역할 경로로 이동)
+- Then  URL이 `/login?next=%2Ftesters%2Frecruitments%3Ftab%3Dhistory`이다 (탭까지 기억한다) (고침 #101: 역할 경로로 이동)
 
 S449 테스터 [직접]
 - Given `demo-role=tester` (또는 쿠키 없음)
@@ -58,7 +58,7 @@ S450 개발자·운영자 [직접]
 탭 상태는 URL `tab`에 남고, 탭은 링크다. 각 탭에 개수를 보여 준다.
 
 S451 기본 탭 [직접]
-- When  `/my/participations`에 접속한다
+- When  `/testers/recruitments`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "참여 중인 테스트" 탭이 현재 탭이다 (`aria-current="page"`)
 - Then  탭 3개가 순서대로 있다: 지원한 테스트 `?tab=applied`, 참여 중인 테스트 `?tab=ongoing`, 참여했던 테스트 `?tab=history`
 
@@ -67,7 +67,7 @@ S452 개수 [직접]
 
 S453 탭 이동 [테스트]
 - When  "참여했던 테스트"를 누른다
-- Then  URL이 `/my/participations?tab=history`이고 그 탭이 현재 탭이다
+- Then  URL이 `/testers/recruitments?tab=history`이고 그 탭이 현재 탭이다 (고침 #101: 역할 경로로 이동)
 - When  뒤로 가기를 누른다
 - Then  "참여 중인 테스트" 탭으로 돌아온다
 
@@ -79,7 +79,7 @@ S454 알 수 없는 탭 [직접]
 로그인한 테스터 본인의 피드백 제출 전 참여만 다룬다. lg 이상은 왼쪽에 마감 캘린더, 오른쪽에 마감 임박 테스트를 나란히 두고, 그보다 좁으면 위아래로 쌓는다. "임박"은 기간으로 자르지 않고 제출 전 참여 전체를 마감이 가까운 순서로 보여 준다. 캘린더는 오늘이 있는 달에서 시작하고 이전·다음 버튼으로 넘긴다. 마감일 칸은 md 이상에서 서비스 이름을(같은 날이 여러 건이면 첫 이름과 "외 n건"), 그보다 좁으면 점을 보여 주고, 스크린 리더는 어느 폭에서나 이름을 읽는다. 날짜 계산은 서울 시간 기준이다. 이 화면의 주 버튼(강조색)은 목록 맨 위 항목의 버튼 하나뿐이고, 나머지는 보조 버튼이다.
 
 S455 목록 맨 위 [테스트] (고침 #46: 다음 할 일 카드를 마감 임박 목록으로 바꿈)
-- Then  첫 항목에 "회의록 정리"와 "D-8"이 보이고, 주 버튼 "피드백 쓰기"가 그 참여의 상세(`/my/participations/:participationKey`)를 가리킨다
+- Then  첫 항목에 "회의록 정리"와 "D-8"이 보이고, 주 버튼 "피드백 쓰기"가 그 참여의 상세(`/testers/recruitments/:participationKey`)를 가리킨다 (고침 #101: 역할 경로로 이동)
 - Then  화면의 강조색 바탕 버튼은 이것 하나다
 
 #46-S9 마감 임박 목록 [테스트]
@@ -192,15 +192,15 @@ S467 [명령] (고침 #46: TodoScroller를 DeadlineCalendar로 바꿈)
 - Then  결과가 없다
 
 ## 11. 상세 접근 (R192)
-내 참여 상세 `/my/participations/:participationKey`는 그 참여의 테스터만 본다. 시나리오 S472~S481는 `frontend/e2e/participation-detail.spec.ts`에 있다.
+내 참여 상세 `/testers/recruitments/:participationKey`는 그 참여의 테스터만 본다. 시나리오 S472~S481는 `frontend/e2e/participation-detail.spec.ts`에 있다.
 
 S472 비로그인 [테스트: pages.spec.ts #56-S2]
 - Given `demo-role=guest`
-- When  `/my/participations/p-meeting-notes`에 접속한다
-- Then  URL이 `/login?next=%2Fmy%2Fparticipations%2Fp-meeting-notes`이다
+- When  `/testers/recruitments/p-meeting-notes`에 접속한다 (고침 #101: 역할 경로로 이동)
+- Then  URL이 `/login?next=%2Ftesters%2Frecruitments%2Fp-meeting-notes`이다 (고침 #101: 역할 경로로 이동)
 
 S473 없거나 내 참여가 아님 [테스트]
-- When  테스터가 `/my/participations/nope`에, 개발자가 테스터의 참여 주소에 접속한다
+- When  테스터가 `/testers/recruitments/nope`에, 개발자가 테스터의 참여 주소에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  맞춤 404("찾는 페이지가 없어요")가 보인다 (개발자 프로젝트 S485와 같은 방식)
 
 ## 12. 제출 전 상세와 피드백 작성 (R193)
@@ -208,53 +208,53 @@ S473 없거나 내 참여가 아님 [테스트]
 
 S474 제출 전 상세 [직접]
 - Then  제목(h1)이 서비스 이름이고, 헤더의 "참여 테스트" 탭이 현재 탭이다
-- Then  "참여 중인 테스트"(`/my/participations?tab=ongoing`)로 돌아가는 링크가 있다
+- Then  "참여 중인 테스트"(`/testers/recruitments?tab=ongoing`)로 돌아가는 링크가 있다 (고침 #101: 역할 경로로 이동)
 - Then  진행 상황에 "11월 n일까지 피드백을 제출해 주세요 (D-8)"이 보이고 상태 배지는 "피드백 제출 전"이다
-- Then  "내용" 칸과 "0 / 500자"가 있고, 강조색 바탕 버튼은 "피드백 제출" 하나다
+- Then  테스트 항목과 기타 의견마다 칸과 "0 / 500자"가 있고, 강조색 바탕 버튼은 "피드백 제출" 하나다 (고침 #90: 칸 하나를 항목별로 나눔)
 
-S475 입력 검사 [테스트]
-- When  비운 채 제출한다
-- Then  "피드백을 적어 주세요"가 보이고 포커스가 칸으로 간다 (`aria-invalid="true"`)
-- When  20자보다 짧게 적고 제출한다
-- Then  "20자 이상 적어 주세요"가 보이고 적은 내용은 그대로 남는다
+S475 입력 검사 [테스트] (고침 #90: 칸마다 검사하고 최소 글자 수를 없앰)
+- When  필수 항목을 비운 채 제출한다
+- Then  비어 있는 필수 항목마다 "피드백을 적어 주세요"가 보이고 포커스가 첫 번째 오류 칸으로 간다 (`aria-invalid="true"`)
+- When  다른 칸은 적고 필수 항목에 공백만 적어 제출한다
+- Then  그 칸에 "피드백을 적어 주세요"가 보이고 다른 칸에 적은 내용은 그대로 남는다
 
-S476 제출 [테스트]
-- When  20자 이상 적고 제출한다
+S476 제출 [테스트] (고침 #90: 필수 항목을 모두 적어야 하고 항목별로 보임)
+- When  필수 항목을 모두 적고 제출한다
 - Then  URL에 `?notice=submitted`가 붙고 "피드백을 제출했어요" 안내(`role="status"`)가 보인다
-- Then  상태가 "지급 대기"로 바뀌고, 작성 칸 대신 "제출한 피드백"에 적은 내용이 보인다
+- Then  상태가 "지급 대기"로 바뀌고, 작성 칸 대신 "제출한 피드백"에 항목 이름과 적은 내용이 보인다
 - Then  목록에서 마감 임박 테스트가 3개로 줄고 "회의록 정리" 행이 "지급 대기"다 (시연용이라 이 브라우저에만 남는다)
 
 ## 12-1. 피드백 이미지 (#57-R1)
-피드백을 쓰면서 이미지를 PNG·JPG·WEBP로 한 장에 5MB까지, 5장까지 고를 수 있다. 고르면 바로 미리 보고 뺄 수 있다. 한도를 넘는 파일이 섞이면 이번에 고른 파일은 넣지 않고 이유를 알린다. 시연용이라 파일은 서버로 보내지 않고 이름·크기·형식만 보내며, 제출한 피드백에는 내용 아래에 미리 보기와 같은 크기의 칸으로 아이콘과 파일 이름이 남는다. 실제 업로드와 이미지 다시 보기는 백엔드 저장소가 정해지면 붙인다.
+(고침 #90: 칸마다 따로 5장까지) 피드백을 쓰면서 칸마다 이미지를 PNG·JPG·WEBP로 한 장에 5MB까지, 5장까지 고를 수 있다. 고르면 바로 미리 보고 뺄 수 있다. 한도를 넘는 파일이 섞이면 이번에 고른 파일은 넣지 않고 이유를 알린다. 시연용이라 파일은 서버로 보내지 않고 이름·크기·형식만 보내며, 제출한 피드백에는 내용 아래에 미리 보기와 같은 크기의 칸으로 아이콘과 파일 이름이 남는다. 실제 업로드와 이미지 다시 보기는 백엔드 저장소가 정해지면 붙인다.
 
-#57-S1 미리 보기와 빼기 [테스트]
+#57-S1 미리 보기와 빼기 [테스트] (고침 #90: 첫 칸에서 확인)
 - When  이미지 2장을 고른다
 - Then  미리 보기 2개와 "2 / 5"가 보인다
 - When  한 장을 뺀다
 - Then  미리 보기가 1개가 되고 포커스가 "이미지 추가"로 간다
 
-#57-S2 장수 한도 [테스트]
+#57-S2 장수 한도 [테스트] (고침 #90: 첫 칸에서 확인)
 - Given 4장을 골랐다
 - When  2장을 더 고른다
 - Then  "이미지는 5장까지 올릴 수 있어요"가 보이고 4장 그대로다
 - When  1장을 더 고른다
 - Then  5장이 되고 "이미지 추가"가 없다. 한 장을 빼면 다시 나타나 포커스를 받는다
 
-#57-S3 형식과 용량 [테스트]
+#57-S3 형식과 용량 [테스트] (고침 #90: 첫 칸에서 확인)
 - When  GIF나 5MB가 넘는 파일을 고른다
 - Then  이유가 보이고 들어가지 않는다
 - When  맞는 파일을 고른다
 - Then  안내가 사라지고 들어간다
 
-#57-S4 제출 [테스트]
-- When  이미지 2장과 함께 제출한다
+#57-S4 제출 [테스트] (고침 #90: 이미지가 그 항목의 피드백 아래에 남음)
+- When  한 항목에 이미지 2장을 넣고 제출한다
 - Then  요청에 파일 내용이 없다
-- Then  제출한 피드백에 "첨부 이미지 2"와 파일 이름이 있고, 새로고침해도 남는다
+- Then  그 항목의 피드백에 "첨부 이미지 2"와 파일 이름이 있고, 새로고침해도 남는다
 
-#57-S5 서버 확인 [테스트]
-- Given 숨은 칸의 값을 6장으로 바꿨다
+#57-S5 서버 확인 [테스트] (고침 #90: 칸마다 확인)
+- Given 한 칸의 숨은 값을 6장으로 바꿨다
 - When  제출한다
-- Then  "이미지는 5장까지 올릴 수 있어요"가 보이고 입력과 미리 보기가 남는다
+- Then  그 칸에 "이미지는 5장까지 올릴 수 있어요"가 보이고 입력과 미리 보기가 남는다
 
 #57-S6 이미지 없이 제출 [직접]
 - When  이미지를 모두 빼고 제출한다
@@ -264,6 +264,57 @@ S476 제출 [테스트]
 - Then  "이미지 0 / 5" 옆에 형식·용량·장수 안내가 있고, 좁은 화면에서는 안내가 다음 줄로 내려간다
 - Then  제출한 이미지는 내용 아래에 같은 크기의 정사각형 칸으로 넓은 화면 5칸, 좁은 화면 3칸씩 놓인다
 - Then  너비 375px에서 긴 파일 이름은 말줄임되고 가로 스크롤이 없으며, 마우스를 올리면 전체 이름이 보인다
+
+## 12-2. 테스트 항목별 피드백 (#90-R1)
+테스터는 테스트 항목마다 피드백을 쓰고 한 번에 제출한다. 저장 구조는 항목별 한 건이고(`docs/backend/project/README.md`), 항목에 속하지 않는 의견은 "기타 의견"에 쓴다. 필수 항목은 비울 수 없고, 선택 항목과 기타 의견은 비워도 된다. 최소 글자 수는 두지 않고, 칸마다 500자까지 적을 수 있다.
+
+#90-S1 항목별 칸 [테스트]
+- Given 제출 전 참여(`p-meeting-notes`)
+- Then  테스트 항목마다 이름, 설명, "필수" 또는 "선택" 배지와 내용 칸이 있고, 그 아래에 "기타 의견" 칸이 있다
+- Then  모집글 상세의 테스트 항목처럼 칸마다 번호와 구분선으로 나뉜다. "제출한 피드백"도 같은 모양이다. 기타 의견은 번호 대신 아이콘이다
+
+#90-S2 기타 의견 [테스트]
+- When  필수 항목만 적고 제출한다
+- Then  제출되고 "제출한 피드백"에 "기타 의견"이 없다
+- When  다른 참여에서 기타 의견까지 적고 제출한다
+- Then  "제출한 피드백"에 "기타 의견"과 내용이 보인다
+
+#90-S3 선택 항목 [테스트]
+- When  선택 항목을 비우고 제출한다
+- Then  제출되고 "제출한 피드백"에 그 항목이 없다
+- When  다른 참여에서 선택 항목에 짧게 적고 제출한다
+- Then  제출되고 "제출한 피드백"에 적은 내용이 보인다
+
+#90-S4 최대 글자 수 서버 확인 [테스트]
+- Given 칸의 `maxlength`를 지우고 501자를 적었다
+- When  제출한다
+- Then  그 칸에 "500자까지 적을 수 있어요"가 보이고 입력이 남는다
+
+#90-S5 이미지는 칸마다 따로 센다 [테스트]
+- Given 첫 칸에 5장을 넣어 "이미지 추가"가 없다
+- Then  다른 칸은 "0 / 5"이고 이미지를 넣을 수 있다
+- When  둘 다 내용을 적고 제출한다
+- Then  이미지가 각자의 피드백 아래에 나뉘어 보인다
+
+#90-S6 내용 없는 칸의 이미지 [테스트]
+- Given 내용을 적지 않은 선택 항목에 이미지를 넣었다
+- When  제출한다
+- Then  그 칸에 "내용을 적어야 이미지를 넣을 수 있어요"가 보이고 미리 보기가 남는다
+
+#90-S7 아무것도 적지 않음 [테스트]
+- Given 모두 선택 항목인 참여(`p-ledger-note`)
+- When  아무것도 적지 않고 제출한다
+- Then  첫 칸에 "피드백을 적어 주세요"가 보이고 제출되지 않는다
+
+#90-S8 시연용 저장 한도 [테스트]
+- When  모든 칸에 500자씩 적고 제출한다
+- Then  저장 한도를 넘었다는 안내가 보이고 입력이 그대로 남는다
+
+#90-S9 개발자 피드백 탭 [테스트: projects.spec.ts S361]
+- Then  개발자는 피드백 탭에서 테스트 항목별 피드백을 본다. 제출률은 낸 사람 수로 센다(S130). 두 목업은 아직 따로라, 여기서 제출한 내용이 개발자 탭에 나타나지는 않는다
+
+#90-S10 좁은 화면 [테스트: pages.spec.ts #56-S1]
+- Then  너비 375px에서 작성 화면에 가로 스크롤이 없다
 
 ## 13. 상태별 상세 (R194)
 상태마다 지금 단계와 다음에 일어날 일을 진행 상황에 한 줄로 알리고, 제목 바로 아래 "테스트 정보"에 마감일·보상·진행 날짜를 둔다. 운영 용어(신고 사유, 제재)는 쓰지 않는다.
@@ -355,20 +406,21 @@ S482 제출한 피드백의 긴 문자열 [직접]
 - Then  폼이 POST로 제출되어 값이 저장되고, 번들을 받은 뒤 그리드로 보인다
 
 ## 구현
-- `src/app/my/participations/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·마감 일정·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
-- `src/app/my/participations/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
+- `src/app/testers/recruitments/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·마감 일정·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
+- `src/app/testers/recruitments/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
 - `src/features/participation/`
-  - `types.ts`: `Participation`(key, 모집 건 slug, 상태, 지원일, 제출일, 지급일, 받은 크레딧, 제출한 피드백), 상태 상수, 탭↔상태 묶음, 피드백 글자 수(20~500자)
+  - `types.ts`: `Participation`(key, 모집 건 slug, 상태, 지원일, 제출일, 지급일, 받은 크레딧, 제출한 피드백), 상태 상수, 탭↔상태 묶음, 테스트 항목, 항목별 제출한 피드백, 피드백 최대 글자 수(칸마다 500자)
   - `mock.ts`: 아래 샘플. 날짜는 홈처럼 접속 시각 기준 상대값
   - `api.ts`: `getParticipations(tab)`, `getParticipationCounts()`, `getParticipationSummary()`, `getUpcomingDeadlines()`, `getParticipation(key)`. 시그니처는 실제 API를 붙여도 유지. 한 요청 안에서는 React `cache`로 한 번만 읽는다
   - `actions.ts`: `submitFeedback(key)` 서버 액션. 글자 수·상태·마감을 검사하고 시연용 기록에 남긴 뒤 상세로 돌아간다. `setParticipationView`는 보기 방식을 저장하고 같은 탭으로 돌아간다(리다이렉트 없는 서버 액션의 POST 응답에는 본문이 없어, JS 번들을 받기 전에 누르면 빈 화면이 되기 때문이다)
   - `view-preference.ts`: 보기 방식 쿠키 읽기·쓰기. 시연용이 아니라 브라우저별 화면 설정이라 실제 API를 붙여도 남는다
   - `feedback-images.ts`: 이미지 한도와 검사. 화면과 서버가 같은 규칙을 쓴다
-  - `demo-feedback.ts`: 시연용 제출 기록. 참여마다 쿠키 `demo-feedback-<키>`에 "제출 시각.내용.이미지 이름(base64url)"을 둔다. 쿠키 한도(4,000바이트)를 넘으면 저장하지 않고 오류를 알린다. `api.ts`가 읽어서 그 참여를 제출 전 → 지급 대기로 바꾼다
+  - `feedback-fields.ts`: 항목별 칸 이름과 제출 값 검사(`parseFeedbackForm`). 서버 액션이 쓴다
+  - `demo-feedback.ts`: 시연용 제출 기록. 참여마다 쿠키 `demo-feedback-<키>`에 "제출 시각.항목별 내용과 이미지 이름 JSON(base64url)"을 둔다. 쿠키 한도(4,000바이트)를 넘으면 저장하지 않고 오류를 알린다. `api.ts`가 읽어서 그 참여를 제출 전 → 지급 대기로 바꾼다
   - `components/`: `ParticipationTabs`, `ParticipationRow`, `ParticipationList`(빈 상태·받은 크레딧 합계 포함), `ParticipationViewToggle`(보기 방식), `DeadlinePanel`, `DeadlineCalendar`(클라이언트, 달을 넘긴다), `ParticipationSkeleton`, `ParticipationDetail`(상세), `FeedbackForm`(클라이언트, 피드백 작성)
 - 모집 쪽 변경: 지난 모집 글 3개를 `recruitment/mock.ts`의 `PAST`에 두고(홈 목록에는 안 나온다), `recruitment/api.ts`에 `getRecruitmentsBySlugs(slugs)`를 더했다. 이 함수는 목록용 시연 상황(`demo-data`)을 따르지 않는다.
 - 재사용: `Container`, `Card`, `Badge`, `LinkButton`, `EmptyState`, `Skeleton`, `RecruitmentThumb`, `ProofStamp`, `lib/format.ts`, `lib/auth.ts`의 `requireMember`, 프로젝트 폼의 입력 칸 모양(`TextField`의 `inputClass`)
-- 도장: `RecruitmentThumb`이 `stamp` prop을 받게 바꿨다(`RecruitmentCard`는 정원이 차면 "모집 완료"를 넘긴다). 참여 기능은 썸네일만 가져다 쓰고 `ProofStamp`를 직접 쓰지 않아서 `features/recruitment`에 그대로 두었다.
+- 도장: `RecruitmentThumb`이 `stamp` prop을 받게 바꿨다(#78에서 모집 완료가 없어져 지금은 "지급 완료"만 쓴다). 참여 기능은 썸네일만 가져다 쓰고 `ProofStamp`를 직접 쓰지 않아서 `features/recruitment`에 그대로 두었다.
 
 ## 디자인 메모
 - 강조색(One Green Rule): 마감 임박 목록 맨 위의 주 버튼, 추가 보상(목록은 썸네일 배지, 상세는 줄), "지급 완료" 도장, 포커스만. 상태 배지와 D-day는 강조색을 쓰지 않는다.
@@ -391,7 +443,8 @@ S482 제출한 피드백의 긴 문자열 [직접]
 - 미선정은 "지원한 테스트"에 남긴다(참여하지 않았으므로 "참여했던"이 아니다).
 - 기본 탭은 할 일이 있는 "참여 중"으로 정했다.
 - 스터디 매칭은 지급까지 약 30시간(제출 42시간 전)이라, 제출이 모집 글 등록보다 앞서지 않게 홈 목업의 등록일을 1일 전에서 4일 전으로 옮겼다. 홈 시나리오 결과는 바뀌지 않는다.
-- 피드백 글자 수는 기획에서 미정이라 20~500자로 정했다. 최대 길이는 시연용 저장(쿠키) 한도에 맞춘 값이다.
+- 피드백 글자 수는 기획에서 미정이라 칸마다 500자까지로 정했다. 최소 글자 수는 없다. 시연용 저장은 쿠키 하나(4,000바이트)라, 모든 칸을 합쳐 한글 약 900자가 넘으면 저장하지 못하고 안내한다.
+- 참여 샘플의 테스트 항목은 `participation/mock.ts`에 따로 둔다. 모집 글 상세의 항목 샘플과는 연결되어 있지 않다.
 - 샘플 중 지급 대기·운영자 검토 중·지급 완료 4건에는 시연용 피드백 원문을 넣었다. "보상 제외" 샘플은 없어서 그 상태의 상세는 E2E로 확인하지 않는다.
 - D-3 이하가 아니면 D-day는 600 굵기 흐린 먹이다. 끝난 상태(미선정, 기한 내 미제출, 보상 제외) 배지는 흐린 배지(`Badge tone="muted"`)다.
 

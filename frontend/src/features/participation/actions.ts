@@ -5,14 +5,8 @@ import { redirect, RedirectType } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { getParticipation } from "./api";
 import { saveDemoFeedback } from "./demo-feedback";
-import { checkFeedbackImages, parseFileMeta } from "./feedback-images";
-import {
-  FEEDBACK_MAX_LENGTH,
-  FEEDBACK_MIN_LENGTH,
-  parseParticipationTab,
-  parseParticipationView,
-  participationPath,
-} from "./types";
+import { parseFeedbackForm, type FeedbackFieldErrors } from "./feedback-fields";
+import { parseParticipationTab, parseParticipationView, participationPath } from "./types";
 import { saveParticipationView } from "./view-preference";
 
 /*
@@ -20,7 +14,8 @@ import { saveParticipationView } from "./view-preference";
  * 실제 API를 붙일 때는 saveDemoFeedback 대신 제출을 저장한다.
  */
 
-export type FeedbackFormState = { status: "idle" } | { status: "error"; error: string };
+/** errors는 칸별 오류, error는 칸에 속하지 않는 오류다 */
+export type FeedbackFormState = { status: "idle" } | { status: "error"; errors: FeedbackFieldErrors; error?: string };
 
 export async function submitFeedback(
   participationKey: string,
@@ -30,25 +25,17 @@ export async function submitFeedback(
   const path = participationPath(participationKey);
   await requireMember(path);
   const item = await getParticipation(participationKey);
-  if (!item || item.status !== "beforeSubmit") return { status: "error", error: "피드백을 제출할 수 없는 참여예요" };
-  if (new Date(item.recruitment.submitDeadline) <= new Date()) return { status: "error", error: "피드백 제출 마감이 지났어요" };
+  if (!item || item.status !== "beforeSubmit") return { status: "error", errors: {}, error: "피드백을 제출할 수 없는 참여예요" };
+  if (new Date(item.recruitment.submitDeadline) <= new Date()) return { status: "error", errors: {}, error: "피드백 제출 마감이 지났어요" };
 
-  const content = String(formData.get("content") ?? "").trim();
-  if (!content) return { status: "error", error: "피드백을 적어 주세요" };
-  if (content.length < FEEDBACK_MIN_LENGTH) return { status: "error", error: `${FEEDBACK_MIN_LENGTH}자 이상 적어 주세요` };
-  if (content.length > FEEDBACK_MAX_LENGTH) return { status: "error", error: `${FEEDBACK_MAX_LENGTH}자까지 적을 수 있어요` };
+  const { errors, entries } = parseFeedbackForm(item.testItems, formData);
+  if (Object.keys(errors).length > 0) return { status: "error", errors };
 
-  const images = parseFileMeta(formData.get("imagesMeta"));
-  if (!images) return { status: "error", error: "이미지 정보를 읽지 못했어요. 이미지를 다시 골라 주세요" };
-  const imageError = checkFeedbackImages(images);
-  if (imageError) return { status: "error", error: imageError };
-
-  const imageNames = images.map((image) => image.name);
-  if (!(await saveDemoFeedback(participationKey, content, imageNames))) {
-    return { status: "error", error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용이나 이미지를 줄여 다시 제출해 주세요" };
+  if (!(await saveDemoFeedback(participationKey, entries))) {
+    return { status: "error", errors: {}, error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용이나 이미지를 줄여 다시 제출해 주세요" };
   }
   /* 목록의 탭 개수·마감 일정·요약 줄도 제출을 반영하게 한다 */
-  revalidatePath("/my/participations", "layout");
+  revalidatePath("/testers/recruitments", "layout");
   redirect(`${path}?notice=submitted`);
 }
 
@@ -58,7 +45,7 @@ export async function submitFeedback(
  */
 export async function setParticipationView(formData: FormData) {
   const tab = formData.get("tab");
-  const path = typeof tab === "string" ? `/my/participations?tab=${parseParticipationTab(tab)}` : "/my/participations";
+  const path = typeof tab === "string" ? `/testers/recruitments?tab=${parseParticipationTab(tab)}` : "/testers/recruitments";
   await requireMember(path);
   await saveParticipationView(parseParticipationView(formData.get("view")));
   redirect(path, RedirectType.replace);

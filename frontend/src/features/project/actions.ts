@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { PROJECTS_PATH, PROJECT_NEW_PATH, projectPath, projectEditPath, recruitmentCreatePath } from "@/lib/project-paths";
 import {
   cancelRecruitment as cancel,
   decideApplicants as decide,
@@ -19,40 +20,38 @@ import type { FormState } from "./types";
 
 /** 프로젝트 등록(projectKey가 null)과 수정 */
 export async function saveProject(projectKey: string | null, _prev: FormState, formData: FormData): Promise<FormState> {
-  if (projectKey) await getMyProject(`/my/projects/${projectKey}/edit`, projectKey);
-  else await requireRole("/my/projects/new");
+  if (projectKey) await getMyProject(projectEditPath(projectKey), projectKey);
+  else await requireRole(PROJECT_NEW_PATH);
 
   const result = validateProjectForm(formData);
   if (Object.keys(result.errors).length > 0) return result;
-  redirect(projectKey ? `/my/projects/${projectKey}?notice=saved` : "/my/projects?notice=saved");
+  redirect(projectKey ? `${projectPath(projectKey)}?notice=saved` : `${PROJECTS_PATH}?notice=saved`);
 }
 
 /** 테스트 모집 작성 */
 export async function createRecruitment(projectKey: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  const { maxCapacity, isSubscription } = await getRecruitmentFormInfo(`/my/projects/${projectKey}/recruitments/new`, projectKey);
+  const { isSubscription } = await getRecruitmentFormInfo(recruitmentCreatePath(projectKey), projectKey);
 
-  const result = validateRecruitmentForm(formData, maxCapacity, isSubscription, new Date());
+  const result = validateRecruitmentForm(formData, isSubscription, new Date());
   if (Object.keys(result.errors).length > 0) return result;
-  redirect(`/my/projects/${projectKey}?notice=saved`);
+  redirect(`${projectPath(projectKey)}?notice=saved`);
 }
 
 /** 지원자 확정·거절. 시연용이라 결과는 브라우저 쿠키에 남고, 요약·분석·내 프로젝트 화면에도 반영된다 */
 export async function decideApplicants(
-  projectKey: string,
   recruitmentKey: string,
   ids: string[],
   status: "confirmed" | "rejected",
 ): Promise<{ ok: boolean }> {
   if (status !== "confirmed" && status !== "rejected") return { ok: false };
-  return decide(projectKey, recruitmentKey, ids, status);
+  return decide(recruitmentKey, ids, status);
 }
 
 /** 모집 취소. 운영자 승인 없이 바로 취소된다. 시연용이라 브라우저 쿠키에 남는다 */
 export async function cancelRecruitment(
-  projectKey: string,
   recruitmentKey: string,
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState & { ok?: boolean }> {
-  return cancel(projectKey, recruitmentKey, formData);
+  return cancel(recruitmentKey, formData);
 }

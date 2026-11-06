@@ -110,7 +110,6 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 12),
     recruitDeadline: daysAgo(now, 5),
     submitDeadline: inDays(now, 2),
-    capacity: 5,
     confirmedCount: 5,
   };
 
@@ -122,7 +121,6 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 15),
     recruitDeadline: daysAgo(now, 9),
     submitDeadline: daysAgo(now, 2),
-    capacity: 10,
     confirmedCount: 0,
   };
 
@@ -134,12 +132,11 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 1),
     recruitDeadline: inDays(now, 5),
     submitDeadline: inDays(now, 12),
-    capacity: 10,
     confirmedCount: 0,
   };
 
   const applications: Record<string, Application[]> = {
-    /* 모집 중. 대기 지원자 8명이 남은 자리 7명보다 많아 일괄 확정의 정원 안내를 보여 준다 */
+    /* 모집 중. 대기 지원자 8명으로 일괄 확정을 보여 준다 */
     booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, cancelled: 0, applied: 8 }),
     /* 확정 5명 중 1명은 아직 피드백을 내지 않았고, 1명은 참여를 취소했다. 모집이 끝나 남은 대기 지원자 1명은 더 확정할 수 없다(일괄 확정이 없는 것을 보여 준다) */
     "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, cancelled: 1, applied: 1 }),
@@ -209,6 +206,13 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       selectionMode: "selection",
       accessUrl: "https://booklog.example.com",
       conditions: "한 달에 책을 한 권 이상 읽는 분\n휴대폰 브라우저(크롬·사파리)로 참여할 수 있는 분",
+      /* 모집글 상세 이미지 띠에서 대표 이미지 다음에 이 순서로 놓인다 (#124) */
+      images: [
+        { url: "/sample/projects/booklog-library.svg", name: "2차 베타 내 서재" },
+        { url: "/sample/projects/booklog-underline.svg", name: "2차 베타 밑줄 긋기" },
+        { url: "/sample/projects/booklog-collection.svg", name: "2차 베타 밑줄 모아 보기" },
+        { url: "/sample/feedback/booklog-search.svg", name: "2차 베타 책 검색" },
+      ],
       testItems: [
         { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 제목이나 저자 이름으로 검색한 뒤 결과 목록에서 같은 책을 골라 내 서재에 등록해 주세요. 판본이 여러 개 나오면 표지와 출판사를 비교해 실제로 가진 책을 고르면 됩니다. 검색 결과가 없다면 띄어쓰기를 바꾸거나 부제를 빼고 다시 찾아보고, 그래도 없으면 어떤 검색어를 썼는지 메모해 주세요. 등록한 뒤에는 내 서재 첫 화면에서 책이 바로 보이는지, 표지와 제목이 맞게 나오는지도 함께 확인해 주세요. 원하는 책을 찾기까지 몇 번 검색했는지도 알려 주세요.", required: true, images: [
             { url: "/sample/feedback/booklog-search.svg", name: "책 검색 화면" },
@@ -226,6 +230,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       selectionMode: "selection",
       accessUrl: "https://beta.booklog.example.com",
       conditions: "",
+      images: [],
       testItems: [
         { id: "booklog-first-t1", title: "책 검색하기", description: "제목으로 책을 찾아 보세요.", required: true, images: [] },
         { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요.", required: true, images: [] },
@@ -236,6 +241,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       selectionMode: "firstCome",
       accessUrl: "https://folio.example.com",
       conditions: "포트폴리오를 만들어 본 적이 있는 분",
+      images: [],
       testItems: [
         { id: "folio-t1", title: "템플릿 고르기", description: "마음에 드는 템플릿을 하나 골라 주세요.", required: true, images: [] },
         { id: "folio-t2", title: "프로젝트 추가하기", description: "프로젝트 하나를 추가하고 미리보기로 확인해 주세요.", required: true, images: [] },
@@ -246,6 +252,7 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
       selectionMode: "firstCome",
       accessUrl: "https://old.folio.example.com",
       conditions: "",
+      images: [],
       testItems: [{ id: "folio-old-t1", title: "템플릿 고르기", description: "첫 버전 템플릿 화면을 써 보세요.", required: true, images: [] }],
     },
   };

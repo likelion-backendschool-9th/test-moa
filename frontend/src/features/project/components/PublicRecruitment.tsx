@@ -15,7 +15,6 @@ import { TestItemImages } from "./TestItemImages";
 
 /** 지원할 수 없을 때의 안내. 모집 중이면 지원 버튼을 보여 준다 */
 const CLOSED_MESSAGE = {
-  full: "정원이 모두 찼어요",
   testing: "모집이 마감됐어요",
   closed: "모집이 마감됐어요",
 };
@@ -25,8 +24,8 @@ const LAYOUT_CLASS = "grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
 const SUMMARY_PLACE_CLASS = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
 
 /**
- * 공개 모집글. 테스터가 지원 전에 일정, 인원, 보상을 확인하는 화면이다 (PRODUCT: 보상과 일정은 숨기지 않는다).
- * 요약은 보상과 인원을 크게, 일정과 선정 방식을 작게 두어 먼저 볼 숫자가 드러나게 한다.
+ * 공개 모집글. 테스터가 지원 전에 일정, 보상을 확인하는 화면이다 (PRODUCT: 보상과 일정은 숨기지 않는다).
+ * 요약은 보상을 크게, 일정과 선정 방식을 작게 두어 먼저 볼 숫자가 드러나게 한다.
  * 접속 링크는 참여가 확정된 테스터에게만 안내하므로 보여 주지 않는다.
  */
 export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
@@ -34,7 +33,6 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
   const keyFacts: Array<{ term: string; value: string; accent?: boolean }> = [
     { term: "기본 보상", value: formatCredits(recruitment.baseReward) },
     ...(recruitment.extraReward !== undefined ? [{ term: "추가 보상", value: `+${formatCredits(recruitment.extraReward)}`, accent: true }] : []),
-    { term: "인원", value: `${recruitment.confirmedCount} / ${recruitment.capacity}명` },
   ];
   const scheduleFacts: Array<[string, string]> = [
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
@@ -45,14 +43,14 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
   const conditions = detail?.conditions.split("\n").filter((line) => line.trim()) ?? [];
   const testItems = detail?.testItems ?? [];
   const requiredCount = testItems.filter((item) => item.required).length;
-  /* 대표 이미지 다음에 테스트 항목 이미지를 항목 순서대로 잇는다 */
+  /* 대표 이미지 다음에 모집글 이미지를 등록한 순서대로 잇는다. 테스트 항목 이미지는 각 항목 아래에만 둔다 (#124) */
   const gallery: GalleryImage[] = [
     {
       url: project?.image?.url ?? DEFAULT_PROJECT_IMAGE_URL,
       alt: project?.image ? `${recruitment.projectName} 대표 이미지` : "기본 프로젝트 이미지",
       badge: project?.image ? "대표 이미지" : undefined,
     },
-    ...testItems.flatMap((item) => item.images.map((image) => ({ url: image.url, alt: image.name }))),
+    ...(detail?.images ?? []).map((image) => ({ url: image.url, alt: image.name })),
   ];
 
   return (

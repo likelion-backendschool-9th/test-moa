@@ -13,7 +13,7 @@
 | 1 신청은 요청 상태 | #45-S13 |
 | 2 지급 완료, "완료" 상태 없음 | #45-S14, #45-S23 |
 | 3 반려 사유 선택, 반려 상태·처리 일시 | #45-S16, #45-S19 |
-| 4 기타는 메모 필수, 다른 사유 메모는 운영자 메모 | #45-S17, #45-S18 |
+| 4 기타는 메모 필수, 다른 사유 메모는 선택(메모는 모두 회원에게 보임) | #45-S17, #45-S18 |
 | 5 이미 처리한 요청은 다시 처리 불가 | #45-S15, #45-S20 |
 | 6 신청은 적립 → 잠김, 반려는 잠김 → 적립, 장부 없음 | #45-S3, #45-S4, #45-S7, #45-S8 (장부를 남기지 않는 것은 #67-S2, #68-S1) |
 | 7 지급하면 잠김에서 빠지고 장부 한 줄 | #45-S5, #45-S6 (장부 행은 #68-S1) |
@@ -65,7 +65,7 @@
 - Then  `IllegalArgumentException`
 
 #45-S21 승인 대기 보상은 지갑 컬럼이 아님 [직접]
-- `CreditWallet`에 `pendingReward` 필드가 없다. 승인 대기 보상은 `Feedback(SUBMITTED)`의 보상 합으로 구한다(#66-S1)
+- `CreditWallet`에 `pendingReward` 필드가 없다. 조회 규칙은 [credit-balance-ledger.md](credit-balance-ledger.md) (#66-S1, #66-S3, #91)
 
 ## 2. 크레딧 내역 (#45-R2)
 
@@ -98,11 +98,11 @@
 | `user` | `user_id` | FK → users | 불가 | 요청자 |
 | `amount` | `amount` | Integer | 불가 | 현금화 크레딧. 1크레딧=1원 |
 | `bank` | `bank` | String | 불가 | 입금 은행 |
-| `accountNumber` | `account_number` | String | 불가 | 계좌 숫자 10~14자리. 저장 방식은 [README.md](README.md#아직-정하지-않은-것)의 1번 |
-| `accountHolder` | `account_holder` | String | 불가 | 예금주 |
+| `accountNumber` | `account_number` | String | 불가 | 계좌 숫자 10~14자리. **A 컬럼 암호화**([cashout.md](cashout.md)). length 넉넉히 |
+| `accountHolder` | `account_holder` | String | 불가 | 예금주. 계좌와 같이 암호화 |
 | `status` | `status` | enum `CashoutStatus` | 불가 | `REQUESTED` / `PAID` / `REJECTED` |
 | `rejectReason` | `reject_reason` | enum (DB String) | 가능 | `HOLDER` / `ACCOUNT` / `OTHER` |
-| `rejectMemo` | `reject_memo` | String | 가능 | OTHER면 회원 사유(필수), 그 외 운영자 메모 |
+| `rejectMemo` | `reject_memo` | String | 가능 | 회원에게 보이는 안내. OTHER면 필수, 그 외 선택 |
 | `processedAt` | `processed_at` | datetime | 가능 | 지급·반려 일시 |
 
 상태는 `REQUESTED`에서 `PAID` 또는 `REJECTED`로 한 번만 바뀌고 되돌리지 않는다. 생성 시 상태는 항상 `REQUESTED`. 지급 완료는 `PAID` 하나이고 `COMPLETED`는 없앴다.
@@ -134,15 +134,15 @@
 
 ## 4. 운영자 출금 (#45-R4)
 
-운영자가 지급·반려한다. 대기 건만 계좌 전체, 완료는 끝 4자리(저장 방식은 [README.md](README.md#아직-정하지-않은-것)의 1번).
+운영자가 지급·반려한다. 대기 건만 계좌 전체, 완료는 끝 4자리(저장은 A 암호화, [cashout.md](cashout.md)).
 
 ### 반려 사유 `CashoutRejectReason`
 
 | 값 | 화면 문구 | 회원에게 보이는 사유 |
 | --- | --- | --- |
-| `HOLDER` | 예금주 이름이 회원 정보와 달라요 | 이 문구 |
-| `ACCOUNT` | 계좌번호를 확인할 수 없어요 | 이 문구 |
-| `OTHER` | 기타 | `rejectMemo` |
+| `HOLDER` | 예금주 이름이 회원 정보와 달라요 | 이 문구 + `rejectMemo`(있으면) |
+| `ACCOUNT` | 계좌번호를 확인할 수 없어요 | 이 문구 + `rejectMemo`(있으면) |
+| `OTHER` | 기타 | 이 문구 + `rejectMemo`(필수) |
 
 #45-S5 지급 시 잠긴 잔액만 줄임 [테스트]
 - Given 잠긴 5,000

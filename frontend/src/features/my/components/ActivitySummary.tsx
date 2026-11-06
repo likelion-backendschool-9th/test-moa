@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PROJECTS_PATH } from "@/lib/project-paths";
 import { LinkButton } from "@/components/ui/LinkButton";
 import type { Activity } from "../types";
 import { ActivityGroup } from "./ActivityGroup";
@@ -10,14 +11,14 @@ type Stat = { label: string; count: number; href: string };
 export function ActivitySummary({ activity }: { activity: Activity }) {
   const { participation, project } = activity;
   const participationStats: Stat[] = [
-    { label: "지원", count: participation.applied, href: "/my/participations?tab=applied" },
-    { label: "참여 중", count: participation.ongoing, href: "/my/participations?tab=ongoing" },
-    { label: "완료", count: participation.completed, href: "/my/participations?tab=history" },
+    { label: "지원", count: participation.applied, href: "/testers/recruitments?tab=applied" },
+    { label: "참여 중", count: participation.ongoing, href: "/testers/recruitments?tab=ongoing" },
+    { label: "완료", count: participation.completed, href: "/testers/recruitments?tab=history" },
   ];
   const projectStats: Stat[] = [
-    { label: "프로젝트", count: project.projects, href: "/my/projects" },
-    { label: "모집 중", count: project.recruiting, href: "/my/projects" },
-    { label: "새 피드백", count: project.newFeedback, href: "/my/projects" },
+    { label: "프로젝트", count: project.projects, href: PROJECTS_PATH },
+    { label: "모집 중", count: project.recruiting, href: PROJECTS_PATH },
+    { label: "새 피드백", count: project.newFeedback, href: PROJECTS_PATH },
   ];
   return (
     <section aria-labelledby="my-activity-heading" className={cardClass}>
@@ -34,7 +35,7 @@ export function ActivitySummary({ activity }: { activity: Activity }) {
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-muted px-4 py-3">
               <p className="text-sm text-text-muted">아직 등록한 프로젝트가 없어요</p>
-              <LinkButton href="/my/projects" variant="secondary" size="sm">
+              <LinkButton href={PROJECTS_PATH} variant="secondary" size="sm">
                 내 프로젝트
               </LinkButton>
             </div>

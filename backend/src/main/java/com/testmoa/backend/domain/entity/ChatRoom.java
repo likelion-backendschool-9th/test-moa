@@ -78,4 +78,18 @@ public class ChatRoom {
         this.participants.add(new ChatParticipant(this, recruitment.getProject().getUser(), ChatRole.DEVELOPER));
         this.participants.add(new ChatParticipant(this, register.getUser(), ChatRole.TESTER));
     }
+
+    /** 방 행의 쓰기 잠금을 획득한 뒤 호출한다. 순번과 최근 일시는 생성한 메시지에 맞춰 함께 갱신한다. */
+    public ChatMessage createMessage(ChatParticipant sender, String content) {
+        ChatRoom senderRoom = sender.getRoom();
+        // 저장 전에는 객체로, 저장 후에는 프록시·분리된 객체도 같은 방으로 판단하도록 id로 비교한다.
+        if (senderRoom != this && (getId() == null || !getId().equals(senderRoom.getId()))) {
+            throw new IllegalArgumentException("이 방의 참여자만 메시지를 보낼 수 있어요");
+        }
+        ChatMessage message = ChatMessage.builder().sender(sender).seq(lastSeq + 1).content(content).build();
+        this.lastSeq = message.getSeq();
+        this.lastMessageAt = message.getSentAt();
+        return message;
+    }
+
 }

@@ -1,7 +1,9 @@
 package com.testmoa.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
+import com.testmoa.backend.domain.entity.RefreshToken;
 import com.testmoa.backend.domain.entity.User;
+import com.testmoa.backend.domain.repository.RefreshTokenRepository;
 import com.testmoa.backend.domain.repository.UserRepository;
 import com.testmoa.backend.global.common.UserStatus;
 import org.junit.jupiter.api.DisplayName;
@@ -15,8 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,6 +36,7 @@ class AuthControllerTest {
 
     @Autowired MockMvc mvc;
     @Autowired UserRepository userRepository;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
 
     private final String suffix = UUID.randomUUID().toString().substring(0, 8);
     private final String email = "moa" + suffix + "@example.com";
@@ -126,6 +131,72 @@ class AuthControllerTest {
         ReflectionTestUtils.setField(user, "status", UserStatus.SUSPENDED); // 정지 기능은 운영자 회원 관리에서 만든다
 
         login(email, "moa2026pw").andExpect(status().isForbidden()).andExpect(jsonPath("$.error.code").value("SUSPENDED"));
+    }
+
+    @Test
+    @DisplayName("#80-S9 로그아웃하면 그 로그인 세션이 끝나서, 로그아웃 전에 갱신으로 받은 토큰도 쓸 수 없다")
+    void 로그아웃하면_로그아웃_전에_갱신한_토큰도_못_쓴다() throws Exception {
+        signup(email, nickname);
+        String r0 = field(login(email, "moa2026pw"), "$.data.refreshToken");
+        String otherDevice = field(login(email, "moa2026pw"), "$.data.accessToken"); // 다른 기기의 로그인
+
+        // 요청 A: R0로 갱신해 R1·A1을 받는다(브라우저에는 아직 도착하지 않은 응답)
+        ResultActions refreshed = postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+        String r1 = field(refreshed, "$.data.refreshToken");
+        String a1 = field(refreshed, "$.data.accessToken");
+        me(a1).andExpect(status().isOk());
+
+        // 요청 B: 브라우저 쿠키에 남은 R0로 로그아웃한다
+        postJson("/api/auth/logout", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+
+        // A의 늦은 응답이 쿠키에 R1·A1을 다시 넣어도 쓸 수 없다
+        postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r1 + "\"}").andExpect(status().isUnauthorized());
+        me(a1).andExpect(status().isUnauthorized());
+
+        // 다른 기기의 로그인은 그대로다
+        me(otherDevice).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("#80-S10 여러 번 갱신한 뒤에도 처음 토큰으로 로그아웃하면 그 세션이 끝난다")
+    void 여러_번_갱신한_뒤_처음_토큰으로_로그아웃해도_세션이_끝난다() throws Exception {
+        signup(email, nickname);
+        String r0 = field(login(email, "moa2026pw"), "$.data.refreshToken");
+
+        // R0 → R1 → R2로 두 번 갱신한다(다른 탭·요청이 먼저 갱신한 상황)
+        String r1 = field(postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r0 + "\"}"), "$.data.refreshToken");
+        ResultActions second = postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r1 + "\"}").andExpect(status().isOk());
+        String r2 = field(second, "$.data.refreshToken");
+        String a2 = field(second, "$.data.accessToken");
+
+        // R0를 담고 있던 늦은 로그아웃 요청
+        postJson("/api/auth/logout", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+
+        postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r2 + "\"}").andExpect(status().isUnauthorized());
+        me(a2).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("#80-S12 로그인하면 그 회원의 만료된 refresh 토큰 행을 지운다")
+    void 로그인하면_만료된_토큰_행을_지운다() throws Exception {
+        signup(email, nickname);
+        String access = field(login(email, "moa2026pw"), "$.data.accessToken");
+        Integer userId = JsonPath.read(me(access).andReturn().getResponse().getContentAsString(), "$.data.id");
+        User user = userRepository.findById(userId.longValue()).orElseThrow();
+        RefreshToken expired = refreshTokenRepository.save(RefreshToken.builder()
+                .user(user)
+                .sessionId(UUID.randomUUID().toString())
+                .tokenHash("0".repeat(56) + suffix)
+                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .build());
+
+        login(email, "moa2026pw").andExpect(status().isOk());
+
+        assertThat(refreshTokenRepository.findById(expired.getId())).isEmpty();
+    }
+
+    private ResultActions me(String accessToken) throws Exception {
+        return mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + accessToken));
     }
 
     @Test

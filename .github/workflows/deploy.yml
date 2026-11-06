@@ -83,6 +83,8 @@ jobs:
           SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
           # 테스트 전용 서명 키. 테스트 서버의 키는 서버 .env에 따로 있다
           JWT_SECRET: ci-test-secret-0123456789abcdef0123456789
+          # 테스트 전용 출금 계좌 암호화 키(32바이트 Base64). 서버 .env 키와 다르다
+          CASHOUT_ACCOUNT_CRYPTO_KEY: dGVzdC1jYXNob3V0LWtleS0zMi1ieXRlcy1sb25nISE=
 
   # PR에서만: 운영 이미지가 빌드되는지 확인하고 올리지 않는다
   docker:

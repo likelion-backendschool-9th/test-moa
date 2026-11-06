@@ -48,7 +48,7 @@ public class ChatMessage {
 
     /**
      * 메시지를 보낼 때 새로운 ChatMessage 엔티티를 만들기 위해 사용하는 빌더 생성자.
-     * 채팅방은 보낸 참여자의 방으로 정한다. 순번을 받는 일과 방 갱신은 보내는 쪽(#49)이 한 트랜잭션에서 한다.
+     * 채팅방은 보낸 참여자의 방으로 정한다. 전송 시 순번 할당과 방 갱신은 ChatRoom.createMessage가 함께 한다.
      *
      * @param sender    보낸 참여자
      * @param seq       방 안에서의 순번

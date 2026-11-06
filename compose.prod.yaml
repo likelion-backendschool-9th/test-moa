@@ -36,6 +36,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER를 .env에 설정하세요}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD를 .env에 설정하세요}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET을 .env에 설정하세요}
+      CASHOUT_ACCOUNT_CRYPTO_KEY: ${CASHOUT_ACCOUNT_CRYPTO_KEY:?CASHOUT_ACCOUNT_CRYPTO_KEY를 .env에 설정하세요}
       # 엔티티를 보고 테이블을 만들고 바뀐 컬럼을 더한다(지우지는 않음). 실제 서비스 전에 Flyway 같은 마이그레이션으로 바꾼다
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       # AI 분석 서버(별도 EC2). 비어 있으면 AI 기능만 503이고 나머지는 그대로 뜸

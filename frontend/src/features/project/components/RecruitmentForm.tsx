@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { projectPath } from "@/lib/project-paths";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
@@ -19,7 +20,7 @@ import { TextField } from "./TextField";
  */
 
 const SELECTION_MODE_HINT: Record<SelectionMode, string> = {
-  firstCome: "지원 순서대로 자동 확정돼요",
+  firstCome: "지원하면 바로 확정돼요",
   selection: "지원자를 직접 확정하고 거절해요",
 };
 
@@ -28,7 +29,6 @@ type RecruitmentFormProps = {
   isSubscription: boolean;
   baseReward: number;
   extraReward: number;
-  maxCapacity: number;
 };
 
 /** 항목에 고른 이미지. 브라우저 임시 주소(blob:)로 미리 보여 준다 */
@@ -38,8 +38,10 @@ type ItemRow = { title: string; description: string; required: boolean; images: 
 
 const emptyRow = (): ItemRow => ({ title: "", description: "", required: true, images: [] });
 
+const toItemImage = (file: File): ItemImage => ({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) });
+
 /** 테스트 모집 작성 폼 */
-export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraReward, maxCapacity }: RecruitmentFormProps) {
+export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraReward }: RecruitmentFormProps) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     createRecruitment.bind(null, projectKey),
     EMPTY_FORM_STATE,
@@ -48,6 +50,9 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
   const { values, errors } = state;
   /* 항목 줄은 화면 상태로 들고 있어서 제출 뒤 오류가 와도 적은 값이 남는다 */
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  /* 모집글 이미지. 항목 이미지와 따로 들고 있고, 고른 순서가 모집글 상세 이미지 띠의 순서다 (#124) */
+  const [images, setImages] = useState<ItemImage[]>([]);
+  const [imagesPickError, setImagesPickError] = useState<string | undefined>();
   /* 고를 때 나온 이미지 오류는 줄 번호로 들고 있다가 줄을 지우면 함께 지운다 */
   const [pickErrors, setPickErrors] = useState<Record<number, string | undefined>>({});
   /* 줄 오류는 제출할 때의 순서로 찾으므로, 줄을 지우면 다음 제출까지 숨긴다 */
@@ -72,6 +77,22 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
   }
 
   /* 한 장이라도 한도를 넘으면 이번에 고른 파일은 넣지 않고 이유를 알린다 */
+  function addRecruitmentImages(event: ChangeEvent<HTMLInputElement>) {
+    const picked = [...(event.target.files ?? [])];
+    event.target.value = "";
+    if (picked.length === 0) return;
+    const problem = checkImages([...images, ...picked], RECRUITMENT_LIMIT.imageCount);
+    setImagesPickError(problem);
+    if (problem) return;
+    setImages((prev) => [...prev, ...picked.map(toItemImage)]);
+  }
+
+  function removeRecruitmentImage(url: string) {
+    revoke(url);
+    setImages((prev) => prev.filter((image) => image.url !== url));
+    setImagesPickError(undefined);
+  }
+
   function addImages(index: number, event: ChangeEvent<HTMLInputElement>) {
     const picked = [...(event.target.files ?? [])];
     event.target.value = "";
@@ -81,7 +102,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
     setPickErrors((prev) => ({ ...prev, [index]: problem }));
     if (problem) return;
     updateItem(index, {
-      images: [...current, ...picked.map((file) => ({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) }))],
+      images: [...current, ...picked.map(toItemImage)],
     });
   }
 
@@ -144,6 +165,36 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
           error={errors.conditions}
           hint={`필요한 경험, 관심사, 사용 환경을 적어 주세요. ${RECRUITMENT_LIMIT.conditionsLength}자까지`}
         />
+        <FileField
+          name="recruitmentImages"
+          label="모집글 이미지 (선택)"
+          accept={PROJECT_MEDIA_LIMIT.images.types.join(",")}
+          multiple
+          hint={`모집글 상세에서 대표 이미지 다음에 보여요 · PNG, JPG, WEBP · 한 장에 ${formatBytes(PROJECT_MEDIA_LIMIT.images.bytes)}까지 · ${RECRUITMENT_LIMIT.imageCount}장까지 · 고른 순서대로 보여요`}
+          error={imagesPickError ?? errors.recruitmentImages}
+          onChange={addRecruitmentImages}
+          buttonLabel="이미지 추가"
+        >
+          {images.length > 0 && (
+            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {images.map((image) => (
+                <li key={image.url} data-testid="recruitment-image" className="flex flex-col gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-muted object-cover outline -outline-offset-1 outline-line" />
+                  <button
+                    type="button"
+                    onClick={() => removeRecruitmentImage(image.url)}
+                    aria-label={`모집글 이미지 ${image.name} 삭제`}
+                    className="text-xs font-semibold text-text-muted hover:text-text"
+                  >
+                    삭제
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </FileField>
+        <input type="hidden" name="recruitmentImagesMeta" value={JSON.stringify(images.map(({ name, size, type }) => ({ name, size, type })))} />
       </FormSection>
       <FormSection title="선정 조건과 일정">
         <fieldset className="flex flex-col gap-2" aria-describedby={errors.selectionMode ? "field-selectionMode-error" : undefined}>
@@ -181,16 +232,6 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
             </p>
           )}
         </fieldset>
-        <TextField
-          name="capacity"
-          label="모집 인원"
-          type="number"
-          min={1}
-          max={maxCapacity}
-          defaultValue={values.capacity}
-          error={errors.capacity}
-          hint={`1~${maxCapacity}명`}
-        />
         <div className="grid gap-6 sm:grid-cols-2">
           <TextField name="recruitDeadline" label="모집 마감일" type="date" defaultValue={values.recruitDeadline} error={errors.recruitDeadline} />
           <TextField name="submitDeadline" label="피드백 제출 마감일" type="date" defaultValue={values.submitDeadline} error={errors.submitDeadline} />
@@ -315,7 +356,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
         <Button type="submit" disabled={pending}>
           모집 등록
         </Button>
-        <LinkButton href={`/my/projects/${projectKey}`} variant="secondary">
+        <LinkButton href={projectPath(projectKey)} variant="secondary">
           취소
         </LinkButton>
       </div>

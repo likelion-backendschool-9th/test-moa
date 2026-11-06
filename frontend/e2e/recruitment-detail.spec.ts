@@ -12,10 +12,10 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByText("추가 보상", { exact: true })).toHaveCount(2);
     await expect(page.getByText("구독 모집", { exact: true })).toHaveCount(0);
     const summary = page.getByRole("complementary", { name: "모집 요약" });
-    for (const term of ["모집 마감", "피드백 제출 마감", "인원", "선정 방식", "기본 보상", "추가 보상"]) {
+    for (const term of ["모집 마감", "피드백 제출 마감", "선정 방식", "기본 보상", "추가 보상"]) {
       await expect(summary.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) })).toBeVisible();
     }
-    await expect(summary).toContainText("13 / 20명");
+    await expect(summary.getByRole("term").filter({ hasText: /^인원$/ })).toHaveCount(0);
     await expect(page.getByText(/한 달에 책을 한 권 이상 읽는 분/)).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "책 검색해서 등록하기" })).toContainText("필수");
     await expect(page.getByRole("listitem").filter({ hasText: "독서 기록 쓰기" })).toContainText("선택");
@@ -27,13 +27,12 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByRole("heading", { name: "준비 중인 페이지예요" })).toBeVisible();
   });
 
-  test("#63-S2 정원이 찼거나 마감되면 지원할 수 없다", async ({ page }) => {
+  test("#63-S2 모집 마감 전이면 지원하고, 마감되면 지원할 수 없다", async ({ page }) => {
     await page.goto("/recruitments/folio-builder");
-    await expect(page.getByText("모집 완료", { exact: true })).toBeVisible();
-    await expect(page.getByText("정원이 모두 찼어요")).toBeVisible();
+    await expect(page.getByText("모집 중", { exact: true })).toBeVisible();
     /* 추가 보상이 없으면 배지도 없다 */
     await expect(page.getByText("추가 보상", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "지원하기" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "지원하기" })).toBeVisible();
 
     await page.goto("/recruitments/memo-garden");
     await expect(page.getByText("모집이 마감됐어요")).toBeVisible();
@@ -59,21 +58,24 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByRole("list", { name: /^독서 기록 쓰기 이미지/ })).toHaveCount(0);
 
     await setDemo(context, { role: "developer" });
-    await page.goto("/my/projects/booklog/recruitments/booklog");
+    await page.goto("/developer/recruitments/booklog");
     await page.getByText("모집 조건과 테스트 항목 3개").click();
     await expect(page.getByRole("list", { name: "책 검색해서 등록하기 이미지 2장" }).getByRole("img")).toHaveCount(2);
   });
 
-  test("#63-S9 대표 이미지 옆에 항목 이미지를 이어 놓고 버튼으로 넘긴다", async ({ page }) => {
+  test("#63-S9 대표 이미지 옆에 모집글 이미지를 이어 놓고 버튼으로 넘긴다", async ({ page }) => {
     await page.goto("/recruitments/booklog");
     const gallery = page.getByRole("list", { name: "북로그 이미지 5장" });
     expect(await gallery.getByRole("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt")))).toEqual([
       "북로그 대표 이미지",
-      "책 검색 화면",
-      "내 서재 화면",
-      "밑줄 긋기 화면",
-      "밑줄 모아 보기 화면",
+      "2차 베타 내 서재",
+      "2차 베타 밑줄 긋기",
+      "2차 베타 밑줄 모아 보기",
+      "2차 베타 책 검색",
     ]);
+    /* 테스트 항목 이미지는 띠에 없고 항목 아래에만 있다 */
+    await expect(gallery.getByRole("img", { name: "책 검색 화면" })).toHaveCount(0);
+    await expect(page.getByRole("list", { name: "책 검색해서 등록하기 이미지 2장" })).toBeVisible();
     /* 대표 이미지에만 표시가 있다 */
     await expect(gallery.getByText("대표 이미지", { exact: true })).toHaveCount(1);
     await expect(gallery.getByRole("listitem").first()).toContainText("대표 이미지");
@@ -92,7 +94,7 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect.poll(scrollLeft).toBeGreaterThan(second);
     await next.click();
     await expect(next).toBeDisabled();
-    await expect(gallery.getByRole("img", { name: "밑줄 모아 보기 화면" })).toBeInViewport({ ratio: 1 });
+    await expect(gallery.getByRole("img", { name: "2차 베타 책 검색" })).toBeInViewport({ ratio: 1 });
 
     /* 움직이는 중에 빠르게 눌러도 누른 만큼 넘어간다 */
     await prev.click();
@@ -102,7 +104,7 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(next).toBeEnabled();
     await expect(prev).toBeDisabled();
 
-    /* 항목 이미지가 없으면 대표 이미지만 있고 넘길 것이 없다 */
+    /* 모집글 이미지가 없으면 대표 이미지만 있고 넘길 것이 없다 */
     await page.goto("/recruitments/moaplan");
     await expect(page.getByTestId("recruitment-gallery").getByRole("img")).toHaveCount(1);
     await expect(page.getByRole("button", { name: "다음 이미지" })).toHaveCount(0);
@@ -138,14 +140,14 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(viewer).toHaveCount(0);
 
     await setDemo(context, { role: "developer" });
-    await page.goto("/my/projects/booklog/recruitments/booklog");
+    await page.goto("/developer/recruitments/booklog");
     await page.getByText("모집 조건과 테스트 항목 3개").click();
     await page.getByRole("button", { name: "책 검색 화면 크게 보기" }).click();
     await expect(page.getByRole("dialog", { name: "책 검색해서 등록하기 이미지 크게 보기" })).toBeVisible();
   });
 
   test.describe("모집 작성", () => {
-    const NEW = "/my/projects/booklog/recruitments/new";
+    const NEW = "/developer/recruitments/new?project=booklog";
     const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
     const png = (name: string) => ({ name, mimeType: "image/png", buffer: PIXEL });
     const picker = (page: Page, index: number) => page.getByLabel(`항목 ${index} 이미지 (선택)`);
@@ -183,6 +185,45 @@ test.describe("#63-R1 모집글 상세", () => {
       await page.getByRole("button", { name: "모집 등록" }).click();
       await expect(page.getByText("모집글 제목을 적어 주세요")).toBeVisible();
       await expect(page.getByTestId("test-item-image")).toHaveCount(2);
+    });
+
+    test("#124-S1 모집글 이미지는 항목 이미지와 따로 10장까지이고 넘기면 넣지 않는다", async ({ page }) => {
+      await page.goto(NEW);
+      const picker = page.getByLabel("모집글 이미지 (선택)");
+      const images = page.getByTestId("recruitment-image");
+      const names = (count: number, from = 1) => Array.from({ length: count }, (_, index) => png(`${index + from}.png`));
+      await page.getByLabel("항목 1 이미지 (선택)").setInputFiles(png("항목.png"));
+      await picker.setInputFiles(names(9));
+      await expect(images).toHaveCount(9);
+      await expect(page.getByTestId("test-item-image")).toHaveCount(1);
+
+      await picker.setInputFiles(names(2, 10));
+      await expect(page.getByText("이미지는 10장까지 올릴 수 있어요")).toBeVisible();
+      await expect(picker).toHaveAttribute("aria-invalid", "true");
+      await expect(images).toHaveCount(9);
+
+      await picker.setInputFiles(png("10.png"));
+      await expect(images).toHaveCount(10);
+      await expect(page.getByText("이미지는 10장까지 올릴 수 있어요")).toHaveCount(0);
+
+      await page.getByRole("button", { name: "모집글 이미지 1.png 삭제" }).click();
+      const alts = () => images.getByRole("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt")));
+      expect(await alts()).toEqual(["2", "3", "4", "5", "6", "7", "8", "9", "10"].map((name) => `${name}.png`));
+
+      /* 제출에 실패해도 고른 이미지가 남는다 */
+      await page.getByRole("button", { name: "모집 등록" }).click();
+      await expect(page.getByText("모집글 제목을 적어 주세요")).toBeVisible();
+      expect(await alts()).toEqual(["2", "3", "4", "5", "6", "7", "8", "9", "10"].map((name) => `${name}.png`));
+    });
+
+    test("#124-S2 서버도 모집글 이미지 장수를 다시 확인한다", async ({ page }) => {
+      await page.goto(NEW);
+      await page.locator('input[name="recruitmentImagesMeta"]').evaluate((element: HTMLInputElement) => {
+        element.value = JSON.stringify(Array.from({ length: 11 }, (_, index) => ({ name: `${index}.png`, size: 1, type: "image/png" })));
+      });
+      await page.getByRole("button", { name: "모집 등록" }).click();
+      await expect(page.getByText("이미지는 10장까지 올릴 수 있어요")).toBeVisible();
+      await expect(page).toHaveURL(NEW);
     });
 
     test("#63-S8 서버도 항목 이미지 장수를 다시 확인하고, 이름 없이 이미지만 있으면 막는다", async ({ page }) => {

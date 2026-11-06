@@ -26,11 +26,6 @@ public class FollowupRequestReader {
         Feedback feedback = feedbackRepository.findWithRecruitmentById(feedbackId)
                 .filter(found -> found.getRegister().getRecruitment().getProject().getUser().getId().equals(userId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        return toRequest(feedback);
-    }
-
-    // 분석 서버의 글자 수에 맞춰 자름
-    private static FollowupRequest toRequest(Feedback feedback) {
         return new FollowupRequest(
                 AnalysisRequests.context(feedback.getRegister().getRecruitment()),
                 AnalysisRequests.feedbackItem(feedback));

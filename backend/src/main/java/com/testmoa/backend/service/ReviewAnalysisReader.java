@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ReviewAnalysisReader {
     // 분석 서버가 한 번에 받는 리뷰 수
-    public static final int MAX_FEEDBACKS = 1000;
+    private static final int MAX_FEEDBACKS = 1000;
 
     // 심각도 오름차순(null은 맨 뒤) → 테스터 수 내림차순 → 먼저 저장한 그룹
     private static final Comparator<Group> PRIORITY = Comparator

@@ -126,8 +126,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 소셜 로그인. 이미 연동된 회원 → 로그인. 제공자가 확인한 이메일과 같은 회원 → 그 회원에 연동하고 로그인.
-     * 둘 다 아니면 처음 온 사람이라 이름을 받으러 가입 토큰을 준다. 확인된 이메일이 없으면 연동도 가입도 하지 않는다
+     * 소셜 로그인. 이미 연동된 회원 → 로그인. 제공자가 확인한 이메일과 같은 소셜 회원 → 그 회원에 연동하고 로그인.
+     * 둘 다 아니면 처음 온 사람이라 이름을 받으러 가입 토큰을 준다. 확인된 이메일이 없으면 연동도 가입도 하지 않는다.
+     * 이메일 가입(비밀번호가 있는) 회원에는 자동 연동하지 않는다. 이메일 인증이 없어서 남이 그 이메일로 먼저 가입해 두었으면,
+     * 연동한 뒤 그 사람이 비밀번호로 같은 계정에 들어올 수 있기 때문이다. 이메일로 로그인한 뒤 마이페이지에서 연동한다.
+     * ponytail: 이메일 인증이 생기면 인증된 이메일 계정에는 자동 연동해도 된다
      */
     @Override
     public OAuthLoginResponse oauthLogin(String provider, OAuthCodeRequest request) {
@@ -142,6 +145,9 @@ public class AuthServiceImpl implements AuthService {
         Optional<User> sameEmail = userRepository.findByEmail(email);
         if (sameEmail.isPresent()) {
             User user = sameEmail.get();
+            boolean hasPassword = accountRepository.findByUserId(user.getId()).stream()
+                    .anyMatch(account -> account.getProvider() == Provider.LOCAL);
+            if (hasPassword) throw new BusinessException(ErrorCode.EMAIL_ACCOUNT_EXISTS);
             saveSocialAccount(user, profile);
             return OAuthLoginResponse.loggedIn(startSocialSession(user));
         }

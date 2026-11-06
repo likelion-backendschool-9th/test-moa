@@ -17,6 +17,10 @@ colors:
   on-accent: "#ffffff"
   like: "#c4264a"
   like-soft: "#fde8ed"
+  paid-start: "#ddf5ea"
+  paid-mid: "#edf5ee"
+  paid-end: "#eeeaf4"
+  paid-text: "#0f7c4a"
   thumb: "#ffffff"
   on-thumb: "#1a1a1a"
   mark: "#1a1a1a"
@@ -36,6 +40,10 @@ colors:
   on-accent-dark: "#000000"
   like-dark: "#f47c97"
   like-soft-dark: "#341520"
+  paid-start-dark: "#123625"
+  paid-mid-dark: "#1a2a26"
+  paid-end-dark: "#241f36"
+  paid-text-dark: "#34b27a"
   thumb-dark: "#ffffff"
   on-thumb-dark: "#16181d"
   mark-dark: "#3d434b"
@@ -304,6 +312,7 @@ components:
 
 ### Tertiary
 - **유용해요 분홍 / 빨강** (like-soft, like): 피드백 "유용해요"를 누른 상태(`Button`의 `like`)에만 쓴다. 라이트는 연한 분홍 `#fde8ed` 위 빨강 `#c4264a`(대비 4.82:1), 다크는 남회색 패널에서 튀지 않게 어두운 장미색 `#341520` 위 밝힌 분홍 `#f47c97`(대비 6.42:1). 위험·오류 색으로 쓰지 않는다. (#134)
+- **유료 기능 그라데이션** (paid-start, paid-mid, paid-end, paid-text): 피드백의 채팅하기·AI 질문 받기 버튼(`Button`의 `paid`) 바탕. 라이트는 시안 그대로 민트 `#ddf5ea` → 55% `#edf5ee` → 라벤더 `#eeeaf4`이고 글씨는 진한 초록(글씨 아래 대비 4.51:1 이상). 다크는 같은 흐름을 낮춘 `#123625` → `#1a2a26` → `#241f36`이고, 기본 강조 초록은 이 바탕에서 대비가 낮아 글씨만 `#34b27a`로 밝힌다(4.93:1 이상). (#134)
 
 ### Named Rules
 **The Token-Only Rule.** 색·모션 값은 `globals.css` 토큰에서만 정의한다. `src/components`, `src/features`에는 hex도, 임의 px도 쓰지 않는다.
@@ -377,7 +386,7 @@ components:
 - **Secondary:** 칩 회색 바탕, 먹 글씨. '자세히 보기', 헤더의 크레딧 잔액.
 - **Ghost:** 바탕 없음. 로그인, 내 정보, 슬라이드 이전·다음, 대화상자의 취소.
 - **Strong:** 먹 바탕, 작업대 글씨, hover 때 불투명도 90%. 대화방 삭제 확인처럼 되돌리기 어려운 무거운 행동에 쓴다. 위험 색(빨강)이 없어서 강조색 대신 먹을 쓴다.
-- **Soft:** 연한 강조 바탕, 강조색 글씨, hover 때 불투명도 80%. 유료 기능으로 이어지는 버튼(피드백의 채팅하기·AI 질문 받기)에 쓴다. (#134)
+- **Paid:** 민트→라벤더 그라데이션 바탕(sRGB로 섞음), 유료 기능 글씨, hover 때 불투명도 80%. 유료 기능으로 이어지는 버튼(피드백의 채팅하기·AI 질문 받기)에 쓴다. (#134)
 - **Like:** 유용해요 분홍 바탕, 빨강 글씨. 피드백 "유용해요"를 누른 상태에만 쓰고, 누르지 않았으면 secondary다. (#134)
 - `Button`과 `LinkButton`은 같은 `buttonClass`를 쓴다. 새 버튼 스타일을 만들지 말고 variant를 고른다.
 

@@ -1,7 +1,16 @@
-import { DEMO_PASSWORD,DEMO_PROFILES } from "@/demo/member";
+import { buildMyPageSummary, buildUsers, DEMO_PASSWORD, DEMO_PROFILES } from "@/demo/member";
+import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
+import { creditDataFor } from "@/features/credit/api";
+import type { UserDetail, UserFilter, UserSummary } from "@/features/member/admin";
+import type { MyPageSummary, Profile, Todo } from "@/features/member/types";
+import { loadReports as loadAll } from "@/features/report/api";
+import type { Report } from "@/features/report/types";
+import { requireMember } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
+import { subscriptionFor } from "@/features/subscription/api";
+import { formatDday } from "@/lib/format";
+import { connection } from "next/server";
 import "server-only";
-import type { Profile } from "./types";
 
 /*
  * 회원 데이터 조회. 로그인·회원가입·개인정보 수정이 모두 이 파일로 회원 정보를 본다.
@@ -38,36 +47,24 @@ export function isEmailTaken(email: string): boolean {
   return Object.values(DEMO_PROFILES).some((profile) => profile.email === normalized);
 }
 
-export type DemoAccount = { role: MemberRole; email: string };
+export type DemoAccount = { role: MemberRole; email: string; };
 
 /** 로그인 화면에 안내할 시연 계정과 공통 비밀번호 */
-export function getDemoAccounts(): { accounts: DemoAccount[]; password: string } {
+export function getDemoAccounts(): { accounts: DemoAccount[]; password: string; } {
   const accounts = (Object.entries(DEMO_PROFILES) as [MemberRole, Profile][]).map(([role, profile]) => ({ role, email: profile.email }));
   return { accounts, password: DEMO_PASSWORD };
 }
 
-import { getDemoDataMode } from "@/demo/mode";
-import { loadReports as loadAll } from "@/features/report/api";
-import type { Report } from "@/features/report/types";
-import "server-only";
-
-import { buildUsers } from "@/demo/member";
-import type { UserDetail,UserFilter,UserSummary } from "./admin";
-
-
 /** 상세 주소의 회원 키 목록. 신고·출금 키와 같이 목업에서 뽑아 두어, 쿠키를 읽기 전에 없는 회원인지 안다 */
 const USER_KEYS = buildUsers(new Date(0)).map((user) => user.id);
-
 
 export function isUserKey(userKey: string) {
   return USER_KEYS.includes(userKey);
 }
 
-
 export function getUserKeys() {
   return [...USER_KEYS];
 }
-
 
 /* 신고는 신고·제재 관리와 같은 loadAll()로 읽는다. 권한 확인과 시연 모드(slow·empty)도 거기서 한다 */
 async function loadUsersAndReports() {
@@ -76,9 +73,7 @@ async function loadUsersAndReports() {
   return { now, users, reports };
 }
 
-
 const reportsFor = (reports: Report[], userKey: string) => reports.filter((report) => report.targetUserKey === userKey);
-
 
 /** 최근 가입 순서. 필터와 닉네임 검색(부분 일치)을 함께 쓸 수 있다 */
 export async function getUsers(filter: UserFilter, query: string): Promise<UserSummary[]> {
@@ -98,8 +93,7 @@ export async function getUsers(filter: UserFilter, query: string): Promise<UserS
     .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
 }
 
-
-export async function getUser(userKey: string): Promise<{ now: Date; user: UserDetail | null }> {
+export async function getUser(userKey: string): Promise<{ now: Date; user: UserDetail | null; }> {
   const { now, users, reports } = await loadUsersAndReports();
   const user = users.find((item) => item.id === userKey);
   if (!user) return { now, user: null };
@@ -110,25 +104,12 @@ export async function getUser(userKey: string): Promise<{ now: Date; user: UserD
   return { now, user: { ...user, sanctions, receivedReports } };
 }
 
-import { buildMyPageSummary } from "@/demo/member";
-import { waitIfSlow } from "@/demo/mode";
-import { creditDataFor } from "@/features/credit/api";
-import type { MyPageSummary,Todo } from "@/features/member/types";
-import { requireMember } from "@/features/session/guard";
-import { formatDday } from "@/lib/format";
-import { connection } from "next/server";
-import "server-only";
-
-import { subscriptionFor } from "@/features/subscription/api";
-
-
 /*
  * 마이페이지 데이터 접근. 지금은 목업을 돌려준다.
  * 실제 API를 붙일 때는 이 파일의 함수 본문만 바꾸고 시그니처는 유지한다.
  */
 
 const RECENT_CREDITS = 5;
-
 
 /** 로그인한 회원의 마이페이지 요약. 비로그인이면 로그인으로 보낸다 */
 export async function getMyPageSummary(): Promise<MyPageSummary> {
@@ -149,7 +130,6 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
   };
 }
 
-
 /** 개인정보 수정에 채울 현재 회원 정보. 비로그인이면 로그인으로 보낸다 */
 export async function getProfile(next: string): Promise<Profile> {
   const session = await requireMember(next);
@@ -157,9 +137,7 @@ export async function getProfile(next: string): Promise<Profile> {
   return getMemberProfile(session.role);
 }
 
-
 const TODO_LIMIT = 5;
-
 
 /** 마감이 있는 할 일이 먼저, 가까운 순서. 마감 항목의 detail은 D-day로 채운다 */
 function sortTodos(todos: Todo[], now: Date): Todo[] {

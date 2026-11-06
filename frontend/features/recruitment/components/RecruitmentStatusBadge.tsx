@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/Badge";
-import { RECRUITMENT_STATUS_LABEL, type RecruitmentStatus } from "../types";
+import { RECRUITMENT_STATUS_LABEL, type RecruitmentStatus } from "@/features/recruitment/types";
 
 /* 모집 건 상태 배지. 지금 움직이는 상태(모집 중)만 강조색을 쓴다 */
 

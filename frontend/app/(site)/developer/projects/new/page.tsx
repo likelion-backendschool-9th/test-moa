@@ -4,7 +4,7 @@ import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
 import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm";
-import { requireRole } from "@/features/project/service";
+import { requireRole } from "@/features/session/guard";
 
 /* 프로젝트 등록 (/developer/projects/new) */
 

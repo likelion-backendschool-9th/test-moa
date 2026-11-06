@@ -3,7 +3,6 @@ import { isReportDecision, type ReportReview } from "@/features/report/types";
 import { cookies } from "next/headers";
 import "server-only";
 
-
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
  * 모집 건 이름은 모집 목업을 재사용하고, 시각은 기준 시각에서 몇 시간 전으로 만든다.
@@ -13,7 +12,6 @@ import "server-only";
 const HOUR_MS = 60 * 60 * 1000;
 
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
-
 
 /** 검토 대기 4건과 이미 처리한 2건 */
 export function buildReports(now: Date): Report[] {
@@ -97,10 +95,8 @@ export function buildReports(now: Date): Report[] {
   ];
 }
 
-
 /** 신고 키 목록. 없는 신고인지 쿠키를 읽기 전에 알 수 있게 목업에서 키만 뽑아 둔다 */
 export const REPORT_KEYS = buildReports(new Date(0)).map((report) => report.id);
-
 
 /*
  * 시연용 처리 기록. 실제 저장소가 없어서 쿠키에 { 요청 키: 처리 기록 }을 JSON으로 둔다.
@@ -110,22 +106,18 @@ export const REPORT_KEYS = buildReports(new Date(0)).map((report) => report.id);
 
 export const DEMO_REPORTS_COOKIE = "demo-reports";
 
-
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 /* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
 const COOKIE_MAX_BYTES = 4000;
 
-
 type Validator<T> = (value: unknown) => value is T;
-
 
 function isReview(value: unknown): value is ReportReview {
   if (typeof value !== "object" || value === null) return false;
   const review = value as Record<string, unknown>;
   return isReportDecision(review.decision) && typeof review.memo === "string" && typeof review.processedAt === "string";
 }
-
 
 /** 깨진 값은 버리고 올바른 기록만 돌려준다 */
 async function readStore<T>(name: string, isValid: Validator<T>): Promise<Record<string, T>> {
@@ -139,7 +131,6 @@ async function readStore<T>(name: string, isValid: Validator<T>): Promise<Record
     return {};
   }
 }
-
 
 /**
  * Server Action에서만 부른다. 쿠키는 렌더링 중에 쓸 수 없다.
@@ -157,9 +148,7 @@ async function saveToStore<T>(name: string, isValid: Validator<T>, key: string, 
   return true;
 }
 
-
 export const readReviews = () => readStore(DEMO_REPORTS_COOKIE, isReview);
-
 
 export const saveReview = (reportKey: string, review: ReportReview) =>
   saveToStore(DEMO_REPORTS_COOKIE, isReview, reportKey, review);

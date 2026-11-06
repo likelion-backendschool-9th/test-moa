@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "./auth-tokens";
-import { type BackendResult, type RequestOptions, requestBackend } from "./backend-http";
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "@/lib/auth-tokens";
+import { type BackendResult, type RequestOptions, requestBackend } from "@/lib/backend-http";
 
 /*
  * 백엔드(Spring) 호출. 브라우저는 백엔드를 직접 부르지 않고, Next 서버가 쿠키의 토큰을 Bearer로 붙여 부른다(BFF).

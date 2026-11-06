@@ -5,8 +5,8 @@ import { type FormEvent, type ReactNode, startTransition, useActionState, useSta
 import { Button } from "@/components/ui/Button";
 import { cardClass, cardTitleClass } from "@/app/(site)/my/(account)/_components/card-styles";
 import { formatCredits, formatWon } from "@/lib/format";
-import { requestWithdrawal, type WithdrawalField, type WithdrawalFormState } from "../../../../../../../features/credit/actions";
-import { BANKS } from "../../../../../../../features/credit/types";
+import { requestWithdrawal, type WithdrawalField, type WithdrawalFormState } from "@/features/credit/actions";
+import { BANKS } from "@/features/credit/types";
 
 const initialState: WithdrawalFormState = { status: "idle" };
 

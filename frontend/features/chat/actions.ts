@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { deleteChatRoom, renameChatRoom, sendChatMessage } from "./api";
-import { CHATS_PATH } from "./query";
+import { deleteChatRoom, renameChatRoom, sendChatMessage } from "@/features/chat/api";
+import { CHATS_PATH } from "@/features/chat/query";
 
 /*
  * 채팅의 서버 액션. 데이터 계층(api.ts)만 부른다.

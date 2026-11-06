@@ -1,7 +1,12 @@
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { formatCredits } from "@/lib/format";
-import { TAB_LABEL, type ParticipationItem, type ParticipationTab, type ParticipationView } from "../../../../../features/participation/types";
+import {
+  TAB_LABEL,
+  type ParticipationItem,
+  type ParticipationTab,
+  type ParticipationView,
+} from "@/features/participation/types";
 import { ParticipationRow } from "./ParticipationRow";
 import { ParticipationViewToggle } from "./ParticipationViewToggle";
 import { VIEW_LIST_CLASS } from "./view-styles";

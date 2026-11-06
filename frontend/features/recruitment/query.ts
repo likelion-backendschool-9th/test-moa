@@ -1,4 +1,4 @@
-import { SOFTWARE_TYPES, type SoftwareType } from "./types";
+import { SOFTWARE_TYPES, type SoftwareType } from "@/features/recruitment/types";
 
 /**
  * 전체 테스트 그리드의 검색 조건. URL 검색 파라미터와 1:1로 대응한다.

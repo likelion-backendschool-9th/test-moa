@@ -1,8 +1,8 @@
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Pagination } from "@/components/ui/Pagination";
-import { toSearchParams, type RecruitmentQuery } from "../../../../features/recruitment/query";
-import type { RecruitmentPage } from "../../../../features/recruitment/types";
+import { toSearchParams, type RecruitmentQuery } from "@/features/recruitment/query";
+import type { RecruitmentPage } from "@/features/recruitment/types";
 import { RecruitmentFilters } from "./RecruitmentFilters";
 import { RecruitmentGrid } from "./RecruitmentGrid";
 

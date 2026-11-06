@@ -3,7 +3,7 @@
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useEffect, useState, useSyncExternalStore, type FocusEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { Button } from "./Button";
+import { Button } from "@/components/ui/Button";
 
 export type CarouselSlide = {
   key: string;

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Recruitment } from "../../../../features/recruitment/types";
+import type { Recruitment } from "@/features/recruitment/types";
 import { RecruitmentGrid, RecruitmentGridSkeleton } from "./RecruitmentGrid";
 
 /** 영역 틀. 제목은 테스터에게 좋은 점(추가 보상)을 말하고 '구독'이라는 말은 쓰지 않는다 */

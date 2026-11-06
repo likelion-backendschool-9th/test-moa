@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/Skeleton";
-import type { Recruitment } from "../../../../features/recruitment/types";
+import type { Recruitment } from "@/features/recruitment/types";
 import { RecruitmentCard } from "./RecruitmentCard";
 
 const COLUMNS = {

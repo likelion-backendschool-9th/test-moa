@@ -4,8 +4,8 @@ import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
-import { SORT_LABEL, toSearchParams, type RecruitmentQuery, type RecruitmentSort } from "../../../../features/recruitment/query";
-import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES, type SoftwareType } from "../../../../features/recruitment/types";
+import { SORT_LABEL, toSearchParams, type RecruitmentQuery, type RecruitmentSort } from "@/features/recruitment/query";
+import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES, type SoftwareType } from "@/features/recruitment/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
 

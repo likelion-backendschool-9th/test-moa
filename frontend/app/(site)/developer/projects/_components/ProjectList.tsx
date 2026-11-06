@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
-import type { ProjectSummary } from "../../../../../features/project/service";
+import type { ProjectSummary } from "@/features/recruitment/types";
 
 /* 내 프로젝트 목록 화면의 카드 그리드 */
 

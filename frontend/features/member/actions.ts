@@ -1,7 +1,7 @@
 "use server";
 
-import { getProfile,isCurrentPassword,isNicknameTaken } from "@/features/member/api";
-import { validateName,validateNewPassword,validateNickname } from "@/features/member/validation";
+import { getProfile, isCurrentPassword, isNicknameTaken } from "@/features/member/api";
+import { validateName, validateNewPassword, validateNickname } from "@/features/member/validation";
 import type { FormState } from "@/lib/form";
 
 /*

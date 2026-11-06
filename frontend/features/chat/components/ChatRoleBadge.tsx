@@ -1,5 +1,5 @@
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
-import { CHAT_ROLE_LABEL, type ChatRole } from "../types";
+import { CHAT_ROLE_LABEL, type ChatRole } from "@/features/chat/types";
 
 /* 강조색을 더하지 않고 바탕·테두리로 나눈다. 테스터는 칩 회색 바탕, 개발자는 바탕 없이 재단 회색 테두리 (11-02 리뷰 제안) */
 const TONE = { tester: "neutral", developer: "outline" } as const satisfies Record<ChatRole, BadgeTone>;

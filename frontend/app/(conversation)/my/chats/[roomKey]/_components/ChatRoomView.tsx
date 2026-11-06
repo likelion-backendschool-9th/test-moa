@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/Skeleton";
-import type { ChatRoomData } from "../../../../../../features/chat/types";
+import type { ChatRoomData } from "@/features/chat/types";
 import { ChatComposer } from "./ChatComposer";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatRoomHeader } from "./ChatRoomHeader";

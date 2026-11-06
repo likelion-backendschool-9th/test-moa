@@ -2,7 +2,7 @@
 
 import { CaretLeftIcon } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useInboxHref } from "../../../../../../features/chat/inbox-href";
+import { useInboxHref } from "@/features/chat/inbox-href";
 
 /** 채팅방 맨 위의 "채팅함" 링크. 마지막으로 본 채팅함의 검색·역할·정렬 그대로 돌아간다 */
 export function ChatsBackLink() {

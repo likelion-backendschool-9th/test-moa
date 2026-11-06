@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ProjectOverview, TodoItem } from "../../../../../features/project/service";
+import type { ProjectOverview, TodoItem } from "@/features/recruitment/types";
 
 /* 내 프로젝트 화면 위쪽의 "지금 확인할 일"과 "전체 현황" */
 

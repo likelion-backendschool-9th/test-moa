@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatDday, seoulDayKey } from "@/lib/format";
-import type { ParticipationItem } from "../../../../../features/participation/types";
+import type { ParticipationItem } from "@/features/participation/types";
 import { DeadlineCalendar } from "./DeadlineCalendar";
 
 const layoutClass = "grid items-stretch gap-4 lg:grid-cols-2";

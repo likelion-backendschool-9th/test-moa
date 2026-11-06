@@ -1,7 +1,7 @@
 "use server";
 
 import { getSession } from "@/features/session/session";
-import { canPayForSubscription,getSubscriptionOverview,saveSubscriptionPayment } from "@/features/subscription/api";
+import { canPayForSubscription, getSubscriptionOverview, saveSubscriptionPayment } from "@/features/subscription/api";
 import { renewedExpiry } from "@/features/subscription/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 
 const PATH = "/my/subscription/checkout";
 
-export type CheckoutFormState = { status: "idle" } | { status: "error"; error: string };
+export type CheckoutFormState = { status: "idle"; } | { status: "error"; error: string; };
 
 export async function payForSubscription(_prev: CheckoutFormState, formData: FormData): Promise<CheckoutFormState> {
   const { subscription, plans, payableCredits } = await getSubscriptionOverview(PATH);

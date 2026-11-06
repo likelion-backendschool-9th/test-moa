@@ -4,10 +4,10 @@ import { requireMember } from "@/features/session/guard";
 import { participationPath,PARTICIPATIONS_PATH,participationsPath } from "@/features/participation/paths";
 import { revalidatePath } from "next/cache";
 import { redirect,RedirectType } from "next/navigation";
-import { getParticipation,saveFeedback } from "./api";
-import { parseFeedbackForm,type FeedbackFieldErrors } from "./feedback-fields";
-import { parseParticipationTab,parseParticipationView } from "./types";
-import { saveParticipationView } from "./view-preference";
+import { getParticipation,saveFeedback } from "@/features/participation/api";
+import { parseFeedbackForm,type FeedbackFieldErrors } from "@/features/participation/feedback-fields";
+import { parseParticipationTab,parseParticipationView } from "@/features/participation/types";
+import { saveParticipationView } from "@/features/participation/view-preference";
 
 /*
  * 피드백 제출. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo-feedback.ts)에 남긴다.

@@ -13,9 +13,9 @@ import {
 } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { deleteChatRoomAction, renameChatRoomAction } from "../actions";
-import { CHAT_ROOM_NAME_MAX } from "../types";
-import { ChatRoomDialog } from "./ChatRoomDialog";
+import { deleteChatRoomAction, renameChatRoomAction } from "@/features/chat/actions";
+import { CHAT_ROOM_NAME_MAX } from "@/features/chat/types";
+import { ChatRoomDialog } from "@/features/chat/components/ChatRoomDialog";
 
 type ChatCardMenuProps = {
   roomKey: string;

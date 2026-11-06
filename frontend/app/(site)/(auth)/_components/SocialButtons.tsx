@@ -1,8 +1,8 @@
 import { GithubLogoIcon, GoogleLogoIcon } from "@phosphor-icons/react/ssr";
 import type { ComponentType } from "react";
 import { Button } from "@/components/ui/Button";
-import { socialLogin } from "../../../../features/auth/actions";
-import { SOCIAL_PROVIDERS } from "../../../../features/auth/types";
+import { socialLogin } from "@/features/auth/actions";
+import { SOCIAL_PROVIDERS } from "@/features/auth/types";
 
 /*
  * 소셜 로그인 버튼 목업. 제공자 목록(SOCIAL_PROVIDERS)대로 버튼이 생긴다.

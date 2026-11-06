@@ -6,12 +6,13 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { cn } from "@/lib/cn";
 import { formatCredits, formatDate, formatDday } from "@/lib/format";
-import type { PublicRecruitmentView } from "../../../../../features/project/service";
-import { DEFAULT_PROJECT_IMAGE_URL, SELECTION_MODE_LABEL } from "../../../../../features/project/types";
-import { ProjectDescription } from "../../../../../features/project/components/ProjectDescription";
-import { RecruitmentGallery, type GalleryImage } from "../../../../../features/project/components/RecruitmentGallery";
-import { RecruitmentStatusBadge } from "../../../../../features/project/components/StatusBadge";
-import { TestItemImages } from "../../../../../features/project/components/TestItemImages";
+import type { PublicRecruitmentView } from "@/features/recruitment/types";
+import { DEFAULT_PROJECT_IMAGE_URL } from "@/features/project/types";
+import { SELECTION_MODE_LABEL } from "@/features/recruitment/types";
+import { ProjectDescription } from "@/features/project/components/ProjectDescription";
+import { RecruitmentGallery, type GalleryImage } from "@/features/recruitment/components/RecruitmentGallery";
+import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge";
+import { TestItemImages } from "@/features/recruitment/components/TestItemImages";
 
 /** 지원할 수 없을 때의 안내. 모집 중이면 지원 버튼을 보여 준다 */
 const CLOSED_MESSAGE = {

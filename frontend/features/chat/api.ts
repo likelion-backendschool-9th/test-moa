@@ -4,8 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getDemoDataMode } from "@/demo/mode";
 import { getSession, type Role } from "@/features/session/session";
-import { buildChatThreads, chatMemberNickname, type ChatThreadSeed } from "./mock";
-import { CHATS_PATH, type ChatQuery } from "./query";
+import { buildChatThreads, chatMemberNickname, type ChatThreadSeed } from "@/features/chat/mock";
+import { CHATS_PATH, type ChatQuery } from "@/features/chat/query";
 import {
   CHAT_MESSAGE_MAX,
   CHAT_ROOM_NAME_MAX,
@@ -13,7 +13,7 @@ import {
   type ChatMessage,
   type ChatRoom,
   type ChatRoomData,
-} from "./types";
+} from "@/features/chat/types";
 
 /*
  * 채팅 데이터 접근. 지금은 목업을 돌려준다.

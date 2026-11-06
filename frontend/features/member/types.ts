@@ -1,3 +1,6 @@
+import type { CreditBalance, CreditEntry } from "@/features/credit/types";
+import type { Subscription } from "@/features/subscription/types";
+
 /** 회원 기본 정보. 개발자와 테스터는 한 계정이다 */
 export type Profile = {
   name: string;
@@ -5,20 +8,13 @@ export type Profile = {
   email: string;
 };
 
-import type { CreditBalance,CreditEntry } from "@/features/credit/types";
-
-import type { Subscription } from "@/features/subscription/types";
-
-
 /** 지금 할 일은 테스트 참여와 내 프로젝트에서만 나온다 */
 export type TodoCategory = "participation" | "project";
-
 
 export const TODO_CATEGORY_LABEL: Record<TodoCategory, string> = {
   participation: "테스트 참여",
   project: "내 프로젝트",
 };
-
 
 /** 지금 할 일 한 줄 */
 export type Todo = {
@@ -32,17 +28,14 @@ export type Todo = {
   dueAt?: string;
 };
 
+export type ParticipationCounts = { applied: number; ongoing: number; completed: number; };
 
-export type ParticipationCounts = { applied: number; ongoing: number; completed: number };
-
-export type ProjectCounts = { projects: number; recruiting: number; newFeedback: number };
-
+export type ProjectCounts = { projects: number; recruiting: number; newFeedback: number; };
 
 export type Activity = {
   participation: ParticipationCounts;
   project: ProjectCounts;
 };
-
 
 export type MyPageSummary = {
   profile: Profile;

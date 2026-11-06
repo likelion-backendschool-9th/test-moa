@@ -1,7 +1,11 @@
-import type { FeedbackEntry,FeedbackTestItem,Participation,ParticipationStatus } from "@/features/participation/types";
+import type {
+  FeedbackEntry,
+  FeedbackTestItem,
+  Participation,
+  ParticipationStatus,
+} from "@/features/participation/types";
 import { cookies } from "next/headers";
 import "server-only";
-
 
 /*
  * 시연용 샘플 데이터. 테스터 "한서윤"의 참여 11건이며 실제 사용자와 관계없다.
@@ -24,9 +28,7 @@ type Seed = {
   feedbacks?: Array<[number, string]>;
 };
 
-
 const DAY = 24;
-
 
 const SEEDS: Seed[] = [
   { key: "p-booklog", recruitmentSlug: "booklog", status: "selectionPending", appliedHoursAgo: 1 * DAY },
@@ -139,9 +141,7 @@ const SEEDS: Seed[] = [
   { key: "p-cafe-map", recruitmentSlug: "cafe-map", status: "incomplete", appliedHoursAgo: 33 * DAY },
 ];
 
-
 const HOUR_MS = 60 * 60 * 1000;
-
 
 function toParticipation(seed: Seed, now: Date): Participation {
   const testItems: FeedbackTestItem[] = (seed.testItems ?? []).map(([title, description, required], index) => ({
@@ -170,11 +170,9 @@ function toParticipation(seed: Seed, now: Date): Participation {
   };
 }
 
-
 export function buildParticipations(now: Date) {
   return SEEDS.map((seed) => toParticipation(seed, now));
 }
-
 
 /*
  * 시연용 피드백 제출 기록. 실제 저장소가 없어서 참여마다 쿠키 demo-feedback-<참여 키>에 남긴다.
@@ -189,14 +187,11 @@ const MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 /* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
 const COOKIE_MAX_BYTES = 4000;
 
-
-export type DemoFeedback = { submittedAt: string; entries: FeedbackEntry[] };
-
+export type DemoFeedback = { submittedAt: string; entries: FeedbackEntry[]; };
 
 const encode = (text: string) => Buffer.from(text, "utf8").toString("base64url");
 
 const decodeText = (text: string) => Buffer.from(text, "base64url").toString("utf8");
-
 
 function isEntry(value: unknown): value is FeedbackEntry {
   const entry = value as FeedbackEntry | null;
@@ -207,7 +202,6 @@ function isEntry(value: unknown): value is FeedbackEntry {
     entry.imageNames.every((name) => typeof name === "string")
   );
 }
-
 
 function decode(value: string): DemoFeedback | null {
   const [millis, encoded] = value.split(".");
@@ -223,7 +217,6 @@ function decode(value: string): DemoFeedback | null {
   }
 }
 
-
 /** 이 브라우저에서 제출한 피드백, { 참여 키: 기록 }. 깨진 값은 버린다 */
 export async function readDemoFeedback(): Promise<Record<string, DemoFeedback>> {
   const entries = (await cookies())
@@ -233,7 +226,6 @@ export async function readDemoFeedback(): Promise<Record<string, DemoFeedback>> 
     .filter((entry): entry is readonly [string, DemoFeedback] => entry[1] !== null);
   return Object.fromEntries(entries);
 }
-
 
 /** Server Action에서만 부른다. 쿠키 한도를 넘으면 저장하지 않고 false를 돌려준다 */
 export async function saveDemoFeedback(participationKey: string, entries: FeedbackEntry[]): Promise<boolean> {

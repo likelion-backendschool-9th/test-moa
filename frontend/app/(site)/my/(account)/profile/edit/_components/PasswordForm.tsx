@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField, FormMessage } from "@/components/ui/FormField";
 import type { FormState } from "@/lib/form";
 import { PASSWORD_HINT } from "@/features/member/validation";
-import { changePassword, type PasswordField } from "../../../../../../../features/member/actions";
+import { changePassword, type PasswordField } from "@/features/member/actions";
 import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "../../../_components/card-styles";
 
 

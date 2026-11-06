@@ -1,5 +1,5 @@
 import { cn } from "@/lib/cn";
-import type { ChatMessage } from "../../../../../../features/chat/types";
+import type { ChatMessage } from "@/features/chat/types";
 
 /*
  * 말풍선 모양. 대화 내용(ChatMessageList)과 보내는 중 말풍선(ChatComposer)이 같이 쓴다.

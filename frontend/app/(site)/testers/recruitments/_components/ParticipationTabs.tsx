@@ -2,7 +2,12 @@ import Link from "next/link";
 import { participationsPath } from "@/features/participation/paths";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
-import { PARTICIPATION_TABS, TAB_LABEL, type ParticipationCounts, type ParticipationTab } from "../../../../../features/participation/types";
+import {
+  PARTICIPATION_TABS,
+  TAB_LABEL,
+  type ParticipationCounts,
+  type ParticipationTab,
+} from "@/features/participation/types";
 
 type ParticipationTabsProps = {
   /** 현재 탭. URL을 읽기 전에는 없다 */

@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate, formatElapsed, formatWon } from "@/lib/format";
-import { isHolderMismatch, maskAccount, rejectReasonText, WITHDRAWAL_DECISION_LABEL, type WithdrawalRequest } from "@/features/credit/types";
+import {
+  isHolderMismatch,
+  maskAccount,
+  rejectReasonText,
+  WITHDRAWAL_DECISION_LABEL,
+  type WithdrawalRequest,
+} from "@/features/credit/types";
 import { CopyAccountButton } from "./CopyAccountButton";
 
 const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";

@@ -1,41 +1,38 @@
+import type { ProjectImage, Project as ProjectRecord } from "@/features/project/types";
+import type {
+  AiSummary,
+  Application,
+  ApplicationStatus,
+  Feedback,
+  FeedbackStatus,
+  ProjectWithRecruitments as Project,
+  Recruitment,
+  RecruitmentCancellation,
+  RecruitmentDetail,
+} from "@/features/recruitment/types";
 import "server-only";
+
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
  * 날짜는 기준 시각에서 상대적으로 만들어 언제 시연해도 같은 상태로 보인다.
  * 북로그와 포트폴리오 빌더 모집 건은 홈의 샘플(recruitment/mock.ts)을 그대로 받아 쓴다. 둘 다 아직 모집 마감 전이라 피드백이 없다.
  * 날짜 순서는 항상 모집 생성 → 지원 → 모집 마감 → 피드백 제출이다. 피드백은 테스트 중인 북로그 1차 모집에만 있다.
  */
-import type {
-AiSummary,
-Application,
-ApplicationStatus,
-Feedback,
-FeedbackStatus,
-Project,
-ProjectImage,
-RecruitmentCancellation,
-RecruitmentDetail,
-} from "@/features/project/types";
-import type { Recruitment } from "@/features/recruitment/types";
-
 
 const HOUR_MS = 60 * 60 * 1000;
 
 const DAY_MS = 24 * HOUR_MS;
-
 
 const NICKNAMES = [
   "김하늘", "이도윤", "박서아", "최지호", "윤슬", "강민준", "조하은", "윤시우", "장유나", "임건우",
   "한지아", "오태윤", "서다인", "신우진", "권나연", "황준서", "안소율", "송현우", "전채원", "홍지안", "문서진", "배하린",
 ];
 
-
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
 
 const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
 
 const inDays = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
-
 
 /**
  * 상태별 인원 수로 지원 목록을 만든다. 먼저 지원한 사람부터 확정, 거절, 참여 취소, 대기 순이다.
@@ -59,7 +56,6 @@ function buildApplications(recruitment: Recruitment, now: Date, counts: Record<A
   }));
 }
 
-
 type FeedbackSeed = {
   nickname: string;
   content: string;
@@ -70,7 +66,6 @@ type FeedbackSeed = {
   images?: ProjectImage[];
   recommended?: boolean;
 };
-
 
 function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedback[] {
   return seeds.map((seed, index) => ({
@@ -85,7 +80,6 @@ function buildFeedbacks(slug: string, now: Date, seeds: FeedbackSeed[]): Feedbac
   }));
 }
 
-
 export type ProjectSeedData = {
   projects: Project[];
   /** recruitmentKey별 지원 목록 */
@@ -99,7 +93,6 @@ export type ProjectSeedData = {
   /** recruitmentKey별 모집 취소 기록 */
   cancellations: Record<string, RecruitmentCancellation>;
 };
-
 
 /**
  * 개발자(박도현)의 프로젝트 3개를 만든다.
@@ -226,14 +219,18 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
         { url: "/sample/feedback/booklog-search.svg", name: "2차 베타 책 검색" },
       ],
       testItems: [
-        { id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 제목이나 저자 이름으로 검색한 뒤 결과 목록에서 같은 책을 골라 내 서재에 등록해 주세요. 판본이 여러 개 나오면 표지와 출판사를 비교해 실제로 가진 책을 고르면 됩니다. 검색 결과가 없다면 띄어쓰기를 바꾸거나 부제를 빼고 다시 찾아보고, 그래도 없으면 어떤 검색어를 썼는지 메모해 주세요. 등록한 뒤에는 내 서재 첫 화면에서 책이 바로 보이는지, 표지와 제목이 맞게 나오는지도 함께 확인해 주세요. 원하는 책을 찾기까지 몇 번 검색했는지도 알려 주세요.", required: true, images: [
+        {
+          id: "booklog-t1", title: "책 검색해서 등록하기", description: "읽고 있는 책을 제목이나 저자 이름으로 검색한 뒤 결과 목록에서 같은 책을 골라 내 서재에 등록해 주세요. 판본이 여러 개 나오면 표지와 출판사를 비교해 실제로 가진 책을 고르면 됩니다. 검색 결과가 없다면 띄어쓰기를 바꾸거나 부제를 빼고 다시 찾아보고, 그래도 없으면 어떤 검색어를 썼는지 메모해 주세요. 등록한 뒤에는 내 서재 첫 화면에서 책이 바로 보이는지, 표지와 제목이 맞게 나오는지도 함께 확인해 주세요. 원하는 책을 찾기까지 몇 번 검색했는지도 알려 주세요.", required: true, images: [
             { url: "/sample/feedback/booklog-search.svg", name: "책 검색 화면" },
             { url: "/sample/projects/booklog-library.svg", name: "내 서재 화면" },
-          ] },
-        { id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장한 뒤 모아 보기에서 다시 찾아 주세요. 문장을 고르기 어려웠다면 어느 단계에서 막혔는지 적어 주세요. 참고 화면: https://help.example.com/underline/how-to-save-a-sentence-and-find-it-again-in-your-collection", required: true, images: [
+          ]
+        },
+        {
+          id: "booklog-t2", title: "밑줄 문장 남기기", description: "마음에 드는 문장을 하나 골라 밑줄로 저장한 뒤 모아 보기에서 다시 찾아 주세요. 문장을 고르기 어려웠다면 어느 단계에서 막혔는지 적어 주세요. 참고 화면: https://help.example.com/underline/how-to-save-a-sentence-and-find-it-again-in-your-collection", required: true, images: [
             { url: "/sample/projects/booklog-underline.svg", name: "밑줄 긋기 화면" },
             { url: "/sample/projects/booklog-collection.svg", name: "밑줄 모아 보기 화면" },
-          ] },
+          ]
+        },
         { id: "booklog-t3", title: "독서 기록 쓰기", description: "등록한 책에 짧은 감상을 남겨 주세요.", required: false, images: [] },
       ],
     },
@@ -273,38 +270,10 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     "folio-builder-old": { reason: "서비스 화면을 크게 바꿔서 다시 모집할게요", cancelledAt: daysAgo(now, 10) },
   };
 
-  const projects: Project[] = [
-    {
-      key: "booklog",
-      name: booklog.projectName,
-      description:
-        "읽은 책을 검색해 등록하고, 마음에 드는 문장에 밑줄을 그어 모아 두는 서비스예요.\n이번에는 책 등록부터 기록 작성까지 처음 쓰는 흐름이 자연스러운지 보고 싶어요.",
-      image: { url: "/sample/projects/booklog.svg", name: "내 서재와 밑줄 문장 화면" },
-      createdAt: daysAgo(now, 30),
-      recruitments: [booklog, booklogFirst],
-    },
-    {
-      key: "folio-builder",
-      name: folio.projectName,
-      description: "템플릿을 고르고 프로젝트를 추가하면 포트폴리오 페이지를 만들어 주는 서비스예요.\n이번에는 템플릿을 고르는 화면이 이해하기 쉬운지 보고 싶어요.",
-      image: { url: "/sample/projects/folio-builder.svg", name: "템플릿 고르기 화면" },
-      createdAt: daysAgo(now, 20),
-      recruitments: [folioNext, folio, folioOld],
-    },
-    {
-      /* 모집 건, 상세 설명, 대표 이미지가 없는 프로젝트. 빈 상태와 기본 이미지를 보여 준다 */
-      key: "todo-memo",
-      name: "할 일 메모",
-      description: "",
-      image: null,
-      createdAt: daysAgo(now, 1),
-      recruitments: [],
-    },
-  ];
+  const projects: Project[] = buildProjectRecords(now).map(project => ({ ...project, recruitments: ({ "booklog": [booklog, booklogFirst], "folio-builder": [folioNext, folio, folioOld], "todo-memo": [] } as Record<string, Recruitment[]>)[project.key] }));
 
   return { projects, applications, feedbacks, aiSummaries, details, cancellations };
 }
-
 
 /**
  * 시연용 AI 후속 질문 3개. 실제로는 백엔드가 AI 분석 서버에서 받아 온다(POST /api/v1/developer/feedbacks/{id}/followup-questions).
@@ -318,4 +287,30 @@ export function buildFollowupQuestions(testItemTitle: string | null): string[] {
     "그 순간 화면에 어떤 문구나 버튼이 보였는지 말씀해 주실 수 있을까요?",
     "같은 상황에서 화면이 어떻게 달라지면 더 편하셨을지 편하게 들려주실 수 있을까요?",
   ];
+}
+
+/** 모집 데이터 없이 프로젝트 자체만 만드는 시연 원천. */
+export function buildProjectRecords(now: Date): ProjectRecord[] {
+  return [{
+key: "booklog",
+    name: "북로그",
+    description:
+      "읽은 책을 검색해 등록하고, 마음에 드는 문장에 밑줄을 그어 모아 두는 서비스예요.\n이번에는 책 등록부터 기록 작성까지 처음 쓰는 흐름이 자연스러운지 보고 싶어요.",
+    image: { url: "/sample/projects/booklog.svg", name: "내 서재와 밑줄 문장 화면" },
+    createdAt: daysAgo(now, 30)
+},
+  {
+key: "folio-builder",
+    name: "포트폴리오 빌더",
+    description: "템플릿을 고르고 프로젝트를 추가하면 포트폴리오 페이지를 만들어 주는 서비스예요.\n이번에는 템플릿을 고르는 화면이 이해하기 쉬운지 보고 싶어요.",
+    image: { url: "/sample/projects/folio-builder.svg", name: "템플릿 고르기 화면" },
+    createdAt: daysAgo(now, 20)
+},
+  {
+key: "todo-memo",
+    name: "할 일 메모",
+    description: "",
+    image: null,
+    createdAt: daysAgo(now, 1)
+}];
 }

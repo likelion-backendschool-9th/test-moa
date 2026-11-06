@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { CHATS_PATH } from "./query";
+import { CHATS_PATH } from "@/features/chat/query";
 
 /*
  * 마지막으로 본 채팅함 주소(검색·역할·정렬 포함). 채팅방의 "채팅함" 링크가 이 주소로 돌아가서, 채팅함에서 고른 조건이 풀리지 않게 한다.

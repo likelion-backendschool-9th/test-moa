@@ -4,8 +4,8 @@ import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FormField, FormMessage } from "@/components/ui/FormField";
 import type { FormState } from "@/lib/form";
-import { login } from "../../../../../features/auth/actions";
-import type { LoginField } from "../../../../../features/auth/types";
+import { login } from "@/features/auth/actions";
+import type { LoginField } from "@/features/auth/types";
 
 const initialState: FormState<LoginField> = { status: "idle" };
 

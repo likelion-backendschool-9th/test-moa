@@ -7,9 +7,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/format";
-import { decideApplicants } from "../../../../../../features/project/actions";
-import type { ApplicationView } from "../../../../../../features/project/service";
-import { APPLICATION_STATUS_LABEL, SUBMISSION_STATUS_LABEL, type Application, type ApplicationStatus, type SelectionMode } from "../../../../../../features/project/types";
+import { decideApplicants } from "@/features/recruitment/actions";
+import type { ApplicationView } from "@/features/recruitment/types";
+import {
+  APPLICATION_STATUS_LABEL,
+  SUBMISSION_STATUS_LABEL,
+  type Application,
+  type ApplicationStatus,
+  type SelectionMode,
+} from "@/features/recruitment/types";
 
 /*
  * 테스터 관리 탭. 선발형 모집은 지원자를 직접 확정·거절하고, 선착순 모집은 보기만 한다.

@@ -1,10 +1,8 @@
-import type { WithdrawalRequest } from "@/features/credit/types";
+import type { CreditBalance, CreditEntry, Withdrawal, WithdrawalRequest } from "@/features/credit/types";
 import { isRejectReason, isWithdrawalDecision, type WithdrawalReview } from "@/features/credit/types";
-import type { CreditBalance,CreditEntry,Withdrawal } from "@/features/credit/types";
 import type { Role } from "@/features/session/session";
 import { cookies } from "next/headers";
 import "server-only";
-
 
 /*
  * 시연용 샘플 데이터. 실제 사용자와 관계없다.
@@ -21,13 +19,11 @@ export type CreditData = {
   withdrawals: Withdrawal[];
 };
 
-
 const HOUR_MS = 60 * 60 * 1000;
 
 const DAY_MS = 24 * HOUR_MS;
 
 const SEOUL_OFFSET_MS = 9 * HOUR_MS;
-
 
 /** 기준 시각에서 days일 전 날의 서울 시간 time("15:12"). days는 1 이상이라 미래 시각이 되지 않는다 */
 const daysAgoAt = (now: Date, days: number, time: string) => {
@@ -37,13 +33,10 @@ const daysAgoAt = (now: Date, days: number, time: string) => {
   return new Date(utc).toISOString();
 };
 
-
 type EntrySeed = [id: string, label: string, amount: number, daysAgo: number, time: string];
-
 
 const toLedger = (now: Date, seeds: EntrySeed[]): CreditEntry[] =>
   seeds.map(([id, label, amount, days, time]) => ({ id, label, amount, occurredAt: daysAgoAt(now, days, time) }));
-
 
 export function buildCreditData(role: Exclude<Role, "guest">, now: Date): CreditData {
   switch (role) {
@@ -97,7 +90,6 @@ export function buildCreditData(role: Exclude<Role, "guest">, now: Date): Credit
   }
 }
 
-
 /*
  * 시연용 출금 신청 기록. 프로토타입에서 신청이 화면에 남도록 브라우저 쿠키에만 저장한다.
  * 쿠키라서 다른 브라우저·다른 시연 회원과 섞이지 않고, 병렬 E2E도 서로의 신청을 보지 않는다.
@@ -106,19 +98,15 @@ export function buildCreditData(role: Exclude<Role, "guest">, now: Date): Credit
 
 type MemberRole = Exclude<Role, "guest">;
 
-
 const COOKIE_PREFIX = "demo-withdrawals-";
 
 const MAX_REQUESTS = 10;
 
 const WITHDRAWAL_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
-
-type StoredRequest = { id: string; amount: number; bank: string; last4: string; requestedAt: string };
-
+type StoredRequest = { id: string; amount: number; bank: string; last4: string; requestedAt: string; };
 
 const cookieName = (role: MemberRole) => `${COOKIE_PREFIX}${role}`;
-
 
 function isStoredRequest(value: unknown): value is StoredRequest {
   if (typeof value !== "object" || value === null) return false;
@@ -132,7 +120,6 @@ function isStoredRequest(value: unknown): value is StoredRequest {
   );
 }
 
-
 /** 쿠키 값이 깨졌거나 모양이 다르면 기록이 없는 것으로 본다 */
 async function readStored(role: MemberRole): Promise<StoredRequest[]> {
   const raw = (await cookies()).get(cookieName(role))?.value;
@@ -145,7 +132,6 @@ async function readStored(role: MemberRole): Promise<StoredRequest[]> {
   }
 }
 
-
 /** 이 브라우저에서 신청한 출금, 최신순. 운영자 처리가 없어 모두 처리 중이다 */
 export async function getDemoWithdrawals(role: MemberRole): Promise<Withdrawal[]> {
   return (await readStored(role)).map(({ last4, ...item }) => ({
@@ -155,9 +141,8 @@ export async function getDemoWithdrawals(role: MemberRole): Promise<Withdrawal[]
   }));
 }
 
-
 /** 신청을 맨 앞에 더한다. 계좌번호는 끝 4자리만 남기고, 오래된 기록부터 지워 최대 10건을 둔다 */
-export async function addDemoWithdrawal(role: MemberRole, request: { amount: number; bank: string; account: string }) {
+export async function addDemoWithdrawal(role: MemberRole, request: { amount: number; bank: string; account: string; }) {
   const now = new Date();
   const next: StoredRequest = {
     id: `demo-${now.getTime()}`,
@@ -176,7 +161,6 @@ export async function addDemoWithdrawal(role: MemberRole, request: { amount: num
 }
 
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
-
 
 /** 처리 대기 3건과 이미 처리한 2건. 김민준은 예금주가 회원 이름과 다르다 */
 export function buildWithdrawals(now: Date): WithdrawalRequest[] {
@@ -236,21 +220,17 @@ export function buildWithdrawals(now: Date): WithdrawalRequest[] {
   ];
 }
 
-
 /** 출금 요청 키 목록. 신고 키와 같은 이유로 목업에서 뽑아 둔다 */
 export const WITHDRAWAL_KEYS = buildWithdrawals(new Date(0)).map((request) => request.id);
 
 export const DEMO_ADMIN_WITHDRAWALS_COOKIE = "demo-admin-withdrawals";
-
 
 const REVIEW_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 /* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
 const COOKIE_MAX_BYTES = 4000;
 
-
 type Validator<T> = (value: unknown) => value is T;
-
 
 function isWithdrawalReview(value: unknown): value is WithdrawalReview {
   if (typeof value !== "object" || value === null) return false;
@@ -258,7 +238,6 @@ function isWithdrawalReview(value: unknown): value is WithdrawalReview {
   if (!isWithdrawalDecision(review.decision) || typeof review.memo !== "string" || typeof review.processedAt !== "string") return false;
   return review.decision === "paid" ? review.reason === undefined : isRejectReason(review.reason);
 }
-
 
 /** 깨진 값은 버리고 올바른 기록만 돌려준다 */
 async function readStore<T>(name: string, isValid: Validator<T>): Promise<Record<string, T>> {
@@ -272,7 +251,6 @@ async function readStore<T>(name: string, isValid: Validator<T>): Promise<Record
     return {};
   }
 }
-
 
 /**
  * Server Action에서만 부른다. 쿠키는 렌더링 중에 쓸 수 없다.
@@ -290,9 +268,7 @@ async function saveToStore<T>(name: string, isValid: Validator<T>, key: string, 
   return true;
 }
 
-
 export const readWithdrawalReviews = () => readStore(DEMO_ADMIN_WITHDRAWALS_COOKIE, isWithdrawalReview);
-
 
 export const saveWithdrawalReview = (withdrawalKey: string, review: WithdrawalReview) =>
   saveToStore(DEMO_ADMIN_WITHDRAWALS_COOKIE, isWithdrawalReview, withdrawalKey, review);

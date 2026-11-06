@@ -2,9 +2,9 @@
 
 import { type FormEvent, startTransition, useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { submitFeedback, type FeedbackFormState } from "../../../../../../features/participation/actions";
-import { OTHER_FEEDBACK_KEY } from "../../../../../../features/participation/feedback-fields";
-import type { FeedbackTestItem } from "../../../../../../features/participation/types";
+import { submitFeedback, type FeedbackFormState } from "@/features/participation/actions";
+import { OTHER_FEEDBACK_KEY } from "@/features/participation/feedback-fields";
+import type { FeedbackTestItem } from "@/features/participation/types";
 import { FeedbackField } from "./FeedbackField";
 
 const initialState: FeedbackFormState = { status: "idle" };

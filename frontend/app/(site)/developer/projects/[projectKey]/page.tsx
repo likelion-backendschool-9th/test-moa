@@ -5,7 +5,7 @@ import { PROJECTS_PATH, projectPath } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/app/(site)/developer/_components/ProjectDetail";
 import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";
-import { getMyProject } from "@/features/project/service";
+import { getMyProject } from "@/features/recruitment/api";
 
 /* 프로젝트 상세 (/developer/projects/:projectKey) */
 

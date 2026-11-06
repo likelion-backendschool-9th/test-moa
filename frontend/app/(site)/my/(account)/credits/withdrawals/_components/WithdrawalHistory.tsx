@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import { cardClass, cardTitleClass } from "@/app/(site)/my/(account)/_components/card-styles";
 import { formatClock, formatWon } from "@/lib/format";
-import { WITHDRAWAL_STATUS_LABEL, type Withdrawal, type WithdrawalStatus } from "../../../../../../../features/credit/types";
+import { WITHDRAWAL_STATUS_LABEL, type Withdrawal, type WithdrawalStatus } from "@/features/credit/types";
 import { DayGroups } from "../../../_components/DayGroups";
 import { FlowIcon } from "../../../_components/FlowIcon";
 

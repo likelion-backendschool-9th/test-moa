@@ -1,8 +1,8 @@
 import Link from "next/link";
-import type { ChatRoom } from "../../../../../../features/chat/types";
-import { ChatCardMenu } from "../../../../../../features/chat/components/ChatCardMenu";
-import { ChatRoleBadge } from "../../../../../../features/chat/components/ChatRoleBadge";
-import { ChatThumb } from "../../../../../../features/chat/components/ChatThumb";
+import type { ChatRoom } from "@/features/chat/types";
+import { ChatCardMenu } from "@/features/chat/components/ChatCardMenu";
+import { ChatRoleBadge } from "@/features/chat/components/ChatRoleBadge";
+import { ChatThumb } from "@/features/chat/components/ChatThumb";
 
 /**
  * 채팅방 머리. 왼쪽 작은 프로젝트 이미지(4:3), 대화방 이름(h1), 그 아래 [역할 배지 + 대화 상대 닉네임 · 모집 글 링크],

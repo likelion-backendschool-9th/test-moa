@@ -1,8 +1,8 @@
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { CHATS_PATH, toChatsHref, type ChatQuery } from "../../../../../features/chat/query";
-import { CHAT_ROLE_LABEL, type ChatInboxData, type ChatRole } from "../../../../../features/chat/types";
+import { CHATS_PATH, toChatsHref, type ChatQuery } from "@/features/chat/query";
+import { CHAT_ROLE_LABEL, type ChatInboxData, type ChatRole } from "@/features/chat/types";
 import { ChatCard } from "./ChatCard";
 import { ChatFilters } from "./ChatFilters";
 

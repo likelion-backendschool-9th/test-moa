@@ -1,10 +1,26 @@
 "use server";
 
-import { requireMember } from "@/features/session/guard";
+import {
+  getCreditBalance,
+  getAdminWithdrawal as getWithdrawal,
+  isWithdrawalKey,
+  saveAdminWithdrawalReview,
+  saveWithdrawalRequest,
+} from "@/features/credit/api";
+import { withdrawalsHref } from "@/features/credit/paths";
+import {
+  BANKS,
+  cashableCredits,
+  isRejectReason,
+  isWithdrawalDecision,
+  REVIEW_MEMO_MAX_LENGTH,
+  type RequestFormState,
+  type WithdrawalReview,
+} from "@/features/credit/types";
+import { assertAdmin, requireMember } from "@/features/session/guard";
 import { formatWon } from "@/lib/format";
 import { revalidatePath } from "next/cache";
-import { getCreditBalance,saveWithdrawalRequest } from "./api";
-import { BANKS,cashableCredits } from "./types";
+import { redirect } from "next/navigation";
 
 /*
  * 출금 신청. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo-requests.ts)에 남긴다.
@@ -16,9 +32,9 @@ const PATH = "/my/credits/withdrawals";
 export type WithdrawalField = "amount" | "bank" | "account" | "holder";
 
 export type WithdrawalFormState =
-  | { status: "idle" }
-  | { status: "error"; errors: Partial<Record<WithdrawalField | "form", string>> }
-  | { status: "success"; message: string; submittedAt: number };
+  | { status: "idle"; }
+  | { status: "error"; errors: Partial<Record<WithdrawalField | "form", string>>; }
+  | { status: "success"; message: string; submittedAt: number; };
 
 const ACCOUNT_PATTERN = /^\d{10,14}$/;
 
@@ -45,7 +61,7 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
   if (!holder) errors.holder = "예금주를 입력해 주세요";
 
   if (Object.keys(errors).length > 0) return { status: "error", errors };
-  await saveWithdrawalRequest( { amount, bank, account });
+  await saveWithdrawalRequest({ amount, bank, account });
   /* 출금 내역, 크레딧 잔액, 마이페이지 대시보드가 새 잠금 금액을 보여 주게 한다 */
   revalidatePath("/my", "layout");
   return {
@@ -54,13 +70,6 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
     submittedAt: Date.now(),
   };
 }
-
-import { getAdminWithdrawal as getWithdrawal,isWithdrawalKey,saveAdminWithdrawalReview } from "@/features/credit/api";
-import { withdrawalsHref } from "@/features/credit/paths";
-import { isRejectReason,isWithdrawalDecision,REVIEW_MEMO_MAX_LENGTH,type RequestFormState,type WithdrawalReview } from "@/features/credit/types";
-import { assertAdmin } from "@/features/session/guard";
-import { redirect } from "next/navigation";
-
 
 /**
  * 출금 처리. 신고 처리와 같은 이유로 권한을 다시 확인한다.

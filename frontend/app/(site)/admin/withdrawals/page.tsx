@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
-import { getAdminWithdrawal as getWithdrawal, getAdminWithdrawals as getWithdrawals, isWithdrawalKey } from "@/features/credit/api";
+import {
+  getAdminWithdrawal as getWithdrawal,
+  getAdminWithdrawals as getWithdrawals,
+  isWithdrawalKey,
+} from "@/features/credit/api";
 import { requireAdmin } from "@/features/session/guard";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { cardClass, cardTitleClass } from "@/app/(site)/my/(account)/_components/card-styles";
-import { LEDGER_TYPE_LABEL, LEDGER_TYPES, type CreditEntry, type LedgerType } from "../../../../../../features/credit/types";
+import { LEDGER_TYPE_LABEL, LEDGER_TYPES, type CreditEntry, type LedgerType } from "@/features/credit/types";
 import { DayGroups } from "../../_components/DayGroups";
 import { LedgerRow } from "../../_components/LedgerRow";
 

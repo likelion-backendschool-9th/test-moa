@@ -3,8 +3,8 @@
 import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassPlusIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/Button";
-import type { TestItem } from "../types";
-import { NAV_BUTTON_CLASS } from "./RecruitmentGallery";
+import type { TestItem } from "@/features/recruitment/types";
+import { NAV_BUTTON_CLASS } from "@/features/recruitment/components/RecruitmentGallery";
 
 /** 테스트 항목 설명을 돕는 이미지. 정한 순서대로 크게 나열하고, 누르면 확대해서 보여 준다 */
 export function TestItemImages({ item }: { item: TestItem }) {

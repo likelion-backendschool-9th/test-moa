@@ -4,8 +4,8 @@ import { type FormEvent, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FormField, FormMessage } from "@/components/ui/FormField";
 import type { FormState } from "@/lib/form";
-import { socialSignup } from "../../../../../../features/auth/actions";
-import type { SocialSignupField } from "../../../../../../features/auth/types";
+import { socialSignup } from "@/features/auth/actions";
+import type { SocialSignupField } from "@/features/auth/types";
 import { Agreements } from "../../_components/Agreements";
 
 const initialState: FormState<SocialSignupField> = { status: "idle" };

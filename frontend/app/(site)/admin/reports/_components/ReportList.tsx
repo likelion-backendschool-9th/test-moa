@@ -5,7 +5,13 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { formatElapsed } from "@/lib/format";
 import { LinkTabs } from "../../_components/LinkTabs";
-import { isOverdue, REPORT_DECISION_LABEL, REPORT_TARGET_LABEL, type Report, type ReportDecision } from "@/features/report/types";
+import {
+  isOverdue,
+  REPORT_DECISION_LABEL,
+  REPORT_TARGET_LABEL,
+  type Report,
+  type ReportDecision,
+} from "@/features/report/types";
 import { reportDetailHref, reportsHref, type ReportTargetFilter, type ListTab } from "@/features/report/paths";
 
 const TABS: { tab: ListTab; label: string }[] = [

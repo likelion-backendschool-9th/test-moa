@@ -4,7 +4,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { formatCredits, formatDate, formatWon } from "@/lib/format";
-import { payForSubscription, type CheckoutFormState } from "../../../../../../../features/subscription/actions";
+import { payForSubscription, type CheckoutFormState } from "@/features/subscription/actions";
 import type { SubscriptionPlan } from "@/features/subscription/types";
 import { cardClass, cardTitleClass } from "../../../_components/card-styles";
 

@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { FormField, FormMessage } from "@/components/ui/FormField";
 import type { FormState } from "@/lib/form";
 import { NICKNAME_HINT, PASSWORD_HINT } from "@/features/member/validation";
-import { signup } from "../../../../../features/auth/actions";
+import { signup } from "@/features/auth/actions";
 import { Agreements } from "./Agreements";
-import type { SignupField } from "../../../../../features/auth/types";
+import type { SignupField } from "@/features/auth/types";
 
 const initialState: FormState<SignupField> = { status: "idle" };
 

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import { formatClock } from "@/lib/format";
-import { groupChatMessages } from "../../../../../../features/chat/thread";
-import type { ChatMessage, ChatRoom } from "../../../../../../features/chat/types";
+import { groupChatMessages } from "@/features/chat/thread";
+import type { ChatMessage, ChatRoom } from "@/features/chat/types";
 import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from "./bubble";
 
 /**

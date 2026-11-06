@@ -1,5 +1,5 @@
 import { formatChatDay, formatClock, seoulDayKey } from "@/lib/format";
-import type { ChatMessage } from "./types";
+import type { ChatMessage } from "@/features/chat/types";
 
 /** 말풍선 하나와 그 자리에서 정해지는 모양 */
 export type ChatThreadItem = {

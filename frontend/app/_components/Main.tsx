@@ -1,5 +1,5 @@
-import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
+import type { ComponentProps } from "react";
 
 /** 본문 랜드마크와 본문 건너뛰기의 도착점. 서버 전용 코드를 import하지 않는다. */
 export function Main({ className, ...props }: ComponentProps<"main">) {

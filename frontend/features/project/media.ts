@@ -1,12 +1,13 @@
+import { PROJECT_MEDIA_LIMIT } from "@/features/project/types";
+
 /*
  * 프로젝트 이미지 검사. 화면(파일을 고를 때)과 서버(제출할 때)가 같은 규칙을 쓴다.
  * 시연용이라 파일 자체는 서버로 보내지 않고 이름·크기·형식만 보낸다.
  * ponytail: 실제 업로드는 백엔드 저장소(예: 미리 서명한 업로드 주소)가 정해지면 붙인다.
  */
-import { PROJECT_MEDIA_LIMIT } from "./types";
 
 /** 고른 파일의 이름·크기·형식 */
-export type FileMeta = { name: string; size: number; type: string };
+export type FileMeta = { name: string; size: number; type: string; };
 
 const MB = 1024 * 1024;
 

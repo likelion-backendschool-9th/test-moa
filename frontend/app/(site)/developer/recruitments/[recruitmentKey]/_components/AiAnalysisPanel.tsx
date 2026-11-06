@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate } from "@/lib/format";
-import type { AiAnalysis } from "../../../../../../features/project/service";
-import type { AiFinding } from "../../../../../../features/project/types";
+import type { AiAnalysis } from "@/features/recruitment/types";
+import type { AiFinding } from "@/features/recruitment/types";
 
 /*
  * 분석 탭 아래의 AI 분석 영역. 지금은 AI가 없어 시연용 샘플을 보여 준다.

@@ -4,9 +4,9 @@ import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
-import { rememberInboxHref } from "../../../../../features/chat/inbox-href";
-import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "../../../../../features/chat/query";
-import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from "../../../../../features/chat/types";
+import { rememberInboxHref } from "@/features/chat/inbox-href";
+import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "@/features/chat/query";
+import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from "@/features/chat/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
 

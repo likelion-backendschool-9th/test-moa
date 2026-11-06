@@ -3,7 +3,7 @@ import Image from "next/image";
 import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
-import { SOFTWARE_TYPE_LABEL, type Recruitment } from "../../../../features/recruitment/types";
+import { SOFTWARE_TYPE_LABEL, type Recruitment } from "@/features/recruitment/types";
 
 /**
  * 모집 카드. 프로젝트명을 본문 제목으로 표시하고, 보상은 추가 보상 배지만 보여 준다.

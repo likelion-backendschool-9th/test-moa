@@ -1,4 +1,4 @@
-import { CHAT_ROLES, type ChatRole } from "./types";
+import { CHAT_ROLES, type ChatRole } from "@/features/chat/types";
 
 /** 채팅함의 검색 조건. URL 검색 파라미터와 1:1로 대응한다 */
 export type ChatSort = "latest" | "oldest";

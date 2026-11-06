@@ -1,7 +1,12 @@
 import { ListBulletsIcon, SquaresFourIcon } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/cn";
-import { setParticipationView } from "../../../../../features/participation/actions";
-import { PARTICIPATION_VIEWS, VIEW_LABEL, type ParticipationTab, type ParticipationView } from "../../../../../features/participation/types";
+import { setParticipationView } from "@/features/participation/actions";
+import {
+  PARTICIPATION_VIEWS,
+  VIEW_LABEL,
+  type ParticipationTab,
+  type ParticipationView,
+} from "@/features/participation/types";
 
 const VIEW_ICON = { list: ListBulletsIcon, grid: SquaresFourIcon };
 

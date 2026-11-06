@@ -8,8 +8,14 @@ import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/features/session/session";
 import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/features/member/validation";
-import { callbackUrl, clearSignup, readSignup, saveState } from "./oauth";
-import { type LoginField, type SignupField, SOCIAL_PROVIDERS, type SocialSignupField, withNext } from "./types";
+import { callbackUrl, clearSignup, readSignup, saveState } from "@/features/auth/oauth";
+import {
+  type LoginField,
+  type SignupField,
+  SOCIAL_PROVIDERS,
+  type SocialSignupField,
+  withNext,
+} from "@/features/auth/types";
 
 /*
  * 로그인·로그아웃·회원가입. 목업이라 시연 회원 역할로 demo-role 쿠키를 바꾸는 것이 곧 로그인이다.

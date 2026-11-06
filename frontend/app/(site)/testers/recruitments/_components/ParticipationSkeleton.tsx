@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
-import type { ParticipationView } from "../../../../../features/participation/types";
+import type { ParticipationView } from "@/features/participation/types";
 import { VIEW_LIST_CLASS } from "./view-styles";
 
 /** 보기 방식에 맞춘 스켈레톤. 실제 목록과 같은 배치로 자리를 잡아 둔다 */

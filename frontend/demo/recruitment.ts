@@ -1,8 +1,6 @@
-import type { ApplicationStatus,RecruitmentCancellation } from "@/features/project/types";
-import type { Recruitment } from "@/features/recruitment/types";
+import type { ApplicationStatus, Recruitment, RecruitmentCancellation } from "@/features/recruitment/types";
 import { cookies } from "next/headers";
 import "server-only";
-
 
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
@@ -15,7 +13,6 @@ type Seed = Omit<Recruitment, "createdAt" | "recruitDeadline" | "submitDeadline"
   recruitInDays: number;
   submitInDays: number;
 };
-
 
 const PROMOTED: Seed[] = [
   {
@@ -61,7 +58,6 @@ const PROMOTED: Seed[] = [
     submitInDays: 11,
   },
 ];
-
 
 const GENERAL: Seed[] = [
   {
@@ -193,7 +189,6 @@ const GENERAL: Seed[] = [
   ),
 ];
 
-
 /* 끝난 모집 글. 홈 목록에는 나오지 않고 참여 내역에서만 가리킨다 */
 const PAST: Seed[] = [
   {
@@ -238,9 +233,7 @@ const PAST: Seed[] = [
   },
 ];
 
-
 const DAY_MS = 24 * 60 * 60 * 1000;
-
 
 /** 채팅에서도 사용하는 시연용 프로젝트 이미지. 실제 업로드 이미지로 교체할 자리다. */
 const PROJECT_IMAGES: Record<string, string> = {
@@ -251,7 +244,6 @@ const PROJECT_IMAGES: Record<string, string> = {
   "meeting-notes": "/sample/projects/meeting-notes.svg",
   "folio-builder": "/sample/projects/folio-builder.svg",
 };
-
 
 function toRecruitment(seed: Seed, now: Date): Recruitment {
   const { createdDaysAgo, recruitInDays, submitInDays, ...rest } = seed;
@@ -265,21 +257,17 @@ function toRecruitment(seed: Seed, now: Date): Recruitment {
   };
 }
 
-
 export function buildPromotedRecruitments(now: Date) {
   return PROMOTED.map((seed) => toRecruitment(seed, now));
 }
-
 
 export function buildGeneralRecruitments(now: Date) {
   return GENERAL.map((seed) => toRecruitment(seed, now));
 }
 
-
 export function buildPastRecruitments(now: Date) {
   return PAST.map((seed) => toRecruitment(seed, now));
 }
-
 
 /*
  * 시연용 지원자 확정·거절 기록과 모집 취소. 실제 저장소가 없어서 쿠키에 JSON으로 둔다.
@@ -295,14 +283,11 @@ const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 /* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
 const COOKIE_MAX_BYTES = 4000;
 
-
 export type Decision = Extract<ApplicationStatus, "confirmed" | "rejected">;
 
 type StoredDecisions = Record<string, Decision>;
 
-
 const isDecision = (value: unknown): value is Decision => value === "confirmed" || value === "rejected";
-
 
 /** 깨진 값은 버리고 올바른 기록만 돌려준다 */
 export async function readDecisions(): Promise<StoredDecisions> {
@@ -317,7 +302,6 @@ export async function readDecisions(): Promise<StoredDecisions> {
   }
 }
 
-
 /**
  * Server Action에서만 부른다. 쿠키는 렌더링 중에 쓸 수 없다.
  * 쿠키 한도를 넘으면 저장하지 않고 false를 돌려준다.
@@ -329,7 +313,6 @@ export async function saveDecisions(ids: string[], status: Decision): Promise<bo
   return true;
 }
 
-
 /* ---------- 모집 취소 ---------- */
 
 /*
@@ -338,14 +321,12 @@ export async function saveDecisions(ids: string[], status: Decision): Promise<bo
  */
 const CANCEL_COOKIE_PREFIX = "demo-recruitment-cancel-";
 
-
 const isStoredCancellation = (value: unknown): value is RecruitmentCancellation =>
   typeof value === "object" &&
   value !== null &&
   typeof (value as RecruitmentCancellation).reason === "string" &&
   typeof (value as RecruitmentCancellation).cancelledAt === "string" &&
   !Number.isNaN(Date.parse((value as RecruitmentCancellation).cancelledAt));
-
 
 function parseCancellation(raw: string): RecruitmentCancellation[] {
   try {
@@ -356,7 +337,6 @@ function parseCancellation(raw: string): RecruitmentCancellation[] {
   }
 }
 
-
 /** 취소한 모집 건. 깨진 값은 버린다 */
 export async function readCancellations(): Promise<Record<string, RecruitmentCancellation>> {
   const stored = (await cookies()).getAll().filter(({ name }) => name.startsWith(CANCEL_COOKIE_PREFIX));
@@ -366,7 +346,6 @@ export async function readCancellations(): Promise<Record<string, RecruitmentCan
     ),
   );
 }
-
 
 /** 모집 취소를 저장한다. Server Action에서만 부른다. 쿠키 한도를 넘으면 false */
 export async function saveCancellation(recruitmentKey: string, cancellation: RecruitmentCancellation): Promise<boolean> {

@@ -9,7 +9,14 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentThumb";
 import { formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
-import { payoutAt, STATUS_LABEL, tabOf, TAB_LABEL, type FeedbackEntry, type ParticipationItem } from "../../../../../../features/participation/types";
+import {
+  payoutAt,
+  STATUS_LABEL,
+  tabOf,
+  TAB_LABEL,
+  type FeedbackEntry,
+  type ParticipationItem,
+} from "@/features/participation/types";
 import { FeedbackForm } from "./FeedbackForm";
 import { FeedbackMarker } from "./FeedbackMarker";
 

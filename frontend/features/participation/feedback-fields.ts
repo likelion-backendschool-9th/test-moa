@@ -1,5 +1,5 @@
-import { checkFeedbackImages, parseFileMeta } from "./feedback-images";
-import { FEEDBACK_MAX_LENGTH, type FeedbackEntry, type FeedbackTestItem } from "./types";
+import { checkFeedbackImages, parseFileMeta } from "@/features/participation/feedback-images";
+import { FEEDBACK_MAX_LENGTH, type FeedbackEntry, type FeedbackTestItem } from "@/features/participation/types";
 
 /*
  * 항목별 피드백 칸의 이름과 제출 값 검사.

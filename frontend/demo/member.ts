@@ -1,11 +1,9 @@
-import type { AdminUser,DeveloperActivity,TesterActivity } from "@/features/member/admin";
-import type { Profile } from "@/features/member/types";
-import type { MyPageSummary, Todo } from "@/features/member/types";
-import type { Role } from "@/features/session/session";
+import type { AdminUser, DeveloperActivity, TesterActivity } from "@/features/member/admin";
+import type { MyPageSummary, Profile, Todo } from "@/features/member/types";
 import { participationsPath } from "@/features/participation/paths";
 import { PROJECTS_PATH } from "@/features/project/paths";
+import type { Role } from "@/features/session/session";
 import "server-only";
-
 
 /*
  * 시연 회원 데이터. 실제 사용자와 관계없고, 이메일은 예시용 도메인(example.com)만 쓴다.
@@ -18,15 +16,12 @@ export const DEMO_PROFILES: Record<Exclude<Role, "guest">, Profile> = {
   admin: { name: "운영자", nickname: "운영자", email: "admin@example.com" },
 };
 
-
 /** 시연 회원 모두 같은 비밀번호를 쓴다. 실제 비밀번호와 관계없다 */
 export const DEMO_PASSWORD = "test1234";
 
 const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
 
-
-type UserSeed = Omit<AdminUser, "realName" | "email" | "joinedAt"> & { joinedDaysAgo: number };
-
+type UserSeed = Omit<AdminUser, "realName" | "email" | "joinedAt"> & { joinedDaysAgo: number; };
 
 const tester = (confirmedCount: number, submittedCount: number, incompleteCount: number): TesterActivity => ({
   confirmedCount,
@@ -34,13 +29,11 @@ const tester = (confirmedCount: number, submittedCount: number, incompleteCount:
   incompleteCount,
 });
 
-
 const developer = (projectCount: number, recruitmentCount: number, subscribed: boolean): DeveloperActivity => ({
   projectCount,
   recruitmentCount,
   subscribed,
 });
-
 
 const SEEDS: UserSeed[] = [
   { id: "user-1", nickname: "박도현", joinedDaysAgo: 55, activity: { tester: null, developer: developer(3, 5, true) } },
@@ -56,7 +49,6 @@ const SEEDS: UserSeed[] = [
   { id: "user-10", nickname: "강민서", joinedDaysAgo: 3, activity: { tester: tester(2, 1, 1), developer: null } },
 ];
 
-
 export function buildUsers(now: Date): AdminUser[] {
   return SEEDS.map(({ joinedDaysAgo, ...seed }) => ({
     ...seed,
@@ -66,7 +58,6 @@ export function buildUsers(now: Date): AdminUser[] {
     joinedAt: daysAgo(now, joinedDaysAgo),
   }));
 }
-
 
 /*
  * 시연용 샘플 데이터. 실제 사용자와 관계없다.
@@ -78,13 +69,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const SUBSCRIPTION_DAYS_LEFT = 30;
 
-
 const daysFrom = (now: Date, days: number) => new Date(now.getTime() + days * DAY_MS).toISOString();
-
 
 /** 크레딧 잔액·최근 내역은 features/credit 목업에서, 프로필은 features/member에서 가져온다 */
 export type MyPageSeed = Omit<MyPageSummary, "credits" | "recentCredits" | "profile">;
-
 
 export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyPageSeed {
   switch (role) {

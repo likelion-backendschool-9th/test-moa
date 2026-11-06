@@ -6,16 +6,16 @@ import { connection } from "next/server";
 import { cache } from "react";
 import "server-only";
 import {
-keyDateOf,
-PARTICIPATION_TABS,
-rewardOf,
-TAB_STATUSES,
-tabOf,
-type ParticipationCounts,
-type ParticipationItem,
-type ParticipationSummary,
-type ParticipationTab,
-} from "./types";
+  keyDateOf,
+  PARTICIPATION_TABS,
+  rewardOf,
+  TAB_STATUSES,
+  tabOf,
+  type ParticipationCounts,
+  type ParticipationItem,
+  type ParticipationSummary,
+  type ParticipationTab,
+} from "@/features/participation/types";
 
 /*
  * 로그인한 사용자의 참여 데이터 접근. 지금은 목업을 돌려준다.

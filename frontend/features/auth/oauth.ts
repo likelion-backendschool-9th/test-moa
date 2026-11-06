@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import type { Tokens } from "@/lib/backend";
-import type { SocialProviderId } from "./types";
+import type { SocialProviderId } from "@/features/auth/types";
 
 /*
  * 소셜 로그인(OAuth) 중간 상태를 담는 httpOnly 쿠키 두 개.

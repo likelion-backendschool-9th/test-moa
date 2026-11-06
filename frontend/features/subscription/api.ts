@@ -1,14 +1,20 @@
 import { buildMyPageSummary } from "@/demo/member";
 import { waitIfSlow } from "@/demo/mode";
-import { addDemoSubscriptionPayment,FREE_PLAN,getDemoSubscriptionPayments,MAX_DEMO_PAYMENTS,monthlyRecruitUsed,SUBSCRIPTION_PLANS } from "@/demo/subscription";
+import {
+  addDemoSubscriptionPayment,
+  FREE_PLAN,
+  getDemoSubscriptionPayments,
+  MAX_DEMO_PAYMENTS,
+  monthlyRecruitUsed,
+  SUBSCRIPTION_PLANS,
+} from "@/demo/subscription";
 import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
 import { requireMember } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
-import type { Subscription,SubscriptionOverview } from "@/features/subscription/types";
+import type { Subscription, SubscriptionOverview } from "@/features/subscription/types";
 import { connection } from "next/server";
 import "server-only";
-
 
 /** 구독 관리·구독 결제 화면 데이터. 운영자는 구독 대상이 아니라 subscription이 null이다 */
 export async function getSubscriptionOverview(next = "/my/subscription"): Promise<SubscriptionOverview> {
@@ -32,16 +38,13 @@ export async function getSubscriptionOverview(next = "/my/subscription"): Promis
   };
 }
 
-
 const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
-
 
 /** 한국 시간 기준 다음 달 1일 0시 */
 function startOfNextMonthInSeoul(now: Date) {
   const seoul = new Date(now.getTime() + SEOUL_OFFSET_MS);
   return new Date(Date.UTC(seoul.getUTCFullYear(), seoul.getUTCMonth() + 1, 1) - SEOUL_OFFSET_MS).toISOString();
 }
-
 
 /**
  * 이 브라우저에서 시연용 구독 결제를 했으면 마지막 결제가 정한 만료일, 아니면 목업 구독. 운영자는 null.
@@ -55,12 +58,10 @@ export async function subscriptionFor(role: Exclude<Role, "guest">, now: Date): 
   return new Date(last.expiresAt) > now ? { status: "active", planId: last.planId, expiresAt: last.expiresAt } : { status: "none" };
 }
 
-
 export async function canPayForSubscription(role: Parameters<typeof getDemoSubscriptionPayments>[0]) {
   await requireMember("/my/subscription/checkout");
   return (await getDemoSubscriptionPayments(role)).length < MAX_DEMO_PAYMENTS;
 }
-
 
 export async function saveSubscriptionPayment(role: Parameters<typeof addDemoSubscriptionPayment>[0], payment: Parameters<typeof addDemoSubscriptionPayment>[1]) {
   await requireMember("/my/subscription/checkout");

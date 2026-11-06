@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { formatDate } from "@/lib/format";
-import { getFollowupQuestions } from "../../../../../../features/project/actions";
-import type { FeedbackView } from "../../../../../../features/project/service";
-import type { FeedbackStatus, TestItem } from "../../../../../../features/project/types";
+import { getFollowupQuestions } from "@/features/recruitment/actions";
+import type { FeedbackView } from "@/features/recruitment/types";
+import type { FeedbackStatus, TestItem } from "@/features/recruitment/types";
 import { CHAT_NOT_READY, FollowupQuestionsDialog, type FollowupState } from "./FollowupQuestionsDialog";
-import { inputClass } from "../../../../../../components/ui/TextField";
+import { inputClass } from "@/components/ui/TextField";
 
 /*
  * 피드백 탭. 피드백마다 어느 테스트 항목에 대한 것인지(없으면 기타 의견)와 붙인 스크린샷을 보여 준다.

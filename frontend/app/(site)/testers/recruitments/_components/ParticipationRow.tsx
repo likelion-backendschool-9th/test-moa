@@ -12,7 +12,7 @@ import {
   type ParticipationItem,
   type ParticipationStatus,
   type ParticipationView,
-} from "../../../../../features/participation/types";
+} from "@/features/participation/types";
 
 /** D-3 이하는 굵기로 급함을 알린다 */
 const URGENT_DAYS = 3;

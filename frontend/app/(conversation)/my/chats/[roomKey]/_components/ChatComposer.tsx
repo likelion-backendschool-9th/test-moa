@@ -15,8 +15,8 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import { isTodayInSeoul } from "@/lib/format";
-import { sendChatMessageAction } from "../../../../../../features/chat/actions";
-import { CHAT_MESSAGE_MAX, type ChatMessage } from "../../../../../../features/chat/types";
+import { sendChatMessageAction } from "@/features/chat/actions";
+import { CHAT_MESSAGE_MAX, type ChatMessage } from "@/features/chat/types";
 import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from "./bubble";
 
 type ChatComposerProps = {

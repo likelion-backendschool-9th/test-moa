@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { parseParticipationView, type ParticipationView } from "./types";
+import { parseParticipationView, type ParticipationView } from "@/features/participation/types";
 
 /* 고른 보기 방식은 브라우저별 화면 설정이라 쿠키에 둔다. 상세에 갔다 돌아오거나 탭을 바꿔도 유지된다 */
 

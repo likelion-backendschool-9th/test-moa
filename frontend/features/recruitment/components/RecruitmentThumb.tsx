@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
-import type { Recruitment } from "../types";
-import { ProofStamp } from "./ProofStamp";
+import type { Recruitment } from "@/features/recruitment/types";
+import { ProofStamp } from "@/features/recruitment/components/ProofStamp";
 
 /**
  * 활자 썸네일. 가짜 스크린샷 대신 교정지 위에 서비스 이름을 크게 앉혀 이름 자체를 그림으로 쓴다.

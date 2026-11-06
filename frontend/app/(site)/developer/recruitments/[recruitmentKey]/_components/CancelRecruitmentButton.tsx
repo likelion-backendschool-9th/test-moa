@@ -2,9 +2,10 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { cancelRecruitment } from "../../../../../../features/project/actions";
-import { EMPTY_FORM_STATE, RECRUITMENT_LIMIT, type FormState } from "../../../../../../features/project/types";
-import { TextField } from "../../../../../../components/ui/TextField";
+import { cancelRecruitment } from "@/features/recruitment/actions";
+import { EMPTY_FORM_STATE, type FormState } from "@/features/project/types";
+import { RECRUITMENT_LIMIT } from "@/features/recruitment/types";
+import { TextField } from "@/components/ui/TextField";
 
 /*
  * 모집 취소 버튼과 확인 대화상자. 운영자 승인 없이 바로 취소된다.

@@ -5,12 +5,17 @@ import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
-import type { RecruitmentAnalytics, RecruitmentView } from "../../../../../../features/project/service";
-import { SELECTION_MODE_LABEL, type Project, type RecruitmentCancellation, type RecruitmentDetail } from "../../../../../../features/project/types";
+import type { RecruitmentAnalytics, RecruitmentView } from "@/features/recruitment/types";
+import {
+  SELECTION_MODE_LABEL,
+  type RecruitmentCancellation,
+  type RecruitmentDetail,
+} from "@/features/recruitment/types";
+import { type Project } from "@/features/project/types";
 import { CancelRecruitmentButton } from "./CancelRecruitmentButton";
 import { ExternalLink } from "../../../_components/ProjectDetail";
-import { RecruitmentStatusBadge } from "../../../../../../features/project/components/StatusBadge";
-import { TestItemImages } from "../../../../../../features/project/components/TestItemImages";
+import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge";
+import { TestItemImages } from "@/features/recruitment/components/TestItemImages";
 
 /* 테스트 모집 관리 화면의 머리 요약, 탭 줄, 분석 탭 */
 

@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
 import { formatCredits } from "@/lib/format";
-import { createRecruitment } from "../../../../../../features/project/actions";
-import { checkImages, formatBytes, type FileMeta } from "../../../../../../features/project/media";
-import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type FormState, type SelectionMode } from "../../../../../../features/project/types";
+import { createRecruitment } from "@/features/recruitment/actions";
+import { checkImages, formatBytes, type FileMeta } from "@/features/project/media";
+import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState } from "@/features/project/types";
+import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type SelectionMode } from "@/features/recruitment/types";
 import { FormSection } from "../../../_components/FormSection";
 import { FileField, revoke, useFocusFirstError } from "../../../_components/ProjectForm";
-import { TextField } from "../../../../../../components/ui/TextField";
+import { TextField } from "@/components/ui/TextField";
 
 /*
  * 테스트 모집 작성 폼. 보상은 서비스가 정하므로 입력받지 않고 안내만 한다.

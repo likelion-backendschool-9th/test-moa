@@ -4,7 +4,7 @@ import { projectPath, projectEditPath } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
 import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm";
-import { getMyProject } from "@/features/project/service";
+import { getMyProject } from "@/features/recruitment/api";
 
 /* 프로젝트 수정 (/developer/projects/:projectKey/edit). 등록과 같은 폼에 값을 채워 둔다 */
 

@@ -4,12 +4,12 @@ import { useActionState, useEffect, useRef, useState, type ChangeEvent, type Rea
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { saveProject } from "../../../../features/project/actions";
-import { checkImages, formatBytes, type FileMeta } from "../../../../features/project/media";
-import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImage } from "../../../../features/project/types";
+import { saveProject } from "@/features/project/actions";
+import { checkImages, formatBytes, type FileMeta } from "@/features/project/media";
+import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImage } from "@/features/project/types";
 import { FormSection } from "./FormSection";
 import { ProjectBody } from "./ProjectDetail";
-import { TextField } from "../../../../components/ui/TextField";
+import { TextField } from "@/components/ui/TextField";
 
 /*
  * 프로젝트 등록·수정 폼과 미리보기. 검증은 서버 액션이 하고, 오류가 오면 첫 오류 칸으로 포커스를 옮긴다.

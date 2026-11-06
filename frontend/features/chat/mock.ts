@@ -1,5 +1,5 @@
 import type { Role } from "@/features/session/session";
-import type { ChatMessage, ChatRoom } from "./types";
+import type { ChatMessage, ChatRoom } from "@/features/chat/types";
 
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.

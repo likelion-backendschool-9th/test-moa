@@ -6,9 +6,14 @@ import { Badge } from "@/components/ui/Badge";
 import { FeedbackMarker } from "./FeedbackMarker";
 import { buttonClass } from "@/components/ui/button-styles";
 import { inputClass } from "@/components/ui/TextField";
-import { contentFieldName, imagesFieldName } from "../../../../../../features/participation/feedback-fields";
-import { checkFeedbackImages, FEEDBACK_IMAGE_HINT, FEEDBACK_IMAGE_LIMIT, type FileMeta } from "../../../../../../features/participation/feedback-images";
-import { FEEDBACK_MAX_LENGTH } from "../../../../../../features/participation/types";
+import { contentFieldName, imagesFieldName } from "@/features/participation/feedback-fields";
+import {
+  checkFeedbackImages,
+  FEEDBACK_IMAGE_HINT,
+  FEEDBACK_IMAGE_LIMIT,
+  type FileMeta,
+} from "@/features/participation/feedback-images";
+import { FEEDBACK_MAX_LENGTH } from "@/features/participation/types";
 
 type PickedImage = FileMeta & { url: string };
 

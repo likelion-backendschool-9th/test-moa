@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { formatChatTime, isTodayInSeoul } from "@/lib/format";
-import type { ChatRoom } from "../../../../../features/chat/types";
-import { ChatCardMenu } from "../../../../../features/chat/components/ChatCardMenu";
-import { ChatRoleBadge } from "../../../../../features/chat/components/ChatRoleBadge";
-import { ChatThumb } from "../../../../../features/chat/components/ChatThumb";
+import type { ChatRoom } from "@/features/chat/types";
+import { ChatCardMenu } from "@/features/chat/components/ChatCardMenu";
+import { ChatRoleBadge } from "@/features/chat/components/ChatRoleBadge";
+import { ChatThumb } from "@/features/chat/components/ChatThumb";
 
 /**
  * 채팅방 카드 한 장. 왼쪽은 카드 높이를 다 채우는 프로젝트 이미지, 선 없이 바로 옆에

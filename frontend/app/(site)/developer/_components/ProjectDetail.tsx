@@ -7,10 +7,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate } from "@/lib/format";
-import type { RecruitmentView } from "../../../../features/project/service";
-import { DEFAULT_PROJECT_IMAGE_URL, type Project } from "../../../../features/project/types";
-import { ProjectDescription } from "../../../../features/project/components/ProjectDescription";
-import { RecruitmentStatusBadge } from "../../../../features/project/components/StatusBadge";
+import type { RecruitmentView } from "@/features/recruitment/types";
+import { DEFAULT_PROJECT_IMAGE_URL, type Project } from "@/features/project/types";
+import { ProjectDescription } from "@/features/project/components/ProjectDescription";
+import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge";
 
 /* 프로젝트 상세 화면: 프로젝트 정보와 모집 건 목록 */
 

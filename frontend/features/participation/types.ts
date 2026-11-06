@@ -1,4 +1,4 @@
-import type { TestItem } from "@/features/project/types";
+import type { TestItem } from "@/features/recruitment/types";
 import type { Recruitment } from "@/features/recruitment/types";
 
 /**

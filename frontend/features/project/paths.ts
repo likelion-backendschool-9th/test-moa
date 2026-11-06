@@ -1,3 +1,5 @@
+
+
 /* 개발자 프로젝트·모집의 이동 주소. 서버와 클라이언트가 같은 규칙을 쓴다. */
 
 export const DEVELOPER_RECRUITMENTS_PATH = "/developer/recruitments";

@@ -11,8 +11,12 @@ import {
   RecruitmentSummary,
   RecruitmentTabs,
 } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage";
-import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel";
-import { canSelectApplicants, getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
+import {
+  AiAnalysisPanel,
+  AiAnalysisSkeleton,
+} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel";
+import { canSelectApplicants } from "@/features/recruitment/types";
+import { getAiAnalysis, getRecruitmentDetail } from "@/features/recruitment/api";
 
 /* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
 

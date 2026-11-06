@@ -1,10 +1,10 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.dto.response.ChatRoomResponse;
-import com.testmoa.backend.domain.dto.response.ChatInboxResponse;
-import com.testmoa.backend.domain.dto.request.ChatInboxQuery;
-import com.testmoa.backend.domain.dto.response.ChatMessageResponse;
-import com.testmoa.backend.domain.dto.response.ChatMessageSliceResponse;
+import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.dto.response.ChatInboxResponse;
+import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.dto.response.ChatMessageResponse;
+import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 
 public interface ChatService {
     ChatInboxResponse getInbox(Long userId, ChatInboxQuery query);

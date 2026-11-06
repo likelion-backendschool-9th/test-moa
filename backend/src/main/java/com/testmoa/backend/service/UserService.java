@@ -1,7 +1,7 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.dto.AuthenticatedUser;
-import com.testmoa.backend.domain.dto.response.MeResponse;
+import com.testmoa.backend.dto.AuthenticatedUser;
+import com.testmoa.backend.dto.response.MeResponse;
 
 import java.util.Optional;
 

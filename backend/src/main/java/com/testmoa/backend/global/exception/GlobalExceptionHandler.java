@@ -1,6 +1,6 @@
 package com.testmoa.backend.global.exception;
 
-import com.testmoa.backend.global.common.ApiResponse;
+import com.testmoa.backend.global.util.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;

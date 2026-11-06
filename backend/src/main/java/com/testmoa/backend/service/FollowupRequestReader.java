@@ -1,10 +1,10 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.entity.Feedback;
-import com.testmoa.backend.domain.entity.Project;
-import com.testmoa.backend.domain.entity.Recruitment;
-import com.testmoa.backend.domain.entity.TestItem;
-import com.testmoa.backend.domain.repository.FeedbackRepository;
+import com.testmoa.backend.entity.Feedback;
+import com.testmoa.backend.entity.Project;
+import com.testmoa.backend.entity.Recruitment;
+import com.testmoa.backend.entity.TestItem;
+import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.global.client.AnalysisClient;
 import com.testmoa.backend.global.client.AnalysisClient.Context;
 import com.testmoa.backend.global.client.AnalysisClient.FeedbackItem;

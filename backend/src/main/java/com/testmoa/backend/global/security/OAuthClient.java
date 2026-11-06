@@ -1,7 +1,6 @@
 package com.testmoa.backend.global.security;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.testmoa.backend.global.common.Provider;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;

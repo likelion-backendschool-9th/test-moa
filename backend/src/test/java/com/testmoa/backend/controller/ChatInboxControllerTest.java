@@ -1,10 +1,10 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.dto.request.ChatInboxQuery;
-import com.testmoa.backend.domain.entity.ChatRoom;
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.global.common.ChatRole;
-import com.testmoa.backend.global.common.Role;
+import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.entity.ChatRoom;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.ChatRole;
+import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.support.ChatFixtures;
 import com.testmoa.backend.service.ChatService;

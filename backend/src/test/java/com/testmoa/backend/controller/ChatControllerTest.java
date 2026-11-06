@@ -1,8 +1,12 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.entity.*;
-import com.testmoa.backend.global.common.*;
+import com.testmoa.backend.entity.ChatMessage;
+import com.testmoa.backend.entity.ChatParticipant;
+import com.testmoa.backend.entity.ChatRoom;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.ChatRole;
 import com.testmoa.backend.global.security.JwtProvider;
+import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.support.ChatFixtures;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;

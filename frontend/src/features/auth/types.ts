@@ -12,6 +12,7 @@ export type SocialProviderId = (typeof SOCIAL_PROVIDERS)[number]["id"];
 
 export type LoginField = "email" | "password";
 export type SignupField = "name" | "nickname" | "email" | "password" | "confirm" | "agreements";
+export type SocialSignupField = "name" | "agreements";
 
 /** 로그인·가입 화면 사이를 오갈 때 돌아갈 경로를 붙인다. next는 safeNextPath를 거친 값이다 */
 export function withNext(path: string, next: string, params?: Record<string, string>): string {

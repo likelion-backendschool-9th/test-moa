@@ -12,12 +12,12 @@ import { TextField } from "./TextField";
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
 
-type CancelRecruitmentButtonProps = { projectKey: string; recruitmentKey: string; reasonRequired: boolean };
+type CancelRecruitmentButtonProps = { recruitmentKey: string; reasonRequired: boolean };
 
 /** "모집 취소" 버튼. 누르면 확인 대화상자가 열린다 */
-export function CancelRecruitmentButton({ projectKey, recruitmentKey, reasonRequired }: CancelRecruitmentButtonProps) {
+export function CancelRecruitmentButton({ recruitmentKey, reasonRequired }: CancelRecruitmentButtonProps) {
   const [state, formAction, pending] = useActionState<FormState & { ok?: boolean }, FormData>(
-    cancelRecruitment.bind(null, projectKey, recruitmentKey),
+    cancelRecruitment.bind(null, recruitmentKey),
     EMPTY_FORM_STATE,
   );
   const dialogRef = useRef<HTMLDialogElement>(null);

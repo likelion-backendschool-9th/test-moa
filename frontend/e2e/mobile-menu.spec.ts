@@ -15,7 +15,7 @@ test.describe("R4 모바일 메뉴", () => {
     await page.goto("/");
     await openMenu(page);
     await panel(page).getByRole("link", { name: "참여 테스트" }).click();
-    await expect(page).toHaveURL("/my/participations");
+    await expect(page).toHaveURL("/testers/recruitments");
     await expect(panel(page)).toHaveCount(0);
   });
 });
@@ -24,7 +24,7 @@ test.describe("R179 모바일 메뉴의 계정 영역", () => {
 
   test("S328 패널에서 로그아웃하면 홈으로 가고 패널이 닫힌다", async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
-    await page.goto("/my/projects");
+    await page.goto("/developer/projects");
     await openMenu(page);
     await panel(page).getByRole("button", { name: "로그아웃" }).click();
     await expect(page).toHaveURL("/");

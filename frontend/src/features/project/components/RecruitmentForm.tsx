@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { projectPath } from "@/lib/project-paths";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
@@ -355,7 +356,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
         <Button type="submit" disabled={pending}>
           모집 등록
         </Button>
-        <LinkButton href={`/my/projects/${projectKey}`} variant="secondary">
+        <LinkButton href={projectPath(projectKey)} variant="secondary">
           취소
         </LinkButton>
       </div>

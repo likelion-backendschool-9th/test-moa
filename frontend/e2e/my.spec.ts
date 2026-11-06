@@ -21,7 +21,7 @@ test.describe("R133 지금 할 일", () => {
     await expect(items).toHaveCount(2);
     await expect(items.nth(0)).toContainText("북로그 피드백 제출");
     await expect(items.nth(0)).toContainText("D-2");
-    await expect(items.nth(0)).toHaveAttribute("href", "/my/participations?tab=ongoing");
+    await expect(items.nth(0)).toHaveAttribute("href", "/testers/recruitments?tab=ongoing");
     await expect(items.nth(1)).toContainText("모아플랜 참여 확정, 테스트 시작하기");
     await expect(items.nth(1)).toContainText("D-9");
     await expect(todos).not.toContainText("크레딧");

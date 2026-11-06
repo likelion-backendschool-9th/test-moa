@@ -148,5 +148,5 @@ export function keyDateOf(item: ParticipationItem): { label: string; at: string 
 
 /** 내 참여 상세 주소 */
 export function participationPath(key: string) {
-  return `/my/participations/${key}`;
+  return `/testers/recruitments/${key}`;
 }

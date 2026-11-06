@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PROJECT_NEW_PATH, projectPath } from "@/lib/project-paths";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -14,7 +15,7 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
       <EmptyState
         title="아직 등록한 프로젝트가 없어요"
         description="테스트받고 싶은 서비스를 프로젝트로 등록하면 테스터를 모집할 수 있어요."
-        action={<LinkButton href="/my/projects/new">프로젝트 등록</LinkButton>}
+        action={<LinkButton href={PROJECT_NEW_PATH}>프로젝트 등록</LinkButton>}
       />
     );
   }
@@ -23,7 +24,7 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
       {projects.map((project) => (
         <li key={project.key}>
           <Link
-            href={`/my/projects/${project.key}`}
+            href={projectPath(project.key)}
             className="group block h-full rounded-2xl"
           >
             <Card className="flex h-full flex-col gap-3 border border-line transition-colors duration-300 ease-brand group-hover:bg-surface-strong">

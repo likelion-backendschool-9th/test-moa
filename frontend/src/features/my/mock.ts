@@ -1,3 +1,4 @@
+import { PROJECTS_PATH } from "@/lib/project-paths";
 import type { Role } from "@/lib/session";
 import type { MyPageSummary, PlanTerms, SubscriptionPlan, Todo } from "./types";
 
@@ -60,7 +61,7 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
             category: "participation",
             title: "모아플랜 참여 확정, 테스트 시작하기",
             detail: "",
-            href: "/my/participations?tab=ongoing",
+            href: "/testers/recruitments?tab=ongoing",
             dueAt: daysFrom(now, 9),
           },
           {
@@ -68,7 +69,7 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
             category: "participation",
             title: "북로그 피드백 제출",
             detail: "",
-            href: "/my/participations?tab=ongoing",
+            href: "/testers/recruitments?tab=ongoing",
             dueAt: daysFrom(now, 2),
           },
         ] satisfies Todo[],
@@ -81,13 +82,13 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
       return {
         subscription: { status: "active", planId: "basic", expiresAt: daysFrom(now, SUBSCRIPTION_DAYS_LEFT) },
         todos: [
-          { id: "feedback-minutes", category: "project", title: "회의록 정리 새 피드백 확인", detail: "3건", href: "/my/projects" },
+          { id: "feedback-minutes", category: "project", title: "회의록 정리 새 피드백 확인", detail: "3건", href: PROJECTS_PATH },
           {
             id: "select-ledger",
             category: "project",
             title: "가계부 노트 지원자 선정",
             detail: "",
-            href: "/my/projects",
+            href: PROJECTS_PATH,
             dueAt: daysFrom(now, 3),
           },
         ],

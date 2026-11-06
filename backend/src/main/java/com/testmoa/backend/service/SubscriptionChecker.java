@@ -1,8 +1,8 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.entity.Subscription;
-import com.testmoa.backend.domain.repository.SubscriptionRepository;
-import com.testmoa.backend.global.common.SubscriptionStatus;
+import com.testmoa.backend.entity.Subscription;
+import com.testmoa.backend.repository.SubscriptionRepository;
+import com.testmoa.backend.entity.enums.SubscriptionStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

@@ -1,17 +1,17 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.dto.request.OAuthCodeRequest;
-import com.testmoa.backend.domain.dto.request.OAuthSignupRequest;
-import com.testmoa.backend.domain.dto.response.OAuthLoginResponse;
-import com.testmoa.backend.global.security.OAuthClient;
+
+import com.testmoa.backend.dto.request.OAuthCodeRequest;
+import com.testmoa.backend.dto.request.OAuthSignupRequest;
+import com.testmoa.backend.dto.response.OAuthLoginResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import com.testmoa.backend.domain.dto.request.LoginRequest;
-import com.testmoa.backend.domain.dto.request.RefreshTokenRequest;
-import com.testmoa.backend.domain.dto.request.SignupRequest;
-import com.testmoa.backend.domain.dto.response.TokenResponse;
-import com.testmoa.backend.global.common.ApiResponse;
+import com.testmoa.backend.dto.request.LoginRequest;
+import com.testmoa.backend.dto.request.RefreshTokenRequest;
+import com.testmoa.backend.dto.request.SignupRequest;
+import com.testmoa.backend.dto.response.TokenResponse;
+import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;

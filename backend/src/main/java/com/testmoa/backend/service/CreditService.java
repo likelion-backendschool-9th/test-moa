@@ -1,10 +1,10 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.dto.request.CashoutCreateRequest;
-import com.testmoa.backend.domain.dto.response.CashoutResponse;
-import com.testmoa.backend.domain.dto.response.CreditBalanceResponse;
-import com.testmoa.backend.domain.dto.response.CreditLedgerResponse;
-import com.testmoa.backend.global.common.LedgerFlow;
+import com.testmoa.backend.dto.request.CashoutCreateRequest;
+import com.testmoa.backend.dto.response.CashoutResponse;
+import com.testmoa.backend.dto.response.CreditBalanceResponse;
+import com.testmoa.backend.dto.response.CreditLedgerResponse;
+import com.testmoa.backend.entity.enums.LedgerFlow;
 
 import java.util.List;
 

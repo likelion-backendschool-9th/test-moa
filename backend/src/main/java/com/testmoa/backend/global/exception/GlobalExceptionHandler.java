@@ -1,6 +1,6 @@
 package com.testmoa.backend.global.exception;
 
-import com.testmoa.backend.global.common.ApiResponse;
+import com.testmoa.backend.global.util.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
         ErrorCode code = e.getErrorCode();
-        return ResponseEntity.status(code.getStatus()).body(ApiResponse.fail(code, e.getMessage(), null));
+        return ResponseEntity.status(code.getStatus()).body(ApiResponse.fail(code, e.getMessage(), e.getFields()));
     }
 
     // 예상하지 못한 오류. 내용은 로그에만 남기고 응답에는 싣지 않는다

@@ -1,6 +1,6 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.dto.response.FollowupQuestionsResponse;
+import com.testmoa.backend.dto.response.FollowupQuestionsResponse;
 
 /**
  * AI 후속 질문 추천

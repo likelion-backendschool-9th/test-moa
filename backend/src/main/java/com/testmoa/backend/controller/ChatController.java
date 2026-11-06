@@ -1,9 +1,12 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.dto.request.ChatMessageSendRequest;
-import com.testmoa.backend.domain.dto.request.ChatInboxQuery;
-import com.testmoa.backend.domain.dto.response.*;
-import com.testmoa.backend.global.common.ApiResponse;
+import com.testmoa.backend.dto.request.ChatMessageSendRequest;
+import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.dto.response.ChatInboxResponse;
+import com.testmoa.backend.dto.response.ChatMessageResponse;
+import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
+import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.ChatService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -19,25 +22,25 @@ public class ChatController {
 
     @GetMapping
     public ApiResponse<ChatInboxResponse> getInbox(@AuthenticationPrincipal Long userId,
-                                                 @ModelAttribute ChatInboxQuery query) {
+                                                   @ModelAttribute ChatInboxQuery query) {
         return ApiResponse.ok(chatService.getInbox(userId, query));
     }
 
     @GetMapping("/{roomKey}")
     public ApiResponse<ChatRoomResponse> getRoom(@PathVariable String roomKey,
-                                                @AuthenticationPrincipal Long userId) {
+                                                 @AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(chatService.getRoom(roomKey, userId));
     }
 
     @GetMapping("/{roomKey}/messages")
     public ApiResponse<ChatMessageSliceResponse> getMessages(@PathVariable String roomKey,
-            @AuthenticationPrincipal Long userId, @RequestParam(required = false) @Min(1) Long before) {
+                                                             @AuthenticationPrincipal Long userId, @RequestParam(required = false) @Min(1) Long before) {
         return ApiResponse.ok(chatService.getMessages(roomKey, userId, before));
     }
 
     @PostMapping("/{roomKey}/messages")
     public ApiResponse<ChatMessageResponse> sendMessage(@PathVariable String roomKey,
-            @AuthenticationPrincipal Long userId, @Valid @RequestBody ChatMessageSendRequest request) {
+                                                        @AuthenticationPrincipal Long userId, @Valid @RequestBody ChatMessageSendRequest request) {
         return ApiResponse.ok(chatService.sendMessage(roomKey, userId, request.text()));
     }
 }

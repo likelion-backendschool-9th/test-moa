@@ -1,11 +1,11 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.domain.dto.request.LoginRequest;
-import com.testmoa.backend.domain.dto.request.OAuthSignupRequest;
-import com.testmoa.backend.domain.dto.request.SignupRequest;
-import com.testmoa.backend.domain.dto.response.OAuthLoginResponse;
-import com.testmoa.backend.domain.dto.response.TokenResponse;
-import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
+import com.testmoa.backend.dto.request.LoginRequest;
+import com.testmoa.backend.dto.request.OAuthCodeRequest;
+import com.testmoa.backend.dto.request.OAuthSignupRequest;
+import com.testmoa.backend.dto.request.SignupRequest;
+import com.testmoa.backend.dto.response.OAuthLoginResponse;
+import com.testmoa.backend.dto.response.TokenResponse;
 
 /**
  * 이메일·소셜 가입과 로그인, 토큰 발급·갱신·폐기, 소셜 계정 연동

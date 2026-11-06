@@ -1,6 +1,6 @@
 package com.testmoa.backend.service.impl;
 
-import com.testmoa.backend.domain.dto.response.FollowupQuestionsResponse;
+import com.testmoa.backend.dto.response.FollowupQuestionsResponse;
 import com.testmoa.backend.global.client.AnalysisClient;
 import com.testmoa.backend.global.client.AnalysisClient.FollowupRequest;
 import com.testmoa.backend.service.FollowupQuestionLimiter;

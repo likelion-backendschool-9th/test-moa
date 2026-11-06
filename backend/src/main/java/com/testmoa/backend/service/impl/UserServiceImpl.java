@@ -1,14 +1,14 @@
 package com.testmoa.backend.service.impl;
 
-import com.testmoa.backend.domain.dto.AuthenticatedUser;
-import com.testmoa.backend.domain.dto.response.MeResponse;
-import com.testmoa.backend.domain.dto.response.MeResponse.SubscriptionStatusResponse;
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.domain.repository.AccountRepository;
-import com.testmoa.backend.domain.repository.RefreshTokenRepository;
-import com.testmoa.backend.domain.repository.UserRepository;
-import com.testmoa.backend.global.common.Role;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.dto.AuthenticatedUser;
+import com.testmoa.backend.dto.response.MeResponse;
+import com.testmoa.backend.dto.response.MeResponse.SubscriptionStatusResponse;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.repository.AccountRepository;
+import com.testmoa.backend.repository.RefreshTokenRepository;
+import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.SubscriptionChecker;

@@ -1,6 +1,5 @@
 package com.testmoa.backend.global.security;
 
-import com.testmoa.backend.global.common.Provider;
 import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;

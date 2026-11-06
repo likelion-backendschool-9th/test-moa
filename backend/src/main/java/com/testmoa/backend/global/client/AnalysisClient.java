@@ -1,9 +1,5 @@
 package com.testmoa.backend.global.client;
 
-import com.testmoa.backend.domain.entity.Feedback;
-import com.testmoa.backend.domain.entity.Project;
-import com.testmoa.backend.domain.entity.Recruitment;
-import com.testmoa.backend.domain.entity.TestItem;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +23,9 @@ public class AnalysisClient {
     private static final String REQUEST_ID_HEADER = "X-Request-ID";
 
     // 분석 서버가 받는 글자 수. 넘으면 422로 거부함
-    static final int TITLE_MAX = 200;
-    static final int DESCRIPTION_MAX = 5000;
-    static final int CONTENT_MAX = 4000;
+    public static final int TITLE_MAX = 200;
+    public static final int DESCRIPTION_MAX = 5000;
+    public static final int CONTENT_MAX = 4000;
 
     private final RestClient restClient;
     private final String internalToken;
@@ -97,7 +93,7 @@ public class AnalysisClient {
     }
 
     // 코드 포인트 기준으로 max자까지 자름. 분석 서버도 코드 포인트로 세므로 이모지가 반으로 잘리지 않음
-    static String cut(String text, int max) {
+    public static String cut(String text, int max) {
         if (text == null || text.codePointCount(0, text.length()) <= max) return text;
         return text.substring(0, text.offsetByCodePoints(0, max));
     }
@@ -105,27 +101,7 @@ public class AnalysisClient {
     /**
      * 후속 질문 요청(FollowupRequest). 계약에 없는 필드를 더하면 분석 서버가 422로 거부함
      */
-    public record FollowupRequest(Context context, FeedbackItem feedback) {
-        // 리뷰와 그 모집글·프로젝트로 요청을 만듦. 분석 서버의 글자 수에 맞춰 자름
-        public static FollowupRequest from(Feedback feedback) {
-            Recruitment recruitment = feedback.getRegister().getRecruitment();
-            Project project = recruitment.getProject();
-            TestItem testItem = feedback.getTestItem();
-
-            return new FollowupRequest(
-                    new Context(
-                            cut(project.getTitle(), TITLE_MAX),
-                            cut(project.getDescription(), DESCRIPTION_MAX),
-                            cut(recruitment.getTitle(), TITLE_MAX),
-                            cut(recruitment.getDescription(), DESCRIPTION_MAX),
-                            recruitment.getVersion()),
-                    new FeedbackItem(
-                            feedback.getId(),
-                            feedback.getRegister().getUser().getId(),
-                            cut(feedback.getContent(), CONTENT_MAX),
-                            testItem == null ? null : cut(testItem.getTitle(), TITLE_MAX)));
-        }
-    }
+    public record FollowupRequest(Context context, FeedbackItem feedback) {}
 
     /**
      * @param version 모집글 버전. 1부터

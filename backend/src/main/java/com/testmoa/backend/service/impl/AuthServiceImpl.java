@@ -146,8 +146,10 @@ public class AuthServiceImpl implements AuthService {
             return OAuthLoginResponse.loggedIn(startSocialSession(user));
         }
 
-        OAuthProfile verified = new OAuthProfile(profile.provider(), profile.providerCode(), email, true, profile.nickname());
-        return OAuthLoginResponse.signupRequired(jwtProvider.createSignupToken(verified), email, availableNickname(profile.nickname()));
+        // 닉네임은 여기서 한 번 정해 가입 토큰에 넣는다. 이름 입력 화면에 보인 닉네임 그대로 가입된다
+        String nickname = availableNickname(profile.nickname());
+        OAuthProfile verified = new OAuthProfile(profile.provider(), profile.providerCode(), email, true, nickname);
+        return OAuthLoginResponse.signupRequired(jwtProvider.createSignupToken(verified), email, nickname);
     }
 
     /** 소셜 가입. 이름 입력 화면에 있는 동안 같은 이메일로 가입했거나 같은 계정이 연동됐으면 409 */
@@ -162,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.save(User.builder()
                 .name(request.name().trim())
-                .nickname(availableNickname(profile.nickname()))
+                .nickname(availableNickname(profile.nickname())) // 화면에 보인 닉네임. 그사이 누가 가져갔으면 숫자를 붙인다
                 .email(profile.email())
                 .role(Role.USER)
                 .status(UserStatus.ACTIVE)

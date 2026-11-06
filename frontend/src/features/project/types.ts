@@ -97,6 +97,8 @@ export type RecruitmentDetail = {
   accessUrl: string;
   /** 모집 조건: 필요한 경험·관심사·사용 환경 (README). 없으면 빈 문자열 */
   conditions: string;
+  /** 모집글 이미지 (백엔드 recruitment_images). 배열 순서가 sort_order이고, 모집글 상세 이미지 띠에서 대표 이미지 다음에 놓인다 */
+  images: ProjectImage[];
   testItems: TestItem[];
 };
 
@@ -161,6 +163,8 @@ export const PROJECT_MEDIA_LIMIT = {
 export const RECRUITMENT_LIMIT = {
   titleLength: 50,
   conditionsLength: 500,
+  /** 모집글 이미지 장수. 형식과 한 장 용량은 PROJECT_MEDIA_LIMIT.images를 따른다 (#124) */
+  imageCount: 10,
   testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300, imageCount: 5 },
   cancelReasonLength: 300,
 } as const;

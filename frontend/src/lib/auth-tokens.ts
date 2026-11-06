@@ -1,15 +1,10 @@
 /*
- * 로그인 토큰 쿠키. backend.ts(서버 액션·서버 컴포넌트)와 proxy.ts(토큰 갱신)가 함께 쓴다.
- * proxy에서도 읽어야 해서 "server-only"와 next/headers를 쓰지 않는다.
+ * 로그인 토큰 쿠키 정책(이름·수명·속성). backend.ts(서버 액션·서버 컴포넌트)와 proxy.ts(토큰 갱신)가 함께 쓴다.
+ * proxy에서도 읽어야 해서 "server-only"와 next/headers를 쓰지 않는다. 백엔드 통신은 backend-http.ts가 맡는다.
  */
-
-export const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
 export const ACCESS_TOKEN_COOKIE = "access_token";
 export const REFRESH_TOKEN_COOKIE = "refresh_token";
-
-/** 백엔드가 응답하지 않을 때 기다리는 시간. 넘으면 백엔드에 닿지 못한 것으로 본다 */
-export const BACKEND_TIMEOUT_MS = 5000;
 
 /* access 쿠키를 토큰보다 이만큼 먼저 만료시킨다. 쿠키는 남았는데 토큰은 만료된 틈이 생기지 않게 미리 갱신한다 */
 const ACCESS_COOKIE_MARGIN_SECONDS = 60;

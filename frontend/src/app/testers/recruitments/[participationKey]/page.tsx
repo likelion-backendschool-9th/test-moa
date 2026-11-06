@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { participationPath } from "@/lib/participation-paths";
 import { Container } from "@/components/ui/Container";
 import { getParticipation } from "@/features/participation/api";
 import {
   ParticipationDetail,
   ParticipationDetailSkeleton,
 } from "@/features/participation/components/ParticipationDetail";
-import { participationPath } from "@/features/participation/types";
 import { requireMember } from "@/lib/auth";
 
 /* 내 참여 상세 (/testers/recruitments/:participationKey) */

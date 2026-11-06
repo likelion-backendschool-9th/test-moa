@@ -1,3 +1,4 @@
+import { participationsPath } from "@/lib/participation-paths";
 import { PROJECTS_PATH } from "@/lib/project-paths";
 import type { Role } from "@/lib/session";
 import type { MyPageSummary, PlanTerms, SubscriptionPlan, Todo } from "./types";
@@ -61,7 +62,7 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
             category: "participation",
             title: "모아플랜 참여 확정, 테스트 시작하기",
             detail: "",
-            href: "/testers/recruitments?tab=ongoing",
+            href: participationsPath("ongoing"),
             dueAt: daysFrom(now, 9),
           },
           {
@@ -69,7 +70,7 @@ export function buildMyPageSummary(role: Exclude<Role, "guest">, now: Date): MyP
             category: "participation",
             title: "북로그 피드백 제출",
             detail: "",
-            href: "/testers/recruitments?tab=ongoing",
+            href: participationsPath("ongoing"),
             dueAt: daysFrom(now, 2),
           },
         ] satisfies Todo[],

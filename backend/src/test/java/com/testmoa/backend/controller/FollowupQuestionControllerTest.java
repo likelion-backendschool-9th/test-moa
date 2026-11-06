@@ -66,13 +66,22 @@ class FollowupQuestionControllerTest {
         return user;
     }
 
+    // 플랜은 (tier, version)이 겹치면 저장되지 않아(uk_plans_tier_version) 테스트마다 한 번만 만들고 함께 씀
+    private Plan plan;
+
+    private Plan plan() {
+        if (plan == null) {
+            plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000).monthlyRecruitLimit(30)
+                    .version(1).periodDays(30).build();
+            em.persist(plan);
+        }
+        return plan;
+    }
+
     private User saveSubscriber() {
         User user = saveUser();
-        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000).monthlyRecruitLimit(30)
-                .version(1).periodDays(30).build();
-        em.persist(plan);
         LocalDateTime now = LocalDateTime.now();
-        em.persist(Subscription.builder().user(user).plan(plan).startAt(now.minusDays(1)).endAt(now.plusDays(29)).build());
+        em.persist(Subscription.builder().user(user).plan(plan()).startAt(now.minusDays(1)).endAt(now.plusDays(29)).build());
         return user;
     }
 
@@ -176,7 +185,8 @@ class FollowupQuestionControllerTest {
     @DisplayName("#109-S5 다른 회원 프로젝트의 리뷰와 없는 리뷰는 404 NOT_FOUND이고 분석 서버를 부르지 않는다")
     void 내_리뷰가_아님() throws Exception {
         User developer = saveSubscriber();
-        Feedback others = saveFeedback(saveSubscriber());
+        // 리뷰가 달린 프로젝트의 주인은 구독 여부와 관계없음
+        Feedback others = saveFeedback(saveUser());
 
         recommend(developer, others.getId())
                 .andExpect(status().isNotFound())

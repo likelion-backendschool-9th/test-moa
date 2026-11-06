@@ -104,9 +104,9 @@ test.describe("R156 이메일 로그인", () => {
   }
 
   test("S316 쿼리가 있는 경로로 돌아간다", async ({ page }) => {
-    await page.goto(`/login?next=${encodeURIComponent("/my/participations?tab=ongoing&sort=recent")}`);
+    await page.goto(`/login?next=${encodeURIComponent("/testers/recruitments?tab=ongoing&sort=recent")}`);
     await login(page, "seoyun@example.com", PASSWORD);
-    await expect(page).toHaveURL("/my/participations?tab=ongoing&sort=recent");
+    await expect(page).toHaveURL("/testers/recruitments?tab=ongoing&sort=recent");
   });
 });
 

@@ -12,4 +12,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     // 이메일 로그인: 그 이메일 회원의 LOCAL 계정
     Optional<Account> findByUser_EmailAndProvider(String email, Provider provider);
+
+    // 소셜 로그인: 그 제공자 계정이 연동된 회원
+    Optional<Account> findByProviderAndProviderCode(Provider provider, String providerCode);
 }

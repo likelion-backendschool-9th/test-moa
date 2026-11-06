@@ -6,6 +6,7 @@ import { FormMessage } from "@/components/ui/FormField";
 import { AuthCard, AuthFormSkeleton, OrDivider } from "@/features/auth/components/AuthCard";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import { SocialButtons } from "@/features/auth/components/SocialButtons";
+import { OAUTH_ERRORS, type OAuthErrorKey } from "@/features/auth/oauth";
 import { withNext } from "@/features/auth/types";
 import { getDemoAccounts } from "@/features/member/api";
 import { isBackendAuth } from "@/lib/backend";
@@ -38,9 +39,13 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
   const [session, params] = await Promise.all([getSession(), searchParams]);
   const next = safeNextPath(params.next);
   if (session.role !== "guest") redirect(next);
+  /* 소셜 로그인 실패(/auth/callback에서 돌아옴). 주소에는 키만 있고 문구는 여기서 고른다. constructor 같은 객체 기본 이름은 무시한다 */
+  const oauthError =
+    typeof params.error === "string" && Object.hasOwn(OAUTH_ERRORS, params.error) ? OAUTH_ERRORS[params.error as OAuthErrorKey] : undefined;
   return (
     <>
       {params.joined === "1" && <FormMessage status="success" message="가입했어요. 로그인해 주세요" />}
+      {oauthError && <FormMessage status="error" message={oauthError} />}
       <LoginForm next={next} />
       <OrDivider />
       <SocialButtons next={next} />

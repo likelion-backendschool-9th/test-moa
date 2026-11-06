@@ -44,3 +44,12 @@ analysis:
   # 응답 대기 시간. nginx의 응답 대기(60초)보다 짧게 둬서 사용자에게 503 안내가 먼저 감
   read-timeout: 30s
 
+# 소셜 로그인(OAuth) 앱 값. 환경 변수로만 넘기고 커밋하지 않는다. 비어 있으면 그 제공자로 로그인할 때 실패한다
+# 내 컴퓨터에서는 backend/config/application-local.yml(커밋하지 않음)에 같은 이름으로 넣어도 된다
+oauth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+  github:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}

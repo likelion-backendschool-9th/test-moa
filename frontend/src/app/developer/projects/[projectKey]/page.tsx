@@ -38,7 +38,7 @@ async function ProjectSlot({ params, searchParams }: Props) {
       <ProjectInfo project={project} />
       <section aria-labelledby="recruitments-heading" className="flex flex-col gap-4">
         <h2 id="recruitments-heading" className="text-2xl font-extrabold tracking-[-0.03em]">
-          테스트 모집
+          모집글 관리
         </h2>
         <ProjectRecruitmentList projectKey={project.key} recruitments={recruitments} />
       </section>

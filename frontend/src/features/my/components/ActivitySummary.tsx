@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { participationsPath } from "@/lib/participation-paths";
 import { PROJECTS_PATH } from "@/lib/project-paths";
 import { LinkButton } from "@/components/ui/LinkButton";
 import type { Activity } from "../types";
@@ -11,9 +12,9 @@ type Stat = { label: string; count: number; href: string };
 export function ActivitySummary({ activity }: { activity: Activity }) {
   const { participation, project } = activity;
   const participationStats: Stat[] = [
-    { label: "지원", count: participation.applied, href: "/testers/recruitments?tab=applied" },
-    { label: "참여 중", count: participation.ongoing, href: "/testers/recruitments?tab=ongoing" },
-    { label: "완료", count: participation.completed, href: "/testers/recruitments?tab=history" },
+    { label: "지원", count: participation.applied, href: participationsPath("applied") },
+    { label: "참여 중", count: participation.ongoing, href: participationsPath("ongoing") },
+    { label: "완료", count: participation.completed, href: participationsPath("history") },
   ];
   const projectStats: Stat[] = [
     { label: "프로젝트", count: project.projects, href: PROJECTS_PATH },

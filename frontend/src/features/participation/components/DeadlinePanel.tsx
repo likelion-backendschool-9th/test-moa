@@ -1,8 +1,9 @@
+import { participationPath } from "@/lib/participation-paths";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatDday, seoulDayKey } from "@/lib/format";
-import { participationPath, type ParticipationItem } from "../types";
+import type { ParticipationItem } from "../types";
 import { DeadlineCalendar } from "./DeadlineCalendar";
 
 const layoutClass = "grid items-stretch gap-4 lg:grid-cols-2";

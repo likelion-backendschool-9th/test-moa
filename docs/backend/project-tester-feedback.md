@@ -45,7 +45,7 @@ erDiagram
 | 4 | `Feedback.testItem`은 null을 허용한다 | ERD 내보내기는 `NOT NULL`이지만 기타 의견을 null로 표현한다 |
 | 5 | `ProjectImage`는 `TestItemImage`로 이름을 바꾼다 | 프로젝트 이미지는 `projects.image_url`, 모집글 이미지는 `recruitment_images`가 맡아 테스트 항목 이미지만 남는다 |
 | 6 | ERD에 `cancel_reason`, `cancelled_at`, `is_recommended`를 더한다 | 프론트 화면에 필요하고 ERD에 없다. 코드와 함께 ERD도 고친다 |
-| 7 | 모집글의 주소 키로 slug를 저장하지 않는다 | ERD에 없다. API를 만들 때 프론트의 slug 자리에 `recruitment_id`를 넘긴다 |
+| 7 | 모집글의 주소 키로 slug를 저장하지 않는다 | ERD에 없다. 백엔드 API는 `recruitment_id`를 주소에 쓰고(11-06 팀 결정: 백엔드는 id), 프론트 페이지 URL의 key 자리에는 같은 id 값을 넣는다. slug는 필요해지면 더한다 |
 
 ## 이슈 #89 시나리오 확인
 
@@ -264,15 +264,15 @@ erDiagram
 
 ## 5. 프로젝트·모집 작성 API (#92-R1)
 
-주소는 WBS를 따르고 `/api/v1`로 통일한다. WBS에 slug로 적힌 곳만 slug이고 나머지 주소 변수는 key다. ERD에 별도 키 컬럼이 없어 지금 `{projectKey}` 값은 프로젝트 ID다.
+주소는 WBS를 따르고 `/api/v1`로 통일한다. 주소 변수는 팀 결정(11-06)대로 나눈다: 백엔드 API는 DB의 id(`{projectId}`, `{recruitmentId}`)로 통일하고, 프론트 페이지 URL은 key(`{projectKey}`)로 남겨 둔다. 지금 프론트 key 값은 id와 같다. slug는 필요해지면 그때 더한다.
 
 | WBS | 동작 | API | 성공 |
 | --- | --- | --- | --- |
 | 5.3 | 내 프로젝트 목록 | `GET /api/v1/developer/projects` | 200 |
 | 5.4 | 프로젝트 등록 | `POST /api/v1/developer/projects` | 201 |
-| 5.5 | 프로젝트 정보 조회 | `GET /api/v1/developer/projects/{projectKey}` | 200 |
-| 5.6 | 프로젝트 모집 건 목록 조회 | `GET /api/v1/developer/projects/{projectKey}/recruitments` | 200 |
-| 5.7 | 프로젝트 수정 | `PUT /api/v1/developer/projects/{projectKey}` | 200 |
+| 5.5 | 프로젝트 정보 조회 | `GET /api/v1/developer/projects/{projectId}` | 200 |
+| 5.6 | 프로젝트 모집 건 목록 조회 | `GET /api/v1/developer/projects/{projectId}/recruitments` | 200 |
+| 5.7 | 프로젝트 수정 | `PUT /api/v1/developer/projects/{projectId}` | 200 |
 | 5.9 | 테스트 모집 작성 | `POST /api/v1/developer/recruitments` (본문의 `projectId`) | 201 |
 
 - 프로젝트 항목은 ERD 기준으로 이름·설명·대표 이미지이고, 유형과 접속 링크는 모집글에 있다. WBS를 이 기준으로 고친다. 정원과 모집 인원은 없다(#78)

@@ -792,7 +792,7 @@ test.describe("#101 역할별 페이지 주소", () => {
 
   test("#101-S5 프로젝트에서 모집 작성을 누르면 프로젝트 쿼리로 폼을 연다", async ({ page }) => {
     await page.goto(BOOKLOG);
-    await page.getByRole("link", { name: "테스트 모집 작성", exact: true }).click();
+    await page.getByRole("link", { name: "모집글 작성", exact: true }).click();
     await expect(page).toHaveURL("/developer/recruitments/new?project=booklog");
     await expect(page.getByRole("main").getByRole("paragraph").filter({ hasText: /^북로그$/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "취소", exact: true })).toHaveAttribute("href", BOOKLOG);

@@ -44,7 +44,7 @@
 
 #101-S5 작성 폼 [테스트]
 - Given 개발자로 로그인
-- When  `/developer/projects/booklog`에서 "테스트 모집 작성"을 누른다
+- When  `/developer/projects/booklog`에서 "모집글 작성"을 누른다 (고침 #130: 문구 변경)
 - Then  URL이 `/developer/recruitments/new?project=booklog`이고 폼 위에 "북로그"가 보인다
 
 #101-S6 프로젝트 키가 없거나 남의 프로젝트 [테스트]

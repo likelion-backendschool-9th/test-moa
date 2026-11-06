@@ -46,9 +46,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ProjectServiceImpl implements ProjectService {
 
-    // 마감일과 "오늘"은 한국 시간으로 본다. 서버 시간대와 상관없이 같은 값이 저장된다
+    // 마감일과 "오늘"은 한국 날짜로 본다. 저장과 비교는 다른 코드처럼 서버 시간대(LocalDateTime.now())를 쓴다
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
-    // 마감일은 그날 끝까지다
+    // 마감일은 한국 시간으로 그날 끝까지다
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
 
     private final ProjectRepository projectRepository;
@@ -107,7 +107,7 @@ public class ProjectServiceImpl implements ProjectService {
         Map<Long, Long> confirmed = registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED).stream()
                 .collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
 
-        LocalDateTime now = LocalDateTime.now(SEOUL);
+        LocalDateTime now = LocalDateTime.now();
         return recruitments.stream().map(item -> RecruitmentSummaryResponse.of(
                 item,
                 statusOf(item, now),
@@ -163,7 +163,7 @@ public class ProjectServiceImpl implements ProjectService {
     // 프로젝트마다 모집 수와 모집 중인 수를 센다. 취소한 모집은 세지 않는다
     private List<ProjectResponse> withCounts(List<Project> projects) {
         List<Long> projectIds = projects.stream().map(Project::getId).toList();
-        LocalDateTime now = LocalDateTime.now(SEOUL);
+        LocalDateTime now = LocalDateTime.now();
         Map<Long, List<Recruitment>> byProject = recruitmentRepository.findByProjectIdInOrderByCreatedAtDescIdDesc(projectIds).stream()
                 .filter(item -> item.getStatus() != RecruitmentStatus.CANCELLED)
                 .collect(Collectors.groupingBy(item -> item.getProject().getId()));
@@ -218,8 +218,9 @@ public class ProjectServiceImpl implements ProjectService {
         return typeRepository.findByCode(code).orElseGet(() -> typeRepository.save(Type.builder().code(code).build()));
     }
 
+    // 한국 날짜의 끝 시각을 서버 시간대의 시각으로 바꾼다. 서버가 UTC면 23:59:59가 14:59:59로 저장된다
     private LocalDateTime endOf(LocalDate date) {
-        return date.atTime(END_OF_DAY);
+        return date.atTime(END_OF_DAY).atZone(SEOUL).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     private SelectionMode selectionModeOf(String value) {

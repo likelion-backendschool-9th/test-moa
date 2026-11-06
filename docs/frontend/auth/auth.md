@@ -105,9 +105,9 @@ S295 바깥 주소로 보내지 않음 [테스트]
 - Then  이미 로그인한 상태로 같은 `/login?next=…`에 접속해도 `/`로 간다
 
 S316 쿼리가 있는 경로 (고침 11-01: 리뷰) [테스트]
-- Given `/login?next=%2Fmy%2Fparticipations%3Ftab%3Dongoing%26sort%3Drecent`
+- Given `/login?next=%2Ftesters%2Frecruitments%3Ftab%3Dongoing%26sort%3Drecent` (고침 #101: 역할 경로로 이동)
 - When  seoyun@example.com / test1234로 로그인한다
-- Then  URL이 `/my/participations?tab=ongoing&sort=recent`다
+- Then  URL이 `/testers/recruitments?tab=ongoing&sort=recent`다 (고침 #101: 역할 경로로 이동)
 
 ## 3. 소셜 로그인 (R157)
 깃허브·구글 버튼은 목업이다. 누르면 테스터 시연 계정으로 로그인하고 `next`로 보낸다. 제공자는 추후 바뀔 수 있어 목록 한 곳(`SOCIAL_PROVIDERS`)만 고치면 버튼이 바뀌게 한다. (고침 11-01: 카카오·구글 → 깃허브·구글)

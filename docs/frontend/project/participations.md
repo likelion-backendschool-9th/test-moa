@@ -1,4 +1,4 @@
-# 프론트엔드 참여 테스트 (`/my/participations`)
+# 프론트엔드 참여 테스트 (`/testers/recruitments`)
 
 백엔드: [프로젝트·테스터·피드백 백엔드](../../backend/project/README.md)
 
@@ -15,8 +15,8 @@
   3. 마감 캘린더와 마감 임박 테스트: 왼쪽은 내 피드백 제출 마감을 표시한 달력, 오른쪽은 제출 전 테스트를 마감 순으로 모은 목록이다. 좁은 화면에서는 위아래로 쌓인다. 주 버튼은 목록 맨 위에만
   4. 탭 3개: 지원한 테스트 / 참여 중인 테스트 / 참여했던 테스트 (개수 표시)
   5. 선택한 탭의 참여 목록(행 카드)
-  6. 상세(`/my/participations/:participationKey`): 진행 상황, 피드백 작성 또는 제출한 피드백, 테스트 정보
-- URL: `docs/page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/my/participations/:participationKey`(`docs/page-urls.md`에서는 아직 후보).
+  6. 상세(`/testers/recruitments/:participationKey`): 진행 상황, 피드백 작성 또는 제출한 피드백, 테스트 정보
+- URL: `docs/page-urls.md`의 참여 테스트 섹션을 따른다. 탭은 `?tab=applied|ongoing|history`, 상세는 `/testers/recruitments/:participationKey`(`docs/page-urls.md`에서는 아직 후보).
 - 디자인: `frontend/DESIGN.md`와 `docs/design-tokens.html`의 토큰·컴포넌트를 그대로 쓴다. 새 색이나 새 버튼 스타일을 만들지 않는다.
 - 데이터: 목업이다. `demo-role`, `demo-data` 쿠키로 상태를 바꾼다(홈과 같은 장치).
 
@@ -42,8 +42,8 @@ README의 흐름(지원 → 참여 확정 → 테스트 → 피드백 제출 →
 
 S448 비로그인 [테스트: pages.spec.ts #56-S2] (고침 #96: 쿼리가 있는 주소(`/admin/withdrawals?open=`)까지 페이지 목록 테스트가 확인해서 테스트를 지움)
 - Given `demo-role=guest`
-- When  `/my/participations?tab=history`에 접속한다
-- Then  URL이 `/login?next=%2Fmy%2Fparticipations%3Ftab%3Dhistory`이다 (탭까지 기억한다)
+- When  `/testers/recruitments?tab=history`에 접속한다 (고침 #101: 역할 경로로 이동)
+- Then  URL이 `/login?next=%2Ftesters%2Frecruitments%3Ftab%3Dhistory`이다 (탭까지 기억한다) (고침 #101: 역할 경로로 이동)
 
 S449 테스터 [직접]
 - Given `demo-role=tester` (또는 쿠키 없음)
@@ -58,7 +58,7 @@ S450 개발자·운영자 [직접]
 탭 상태는 URL `tab`에 남고, 탭은 링크다. 각 탭에 개수를 보여 준다.
 
 S451 기본 탭 [직접]
-- When  `/my/participations`에 접속한다
+- When  `/testers/recruitments`에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  "참여 중인 테스트" 탭이 현재 탭이다 (`aria-current="page"`)
 - Then  탭 3개가 순서대로 있다: 지원한 테스트 `?tab=applied`, 참여 중인 테스트 `?tab=ongoing`, 참여했던 테스트 `?tab=history`
 
@@ -67,7 +67,7 @@ S452 개수 [직접]
 
 S453 탭 이동 [테스트]
 - When  "참여했던 테스트"를 누른다
-- Then  URL이 `/my/participations?tab=history`이고 그 탭이 현재 탭이다
+- Then  URL이 `/testers/recruitments?tab=history`이고 그 탭이 현재 탭이다 (고침 #101: 역할 경로로 이동)
 - When  뒤로 가기를 누른다
 - Then  "참여 중인 테스트" 탭으로 돌아온다
 
@@ -79,7 +79,7 @@ S454 알 수 없는 탭 [직접]
 로그인한 테스터 본인의 피드백 제출 전 참여만 다룬다. lg 이상은 왼쪽에 마감 캘린더, 오른쪽에 마감 임박 테스트를 나란히 두고, 그보다 좁으면 위아래로 쌓는다. "임박"은 기간으로 자르지 않고 제출 전 참여 전체를 마감이 가까운 순서로 보여 준다. 캘린더는 오늘이 있는 달에서 시작하고 이전·다음 버튼으로 넘긴다. 마감일 칸은 md 이상에서 서비스 이름을(같은 날이 여러 건이면 첫 이름과 "외 n건"), 그보다 좁으면 점을 보여 주고, 스크린 리더는 어느 폭에서나 이름을 읽는다. 날짜 계산은 서울 시간 기준이다. 이 화면의 주 버튼(강조색)은 목록 맨 위 항목의 버튼 하나뿐이고, 나머지는 보조 버튼이다.
 
 S455 목록 맨 위 [테스트] (고침 #46: 다음 할 일 카드를 마감 임박 목록으로 바꿈)
-- Then  첫 항목에 "회의록 정리"와 "D-8"이 보이고, 주 버튼 "피드백 쓰기"가 그 참여의 상세(`/my/participations/:participationKey`)를 가리킨다
+- Then  첫 항목에 "회의록 정리"와 "D-8"이 보이고, 주 버튼 "피드백 쓰기"가 그 참여의 상세(`/testers/recruitments/:participationKey`)를 가리킨다 (고침 #101: 역할 경로로 이동)
 - Then  화면의 강조색 바탕 버튼은 이것 하나다
 
 #46-S9 마감 임박 목록 [테스트]
@@ -192,15 +192,15 @@ S467 [명령] (고침 #46: TodoScroller를 DeadlineCalendar로 바꿈)
 - Then  결과가 없다
 
 ## 11. 상세 접근 (R192)
-내 참여 상세 `/my/participations/:participationKey`는 그 참여의 테스터만 본다. 시나리오 S472~S481는 `frontend/e2e/participation-detail.spec.ts`에 있다.
+내 참여 상세 `/testers/recruitments/:participationKey`는 그 참여의 테스터만 본다. 시나리오 S472~S481는 `frontend/e2e/participation-detail.spec.ts`에 있다.
 
 S472 비로그인 [테스트: pages.spec.ts #56-S2]
 - Given `demo-role=guest`
-- When  `/my/participations/p-meeting-notes`에 접속한다
-- Then  URL이 `/login?next=%2Fmy%2Fparticipations%2Fp-meeting-notes`이다
+- When  `/testers/recruitments/p-meeting-notes`에 접속한다 (고침 #101: 역할 경로로 이동)
+- Then  URL이 `/login?next=%2Ftesters%2Frecruitments%2Fp-meeting-notes`이다 (고침 #101: 역할 경로로 이동)
 
 S473 없거나 내 참여가 아님 [테스트]
-- When  테스터가 `/my/participations/nope`에, 개발자가 테스터의 참여 주소에 접속한다
+- When  테스터가 `/testers/recruitments/nope`에, 개발자가 테스터의 참여 주소에 접속한다 (고침 #101: 역할 경로로 이동)
 - Then  맞춤 404("찾는 페이지가 없어요")가 보인다 (개발자 프로젝트 S485와 같은 방식)
 
 ## 12. 제출 전 상세와 피드백 작성 (R193)
@@ -208,7 +208,7 @@ S473 없거나 내 참여가 아님 [테스트]
 
 S474 제출 전 상세 [직접]
 - Then  제목(h1)이 서비스 이름이고, 헤더의 "참여 테스트" 탭이 현재 탭이다
-- Then  "참여 중인 테스트"(`/my/participations?tab=ongoing`)로 돌아가는 링크가 있다
+- Then  "참여 중인 테스트"(`/testers/recruitments?tab=ongoing`)로 돌아가는 링크가 있다 (고침 #101: 역할 경로로 이동)
 - Then  진행 상황에 "11월 n일까지 피드백을 제출해 주세요 (D-8)"이 보이고 상태 배지는 "피드백 제출 전"이다
 - Then  테스트 항목과 기타 의견마다 칸과 "0 / 500자"가 있고, 강조색 바탕 버튼은 "피드백 제출" 하나다 (고침 #90: 칸 하나를 항목별로 나눔)
 
@@ -406,8 +406,8 @@ S482 제출한 피드백의 긴 문자열 [직접]
 - Then  폼이 POST로 제출되어 값이 저장되고, 번들을 받은 뒤 그리드로 보인다
 
 ## 구현
-- `src/app/my/participations/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·마감 일정·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
-- `src/app/my/participations/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
+- `src/app/testers/recruitments/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·마감 일정·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
+- `src/app/testers/recruitments/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
 - `src/features/participation/`
   - `types.ts`: `Participation`(key, 모집 건 slug, 상태, 지원일, 제출일, 지급일, 받은 크레딧, 제출한 피드백), 상태 상수, 탭↔상태 묶음, 테스트 항목, 항목별 제출한 피드백, 피드백 최대 글자 수(칸마다 500자)
   - `mock.ts`: 아래 샘플. 날짜는 홈처럼 접속 시각 기준 상대값

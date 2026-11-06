@@ -91,7 +91,7 @@ export function RequestReviewForm({
           </label>
           {/* placeholder는 입력하면 사라져서 안내는 늘 보이게 둔다 */}
           <p id={hintId} className="text-text-muted">
-            반려할 때 운영자 기록으로 남아요. 사유가 &ldquo;기타&rdquo;이면 이 메모가 {audience}에게 보이는 사유가 돼요.
+            이 메모는 {audience}에게 그대로 보여요. &ldquo;기타&rdquo;는 꼭 적고, 다른 사유는 덧붙일 말이 있을 때만 적어요.
           </p>
           <textarea
             id={`${idPrefix}-memo`}

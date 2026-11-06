@@ -132,7 +132,7 @@ export function isWithdrawalDecision(value: unknown): value is WithdrawalDecisio
   return value === "paid" || value === "rejected";
 }
 
-/** 반려 사유. 문구는 테스터 출금 내역에 그대로 보인다. "기타"는 메모가 사유가 된다 */
+/** 반려 사유. 문구는 테스터 출금 내역에 그대로 보인다. 메모는 사유와 상관없이 따로 보인다("기타"만 필수) */
 export const REJECT_REASONS = {
   holder: "예금주 이름이 회원 정보와 달라요",
   account: "계좌번호를 확인할 수 없어요",
@@ -155,7 +155,7 @@ export type RequestFormState = { error: RequestFormError | null };
 export type WithdrawalReview = {
   decision: WithdrawalDecision;
   reason?: RejectReason;
-  /** 반려 메모. 운영자 기록이고, 사유가 "기타"일 때만 회원에게 사유로 보인다 */
+  /** 반려 메모. 사유와 상관없이 회원에게 그대로 보인다. "기타"만 필수다 */
   memo: string;
   processedAt: string;
 };
@@ -163,7 +163,7 @@ export type WithdrawalReview = {
 /** 회원에게 보이는 반려 사유 */
 export function rejectReasonText(review: WithdrawalReview) {
   if (!review.reason) return "";
-  return review.reason === "other" ? review.memo : REJECT_REASONS[review.reason];
+  return REJECT_REASONS[review.reason];
 }
 
 /** 출금 요청. id가 상세 주소의 withdrawalKey다 */

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton } from "@/features/project/components/ProjectDetail";
 import { ProjectForm } from "@/features/project/components/ProjectForm";
 import { requireRole } from "@/features/project/service";
 
-/* 프로젝트 등록 (/my/projects/new) */
+/* 프로젝트 등록 (/developer/projects/new) */
 
 export const metadata: Metadata = { title: "프로젝트 등록" };
 
@@ -21,6 +22,6 @@ export default function NewProjectPage() {
 }
 
 async function FormSlot() {
-  await requireRole("/my/projects/new");
-  return <ProjectForm projectKey={null} cancelHref="/my/projects" />;
+  await requireRole(PROJECT_NEW_PATH);
+  return <ProjectForm projectKey={null} cancelHref={PROJECTS_PATH} />;
 }

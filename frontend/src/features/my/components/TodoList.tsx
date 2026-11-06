@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PROJECTS_PATH } from "@/lib/project-paths";
 import { LinkButton } from "@/components/ui/LinkButton";
 import type { Todo, TodoCategory } from "../types";
 import { ActivityGroup } from "./ActivityGroup";
@@ -7,7 +8,7 @@ import { cardClass, cardTitleClass } from "./card-styles";
 /** 할 일이 없는 묶음에 보여 줄 안내와 이동 링크 */
 const EMPTY: Record<TodoCategory, { text: string; href: string; label: string }> = {
   participation: { text: "지금 할 테스트가 없어요", href: "/recruitments", label: "테스트 둘러보기" },
-  project: { text: "지금 할 프로젝트 일이 없어요", href: "/my/projects", label: "내 프로젝트" },
+  project: { text: "지금 할 프로젝트 일이 없어요", href: PROJECTS_PATH, label: "내 프로젝트" },
 };
 
 const CATEGORY_ORDER: TodoCategory[] = ["participation", "project"];

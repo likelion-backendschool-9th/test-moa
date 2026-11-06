@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { projectPath, projectEditPath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton } from "@/features/project/components/ProjectDetail";
 import { ProjectForm } from "@/features/project/components/ProjectForm";
 import { getMyProject } from "@/features/project/service";
 
-/* 프로젝트 수정 (/my/projects/:projectKey/edit). 등록과 같은 폼에 값을 채워 둔다 */
+/* 프로젝트 수정 (/developer/projects/:projectKey/edit). 등록과 같은 폼에 값을 채워 둔다 */
 
 export const metadata: Metadata = { title: "프로젝트 수정" };
 
-type Props = PageProps<"/my/projects/[projectKey]/edit">;
+type Props = PageProps<"/developer/projects/[projectKey]/edit">;
 
 export default function EditProjectPage({ params }: Props) {
   return (
@@ -24,14 +25,14 @@ export default function EditProjectPage({ params }: Props) {
 
 async function FormSlot({ params }: Pick<Props, "params">) {
   const { projectKey } = await params;
-  const { project } = await getMyProject(`/my/projects/${projectKey}/edit`, projectKey);
+  const { project } = await getMyProject(projectEditPath(projectKey), projectKey);
   const { name, description } = project;
   return (
     <ProjectForm
       projectKey={project.key}
       initialValues={{ name, description }}
       initialImage={project.image}
-      cancelHref={`/my/projects/${project.key}`}
+      cancelHref={projectPath(project.key)}
     />
   );
 }

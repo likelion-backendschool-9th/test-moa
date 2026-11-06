@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PROJECTS_PATH, projectPath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
 import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/features/project/components/ProjectDetail";
 import { SavedNotice } from "@/features/project/components/SavedNotice";
 import { getMyProject } from "@/features/project/service";
 
-/* 프로젝트 상세 (/my/projects/:projectKey) */
+/* 프로젝트 상세 (/developer/projects/:projectKey) */
 
 export const metadata: Metadata = { title: "프로젝트 상세" };
 
-type Props = PageProps<"/my/projects/[projectKey]">;
+type Props = PageProps<"/developer/projects/[projectKey]">;
 
 export default function ProjectPage({ params, searchParams }: Props) {
   return (
@@ -25,12 +26,12 @@ export default function ProjectPage({ params, searchParams }: Props) {
 async function ProjectSlot({ params, searchParams }: Props) {
   const { projectKey } = await params;
   const [{ project, recruitments }, { notice }] = await Promise.all([
-    getMyProject(`/my/projects/${projectKey}`, projectKey),
+    getMyProject(projectPath(projectKey), projectKey),
     searchParams,
   ]);
   return (
     <div className="flex flex-col gap-10">
-      <Link href="/my/projects" className="w-fit text-sm font-semibold text-text-muted hover:text-text">
+      <Link href={PROJECTS_PATH} className="w-fit text-sm font-semibold text-text-muted hover:text-text">
         내 프로젝트로 돌아가기
       </Link>
       <SavedNotice show={notice === "saved"} />

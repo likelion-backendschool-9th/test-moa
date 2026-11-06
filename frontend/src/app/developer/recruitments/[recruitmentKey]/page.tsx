@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { recruitmentManagePath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
 import { ApplicantList } from "@/features/project/components/ApplicantList";
 import { FeedbackList } from "@/features/project/components/FeedbackList";
@@ -13,11 +14,11 @@ import {
 import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/features/project/components/AiAnalysisPanel";
 import { canSelectApplicants, getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
 
-/* 테스트 모집 관리 (/my/projects/:projectKey/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
+/* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
 
 export const metadata: Metadata = { title: "테스트 모집 관리" };
 
-type Props = PageProps<"/my/projects/[projectKey]/recruitments/[recruitmentKey]">;
+type Props = PageProps<"/developer/recruitments/[recruitmentKey]">;
 
 export default function RecruitmentManagePage({ params, searchParams }: Props) {
   return (
@@ -30,10 +31,10 @@ export default function RecruitmentManagePage({ params, searchParams }: Props) {
 }
 
 async function ManageSlot({ params, searchParams }: Props) {
-  const { projectKey, recruitmentKey } = await params;
-  const basePath = `/my/projects/${projectKey}/recruitments/${recruitmentKey}`;
+  const { recruitmentKey } = await params;
+  const basePath = recruitmentManagePath(recruitmentKey);
   const [{ project, recruitment, applications, feedbacks, analytics, detail, cancellation, canCancel }, { tab }] = await Promise.all([
-    getRecruitmentDetail(basePath, projectKey, recruitmentKey),
+    getRecruitmentDetail(basePath, recruitmentKey),
     searchParams,
   ]);
   const current = parseManageTab(tab);
@@ -53,7 +54,6 @@ async function ManageSlot({ params, searchParams }: Props) {
         <ApplicantList
           applications={applications}
           canSelect={canSelectApplicants(recruitment, detail.selectionMode)}
-          projectKey={projectKey}
           recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
           selectionMode={detail.selectionMode}
@@ -64,13 +64,13 @@ async function ManageSlot({ params, searchParams }: Props) {
       {/* AI 분석은 느릴 수 있어서 숫자 카드와 따로 기다린다. 구독 모집에서만 보인다 */}
       {current === "analytics" && recruitment.isSubscription && (
         <Suspense fallback={<AiAnalysisSkeleton />}>
-          <AiSlot basePath={basePath} projectKey={projectKey} recruitmentKey={recruitmentKey} />
+          <AiSlot basePath={basePath} recruitmentKey={recruitmentKey} />
         </Suspense>
       )}
     </div>
   );
 }
 
-async function AiSlot({ basePath, projectKey, recruitmentKey }: { basePath: string; projectKey: string; recruitmentKey: string }) {
-  return <AiAnalysisPanel analysis={await getAiAnalysis(basePath, projectKey, recruitmentKey)} />;
+async function AiSlot({ basePath, recruitmentKey }: { basePath: string; recruitmentKey: string }) {
+  return <AiAnalysisPanel analysis={await getAiAnalysis(basePath, recruitmentKey)} />;
 }

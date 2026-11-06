@@ -20,7 +20,7 @@ export function ParticipationTabs({ active, counts }: ParticipationTabsProps) {
           return (
             <li key={tab}>
               <Link
-                href={`/my/participations?tab=${tab}`}
+                href={`/testers/recruitments?tab=${tab}`}
                 scroll={false}
                 aria-current={current ? "page" : undefined}
                 className={cn(

@@ -58,7 +58,7 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByRole("list", { name: /^독서 기록 쓰기 이미지/ })).toHaveCount(0);
 
     await setDemo(context, { role: "developer" });
-    await page.goto("/my/projects/booklog/recruitments/booklog");
+    await page.goto("/developer/recruitments/booklog");
     await page.getByText("모집 조건과 테스트 항목 3개").click();
     await expect(page.getByRole("list", { name: "책 검색해서 등록하기 이미지 2장" }).getByRole("img")).toHaveCount(2);
   });
@@ -140,14 +140,14 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(viewer).toHaveCount(0);
 
     await setDemo(context, { role: "developer" });
-    await page.goto("/my/projects/booklog/recruitments/booklog");
+    await page.goto("/developer/recruitments/booklog");
     await page.getByText("모집 조건과 테스트 항목 3개").click();
     await page.getByRole("button", { name: "책 검색 화면 크게 보기" }).click();
     await expect(page.getByRole("dialog", { name: "책 검색해서 등록하기 이미지 크게 보기" })).toBeVisible();
   });
 
   test.describe("모집 작성", () => {
-    const NEW = "/my/projects/booklog/recruitments/new";
+    const NEW = "/developer/recruitments/new?project=booklog";
     const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
     const png = (name: string) => ({ name, mimeType: "image/png", buffer: PIXEL });
     const picker = (page: Page, index: number) => page.getByLabel(`항목 ${index} 이미지 (선택)`);

@@ -2,8 +2,6 @@ const PLACEMENT = {
   /* 썸네일 오른쪽 위에 이름과 겹치지 않게 겹쳐 찍는다 */
   corner: "absolute top-[7%] right-[5%] w-[max(30%,4.5rem)] -rotate-8",
   bottomRight: "absolute bottom-[7%] right-[5%] w-[max(45%,6rem)] -rotate-8",
-  /* 오른쪽 위에 다른 배지가 있을 때(참여 내역의 '추가 보상') 오른쪽 가운데에 이름 위로 겹쳐 찍는다. #59의 배치 그대로 */
-  middle: "absolute top-1/2 right-[6%] w-[42%] -translate-y-1/2 -rotate-12",
   /* 768px 이상에서 글줄 안에 놓는다 (예: 홈 배너 진행 흐름의 마지막 줄) */
   inline: "hidden w-24 shrink-0 -rotate-6 md:block lg:w-28",
   /* 768px 미만에서 면의 오른쪽 아래 가장자리에 걸쳐 찍는다. 좁은 글줄을 비워 두려고 inline과 짝으로 쓴다 */

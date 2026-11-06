@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 
 /**
  * strong: 먹 바탕 버튼. 되돌리기 어려운 행동(삭제 확인)처럼 강조색을 쓰면 안 되는 무거운 행동에 쓴다.
- * paid: 민트→라벤더 그라데이션 바탕. 유료 기능으로 이어지는 버튼(피드백의 채팅하기·AI 질문 받기)에 쓴다.
+ * paid: 유료 기능 그라데이션(bg-paid-gradient) 바탕에 강조색 글씨. 유료 기능으로 이어지는 버튼(피드백의 채팅하기·AI 질문 받기)에 쓴다.
  * like: 피드백 "유용해요"를 누른 상태에만 쓴다.
  */
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "strong" | "paid" | "like";
@@ -18,7 +18,7 @@ const variants: Record<ButtonVariant, string> = {
   secondary: "bg-surface-strong text-text hover:bg-line",
   ghost: "text-text hover:bg-surface-strong",
   strong: "bg-text text-surface hover:opacity-90",
-  paid: "bg-linear-to-r/srgb from-paid-start via-paid-mid via-55% to-paid-end text-paid-text hover:opacity-80",
+  paid: "bg-paid-gradient text-accent hover:opacity-80",
   like: "bg-like-soft text-like hover:opacity-80",
 };
 

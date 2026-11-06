@@ -173,7 +173,8 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   aria-label={`${nickname}님의 피드백이 유용해요`}
                   onClick={() => toggleRecommend(item, !liked)}
                 >
-                  <HeartIcon {...icon} />
+                  {/* 이번에 직접 누른 하트만 튀어 오른다. 처음부터 눌려 있던 피드백은 그냥 보인다 */}
+                  <HeartIcon {...icon} className={recommended[item.id] ? "animate-heart-pop" : undefined} />
                   유용해요
                 </Button>
                 {status === "reported" ? (

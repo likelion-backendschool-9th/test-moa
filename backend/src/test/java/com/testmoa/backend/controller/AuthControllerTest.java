@@ -129,6 +129,34 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("#80-S9 로그아웃하면 그 로그인 세션이 끝나서, 로그아웃 전에 갱신으로 받은 토큰도 쓸 수 없다")
+    void 로그아웃하면_로그아웃_전에_갱신한_토큰도_못_쓴다() throws Exception {
+        signup(email, nickname);
+        String r0 = field(login(email, "moa2026pw"), "$.data.refreshToken");
+        String otherDevice = field(login(email, "moa2026pw"), "$.data.accessToken"); // 다른 기기의 로그인
+
+        // 요청 A: R0로 갱신해 R1·A1을 받는다(브라우저에는 아직 도착하지 않은 응답)
+        ResultActions refreshed = postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+        String r1 = field(refreshed, "$.data.refreshToken");
+        String a1 = field(refreshed, "$.data.accessToken");
+        me(a1).andExpect(status().isOk());
+
+        // 요청 B: 브라우저 쿠키에 남은 R0로 로그아웃한다
+        postJson("/api/auth/logout", "{\"refreshToken\":\"" + r0 + "\"}").andExpect(status().isOk());
+
+        // A의 늦은 응답이 쿠키에 R1·A1을 다시 넣어도 쓸 수 없다
+        postJson("/api/auth/refresh", "{\"refreshToken\":\"" + r1 + "\"}").andExpect(status().isUnauthorized());
+        me(a1).andExpect(status().isUnauthorized());
+
+        // 다른 기기의 로그인은 그대로다
+        me(otherDevice).andExpect(status().isOk());
+    }
+
+    private ResultActions me(String accessToken) throws Exception {
+        return mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + accessToken));
+    }
+
+    @Test
     @DisplayName("#80-S6·S7 refresh 토큰은 한 번만 쓸 수 있고 로그아웃하면 못 쓴다")
     void refresh_토큰은_한_번만_쓸_수_있고_로그아웃하면_못_쓴다() throws Exception {
         signup(email, nickname);

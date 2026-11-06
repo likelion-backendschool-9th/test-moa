@@ -1,7 +1,10 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.domain.dto.request.LoginRequest;
+import com.testmoa.backend.domain.dto.request.OAuthCodeRequest;
+import com.testmoa.backend.domain.dto.request.OAuthSignupRequest;
 import com.testmoa.backend.domain.dto.request.SignupRequest;
+import com.testmoa.backend.domain.dto.response.OAuthLoginResponse;
 import com.testmoa.backend.domain.dto.response.TokenResponse;
 import com.testmoa.backend.domain.entity.Account;
 import com.testmoa.backend.domain.entity.RefreshToken;
@@ -15,6 +18,8 @@ import com.testmoa.backend.global.common.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.JwtProvider;
+import com.testmoa.backend.global.security.OAuthClient;
+import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
 import com.testmoa.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +36,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final OAuthClient oauthClient;
     private final Duration refreshTokenTtl;
 
     public AuthServiceImpl(UserRepository userRepository,
@@ -51,12 +58,14 @@ public class AuthServiceImpl implements AuthService {
                            RefreshTokenRepository refreshTokenRepository,
                            PasswordEncoder passwordEncoder,
                            JwtProvider jwtProvider,
+                           OAuthClient oauthClient,
                            @Value("${jwt.refresh-token-ttl}") Duration refreshTokenTtl) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
+        this.oauthClient = oauthClient;
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
@@ -103,6 +112,123 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
         return issueTokens(user, UUID.randomUUID().toString());
+    }
+
+    // 소셜 로그인·가입의 새 로그인 세션. 정지 회원은 막는다
+    private TokenResponse startSession(User user) {
+        if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
+        return issueTokens(user, UUID.randomUUID().toString());
+    }
+
+    @Override
+    public String oauthAuthorizeUrl(String provider, String redirectUri, String state) {
+        return oauthClient.authorizeUrl(OAuthClient.parse(provider), redirectUri, state);
+    }
+
+    /**
+     * 소셜 로그인. 이미 연동된 회원 → 로그인. 제공자가 확인한 이메일과 같은 회원 → 그 회원에 연동하고 로그인.
+     * 둘 다 아니면 처음 온 사람이라 이름을 받으러 가입 토큰을 준다. 확인된 이메일이 없으면 연동도 가입도 하지 않는다
+     */
+    @Override
+    public OAuthLoginResponse oauthLogin(String provider, OAuthCodeRequest request) {
+        OAuthProfile profile = oauthClient.fetchProfile(OAuthClient.parse(provider), request.code(), request.redirectUri());
+
+        Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
+        if (linked.isPresent()) return OAuthLoginResponse.loggedIn(startSocialSession(linked.get().getUser()));
+
+        if (!profile.emailVerified() || profile.email() == null) throw new BusinessException(ErrorCode.OAUTH_EMAIL_REQUIRED);
+        String email = normalizeEmail(profile.email());
+
+        Optional<User> sameEmail = userRepository.findByEmail(email);
+        if (sameEmail.isPresent()) {
+            User user = sameEmail.get();
+            saveSocialAccount(user, profile);
+            return OAuthLoginResponse.loggedIn(startSocialSession(user));
+        }
+
+        OAuthProfile verified = new OAuthProfile(profile.provider(), profile.providerCode(), email, true, profile.nickname());
+        return OAuthLoginResponse.signupRequired(jwtProvider.createSignupToken(verified), email, availableNickname(profile.nickname()));
+    }
+
+    /** 소셜 가입. 이름 입력 화면에 있는 동안 같은 이메일로 가입했거나 같은 계정이 연동됐으면 409 */
+    @Override
+    public TokenResponse oauthSignup(OAuthSignupRequest request) {
+        OAuthProfile profile = jwtProvider.readSignupToken(request.signupToken())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_SIGNUP_TOKEN));
+        if (userRepository.existsByEmail(profile.email())) throw new BusinessException(ErrorCode.EMAIL_TAKEN);
+        if (accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode()).isPresent()) {
+            throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+        }
+
+        User user = userRepository.save(User.builder()
+                .name(request.name().trim())
+                .nickname(availableNickname(profile.nickname()))
+                .email(profile.email())
+                .role(Role.USER)
+                .status(UserStatus.ACTIVE)
+                .build());
+        saveSocialAccount(user, profile);
+        return startSession(user);
+    }
+
+    @Override
+    public void linkAccount(Long userId, String provider, OAuthCodeRequest request) {
+        OAuthProfile profile = oauthClient.fetchProfile(OAuthClient.parse(provider), request.code(), request.redirectUri());
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+
+        Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
+        if (linked.isPresent()) {
+            if (linked.get().getUser().getId().equals(userId)) return; // 이미 내 계정
+            throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+        }
+        saveSocialAccount(user, profile);
+    }
+
+    @Override
+    public void unlinkAccount(Long userId, String provider) {
+        Provider target = OAuthClient.parse(provider);
+        List<Account> accounts = accountRepository.findByUserId(userId);
+        Optional<Account> account = accounts.stream().filter(a -> a.getProvider() == target).findFirst();
+        if (account.isEmpty()) return; // 이미 해제됨
+        if (accounts.size() == 1) throw new BusinessException(ErrorCode.LAST_LOGIN_METHOD);
+        accountRepository.delete(account.get());
+    }
+
+    // ponytail: 탈퇴 유예 회원의 소셜 로그인은 이메일 로그인처럼 막기만 한다. 되돌리기는 #84에서 바꾼다
+    private TokenResponse startSocialSession(User user) {
+        if (user.getStatus() == UserStatus.WITHDRAWN) throw new BusinessException(ErrorCode.OAUTH_FAILED);
+        return startSession(user);
+    }
+
+    // 제공자마다 계정 하나. 같은 제공자의 다른 계정이 이미 있으면 409
+    private void saveSocialAccount(User user, OAuthProfile profile) {
+        boolean hasProvider = accountRepository.findByUserId(user.getId()).stream()
+                .anyMatch(a -> a.getProvider() == profile.provider());
+        if (hasProvider) throw new BusinessException(ErrorCode.PROVIDER_ALREADY_LINKED);
+        accountRepository.save(Account.builder()
+                .user(user)
+                .provider(profile.provider())
+                .providerCode(profile.providerCode())
+                .build());
+    }
+
+    /**
+     * 소셜 가입 닉네임. 제공자 이름(GitHub 사용자명, Google 이름)에서 닉네임 규칙(한글·영문·숫자 1~39자)에 맞는 글자만 남기고,
+     * 비거나 겹치면 숫자 네 자리를 붙인다.
+     * ponytail: 확인과 저장 사이에 같은 닉네임이 생기면 unique 제약으로 500. 드물어서 그대로 둔다
+     */
+    private String availableNickname(String suggestion) {
+        String base = suggestion == null ? "" : suggestion.replaceAll("[^가-힣a-zA-Z0-9]", "");
+        if (base.isEmpty()) base = "회원";
+        if (base.length() > 39) base = base.substring(0, 39);
+        if (!userRepository.existsByNickname(base)) return base;
+
+        String prefix = base.length() > 35 ? base.substring(0, 35) : base;
+        for (int i = 0; i < 20; i++) {
+            String candidate = prefix + String.format("%04d", RANDOM.nextInt(10_000));
+            if (!userRepository.existsByNickname(candidate)) return candidate;
+        }
+        return prefix + HexFormat.of().formatHex(RANDOM.generateSeed(2)); // 거의 일어나지 않는다
     }
 
     /**

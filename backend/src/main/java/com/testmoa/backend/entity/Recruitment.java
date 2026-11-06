@@ -68,6 +68,9 @@ public class Recruitment {
     @Column(nullable = false)
     private AnalysisStatus analysisStatus;
 
+    // 피드백 분석 완료 일시. 분석 전에는 null. 버전 비교가 이보다 이르면 오래된 비교다
+    private LocalDateTime analyzedAt;
+
     // 취소 사유. 사유 없이 취소하면 null
     @Column(columnDefinition = "TEXT")
     private String cancelReason;
@@ -138,5 +141,15 @@ public class Recruitment {
         this.status = RecruitmentStatus.CANCELLED;
         this.cancelReason = trimmed.isEmpty() ? null : trimmed;
         this.cancelledAt = now;
+    }
+
+    /**
+     * 피드백 분석 완료. 분석 상태를 DONE으로 바꾸고 완료 일시를 남긴다.
+     *
+     * @param now 분석 완료 일시
+     */
+    public void completeAnalysis(LocalDateTime now) {
+        this.analysisStatus = AnalysisStatus.DONE;
+        this.analyzedAt = now;
     }
 }

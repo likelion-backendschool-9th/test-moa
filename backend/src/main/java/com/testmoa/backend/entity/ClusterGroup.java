@@ -79,4 +79,13 @@ public class ClusterGroup {
         this.gitIssueTitle = gitIssueTitle;
         this.gitIssueContent = gitIssueContent;
     }
+
+    /**
+     * 분류 코드 변경. 버전 비교에서 직전 버전의 같은 문제 코드를 이어받거나, 새 문제로 새 코드를 받을 때 쓴다.
+     *
+     * @param groupCode 바꿀 분류 코드. 발급은 백엔드가 한다
+     */
+    public void updateGroupCode(String groupCode) {
+        this.groupCode = groupCode;
+    }
 }

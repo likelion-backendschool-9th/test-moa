@@ -38,7 +38,13 @@ public enum ErrorCode {
 
     // AI 분석
     AI_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 분석을 잠시 쓸 수 없어요. 잠시 후 다시 시도해 주세요"),
-    FOLLOWUP_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 쓸 수 있는 질문 추천을 모두 썼어요. 내일 다시 써 주세요");
+    FOLLOWUP_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 쓸 수 있는 질문 추천을 모두 썼어요. 내일 다시 써 주세요"),
+
+    // AI 버전 비교
+    NO_PREVIOUS_VERSION(HttpStatus.CONFLICT, "비교할 이전 버전이 없어요"),
+    ANALYSIS_NOT_DONE(HttpStatus.CONFLICT, "두 버전의 리뷰 분석을 먼저 해 주세요"),
+    COMPARISON_NOT_FOUND(HttpStatus.NOT_FOUND, "아직 버전 비교를 하지 않았어요"),
+    COMPARISON_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "이번 주에 쓸 수 있는 버전 비교를 모두 썼어요. 다음 주에 다시 써 주세요");
 
     private final HttpStatus status;
     private final String message;

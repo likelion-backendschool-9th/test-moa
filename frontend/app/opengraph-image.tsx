@@ -14,7 +14,7 @@ export default async function Image() {
    * 이미지 생성기는 Wanted Sans의 GSUB 규칙을 읽지 못한다. 아래 문구의 글자만 남기고 레이아웃 규칙을 뺀 부분 글꼴을 쓴다.
    * 문구를 바꾸면 frontend/README.md의 방법대로 부분 글꼴을 다시 만든다.
    */
-  const font = await readFile(join(process.cwd(), "src/app/_og/WantedSans-Bold-og.ttf"));
+  const font = await readFile(join(process.cwd(), "app/_og/WantedSans-Bold-og.ttf"));
 
   return new ImageResponse(
     (

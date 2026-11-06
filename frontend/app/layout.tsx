@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import "./globals.css";
 
 const wantedSans = localFont({
-  src: "../../node_modules/wanted-sans/fonts/webfonts/variable/complete/woff2/WantedSansVariable.woff2",
+  src: "../node_modules/wanted-sans/fonts/webfonts/variable/complete/woff2/WantedSansVariable.woff2",
   variable: "--font-wanted",
   weight: "400 1000",
   display: "swap",

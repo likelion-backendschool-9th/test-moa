@@ -46,24 +46,24 @@ public class ProjectController {
     }
 
     @Operation(summary = "프로젝트 정보 조회")
-    @GetMapping("/{projectKey}")
+    @GetMapping("/{projectId}")
     public ApiResponse<ProjectResponse> findOne(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
-                                                @PathVariable Long projectKey) {
-        return ApiResponse.ok(projectService.findMine(userId, projectKey));
+                                                @PathVariable Long projectId) {
+        return ApiResponse.ok(projectService.findMine(userId, projectId));
     }
 
     @Operation(summary = "프로젝트 모집 건 목록 조회", description = "최신순")
-    @GetMapping("/{projectKey}/recruitments")
+    @GetMapping("/{projectId}/recruitments")
     public ApiResponse<List<RecruitmentSummaryResponse>> findRecruitments(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
-                                                                          @PathVariable Long projectKey) {
-        return ApiResponse.ok(projectService.findRecruitments(userId, projectKey));
+                                                                          @PathVariable Long projectId) {
+        return ApiResponse.ok(projectService.findRecruitments(userId, projectId));
     }
 
     @Operation(summary = "프로젝트 수정", description = "보낸 값으로 모두 바꾼다. 설명과 이미지를 비워 보내면 지워진다")
-    @PutMapping("/{projectKey}")
+    @PutMapping("/{projectId}")
     public ApiResponse<ProjectResponse> update(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
-                                               @PathVariable Long projectKey,
+                                               @PathVariable Long projectId,
                                                @Valid @RequestBody ProjectSaveRequest request) {
-        return ApiResponse.ok(projectService.update(userId, projectKey, request));
+        return ApiResponse.ok(projectService.update(userId, projectId, request));
     }
 }

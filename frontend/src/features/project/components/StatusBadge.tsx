@@ -5,7 +5,6 @@ import { RECRUITMENT_STATUS_LABEL, type RecruitmentStatus } from "../types";
 
 const TONE: Record<RecruitmentStatus, "accent" | "neutral" | "muted"> = {
   recruiting: "accent",
-  full: "neutral",
   testing: "neutral",
   closed: "muted",
   cancelled: "muted",

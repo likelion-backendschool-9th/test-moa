@@ -46,7 +46,6 @@ public class SecurityConfig {
     // 로그인 없이 부를 수 있는 주소. 다른 기능의 공개 조회 API가 생기면 여기에 더한다
     private static final String[] PUBLIC_PATHS = {
             "/api/auth/**",
-            "/api/samples/**",
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
             "/error"
     };

@@ -3,9 +3,9 @@ import { Suspense } from "react";
 import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { ProjectList, ProjectListSkeleton } from "@/features/project/components/ProjectList";
-import { SavedNotice } from "@/features/project/components/SavedNotice";
-import { OverviewStats, TodoList } from "@/features/project/components/ProjectDashboard";
+import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList";
+import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";
+import { OverviewStats, TodoList } from "@/app/(site)/developer/projects/_components/ProjectDashboard";
 import { getMyDashboard } from "@/features/project/service";
 
 /* 내 프로젝트 목록 (/developer/projects) */

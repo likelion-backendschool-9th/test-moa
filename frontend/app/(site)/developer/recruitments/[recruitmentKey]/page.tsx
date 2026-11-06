@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { recruitmentManagePath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
-import { ApplicantList } from "@/features/project/components/ApplicantList";
-import { FeedbackList } from "@/features/project/components/FeedbackList";
-import { DetailSkeleton } from "@/features/project/components/ProjectDetail";
+import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList";
+import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
 import {
   AnalyticsPanel,
   parseManageTab,
   RecruitmentSummary,
   RecruitmentTabs,
-} from "@/features/project/components/RecruitmentManage";
-import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/features/project/components/AiAnalysisPanel";
+} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage";
+import { AiAnalysisPanel, AiAnalysisSkeleton } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel";
 import { canSelectApplicants, getAiAnalysis, getRecruitmentDetail } from "@/features/project/service";
 
 /* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */

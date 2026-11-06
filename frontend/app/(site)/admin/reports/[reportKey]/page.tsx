@@ -6,14 +6,14 @@ import { Container } from "@/components/ui/Container";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getReport, getReportKeys, isReportKey, requireAdmin } from "@/features/admin/api";
 import { parseListTab, parseReportTargetFilter, type ReportListView } from "@/features/admin/types";
-import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import {
   ReportDetail,
   ReportDetailSkeleton,
   ReviewForm,
   ReviewResult,
   type ReviewFormError,
-} from "@/features/admin/components/ReportDetail";
+} from "@/app/(site)/admin/reports/[reportKey]/_components/ReportDetail";
 
 export const metadata: Metadata = { title: "신고 상세" };
 

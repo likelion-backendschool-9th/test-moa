@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { recruitmentCreatePath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
-import { DetailSkeleton } from "@/features/project/components/ProjectDetail";
-import { RecruitmentForm } from "@/features/project/components/RecruitmentForm";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
+import { RecruitmentForm } from "@/app/(site)/developer/recruitments/new/_components/RecruitmentForm";
 import { getRecruitmentFormInfo } from "@/features/project/service";
 
 /* 테스트 모집 작성 (/developer/recruitments/new?project=:projectKey) */

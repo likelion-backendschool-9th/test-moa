@@ -5,8 +5,8 @@ import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getSubscriptionOverview } from "@/features/my/api";
-import { cardClass } from "@/features/my/components/card-styles";
-import { CheckoutForm } from "@/features/my/components/CheckoutForm";
+import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
+import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm";
 
 export const metadata: Metadata = { title: "구독 결제" };
 

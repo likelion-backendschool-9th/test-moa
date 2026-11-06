@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { requireAdmin } from "@/features/admin/api";
-import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";
-import { UserFilters, UserList, UserListSkeleton, UserSearch } from "@/features/admin/components/UserList";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { UserFilters, UserList, UserListSkeleton, UserSearch } from "@/app/(site)/admin/users/_components/UserList";
 import { getUsers, parseUserFilter, parseUserQuery, type UserFilter } from "@/features/admin/users";
 
 export const metadata: Metadata = { title: "회원 관리" };

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
-import { PublicRecruitment, PublicRecruitmentSkeleton } from "@/features/project/components/PublicRecruitment";
+import { PublicRecruitment, PublicRecruitmentSkeleton } from "@/app/(site)/recruitments/[slug]/_components/PublicRecruitment";
 import { getPublicRecruitment } from "@/features/project/service";
 
 /* 모집글 상세 (/recruitments/:slug). 누구나 볼 수 있다 */

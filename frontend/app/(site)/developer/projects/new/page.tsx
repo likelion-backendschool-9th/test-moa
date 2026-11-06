@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
-import { DetailSkeleton } from "@/features/project/components/ProjectDetail";
-import { ProjectForm } from "@/features/project/components/ProjectForm";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
+import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm";
 import { requireRole } from "@/features/project/service";
 
 /* 프로젝트 등록 (/developer/projects/new) */

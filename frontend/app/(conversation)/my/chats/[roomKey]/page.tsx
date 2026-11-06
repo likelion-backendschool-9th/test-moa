@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { Main } from "@/app/_components/Main";
 import { Container } from "@/components/ui/Container";
 import { getChatRoom, getChatRoomTitle } from "@/features/chat/api";
-import { ChatRoomSkeleton, ChatRoomView } from "@/features/chat/components/ChatRoomView";
-import { ChatsBackLink } from "@/features/chat/components/ChatsBackLink";
+import { ChatRoomSkeleton, ChatRoomView } from "@/app/(conversation)/my/chats/[roomKey]/_components/ChatRoomView";
+import { ChatsBackLink } from "@/app/(conversation)/my/chats/[roomKey]/_components/ChatsBackLink";
 
 type RoomPageProps = PageProps<"/my/chats/[roomKey]">;
 

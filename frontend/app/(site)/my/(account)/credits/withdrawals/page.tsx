@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getCreditBalance, getWithdrawals } from "@/features/credit/api";
-import { WithdrawalForm } from "@/features/credit/components/WithdrawalForm";
-import { WithdrawalHistory } from "@/features/credit/components/WithdrawalHistory";
+import { WithdrawalForm } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalForm";
+import { WithdrawalHistory } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalHistory";
 import { cashableCredits } from "@/features/credit/types";
-import { cardClass } from "@/features/my/components/card-styles";
+import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
 
 export const metadata: Metadata = { title: "출금" };
 

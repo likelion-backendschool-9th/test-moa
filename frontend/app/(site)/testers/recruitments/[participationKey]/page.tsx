@@ -8,7 +8,7 @@ import { getParticipation } from "@/features/participation/api";
 import {
   ParticipationDetail,
   ParticipationDetailSkeleton,
-} from "@/features/participation/components/ParticipationDetail";
+} from "@/app/(site)/testers/recruitments/[participationKey]/_components/ParticipationDetail";
 import { requireMember } from "@/lib/auth";
 
 /* 내 참여 상세 (/testers/recruitments/:participationKey) */

@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { getReports, requireAdmin } from "@/features/admin/api";
-import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";
-import { ProcessedNotice, ReportList, ReportListSkeleton, ReportTabs, ReportTargetFilters } from "@/features/admin/components/ReportList";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { ProcessedNotice, ReportList, ReportListSkeleton, ReportTabs, ReportTargetFilters } from "@/app/(site)/admin/reports/_components/ReportList";
 import { isReportDecision, parseReportTargetFilter, type ListTab, type ReportTargetFilter } from "@/features/admin/types";
 
 export const metadata: Metadata = { title: "신고·제재 관리" };

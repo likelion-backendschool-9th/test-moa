@@ -3,11 +3,11 @@ import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getSubscriptionOverview } from "@/features/my/api";
-import { cardClass } from "@/features/my/components/card-styles";
-import { PlanComparison } from "@/features/my/components/PlanComparison";
-import { SubscriptionExpiry } from "@/features/my/components/SubscriptionExpiry";
-import { SubscriptionPayment } from "@/features/my/components/SubscriptionPayment";
-import { SubscriptionStatus } from "@/features/my/components/SubscriptionStatus";
+import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
+import { PlanComparison } from "@/app/(site)/my/(account)/subscription/_components/PlanComparison";
+import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry";
+import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment";
+import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "구독" };

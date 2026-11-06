@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { PROJECTS_PATH, projectPath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
-import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/features/project/components/ProjectDetail";
-import { SavedNotice } from "@/features/project/components/SavedNotice";
+import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/app/(site)/developer/_components/ProjectDetail";
+import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";
 import { getMyProject } from "@/features/project/service";
 
 /* 프로젝트 상세 (/developer/projects/:projectKey) */

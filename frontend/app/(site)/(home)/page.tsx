@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
-import { HeroBanner, HeroBannerFallback } from "@/features/home/components/HeroBanner";
+import { HeroBanner, HeroBannerFallback } from "@/app/(site)/(home)/_components/HeroBanner";
 import { getLatestOpenRecruitments, getSubscriptionRecruitments, searchRecruitments } from "@/features/recruitment/api";
-import { AllRecruitments } from "@/features/recruitment/components/AllRecruitments";
-import { RecruitmentGridSkeleton } from "@/features/recruitment/components/RecruitmentGrid";
-import { SubscriptionSection, SubscriptionSectionSkeleton } from "@/features/recruitment/components/SubscriptionSection";
+import { AllRecruitments } from "@/app/(site)/(home)/_components/AllRecruitments";
+import { RecruitmentGridSkeleton } from "@/app/(site)/(home)/_components/RecruitmentGrid";
+import { SubscriptionSection, SubscriptionSectionSkeleton } from "@/app/(site)/(home)/_components/SubscriptionSection";
 import { parseRecruitmentQuery } from "@/features/recruitment/query";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {

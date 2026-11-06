@@ -3,10 +3,10 @@ import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { getAdminSummary, getOldestPending, getRecentRequests, requireAdmin } from "@/features/admin/api";
-import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";
-import { OldestPendingPanel, OldestPendingPanelSkeleton } from "@/features/admin/components/OldestPendingPanel";
-import { PendingSummary, PendingSummarySkeleton } from "@/features/admin/components/PendingSummary";
-import { RecentRequests, RecentRequestsSkeleton } from "@/features/admin/components/RecentRequests";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { OldestPendingPanel, OldestPendingPanelSkeleton } from "@/app/(site)/admin/_components/OldestPendingPanel";
+import { PendingSummary, PendingSummarySkeleton } from "@/app/(site)/admin/_components/PendingSummary";
+import { RecentRequests, RecentRequestsSkeleton } from "@/app/(site)/admin/_components/RecentRequests";
 
 export const metadata: Metadata = { title: "운영자 홈" };
 

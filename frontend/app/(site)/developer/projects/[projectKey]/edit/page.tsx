@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { projectPath, projectEditPath } from "@/lib/project-paths";
 import { Container } from "@/components/ui/Container";
-import { DetailSkeleton } from "@/features/project/components/ProjectDetail";
-import { ProjectForm } from "@/features/project/components/ProjectForm";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
+import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm";
 import { getMyProject } from "@/features/project/service";
 
 /* 프로젝트 수정 (/developer/projects/:projectKey/edit). 등록과 같은 폼에 값을 채워 둔다 */

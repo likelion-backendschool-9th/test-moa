@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getMyPageSummary } from "@/features/my/api";
-import { ActivitySummary } from "@/features/my/components/ActivitySummary";
-import { cardClass } from "@/features/my/components/card-styles";
-import { CreditSummaryCard } from "@/features/my/components/CreditSummaryCard";
-import { ProfileHeader } from "@/features/my/components/ProfileHeader";
-import { RecentCredits } from "@/features/my/components/RecentCredits";
-import { SubscriptionCard } from "@/features/my/components/SubscriptionCard";
-import { TodoList } from "@/features/my/components/TodoList";
+import { ActivitySummary } from "@/app/(site)/my/(account)/_components/ActivitySummary";
+import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
+import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard";
+import { ProfileHeader } from "@/app/(site)/my/(account)/_components/ProfileHeader";
+import { RecentCredits } from "@/app/(site)/my/(account)/_components/RecentCredits";
+import { SubscriptionCard } from "@/app/(site)/my/(account)/_components/SubscriptionCard";
+import { TodoList } from "@/app/(site)/my/(account)/_components/TodoList";
 
 export const metadata: Metadata = { title: "마이페이지" };
 

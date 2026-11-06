@@ -3,15 +3,15 @@ import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
 import { Container } from "@/components/ui/Container";
 import { getWithdrawal, getWithdrawals, isWithdrawalKey, requireAdmin } from "@/features/admin/api";
-import { AdminShell, AdminShellSkeleton } from "@/features/admin/components/AdminShell";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
 import {
   WithdrawalList,
   WithdrawalListSkeleton,
   WithdrawalModalSkeleton,
   WithdrawalProcessedNotice,
   WithdrawalTabs,
-} from "@/features/admin/components/WithdrawalList";
-import { WithdrawalModalContent } from "@/features/admin/components/WithdrawalModalContent";
+} from "@/app/(site)/admin/withdrawals/_components/WithdrawalList";
+import { WithdrawalModalContent } from "@/app/(site)/admin/withdrawals/_components/WithdrawalModalContent";
 import { withdrawalsHref, type ListTab } from "@/features/admin/types";
 
 export const metadata: Metadata = { title: "출금 요청 관리" };

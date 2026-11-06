@@ -11,10 +11,10 @@ import {
   getParticipationSummary,
   getUpcomingDeadlines,
 } from "@/features/participation/api";
-import { DeadlinePanel, DeadlinePanelSkeleton } from "@/features/participation/components/DeadlinePanel";
-import { NoParticipations, ParticipationList } from "@/features/participation/components/ParticipationList";
-import { ParticipationSkeleton } from "@/features/participation/components/ParticipationSkeleton";
-import { ParticipationTabs } from "@/features/participation/components/ParticipationTabs";
+import { DeadlinePanel, DeadlinePanelSkeleton } from "@/app/(site)/testers/recruitments/_components/DeadlinePanel";
+import { NoParticipations, ParticipationList } from "@/app/(site)/testers/recruitments/_components/ParticipationList";
+import { ParticipationSkeleton } from "@/app/(site)/testers/recruitments/_components/ParticipationSkeleton";
+import { ParticipationTabs } from "@/app/(site)/testers/recruitments/_components/ParticipationTabs";
 import { parseParticipationTab, type ParticipationTab, type ParticipationView } from "@/features/participation/types";
 import { readParticipationView } from "@/features/participation/view-preference";
 import { formatCredits } from "@/lib/format";

@@ -30,6 +30,14 @@ class CashoutRequestTest {
     }
 
     @Test
+    @DisplayName("toString에 계좌번호·예금주가 없다")
+    void toStringExcludesAccountFields() {
+        String text = newRequest().toString();
+        assertFalse(text.contains("1234567890"));
+        assertFalse(text.contains("홍길동"));
+    }
+
+    @Test
     @DisplayName("#45-S14 지급은 REQUESTED에서 PAID로")
     void pay는_REQUESTED에서_PAID로_바꾼다() {
         CashoutRequest request = newRequest();

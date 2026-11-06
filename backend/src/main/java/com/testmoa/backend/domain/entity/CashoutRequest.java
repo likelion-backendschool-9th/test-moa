@@ -2,6 +2,7 @@ package com.testmoa.backend.domain.entity;
 
 import com.testmoa.backend.global.common.CashoutRejectReason;
 import com.testmoa.backend.global.common.CashoutStatus;
+import com.testmoa.backend.global.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -32,12 +33,16 @@ public class CashoutRequest {
     @Column(nullable = false)
     private String bank;
 
-    // 계좌번호. 숫자 10~14자리. 응답 시 완료 건은 마스킹할 수 있다
-    @Column(nullable = false)
+    // 계좌번호. 숫자 10~14자리. DB에는 AES-GCM 암호문으로 저장한다(#67)
+    @ToString.Exclude
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, length = 255)
     private String accountNumber;
 
-    // 입금 예금주. 회원 실명과 다르면 운영자가 확인한다
-    @Column(nullable = false)
+    // 입금 예금주. 회원 실명과 다르면 운영자가 확인한다. 계좌와 같이 암호화
+    @ToString.Exclude
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, length = 255)
     private String accountHolder;
 
     // 처리 상태(REQUESTED, PAID, REJECTED). 지급 완료는 PAID
@@ -49,7 +54,7 @@ public class CashoutRequest {
     @Enumerated(EnumType.STRING)
     private CashoutRejectReason rejectReason;
 
-    // 반려 메모. 기타(OTHER)면 회원에게 보이는 사유이고 필수, 그 외에는 운영자 메모(선택)
+    // 반려 메모. 사유와 상관없이 회원에게 그대로 보인다. 기타(OTHER)면 필수, 그 외에는 선택
     private String rejectMemo;
 
     // 처리 일시. 처리 전에는 null
@@ -109,7 +114,7 @@ public class CashoutRequest {
      * 반려 처리. 요청 중일 때만 할 수 있고, 사유가 기타(OTHER)면 메모가 있어야 한다.
      *
      * @param reason 반려 사유
-     * @param memo   반려 메모. 기타면 회원에게 보이는 사유, 그 외에는 운영자 메모. 비어 있으면 저장하지 않는다
+     * @param memo   반려 메모. 회원에게 보이는 안내다. 기타면 필수, 그 외에는 선택. 비어 있으면 저장하지 않는다
      * @param now    처리 일시
      */
     public void reject(CashoutRejectReason reason, String memo, LocalDateTime now) {

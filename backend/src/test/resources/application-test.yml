@@ -5,3 +5,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+# 테스트 전용 고정 키(32바이트 Base64). 운영·로컬 .env 키와 섞지 않는다
+cashout:
+  account-crypto-key: dGVzdC1jYXNob3V0LWtleS0zMi1ieXRlcy1sb25nISE=

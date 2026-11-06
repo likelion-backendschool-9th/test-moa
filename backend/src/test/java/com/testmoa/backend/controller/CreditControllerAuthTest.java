@@ -76,4 +76,10 @@ class CreditControllerAuthTest {
 
         mvc.perform(get("/api/v1/my/credits")).andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("#67-S7 토큰 없이 출금 내역을 보면 401")
+    void 토큰_없이_출금_내역을_보면_401() throws Exception {
+        mvc.perform(get("/api/v1/my/credits/withdrawals")).andExpect(status().isUnauthorized());
+    }
 }

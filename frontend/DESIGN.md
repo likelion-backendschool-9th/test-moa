@@ -291,7 +291,7 @@ components:
 
 ## Colors
 
-흰 교정지와 먹, 진한 초록 하나로 된 팔레트이며, 다크에서는 uibowl 바탕 위에 밝힌 초록이 같은 역할을 맡는다. 모든 값은 `src/app/globals.css`의 CSS 변수에만 있고, `-dark` 키는 `prefers-color-scheme: dark`에서 같은 이름의 변수를 덮어쓴 값이다(컴포넌트는 `-dark`를 따로 부르지 않는다).
+흰 교정지와 먹, 진한 초록 하나로 된 팔레트이며, 다크에서는 uibowl 바탕 위에 밝힌 초록이 같은 역할을 맡는다. 모든 값은 `app/globals.css`의 CSS 변수에만 있고, `-dark` 키는 `prefers-color-scheme: dark`에서 같은 이름의 변수를 덮어쓴 값이다(컴포넌트는 `-dark`를 따로 부르지 않는다).
 
 ### Primary
 - **진한 초록 (라이트 / 다크)** (accent, accent-dark): 라이트에서는 재단 매트 바탕, 주 행동 버튼, 추가 보상 배지, 교정 도장, 진행 흐름 마지막 체크에 같은 초록(`brand-green` `#0f7c4a`)을 쓴다. 로고의 'moa'와 파비콘 바탕만 한 단계 밝은 `brand-logo` `#129357`이다. 포커스 링, 선택, 캐럿, 오늘 온 대화의 일시와 채팅방의 내 말풍선에도 쓴다. 진한 매트 위 글씨와 주 버튼만 흰색으로 뒤집는다. 다크에서는 기존의 밝힌 초록을 쓴다. (고침 #60: 한 초록과 매트 위 흰색 예외)
@@ -316,7 +316,7 @@ components:
 - **유료 기능 그라데이션** (paid-start, paid-mid, paid-end, paid-gradient, paid-text): 유료 기능으로 이어지는 면의 바탕. 그라데이션 전체는 `--paid-gradient` 토큰 하나이고 `bg-paid-gradient` 유틸리티로 쓴다. 지금은 피드백의 채팅하기·AI 질문 받기 버튼(`Button`의 `paid`)이 쓰고, 구독 화면 같은 다른 유료 기능 컴포넌트도 같은 유틸리티를 가져다 쓴다. 라이트는 시안 색 그대로 민트 `#ddf5ea`(30%까지) → 65% `#edf5ee` → 라벤더 `#eeeaf4`이고, 초록 쪽 비중을 늘리려고 민트를 30%까지 그대로 둔다(sRGB로 섞음), 다크는 같은 흐름을 낮춘 `#123625` → `#1a2a26` → `#241f36`이다. 위 글씨(`paid-text`)는 라이트에서 강조색(글씨 아래 대비 4.51:1 이상), 다크에서 흰색이다. (#134)
 
 ### Named Rules
-**The Token-Only Rule.** 색·모션 값은 `globals.css` 토큰에서만 정의한다. `src/components`, `src/features`에는 hex도, 임의 px도 쓰지 않는다.
+**The Token-Only Rule.** 색·모션 값은 `globals.css` 토큰에서만 정의한다. `components`, `features`에는 hex도, 임의 px도 쓰지 않는다.
 
 **The One Green Rule.** 라이트에서 재단 매트와 강조색은 같은 초록이다. 초록 강조는 주 행동, 로고의 moa, 추가 보상, 교정 도장과 진행 흐름 마지막 체크, 새로 생긴 것(채팅함의 오늘 온 대화), 그리고 포커스·선택·hover 같은 상호작용 상태에만 쓴다. 고른 필터 칩은 먹색으로 구분한다. 카테고리나 일반 링크, 카드·메시지마다 반복되는 정보에는 강조색을 쓰지 않는다. 매트 위의 주 버튼과 제목은 흰색으로 뒤집고, 교정지 안의 강조는 같은 초록을 쓴다. 채팅방의 내 말풍선은 내가 보낸 말을 구분하려고 초록을 쓴다. 한 화면에 주 버튼은 하나.
 
@@ -478,7 +478,7 @@ components:
 - **Do** 모션은 `--ease-brand`와 300/500ms만 쓰고 reduced motion을 지킨다.
 
 ### Don't:
-- **Don't** `src/components`, `src/features`에 hex나 임의 px를 쓰지 않는다.
+- **Don't** `components`, `features`에 hex나 임의 px를 쓰지 않는다.
 - **Don't** 제목 위에 kicker·eyebrow를 두지 않는다.
 - **Don't** 그라데이션 글자를 쓰지 않는다.
 - **Don't** 강조색을 주 행동, 로고의 moa, 추가 보상, 교정 도장·진행 흐름 마지막 체크, 새로 생긴 것, 상호작용 상태 밖에서 쓰지 않는다. (예외: 채팅방의 내 말풍선)

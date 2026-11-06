@@ -20,13 +20,13 @@ npm run test:e2e   # Playwright E2E (처음 한 번: npx playwright install chro
 
 ## 공유 이미지 글꼴
 
-`src/app/opengraph-image.tsx`의 이미지 생성기는 Wanted Sans의 GSUB 규칙을 읽지 못한다. 그래서 이미지 문구의 글자만 담은 부분 글꼴(`src/app/_og/WantedSans-Bold-og.ttf`)을 쓴다. 문구를 바꾸면 다시 만든다.
+`app/opengraph-image.tsx`의 이미지 생성기는 Wanted Sans의 GSUB 규칙을 읽지 못한다. 그래서 이미지 문구의 글자만 담은 부분 글꼴(`app/_og/WantedSans-Bold-og.ttf`)을 쓴다. 문구를 바꾸면 다시 만든다.
 
 ```bash
 pip install fonttools
 pyftsubset node_modules/wanted-sans/fonts/ttf/WantedSans-Bold.ttf \
   --text="이미지에 들어가는 모든 문구" --layout-features='' \
-  --output-file=src/app/_og/WantedSans-Bold-og.ttf
+  --output-file=app/_og/WantedSans-Bold-og.ttf
 ```
 
 ## 시연용 상태 전환
@@ -42,8 +42,8 @@ pyftsubset node_modules/wanted-sans/fonts/ttf/WantedSans-Bold.ttf \
 
 ## 폴더 구조와 규칙
 
-```
-src/
+```text
+frontend/
   app/                 라우트. 데이터를 불러와 도메인 컴포넌트를 조립만 한다
   components/ui/       Button, Badge, Card 같은 기본 요소. 도메인을 모른다
   components/layout/   헤더, 탭, 모바일 메뉴, 푸터
@@ -56,7 +56,7 @@ src/
 e2e/                   시나리오(S번호)와 1:1로 맞춘 Playwright 테스트
 ```
 
-- 색·모션 값은 `src/app/globals.css`의 토큰에만 둔다. 컴포넌트에 hex나 `[13px]` 같은 임의 값을 쓰지 않는다.
+- 색·모션 값은 `app/globals.css`의 토큰에만 둔다. 컴포넌트에 hex나 `[13px]` 같은 임의 값을 쓰지 않는다.
 - 간격·글자 크기·라운드는 Tailwind 기본 스케일만 쓴다.
 - `"use client"`는 상호작용이 필요한 컴포넌트에만 붙인다.
 - 세션이나 쿠키를 읽는 컴포넌트는 `<Suspense>` 안에 둔다. Cache Components에서는 Suspense 밖에서 읽으면 빌드 에러가 난다.
@@ -71,7 +71,7 @@ e2e/                   시나리오(S번호)와 1:1로 맞춘 Playwright 테스�
 - 다른 기능은 그 기능의 `api.ts`, `types.ts`, 공개 컴포넌트로만 쓴다. `actions.ts`, 스타일 상수 같은 내부 파일은 부르지 않는다.
 - 여러 기능이 함께 쓰는 코드는 한 기능 안에 두지 않는다. UI는 `components/ui`, 순수 함수와 타입은 `lib`, 데이터는 별도 기능(예: 회원 데이터 `features/member`)에 둔다.
 - 검사 함수(`lib/validation.ts`)는 값을 받아 오류 문구를 돌려주는 순수 함수다. 중복 조회, 쿠키, 화면 상태는 서버 액션에서 다룬다.
-- 확인: `grep -rn "@/features" src/components/ui src/lib`는 결과가 없어야 하고, `grep -rnE 'from "[^"]*mock"' src`는 각 `api.ts`의 `./mock`과 아래 예외만 나와야 한다.
+- 확인: `grep -rn "@/features" components/ui lib`는 결과가 없어야 하고, `grep -rnE 'from "[^"]*mock"' app components features lib`는 각 `api.ts`의 `./mock`과 아래 예외만 나와야 한다.
 - 알려진 예외(고칠 예정): `features/project/api.ts → features/recruitment/mock`, `features/credit/components → features/my/components/card-styles`.
 - 페이지 URL은 [`../docs/page-urls.md`](../docs/page-urls.md)를 따른다.
 

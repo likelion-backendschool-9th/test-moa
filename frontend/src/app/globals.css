@@ -30,7 +30,8 @@
   --paid-start: #ddf5ea;
   --paid-mid: #edf5ee;
   --paid-end: #eeeaf4;
-  --paid-gradient: linear-gradient(to right, var(--paid-start), var(--paid-mid) 55%, var(--paid-end));
+  /* 민트를 30%까지 그대로 두고 65%에서 옅어지게 해 초록 쪽 비중을 늘린다 */
+  --paid-gradient: linear-gradient(to right, var(--paid-start) 30%, var(--paid-mid) 65%, var(--paid-end));
   /* 활자 썸네일의 교정지 면과 재단선 */
   --thumb: #ffffff;
   --on-thumb: #1a1a1a;

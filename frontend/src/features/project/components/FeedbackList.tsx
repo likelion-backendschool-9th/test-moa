@@ -174,7 +174,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   onClick={() => toggleRecommend(item, !liked)}
                 >
                   {/* 이번에 직접 누른 하트만 튀어 오른다. 처음부터 눌려 있던 피드백은 그냥 보인다 */}
-                  <HeartIcon {...icon} className={recommended[item.id] ? "animate-heart-pop" : undefined} />
+                  <HeartIcon {...icon} weight={liked ? "fill" : "bold"} className={recommended[item.id] ? "animate-heart-pop" : undefined} />
                   유용해요
                 </Button>
                 {status === "reported" ? (
@@ -184,7 +184,8 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                     aria-label={`${nickname}님의 피드백 신고 정보`}
                     onClick={() => showNotice(item, REPORT_INFO_NOT_READY)}
                   >
-                    <FlagIcon {...icon} />
+                    {/* 신고한 피드백은 깃발을 채워 신고하기와 구분한다 */}
+                    <FlagIcon {...icon} weight="fill" />
                     신고 정보
                   </Button>
                 ) : (

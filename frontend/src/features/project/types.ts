@@ -60,12 +60,11 @@ export type Feedback = {
   status: FeedbackStatus;
 };
 
-/** 모집 건 상태. 저장하지 않고 마감일과 인원으로 계산한다. 개발자가 취소하면 취소다 */
-export type RecruitmentStatus = "recruiting" | "full" | "testing" | "closed" | "cancelled";
+/** 모집 건 상태. 저장하지 않고 마감일로 계산한다. 개발자가 취소하면 취소다 */
+export type RecruitmentStatus = "recruiting" | "testing" | "closed" | "cancelled";
 
 export const RECRUITMENT_STATUS_LABEL: Record<RecruitmentStatus, string> = {
   recruiting: "모집 중",
-  full: "모집 완료",
   testing: "테스트 중",
   closed: "종료",
   cancelled: "취소",
@@ -81,7 +80,7 @@ export type TestItem = {
   images: ProjectImage[];
 };
 
-/** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원 순서대로 자동 확정, 선발형은 개발자가 직접 확정·거절 */
+/** 지원자를 뽑는 방식 (백엔드 post.selection_mode). 선착순은 지원하면 바로 확정, 선발형은 개발자가 직접 확정·거절 */
 export type SelectionMode = "firstCome" | "selection";
 
 export const SELECTION_MODE_LABEL: Record<SelectionMode, string> = {
@@ -124,8 +123,6 @@ export const REPORT_WINDOW_HOURS = 72;
 export const BASE_REWARD = 1000;
 /** 구독 모집의 추가 보상 크레딧 */
 export const EXTRA_REWARD = 300;
-/** 무료·구독별 최대 모집 인원 */
-export const MAX_CAPACITY = { free: 10, subscription: 30 } as const;
 
 /** AI 분석 항목 하나. 근거가 된 피드백 수를 함께 둔다 */
 export type AiFinding = {

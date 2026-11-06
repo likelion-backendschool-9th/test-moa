@@ -17,7 +17,7 @@ import {
 
 export const metadata: Metadata = { title: "신고 상세" };
 
-/* 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다(docs/frontend/admin-reports.md S427) */
+/* 키를 미리 알려 두고, 없는 키는 데이터를 읽기 전에 맞춤 404 화면을 보여 준다(docs/frontend/admin/reports.md S427) */
 export function generateStaticParams() {
   return getReportKeys().map((reportKey) => ({ reportKey }));
 }

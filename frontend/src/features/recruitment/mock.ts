@@ -3,7 +3,7 @@ import type { Recruitment } from "./types";
 /*
  * 시연용 샘플 데이터. 실제 서비스나 사용자와 관계없다.
  * 보상 크레딧은 기획에서 미정이라 임시값이다.
- * 날짜는 기준 시각에서 상대적으로 만들어 언제 시연해도 마감 전 상태로 보인다.
+ * 날짜는 기준 시각에서 상대적으로 만들어 언제 시연해도 같은 상태로 보인다.
  */
 
 type Seed = Omit<Recruitment, "createdAt" | "recruitDeadline" | "submitDeadline"> & {
@@ -20,7 +20,6 @@ const PROMOTED: Seed[] = [
     request: "책 등록부터 독서 기록 작성까지 한 번 써 보기",
     softwareType: "web",
     isSubscription: true,
-    capacity: 20,
     confirmedCount: 13,
     baseReward: 1350,
     extraReward: 450,
@@ -35,7 +34,6 @@ const PROMOTED: Seed[] = [
     request: "일정을 만들고 팀원을 초대하는 흐름 확인하기",
     softwareType: "web",
     isSubscription: true,
-    capacity: 15,
     confirmedCount: 4,
     baseReward: 1180,
     extraReward: 320,
@@ -50,7 +48,6 @@ const PROMOTED: Seed[] = [
     request: "재료 입력과 추천 결과가 쓸 만한지 알려 주기",
     softwareType: "web",
     isSubscription: true,
-    capacity: 25,
     confirmedCount: 17,
     baseReward: 990,
     extraReward: 270,
@@ -68,7 +65,6 @@ const GENERAL: Seed[] = [
     request: "영수증 업로드 후 분류가 맞는지 확인하기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 10,
     confirmedCount: 3,
     baseReward: 870,
     createdDaysAgo: 0,
@@ -82,7 +78,6 @@ const GENERAL: Seed[] = [
     request: "프로필 작성부터 스터디 신청까지 해 보기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 12,
     confirmedCount: 7,
     baseReward: 940,
     createdDaysAgo: 4,
@@ -96,7 +91,6 @@ const GENERAL: Seed[] = [
     request: "템플릿 선택과 프로젝트 추가 화면 써 보기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 12,
     confirmedCount: 12,
     baseReward: 1060,
     createdDaysAgo: 2,
@@ -110,11 +104,11 @@ const GENERAL: Seed[] = [
     request: "식물 등록과 물 주기 알림 설정 확인하기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 8,
     confirmedCount: 2,
     baseReward: 760,
+    /* 모집 중만 보기를 보여 주려고 모집 마감이 지난 샘플로 둔다 */
     createdDaysAgo: 4,
-    recruitInDays: 8,
+    recruitInDays: -1,
     submitInDays: 15,
   },
   {
@@ -124,7 +118,6 @@ const GENERAL: Seed[] = [
     request: "모임 검색과 참가 신청 흐름 써 보기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 15,
     confirmedCount: 9,
     baseReward: 830,
     createdDaysAgo: 6,
@@ -138,7 +131,6 @@ const GENERAL: Seed[] = [
     request: "책 등록과 거래 요청 보내기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 10,
     confirmedCount: 5,
     baseReward: 720,
     createdDaysAgo: 8,
@@ -152,7 +144,6 @@ const GENERAL: Seed[] = [
     request: "회의록 작성 후 할 일 목록이 맞는지 보기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 10,
     confirmedCount: 6,
     baseReward: 910,
     createdDaysAgo: 10,
@@ -162,7 +153,7 @@ const GENERAL: Seed[] = [
   /*
    * 페이지 나누기를 보이려고 더한 글 (#60). 기존 시나리오가 깨지지 않게
    * 생성일은 가계부 노트보다 이르고, 모집 마감은 회의록 정리보다 늦고, 기본 보상은 북로그보다 적고,
-   * 정원이 남아 있으며, 검색어 "일정"에 걸리지 않는다.
+   * 검색어 "일정"에 걸리지 않는다.
    */
   ...(
     [
@@ -187,7 +178,6 @@ const GENERAL: Seed[] = [
       request,
       softwareType: "web",
       isSubscription: false,
-      capacity: 10,
       confirmedCount: index % 4,
       baseReward,
       createdDaysAgo: 11 + index,
@@ -206,7 +196,6 @@ const PAST: Seed[] = [
     request: "메모 작성과 주제 묶기가 자연스러운지 보기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 10,
     confirmedCount: 10,
     baseReward: 850,
     createdDaysAgo: 30,
@@ -220,7 +209,6 @@ const PAST: Seed[] = [
     request: "주차 위치 저장과 알림 설정 흐름 써 보기",
     softwareType: "web",
     isSubscription: true,
-    capacity: 20,
     confirmedCount: 18,
     baseReward: 1100,
     extraReward: 300,
@@ -235,7 +223,6 @@ const PAST: Seed[] = [
     request: "카페 검색과 후기 남기기 해 보기",
     softwareType: "web",
     isSubscription: false,
-    capacity: 12,
     confirmedCount: 12,
     baseReward: 780,
     createdDaysAgo: 35,

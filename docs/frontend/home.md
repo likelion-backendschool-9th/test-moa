@@ -2,7 +2,7 @@
 
 지금 홈 화면이 지켜야 하는 요구사항(R)과 시나리오(S)를 모은 문서다. S번호는 `frontend/e2e`의 테스트 이름과 1:1로 맞는다. 테스트를 추가하거나 바꾸면 이 문서도 함께 고친다.
 
-시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
 - 스택: Next.js 16(App Router, Cache Components), Tailwind CSS v4, TypeScript, Playwright E2E. 실행 방법은 `frontend/README.md`를 본다.
@@ -92,7 +92,7 @@ S61 첫 화면 [직접] (고침 #60: 제목·설명·배치와 B 색 시안)
 
 #60-S8 교정지 더미 [직접]
 - Given 너비 1280px 이상
-- Then  소개 오른쪽에 정원이 남고 모집 마감 전인 최근 모집 글 썸네일 세 장("가계부 노트", "북로그", "모아플랜")이 기울어 겹쳐 있고, 글 칸을 뺀 오른쪽 칸을 채운다 (1440px에서 한 장 약 300px)
+- Then  소개 오른쪽에 모집 마감 전인 최근 모집 글 썸네일 세 장("가계부 노트", "북로그", "포트폴리오 빌더")이 기울어 겹쳐 있고, 글 칸을 뺀 오른쪽 칸을 채운다 (1440px에서 한 장 약 300px)
 - Given 너비 1024~1279px
 - Then  같은 자리에 두 장("가계부 노트", "북로그")만 크게 겹쳐 있다
 - Given 너비 768px 미만
@@ -167,9 +167,9 @@ S70 카테고리와 초기화 [테스트] (고침 #60: 한 페이지 20개)
 - When  "조건 초기화"를 누른다
 - Then  URL이 `/`이고 카드 20개가 다시 보인다
 
-S71 모집 중만 [테스트] (고침 #60: 목업 22개)
+S71 모집 중만 [테스트] (고침 #60: 목업 22개) (고침 #78: 모집 마감일로 거름)
 - When  "모집 중만 보기"를 켠다
-- Then  URL에 `open=1`이 붙고 "총 21개"가 보이며, "포트폴리오 빌더"는 없다
+- Then  URL에 `open=1`이 붙고 "총 21개"가 보이며, 모집 마감이 지난 "반려식물 일지"는 없다. 확정 인원과 상관없이 모집 마감 전이면 남는다
 
 S72 정렬 [테스트] (고침 #60: 정렬이 글자 버튼에서 선택 상자로 바뀜. 카드에 금액이 없어 "보상 많은순"을 뺐다)
 - Then  정렬 선택 상자에는 "최신순"과 "마감 임박순"만 있다
@@ -185,14 +185,14 @@ S73 URL로 열기 [테스트] (고침 #60: 정렬은 선택 상자 값으로 확
 S74 프로젝트명과 모집 상태 [직접] (고침 #60: 활자 썸네일을 본문 제목으로 변경)
 - Then  카드 위에는 프로젝트 대표 이미지가 있고 프로젝트명은 이미지 아래 본문의 h3 제목이다. 이미지가 없으면 중성색 자리 표시를 쓴다
 - Then  대표 이미지는 바깥 여백 없이 카드 너비를 채우며 전체·구독 카드 모두 4:3 비율이다
-- Then  정원이 찬 카드에는 "모집 완료" 배지가 있다 (1440px 5열, 375px 2열)
+- Then  1440px에서 5열, 375px에서 2열이고 모집 완료 도장은 없다 (고침 #78)
 
 #60-S2 유형·추가 보상 배지와 카드 높이 [직접]
 - Then  옅은 중성색 카드 면(`--surface-card`, 라이트 `#fcfcfb`)이 본문 정보를 감싸고 1px 안쪽 재단선으로 흰 페이지와 구분된다
 - Then  카드 위에 유형 배지(예: "웹서비스")가 있고, 크레딧 금액은 없다
 - Then  추가 보상이 있는 카드에는 "추가 보상" 배지만 있다
-- Then  프로젝트명 아래에 요청 문구가 있고, 하단에 모집 마감 날짜와 현재/정원 수치가 있다
-- Then  "모집 마감"·"인원" 라벨은 화면에 없고 보조 기술에만 제공된다
+- Then  프로젝트명 아래에 요청 문구가 있고, 하단에 모집 마감 날짜가 있고 인원은 없다 (고침 #78)
+- Then  모집 마감 날짜 앞에는 짧은 "마감" 라벨이 있다
 
 #60-S3 검색·필터·정렬 배치 [직접]
 - Given 너비 1440px
@@ -234,10 +234,10 @@ S75 [직접] (고침 #60: 한 페이지 20개)
 
 ## 11. 빈 링크와 404 (R11)
 홈의 모든 링크는 404 없이 열리고, 아직 없는 페이지는 "준비 중" 화면을 보여 준다.
-모든 페이지는 좁은 화면에서 넘치지 않고, 보호 페이지는 권한이 없으면 열리지 않는다. 페이지마다 하던 이 확인은 `frontend/e2e/pages.spec.ts`가 페이지 목록(`PAGES`)을 돌며 한 번에 한다. 새 페이지를 만들면 목록에 한 줄 더한다. (고침 #56: 테스트 정리, `docs/test-cleanup.md`)
+모든 페이지는 좁은 화면에서 넘치지 않고, 보호 페이지는 권한이 없으면 열리지 않는다. 페이지마다 하던 이 확인은 `frontend/e2e/pages.spec.ts`가 페이지 목록(`PAGES`)을 돌며 한 번에 한다. 새 페이지를 만들면 목록에 한 줄 더한다. (고침 #56: 테스트 정리)
 
 S26 준비 중 페이지와 내부 링크 [테스트]
-- Given `/recruitments`, `/recruitments/:slug/apply`(고침 #63: 상세 페이지를 만들어 지원 페이지로 바꿈), `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/frontend/auth.md`에서, `/my/chats`는 `docs/frontend/chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
+- Given `/recruitments`, `/recruitments/:slug/apply`(고침 #63: 상세 페이지를 만들어 지원 페이지로 바꿈), `/terms`, `/privacy`, `/events`, `/notices` (고침 11-01: `/login`, `/signup`은 `docs/frontend/auth/auth.md`에서, `/my/chats`는 `docs/frontend/chat/chats.md`에서 만들어 뺐다. `/my/projects`도 이미 테스트 목록에 없어 함께 맞춤)
 - Then  각각 HTTP 200이고 "준비 중" 제목과 "홈으로" 링크가 있다
 - Then  홈의 내부 링크는 모두 200으로 열린다
 
@@ -284,7 +284,7 @@ S79 이름과 상태 [직접] (고침 #60: h1)
 
 S78 [명령]
 - When  `grep -rl '"use client"' src`
-- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 23개, 모두 29개만 나온다: AccountNav(`docs/frontend/my.md`), ChatFilters·ChatCardMenu(`docs/frontend/chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/frontend/chat-room.md`), WithdrawalForm(`docs/frontend/credits.md`), 관리자 CopyAccountButton·RequestReviewForm·WithdrawalModal(`docs/frontend/admin-reports.md` S445), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList·CancelRecruitmentButton·ProjectDescription(`docs/frontend/projects.md` S516), DeadlineCalendar·FeedbackForm(`docs/frontend/participations.md` S467), ProfileForm·PasswordForm(`docs/frontend/profile-edit.md` S181), LoginForm·SignupForm(`docs/frontend/auth.md` S313), CheckoutForm(`docs/frontend/subscription.md` S533~S543) (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/frontend/header.md` S333. 구독 결제 CheckoutForm 추가. 고침 #42: WithdrawalModal)
+- Then  Carousel, MainNav, MyPageLink, MobileMenu, DemoSwitcher, RecruitmentFilters 6개에 다른 페이지 문서가 더한 23개, 모두 29개만 나온다: AccountNav(`docs/frontend/my.md`), ChatFilters·ChatCardMenu(`docs/frontend/chat/chats.md`), ChatComposer·HideFooter·ChatsBackLink(`docs/frontend/chat/chat-room.md`), WithdrawalForm(`docs/frontend/payment/credits.md`), 관리자 CopyAccountButton·RequestReviewForm·WithdrawalModal(`docs/frontend/admin/reports.md` S445), ProjectForm·RecruitmentForm·ApplicantList·FeedbackList·CancelRecruitmentButton·ProjectDescription(`docs/frontend/project/projects.md` S516), DeadlineCalendar·FeedbackForm(`docs/frontend/project/participations.md` S467), ProfileForm·PasswordForm(`docs/frontend/auth/profile-edit.md` S181), LoginForm·SignupForm(`docs/frontend/auth/auth.md` S313), CheckoutForm(`docs/frontend/payment/subscription.md` S533~S543) (고침 11-02: 헤더 검색 HeaderSearch 삭제, 헤더 마이페이지 MyPageLink 추가 — `docs/frontend/header.md` S333. 구독 결제 CheckoutForm 추가. 고침 #42: WithdrawalModal)
 - When  `grep -rnE '#[0-9a-fA-F]{3,6}\b|\[[0-9]+px\]' src/components src/features`
 - Then  결과가 없다
 - When  `grep -rln "mock" src --include='*.tsx'`
@@ -297,25 +297,11 @@ S78 [명령]
 - 카테고리 중 웹서비스 외에는 모집 글이 없어서 빈 상태가 보인다.
 
 ## 범위 밖
-- 홈 외 페이지의 실제 내용 (준비 중 화면만 있다. 마이페이지 `/my`는 `docs/frontend/my.md`, 채팅함 `/my/chats`는 `docs/frontend/chats.md`)
+- 홈 외 페이지의 실제 내용 (준비 중 화면만 있다. 마이페이지 `/my`는 `docs/frontend/my.md`, 채팅함 `/my/chats`는 `docs/frontend/chat/chats.md`)
 - 실제 로그인, API, 결제 연동
 - 무한 스크롤
 - 실제 서비스 스크린샷 썸네일
 - 아직 확인하지 않은 것: 768~1023px 폭(그리드 2열 구간), hover·focus 상태의 화면 검토
-
-## 브랜치·커밋
-- 브랜치: `feature/frontend-home` (`develop`에서 분기)
-- 커밋 메시지: README의 `유형: 변경 내용` 규칙
-
-## 변경 이력
-- 2026-10-30
-  - 홈을 와이어프레임(헤더, 탭 줄, 배너, 카드 5개 한 줄) 기준으로 처음 만들었다. 첫 마케팅 랜딩안(혜택, FAQ, 태그라인 리빌)은 쓰지 않았다.
-  - URL을 바꿨다: 모집 `tests` → `recruitments`, 참여 테스트 `/my/tests` → `/my/participations`, 프로젝트 하위 모집도 `recruitments`
-  - 배너 첫 장에 서비스 소개를 넣었다. 이용 방법 3단계와 FAQ를 넣었다가 리디자인 때 뺐다.
-  - redesign 점검(A 항목)을 반영했다: 다크 강조색 채도 낮춤, z-index 토큰, 공유 이미지 등
-  - impeccable 리디자인: uibowl 참고 갤러리형(라이트 교정쇄, 다크 uibowl)으로 바꿨다. 배너는 소개·이벤트·공지, 그 아래 구독 모집과 전체 테스트 그리드다. 마무리 리뷰는 fix 판정 후 7개 수정, ship.
-  - 강조색을 라이트·다크 모두 초록 계열로 통일했다(현재 라이트 `#0f7c4a` / 다크 `#129357`).
-  - 문서를 이 파일 하나로 합쳤다. 테스트 묶음 번호를 R1~R13으로 다시 매기고, 공유 이미지·내 정보 위치·모바일 검색에 S80~S82를 붙였다. 지난 변경을 확인하던 S77(이용 방법·FAQ 없음)은 지웠다.
 
 ## 참고
 - 제품 기록: `frontend/PRODUCT.md`

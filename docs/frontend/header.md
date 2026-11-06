@@ -1,17 +1,16 @@
 # 프론트엔드 헤더 정리와 로그아웃
 
-시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56: `docs/test-cleanup.md`)
+시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[명령]`은 명령 한 번, `[직접]`은 사람이 화면을 보고 확인한다. (고침 #56)
 
 ## 한눈에
 - 끝나면: 헤더 카테고리 탭은 참여 테스트·내 프로젝트·채팅(운영자는 운영자 페이지 추가)만 남는다. 홈은 로고로 간다. "홈"·"테스트 모집" 탭과 헤더 검색창(모바일 메뉴 검색 포함)은 없어진다. 오른쪽은 로그인하면 보유 크레딧·"마이페이지"·"로그아웃", 비로그인이면 "로그인"·"회원가입"이다. 로그아웃하면 비로그인이 되고 홈으로 간다. 로그인 상태에서 탭·버튼 글자가 두 줄로 깨지지 않는다.
 - 결정 필요: 없음 (11-01 확정: "내 정보" 삭제, "마이페이지"는 탭에서 오른쪽으로 옮김, 크레딧 버튼 유지하되 보이는 글자는 동전 아이콘과 숫자만("크레딧" 글자 삭제, 화면 낭독기에는 "보유 크레딧 12,480"으로 읽힘), 로그아웃 뒤 홈, "테스트 모집" 탭·헤더 검색 삭제 — 검색은 홈 전체 테스트 그리드에서 한다, "홈" 탭 삭제 — 로고가 홈으로 간다)
-- 브랜치: `feature/frontend-header` (`feature/frontend-auth`에서 분기). PR base는 `feature/frontend-auth`, Draft로 올리고 auth PR 병합 뒤 Ready로 바꾼다
 - 규모: 5단계, 약 3~4시간
 
 ## 맥락
 - 헤더는 `src/components/layout/`의 `AppHeader`(배치), `NavList`·`MainNav`(탭), `HeaderSearch`(검색창), `UserMenu`(오른쪽), `MobileMenu`(좁은 화면 패널)로 되어 있고, 탭 정의는 `src/lib/nav.ts`의 `NAV`다.
 - 지금 1280px 이상에서는 로고·탭·검색창(최대 384px)·오른쪽을 한 줄에 줄바꿈 없이 놓는다. 한 줄에 필요한 폭은 비로그인 1241px, 테스터 1306px, 운영자 1373px(11-01 측정)라서, 로그인 상태에서 1280~1372px일 때 자리가 모자라 띄어쓰기마다 글자가 줄바꿈된다("테스트 / 모집", "test / moa", "12,480 / 크레딧").
-- 로그인은 `demo-role` 쿠키를 바꾸는 목업이다(`docs/frontend/auth.md`). 쿠키가 없으면 테스터로 보므로, 로그아웃은 쿠키를 지우지 않고 `guest`로 넣는다.
+- 로그인은 `demo-role` 쿠키를 바꾸는 목업이다(`docs/frontend/auth/auth.md`). 쿠키가 없으면 테스터로 보므로, 로그아웃은 쿠키를 지우지 않고 `guest`로 넣는다.
 - 홈 전체 테스트 그리드에는 검색창이 따로 있다(`docs/frontend/home.md` S69). 헤더 검색은 그 그리드로 보내는 입구였다.
 - "테스트 모집" 탭이 가던 `/recruitments`는 아직 준비 중 페이지다. 페이지는 남기고 헤더 진입점만 없앤다.
 
@@ -123,7 +122,7 @@ S332 기존 시나리오 정리 [직접]
   - S79(`home-gallery.spec.ts`): 검색창 2개 → 1개
   - S36(`a11y.spec.ts`): 포커스 링 확인 탭을 "참여 테스트"로
   - `auth.spec.ts`의 로그인 확인: "내 정보" → "마이페이지"
-- Then  `docs/frontend/auth.md` 범위 밖의 "로그아웃"을 이 문서로 옮겼다고 적는다
+- Then  `docs/frontend/auth/auth.md` 범위 밖의 "로그아웃"을 이 문서로 옮겼다고 적는다
 
 S333 구조 [명령]
 - When  `grep -rn "HeaderSearch" src`
@@ -151,19 +150,8 @@ S333 구조 [명령]
    - 탭·로고·오른쪽 버튼 글자에 `whitespace-nowrap`을 걸어, 폭이 모자라도 글자가 쪼개지지 않게 한다
 5. 테스트·문서 — S332, S333
    - `e2e/header.spec.ts`(새 S341~S346 포함), `nav.spec.ts`, `mobile-menu.spec.ts`, `home-gallery.spec.ts`, `a11y.spec.ts`, `auth.spec.ts`, 새 `e2e/header-layout.spec.ts`(S330·S331)
-   - `docs/frontend/home.md` R2~R5·R12 갱신, `docs/frontend/auth.md` 범위 밖 갱신
+   - `docs/frontend/home.md` R2~R5·R12 갱신, `docs/frontend/auth/auth.md` 범위 밖 갱신
    - 확인: `cd frontend && npm run lint && npx tsc --noEmit && npm run test:e2e`, 개발 서버에서 375·1024·1280·1440px와 다크 모드 확인
-
-## 브랜치·커밋
-- 브랜치: `feature/frontend-header` (`feature/frontend-auth`에서 분기)
-- 커밋:
-  - `Docs: 헤더 정리와 로그아웃 계획 문서`
-  - `Feat: 로그아웃 액션` — 단계 2
-  - `Feat: 헤더 탭·검색 정리, 마이페이지·로그아웃 계정 영역` — 단계 1·3 (고침 11-02: 탭 정리와 계정 영역이 같은 파일을 고쳐 한 커밋으로)
-  - `Fix: 로그인 상태에서 헤더 글자가 줄바꿈되지 않게 배치 변경` — 단계 4
-  - `Test: 헤더 정리·로그아웃·배치 E2E 시나리오`
-  - `Docs: 홈 문서 헤더·검색 시나리오 갱신`
-- PR: base `feature/frontend-auth`, Draft. 본문 맨 위에 "auth PR 병합 후 병합, base 변경 금지"
 
 ## 가정
 - 로그아웃 버튼은 보조(ghost) 버튼이다. 헤더의 주 버튼은 비로그인일 때 "회원가입" 하나뿐이다 (DESIGN.md The One Green Rule).
@@ -173,4 +161,4 @@ S333 구조 [명령]
 ## 참고 (2026-11-01 확인)
 - 헤더 코드: `frontend/src/components/layout/AppHeader.tsx`, `NavList.tsx`, `UserMenu.tsx`, `MobileMenu.tsx`, `HeaderSearch.tsx`, `frontend/src/lib/nav.ts`
 - 기존 시나리오: `docs/frontend/home.md` R2~R5, R12
-- 로그인 목업: `docs/frontend/auth.md`, `frontend/src/features/auth/actions.ts`
+- 로그인 목업: `docs/frontend/auth/auth.md`, `frontend/src/features/auth/actions.ts`

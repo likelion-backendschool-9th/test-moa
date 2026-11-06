@@ -56,7 +56,8 @@ class SecurityTest {
     @Test
     @DisplayName("#79-S3 공개 주소는 토큰 없이 열린다")
     void 공개_주소는_토큰_없이_열린다() throws Exception {
-        mvc.perform(get("/api/samples")).andExpect(status().isOk());
+        // 공개 주소 중 GET으로 바로 200이 나오는 곳이 API 문서뿐이라 이 주소로 확인한다
+        mvc.perform(get("/v3/api-docs")).andExpect(status().isOk());
     }
 
     @Test

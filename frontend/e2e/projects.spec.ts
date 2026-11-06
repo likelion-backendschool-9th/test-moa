@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
-/* docs/frontend/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
+/* docs/frontend/project/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
 const BOOKLOG = "/my/projects/booklog";
 const BOOKLOG_MANAGE = `${BOOKLOG}/recruitments/booklog`;
@@ -76,7 +76,7 @@ test.describe("R103 프로젝트 등록·수정", () => {
   });
 });
 
-test.describe("R113 프로젝트 이미지·미리보기", () => {
+test.describe("#62-R1 프로젝트 이미지·미리보기", () => {
   /* 시연용 파일. 내용은 상관없고 이름·형식·크기만 본다 */
   const file = (name: string, mimeType: string, bytes = 1024) => ({ name, mimeType, buffer: Buffer.alloc(bytes) });
   const png = (name: string) => file(name, "image/png");
@@ -93,18 +93,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await page.goto("/my/projects/new");
   });
 
-  test("S145 등록 폼에 이름·상세 설명·대표 이미지만 있다", async ({ page }) => {
-    for (const label of ["프로젝트 이름", "상세 설명 (선택)", "대표 이미지 (선택)"]) {
-      await expect(page.getByLabel(label)).toBeVisible();
-    }
-    await expect(page.getByLabel("한 줄 소개")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "링크 추가" })).toHaveCount(0);
-    await expect(page.getByRole("radio")).toHaveCount(0);
-    /* 미리보기는 등록 버튼 옆에 있고 누르면 대화상자로 열린다 */
-    await expect(page.getByRole("button", { name: "미리보기" })).toBeVisible();
-  });
-
-  test("S146 대표 이미지를 고르면 썸네일이 보이고, 다시 고르면 바뀌며, 한도를 넘으면 막는다", async ({ page }) => {
+  test("#62-S5 대표 이미지를 고르면 썸네일이 보이고, 다시 고르면 바뀌며, 한도를 넘으면 막는다", async ({ page }) => {
     const input = page.getByLabel("대표 이미지 (선택)");
     await expect(input).not.toHaveAttribute("multiple");
     await expect(page.getByText("이미지 고르기")).toBeVisible();
@@ -130,7 +119,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await expect(page.getByRole("button", { name: "첫화면.png 삭제" })).toBeVisible();
   });
 
-  test("S363 다른 화면에 갔다가 뒤로 와도 고른 이미지가 깨지지 않는다", async ({ page }) => {
+  test("#62-S6 다른 화면에 갔다가 뒤로 와도 고른 이미지가 깨지지 않는다", async ({ page }) => {
     /* 1x1 PNG. 실제로 그려지는지 봐야 해서 올바른 이미지를 쓴다 */
     const buffer = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
     await page.getByLabel("대표 이미지 (선택)").setInputFiles({ name: "첫화면.png", mimeType: "image/png", buffer });
@@ -148,7 +137,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await expect.poll(() => hero.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth)).toBeGreaterThan(0);
   });
 
-  test("S366 샘플 이미지가 상세와 수정 폼에 보이고, 이미지가 없으면 기본 이미지가 보인다", async ({ page }) => {
+  test("#62-S8 샘플 이미지가 상세와 수정 폼에 보이고, 이미지가 없으면 기본 이미지가 보인다", async ({ page }) => {
     await page.goto(BOOKLOG);
     const cover = page.getByRole("img", { name: /대표 이미지$/ });
     await expect(cover).toBeVisible();
@@ -177,7 +166,7 @@ test.describe("R113 프로젝트 이미지·미리보기", () => {
     await expect(page).toHaveURL(`${BOOKLOG}?notice=saved`);
   });
 
-  test("S149 미리보기 버튼을 누르면 지금 적은 내용을 상세 화면 모양으로 보여 준다", async ({ page }) => {
+  test("#62-S9 미리보기 버튼을 누르면 지금 적은 내용을 상세 화면 모양으로 보여 준다", async ({ page }) => {
     const button = page.getByRole("button", { name: "미리보기" });
     /* 등록 버튼 바로 옆에 있다 */
     await expect(page.getByRole("button", { name: "등록" }).locator("xpath=following-sibling::*[1]")).toHaveText("미리보기");
@@ -230,7 +219,7 @@ test.describe("R104 프로젝트 상세", () => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S150 상세 설명이 보이고 수정 폼에 채워져 있다", async ({ page }) => {
+  test("#62-S10 상세 설명이 보이고 수정 폼에 채워져 있다", async ({ page }) => {
     await page.goto(BOOKLOG);
     await expect(page.getByText(/이번에는 책 등록부터 기록 작성까지/)).toBeVisible();
 
@@ -263,7 +252,6 @@ test.describe("R105 테스트 모집 작성", () => {
     await page.getByLabel("접속 링크").fill("https://booklog.example.com");
     await page.getByLabel("모집 마감일").fill("2099-01-10");
     await page.getByLabel("피드백 제출 마감일").fill("2099-01-20");
-    await page.getByLabel("모집 인원").fill("10");
     await page.getByLabel("항목 1 이름").fill("회원가입하기");
     await page.getByRole("button", { name: "모집 등록" }).click();
     await expect(page).toHaveURL(`${BOOKLOG}?notice=saved`);
@@ -271,14 +259,14 @@ test.describe("R105 테스트 모집 작성", () => {
   });
 });
 
-test.describe("R119 모집글 제목과 선정 조건", () => {
+test.describe("#62-R7 모집글 제목과 선정 조건", () => {
   const NEW = `${BOOKLOG}/recruitments/new`;
 
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S371 테스트 항목 줄을 지우면 지난 오류가 다른 줄에 붙지 않는다", async ({ page }) => {
+  test("#62-S7 테스트 항목 줄을 지우면 지난 오류가 다른 줄에 붙지 않는다", async ({ page }) => {
     await page.goto(NEW);
     const add = page.getByRole("button", { name: "항목 추가" });
     await add.click();
@@ -296,7 +284,7 @@ test.describe("R119 모집글 제목과 선정 조건", () => {
     await expect(error).toHaveCount(0);
   });
 
-  test("S367 구독 모집은 선정 조건을 고르고, 오류가 나도 고른 값이 남는다", async ({ page }) => {
+  test("#62-S12 구독 모집은 선정 조건을 고르고, 오류가 나도 고른 값이 남는다", async ({ page }) => {
     await page.goto(NEW);
     await expect(page.getByRole("radio", { name: "선발형" })).toBeChecked();
     await page.getByRole("radio", { name: "선착순" }).check();
@@ -310,7 +298,7 @@ test.describe("R119 모집글 제목과 선정 조건", () => {
     await expect(page.getByText("모집글 제목은 50자까지 적을 수 있어요")).toBeVisible();
   });
 
-  test("S369 접속 링크는 모집글마다 적고 모집 관리에서 새 탭으로 열린다", async ({ page }) => {
+  test("#62-S13 접속 링크는 모집글마다 적고 모집 관리에서 새 탭으로 열린다", async ({ page }) => {
     await page.goto("/my/projects/new");
     await expect(page.getByLabel("접속 링크")).toHaveCount(0);
 
@@ -325,7 +313,7 @@ test.describe("R119 모집글 제목과 선정 조건", () => {
     await expect(access).toHaveAttribute("rel", "noopener noreferrer");
   });
 
-  test("S368 모집 관리에 모집글 제목과 선정 방식이 보인다", async ({ page }) => {
+  test("#62-S14 모집 관리에 모집글 제목과 선정 방식이 보인다", async ({ page }) => {
     const value = (term: string) => page.locator("dt", { hasText: term }).locator("+ dd");
     await page.goto(BOOKLOG_MANAGE);
     await expect(page.getByRole("heading", { level: 1, name: "북로그 2차 베타 테스터 모집" })).toBeVisible();
@@ -357,7 +345,7 @@ test.describe("R107 테스터 관리 탭", () => {
     const first = pending.first();
     const nickname = (await first.locator("span").first().textContent()) ?? "";
     await first.getByRole("button", { name: "확정", exact: true }).click();
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 14명 · 정원 20명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 14명");
     await expect(pending).toHaveCount(7);
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: `${nickname}님을 확정했어요` })).toHaveCount(1);
   });
@@ -370,17 +358,17 @@ test.describe("R107 테스터 관리 탭", () => {
 
     await page.getByRole("checkbox", { name: "전체 선택" }).check();
     await expect(bulkButton).toHaveText("선택한 8명 확정");
-    await expect(bulkButton).toBeDisabled();
-    await expect(page.getByText("남은 자리는 7명이에요")).toBeVisible();
+    await expect(bulkButton).toBeEnabled();
 
     await page.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
     await expect(bulkButton).toHaveText("선택한 7명 확정");
     await bulkButton.click();
 
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명 · 정원 20명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명");
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: "7명을 확정했어요" })).toHaveCount(1);
-    await expect(page.getByText("정원이 다 찼어요")).toBeVisible();
-    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    /* 인원 제한이 없어 남은 지원자도 확정할 수 있다 */
+    await expect(page.getByRole("checkbox", { name: "전체 선택" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "확정", exact: true })).toBeEnabled();
   });
 
   test("S521 모집이 끝난 모집에는 대기 지원자가 있어도 일괄 확정이 없다", async ({ page }) => {
@@ -389,15 +377,6 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByTestId("applicant").filter({ hasText: "조하은" }).getByText("지원", { exact: true })).toBeVisible();
     await expect(page.getByRole("checkbox")).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^(확정|거절)$/ })).toHaveCount(0);
-  });
-
-  test("S505 정원이 차면 확정 버튼이 비활성이다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
-    await page.getByRole("checkbox", { name: "전체 선택" }).check();
-    await page.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
-    await page.getByRole("button", { name: "선택한 7명 확정" }).click();
-    await expect(page.getByText("정원이 다 찼어요")).toBeVisible();
-    await expect(page.getByRole("button", { name: "확정", exact: true })).toBeDisabled();
   });
 
   test("S526 확정 요청이 끊기면 안내를 보여 주고 서버 목록으로 화면을 맞춘다", async ({ page }) => {
@@ -410,36 +389,33 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByRole("main").getByRole("alert")).toHaveText("연결이 불안정해 결과를 확인하지 못했어요. 지원자 목록을 다시 불러왔으니 상태를 확인해 주세요");
     await refetch;
     /* 오류 화면 없이 그대로이고, 먼저 바꾼 표시는 서버 상태(저장 안 됨)로 돌아온다 */
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명");
     await expect(page.getByTestId("applicant").filter({ hasText: "권나연" })).toContainText("지원");
     await expect(page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true })).toBeVisible();
   });
 
-  test("S526 다른 탭에서 정원이 차 서버가 거절하면, 안내와 함께 최신 목록으로 맞춘다", async ({ page, context }) => {
+  test("S526 다른 탭에서 먼저 처리해 서버가 거절하면, 안내와 함께 최신 목록으로 맞춘다", async ({ page, context }) => {
     await page.goto(BOOKLOG_MANAGE);
-    /* 같은 브라우저의 다른 탭에서 7명을 확정해 정원을 채운다 */
+    const applicant = (target: typeof page) => target.getByTestId("applicant").filter({ hasText: "배하린" });
+    /* 같은 브라우저의 다른 탭에서 같은 지원자를 먼저 확정한다 */
     const other = await context.newPage();
     await other.goto(BOOKLOG_MANAGE);
-    await other.getByRole("checkbox", { name: "전체 선택" }).check();
-    await other.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
     const saved = other.waitForResponse((response) => response.request().method() === "POST");
-    await other.getByRole("button", { name: "선택한 7명 확정" }).click();
+    await applicant(other).getByRole("button", { name: "확정", exact: true }).click();
     await saved;
 
-    /* 이 탭은 아직 13명이라 확정 버튼이 눌린다. 서버는 정원 초과로 거절한다 */
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명 · 정원 20명");
-    await page.getByTestId("applicant").filter({ hasText: "배하린" }).getByRole("button", { name: "확정", exact: true }).click();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText("확정하지 못했어요. 그사이 정원이 찼거나 모집이 끝났을 수 있어 지원자 목록을 다시 불러왔어요");
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명 · 정원 20명");
-    await expect(page.getByText("정원이 다 찼어요")).toBeVisible();
-    await expect(page.getByRole("button", { name: "확정", exact: true })).toBeDisabled();
+    /* 이 탭은 아직 대기로 보여 확정 버튼이 눌린다. 서버는 이미 처리된 지원이라 거절한다 */
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 13명");
+    await applicant(page).getByRole("button", { name: "확정", exact: true }).click();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText("확정하지 못했어요. 그사이 이미 처리됐거나 모집이 끝났을 수 있어 지원자 목록을 다시 불러왔어요");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 14명");
+    await expect(applicant(page).getByRole("button", { name: "확정", exact: true })).toHaveCount(0);
   });
 
   test("S525 모집이 끝난 모집은 서버도 확정·거절을 저장하지 않는다", async ({ page }) => {
     await page.goto(BOOKLOG_MANAGE);
     /*
      * 화면으로는 보낼 수 없는 요청을 만든다: 북로그 확정 요청을 모집이 끝난 1차 모집의 대기 지원자(조하은) 거절로 바꾼다.
-     * 1차 모집은 정원이 차 있어 확정은 정원 검사에도 걸리므로, 정원 검사가 없는 거절로 마감 검사만 확인한다.
      */
     await page.route(`**${BOOKLOG_MANAGE}`, async (route) => {
       const request = route.request();
@@ -454,7 +430,7 @@ test.describe("R107 테스터 관리 탭", () => {
 
     await page.goto(FIRST_MANAGE);
     await expect(page.getByTestId("applicant").filter({ hasText: "조하은" }).getByText("지원", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명 · 정원 5명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명");
   });
 
   test("S525 확정 결과는 요약·분석·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {
@@ -465,24 +441,23 @@ test.describe("R107 테스터 관리 탭", () => {
     const summaryValue = (term: string) =>
       page.locator("dl div").filter({ has: page.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) }) }).getByRole("definition");
     await expect(summaryValue("확정 인원")).toHaveText("20명");
-    await expect(page.getByRole("main").getByText("모집 완료", { exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByText("모집 중", { exact: true })).toBeVisible();
 
     await page.reload();
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명 · 정원 20명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명");
 
     await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`);
     await expect(summaryValue("확정 수")).toHaveText("20명");
 
     await page.goto("/my/projects");
-    await expect(page.getByTestId("todo").filter({ hasText: "확정을 기다려요" })).toHaveCount(0);
+    await expect(page.getByTestId("todo").filter({ hasText: "지원자 1명이 확정을 기다려요" })).toHaveCount(1);
     const overview = page.getByRole("region", { name: "전체 현황" });
-    const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 완료$/ }) });
-    await expect(tile.getByRole("definition")).toHaveText("2건");
+    await expect(overview.getByRole("term")).toHaveText(["모집 중", "테스트 중", "신고 대기"]);
   });
 
   test("S506 무료 모집은 직접 선정하지 않는다", async ({ page }) => {
     await page.goto(FOLIO_MANAGE);
-    await expect(page.getByText("선착순 모집이라 지원 순서대로 자동 확정돼요")).toBeVisible();
+    await expect(page.getByText("선착순 모집이라 지원하면 바로 확정돼요")).toBeVisible();
     await expect(page.getByRole("button", { name: /확정|거절/ })).toHaveCount(0);
   });
 });
@@ -543,12 +518,12 @@ test.describe("R109 분석 탭", () => {
   });
 });
 
-test.describe("R114 모집 조건과 테스트 항목", () => {
+test.describe("#62-R2 모집 조건과 테스트 항목", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S352 모집 작성에 모집 조건과 테스트 항목이 있고 항목은 1개 이상이다", async ({ page }) => {
+  test("#62-S11 모집 작성에 모집 조건과 테스트 항목이 있고 항목은 1개 이상이다", async ({ page }) => {
     await page.goto(`${BOOKLOG}/recruitments/new`);
     await expect(page.getByLabel("모집 조건 (선택)")).toBeVisible();
     await expect(page.getByTestId("test-item-row")).toHaveCount(1);
@@ -565,13 +540,12 @@ test.describe("R114 모집 조건과 테스트 항목", () => {
     await page.getByLabel("접속 링크").fill("https://booklog.example.com");
     await page.getByLabel("모집 마감일").fill("2099-01-10");
     await page.getByLabel("피드백 제출 마감일").fill("2099-01-20");
-    await page.getByLabel("모집 인원").fill("10");
     await page.getByRole("button", { name: "모집 등록" }).click();
     await expect(page.getByText("테스트 항목을 1개 이상 적어 주세요")).toBeVisible();
     await expect(page.getByLabel("항목 1 이름")).toBeFocused();
   });
 
-  test("S353 모집 관리 화면에서 모집 조건과 테스트 항목을 펼쳐 본다", async ({ page }) => {
+  test("#62-S15 모집 관리 화면에서 모집 조건과 테스트 항목을 펼쳐 본다", async ({ page }) => {
     await page.goto(BOOKLOG_MANAGE);
     const box = page.getByText("모집 조건과 테스트 항목 3개");
     await box.click();
@@ -614,12 +588,12 @@ test.describe("R114 모집 조건과 테스트 항목", () => {
   });
 });
 
-test.describe("R115 모집 취소", () => {
+test.describe("#62-R3 모집 취소", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S354 확정 테스터가 없는 테스트 전 모집은 확인만 받고 바로 취소한다", async ({ page }) => {
+  test("#62-S16 확정 테스터가 없는 테스트 전 모집은 확인만 받고 바로 취소한다", async ({ page }) => {
     await page.goto(FOLIO_NEXT_MANAGE);
     await page.getByRole("button", { name: "모집 취소", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "모집을 취소할까요?" });
@@ -645,10 +619,10 @@ test.describe("R115 모집 취소", () => {
     await page.goto("/my/projects");
     const overview = page.getByRole("region", { name: "전체 현황" });
     const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 중$/ }) });
-    await expect(tile.getByRole("definition")).toHaveText("1건");
+    await expect(tile.getByRole("definition")).toHaveText("2건");
   });
 
-  test("S355 확정 테스터가 있는 테스트 전 모집과 이미 취소한 모집은 취소할 수 없다", async ({ page }) => {
+  test("#62-S17 확정 테스터가 있는 테스트 전 모집과 이미 취소한 모집은 취소할 수 없다", async ({ page }) => {
     for (const manage of [BOOKLOG_MANAGE, FOLIO_MANAGE]) {
       await page.goto(manage);
       await expect(page.getByText("확정된 테스터가 있어 취소할 수 없어요")).toBeVisible();
@@ -681,7 +655,7 @@ test.describe("R115 모집 취소", () => {
     await expect(page.getByTestId("confirmed-count")).toContainText("확정 4명");
   });
 
-  test("S372 쿠키의 취소 시각이 깨져 있어도 화면이 열리고 그 기록은 버린다", async ({ page, context }) => {
+  test("#62-S18 쿠키의 취소 시각이 깨져 있어도 화면이 열리고 그 기록은 버린다", async ({ page, context }) => {
     await context.addCookies([
       {
         name: "demo-recruitment-cancel-folio-builder-next",
@@ -694,7 +668,7 @@ test.describe("R115 모집 취소", () => {
     await expect(page.getByTestId("cancel-status")).toHaveCount(0);
   });
 
-  test("S365 긴 사유로 취소해도 저장된다", async ({ page }) => {
+  test("#62-S19 긴 사유로 취소해도 저장된다", async ({ page }) => {
     await page.goto(FIRST_MANAGE);
     await page.getByRole("button", { name: "모집 취소", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "모집을 취소할까요?" });
@@ -705,7 +679,7 @@ test.describe("R115 모집 취소", () => {
     await expect(page.getByTestId("cancel-status")).toContainText("가".repeat(300));
   });
 
-  test("S357 취소한 모집은 취소 상태이고 진행 숫자에서 빠진다", async ({ page }) => {
+  test("#62-S20 취소한 모집은 취소 상태이고 진행 숫자에서 빠진다", async ({ page }) => {
     await page.goto(FOLIO_OLD_MANAGE);
     await expect(page.getByTestId("cancel-status")).toContainText("모집을 취소했어요");
     await expect(page.getByTestId("cancel-status")).toContainText("취소 사유: 서비스 화면을 크게 바꿔서 다시 모집할게요");
@@ -714,10 +688,10 @@ test.describe("R115 모집 취소", () => {
 
     await page.goto("/my/projects");
     const folio = page.getByRole("region", { name: "프로젝트 3개" }).getByRole("listitem").filter({ hasText: "포트폴리오 빌더" });
-    await expect(folio).toContainText("모집 2건 · 모집 중 1건");
+    await expect(folio).toContainText("모집 2건 · 모집 중 2건");
     const overview = page.getByRole("region", { name: "전체 현황" });
-    const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 완료$/ }) });
-    await expect(tile.getByRole("definition")).toHaveText("1건");
+    const tile = overview.locator("div").filter({ has: page.getByRole("term").filter({ hasText: /^모집 중$/ }) });
+    await expect(tile.getByRole("definition")).toHaveText("3건");
 
     await page.goto("/my/projects/folio-builder");
     const cancelled = page.getByRole("listitem").filter({ hasText: "포트폴리오 빌더 첫 버전 테스트" });
@@ -726,12 +700,12 @@ test.describe("R115 모집 취소", () => {
   });
 });
 
-test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
+test.describe("#62-R4 테스터 제출 현황·채팅·참여 취소", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "developer" });
   });
 
-  test("S358 테스트 중이면 확정 테스터마다 피드백 제출 현황이 보인다", async ({ page }) => {
+  test("#62-S21 테스트 중이면 확정 테스터마다 피드백 제출 현황이 보인다", async ({ page }) => {
     await page.goto(FIRST_MANAGE);
     await expect(page.getByTestId("submission-summary")).toHaveText("피드백 제출 4명 · 미제출 1명 · 미완료 0명");
     await expect(page.getByTestId("applicant").filter({ hasText: "김하늘" })).toContainText("제출함");
@@ -742,13 +716,13 @@ test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
     await expect(page.getByTestId("submission-summary")).toHaveCount(0);
   });
 
-  test("S359 확정 뒤 참여를 취소한 테스터는 참여 취소로 보이고 확정 수에서 빠진다", async ({ page }) => {
+  test("#62-S22 확정 뒤 참여를 취소한 테스터는 참여 취소로 보이고 확정 수에서 빠진다", async ({ page }) => {
     await page.goto(FIRST_MANAGE);
     await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(1);
-    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명 · 정원 5명");
+    await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명");
   });
 
-  test("S360 구독 모집의 확정 테스터에게 채팅 바로가기가 있다", async ({ page }) => {
+  test("#62-S24 구독 모집의 확정 테스터에게 채팅 바로가기가 있다", async ({ page }) => {
     await page.goto(FIRST_MANAGE);
     await expect(page.getByRole("link", { name: "김하늘님과 채팅" })).toHaveAttribute("href", `/my/chats?q=${encodeURIComponent("김하늘")}`);
     /* 확정되지 않은 테스터와 무료 모집에는 없다 */
@@ -758,8 +732,8 @@ test.describe("R116 테스터 제출 현황·채팅·참여 취소", () => {
   });
 });
 
-test.describe("R117 항목별 피드백과 스크린샷", () => {
-  test("S370 채팅 바로가기는 그 테스터와의 채팅으로 이어진다", async ({ page, context }) => {
+test.describe("#62-R5 항목별 피드백과 스크린샷", () => {
+  test("#62-S23 채팅 바로가기는 그 테스터와의 채팅으로 이어진다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(FIRST_MANAGE);
     await page.getByRole("link", { name: "윤슬님과 채팅" }).click();
@@ -768,7 +742,7 @@ test.describe("R117 항목별 피드백과 스크린샷", () => {
     await expect(page.getByRole("main")).toContainText("가계부");
   });
 
-  test("S361 피드백마다 테스트 항목과 스크린샷이 보이고 항목별 수가 있다", async ({ page, context }) => {
+  test("#62-S25 피드백마다 테스트 항목과 스크린샷이 보이고 항목별 수가 있다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 2건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건 · 추천 1건");
@@ -779,8 +753,8 @@ test.describe("R117 항목별 피드백과 스크린샷", () => {
   });
 });
 
-test.describe("R118 피드백 추천", () => {
-  test("S362 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
+test.describe("#62-R6 피드백 추천", () => {
+  test("#62-S26 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     const count = page.getByTestId("recommended-count");

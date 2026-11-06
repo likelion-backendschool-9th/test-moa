@@ -110,7 +110,6 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 12),
     recruitDeadline: daysAgo(now, 5),
     submitDeadline: inDays(now, 2),
-    capacity: 5,
     confirmedCount: 5,
   };
 
@@ -122,7 +121,6 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 15),
     recruitDeadline: daysAgo(now, 9),
     submitDeadline: daysAgo(now, 2),
-    capacity: 10,
     confirmedCount: 0,
   };
 
@@ -134,12 +132,11 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     createdAt: daysAgo(now, 1),
     recruitDeadline: inDays(now, 5),
     submitDeadline: inDays(now, 12),
-    capacity: 10,
     confirmedCount: 0,
   };
 
   const applications: Record<string, Application[]> = {
-    /* 모집 중. 대기 지원자 8명이 남은 자리 7명보다 많아 일괄 확정의 정원 안내를 보여 준다 */
+    /* 모집 중. 대기 지원자 8명으로 일괄 확정을 보여 준다 */
     booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, cancelled: 0, applied: 8 }),
     /* 확정 5명 중 1명은 아직 피드백을 내지 않았고, 1명은 참여를 취소했다. 모집이 끝나 남은 대기 지원자 1명은 더 확정할 수 없다(일괄 확정이 없는 것을 보여 준다) */
     "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, cancelled: 1, applied: 1 }),

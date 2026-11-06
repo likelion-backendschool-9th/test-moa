@@ -19,7 +19,7 @@ import { TextField } from "./TextField";
  */
 
 const SELECTION_MODE_HINT: Record<SelectionMode, string> = {
-  firstCome: "지원 순서대로 자동 확정돼요",
+  firstCome: "지원하면 바로 확정돼요",
   selection: "지원자를 직접 확정하고 거절해요",
 };
 
@@ -28,7 +28,6 @@ type RecruitmentFormProps = {
   isSubscription: boolean;
   baseReward: number;
   extraReward: number;
-  maxCapacity: number;
 };
 
 /** 항목에 고른 이미지. 브라우저 임시 주소(blob:)로 미리 보여 준다 */
@@ -39,7 +38,7 @@ type ItemRow = { title: string; description: string; required: boolean; images: 
 const emptyRow = (): ItemRow => ({ title: "", description: "", required: true, images: [] });
 
 /** 테스트 모집 작성 폼 */
-export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraReward, maxCapacity }: RecruitmentFormProps) {
+export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraReward }: RecruitmentFormProps) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     createRecruitment.bind(null, projectKey),
     EMPTY_FORM_STATE,
@@ -181,16 +180,6 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
             </p>
           )}
         </fieldset>
-        <TextField
-          name="capacity"
-          label="모집 인원"
-          type="number"
-          min={1}
-          max={maxCapacity}
-          defaultValue={values.capacity}
-          error={errors.capacity}
-          hint={`1~${maxCapacity}명`}
-        />
         <div className="grid gap-6 sm:grid-cols-2">
           <TextField name="recruitDeadline" label="모집 마감일" type="date" defaultValue={values.recruitDeadline} error={errors.recruitDeadline} />
           <TextField name="submitDeadline" label="피드백 제출 마감일" type="date" defaultValue={values.submitDeadline} error={errors.submitDeadline} />

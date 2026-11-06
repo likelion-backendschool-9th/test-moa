@@ -33,11 +33,10 @@ export function TodoList({ todos }: { todos: TodoItem[] }) {
   );
 }
 
-/** 모든 프로젝트를 합친 숫자 네 개 */
+/** 모든 프로젝트를 합친 숫자 세 개 */
 export function OverviewStats({ overview }: { overview: ProjectOverview }) {
   const tiles = [
     ["모집 중", `${overview.recruiting}건`],
-    ["모집 완료", `${overview.full}건`],
     ["테스트 중", `${overview.testing}건`],
     ["신고 대기", `${overview.waitingReports}건`],
   ];
@@ -46,7 +45,7 @@ export function OverviewStats({ overview }: { overview: ProjectOverview }) {
       <h2 id="overview-heading" className="text-xl font-extrabold tracking-[-0.03em]">
         전체 현황
       </h2>
-      <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {tiles.map(([term, value]) => (
           <div key={term} className="flex flex-col gap-1 rounded-2xl bg-surface-muted p-5">
             <dt className="text-sm text-text-muted">{term}</dt>

@@ -37,10 +37,9 @@ type SummaryProps = {
 
 /** 모집 건 요약. 탭 위에 늘 보인다 */
 export function RecruitmentSummary({ project, recruitment, analytics, detail, cancellation, canCancel }: SummaryProps) {
-  const beforeTest = recruitment.status === "recruiting" || recruitment.status === "full";
+  const beforeTest = recruitment.status === "recruiting";
   const facts = [
     ["확정 인원", `${recruitment.confirmedCount}명`],
-    ["정원", `${recruitment.capacity}명`],
     ["지원", `${analytics.applicationCount}명`],
     ["피드백 제출", `${analytics.feedbackCount}건`],
     ["모집 마감", formatDate(recruitment.recruitDeadline)],

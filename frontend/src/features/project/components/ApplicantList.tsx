@@ -21,7 +21,6 @@ import { APPLICATION_STATUS_LABEL, SUBMISSION_STATUS_LABEL, type Application, ty
 
 type ApplicantListProps = {
   applications: ApplicationView[];
-  capacity: number;
   /** 구독 모집이고 모집 마감 전이면 true */
   canSelect: boolean;
   isSubscription: boolean;
@@ -59,7 +58,7 @@ async function canReachServer() {
 }
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
-export function ApplicantList({ applications, capacity, canSelect, isSubscription, selectionMode, projectKey, recruitmentKey }: ApplicantListProps) {
+export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, projectKey, recruitmentKey }: ApplicantListProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
@@ -73,13 +72,9 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
 
   const rows = applications.map((item) => ({ ...item, status: statuses[item.id] ?? item.status }));
   const confirmedCount = rows.filter((item) => item.status === "confirmed").length;
-  const remaining = Math.max(0, capacity - confirmedCount);
-  const full = remaining === 0;
   const pendingIds = rows.filter((item) => item.status === "applied").map((item) => item.id);
-  /* 정원이 남은 구독 모집에서만 여러 명을 고를 수 있다 */
-  const canBulk = canSelect && !full && pendingIds.length > 0;
+  const canBulk = canSelect && pendingIds.length > 0;
   const selected = pendingIds.filter((id) => checked.has(id));
-  const overCapacity = selected.length > remaining;
 
   /**
    * 서버에 닿으면 최신 지원자 목록을 다시 받고 message를 보여 준다.
@@ -116,7 +111,7 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
 
   /**
    * 여러 지원을 한 번에 같은 상태로 바꾸고 결과를 알린다.
-   * 서버가 거절하면 그사이 정원이나 모집 상태가 바뀌었을 수 있어서, 표시를 되돌리고 서버의 최신 목록을 다시 받는다.
+   * 서버가 거절하면 그사이 지원이나 모집 상태가 바뀌었을 수 있어서, 표시를 되돌리고 서버의 최신 목록을 다시 받는다.
    * 응답을 받지 못하면 저장됐는지 알 수 없어서 역시 최신 목록을 다시 받는다. 서버에 닿지 않으면 연결될 때까지 미룬다.
    */
   function decide(targets: Application[], status: "confirmed" | "rejected") {
@@ -137,7 +132,7 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
         if (ok) return;
         undo();
         setAnnouncement("");
-        await syncWithServer(`${label}하지 못했어요. 그사이 정원이 찼거나 모집이 끝났을 수 있어 지원자 목록을 다시 불러왔어요`, current);
+        await syncWithServer(`${label}하지 못했어요. 그사이 이미 처리됐거나 모집이 끝났을 수 있어 지원자 목록을 다시 불러왔어요`, current);
       } catch (caught) {
         /* 로그인 이동(redirect)·notFound는 연결 문제가 아니므로 Next가 처리하게 다시 던진다 */
         unstable_rethrow(caught);
@@ -171,10 +166,9 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <p className="font-bold" data-testid="confirmed-count">
-          확정 {confirmedCount}명 · 정원 {capacity}명
+          확정 {confirmedCount}명
         </p>
-        {selectionMode === "firstCome" && <p className="text-text-muted">선착순 모집이라 지원 순서대로 자동 확정돼요</p>}
-        {canSelect && full && <p className="text-text-muted">정원이 다 찼어요</p>}
+        {selectionMode === "firstCome" && <p className="text-text-muted">선착순 모집이라 지원하면 바로 확정돼요</p>}
         {submissions.length > 0 && (
           <p data-testid="submission-summary" className="text-text-muted">
             피드백 제출 {countOf("submitted")}명 · 미제출 {countOf("pending")}명 · 미완료 {countOf("incomplete")}명
@@ -193,11 +187,10 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
             />
             전체 선택
           </label>
-          {overCapacity && <p className="text-sm font-semibold">남은 자리는 {remaining}명이에요</p>}
           <Button
             size="sm"
             className="ml-auto"
-            disabled={selected.length === 0 || overCapacity}
+            disabled={selected.length === 0}
             onClick={() => decide(rows.filter((item) => selected.includes(item.id)), "confirmed")}
           >
             선택한 {selected.length}명 확정
@@ -242,7 +235,7 @@ export function ApplicantList({ applications, capacity, canSelect, isSubscriptio
               )}
               {canSelect && pending && (
                 <span className="ml-auto flex gap-2">
-                  <Button size="sm" disabled={full} onClick={() => decide([item], "confirmed")}>
+                  <Button size="sm" onClick={() => decide([item], "confirmed")}>
                     확정
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => decide([item], "rejected")}>

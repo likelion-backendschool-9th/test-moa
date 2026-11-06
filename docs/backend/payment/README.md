@@ -39,7 +39,7 @@
 
 - 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
 - 구독 중인지는 날짜로 판단하고, `EXPIRED`로 바꾸는 배치는 두지 않는다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다.
-- 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체·완료=끝 4자리. (#67, 2026-11-05)
+- 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림. (#67, 2026-11-06)
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):
 
@@ -228,6 +228,6 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 | 1 | `SubscriptionStatus.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
 | 2 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
 
-계좌번호·예금주 저장은 **A 컬럼 암호화**로 정했다 (#67, [cashout.md](cashout.md)). 응답 마스킹(대기=전체, 완료=끝 4자리)은 유지한다.
+계좌번호·예금주 저장은 **A 컬럼 암호화**로 정했다 (#67, [cashout.md](cashout.md)). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림이다.
 
 - ERD와 코드의 테이블·PK 이름(단수/복수, `id` vs `*_id`)을 맞추는 일. ERD 그림에서는 payment와 subscription 사이를 **1:1**로 그리고 값 설명만 고치면 된다.

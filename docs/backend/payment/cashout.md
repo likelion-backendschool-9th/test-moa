@@ -39,15 +39,15 @@
 | `status` | `REQUESTED` / `PAID` / `REJECTED` (화면: 처리 중·지급 완료·반려) |
 | `bank` | 은행 |
 | `accountNumber` | 마스킹 규칙 아래 |
-| `accountHolder` | 예금주 (회원 내역에서는 그대로 또는 정책에 따름. 프론트 목업은 계좌만 마스킹) |
+| `accountHolder` | 예금주. 마스킹 규칙은 아래 |
 | `rejectReason` | 반려일 때만. `OTHER`면 `rejectMemo`를 회원에게 보이는 사유로 |
 | `rejectMemo` | 회원 응답에서는 `OTHER`일 때만. HOLDER/ACCOUNT 운영자 메모는 null |
 | `requestedAt` | 신청 시각 (`createdAt`) |
 | `processedAt` | 처리 시각. 미처리면 null |
 
-**계좌 마스킹 (응답):**
-- `REQUESTED`(처리 중): 계좌번호 **전체**
-- `PAID`·`REJECTED`(완료): **끝 4자리**만 (앞은 `*` 등으로 가림)
+**계좌·예금주 마스킹 (응답):**
+- `REQUESTED`(처리 중): 계좌번호·예금주 **전체**
+- `PAID`·`REJECTED`(완료): 계좌번호는 **끝 4자리**만. 예금주는 앞·뒤 글자만 남긴다(두 글자는 앞 글자만, 한 글자는 `*`). 예: `한서윤` → `한*윤`, `김철` → `김*`
 
 운영자 목록(#68)도 같은 마스킹 규칙을 쓴다. 대기 건만 전체.
 
@@ -103,7 +103,7 @@ flowchart LR
 - API: `GET /api/v1/my/credits/withdrawals`
 - Then  최신순. 처리 중·지급 완료·반려
 - Then  반려는 사유 포함. `OTHER`면 메모가 회원에게 보이는 사유
-- Then  `REQUESTED`는 계좌 전체, `PAID`·`REJECTED`는 끝 4자리
+- Then  `REQUESTED`는 계좌·예금주 전체, `PAID`·`REJECTED`는 계좌 끝 4자리·예금주 가운데 가림 (고침 #67: 완료 건 예금주도 가린다)
 - 화면: `/my/credits/withdrawals`
 
 #67-S2 출금 신청 성공 [테스트]

@@ -213,9 +213,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
-    // 유형은 처음 쓸 때 만든다. 앱 시작 때 만들면 테이블이 없는 환경에서 앱이 뜨지 못한다
+    // 유형은 처음 쓸 때 만든다. 앱 시작 때 만들면 테이블이 없는 환경에서 앱이 뜨지 못한다.
+    // 처음 쓰는 요청 둘이 겹쳐도 유일 제약 오류로 모집 작성이 실패하지 않게, 없을 때만 넣는 SQL로 만든 뒤 다시 읽는다
     private Type findOrCreateType(TypeCode code) {
-        return typeRepository.findByCode(code).orElseGet(() -> typeRepository.save(Type.builder().code(code).build()));
+        return typeRepository.findByCode(code).orElseGet(() -> {
+            typeRepository.insertIfAbsent(code.name(), LocalDateTime.now());
+            return typeRepository.findByCode(code).orElseThrow();
+        });
     }
 
     // 한국 날짜의 끝 시각을 서버 시간대의 시각으로 바꾼다. 서버가 UTC면 23:59:59가 14:59:59로 저장된다

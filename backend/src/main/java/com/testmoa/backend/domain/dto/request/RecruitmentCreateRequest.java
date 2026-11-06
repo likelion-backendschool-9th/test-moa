@@ -51,7 +51,8 @@ public record RecruitmentCreateRequest(
 
         @NotEmpty(message = "테스트 항목을 1개 이상 적어 주세요")
         @Size(max = 10, message = "테스트 항목은 10개까지 적을 수 있어요")
-        List<@Valid TestItemRequest> testItems,
+        // 빈 원소(null)는 @Valid가 거르지 않아서 원소에도 @NotNull을 둔다
+        List<@NotNull(message = "테스트 항목을 확인해 주세요") @Valid TestItemRequest> testItems,
 
         // 모집글 이미지. 상세에서 프로젝트 대표 이미지 옆에 보낸 순서대로 놓인다. 없어도 된다
         @Size(max = 10, message = "모집글 이미지는 10장까지 올릴 수 있어요")

@@ -108,15 +108,13 @@ public class AuthServiceImpl implements AuthService {
 
         User user = account.getUser();
         if (user.getStatus() == UserStatus.WITHDRAWN) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
-        if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
-
-        refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
-        return issueTokens(user, UUID.randomUUID().toString());
+        return startSession(user);
     }
 
-    // 소셜 로그인·가입의 새 로그인 세션. 정지 회원은 막는다
+    // 이메일·소셜 로그인과 소셜 가입의 새 로그인 세션. 정지 회원은 막고, 만료된 refresh 토큰을 지운다
     private TokenResponse startSession(User user) {
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
+        refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
         return issueTokens(user, UUID.randomUUID().toString());
     }
 

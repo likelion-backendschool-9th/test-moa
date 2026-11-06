@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+
 import com.testmoa.backend.dto.request.OAuthCodeRequest;
 import com.testmoa.backend.service.AuthService;
 import jakarta.validation.Valid;
@@ -25,10 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
     private final UserService userService;
     private final AuthService authService;
+    private final OAuthClient oauthClient;
 
-    public UserController(UserService userService, AuthService authService) {
+    public UserController(UserService userService, AuthService authService, OAuthClient oauthClient) {
         this.userService = userService;
         this.authService = authService;
+        this.oauthClient = oauthClient;
     }
 
     @Operation(summary = "내 정보", description = "로그인 필요. 구독 상태(subscription.active)를 함께 준다")
@@ -42,7 +45,8 @@ public class UserController {
     public ApiResponse<Void> linkAccount(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
                                          @PathVariable String provider,
                                          @Valid @RequestBody OAuthCodeRequest request) {
-        authService.linkAccount(userId, provider, request);
+        // 제공자와는 트랜잭션 밖에서 통신한다(AuthController.oauthLogin과 같다)
+        authService.linkAccount(userId, oauthClient.fetchProfile(OAuthClient.parse(provider), request.code(), request.redirectUri()));
         return ApiResponse.ok();
     }
 

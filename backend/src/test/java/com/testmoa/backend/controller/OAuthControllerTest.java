@@ -162,6 +162,11 @@ class OAuthControllerTest {
         me(viaGithub).andExpect(jsonPath("$.data.id").value(userId));
         assertThat(accountRepository.findByUserId(userId.longValue())).extracting("provider")
                 .containsExactlyInAnyOrder(Provider.GOOGLE, Provider.GITHUB);
+
+        // 같은 이메일의 다른 GitHub 계정은 제공자마다 하나라 연동하지 않는다
+        provider("other", Provider.GITHUB, "gh-other-" + suffix, email, true, "moa");
+        oauthLogin("github", "other").andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("PROVIDER_ALREADY_LINKED"));
     }
 
     @Test

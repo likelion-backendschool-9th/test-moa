@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+
 import com.testmoa.backend.dto.request.OAuthCodeRequest;
 import com.testmoa.backend.dto.request.OAuthSignupRequest;
 import com.testmoa.backend.dto.response.OAuthLoginResponse;
@@ -24,9 +25,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
+    private final OAuthClient oauthClient;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, OAuthClient oauthClient) {
         this.authService = authService;
+        this.oauthClient = oauthClient;
     }
 
     @Operation(summary = "이메일 회원가입")
@@ -69,7 +72,8 @@ public class AuthController {
     @Operation(summary = "소셜 로그인", description = "제공자가 돌려준 code로 로그인한다. 처음 온 사람이면 signupRequired와 가입 토큰이 온다")
     @PostMapping("/oauth/{provider}")
     public ApiResponse<OAuthLoginResponse> oauthLogin(@PathVariable String provider, @Valid @RequestBody OAuthCodeRequest request) {
-        return ApiResponse.ok(authService.oauthLogin(provider, request));
+        // 제공자와는 트랜잭션 밖에서 통신한다. 기다리는 동안 DB 연결을 잡지 않게 서비스에는 받은 회원 정보만 넘긴다
+        return ApiResponse.ok(authService.oauthLogin(oauthClient.fetchProfile(OAuthClient.parse(provider), request.code(), request.redirectUri())));
     }
 
     @Operation(summary = "소셜 가입", description = "소셜 로그인에서 받은 가입 토큰(10분)과 이름으로 가입하고 로그인한다")

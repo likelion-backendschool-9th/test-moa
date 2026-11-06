@@ -131,9 +131,7 @@ public class AuthServiceImpl implements AuthService {
      * ponytail: 이메일 인증이 생기면 인증된 이메일 계정에는 자동 연동해도 된다
      */
     @Override
-    public OAuthLoginResponse oauthLogin(String provider, OAuthCodeRequest request) {
-        OAuthProfile profile = oauthClient.fetchProfile(OAuthClient.parse(provider), request.code(), request.redirectUri());
-
+    public OAuthLoginResponse oauthLogin(OAuthProfile profile) {
         Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
         if (linked.isPresent()) return OAuthLoginResponse.loggedIn(startSocialSession(linked.get().getUser()));
 
@@ -178,8 +176,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void linkAccount(Long userId, String provider, OAuthCodeRequest request) {
-        OAuthProfile profile = oauthClient.fetchProfile(OAuthClient.parse(provider), request.code(), request.redirectUri());
+    public void linkAccount(Long userId, OAuthProfile profile) {
         User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
         Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());

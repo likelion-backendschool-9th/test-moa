@@ -65,7 +65,7 @@
 - Then  `IllegalArgumentException`
 
 #45-S21 승인 대기 보상은 지갑 컬럼이 아님 [직접]
-- `CreditWallet`에 `pendingReward` 필드가 없다. 승인 대기 보상은 `Feedback(SUBMITTED)`의 보상 합으로 구한다(#66-S1)
+- `CreditWallet`에 `pendingReward` 필드가 없다. 조회 규칙은 [../credit-balance-ledger.md](../credit-balance-ledger.md) (#66-S1, #66-S3, #91)
 
 ## 2. 크레딧 내역 (#45-R2)
 

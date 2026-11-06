@@ -1,5 +1,6 @@
 # 1. Next.js가 정한 것과 정하지 않은 것
 
+이 문서의 코드 위치와 개수는 이전 전 develop `5db2041` 기준이다. 현재 배치와 규칙은 [목표 구조](03-target-structure.md)를 따른다.
 이 문서는 기억이 아니라 프로젝트가 쓰는 Next.js 16.4.3에 들어 있는 공식 문서(`frontend/node_modules/next/dist/docs/`)를 읽고 썼다. 인용마다 파일과 줄 번호를 붙였다. 줄을 열어 보면 원문을 확인할 수 있다.
 
 인용 표기는 아래 줄임말을 쓴다. 모두 `node_modules/next/dist/docs/01-app/` 아래 경로다.

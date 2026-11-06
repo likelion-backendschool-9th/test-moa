@@ -1,5 +1,6 @@
 # 2. 점검 결과
 
+이 문서의 코드 위치와 개수는 이전 전 develop `5db2041` 기준이다. 현재 배치와 규칙은 [목표 구조](03-target-structure.md)를 따른다.
 ## 기준
 
 - 코드: `origin/develop` `5db2041`(#142 병합 시점)의 `frontend/src`. 파일 229개 가운데 TypeScript 226개(`app` 39개, 그 밖 187개)를 봤다.

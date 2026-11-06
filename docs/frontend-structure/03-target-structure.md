@@ -1,10 +1,10 @@
 # 3. 목표 구조와 규칙
 
-[2. 점검 결과](02-audit.md)의 F1~F11을 없애는 구조다. Next가 예로 든 전략 C를 쓴다. 전역 공유 코드는 위에 두고, 특정 라우트용 코드는 그 라우트 폴더로 나눈다(`구조:349`). 합의되면 `frontend/README.md`의 "폴더 구조와 규칙"을 이 문서 내용으로 바꾼다.
+[2. 점검 결과](02-audit.md)의 F1~F11을 없애는 구조다. Next가 예로 든 전략 C를 쓴다. 전역 공유 코드는 위에 두고, 특정 라우트용 코드는 그 라우트 폴더로 나눈다(`구조:349`). 배치와 의존 규칙은 `frontend/README.md`에도 기록한다.
 
 ## 3.1 전체 모양
 
-`src` 폴더는 쓰지 않는다(2026-11-06). 앱 코드는 `frontend/` 바로 아래에 두고, 설정 파일(`package.json`, `next.config.ts`, `tsconfig.json`)·`public/`·`e2e/`·`scripts/`와 같은 높이가 된다. Next에서 `src`는 선택 사항이고(`구조:307`), `create-next-app`의 추천 기본값도 `src`를 쓰지 않는다(`설치:89`). `@/` 별칭은 `tsconfig.json`의 `"@/*": ["./*"]`로 바꾸므로 import 문은 그대로다. `src` 위치를 기준으로 쓴 문자열 경로 2곳(로컬 글꼴, OG 이미지 글꼴)만 고친다([4.1](04-migration.md#41-단계) 0단계).
+`src` 폴더는 쓰지 않는다(2026-11-06). 앱 코드는 `frontend/` 바로 아래에 두고, 설정 파일(`package.json`, `next.config.ts`, `tsconfig.json`)·`public/`·`e2e/`·`scripts/`와 같은 높이가 된다. Next에서 `src`는 선택 사항이고(`구조:307`), `create-next-app`의 추천 기본값도 `src`를 쓰지 않는다(`설치:89`). `@/` 별칭은 `tsconfig.json`의 `"@/*": ["./*"]`로 바꾸므로 import 문은 그대로다. `src` 위치를 기준으로 쓴 문자열 경로 2곳(로컬 글꼴, OG 이미지 글꼴)만 고친다([이전 범위](04-migration.md#이전-범위) #144).
 
 ```text
 frontend/
@@ -16,6 +16,7 @@ frontend/
 │   ├── auth/callback/[provider]/route.ts  # 소셜 로그인 콜백. 라우트 핸들러라 경로 그룹 밖 그대로
 │   ├── _components/                 # 앱 전체가 쓰는 라우트 의존 부품
 │   │   ├── AppHeader.tsx, MainNav.tsx, NavList.tsx, MobileMenu.tsx, UserMenu.tsx, MyPageLink.tsx
+│   │   ├── NotFoundContent.tsx      # 루트·일반 화면 404의 공통 내용
 │   │   ├── Main.tsx                 # <main id="main" tabIndex={-1}>. 서버 전용 코드 없음
 │   │   ├── SiteFooter.tsx           # 푸터 마크업(소개·약관 링크). 서버 전용 코드 없음
 │   │   ├── AppFooter.tsx            # SiteFooter + 개발용 시연 전환기(세션·시연 상황을 읽는다). 서버 전용
@@ -25,6 +26,7 @@ frontend/
 │   │
 │   ├── (site)/                      # 푸터 있는 화면
 │   │   ├── layout.tsx               # <SiteFrame>{children}</SiteFrame>
+│   │   ├── not-found.tsx            # 그룹 안의 404 내용만 그림. 본문·푸터는 레이아웃이 담당
 │   │   ├── (home)/                  # /
 │   │   │   ├── page.tsx
 │   │   │   └── _components/         # HeroBanner, ProofMarks, RecruitmentGrid, …
@@ -76,7 +78,7 @@ frontend/
     └── <도메인>.ts                  # 목업 데이터와 쿠키에 남기는 시연 기록
 ```
 
-파일 하나하나의 위치는 [4. 옮기는 순서](04-migration.md)의 표에 있다. 위 트리는 폴더 구성과 대표 파일만 보인다.
+이전 범위와 검증 기준은 [4. 이전 범위](04-migration.md)에 있다. 위 트리는 폴더 구성과 대표 파일만 보인다.
 
 없어지는 폴더: `features/home`, `features/my`, `features/admin`, `components/layout`, `components/` 바로 아래 파일. `HideFooter.tsx`는 지운다.
 
@@ -94,11 +96,11 @@ frontend/
 | P6 | 화면 부품을 **여러 구역**이 쓴다 | 도메인을 알면 `features/<도메인>/components/`, 모르면 `components/ui/`. 라우트를 알면(홈 링크 등) `app/_components/` | 전략 C(`구조:349`) |
 | P7 | 라우트 전용인데 화면 부품이 아닌 코드(여러 도메인을 묶은 요약, 그 화면만 쓰는 주소) | 그 라우트 폴더의 `_lib/` | 도메인 폴더가 화면 조립을 맡지 않게 한다(F2) |
 
-**구역**은 `app/(site)` 바로 아래 폴더(`(home)`, `(auth)`, `recruitments`, `testers`, `developer`, `my/(account)`, `my/chats`, `admin` …)와 `app/(conversation)`이다.
+**구역**은 기본적으로 `app/(site)`의 첫 구간(`(home)`, `(auth)`, `recruitments`, `testers`, `developer`, `admin` …)을 기준으로 나눈다. `my/(account)`와 `my/chats`는 같은 `my` 아래여도 서로 다른 구역이며, `app/(conversation)`도 별도 구역이다. 부품 배치는 먼저 사용처의 구역이 같은지 확인한다. 구역이 다르면 공통 조상이 `app/(site)/my`처럼 깊어도 P6의 공유 부품으로 인정하고, 같은 구역 안에서만 P4·P5의 공통 조상을 계산한다.
 
 **`components/ui`의 기준은 사용 횟수가 아니다.** "도메인·URL·세션을 모르는가"다. `Carousel`은 홈만 쓰지만 범용이라 여기에 둔다. `ProofMarks`는 DESIGN.md가 히어로 전용으로 정했으니 홈으로 간다.
 
-P4~P6은 [`scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.mjs)가 기계적으로 계산한다(TSV의 마지막 열). 사람이 판단하는 것은 P6에서 도메인을 아는지 모르는지뿐이다.
+P4~P6은 [`scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.mjs)가 기계적으로 계산한다(TSV의 마지막 열). URL을 표시할 때만 경로 그룹을 빼고, 배치를 계산할 때는 실제 라우트 파일과 그룹 경로를 유지한다. URL이 `/`로 같아도 루트 layout과 홈 그룹 layout은 서로 다른 사용처다(`구조:288~303`). 사람이 판단하는 것은 P6에서 도메인을 아는지 모르는지뿐이다.
 
 ## 3.3 레이아웃이 맡는 것
 
@@ -118,7 +120,7 @@ P4~P6은 [`scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.
 
 - 푸터는 `<main>` 밖에 둔다. 지금도 그렇다. 푸터를 그룹 레이아웃의 `children` 안에 넣으면 `<footer>`가 `<main>` 안으로 들어가 `contentinfo` 랜드마크가 사라진다. 그래서 `<main>`과 푸터를 한 부품(`SiteFrame`)이 함께 그린다.
 - 404 화면 두 개는 그룹 레이아웃에 기대지 않고 `SiteFrame`을 직접 쓴다. Next는 구간마다 `layout` → … → `not-found` → `page` 순서로 감싸고, 아래 구간은 위 구간 안에 들어간다(`구조:194`~`:201`, `구조:211`). 그래서 두 404는 이렇게 그려진다.
-  - `app/not-found.tsx`는 루트 레이아웃 바로 안에서 `(site)` 레이아웃을 통째로 대신한다. 없는 주소이거나 `(site)` 페이지가 `notFound()`를 부른 경우다. 이 화면에는 `(site)` 레이아웃의 `<main>`과 푸터가 없다.
+  - `app/not-found.tsx`는 없는 주소를 처리하며 `SiteFrame`을 직접 쓴다. `(site)` 안에서 페이지가 `notFound()`를 부를 때는 해당 그룹의 레이아웃이 남는다. 그래서 `app/(site)/not-found.tsx`를 별도로 두고 공통 `NotFoundContent`만 그린다. 레이아웃이 이미 그린 `<main>`과 푸터를 다시 넣지 않는다(`not-found.md:13`, `:45`, `구조:194~201`; #146-S4에서 본문·푸터 중복을 재현해 확인).
   - 채팅방 404는 `(conversation)` 안에서 그려진다. 그래서 `(conversation)`에 `<main>`을 그리는 레이아웃이 있으면, 404 화면이 푸터를 `<main>` 밖에 둘 수 없다. `(conversation)`에 레이아웃을 두지 않는 이유다.
 - 앞으로 `error.tsx`를 만들 때도 본문과 푸터를 직접 그린다. 루트의 `error.tsx`는 루트 레이아웃 바로 안에서 그려지기 때문이다. 다만 `error.tsx`는 클라이언트 컴포넌트라서(N12) `SiteFrame`을 쓸 수 없다. `SiteFrame`이 담은 `AppFooter`는 세션·시연 상황을 읽는 서버 전용 코드를 import하므로, 그대로 쓰면 빌드가 실패한다. 그래서 `error.tsx`는 `<Main>` 다음에 `<SiteFooter />`를 그린다. 오류 화면에는 개발용 시연 전환기가 나오지 않는다(F9).
 - `Main.tsx`·`SiteFooter.tsx`에는 서버 전용 코드(`server-only`를 표시한 파일, `next/headers`)를 넣지 않는다. 넣으면 `error.tsx`가 import하는 순간 빌드가 실패하므로, `npm run build`가 이 조건을 확인한다.
@@ -144,7 +146,7 @@ features/<도메인>/
 - 데이터 접근은 도메인마다 `api.ts` 한 파일이 맡는다(2026-11-06 정함). 근거는 Next 문서다.
   - 이 프로젝트는 백엔드(Spring)가 따로 있어서, 서버 컴포넌트와 서버 액션이 그 HTTP API를 부르는 방식이다(`보안:28`~`:54`).
   - Next는 데이터 접근을 서버 전용 모듈 한 곳에 모으고(데이터 접근 계층, `보안:58`~`:66`), 방식은 하나로 정해 섞지 말라고 한다(`보안:27`). `api.ts`가 그 모듈이다. Spring API를 부르고, 권한을 확인하고, 화면에 줄 값만 돌려준다.
-  - 그래서 `service.ts`를 두지 않는다. 지금 `features/project/service.ts`(486줄)는 5단계에서 나눈다. 데이터를 읽고 묶는 함수는 각 도메인의 `api.ts`로, 상태 계산·입력 검사 같은 순수 함수는 `types.ts`(또는 같은 도메인의 순수 함수 파일)로 보낸다. `users.ts`·`reviews.ts` 같은 다른 이름도 새로 만들지 않는다(F7).
+  - 그래서 `service.ts`를 두지 않는다. 기존 `features/project/service.ts`의 조회·저장·검사를 도메인별로 나눈다. 데이터를 읽고 묶는 함수는 각 도메인의 `api.ts`로, 상태 계산·입력 검사 같은 순수 함수는 `types.ts`(또는 같은 도메인의 순수 함수 파일)로 보낸다. `users.ts`·`reviews.ts` 같은 다른 이름도 새로 만들지 않는다(F7).
   - `api.ts`가 커지면 그 도메인 안에서 `api/` 폴더로 나눈다.
   - `app/api/` 폴더는 만들지 않는다. Next에서 `app/api/…`는 Route Handler(외부가 부르는 HTTP 주소) 자리이고, 서버 컴포넌트는 자기 Route Handler를 거치지 않는다(N13).
 - 권한 확인 함수(`requireMember`, `requireRole`, `requireAdmin`, `assertAdmin`)는 `features/session/guard.ts`에 모은다(F7). 데이터 함수는 이 함수를 불러 확인한다. 화면이나 레이아웃의 확인만 믿지 않는다(N7, N8).
@@ -195,7 +197,7 @@ app ──▶ auth (로그인·가입·로그아웃 액션)
   - `Project`의 `recruitments` 필드는 `recruitment/types.ts`에 모집 건을 붙인 프로젝트 타입으로 따로 둔다.
   - 모집 건을 붙여 읽는 조회(`findProjects`, `getMyProjects`·`getMyDashboard`·`getMyProject`)는 `recruitment`로 간다.
   - `saveProject`의 소유 확인은 모집 건까지 읽는 `getMyProject` 대신, `project/api.ts`에 새로 두는 프로젝트만의 소유 확인을 쓴다.
-- 이동표대로 옮긴 뒤 도메인 사이 방향은 다음과 같다. 순환은 없다. 이 결과는 develop의 import를 하나씩 옮길 곳으로 바꿔 계산했다. 파일이 여러 곳으로 나뉘는 경우에는, 그 import가 실제로 쓰는 함수를 코드에서 확인해 어느 쪽으로 갈지 정했다.
+- 도메인 사이 의존 방향은 다음과 같다. 실제 import를 기준으로 순환이 없는지 확인한다. 파일을 나눌 때는 실제로 쓰는 함수와 타입의 도메인을 기준으로 정한다.
 
   ```text
   auth → member, session
@@ -215,10 +217,11 @@ demo/
 └── <도메인>.ts         # 목업 데이터 + 쿠키에 남기는 시연 기록
 ```
 
-- `features` 안에서 `demo/`를 import할 수 있는 파일은 `api.ts`(데이터 접근)와 `session/session.ts`뿐이다. ESLint 설정은 5단계 전까지 남아 있는 `service.ts`도 허용하고, 5단계에서 `service.ts`가 없어지면 설정에서도 뺀다. `features`의 화면 부품은 `demo/`를 import하지 않는다(B4).
+- `features` 안에서 `demo/`를 import할 수 있는 파일은 `features/*/api.ts`(데이터 접근)와 `features/session/session.ts`뿐이다. 확장자와 중첩 깊이에 관계없이 나머지는 차단한다. `features`의 화면 부품은 `demo/`를 import하지 않는다(B4).
 - `app` 쪽에서는 `AppFooter`만 전환기를 보여 주려고 `demo/`를 import한다. 이것은 ESLint로 검사하지 않는다. `app` 전체를 막으면 `AppFooter`도 막히고, 파일 하나를 예외로 두면 규칙이 복잡해지기 때문이다.
   - 이 조건을 지키려면 옮길 때 두 곳을 함께 고친다. 운영자 출금 처리 폼(`WithdrawalForm`)은 오류 문구에 시연 쿠키 이름을 넣으려고 `admin/reviews.ts`를 import한다. 이 이름은 `credit/api.ts`가 내보내고 폼은 거기서 읽는다. 운영자 홈 요약(`app/(site)/admin/_lib/summary.ts`)은 `report/api.ts`·`credit/api.ts`의 조회 함수만 부른다.
   - 마이페이지 요약(`getMyPageSummary`)은 목업을 읽으므로 `app/**/_lib`가 아니라 `member/api.ts`에 둔다.
+- 채팅의 쿠키 읽기·쓰기·직렬화·목업 상태 반영은 `demo/chat.ts`, 세션 표시용 샘플은 `demo/session.ts`가 맡는다. 채팅 API에는 세션·대화방 권한 확인과 데이터 접근 흐름만 남긴다.
 - `demo/`가 `features`의 무엇을 import하는지(목업에 타입을 붙이려고 `types.ts`를 쓴다)는 제한하지 않는다.
 - 시연 기록 하나를 여러 데이터 접근 파일이 읽어도 된다. `demo/`는 도메인이 아니라서, 이렇게 읽어도 도메인 사이 의존이 생기지 않는다. 지금 그런 것은 시연 결제 기록(`demo/subscription.ts`) 하나다.
 
@@ -244,25 +247,27 @@ demo/
 | B1 | `components/ui`는 `app`, `features`, `demo`, `lib/backend.ts`를 import하지 않는다 |
 | B2 | `lib`는 `app`, `features`, `components`, `demo`를 import하지 않는다 |
 | B3 | `features`는 `app`을 import하지 않는다 |
-| B4 | `features`에서 `demo/`를 import할 수 있는 파일은 `api.ts`·`session.ts`뿐이다(5단계 전까지는 `service.ts`도). `features/*/components`는 `demo/`를 import하지 않는다. (`demo/` 쪽이 무엇을 import하는지는 검사하지 않는다) |
+| B4 | `features` 전체에서 `demo/`를 import할 수 있는 파일은 `features/*/api.ts`·`features/session/session.ts`뿐이다. `features/*/components`는 `demo/`를 import하지 않는다. (`demo/` 쪽이 무엇을 import하는지는 검사하지 않는다) |
 | B5 | 다른 도메인의 `actions.ts`를 import하지 않는다 |
 | B6 | `features/session`은 다른 도메인을 import하지 않는다 |
 | B7 | 다른 도메인은 `features/auth`를 import하지 않는다. `auth`를 import하는 것은 `app`뿐이다 |
 
-이 규칙은 develop(`5db2041`)에서 위반 0건이다. [이동표](04-migration.md)대로 옮긴 뒤의 import도 같은 규칙으로 계산해 0건이 나왔다. 다 옮긴 모양뿐 아니라 1~5단계 각각을 마친 상태도 계산했다(4.1의 앞당기는 일을 반영한 결과). 나뉘는 파일은 실제로 쓰는 함수 기준으로 셌고, 3.4·3.5에 적은 고칠 점(액션의 저장 경로, 도메인 `paths.ts`, `recruitment → project` 방향)을 반영한 결과다. 일부러 어긴 임시 파일로 B1~B7이 모두 실제로 걸리는 것을 확인했다. 허용해야 할 `auth → member`와 `member → session`이 통과하는 것도 확인했다. 시험 방법은 [README](README.md#직접-확인하는-방법)에 있다.
+문자열과 치환 없는 백틱의 동적 `import()`·`require()`에 같은 경계 규칙을 적용한다. 기존 `eslint-plugin-import`가 건너뛰는 백틱 구문은 보조 규칙이 같은 경로 해석과 제한 설정으로 검사한다. 치환식처럼 경로를 계산할 수 없는 경우는 배치 검사의 R0이 차단한다.
+
+이 규칙은 이전 전 develop(`5db2041`)과 이전 후 코드에서 모두 위반 0건이다. 일부러 어긴 import를 넣었을 때 lint가 차단하는 것도 확인한다. 실행 방법은 [README](README.md#직접-확인하는-방법)에 있다.
 
 ### 스크립트로 검사하는 것 (R0~R3)
 
 배치 규칙은 ESLint로 표현하기 어렵다. [`scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.mjs) `--check`가 검사한다. 위반이 있으면 종료 코드 1로 끝나므로 CI에 그대로 넣을 수 있다. import는 TypeScript 구문 트리에서 모은다. 정적 import뿐 아니라 동적 import(`await import("…")`, `next/dynamic`)와 `typeof import("…")`도 센다.
 
-| 번호 | 규칙 | 현재 |
+| 번호 | 규칙 | 결과 |
 | --- | --- | ---: |
 | R0 | 동적 import의 경로는 문자열로 쓴다. 경로를 알 수 없으면 사용처를 계산할 수 없으므로 위반으로 본다 | 0 |
-| R1 | `features/*/components` 파일은 여러 구역이 쓴다 | 88건 위반 |
+| R1 | `features/*/components` 파일은 여러 구역이 쓴다 | 0 |
 | R2 | `_components`·`_lib` 파일은 그 폴더의 부모 경로 안에서만 import한다 | 0 |
 | R3 | `components/ui`는 도메인·세션·시연 코드를 import하지 않는다 | 0 |
 
-옮기기가 끝나면 R1이 0이 된다. 이 스크립트를 CI에 넣을지는 [4. 옮기는 순서](04-migration.md) 6단계에서 정한다.
+R0~R3은 모두 0건을 유지한다. 배치 검사는 CI의 프론트 작업에도 연결한다(#151).
 
 ## 3.7 서버와 클라이언트
 
@@ -272,25 +277,13 @@ demo/
 - 페이지의 인증 검사는 그 안의 서버 액션까지 보호하지 않는다. 액션은 데이터 함수를 거쳐 다시 확인한다(N8).
 - `"use client"`는 상호작용이 필요한 부품에만 붙인다. 클라이언트 부품이 서버 전용 모듈에서 가져올 것은 `import type`뿐이다(N11).
 - 세션이나 쿠키를 읽는 부품은 `<Suspense>` 안에 둔다(README 기존 규칙, Cache Components).
-- `error.tsx`를 만들면 클라이언트 컴포넌트로 만들고, 화면 틀은 `Main`·`SiteFooter`로 그린다([3.3](#33-레이아웃이-맡는-것), N12). 어디에 둘지는 [4. 옮기는 순서](04-migration.md)의 7단계에서 정한다.
+- `error.tsx`를 추가할 때는 클라이언트 컴포넌트로 만들고, 화면 틀은 `Main`·`SiteFooter`로 그린다([3.3](#33-레이아웃이-맡는-것), N12). 신규 오류 화면은 이번 이전 범위 밖이다.
 
 ## 3.8 테스트
 
 - URL이 바뀌지 않으므로 `e2e/pages.spec.ts`의 `PAGES`는 그대로다.
 - 시연 기록 쿠키를 만드는 코드는 `e2e/helpers.ts`로 모은다. 테스트가 쿠키 직렬화 형식을 직접 만들지 않는다(F10).
-- 1단계(레이아웃)는 일반 화면만이 아니라 404 화면까지 본문·푸터·본문 건너뛰기가 그대로인지 확인한다. 화면마다 이미 있는 테스트와 새로 더할 것은 다음과 같다.
-
-  | 화면 | 본문 `<main id="main">` 하나 | 푸터 | 본문 건너뛰기(Tab → Enter → `main`에 포커스) |
-  | --- | --- | --- | --- |
-  | 일반 화면 (`/`) | S35 | S157·S321 (보임) | S35 (`a11y.spec.ts:4`) |
-  | 채팅방 (`/my/chats/booklog-yunseul`) | 새로 더함 | S157·S321 (숨음) | 새로 더함 |
-  | 채팅방 404 (`/my/chats/nope`) | 새로 더함 | S157 (보임, `chat-room.spec.ts:216`) | 새로 더함 |
-  | 없는 주소 404 (`/nope`) | 새로 더함 | 새로 더함 (보임) | 새로 더함 |
-  | 페이지가 부른 404 (운영자로 `/admin/reports/nope`) | 새로 더함 | 새로 더함 (보임) | 새로 더함 |
-
-  - "새로 더함"은 1단계 이슈의 시나리오로 만든다. 지금 404 테스트(`links.spec.ts` S27, `admin-reports.spec.ts` S427)는 제목만 본다.
-  - 푸터는 `[data-site-footer]`가 보이는지와 함께, `<main>` 밖에 있는지(`contentinfo` 랜드마크로 찾힌다)도 확인한다.
-  - 이 확인은 1단계를 시작하기 전에 지금 코드에서 먼저 통과시켜 둔다. 그래야 옮긴 뒤 실패하면 옮기면서 생긴 차이라고 말할 수 있다.
+- 레이아웃은 일반 화면뿐 아니라 채팅방·404의 본문 하나, 본문 밖의 푸터, 본문 건너뛰기까지 확인한다. 일반 화면은 `a11y.spec.ts` S35, 푸터 진입·이탈은 `chat-room.spec.ts` S157·S321이 확인한다. 나머지는 아래 시나리오를 사용한다.
 
 ### #146 레이아웃 이전 시나리오
 

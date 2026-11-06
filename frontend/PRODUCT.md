@@ -41,7 +41,7 @@ web
 
 ## Evidence on Hand
 - 실제 사용자, 후기, 고객사, 이용 수치는 아직 없다. 지어내지 않는다.
-- 화면의 모집 글과 보상 숫자는 시연용 샘플이다 (`features/recruitment/mock.ts`).
+- 화면의 모집 글과 보상 숫자는 시연용 샘플이다 (`demo/recruitment.ts`).
 - 로고는 글자 로고 'test moa'('moa'만 강조색)이고, 파비콘(`app/icon.svg`)은 강조색 바탕의 흰 'm'이다. 그 밖의 브랜드 자산(심볼, 사진)은 없다. (고침 #60)
 
 ## Product Principles

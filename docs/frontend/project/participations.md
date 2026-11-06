@@ -368,7 +368,7 @@ S482 제출한 피드백의 긴 문자열 [직접]
   - `components/`: `ParticipationTabs`, `ParticipationRow`, `ParticipationList`(빈 상태·받은 크레딧 합계 포함), `ParticipationViewToggle`(보기 방식), `DeadlinePanel`, `DeadlineCalendar`(클라이언트, 달을 넘긴다), `ParticipationSkeleton`, `ParticipationDetail`(상세), `FeedbackForm`(클라이언트, 피드백 작성)
 - 모집 쪽 변경: 지난 모집 글 3개를 `recruitment/mock.ts`의 `PAST`에 두고(홈 목록에는 안 나온다), `recruitment/api.ts`에 `getRecruitmentsBySlugs(slugs)`를 더했다. 이 함수는 목록용 시연 상황(`demo-data`)을 따르지 않는다.
 - 재사용: `Container`, `Card`, `Badge`, `LinkButton`, `EmptyState`, `Skeleton`, `RecruitmentThumb`, `ProofStamp`, `lib/format.ts`, `lib/auth.ts`의 `requireMember`, 프로젝트 폼의 입력 칸 모양(`TextField`의 `inputClass`)
-- 도장: `RecruitmentThumb`이 `stamp` prop을 받게 바꿨다(`RecruitmentCard`는 정원이 차면 "모집 완료"를 넘긴다). 참여 기능은 썸네일만 가져다 쓰고 `ProofStamp`를 직접 쓰지 않아서 `features/recruitment`에 그대로 두었다.
+- 도장: `RecruitmentThumb`이 `stamp` prop을 받게 바꿨다(#78에서 모집 완료가 없어져 지금은 "지급 완료"만 쓴다). 참여 기능은 썸네일만 가져다 쓰고 `ProofStamp`를 직접 쓰지 않아서 `features/recruitment`에 그대로 두었다.
 
 ## 디자인 메모
 - 강조색(One Green Rule): 마감 임박 목록 맨 위의 주 버튼, 추가 보상(목록은 썸네일 배지, 상세는 줄), "지급 완료" 도장, 포커스만. 상태 배지와 D-day는 강조색을 쓰지 않는다.

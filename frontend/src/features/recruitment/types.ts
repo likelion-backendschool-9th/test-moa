@@ -26,17 +26,12 @@ export type Recruitment = {
   createdAt: string;
   recruitDeadline: string;
   submitDeadline: string;
-  capacity: number;
   confirmedCount: number;
   /** 기본 보상 크레딧 */
   baseReward: number;
   /** 추가 보상 크레딧. 구독 모집 건에만 있다 */
   extraReward?: number;
 };
-
-export function isFull(recruitment: Recruitment) {
-  return recruitment.confirmedCount >= recruitment.capacity;
-}
 
 /** 전체 테스트 그리드의 한 페이지 */
 export type RecruitmentPage = {

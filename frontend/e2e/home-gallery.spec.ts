@@ -38,7 +38,14 @@ test.describe("R9 전체 테스트", () => {
     await allSection(page).getByRole("button", { name: "모집 중만 보기" }).click();
     await expect(page).toHaveURL(/open=1/);
     await expect(allSection(page).getByText("총 21개", { exact: true })).toBeVisible();
-    expect(await names(page)).not.toContain("포트폴리오 빌더");
+
+    /* 모집 마감이 지난 반려식물 일지만 걸러진다. 모집 중이면 확정 인원과 관계없이 남는다 */
+    await page.goto(`/?q=${encodeURIComponent("반려식물")}`);
+    await expect(allCards(page)).toHaveCount(1);
+    await page.goto(`/?q=${encodeURIComponent("반려식물")}&open=1`);
+    await expect(allCards(page)).toHaveCount(0);
+    await page.goto(`/?q=${encodeURIComponent("포트폴리오")}&open=1`);
+    await expect(allCards(page)).toHaveCount(1);
   });
 
   test("S72 정렬을 바꾼다", async ({ page }) => {

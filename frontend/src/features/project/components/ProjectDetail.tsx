@@ -113,7 +113,7 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
               {item.title || item.request}
             </Link>
             <p className="text-sm text-text-muted">
-              확정 {item.confirmedCount}명 · 정원 {item.capacity}명 · 모집 마감 {formatDate(item.recruitDeadline)} · 제출 마감{" "}
+              확정 {item.confirmedCount}명 · 모집 마감 {formatDate(item.recruitDeadline)} · 제출 마감{" "}
               {formatDate(item.submitDeadline)}
             </p>
           </div>

@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -105,38 +106,48 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 토큰 갱신. 같은 세션의 새 쌍을 주고, 쓴 토큰은 다시 쓸 수 없게 표시한다. 같은 토큰을 두 번 쓰면 두 번째는 실패한다.
-     * 쓴 토큰은 하나만 남겨 둔다. 갱신 응답이 브라우저에 닿기 전에 그 토큰으로 로그아웃해도 세션을 찾아 끝내기 위해서다
+     * 세션의 토큰 행을 잠근 뒤 확인하고 표시해서, 같은 토큰이 동시에 와도 하나만 성공하고 진행 중인 로그아웃과 겹치지 않는다
      */
     @Override
     public TokenResponse refresh(String refreshToken) {
-        RefreshToken saved = refreshTokenRepository.findByTokenHash(hash(refreshToken))
+        String tokenHash = hash(refreshToken);
+        String sessionId = refreshTokenRepository.findSessionIdByTokenHash(tokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        // 잠금을 기다리는 동안 다른 요청이 쓰거나 로그아웃으로 지웠으면, 여기서 읽는 최신 값에 반영돼 있다
+        List<RefreshToken> session = refreshTokenRepository.findBySessionIdOrderByIdAsc(sessionId);
+        RefreshToken saved = session.stream()
+                .filter(token -> token.getTokenHash().equals(tokenHash))
+                .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
 
         LocalDateTime now = LocalDateTime.now();
         User user = saved.getUser();
-        if (saved.isUsed() || saved.isExpired(now) || saved.getSessionId() == null || user.getStatus() != UserStatus.ACTIVE) {
+        if (saved.isUsed() || saved.isExpired(now) || user.getStatus() != UserStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        refreshTokenRepository.deleteBySessionIdAndUsedAtIsNotNull(saved.getSessionId());
+        // 쓴 토큰은 만료될 때까지 남긴다. 몇 번을 갱신했든 예전 토큰으로 온 로그아웃도 세션을 찾아 끝낼 수 있다
+        session.stream().filter(token -> token.isExpired(now)).forEach(refreshTokenRepository::delete);
         saved.markUsed(now);
-        return issueTokens(user, saved.getSessionId());
+        return issueTokens(user, sessionId);
     }
 
     /**
      * 로그아웃. 그 토큰의 로그인 세션을 통째로 끝낸다. 로그아웃 전에 시작한 갱신이 나중에 끝나도 그 토큰은 쓸 수 없다.
+     * 세션을 잠근 뒤 지워서, 동시에 진행 중인 갱신이 끝나기를 기다렸다가 그 갱신이 만든 토큰까지 지운다.
      * 다른 기기의 로그인(다른 세션)은 그대로다. 이미 없는 토큰이어도 성공으로 본다
      */
     @Override
     public void logout(String refreshToken) {
         String tokenHash = hash(refreshToken);
-        refreshTokenRepository.findByTokenHash(tokenHash)
-                .map(RefreshToken::getSessionId)
-                .ifPresentOrElse(refreshTokenRepository::deleteBySessionId,
-                        () -> refreshTokenRepository.deleteByTokenHash(tokenHash));
+        refreshTokenRepository.findSessionIdByTokenHash(tokenHash).ifPresentOrElse(sessionId -> {
+            refreshTokenRepository.findBySessionIdOrderByIdAsc(sessionId);
+            refreshTokenRepository.deleteBySessionId(sessionId);
+        }, () -> refreshTokenRepository.deleteByTokenHash(tokenHash));
     }
 
-    // ponytail: 로그아웃하지 않고 만료된 refresh 토큰 행은 쌓인다(세션마다 최대 2행). 많아지면 만료 행을 지우는 스케줄러를 더한다
+    // ponytail: 쓴 토큰 행은 만료(14일)까지 남아 세션마다 갱신 횟수만큼 쌓인다(30분마다 갱신하면 최대 약 670행). 로그아웃하지 않고 끝난 세션의 행도 남는다. 많아지면 만료 행을 지우는 스케줄러를 더한다
     private TokenResponse issueTokens(User user, String sessionId) {
         String refreshToken = newRefreshToken();
         refreshTokenRepository.save(RefreshToken.builder()

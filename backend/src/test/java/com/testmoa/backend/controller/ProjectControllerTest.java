@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.domain.entity.Plan;
 import com.testmoa.backend.domain.entity.Project;
 import com.testmoa.backend.domain.entity.Recruitment;
+import com.testmoa.backend.domain.entity.RecruitmentImage;
 import com.testmoa.backend.domain.entity.RecruitmentType;
 import com.testmoa.backend.domain.entity.Register;
 import com.testmoa.backend.domain.entity.Subscription;
@@ -417,5 +418,36 @@ class ProjectControllerTest {
         Long count = em.createQuery("select count(t) from types t where t.code = :code", Long.class)
                 .setParameter("code", TypeCode.WEB).getSingleResult();
         assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("#92-S15 모집글 이미지")
+    void 모집글_이미지를_보낸_순서대로_10장까지_저장한다() throws Exception {
+        Project project = saveProject(me, "북로그");
+
+        Map<String, Object> withImages = recruitment();
+        withImages.put("imageUrls", List.of("https://img.example.com/main.png", "https://img.example.com/flow.png"));
+        String body = create(project, withImages).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        Long id = JSON.readTree(body).at("/data/id").asLong();
+        List<RecruitmentImage> images = em.createQuery("select i from recruitment_images i where i.recruitment.id = :id order by i.sortOrder", RecruitmentImage.class)
+                .setParameter("id", id).getResultList();
+        assertThat(images).extracting(RecruitmentImage::getUrl).containsExactly("https://img.example.com/main.png", "https://img.example.com/flow.png");
+        assertThat(images).extracting(RecruitmentImage::getSortOrder).containsExactly(0, 1);
+
+        String noImages = create(project, recruitment()).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        Long count = em.createQuery("select count(i) from recruitment_images i where i.recruitment.id = :id", Long.class)
+                .setParameter("id", JSON.readTree(noImages).at("/data/id").asLong()).getSingleResult();
+        assertThat(count).isZero();
+
+        Project other = saveProject(me, "모아플랜");
+        List<String> eleven = new ArrayList<>();
+        for (int index = 0; index < 11; index++) eleven.add("https://img.example.com/" + index + ".png");
+        Map<String, Object> tooMany = recruitment();
+        tooMany.put("imageUrls", eleven);
+        expectInvalid(other, tooMany, "imageUrls", "모집글 이미지는 10장까지 올릴 수 있어요");
+
+        Map<String, Object> blank = recruitment();
+        blank.put("imageUrls", List.of(" "));
+        expectInvalid(other, blank, "imageUrls[0]", "이미지 주소를 확인해 주세요");
     }
 }

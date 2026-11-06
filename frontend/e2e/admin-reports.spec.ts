@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { setDemo, seedReportReviews } from "./helpers";
 
 const rows = (page: Page) => page.getByRole("main").locator("ul[aria-label] > li");
 const statusTabs = (page: Page) => page.getByRole("navigation", { name: "신고 상태" });
@@ -163,9 +163,7 @@ test.describe("R27 처리", () => {
     /* 메모가 긴 처리 기록 3건이 이미 있어서, 80자 메모를 하나 더 담으면 쿠키 한도를 넘는 상태 */
     const review = (memo: string) => ({ decision: "dismissed", memo, processedAt: new Date().toISOString() });
     const stored = Object.fromEntries(["report-2", "report-3", "report-4"].map((key) => [key, review("가".repeat(120))]));
-    await context.addCookies([
-      { name: "demo-reports", value: encodeURIComponent(JSON.stringify(stored)), url: "http://localhost:3100" },
-    ]);
+    await seedReportReviews(context, stored);
     await page.goto("/admin/reports/report-1");
     await page.getByRole("radio", { name: /^기각/ }).check();
     await page.getByRole("textbox", { name: "처리 메모" }).fill("나".repeat(80));

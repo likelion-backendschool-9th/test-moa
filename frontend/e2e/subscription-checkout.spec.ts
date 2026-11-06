@@ -1,5 +1,5 @@
-import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expect, type Page, test } from "@playwright/test";
+import { setDemo, seedPayment } from "./helpers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -86,21 +86,6 @@ test.describe("R198 결제하고 돌아오기", () => {
 });
 
 test.describe("R198 결제 기록", () => {
-  /** 지난 결제 기록을 쿠키에 직접 넣는다. paidAt·expiresAt은 오늘 기준 날 수 */
-  async function seedPayment(context: BrowserContext, role: string, paidDaysAgo: number, expiresInDays: number) {
-    const payment = {
-      id: "seed",
-      planId: "basic",
-      method: "cash",
-      amount: 10000,
-      paidAt: new Date(Date.now() - paidDaysAgo * DAY_MS).toISOString(),
-      expiresAt: new Date(Date.now() + expiresInDays * DAY_MS).toISOString(),
-    };
-    await context.addCookies([
-      { name: `demo-subscription-${role}`, value: encodeURIComponent(JSON.stringify([payment])), url: "http://localhost:3100" },
-    ]);
-  }
-
   test("S542 결제할 때 정한 만료일은 조회 시각과 관계없이 그대로라 남은 기간이 줄고 만료된다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     /* 7일 전 연장으로 60일 뒤였던 만료일은 지금 53일 남았다 */

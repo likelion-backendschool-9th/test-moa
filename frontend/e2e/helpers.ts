@@ -42,3 +42,26 @@ export async function expectLoginRedirect(page: Page, path: string) {
   await page.goto(path);
   await expect(page).toHaveURL(`/login?next=${encodeURIComponent(path)}`);
 }
+
+/** 시연 기록의 직렬화는 테스트 helper 한 곳에서만 맡는다. */
+async function setDemoRecord(context: BrowserContext, name: string, value: unknown) {
+  await context.addCookies([{ name, value: encodeURIComponent(JSON.stringify(value)), url: "http://localhost:3100" }]);
+}
+
+export async function seedPayment(context: BrowserContext, role: string, paidDaysAgo: number, expiresInDays: number) {
+  const dayMs = 24 * 60 * 60 * 1000;
+  await setDemoRecord(context, `demo-subscription-${role}`, [{
+    id: "seed", planId: "basic", method: "cash", amount: 10000,
+    paidAt: new Date(Date.now() - paidDaysAgo * dayMs).toISOString(),
+    expiresAt: new Date(Date.now() + expiresInDays * dayMs).toISOString(),
+  }]);
+}
+
+export async function seedReportReviews(context: BrowserContext, reviews: Record<string, { decision: string; memo: string; processedAt: string }>) {
+  await setDemoRecord(context, "demo-reports", reviews);
+}
+
+/** 손상된 취소 기록을 넣는 회귀 테스트도 같은 직렬화를 사용한다. */
+export async function seedRecruitmentCancellation(context: BrowserContext, recruitmentKey: string, cancellation: { reason: string; cancelledAt: string }) {
+  await setDemoRecord(context, `demo-recruitment-cancel-${recruitmentKey}`, cancellation);
+}

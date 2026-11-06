@@ -13,6 +13,7 @@ const PAGES: [path: string, role: Role][] = [
   ["/", "guest"],
   ["/login", "guest"],
   ["/signup", "guest"],
+  ["/signup/social", "guest"],
   ["/my", "tester"],
   ["/my/credits", "tester"],
   ["/recruitments/booklog", "guest"],

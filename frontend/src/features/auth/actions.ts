@@ -8,7 +8,8 @@ import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/lib/session";
 import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/lib/validation";
-import { type LoginField, type SignupField, SOCIAL_PROVIDERS, withNext } from "./types";
+import { callbackUrl, clearSignup, readSignup, saveState } from "./oauth";
+import { type LoginField, type SignupField, SOCIAL_PROVIDERS, type SocialSignupField, withNext } from "./types";
 
 /*
  * 로그인·로그아웃·회원가입. 목업이라 시연 회원 역할로 demo-role 쿠키를 바꾸는 것이 곧 로그인이다.
@@ -70,11 +71,56 @@ export async function login(_prev: FormState<LoginField>, formData: FormData): P
   return signIn(role, formData.get("next"));
 }
 
-/** 소셜 로그인 목업. 목록에 있는 제공자만 받고, 테스터 시연 계정으로 로그인한다 */
+/**
+ * 소셜 로그인. 목록에 있는 제공자만 받는다.
+ * 실제 로그인: 무작위 state를 쿠키에 두고 제공자 동의 화면으로 보낸다. 돌아오면 /auth/callback/[provider]가 이어 받는다.
+ * 목업: 테스터 시연 계정으로 로그인한다
+ */
 export async function socialLogin(formData: FormData): Promise<void> {
-  const provider = formData.get("provider");
-  if (!SOCIAL_PROVIDERS.some(({ id }) => id === provider)) redirect("/login");
-  await signIn("tester", formData.get("next"));
+  const provider = SOCIAL_PROVIDERS.find(({ id }) => id === formData.get("provider"))?.id;
+  if (!provider) redirect("/login");
+  if (!isBackendAuth) await signIn("tester", formData.get("next"));
+
+  const next = safeNextPath(formData.get("next"));
+  const state = crypto.randomUUID();
+  const query = new URLSearchParams({ redirectUri: callbackUrl(provider), state });
+  const result = await backendFetch<string>(`/api/auth/oauth/${provider}/authorize-url?${query}`, { withToken: false });
+  if (!result.ok) redirect(withNext("/login", next, { error: "oauth" }));
+  await saveState({ state, provider, next });
+  redirect(result.data);
+}
+
+/**
+ * 소셜 가입의 이름 입력. 이름은 출금 예금주 확인에 써서 이메일 가입처럼 필수다. 성공하면 로그인한 채 돌아갈 곳으로 간다.
+ * 실제 로그인: 쿠키의 가입 토큰(10분)과 이름으로 백엔드에 가입한다. 목업: 테스터 시연 계정으로 로그인한다
+ */
+export async function socialSignup(_prev: FormState<SocialSignupField>, formData: FormData): Promise<FormState<SocialSignupField>> {
+  const name = text(formData, "name").trim();
+  const errors: Partial<Record<SocialSignupField, string>> = {};
+  const nameError = validateName(name);
+  if (nameError) errors.name = nameError;
+  if (formData.get("terms") !== "on" || formData.get("privacy") !== "on") {
+    errors.agreements = "이용약관과 개인정보처리방침에 동의해 주세요";
+  }
+  if (Object.keys(errors).length > 0) return { status: "error", errors };
+
+  if (!isBackendAuth) return signIn("tester", formData.get("next"));
+
+  const pending = await readSignup();
+  if (!pending) redirect("/login?error=expired");
+  const result = await backendFetch<Tokens>("/api/auth/oauth/signup", {
+    method: "POST",
+    body: { signupToken: pending.signupToken, name },
+    withToken: false,
+  });
+  if (!result.ok) {
+    if (result.fields?.name) return { status: "error", errors: { name: result.fields.name } };
+    if (result.code === "INVALID_SIGNUP_TOKEN") redirect("/login?error=expired");
+    return { status: "error", errors: { form: result.message } };
+  }
+  await clearSignup();
+  await saveTokens(result.data);
+  redirect(pending.next);
 }
 
 /**

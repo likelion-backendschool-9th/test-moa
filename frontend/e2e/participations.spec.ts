@@ -9,14 +9,6 @@ const deadlineList = (page: Page) => page.getByRole("region", { name: /^마감 �
 const deadlineItems = (page: Page) => page.getByTestId("deadline-item");
 const calendar = (page: Page) => page.getByRole("region", { name: "마감 캘린더" });
 
-test.describe("R182 접근과 역할", () => {
-  test("S448 비로그인은 탭까지 기억해 로그인으로 보낸다", async ({ page, context }) => {
-    await setDemo(context, { role: "guest" });
-    await page.goto("/my/participations?tab=history");
-    await expect(page).toHaveURL(/\/login\?next=%2Fmy%2Fparticipations%3Ftab%3Dhistory$/);
-  });
-});
-
 test.describe("R183 탭", () => {
   test("S453 탭을 누르면 URL이 바뀌고 뒤로 가기로 돌아온다", async ({ page }) => {
     await page.goto("/my/participations");

@@ -102,7 +102,7 @@ class VersionComparisonControllerTest {
         Recruitment recruitment = Recruitment.builder().project(project).title(version + "차 베타 테스트").description("기록 화면을 봐 주세요")
                 .recruitDeadline(now.plusDays(7)).feedbackDeadline(now.plusDays(14)).selectionMode(SelectionMode.FIRST_COME).build();
         ReflectionTestUtils.setField(recruitment, "version", version);
-        recruitment.completeAnalysis(now.minusHours(1));
+        recruitment.completeAnalysis(null, now.minusHours(1));
         em.persist(recruitment);
         return recruitment;
     }

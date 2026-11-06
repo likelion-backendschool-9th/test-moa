@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -386,6 +387,10 @@ class ProjectControllerTest {
         Map<String, Object> blankItem = recruitment();
         blankItem.put("testItems", List.of(item(" ", true)));
         expectInvalid(project, blankItem, "testItems[0].title", "항목 이름을 적어 주세요");
+
+        Map<String, Object> nullItem = recruitment();
+        nullItem.put("testItems", Collections.singletonList(null));
+        expectInvalid(project, nullItem, "testItems[0]", "테스트 항목을 확인해 주세요");
     }
 
     @Test

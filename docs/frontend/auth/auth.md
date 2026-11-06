@@ -286,10 +286,36 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 #82-S7 `AUTH_MODE`가 없으면 목업으로 동작하고 기존 e2e가 그대로 통과한다 [명령]
 - `npm run test:e2e` 전체 통과 (e2e 서버는 `.env.development.local`을 읽지 않는다)
 
+## 10. 소셜 로그인 백엔드 연결 (#83)
+`AUTH_MODE=backend`일 때 깃허브·구글 버튼이 실제 제공자로 간다. 목업(S296)은 그대로다. 백엔드 API와 규칙은 `docs/backend/auth/README.md` 4장.
+
+1. 버튼(서버 액션 `socialLogin`): 무작위 state를 httpOnly 쿠키 `oauth_state`(10분, 제공자·`next`도 함께)에 넣고, 백엔드에서 받은 동의 화면 주소로 보낸다
+2. 제공자 → `/auth/callback/{provider}?code=…&state=…` (Route Handler)
+3. state가 쿠키와 같으면 쿠키를 지우고 code를 백엔드 `POST /api/auth/oauth/{provider}`에 넘긴다
+4. 가입한 회원이면 토큰 쿠키를 넣고 `next`로, 처음이면 가입 토큰을 httpOnly 쿠키 `oauth_signup`(10분)에 넣고 `/signup/social`로
+5. `/signup/social`에서 이름과 약관 동의를 받아 `POST /api/auth/oauth/signup` → 토큰 쿠키를 넣고 `next`로
+
+- 돌아올 주소는 `NEXT_PUBLIC_SITE_URL` + `/auth/callback/{provider}`(없으면 `http://localhost:3000`). 제공자 앱에 등록한 주소와 글자까지 같아야 한다
+- 실패하면 `/login?error=<키>`로 보내고 로그인 화면이 키에 맞는 문구를 보인다(`oauth`, `suspended`, `email`, `expired`). 주소에 문구를 넣지 않아 남이 만든 문구가 보이지 않는다
+
+#83-S9 `/signup/social`에서 이름과 약관 동의가 없으면 칸 아래에 알린다 [테스트]
+- 목업에서는 시연 이메일·닉네임으로 화면이 보인다
+
+#83-S10 이름을 입력하고 동의하면 로그인한 채 돌아갈 곳으로 간다 [테스트]
+- 목업은 테스터로 로그인한다
+
+#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 키는 무시한다 [테스트]
+
+#83-S12 `AUTH_MODE=backend`에서 버튼을 누르면 제공자 동의 화면으로 가고, 돌아오면 로그인되거나 이름 입력 화면이 나온다 [직접]
+- 동의 화면 주소의 `client_id`·`redirect_uri`·`state`가 맞고, state 쿠키는 httpOnly다
+- 틀린 state로 돌아오면 `/login?error=oauth`, 동의 화면에서 취소하면 문구 없이 `/login`
+- 소셜 로그인 없이 `/signup/social`에 오면 `/login?error=expired`
+
 ## 범위 밖
 - 로그아웃 (고침 11-02: `docs/frontend/header.md`에서 만들었다)
 - 비밀번호 찾기·재설정, 이메일 인증
-- 실제 소셜 로그인(OAuth) 연동, 카카오·네이버 등 다른 제공자, 가입 데이터 저장, 비밀번호 암호화 (목업 기준. `AUTH_MODE=backend`의 가입·저장은 9장)
+- 실제 소셜 로그인(OAuth) 연동, 카카오·네이버 등 다른 제공자, 가입 데이터 저장, 비밀번호 암호화 (목업 기준. `AUTH_MODE=backend`의 가입·저장은 9장, 소셜 로그인은 10장)
+- 마이페이지의 소셜 계정 연동·해제 화면 (#84 내 정보 수정에서. API는 #83에 있다)
 - 가입 크레딧 지급 표시 (금액 미정)
 - 이용약관·개인정보처리방침 본문 (`/terms`, `/privacy`는 준비 중 그대로)
 - 로그인 시도 횟수 제한

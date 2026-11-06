@@ -1,26 +1,51 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { ChatsIcon, FlagIcon, HeartIcon, SparkleIcon, ThumbsUpIcon } from "@phosphor-icons/react";
+import { unstable_rethrow } from "next/navigation";
+import { type ReactNode, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { formatDate } from "@/lib/format";
+import { getFollowupQuestions } from "../actions";
 import type { FeedbackView } from "../service";
-import { FEEDBACK_STATUS_LABEL, type FeedbackStatus, type TestItem } from "../types";
+import type { FeedbackStatus, TestItem } from "../types";
+import { CHAT_NOT_READY, FollowupQuestionsDialog, type FollowupState } from "./FollowupQuestionsDialog";
 import { inputClass } from "./TextField";
 
 /*
- * 피드백 탭. 신고 대기 중인 피드백은 72시간 안에 사유를 적어 신고할 수 있다.
- * 피드백마다 어느 테스트 항목에 대한 것인지(없으면 기타 의견)와 붙인 스크린샷을 보여 준다.
- * 도움이 된 피드백은 "추천"으로 표시한다. 신고된 피드백은 추천할 수 없다.
- * 목업이라 신고와 추천은 화면에서만 바뀌고 새로고침하면 돌아온다.
+ * 피드백 탭. 피드백마다 어느 테스트 항목에 대한 것인지(없으면 기타 의견)와 붙인 스크린샷을 보여 준다.
+ * 카드 아래 버튼 줄: 채팅하기·AI 질문 받기(유료 기능), 유용해요(예전 "추천"), 신고하기·신고 정보.
+ * - 상태 배지 대신 신고 버튼이 상태를 보여 준다. 신고 대기 중(72시간 안)이면 "신고하기", 신고됐으면 "신고 정보", 지급 완료면 없다.
+ * - 무료 모집에서는 채팅하기·AI 질문 받기가 구독 안내로 이어진다.
+ * - 채팅방 생성, 추천 저장, 신고, 신고 정보 조회는 백엔드 API가 아직 없다. 추천과 신고는 화면에서만 바뀌고 새로고침하면 돌아오며,
+ *   채팅하기와 신고 정보는 준비 중 안내만 보여 준다.
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
 
-/** 피드백 목록과 신고 대화상자 */
-export function FeedbackList({ feedbacks, testItems }: { feedbacks: FeedbackView[]; testItems: TestItem[] }) {
+const SUBSCRIPTION_PATH = "/my/subscription";
+const REPORT_INFO_NOT_READY = "신고 정보는 준비 중이에요";
+const FOLLOWUP_NETWORK_ERROR = "연결이 불안정해 질문을 받지 못했어요. 잠시 후 다시 시도해 주세요";
+
+const icon = { "aria-hidden": true, size: 16, weight: "bold" } as const;
+
+type FeedbackListProps = {
+  feedbacks: FeedbackView[];
+  testItems: TestItem[];
+  recruitmentKey: string;
+  /** 구독 모집이면 채팅하기·AI 질문 받기를 바로 쓴다 */
+  isSubscription: boolean;
+};
+
+/** 피드백 목록과 신고·AI 질문 대화상자 */
+export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscription }: FeedbackListProps) {
   const [statuses, setStatuses] = useState<Record<string, FeedbackStatus>>({});
   const [recommended, setRecommended] = useState<Record<string, boolean>>({});
+  /** 버튼을 눌렀지만 API가 없을 때 카드에 보여 줄 안내 */
+  const [notices, setNotices] = useState<Record<string, string>>({});
+  const [followups, setFollowups] = useState<Record<string, FollowupState>>({});
+  const [asking, setAsking] = useState<FeedbackView | null>(null);
   const [target, setTarget] = useState<FeedbackView | null>(null);
   const [error, setError] = useState("");
   const [announcement, setAnnouncement] = useState("");
@@ -28,7 +53,29 @@ export function FeedbackList({ feedbacks, testItems }: { feedbacks: FeedbackView
 
   function toggleRecommend(feedback: FeedbackView, next: boolean) {
     setRecommended((prev) => ({ ...prev, [feedback.id]: next }));
-    setAnnouncement(`${feedback.testerNickname}님의 피드백을 ${next ? "추천했어요" : "추천에서 뺐어요"}`);
+    setAnnouncement(`${feedback.testerNickname}님의 피드백${next ? "을 유용해요로 표시했어요" : "에서 유용해요를 뺐어요"}`);
+  }
+
+  function showNotice(feedback: FeedbackView, text: string) {
+    setNotices((prev) => ({ ...prev, [feedback.id]: text }));
+    setAnnouncement(text);
+  }
+
+  /** 하루 3번 한도가 있어서 이미 받았거나 받는 중이면 다시 요청하지 않는다. 실패했으면 다시 요청한다 */
+  async function askFollowup(feedback: FeedbackView) {
+    setAsking(feedback);
+    const current = followups[feedback.id];
+    if (current && current.state !== "error") return;
+    setFollowups((prev) => ({ ...prev, [feedback.id]: { state: "loading" } }));
+    let next: FollowupState;
+    try {
+      const result = await getFollowupQuestions(recruitmentKey, feedback.id);
+      next = result.ok ? { state: "done", questions: result.questions } : { state: "error", message: result.message };
+    } catch (caught) {
+      unstable_rethrow(caught);
+      next = { state: "error", message: FOLLOWUP_NETWORK_ERROR };
+    }
+    setFollowups((prev) => ({ ...prev, [feedback.id]: next }));
   }
 
   function openReport(feedback: FeedbackView) {
@@ -69,40 +116,24 @@ export function FeedbackList({ feedbacks, testItems }: { feedbacks: FeedbackView
       </p>
       <p data-testid="feedback-by-item" className="text-sm text-text-muted">
         항목별 {byItem.map(([title, count]) => `${title} ${count}건`).join(" · ")}
-        <span data-testid="recommended-count"> · 추천 {recommendedCount}건</span>
+        <span data-testid="recommended-count"> · 유용해요 {recommendedCount}건</span>
       </p>
       <ul className="flex flex-col gap-3">
         {feedbacks.map((item) => {
           const status = statuses[item.id] ?? item.status;
           const liked = isRecommended(item) && status !== "reported";
+          const nickname = item.testerNickname;
           return (
-            <li key={item.id} data-testid="feedback" className="flex flex-col gap-3 rounded-2xl bg-surface-muted p-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="font-bold">{item.testerNickname}</span>
-                <Badge tone="neutral">{itemTitle(item.testItemId)}</Badge>
-                <Badge tone={status === "waiting" ? "accent" : "muted"}>{FEEDBACK_STATUS_LABEL[status]}</Badge>
-                <span className="text-sm text-text-muted">{formatDate(item.submittedAt)} 제출</span>
-                {status === "waiting" && (
-                  <span className="text-sm text-text-muted">{item.hoursUntilPaid}시간 뒤 자동 지급</span>
-                )}
-                <span className="ml-auto flex gap-2">
-                  {status !== "reported" && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      aria-pressed={liked}
-                      aria-label={`${item.testerNickname}님의 피드백 추천`}
-                      onClick={() => toggleRecommend(item, !liked)}
-                    >
-                      {liked ? "추천함" : "추천"}
-                    </Button>
-                  )}
-                  {status === "waiting" && item.hoursUntilPaid > 0 && (
-                    <Button size="sm" variant="secondary" onClick={() => openReport(item)}>
-                      신고
-                    </Button>
-                  )}
-                </span>
+            <li key={item.id} data-testid="feedback" className="flex flex-col gap-4 rounded-2xl bg-surface-muted p-5 md:p-6">
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold">{nickname}</span>
+                  <Badge tone="neutral">{itemTitle(item.testItemId)}</Badge>
+                </div>
+                <p className="text-xs text-text-muted">
+                  {formatDate(item.submittedAt)} 제출
+                  {status === "waiting" && ` · ${item.hoursUntilPaid}시간 뒤 자동 지급`}
+                </p>
               </div>
               <p className="text-sm">{item.content}</p>
               {item.images.length > 0 && (
@@ -111,17 +142,73 @@ export function FeedbackList({ feedbacks, testItems }: { feedbacks: FeedbackView
                     <li key={image.url}>
                       <a href={image.url} target="_blank" rel="noopener noreferrer" className="block w-40">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image.url} alt={image.name} className="aspect-video w-full rounded-xl bg-surface-strong object-cover" />
+                        <img
+                          src={image.url}
+                          alt={image.name}
+                          className="aspect-video w-full rounded-xl border border-line bg-surface-strong object-cover"
+                        />
                         <span className="sr-only"> (새 탭에서 크게 보기)</span>
                       </a>
                     </li>
                   ))}
                 </ul>
               )}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {notices[item.id] && <p className="mr-auto text-sm text-text-muted">{notices[item.id]}</p>}
+                <PaidAction subscribed={isSubscription} label={`${nickname}님과 채팅하기`} onClick={() => showNotice(item, CHAT_NOT_READY)}>
+                  <ChatsIcon {...icon} />
+                  채팅하기
+                </PaidAction>
+                <PaidAction subscribed={isSubscription} label={`${nickname}님 피드백으로 AI 질문 받기`} onClick={() => askFollowup(item)}>
+                  <SparkleIcon {...icon} />
+                  AI 질문 받기
+                </PaidAction>
+                {/* 신고된 피드백은 유용해요를 누를 수 없다 */}
+                {status !== "reported" && (
+                  <Button
+                    size="sm"
+                    variant={liked ? "like" : "secondary"}
+                    aria-pressed={liked}
+                    aria-label={`${nickname}님의 피드백이 유용해요`}
+                    onClick={() => toggleRecommend(item, !liked)}
+                  >
+                    {liked ? <HeartIcon {...icon} /> : <ThumbsUpIcon {...icon} />}
+                    유용해요
+                  </Button>
+                )}
+                {status === "waiting" && item.hoursUntilPaid > 0 && (
+                  <Button size="sm" variant="secondary" aria-label={`${nickname}님의 피드백 신고하기`} onClick={() => openReport(item)}>
+                    <FlagIcon {...icon} />
+                    신고하기
+                  </Button>
+                )}
+                {status === "reported" && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    aria-label={`${nickname}님의 피드백 신고 정보`}
+                    onClick={() => showNotice(item, REPORT_INFO_NOT_READY)}
+                  >
+                    <FlagIcon {...icon} />
+                    신고 정보
+                  </Button>
+                )}
+              </div>
             </li>
           );
         })}
       </ul>
+
+      {asking && (
+        <FollowupQuestionsDialog
+          key={asking.id}
+          nickname={asking.testerNickname}
+          content={asking.content}
+          followup={followups[asking.id] ?? { state: "loading" }}
+          onRetry={() => askFollowup(asking)}
+          onClose={() => setAsking(null)}
+        />
+      )}
 
       <dialog
         ref={dialogRef}
@@ -162,5 +249,21 @@ export function FeedbackList({ feedbacks, testItems }: { feedbacks: FeedbackView
         </form>
       </dialog>
     </>
+  );
+}
+
+/** 유료 기능 버튼. 구독 모집이면 바로 쓰고, 무료 모집이면 구독 안내로 간다 */
+function PaidAction({ subscribed, label, onClick, children }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode }) {
+  if (!subscribed) {
+    return (
+      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="soft" aria-label={`${label}, 구독하면 쓸 수 있어요`}>
+        {children}
+      </LinkButton>
+    );
+  }
+  return (
+    <Button size="sm" variant="soft" aria-label={label} onClick={onClick}>
+      {children}
+    </Button>
   );
 }

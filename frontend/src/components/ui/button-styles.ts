@@ -1,7 +1,11 @@
 import { cn } from "@/lib/cn";
 
-/** strong: 먹 바탕 버튼. 되돌리기 어려운 행동(삭제 확인)처럼 강조색을 쓰면 안 되는 무거운 행동에 쓴다 */
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "strong";
+/**
+ * strong: 먹 바탕 버튼. 되돌리기 어려운 행동(삭제 확인)처럼 강조색을 쓰면 안 되는 무거운 행동에 쓴다.
+ * soft: 연한 강조 바탕. 유료 기능으로 이어지는 버튼(피드백의 채팅하기·AI 질문 받기)에 쓴다.
+ * like: 피드백 "유용해요"를 누른 상태에만 쓴다.
+ */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "strong" | "soft" | "like";
 export type ButtonSize = "md" | "sm";
 /** pill: 기본 알약. field: 금액·계좌 입력 폼 안에서 입력란과 맞춘 12px 모서리 (DESIGN.md The Money Field Rule) */
 export type ButtonShape = "pill" | "field";
@@ -14,6 +18,8 @@ const variants: Record<ButtonVariant, string> = {
   secondary: "bg-surface-strong text-text hover:bg-line",
   ghost: "text-text hover:bg-surface-strong",
   strong: "bg-text text-surface hover:opacity-90",
+  soft: "bg-accent-soft text-accent hover:opacity-80",
+  like: "bg-like-soft text-like hover:opacity-80",
 };
 
 const sizes: Record<ButtonSize, string> = {

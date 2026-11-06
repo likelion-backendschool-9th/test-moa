@@ -149,6 +149,9 @@ export type AiSummary = {
 /** AI 분석을 시작하는 최소 피드백 수. 기획에서 미정이라 임시값이다 */
 export const AI_MIN_FEEDBACKS = 3;
 
+/** 피드백 하나로 받은 AI 후속 질문 (백엔드 FollowupQuestionsResponse). 실패하면 화면에 보일 문구를 둔다 */
+export type FollowupResult = { ok: true; questions: string[] } | { ok: false; message: string };
+
 export type ProjectImage = { url: string; name: string };
 /** 대표 이미지를 넣지 않은 프로젝트에 보여 주는 이미지 */
 export const DEFAULT_PROJECT_IMAGE_URL = "/sample/projects/default.svg";

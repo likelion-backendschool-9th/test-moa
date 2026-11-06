@@ -7,11 +7,12 @@ import {
   decideApplicants as decide,
   getMyProject,
   getRecruitmentFormInfo,
+  recommendFollowupQuestions,
   requireRole,
   validateProjectForm,
   validateRecruitmentForm,
 } from "./service";
-import type { FormState } from "./types";
+import type { FollowupResult, FormState } from "./types";
 
 /*
  * 폼 제출을 받는 서버 액션. 화면 계층의 입구라 service.ts만 부른다.
@@ -54,4 +55,10 @@ export async function cancelRecruitment(
   formData: FormData,
 ): Promise<FormState & { ok?: boolean }> {
   return cancel(recruitmentKey, formData);
+}
+
+/** 피드백 하나로 AI 후속 질문을 받는다. 하루 3번 한도는 백엔드가 센다 */
+export async function getFollowupQuestions(recruitmentKey: string, feedbackId: string): Promise<FollowupResult> {
+  if (typeof recruitmentKey !== "string" || typeof feedbackId !== "string") return { ok: false, message: "잘못된 요청이에요" };
+  return recommendFollowupQuestions(recruitmentKey, feedbackId);
 }

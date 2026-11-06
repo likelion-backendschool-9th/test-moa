@@ -13,6 +13,7 @@ import {
   findProjects,
   findPublicRecruitment,
   findRecruitmentDetail,
+  requestFollowupQuestions,
   saveApplicationDecisions,
   saveRecruitmentCancellation,
 } from "./api";
@@ -27,6 +28,7 @@ import {
   type AiSummary,
   type Application,
   type Feedback,
+  type FollowupResult,
   type FormState,
   type Project,
   type RecruitmentStatus,
@@ -353,6 +355,21 @@ export async function getAiAnalysis(path: string, recruitmentKey: string): Promi
   }
   const summary = await findAiSummary(role, recruitmentKey);
   return summary ? { state: "ready", summary } : { state: "empty" };
+}
+
+const FOLLOWUP_NOT_FOUND = "이 피드백을 찾지 못했어요. 새로고침한 뒤 다시 시도해 주세요";
+
+/**
+ * 내 모집 건 피드백 하나로 AI 후속 질문을 받는다.
+ * 실패 문구는 백엔드 ErrorCode 문구를 그대로 쓴다(구독 필요, 하루 3번 초과, AI 서버 장애). 없는 피드백만 화면 문구로 바꾼다.
+ */
+export async function recommendFollowupQuestions(recruitmentKey: string, feedbackId: string): Promise<FollowupResult> {
+  const { role } = await getMyRecruitment(recruitmentManagePath(recruitmentKey), recruitmentKey);
+  const feedbacks = await findFeedbacks(role, recruitmentKey);
+  if (!feedbacks.some((item) => item.id === feedbackId)) return { ok: false, message: FOLLOWUP_NOT_FOUND };
+  const result = await requestFollowupQuestions(role, recruitmentKey, feedbackId);
+  if (result.ok) return { ok: true, questions: result.data.questions };
+  return { ok: false, message: result.code === "NOT_FOUND" ? FOLLOWUP_NOT_FOUND : result.message };
 }
 
 /** 모집 작성 폼에 보여 줄 보상. 구독 여부는 작성 시점 기준이다 */

@@ -102,7 +102,7 @@
 - 순번은 1부터 시작한다. 메시지가 없는 방의 `last_seq`와 아직 읽지 않은 참여자의 `last_read_seq`는 0이다
 - 메시지가 없는 방의 최근 메시지 일시는 방을 연 일시다. 채팅함 정렬에 null이 끼지 않게 하기 위해서다
 - `(room_id, seq)` unique 제약의 인덱스가 방별 메시지 조회와 커서에 함께 쓰인다
-- 메시지 내용 컬럼은 500자(`CHAT_MESSAGE_MAX`), 바꾼 대화방 이름 컬럼은 30자(`CHAT_ROOM_NAME_MAX`)다. 길이 검증 메시지는 #49·#50에서 정한다
+- 메시지 내용 컬럼은 10,000자(`ChatMessage.CONTENT_MAX`), 바꾼 대화방 이름 컬럼은 30자(`CHAT_ROOM_NAME_MAX`)다. 프론트의 `CHAT_MESSAGE_MAX`는 #54 전까지 500자다. 길이 검증 메시지는 #49·#50에서 정한다. (고침 #111: 서버 최대 길이 10,000자로 확대)
 - 테스트는 H2를 쓰지 않고 CI처럼 Postgres에 붙인다(`@DataJpaTest` + `@AutoConfigureTestDatabase(replace = NONE)` + `@ActiveProfiles("test")`). 테스트 설정을 `application.yml`이 아닌 `application-test.yml`로 두는 것은, 같은 이름이면 main의 `application.yml`을 통째로 가려 snake_case 이름 규칙이 빠지기 때문이다. 로컬에서는 Postgres를 띄우고 CI와 같은 `SPRING_DATASOURCE_*` 환경 변수로 실행한다
 - Postgres는 제약 위반이 난 트랜잭션을 중단시켜 같은 테스트 안에서 다시 조회할 수 없다. 그래서 #47-S2, #47-S6은 예외가 나는 것까지만 확인한다
 

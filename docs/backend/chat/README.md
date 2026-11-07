@@ -9,6 +9,7 @@
 | [#47](https://github.com/likelion-backendschool-9th/test-moa/issues/47) | 채팅 엔티티 | [entities.md](entities.md) |
 | [#49](https://github.com/likelion-backendschool-9th/test-moa/issues/49) | 메시지 조회·보내기 | [messages.md](messages.md) |
 | [#48](https://github.com/likelion-backendschool-9th/test-moa/issues/48) | 채팅함 조회 | [inbox.md](inbox.md) |
+| [#111](https://github.com/likelion-backendschool-9th/test-moa/issues/111) | 메시지 최대 길이 10,000자로 확대 | [message-length.md](message-length.md) |
 | [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | rooms.md |
 | [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | read.md |
 | [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | realtime.md |
@@ -40,7 +41,7 @@
 | `chat_messages` | 메시지 하나 | `room_id`, `seq`, `sender_id`(참여자), `content`, `sent_at` | `(room_id, seq)` unique |
 
 ## 아직 정하지 않은 것
-- 배포 서버 DB에 테이블을 만드는 방법(`ddl-auto: update`, Flyway 등): 11-06 팀 회의에서 정한다. 지금은 `ddl-auto`도 마이그레이션 도구도 없어서 배포된 DB에는 백엔드 테이블이 없다. 그 전까지 채팅은 로컬 테스트로만 확인한다
+- 스키마 관리 방식(Flyway 등) 도입: 팀 결정. 테스트 서버는 `ddl-auto: update`(11-05). `update`는 없는 테이블·컬럼을 더하고 있는 컬럼의 타입·길이를 엔티티에 맞추지만, 컬럼을 지우거나 이름을 바꾸지는 않는다. (#111, 11-07)
 - ERD(ERDCloud)에 세 테이블을 더하는 일
 - 같은 참여자 행을 두 요청이 동시에 고칠 때 바꾸지 않은 컬럼을 덮어쓰지 않게 할 방법: 보내기는 `hidden`만 바꾸는 update 쿼리로 정했다(#49). 이름 변경·삭제(#50), 읽음 처리(#52)의 갱신 방식은 각 이슈에서 정한다
 - 기획이 정하지 않은 것(#36): 채팅방 신고·차단, 사진·파일 보내기, 메시지 수정·삭제, 알림

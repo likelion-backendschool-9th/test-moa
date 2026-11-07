@@ -54,4 +54,18 @@ public class VersionComparison {
         this.previousRecruitment = previousRecruitment;
         this.summary = summary;
     }
+
+    /**
+     * 다시 비교한 결과로 덮어쓰기.
+     * 요약이 같으면 바뀐 값이 없어 갱신 시각이 그대로 남으므로, 비교 시각을 직접 넣어 언제나 갱신되게 한다.
+     *
+     * @param previousRecruitment 비교한 직전 버전 모집글
+     * @param summary             AI가 쓴 변화 요약 문장
+     * @param now                 비교 일시
+     */
+    public void overwrite(Recruitment previousRecruitment, String summary, LocalDateTime now) {
+        this.previousRecruitment = previousRecruitment;
+        this.summary = summary;
+        this.updatedAt = now;
+    }
 }

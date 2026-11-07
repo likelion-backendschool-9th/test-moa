@@ -11,20 +11,23 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 회원별 기간 사용 횟수. 기간(하루, 한 주)은 그 기간의 첫날로 구분하고, 기간이 바뀌면 다시 셈.
- * 서버 메모리에 두므로 서버를 다시 시작하면 처음부터 세고, 서버가 여러 대면 대마다 따로 셈
+ * 서버 메모리에 두므로 서버를 다시 시작하면 처음부터 세고, 서버가 여러 대면 대마다 따로 셈.
+ * 한도를 끄면(enabled = false) 세지 않고 언제나 통과시킴
  */
 public abstract class PeriodUsageLimiter {
     private final Clock clock;
     private final int limit;
     private final ErrorCode limitExceeded;
+    private final boolean enabled;
     private final ConcurrentHashMap<Long, Usage> usages = new ConcurrentHashMap<>();
     // 지난 기간의 기록을 마지막으로 지운 기간
     private volatile LocalDate prunedOn;
 
-    protected PeriodUsageLimiter(Clock clock, int limit, ErrorCode limitExceeded) {
+    protected PeriodUsageLimiter(Clock clock, int limit, ErrorCode limitExceeded, boolean enabled) {
         this.clock = clock;
         this.limit = limit;
         this.limitExceeded = limitExceeded;
+        this.enabled = enabled;
     }
 
     // 오늘이 속한 기간의 첫날
@@ -41,6 +44,8 @@ public abstract class PeriodUsageLimiter {
      */
     public LocalDate acquire(Long userId) {
         LocalDate current = periodStart(LocalDate.now(clock));
+        // 꺼져 있으면 세지 않음. 기록이 없어 release도 아무것도 하지 않음
+        if (!enabled) return current;
         pruneBefore(current);
         LocalDate[] countedIn = new LocalDate[1];
         usages.compute(userId, (id, usage) -> {

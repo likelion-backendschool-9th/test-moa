@@ -1,6 +1,8 @@
 package com.testmoa.backend.service;
 
+import com.testmoa.backend.global.client.AnalysisProperties;
 import com.testmoa.backend.global.exception.ErrorCode;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -15,12 +17,14 @@ import java.time.ZoneId;
 public class VersionComparisonLimiter extends PeriodUsageLimiter {
     public static final int WEEKLY_LIMIT = 3;
 
-    public VersionComparisonLimiter() {
-        this(Clock.system(ZoneId.of("Asia/Seoul")));
+    // 한도는 analysis.weekly-limit-enabled로 끄고 켬. 지금은 꺼 둠(application.yml)
+    @Autowired
+    public VersionComparisonLimiter(AnalysisProperties properties) {
+        this(Clock.system(ZoneId.of("Asia/Seoul")), properties.weeklyLimitEnabled());
     }
 
-    VersionComparisonLimiter(Clock clock) {
-        super(clock, WEEKLY_LIMIT, ErrorCode.COMPARISON_LIMIT_EXCEEDED);
+    VersionComparisonLimiter(Clock clock, boolean enabled) {
+        super(clock, WEEKLY_LIMIT, ErrorCode.COMPARISON_LIMIT_EXCEEDED, enabled);
     }
 
     @Override

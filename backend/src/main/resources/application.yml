@@ -45,6 +45,9 @@ analysis:
   read-timeout: 30s
   # 리뷰 묶기(/v1/analyses)의 응답 대기 시간. 수십 초~몇 분 걸리고 비동기로 불러 nginx 시간과 상관없음
   review-analysis-read-timeout: ${ANALYSIS_REVIEW_READ_TIMEOUT:5m}
+  # 리뷰 묶기·버전 비교의 개발자별 주 3회 한도. 지금은 테스트를 위해 꺼 둠. 다시 켜려면 true로 바꾸거나 환경 변수 ANALYSIS_WEEKLY_LIMIT_ENABLED=true
+  # 후속 질문의 하루 3회 한도는 이 값과 상관없이 늘 켜져 있음
+  weekly-limit-enabled: ${ANALYSIS_WEEKLY_LIMIT_ENABLED:false}
 
 # 소셜 로그인(OAuth) 앱 값. 환경 변수로만 넘기고 커밋하지 않는다. 비어 있으면 그 제공자로 로그인할 때 실패한다
 # 내 컴퓨터에서는 backend/config/application-local.yml(커밋하지 않음)에 같은 이름으로 넣어도 된다

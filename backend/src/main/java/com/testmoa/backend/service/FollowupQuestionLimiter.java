@@ -20,7 +20,7 @@ public class FollowupQuestionLimiter extends PeriodUsageLimiter {
     }
 
     FollowupQuestionLimiter(Clock clock) {
-        super(clock, DAILY_LIMIT, ErrorCode.FOLLOWUP_LIMIT_EXCEEDED);
+        super(clock, DAILY_LIMIT, ErrorCode.FOLLOWUP_LIMIT_EXCEEDED, true);
     }
 
     // 하루 단위로 셈

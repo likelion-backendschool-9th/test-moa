@@ -332,15 +332,6 @@ npx tsc --noEmit && npm run lint && npm run build && npm run test:visual
 3. 그 구역의 `.tsx`에 Tailwind 클래스가 남지 않았는지 `rg -n 'className="' <구역>`으로 확인한다. 문자열 클래스는 `data-*` 등 의도한 것만 남아야 한다.
 4. 비교 사진이 0픽셀인지 확인한다.
 
-## 브랜치·커밋
-
-- 브랜치: `feature/css-modules-colocation`. PR 하나로 올린다.
-- 커밋:
-  - `Test: 화면 비교 도구와 e2e의 클래스 의존을 정리한다` — 1~2단계
-  - `Refactor: <구역> 부품을 폴더와 CSS Modules로 옮긴다` — 3~10단계, 구역마다 (고침 11-07: 폴더 이동 한 커밋, 스타일 이전 한 커밋. 한 부품의 변경과 부르는 곳의 변경이 같이 가야 빌드와 화면이 맞는다)
-  - `Chore: Tailwind를 제거하고 부품 폴더·모듈 값 검사를 추가한다` — 11단계 (검사의 회귀 테스트는 `Test:` 커밋으로 나눈다)
-  - `Docs: CSS Modules와 부품 폴더 규칙을 기록한다` — 12단계
-
 ## 가정
 
 - CSS Modules와 Tailwind는 이전 중에 함께 동작한다. Tailwind의 스타일은 `@layer` 안에 있고 모듈 스타일은 레이어 밖에 있어서 모듈이 이긴다. (확인 11-07: 빌드 결과에 `@layer properties·theme·base·components·utilities`가 있고 모듈 규칙은 레이어 밖이다)

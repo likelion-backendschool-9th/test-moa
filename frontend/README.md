@@ -1,6 +1,6 @@
 # Test Moa 프론트엔드
 
-Next.js 16(App Router, Cache Components) + Tailwind CSS v4 + TypeScript. 글꼴은 Wanted Sans, 아이콘은 Phosphor를 쓴다.
+Next.js 16(App Router, Cache Components) + CSS Modules + TypeScript. 글꼴은 Wanted Sans, 아이콘은 Phosphor를 쓴다.
 
 ## 실행
 
@@ -10,6 +10,7 @@ npm run dev        # http://localhost:3000
 npm run build      # 프로덕션 빌드
 npm run lint
 npm run test:e2e   # Playwright E2E (처음 한 번: npx playwright install chromium)
+npm run test:visual -- --base origin/develop   # 기준 커밋과 화면을 픽셀 단위로 비교
 ```
 
 ## 환경 변수
@@ -48,10 +49,10 @@ app/                         라우트와 그 라우트만 쓰는 코드
   (site)/                    본문·푸터가 있는 일반 화면
     (home)/, (auth)/          홈과 로그인·가입
     admin/, my/, developer/, testers/, recruitments/
-    .../_components/         해당 라우트 또는 구역 전용 부품
-    .../_lib/                해당 구역만 쓰는 순수 함수와 화면 조합
+    .../_components/         해당 라우트 또는 구역 전용 부품 (부품마다 폴더)
+    .../_lib/                해당 구역만 쓰는 순수 함수·훅·화면 조합
   (conversation)/            푸터 없는 채팅방. 페이지가 본문을 그림
-components/ui/               도메인·URL을 모르는 범용 UI
+components/ui/               도메인·URL을 모르는 범용 UI (Card·Button·TextField·SelectField 등)
 features/<도메인>/
   api.ts                     서버 전용 데이터 접근·권한 확인·저장
   actions.ts                 입력 검사 → 데이터 함수 호출 → 이동
@@ -62,7 +63,8 @@ demo/                        시연 데이터·쿠키 기록·개발용 전환�
 lib/                         도메인을 모르는 통신·토큰·포맷·폼 유틸리티
 proxy.ts                     요청의 토큰 갱신. app과 같은 높이
 e2e/                         계획 문서의 시나리오를 확인하는 Playwright 테스트
-scripts/structure/           사용처·배치·import 경계 검사
+scripts/structure/           사용처·배치·import 경계·모듈 값 검사
+scripts/visual/              기준 커밋과 화면을 비교하는 도구
 ```
 
 ### 배치 기준
@@ -75,7 +77,24 @@ scripts/structure/           사용처·배치·import 경계 검사
 | P4 | 라우트 하나만 쓰는 부품 | 해당 라우트의 `_components/` |
 | P5 | 한 구역의 여러 라우트가 쓰는 부품 | 그 구역의 공통 조상 `_components/` |
 | P6 | 여러 구역이 쓰는 부품 | 도메인 부품은 `features/*/components`, 범용 UI는 `components/ui`, 라우트 의존 부품은 `app/_components` |
-| P7 | 라우트 전용 순수 함수·화면 조합 | 해당 구역의 `_lib/` |
+| P7 | 라우트 전용 순수 함수·화면 조합, 한 구역의 여러 부품이 쓰는 훅 | 해당 구역의 `_lib/` |
+
+### 부품 폴더
+
+`_components`·`components/ui`·`features/*/components`의 부품은 이름과 같은 폴더에 둔다. 스타일이 없는 부품도 폴더로 만든다.
+
+```text
+AccountNav/
+  AccountNav.tsx          부품. 폴더 이름과 같다
+  AccountNav.module.css   이 부품의 스타일
+  hook.ts                 이 부품만 쓰는 훅. "use client" 부품에만 둔다
+  api.ts                  이 부품만 쓰는 서버 연결. 필요할 때만 둔다
+```
+
+- import는 `…/AccountNav/AccountNav`처럼 파일까지 쓴다. `index.ts`는 만들지 않는다.
+- 부품 `api.ts`는 `import "server-only"`로 시작하고, 데이터는 `features/*/api.ts`·`actions.ts`만 거친다. `demo`와 `lib/backend*`를 직접 부르지 않는다(B8).
+- 두 부품 이상이 쓰는 훅은 P4~P7을 따른다. 한 구역 안이면 그 구역의 `_lib/`, 여러 구역이 쓰고 도메인을 알면 `features/<도메인>/`, 모르면 `lib/`.
+- 페이지·레이아웃의 스타일은 옆의 `page.module.css`·`layout.module.css`에 둔다.
 
 구역은 홈, 로그인·가입, 운영자, 계정 화면, 채팅함, 채팅방, 개발자 화면, 참여 테스트처럼 레이아웃과 사용처로 나눈다. `components/ui`는 사용 횟수보다 도메인과 URL을 모르는지가 기준이다. 도메인은 `session`, `auth`, `member`, `subscription`, `credit`, `project`, `recruitment`, `participation`, `chat`, `report`다.
 
@@ -90,6 +109,7 @@ scripts/structure/           사용처·배치·import 경계 검사
 | B5 | 다른 도메인의 `actions.ts` 호출 |
 | B6 | `features/session` → 다른 도메인 |
 | B7 | 다른 도메인 → `features/auth` |
+| B8 | 부품 폴더의 `api.ts` → `demo`, `lib/backend.ts`, `lib/backend-http.ts` |
 
 - 로그인·가입·로그아웃 액션(`auth`)은 화면에서만 부른다. 세션·권한 확인은 `session`이 맡는다.
 - 액션은 시연 저장소를 직접 부르지 않고 해당 도메인의 `api.ts`를 거친다. 데이터 함수는 화면의 인증 검사를 믿지 않고 필요한 권한을 다시 확인한다.
@@ -97,9 +117,18 @@ scripts/structure/           사용처·배치·import 경계 검사
 - 모집을 붙인 프로젝트 조회는 `recruitment`가 맡는다. `project`는 모집을 import하지 않는다. 도메인 사이 양방향 의존은 만들지 않는다.
 - API가 바뀌면 `api.ts`를 고치고, 실제 연결이 끝나면 해당 `demo`와 목업 분기를 함께 지운다. `service.ts`는 만들지 않는다.
 
+### 스타일
+
+- 색·간격·글자 크기·줄 높이·모서리·모션 값은 `app/globals.css`의 토큰으로 쓴다. 모듈에 `px`·`rem`·hex·`rgb()`를 직접 쓰지 않는다(R5). 너비·격자 칸 같은 부품 고유 크기와 1px 선 두께는 예외다.
+- 미디어 쿼리 너비는 `40rem`·`48rem`·`64rem`·`80rem`, 컨테이너 쿼리는 `48rem`만 쓴다. 따로 정한 값은 바로 위에 `예외`라고 쓴 주석으로 이유를 남긴다.
+- 애니메이션은 `--animate-*` 토큰으로 쓴다(`animation: var(--animate-rise-in)`). 모듈 안에 쓴 keyframes 이름은 지역 이름으로 바뀌어 `globals.css`의 keyframes를 찾지 못한다.
+- 여러 부품이 쓰는 스타일은 공유 CSS 파일이 아니라 부품으로 나눈다(Next `11-css.md:449`). 교정지 면(패널)은 `Card`가 바탕·모서리·라이트 테두리·포커스 링을 그린다.
+- 부르는 쪽이 넘기는 `className`은 그 부품이 정하지 않은 속성만 정한다. 같은 우선순위에서는 import 순서가 이기고, 그 순서는 개발 서버와 빌드에서 다를 수 있다(`11-css.md:402-404`, `:458`). 부르는 쪽이 이겨야 하는 기본값은 `:where()`로 우선순위를 0으로 둔다(`SelectField`의 여백, `Skeleton`의 모서리).
+- 다른 모듈의 요소를 가리킬 때는 클래스 대신 `data-*` 속성을 쓴다(`data-hover-card`, `data-hero-paper`, `data-thumb`).
+- 모듈 안에서 `@layer`에 기대지 않는다. 빌드 결과에 레이어 순서 선언이 남지 않아 CSS 파일이 실리는 순서가 레이어 순서가 된다.
+
 ### 레이아웃과 서버 경계
 
-- 색·모션 값은 `app/globals.css`의 토큰에만 둔다. 간격·글자 크기·라운드는 Tailwind 기본 스케일을 쓴다.
 - `"use client"`는 상호작용에 필요한 부품에만 붙인다. 서버 전용 코드와 시연 데이터 파일은 `server-only`로 표시한다.
 - 세션이나 쿠키를 읽는 부품은 `<Suspense>` 안에 둔다.
 - 일반 화면의 본문과 푸터는 `(site)/layout.tsx`가, 채팅방의 본문은 해당 페이지가 그린다.
@@ -118,9 +147,12 @@ npm run test:structure
 node scripts/structure/usage.mjs . --check
 npm run build
 npm run test:e2e
+npm run test:visual -- --base origin/develop
 ```
 
-`lint`는 B1~B7을 검사한다. 배치 검사는 R0(계산할 수 없는 동적 import), R1(한 구역 전용 부품의 공용 배치), R2(비공개 폴더 밖의 사용), R3(범용 UI의 도메인 의존)를 검사하며 CI에서도 실행한다. 파일을 옮기면 import 외의 글꼴·이미지·`process.cwd()` 문자열 경로도 확인한다.
+`lint`는 B1~B8을 검사한다. 배치 검사는 R0(계산할 수 없는 동적 import), R1(한 구역 전용 부품의 공용 배치), R2(비공개 폴더 밖의 사용), R3(범용 UI의 도메인 의존), R4(폴더 없는 부품), R5(토큰이 아닌 모듈 값·정하지 않은 너비), R6(정의한 곳이 없는 CSS 변수)를 검사하며 CI에서도 실행한다.
+
+화면 비교(`test:visual`)는 기준 커밋과 지금 코드를 같은 환경에서 빌드해 `e2e/pages.ts`의 `PAGES`, 404 세 곳, 첫 탭이 아닌 화면 9곳을 넓은·좁은 화면, 라이트·다크로 찍고 0픽셀 차이인지 본다. 배포와 같은 Linux에서는 GitHub Actions의 `Frontend visual`을 수동으로 실행하거나 Playwright 공식 이미지에서 돌린다. 마우스를 올린 상태, 메뉴·모달처럼 사진에 안 잡히는 상태는 직접 확인한다. 파일을 옮기면 import 외의 글꼴·이미지·`process.cwd()` 문자열 경로도 확인한다.
 
 세부 기준과 Next 문서 근거: [목표 구조](../docs/frontend-structure/03-target-structure.md). 페이지 URL: [URL 문서](../docs/page-urls.md).
 

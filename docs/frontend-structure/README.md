@@ -19,17 +19,17 @@
 | --- | --- |
 | [1. Next 규칙](01-next-rules.md) | Next 문서가 정한 것(N1~N15)과 정하지 않은 것. 줄 번호 인용과 지금 코드의 상태 |
 | [2. 점검 결과](02-audit.md) | 문제 F1~F11(심각도, 근거, 원인)과 문제없는 것. 현재 상태 숫자 |
-| [3. 목표 구조](03-target-structure.md) | 목표 폴더 트리, 배치 규칙 P1~P7, 레이아웃, 도메인, `demo/`, import 경계 B1~B7·R0~R3 |
+| [3. 목표 구조](03-target-structure.md) | 목표 폴더 트리, 배치 규칙 P1~P7, 레이아웃, 도메인, `demo/`, import 경계 B1~B8·R0~R6 |
 | [4. 이전 범위](04-migration.md) | 이슈별 범위, 레이아웃 결정, 검증 기준 |
-| [5. CSS Modules와 부품 폴더](05-css-modules.md) | #160. Tailwind 제거, 부품 폴더(`부품.tsx`·`.module.css`·`hook.ts`·`api.ts`), 스타일 토큰, 화면 비교 검증 |
+| [5. CSS Modules와 부품 폴더](05-css-modules.md) | #160. 스타일을 CSS Modules로 옮김, 부품 폴더(`부품.tsx`·`.module.css`·`hook.ts`·`api.ts`), 스타일 토큰, 화면 비교 검증 |
 | [`frontend/scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.mjs) | 파일마다 누가 쓰는지 계산한다(동적 import 포함, TypeScript 구문 트리). `--check`로 배치 규칙을 검사한다. 위반이 있으면 종료 코드 1 |
-| [`frontend/scripts/structure/eslint-boundaries.mjs`](../../frontend/scripts/structure/eslint-boundaries.mjs) | import 경계 규칙 B1~B7. `eslint.config.mjs`에 그대로 넣는다 |
+| [`frontend/scripts/structure/eslint-boundaries.mjs`](../../frontend/scripts/structure/eslint-boundaries.mjs) | import 경계 규칙 B1~B8. `eslint.config.mjs`에 그대로 넣는다 |
 
 처음 읽는다면 이 README → [2. 점검 결과](02-audit.md)의 "한눈에" → [3. 목표 구조](03-target-structure.md)의 트리와 배치 규칙 순서가 빠르다. 파일을 추가하거나 옮길 때는 [목표 구조](03-target-structure.md)와 배치 검사를 함께 사용한다.
 
 ## 직접 확인하는 방법
 
-현재 구조의 검사 명령은 [프론트 README](../../frontend/README.md#확인-명령)에 있다. 이전 전 점검 결과는 `5db2041` 기준의 기록이며, 현재 검사에서는 R0~R3과 B1~B7 모두 위반이 없어야 한다.
+현재 구조의 검사 명령은 [프론트 README](../../frontend/README.md#확인-명령)에 있다. 이전 전 점검 결과는 `5db2041` 기준의 기록이며, 현재 검사에서는 R0~R6과 B1~B8 모두 위반이 없어야 한다.
 
 ```bash
 node frontend/scripts/structure/usage.mjs frontend

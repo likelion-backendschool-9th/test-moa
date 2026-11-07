@@ -2,11 +2,11 @@ import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { LinkButton } from "@/components/ui/LinkButton";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getSubscriptionOverview } from "@/features/subscription/api";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
-import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm";
+import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm/CheckoutForm";
 
 export const metadata: Metadata = { title: "구독 결제" };
 

@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { recruitmentManagePath } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList";
-import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList";
-import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
+import { Container } from "@/components/ui/Container/Container";
+import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList/ApplicantList";
+import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList/FeedbackList";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
 import {
   AnalyticsPanel,
   parseManageTab,
   RecruitmentSummary,
   RecruitmentTabs,
-} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage";
+} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage/RecruitmentManage";
 import {
   AiAnalysisPanel,
   AiAnalysisSkeleton,
-} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel";
+} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel/AiAnalysisPanel";
 import { canSelectApplicants } from "@/features/recruitment/types";
 import { getAiAnalysis, getRecruitmentDetail } from "@/features/recruitment/api";
 

@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
 import {
   getAdminWithdrawal as getWithdrawal,
   getAdminWithdrawals as getWithdrawals,
   isWithdrawalKey,
 } from "@/features/credit/api";
 import { requireAdmin } from "@/features/session/guard";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
 import {
   WithdrawalList,
   WithdrawalListSkeleton,
   WithdrawalModalSkeleton,
   WithdrawalProcessedNotice,
   WithdrawalTabs,
-} from "@/app/(site)/admin/withdrawals/_components/WithdrawalList";
-import { WithdrawalModalContent } from "@/app/(site)/admin/withdrawals/_components/WithdrawalModalContent";
+} from "@/app/(site)/admin/withdrawals/_components/WithdrawalList/WithdrawalList";
+import { WithdrawalModalContent } from "@/app/(site)/admin/withdrawals/_components/WithdrawalModalContent/WithdrawalModalContent";
 import { withdrawalsHref } from "@/features/credit/paths";
 import { type ListTab } from "@/features/credit/paths";
 

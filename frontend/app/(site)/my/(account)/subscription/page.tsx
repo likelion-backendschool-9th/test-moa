@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LinkButton } from "@/components/ui/LinkButton";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getSubscriptionOverview } from "@/features/subscription/api";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
-import { PlanComparison } from "@/app/(site)/my/(account)/subscription/_components/PlanComparison";
-import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry";
-import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment";
-import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus";
+import { PlanComparison } from "@/app/(site)/my/(account)/subscription/_components/PlanComparison/PlanComparison";
+import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry/SubscriptionExpiry";
+import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment/SubscriptionPayment";
+import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus/SubscriptionStatus";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "구독" };

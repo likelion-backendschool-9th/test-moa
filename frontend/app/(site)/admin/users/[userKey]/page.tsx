@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
+import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { requireAdmin } from "@/features/session/guard";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
-import { UserDetailSkeleton, UserDetailView } from "@/app/(site)/admin/users/[userKey]/_components/UserDetail";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
+import { UserDetailSkeleton, UserDetailView } from "@/app/(site)/admin/users/[userKey]/_components/UserDetail/UserDetail";
 import { getUser, getUserKeys, isUserKey } from "@/features/member/api";
 
 export const metadata: Metadata = { title: "회원 상세" };

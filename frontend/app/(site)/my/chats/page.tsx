@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Container } from "@/components/ui/Container";
+import { Container } from "@/components/ui/Container/Container";
 import { getChatInbox } from "@/features/chat/api";
-import { ChatInbox, ChatInboxSkeleton } from "@/app/(site)/my/chats/_components/ChatInbox";
+import { ChatInbox, ChatInboxSkeleton } from "@/app/(site)/my/chats/_components/ChatInbox/ChatInbox";
 import { parseChatQuery } from "@/features/chat/query";
 
 export const metadata: Metadata = { title: "채팅함" };

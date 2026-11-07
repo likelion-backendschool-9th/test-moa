@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { AppHeader } from "@/app/_components/AppHeader";
+import { AppHeader } from "@/app/_components/AppHeader/AppHeader";
 import "./globals.css";
 
 const wantedSans = localFont({

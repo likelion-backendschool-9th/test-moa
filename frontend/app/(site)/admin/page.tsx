@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
 import { getAdminSummary, getOldestPending, getRecentRequests } from "@/app/(site)/admin/_lib/summary";
 import { requireAdmin } from "@/features/session/guard";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
-import { OldestPendingPanel, OldestPendingPanelSkeleton } from "@/app/(site)/admin/_components/OldestPendingPanel";
-import { PendingSummary, PendingSummarySkeleton } from "@/app/(site)/admin/_components/PendingSummary";
-import { RecentRequests, RecentRequestsSkeleton } from "@/app/(site)/admin/_components/RecentRequests";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
+import { OldestPendingPanel, OldestPendingPanelSkeleton } from "@/app/(site)/admin/_components/OldestPendingPanel/OldestPendingPanel";
+import { PendingSummary, PendingSummarySkeleton } from "@/app/(site)/admin/_components/PendingSummary/PendingSummary";
+import { RecentRequests, RecentRequestsSkeleton } from "@/app/(site)/admin/_components/RecentRequests/RecentRequests";
 
 export const metadata: Metadata = { title: "운영자 홈" };
 

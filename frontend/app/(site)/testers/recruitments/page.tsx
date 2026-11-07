@@ -3,18 +3,18 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PARTICIPATIONS_PATH, participationsPath } from "@/features/participation/paths";
-import { Container } from "@/components/ui/Container";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Container } from "@/components/ui/Container/Container";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import {
   getParticipationCounts,
   getParticipations,
   getParticipationSummary,
   getUpcomingDeadlines,
 } from "@/features/participation/api";
-import { DeadlinePanel, DeadlinePanelSkeleton } from "@/app/(site)/testers/recruitments/_components/DeadlinePanel";
-import { NoParticipations, ParticipationList } from "@/app/(site)/testers/recruitments/_components/ParticipationList";
-import { ParticipationSkeleton } from "@/app/(site)/testers/recruitments/_components/ParticipationSkeleton";
-import { ParticipationTabs } from "@/app/(site)/testers/recruitments/_components/ParticipationTabs";
+import { DeadlinePanel, DeadlinePanelSkeleton } from "@/app/(site)/testers/recruitments/_components/DeadlinePanel/DeadlinePanel";
+import { NoParticipations, ParticipationList } from "@/app/(site)/testers/recruitments/_components/ParticipationList/ParticipationList";
+import { ParticipationSkeleton } from "@/app/(site)/testers/recruitments/_components/ParticipationSkeleton/ParticipationSkeleton";
+import { ParticipationTabs } from "@/app/(site)/testers/recruitments/_components/ParticipationTabs/ParticipationTabs";
 import { parseParticipationTab, type ParticipationTab, type ParticipationView } from "@/features/participation/types";
 import { readParticipationView } from "@/features/participation/view-preference";
 import { formatCredits } from "@/lib/format";

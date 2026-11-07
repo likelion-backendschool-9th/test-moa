@@ -47,7 +47,7 @@ for (const file of ["features/recruitment/api.ts", "features/session/api.ts", "f
 for (const [rule, file, imported] of [
   ["B1", "components/ui/BoundaryProbe.tsx", "features/member/types"],
   ["B2", "lib/BoundaryProbe.ts", "features/member/types"],
-  ["B3", "features/credit/BoundaryProbe.ts", "app/_components/Main"],
+  ["B3", "features/credit/BoundaryProbe.ts", "app/_components/Main/Main"],
   ["B5", "features/credit/BoundaryProbe.tsx", "features/member/actions"],
   ["B6", "features/session/session.ts", "features/member/types"],
   ["B7", "features/credit/api.ts", "features/auth/types"],
@@ -61,7 +61,7 @@ for (const [rule, file, imported] of [
 for (const [rule, file, imported] of [
   ["B1", "components/ui/BoundaryProbe.tsx", "features/member/types"],
   ["B2", "lib/BoundaryProbe.ts", "features/member/types"],
-  ["B3", "features/credit/BoundaryProbe.ts", "app/_components/Main"],
+  ["B3", "features/credit/BoundaryProbe.ts", "app/_components/Main/Main"],
   ["B4", "features/recruitment/helpers/BoundaryProbe.tsx", "demo/mode"],
   ["B5", "features/credit/BoundaryProbe.tsx", "features/member/actions"],
   ["B6", "features/session/session.ts", "features/member/types"],

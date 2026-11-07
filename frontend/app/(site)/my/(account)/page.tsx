@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getMyPageSummary } from "@/features/member/api";
-import { ActivitySummary } from "@/app/(site)/my/(account)/_components/ActivitySummary";
+import { ActivitySummary } from "@/app/(site)/my/(account)/_components/ActivitySummary/ActivitySummary";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
-import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard";
-import { ProfileHeader } from "@/app/(site)/my/(account)/_components/ProfileHeader";
-import { RecentCredits } from "@/app/(site)/my/(account)/_components/RecentCredits";
-import { SubscriptionCard } from "@/app/(site)/my/(account)/_components/SubscriptionCard";
-import { TodoList } from "@/app/(site)/my/(account)/_components/TodoList";
+import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard/CreditSummaryCard";
+import { ProfileHeader } from "@/app/(site)/my/(account)/_components/ProfileHeader/ProfileHeader";
+import { RecentCredits } from "@/app/(site)/my/(account)/_components/RecentCredits/RecentCredits";
+import { SubscriptionCard } from "@/app/(site)/my/(account)/_components/SubscriptionCard/SubscriptionCard";
+import { TodoList } from "@/app/(site)/my/(account)/_components/TodoList/TodoList";
 
 export const metadata: Metadata = { title: "마이페이지" };
 

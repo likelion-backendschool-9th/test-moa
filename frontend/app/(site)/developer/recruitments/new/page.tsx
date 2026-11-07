@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { recruitmentCreatePath } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
-import { RecruitmentForm } from "@/app/(site)/developer/recruitments/new/_components/RecruitmentForm";
+import { Container } from "@/components/ui/Container/Container";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
+import { RecruitmentForm } from "@/app/(site)/developer/recruitments/new/_components/RecruitmentForm/RecruitmentForm";
 import { getRecruitmentFormInfo } from "@/features/recruitment/api";
 
 /* 테스트 모집 작성 (/developer/recruitments/new?project=:projectKey) */

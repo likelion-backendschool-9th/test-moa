@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
+import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { getReport, getReportKeys, isReportKey } from "@/features/report/api";
 import { requireAdmin } from "@/features/session/guard";
 import { parseListTab, parseReportTargetFilter, type ReportListView } from "@/features/report/paths";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
 import {
   ReportDetail,
   ReportDetailSkeleton,
   ReviewForm,
   ReviewResult,
   type ReviewFormError,
-} from "@/app/(site)/admin/reports/[reportKey]/_components/ReportDetail";
+} from "@/app/(site)/admin/reports/[reportKey]/_components/ReportDetail/ReportDetail";
 
 export const metadata: Metadata = { title: "신고 상세" };
 

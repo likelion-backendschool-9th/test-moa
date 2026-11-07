@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { LinkButton } from "@/components/ui/LinkButton";
-import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList";
-import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";
-import { OverviewStats, TodoList } from "@/app/(site)/developer/projects/_components/ProjectDashboard";
+import { Container } from "@/components/ui/Container/Container";
+import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
+import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList/ProjectList";
+import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice/SavedNotice";
+import { OverviewStats, TodoList } from "@/app/(site)/developer/projects/_components/ProjectDashboard/ProjectDashboard";
 import { getMyDashboard } from "@/features/recruitment/api";
 
 /* 내 프로젝트 목록 (/developer/projects) */

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getCreditBalance, getWithdrawals } from "@/features/credit/api";
-import { WithdrawalForm } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalForm";
-import { WithdrawalHistory } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalHistory";
+import { WithdrawalForm } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalForm/WithdrawalForm";
+import { WithdrawalHistory } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalHistory/WithdrawalHistory";
 import { cashableCredits } from "@/features/credit/types";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
 

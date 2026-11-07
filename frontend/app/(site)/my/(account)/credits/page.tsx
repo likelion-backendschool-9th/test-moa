@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getCreditBalance, getCreditLedger } from "@/features/credit/api";
-import { LedgerList } from "@/app/(site)/my/(account)/credits/_components/LedgerList";
+import { LedgerList } from "@/app/(site)/my/(account)/credits/_components/LedgerList/LedgerList";
 import { parseLedgerType } from "@/features/credit/query";
 import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
-import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard";
+import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard/CreditSummaryCard";
 
 export const metadata: Metadata = { title: "크레딧" };
 

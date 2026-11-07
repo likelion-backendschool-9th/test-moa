@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getProfile } from "@/features/member/api";
 import { settingsCardClass, settingsSectionClass } from "@/app/(site)/my/(account)/_components/card-styles";
-import { PasswordForm } from "@/app/(site)/my/(account)/profile/edit/_components/PasswordForm";
-import { ProfileForm } from "@/app/(site)/my/(account)/profile/edit/_components/ProfileForm";
+import { PasswordForm } from "@/app/(site)/my/(account)/profile/edit/_components/PasswordForm/PasswordForm";
+import { ProfileForm } from "@/app/(site)/my/(account)/profile/edit/_components/ProfileForm/ProfileForm";
 
 export const metadata: Metadata = { title: "개인정보 수정" };
 

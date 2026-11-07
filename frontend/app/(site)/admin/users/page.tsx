@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
 import { requireAdmin } from "@/features/session/guard";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
-import { UserFilters, UserList, UserListSkeleton, UserSearch } from "@/app/(site)/admin/users/_components/UserList";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
+import { UserFilters, UserList, UserListSkeleton, UserSearch } from "@/app/(site)/admin/users/_components/UserList/UserList";
 import { getUsers } from "@/features/member/api";
 import { parseUserFilter, parseUserQuery, type UserFilter } from "@/features/member/admin";
 

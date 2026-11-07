@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { PROJECTS_PATH, projectPath } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/app/(site)/developer/_components/ProjectDetail";
-import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";
+import { Container } from "@/components/ui/Container/Container";
+import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
+import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice/SavedNotice";
 import { getMyProject } from "@/features/recruitment/api";
 
 /* 프로젝트 상세 (/developer/projects/:projectKey) */

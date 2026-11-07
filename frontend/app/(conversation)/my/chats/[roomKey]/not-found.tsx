@@ -1,6 +1,6 @@
-import { SiteFrame } from "@/app/_components/SiteFrame";
-import { Container } from "@/components/ui/Container";
-import { LinkButton } from "@/components/ui/LinkButton";
+import { SiteFrame } from "@/app/_components/SiteFrame/SiteFrame";
+import { Container } from "@/components/ui/Container/Container";
+import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { CHATS_PATH } from "@/features/chat/query";
 
 /** 없거나 삭제했거나 내가 들어가 있지 않은 대화방. 대화 화면이 아니라서 푸터를 그대로 둔다 */

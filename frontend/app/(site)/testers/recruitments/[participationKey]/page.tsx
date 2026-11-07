@@ -3,12 +3,12 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { participationPath } from "@/features/participation/paths";
-import { Container } from "@/components/ui/Container";
+import { Container } from "@/components/ui/Container/Container";
 import { getParticipation } from "@/features/participation/api";
 import {
   ParticipationDetail,
   ParticipationDetailSkeleton,
-} from "@/app/(site)/testers/recruitments/[participationKey]/_components/ParticipationDetail";
+} from "@/app/(site)/testers/recruitments/[participationKey]/_components/ParticipationDetail/ParticipationDetail";
 import { requireMember } from "@/features/session/guard";
 
 /* 내 참여 상세 (/testers/recruitments/:participationKey) */

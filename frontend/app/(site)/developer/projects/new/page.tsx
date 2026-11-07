@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
-import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm";
+import { Container } from "@/components/ui/Container/Container";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
+import { ProjectForm } from "@/app/(site)/developer/_components/ProjectForm/ProjectForm";
 import { requireRole } from "@/features/session/guard";
 
 /* 프로젝트 등록 (/developer/projects/new) */

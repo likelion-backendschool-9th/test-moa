@@ -1,0 +1,63 @@
+package com.testmoa.backend.service.admin.impl;
+
+import com.testmoa.backend.dto.request.PlanCreateRequest;
+import com.testmoa.backend.dto.response.PlanResponse;
+import com.testmoa.backend.entity.Plan;
+import com.testmoa.backend.global.exception.BusinessException;
+import com.testmoa.backend.global.exception.ErrorCode;
+import com.testmoa.backend.repository.PlanRepository;
+import com.testmoa.backend.service.admin.PlanService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * 운영자 플랜 등록. 조건이 바뀌면 옛 행을 고치지 않고 version을 올린 새 행을 만든다.
+ * 회원용 {@code PlanServiceImpl}과 클래스 이름이 같아서 빈 이름을 따로 준다.
+ */
+@Service("adminPlanService")
+@Transactional
+public class PlanServiceImpl implements PlanService {
+
+    private final PlanRepository planRepository;
+
+    public PlanServiceImpl(PlanRepository planRepository) {
+        this.planRepository = planRepository;
+    }
+
+    /**
+     * 그 tier의 행이 없으면 version 1, 있으면 가장 큰 version에 1을 더한다.
+     * 혜택은 쉼표로 이어 description에 저장하므로, 비었거나 쉼표가 든 항목은 거절한다.
+     */
+    @Override
+    public PlanResponse register(PlanCreateRequest request) {
+        validateBenefits(request.benefits());
+        String tier = request.tier().trim();
+        int version = planRepository.findMaxVersionByTier(tier).map(max -> max + 1).orElse(1);
+
+        Plan saved = planRepository.save(Plan.builder()
+                .tier(tier)
+                .cashPrice(request.cashPrice())
+                .creditPrice(request.creditPrice())
+                .periodDays(request.periodDays())
+                .version(version)
+                .description(Plan.joinBenefits(request.benefits()))
+                .build());
+        return PlanResponse.of(saved);
+    }
+
+    private void validateBenefits(List<String> benefits) {
+        if (benefits == null) {
+            return;
+        }
+        for (String benefit : benefits) {
+            if (benefit == null || benefit.isBlank()) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT, "혜택 문구는 비워 둘 수 없어요");
+            }
+            if (benefit.contains(",")) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT, "혜택 문구에는 쉼표를 쓸 수 없어요");
+            }
+        }
+    }
+}

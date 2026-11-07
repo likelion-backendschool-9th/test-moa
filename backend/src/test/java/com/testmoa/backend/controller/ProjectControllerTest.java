@@ -98,7 +98,7 @@ class ProjectControllerTest {
     }
 
     private void subscribe(User user) {
-        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000).monthlyRecruitLimit(30)
+        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000)
                 .version((int) (System.nanoTime() % 1_000_000)).periodDays(30).build();
         em.persist(plan);
         em.persist(Subscription.builder().user(user).plan(plan)

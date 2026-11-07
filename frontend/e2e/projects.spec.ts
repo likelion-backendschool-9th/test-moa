@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { setDemo, seedRecruitmentCancellation } from "./helpers";
 
 /* docs/frontend/project/projects.md의 R101~R110 시나리오. S번호는 문서와 1:1로 맞춘다 */
 
@@ -661,13 +661,7 @@ test.describe("#62-R3 모집 취소", () => {
   });
 
   test("#62-S18 쿠키의 취소 시각이 깨져 있어도 화면이 열리고 그 기록은 버린다", async ({ page, context }) => {
-    await context.addCookies([
-      {
-        name: "demo-recruitment-cancel-folio-builder-next",
-        value: encodeURIComponent(JSON.stringify({ reason: "", cancelledAt: "bad" })),
-        url: "http://localhost:3100",
-      },
-    ]);
+    await seedRecruitmentCancellation(context, "folio-builder-next", { reason: "", cancelledAt: "bad" });
     await page.goto(FOLIO_NEXT_MANAGE);
     await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toBeVisible();
     await expect(page.getByTestId("cancel-status")).toHaveCount(0);

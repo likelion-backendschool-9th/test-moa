@@ -1,7 +1,6 @@
 package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.Subscription;
-import com.testmoa.backend.entity.enums.SubscriptionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -13,5 +12,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
      * 호출 예: (userId, ACTIVE, now, now)
      */
     Optional<Subscription> findFirstByUserIdAndStatusAndStartAtLessThanEqualAndEndAtAfterOrderByEndAtDesc(
-            Long userId, SubscriptionStatus status, LocalDateTime startAtOrBefore, LocalDateTime endAtAfter);
+            Long userId, Subscription.Status status, LocalDateTime startAtOrBefore, LocalDateTime endAtAfter);
 }

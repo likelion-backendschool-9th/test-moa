@@ -84,7 +84,7 @@ export function WithdrawalResult({ withdrawal, now }: { withdrawal: WithdrawalRe
           <Badge tone="neutral">{WITHDRAWAL_DECISION_LABEL[review.decision]}</Badge>
         </Info>
         {review.decision === "rejected" && <Info label="반려 사유">{rejectReasonText(review)}</Info>}
-        {review.decision === "rejected" && review.reason !== "other" && review.memo && <Info label="운영자 메모">{review.memo}</Info>}
+        {review.decision === "rejected" && review.memo && <Info label="회원에게 보이는 메모">{review.memo}</Info>}
         <Info label="처리">
           {formatDate(review.processedAt)} · {formatElapsed(review.processedAt, now)}
         </Info>

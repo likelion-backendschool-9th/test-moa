@@ -1,6 +1,6 @@
 package com.testmoa.backend.repository;
 
-import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
@@ -22,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 @AutoConfigureTestEntityManager
 @ActiveProfiles("test")
 @Import(EncryptedStringConverter.class)
-class CashoutRequestRepositoryTest {
+class CashoutRepositoryTest {
 
     @Autowired
-    private CashoutRequestRepository cashoutRequestRepository;
+    private CashoutRepository cashoutRepository;
     @Autowired
     private org.springframework.boot.jpa.test.autoconfigure.TestEntityManager entityManager;
     @Autowired
@@ -43,7 +43,7 @@ class CashoutRequestRepositoryTest {
                 .build();
         entityManager.persist(user);
 
-        CashoutRequest saved = cashoutRequestRepository.save(CashoutRequest.builder()
+        Cashout saved = cashoutRepository.save(Cashout.builder()
                 .user(user)
                 .amount(5000)
                 .bank("토스뱅크")
@@ -54,12 +54,12 @@ class CashoutRequestRepositoryTest {
         entityManager.clear();
 
         String accountNumber = jdbcTemplate.queryForObject(
-                "select account_number from cashout_requests where id = ?",
+                "select account_number from cashouts where id = ?",
                 String.class,
                 saved.getId()
         );
         String accountHolder = jdbcTemplate.queryForObject(
-                "select account_holder from cashout_requests where id = ?",
+                "select account_holder from cashouts where id = ?",
                 String.class,
                 saved.getId()
         );
@@ -68,7 +68,7 @@ class CashoutRequestRepositoryTest {
         assertFalse(accountNumber.contains("100012345678"));
         assertFalse(accountHolder.contains("한서윤"));
 
-        CashoutRequest loaded = cashoutRequestRepository.findById(saved.getId()).orElseThrow();
+        Cashout loaded = cashoutRepository.findById(saved.getId()).orElseThrow();
         assertEquals("100012345678", loaded.getAccountNumber());
         assertEquals("한서윤", loaded.getAccountHolder());
     }

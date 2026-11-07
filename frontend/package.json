@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",
-    "test:structure": "node --test scripts/structure/*.test.mjs"
+    "test:structure": "node --test scripts/structure/*.test.mjs",
+    "test:visual": "node scripts/visual/compare.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

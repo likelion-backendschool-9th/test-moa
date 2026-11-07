@@ -10,6 +10,7 @@ import {
   ParticipationDetailSkeleton,
 } from "@/app/(site)/testers/recruitments/[participationKey]/_components/ParticipationDetail/ParticipationDetail";
 import { requireMember } from "@/features/session/guard";
+import styles from "./page.module.css";
 
 /* 내 참여 상세 (/testers/recruitments/:participationKey) */
 
@@ -19,7 +20,7 @@ type Props = PageProps<"/testers/recruitments/[participationKey]">;
 
 export default function ParticipationPage({ params, searchParams }: Props) {
   return (
-    <Container className="pt-8">
+    <Container className={styles.participationPage}>
       <Suspense fallback={<ParticipationDetailSkeleton />}>
         <DetailSlot params={params} searchParams={searchParams} />
       </Suspense>

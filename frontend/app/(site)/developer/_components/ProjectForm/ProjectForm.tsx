@@ -10,6 +10,7 @@ import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImag
 import { FormSection } from "../FormSection/FormSection";
 import { ProjectBody } from "../ProjectDetail/ProjectDetail";
 import { TextField } from "@/components/ui/TextField/TextField";
+import styles from "./ProjectForm.module.css";
 
 /*
  * 프로젝트 등록·수정 폼과 미리보기. 검증은 서버 액션이 하고, 오류가 오면 첫 오류 칸으로 포커스를 옮긴다.
@@ -84,7 +85,7 @@ export function ProjectForm({
 
   return (
     <>
-      <form ref={formRef} action={formAction} noValidate className="flex max-w-2xl flex-col gap-6">
+      <form ref={formRef} action={formAction} noValidate className={styles.form}>
         <FormSection title="프로젝트 정보">
         <TextField name="name" label="프로젝트 이름" defaultValue={values.name} error={state.errors.name} hint="50자까지" />
         <TextField
@@ -106,14 +107,14 @@ export function ProjectForm({
           buttonLabel={image ? "이미지 바꾸기" : "이미지 고르기"}
         >
           {image && (
-            <div data-testid="image-item" className="flex w-32 flex-col gap-1">
+            <div data-testid="image-item" className={styles.box}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-muted object-cover outline -outline-offset-1 outline-line" />
+              <img src={image.url} alt={image.name} className={styles.image} />
               <button
                 type="button"
                 onClick={removeImage}
                 aria-label={`${image.name} 삭제`}
-                className="text-xs font-semibold text-text-muted hover:text-text"
+                className={styles.button}
               >
                 삭제
               </button>
@@ -125,7 +126,7 @@ export function ProjectForm({
 
         <input type="hidden" name="imagesMeta" value={JSON.stringify(image ? [toMeta(image)] : [])} />
 
-        <div className="flex gap-2">
+        <div className={styles.box2}>
           <Button type="submit" disabled={pending}>
             {projectKey ? "저장" : "등록"}
           </Button>
@@ -141,20 +142,20 @@ export function ProjectForm({
       <dialog
         ref={previewRef}
         aria-labelledby="preview-heading"
-        className="m-auto w-full max-w-2xl rounded-2xl bg-surface p-6 text-text backdrop:bg-text/50"
+        className={styles.dialog}
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className={styles.box3}>
           <div>
-            <h2 id="preview-heading" className="text-xl font-extrabold tracking-[-0.03em]">
+            <h2 id="preview-heading" className={styles.title}>
               미리보기
             </h2>
-            <p className="text-sm text-text-muted">프로젝트 상세에서 이렇게 보여요</p>
+            <p className={styles.text}>프로젝트 상세에서 이렇게 보여요</p>
           </div>
           <Button type="button" size="sm" variant="secondary" onClick={() => previewRef.current?.close()}>
             닫기
           </Button>
         </div>
-        <Card data-testid="project-preview">
+        <Card data-testid="project-preview" className={styles.card}>
           <ProjectBody
             titleAs="h3"
             project={{
@@ -197,8 +198,8 @@ export function FileField({ name, label, accept, hint, error, onChange, buttonLa
   const id = `field-${name}`;
   const describedBy = [`${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
   return (
-    <div className="flex flex-col gap-3">
-      <label htmlFor={id} className="text-sm font-bold">
+    <div className={styles.fileField}>
+      <label htmlFor={id} className={styles.fileFieldLabel}>
         {label}
       </label>
       <input
@@ -209,19 +210,19 @@ export function FileField({ name, label, accept, hint, error, onChange, buttonLa
         onChange={onChange}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className="peer sr-only"
+        className={styles.fileFieldSrOnly}
       />
       <label
         htmlFor={id}
-        className="w-fit cursor-pointer rounded-full bg-surface-strong px-4 py-2 text-sm font-bold hover:bg-line peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+        className={styles.fileFieldButtonLabel}
       >
         {buttonLabel}
       </label>
-      <p id={`${id}-hint`} className="text-xs text-text-muted">
+      <p id={`${id}-hint`} className={styles.fileFieldHint}>
         {hint}
       </p>
       {error && (
-        <p id={`${id}-error`} className="text-sm font-semibold">
+        <p id={`${id}-error`} className={styles.fileFieldError}>
           {error}
         </p>
       )}

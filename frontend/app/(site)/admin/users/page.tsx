@@ -7,6 +7,7 @@ import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/A
 import { UserFilters, UserList, UserListSkeleton, UserSearch } from "@/app/(site)/admin/users/_components/UserList/UserList";
 import { getUsers } from "@/features/member/api";
 import { parseUserFilter, parseUserQuery, type UserFilter } from "@/features/member/admin";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "회원 관리" };
 
@@ -26,7 +27,7 @@ async function Users({ searchParams }: { searchParams: PageProps<"/admin/users">
   const query = parseUserQuery(params.q);
   return (
     <AdminShell path="/admin/users" title="회원 관리">
-      <Container className="flex flex-col gap-6 pt-10">
+      <Container className={styles.usersContainer}>
         <UserSearch filter={filter} query={query} />
         <UserFilters current={filter} query={query} />
         <Suspense key={`${filter}:${query}`} fallback={<UserListSkeleton />}>

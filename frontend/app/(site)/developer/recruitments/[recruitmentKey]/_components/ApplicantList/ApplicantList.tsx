@@ -16,6 +16,8 @@ import {
   type ApplicationStatus,
   type SelectionMode,
 } from "@/features/recruitment/types";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./ApplicantList.module.css";
 
 /*
  * 테스터 관리 탭. 선발형 모집은 지원자를 직접 확정·거절하고, 선착순 모집은 보기만 한다.
@@ -168,33 +170,33 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
   const countOf = (status: keyof typeof SUBMISSION_STATUS_LABEL) => submissions.filter((value) => value === status).length;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <p className="font-bold" data-testid="confirmed-count">
+    <div className={styles.root}>
+      <div className={styles.box}>
+        <p className={styles.text} data-testid="confirmed-count">
           확정 {confirmedCount}명
         </p>
-        {selectionMode === "firstCome" && <p className="text-text-muted">선착순 모집이라 지원하면 바로 확정돼요</p>}
+        {selectionMode === "firstCome" && <p className={styles.text2}>선착순 모집이라 지원하면 바로 확정돼요</p>}
         {submissions.length > 0 && (
-          <p data-testid="submission-summary" className="text-text-muted">
+          <p data-testid="submission-summary" className={styles.text3}>
             피드백 제출 {countOf("submitted")}명 · 미제출 {countOf("pending")}명 · 미완료 {countOf("incomplete")}명
           </p>
         )}
       </div>
 
       {canBulk && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-surface-strong px-5 py-3">
-          <label className="flex items-center gap-2 text-sm font-bold">
+        <div className={styles.box2}>
+          <label className={styles.field}>
             <input
               type="checkbox"
               checked={selected.length === pendingIds.length}
               onChange={toggleAll}
-              className="size-4 accent-accent"
+              className={styles.input}
             />
             전체 선택
           </label>
           <Button
             size="sm"
-            className="ml-auto"
+            className={styles.button}
             disabled={selected.length === 0}
             onClick={() => decide(rows.filter((item) => selected.includes(item.id)), "confirmed")}
           >
@@ -204,42 +206,42 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
       )}
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-surface-strong px-5 py-3 text-sm font-semibold">
+        <p role="alert" className={styles.error}>
           {error}
         </p>
       )}
-      <p aria-live="polite" className="sr-only">
+      <p aria-live="polite" className={styles.srOnly}>
         {announcement}
       </p>
-      <ul className="flex flex-col divide-y divide-line rounded-2xl bg-surface-muted">
+      <Card as="ul" className={styles.list}>
         {rows.map((item) => {
           const pending = item.status === "applied";
           return (
-            <li key={item.id} data-testid="applicant" className="flex flex-wrap items-center gap-3 px-5 py-4">
+            <li key={item.id} data-testid="applicant" className={styles.root2}>
               {canBulk && pending && (
                 <input
                   type="checkbox"
                   aria-label={`${item.testerNickname} 선택`}
                   checked={checked.has(item.id)}
                   onChange={() => toggle(item.id)}
-                  className="size-4 accent-accent"
+                  className={styles.input2}
                 />
               )}
-              <span className="min-w-16 font-bold">{item.testerNickname}</span>
+              <span className={styles.testerNickname}>{item.testerNickname}</span>
               <Badge tone={TONE[item.status]}>{APPLICATION_STATUS_LABEL[item.status]}</Badge>
-              <span className="text-sm text-text-muted">{formatDate(item.appliedAt)} 지원</span>
+              <span className={styles.label}>{formatDate(item.appliedAt)} 지원</span>
               {item.submission && <Badge tone="muted">{SUBMISSION_STATUS_LABEL[item.submission]}</Badge>}
               {isSubscription && item.status === "confirmed" && (
                 <Link
                   href={`/my/chats?q=${encodeURIComponent(item.testerNickname)}`}
                   aria-label={`${item.testerNickname}님과 채팅`}
-                  className="ml-auto text-sm font-semibold text-text-muted hover:text-text"
+                  className={styles.link}
                 >
                   채팅
                 </Link>
               )}
               {canSelect && pending && (
-                <span className="ml-auto flex gap-2">
+                <span className={styles.label2}>
                   <Button size="sm" onClick={() => decide([item], "confirmed")}>
                     확정
                   </Button>
@@ -251,7 +253,7 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
             </li>
           );
         })}
-      </ul>
+      </Card>
     </div>
   );
 }

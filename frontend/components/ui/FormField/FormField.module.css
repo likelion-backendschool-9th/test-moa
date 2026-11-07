@@ -1,0 +1,72 @@
+.input {
+  height: 3rem;
+  width: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  outline-style: none;
+}
+
+.input:read-only {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  background-color: var(--surface-muted);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.input:read-only:focus {
+  box-shadow: 0 0 0 0px currentcolor;
+}
+
+.input[aria-invalid=true] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.insetText {
+  padding-inline: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--text-muted);
+}
+
+.formMessage {
+  border-radius: var(--radius-2xl);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.formMessage2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}

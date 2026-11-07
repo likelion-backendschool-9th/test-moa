@@ -5,13 +5,14 @@ import { getDemoDataMode } from "@/demo/mode";
 import { getSession } from "@/features/session/session";
 import { isBackendAuth } from "@/lib/backend";
 import { Suspense } from "react";
+import styles from "./AppFooter.module.css";
 
 /** 사이트 푸터와 개발용 시연 전환기. 푸터를 보여 주는 화면만 사용한다 */
 export function AppFooter() {
   return (
     <SiteFooter>
       {process.env.NODE_ENV === "development" && (
-        <Container className="pb-8">
+        <Container className={styles.container}>
           <Suspense fallback={null}>
             <DemoSwitcherSlot />
           </Suspense>

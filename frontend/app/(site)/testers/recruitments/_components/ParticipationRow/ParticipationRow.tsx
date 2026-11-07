@@ -13,6 +13,7 @@ import {
   type ParticipationStatus,
   type ParticipationView,
 } from "@/features/participation/types";
+import styles from "./ParticipationRow.module.css";
 
 /** D-3 이하는 굵기로 급함을 알린다 */
 const URGENT_DAYS = 3;
@@ -47,49 +48,49 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
   return (
     <Card
       data-testid="participation-row"
-      className={cn("flex flex-col gap-4", grid ? "h-full" : "lg:flex-row lg:items-center lg:gap-6")}
+      className={cn(styles.root, grid ? styles.rootGrid : styles.rootNotGrid)}
     >
-      <div className={grid ? "w-full" : "w-48 shrink-0"}>
+      <div className={grid ? styles.boxGrid : styles.boxNotGrid}>
         <RecruitmentThumb
           recruitment={recruitment}
           stamp={status === "paid" ? "지급 완료" : undefined}
           /* 홈 모집 카드와 같은 배지(#138). 금액은 보상 줄에 있다 */
-          badge={recruitment.extraReward !== undefined && <Badge tone="accentSolid" className="font-bold">추가 보상</Badge>}
+          badge={recruitment.extraReward !== undefined && <Badge tone="accentSolid">추가 보상</Badge>}
         />
       </div>
-      <div className="flex flex-1 flex-col gap-3">
-        <p className="text-sm font-semibold">{recruitment.request}</p>
-        <p className="flex flex-wrap items-center gap-2">
+      <div className={styles.box}>
+        <p className={styles.request}>{recruitment.request}</p>
+        <p className={styles.text}>
           <Badge tone={ENDED.includes(status) ? "muted" : "neutral"}>{STATUS_LABEL[status]}</Badge>
           {status === "beforeSubmit" && (
-            <span className={urgent ? "text-xs font-extrabold text-text tabular-nums" : "text-xs font-semibold text-text-muted tabular-nums"}>
+            <span className={urgent ? styles.labelUrgent : styles.labelNotUrgent}>
               {formatDday(recruitment.submitDeadline, now)}
             </span>
           )}
-          {status === "paid" && <span className="text-sm font-bold tabular-nums">+{formatCredits(item.earnedCredits)}</span>}
+          {status === "paid" && <span className={styles.label}>+{formatCredits(item.earnedCredits)}</span>}
         </p>
-        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        <dl className={styles.list}>
           <div>
-            <dt className="text-xs text-text-muted">{keyDate.label}</dt>
-            <dd className="font-semibold tabular-nums">
+            <dt className={styles.label2}>{keyDate.label}</dt>
+            <dd className={styles.value}>
               {status === "payoutPending" ? formatDateTime(keyDate.at) : formatDate(keyDate.at)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-text-muted">기본 보상</dt>
-            <dd className="font-semibold tabular-nums">{formatCredits(recruitment.baseReward)}</dd>
+            <dt className={styles.term}>기본 보상</dt>
+            <dd className={styles.value2}>{formatCredits(recruitment.baseReward)}</dd>
           </div>
           {recruitment.extraReward !== undefined && (
             <div>
-              <dt className="text-xs text-text-muted">추가 보상</dt>
-              <dd className="font-bold text-accent tabular-nums">+{formatCredits(recruitment.extraReward)}</dd>
+              <dt className={styles.term2}>추가 보상</dt>
+              <dd className={styles.value3}>+{formatCredits(recruitment.extraReward)}</dd>
             </div>
           )}
         </dl>
-        {status === "payoutPending" && <p className="text-xs text-text-muted">72시간 동안 신고가 없으면 자동으로 지급돼요</p>}
+        {status === "payoutPending" && <p className={styles.text2}>72시간 동안 신고가 없으면 자동으로 지급돼요</p>}
       </div>
-      <LinkButton href={action.href} variant="secondary" size="sm" className={grid ? "self-start" : "self-start lg:self-center"}>
-        <span className="sr-only">{recruitment.projectName} </span>
+      <LinkButton href={action.href} variant="secondary" size="sm" className={grid ? styles.buttonGrid : styles.buttonNotGrid}>
+        <span className={styles.srOnly}>{recruitment.projectName} </span>
         {action.label}
       </LinkButton>
     </Card>

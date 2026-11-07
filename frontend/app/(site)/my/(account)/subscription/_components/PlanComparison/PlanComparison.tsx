@@ -2,7 +2,8 @@ import { Badge } from "@/components/ui/Badge/Badge";
 import { cn } from "@/lib/cn";
 import { formatWon } from "@/lib/format";
 import { BENEFIT_ROWS, type PlanTerms, type SubscriptionPlan } from "@/features/subscription/types";
-import { cardClass, cardTitleClass } from "../../../_components/card-styles";
+import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./PlanComparison.module.css";
 
 type Column = PlanTerms & { id: string; name: string; price: string };
 
@@ -24,28 +25,28 @@ export function PlanComparison({
   ];
   const current = currentPlanId ?? FREE_ID;
   return (
-    <section aria-labelledby="plan-comparison-heading" className={cardClass}>
-      <div className="flex flex-col gap-1">
-        <h2 id="plan-comparison-heading" className={cardTitleClass}>
+    <AccountCard as="section" aria-labelledby="plan-comparison-heading">
+      <div className={styles.box}>
+        <AccountCardTitle id="plan-comparison-heading">
           혜택 비교
-        </h2>
-        <p className="text-sm text-text-muted">구독 혜택은 모집 글을 올리는 쪽에 붙어요.</p>
+        </AccountCardTitle>
+        <p className={styles.text}>구독 혜택은 모집 글을 올리는 쪽에 붙어요.</p>
       </div>
-      <table className="w-full table-fixed text-sm">
-        <caption className="sr-only">무료와 구독 혜택 비교</caption>
+      <table className={styles.table}>
+        <caption className={styles.srOnly}>무료와 구독 혜택 비교</caption>
         <thead>
-          <tr className="border-b border-line">
-            <th scope="col" className="w-[30%] py-3 pr-3 text-left align-top font-semibold text-text-muted">
+          <tr className={styles.row}>
+            <th scope="col" className={styles.cell}>
               혜택
             </th>
             {columns.map((column) => (
-              <th key={column.id} scope="col" className="px-3 py-3 text-left align-top">
-                <span className="flex flex-col items-start gap-1">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="text-base font-extrabold">{column.name}</span>
+              <th key={column.id} scope="col" className={styles.root}>
+                <span className={styles.label}>
+                  <span className={styles.label2}>
+                    <span className={styles.name}>{column.name}</span>
                     {column.id === current && <Badge>지금 이용 중</Badge>}
                   </span>
-                  <span className="text-xs font-semibold text-text-muted tabular-nums">{column.price}</span>
+                  <span className={styles.price}>{column.price}</span>
                 </span>
               </th>
             ))}
@@ -53,12 +54,12 @@ export function PlanComparison({
         </thead>
         <tbody>
           {BENEFIT_ROWS.map((row) => (
-            <tr key={row.key} className="border-b border-line last:border-b-0">
-              <th scope="row" className="py-3 pr-3 text-left align-top font-normal text-text-muted">
+            <tr key={row.key} className={styles.root2}>
+              <th scope="row" className={styles.label3}>
                 {row.label}
               </th>
               {columns.map((column) => (
-                <td key={column.id} className={cn("px-3 py-3 align-top", column.id !== FREE_ID && "font-semibold")}>
+                <td key={column.id} className={cn(styles.root3, column.id !== FREE_ID && styles.root3On)}>
                   {row.key === "monthlyLimit" ? `월 ${column.monthlyLimit}명` : column.benefits[row.key]}
                 </td>
               ))}
@@ -66,6 +67,6 @@ export function PlanComparison({
           ))}
         </tbody>
       </table>
-    </section>
+    </AccountCard>
   );
 }

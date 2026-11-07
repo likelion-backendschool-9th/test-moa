@@ -6,8 +6,9 @@ import { formatCredits, formatElapsed } from "@/lib/format";
 import { ADMIN_REQUEST_PATH, adminRequestHref } from "@/app/(site)/admin/_lib/paths";
 import { REPORT_TARGET_LABEL, type Report } from "@/features/report/types";
 import { type WithdrawalRequest } from "@/features/credit/types";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./RecentRequests.module.css";
 
-const columnClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6";
 
 type RecentRequestsProps = {
   now: Date;
@@ -18,11 +19,11 @@ type RecentRequestsProps = {
 /** 영역별 최근 요청. 확인만 하고 승인·반려는 각 관리 페이지에서 한다 */
 export function RecentRequests({ now, reports, withdrawals }: RecentRequestsProps) {
   return (
-    <section aria-labelledby="recent-heading" className="flex flex-col gap-6">
-      <h2 id="recent-heading" className="text-2xl font-extrabold tracking-[-0.03em]">
+    <section aria-labelledby="recent-heading" className={styles.root}>
+      <h2 id="recent-heading" className={styles.title}>
         최근 요청
       </h2>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={styles.box}>
         <Column title="신고" href={ADMIN_REQUEST_PATH.report}>
           {reports.map((report) => (
             <Row
@@ -51,17 +52,17 @@ export function RecentRequests({ now, reports, withdrawals }: RecentRequestsProp
 
 function Column({ title, href, children }: { title: string; href: string; children: ReactNode[] }) {
   return (
-    <div className={columnClass}>
-      <h3 className="text-lg font-extrabold">{title}</h3>
+    <Card className={styles.column}>
+      <h3 className={styles.columnTitle}>{title}</h3>
       {children.length === 0 ? (
-        <p className="flex-1 text-sm text-text-muted">최근 요청이 없어요.</p>
+        <p className={styles.columnText}>최근 요청이 없어요.</p>
       ) : (
-        <ul className="flex flex-1 flex-col gap-3">{children}</ul>
+        <ul className={styles.columnChildren}>{children}</ul>
       )}
-      <LinkButton href={href} variant="secondary" size="sm" aria-label={`${title} 전체 보기`} className="self-start">
+      <LinkButton href={href} variant="secondary" size="sm" aria-label={`${title} 전체 보기`} className={styles.columnButton}>
         전체 보기
       </LinkButton>
-    </div>
+    </Card>
   );
 }
 
@@ -78,17 +79,17 @@ function Row({
 }) {
   const body = (
     <>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="truncate text-sm font-semibold">{title}</span>
-        <span className="shrink-0 text-xs text-text-muted tabular-nums">{elapsed}</span>
+      <div className={styles.rowBox}>
+        <span className={styles.rowTitle}>{title}</span>
+        <span className={styles.rowElapsed}>{elapsed}</span>
       </div>
-      <span className="truncate text-sm text-text-muted">{description}</span>
+      <span className={styles.rowDescription}>{description}</span>
     </>
   );
   return (
-    <li className="flex flex-col gap-1">
+    <li className={styles.row}>
       {href ? (
-        <Link href={href} className="flex flex-col gap-1 rounded-lg transition-colors duration-300 ease-brand hover:bg-surface-strong">
+        <Link href={href} className={styles.rowBody}>
           {body}
         </Link>
       ) : (
@@ -100,16 +101,16 @@ function Row({
 
 export function RecentRequestsSkeleton() {
   return (
-    <div aria-busy="true" aria-label="최근 요청 불러오는 중" className="flex flex-col gap-6">
-      <Skeleton className="h-8 w-28" />
-      <div className="grid gap-4 md:grid-cols-2">
+    <div aria-busy="true" aria-label="최근 요청 불러오는 중" className={styles.recentRequestsSkeleton}>
+      <Skeleton className={styles.recentRequestsSkeletonSkeleton} />
+      <div className={styles.recentRequestsSkeletonBox}>
         {Array.from({ length: 2 }, (_, index) => (
-          <div key={index} className={columnClass} data-skeleton="recent">
-            <Skeleton className="h-6 w-20" />
+          <Card key={index} className={styles.column} data-skeleton="recent">
+            <Skeleton className={styles.recentRequestsSkeletonSkeleton2} />
             {Array.from({ length: 3 }, (_, row) => (
-              <Skeleton key={row} className="h-10 w-full" />
+              <Skeleton key={row} className={styles.recentRequestsSkeleton2} />
             ))}
-          </div>
+          </Card>
         ))}
       </div>
     </div>

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/Button/Button";
 import { formatCredits, formatDate, formatWon } from "@/lib/format";
 import { payForSubscription, type CheckoutFormState } from "@/features/subscription/actions";
 import type { SubscriptionPlan } from "@/features/subscription/types";
-import { cardClass, cardTitleClass } from "../../../../_components/card-styles";
+import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./CheckoutForm.module.css";
 
 const initialState: CheckoutFormState = { status: "idle" };
 
@@ -42,16 +43,16 @@ export function CheckoutForm({ plans, payableCredits, activeUntil, now }: Checko
   const error = state.status === "error" ? state.error : undefined;
 
   return (
-    <form action={formAction} aria-labelledby="checkout-heading" className={cardClass}>
-      <h2 id="checkout-heading" className={cardTitleClass}>
+    <AccountCard as="form" action={formAction} aria-labelledby="checkout-heading">
+      <AccountCardTitle id="checkout-heading">
         {activeUntil ? "구독 연장" : "구독 시작"}
-      </h2>
+      </AccountCardTitle>
       {activeUntil && (
-        <p className="text-sm text-text-muted">지금 구독은 {formatDate(activeUntil)}에 끝나요. 결제하면 그날부터 이어져요.</p>
+        <p className={styles.text}>지금 구독은 {formatDate(activeUntil)}에 끝나요. 결제하면 그날부터 이어져요.</p>
       )}
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-sm font-semibold">상품</legend>
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>상품</legend>
         {plans.map((item) => (
           <Choice
             key={item.id}
@@ -65,8 +66,8 @@ export function CheckoutForm({ plans, payableCredits, activeUntil, now }: Checko
         ))}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-sm font-semibold">결제 수단</legend>
+      <fieldset className={styles.fieldset2}>
+        <legend className={styles.legend2}>결제 수단</legend>
         <Choice
           name="method"
           value="credit"
@@ -89,38 +90,38 @@ export function CheckoutForm({ plans, payableCredits, activeUntil, now }: Checko
         />
       </fieldset>
 
-      <dl className="flex flex-col gap-2 border-t border-line pt-4 text-sm">
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-text-muted">이용 기간</dt>
-          <dd className="font-semibold tabular-nums">
+      <dl className={styles.list}>
+        <div className={styles.box}>
+          <dt className={styles.term}>이용 기간</dt>
+          <dd className={styles.value}>
             {formatDate(startsAt)} ~ {formatDate(endsAt)}
           </dd>
         </div>
         {method === "credit" && (
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-text-muted">결제 뒤 남는 크레딧</dt>
-            <dd className="font-semibold tabular-nums">{formatCredits(payableCredits - plan.creditPrice)}</dd>
+          <div className={styles.box2}>
+            <dt className={styles.term2}>결제 뒤 남는 크레딧</dt>
+            <dd className={styles.value2}>{formatCredits(payableCredits - plan.creditPrice)}</dd>
           </div>
         )}
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-text-muted">결제 금액</dt>
-          <dd className="text-2xl font-extrabold tracking-[-0.03em] tabular-nums">{price}</dd>
+        <div className={styles.box3}>
+          <dt className={styles.term3}>결제 금액</dt>
+          <dd className={styles.price}>{price}</dd>
         </div>
       </dl>
 
       {error && (
-        <p role="alert" className="flex items-center gap-1 text-sm font-semibold">
+        <p role="alert" className={styles.text2}>
           <WarningCircleIcon aria-hidden size={16} weight="bold" />
           {error}
         </p>
       )}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm text-text-muted">자동으로 갱신되지 않아요. 만료일이 지나면 무료로 돌아가요.</p>
-        <Button type="submit" shape="field" disabled={pending} className="w-full md:w-auto">
+      <div className={styles.box4}>
+        <p className={styles.text3}>자동으로 갱신되지 않아요. 만료일이 지나면 무료로 돌아가요.</p>
+        <Button type="submit" shape="field" disabled={pending} className={styles.button}>
           {pending ? "결제하는 중…" : `${price} 결제하기`}
         </Button>
       </div>
-    </form>
+    </AccountCard>
   );
 }
 
@@ -137,7 +138,7 @@ type ChoiceProps = {
 /** 고르는 칸 한 개. 고르면 바탕이 진해지고, 고를 수 없으면 흐려진다 (운영자 처리 폼과 같은 모양) */
 function Choice({ name, value, checked, disabled, onChange, label, detail }: ChoiceProps) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-surface-strong px-4 py-3 has-checked:bg-line has-disabled:cursor-not-allowed has-disabled:opacity-50">
+    <label className={styles.choice}>
       <input
         type="radio"
         name={name}
@@ -145,11 +146,11 @@ function Choice({ name, value, checked, disabled, onChange, label, detail }: Cho
         checked={checked}
         disabled={disabled}
         onChange={onChange}
-        className="mt-1 accent-accent"
+        className={styles.choiceInput}
       />
-      <span className="flex flex-col gap-1">
-        <span className="text-sm font-bold tabular-nums">{label}</span>
-        {detail && <span className="text-sm text-text-muted tabular-nums">{detail}</span>}
+      <span className={styles.choiceLabel}>
+        <span className={styles.choiceLabel2}>{label}</span>
+        {detail && <span className={styles.choiceDetail}>{detail}</span>}
       </span>
     </label>
   );

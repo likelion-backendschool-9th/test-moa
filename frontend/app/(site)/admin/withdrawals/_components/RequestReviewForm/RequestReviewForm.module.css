@@ -1,0 +1,127 @@
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.legend {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.box {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.box:is(:where(.root):has(:is(input[name=decision][value=rejected]:checked)) *) {
+  display: flex;
+}
+
+.fieldset2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.legend2 {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.box2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.field {
+  font-weight: 600;
+}
+
+.text {
+  color: var(--text-muted);
+}
+
+.textarea {
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+  color: var(--text);
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.textarea:focus {
+  outline-style: solid;
+  outline-width: 2px;
+  outline-color: var(--accent);
+}
+
+.text2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.button {
+  align-self: flex-start;
+}
+
+.choice {
+  display: flex;
+  cursor: pointer;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+}
+
+.choice:has(:checked) {
+  background-color: var(--line);
+}
+
+.choiceInput {
+  margin-top: var(--space-1);
+  accent-color: var(--accent);
+}
+
+.choiceLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.choiceLabel2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.choiceDetail {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.root {
+  /* 스타일 없음: 상태 표시용 */
+}

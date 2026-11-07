@@ -1,7 +1,8 @@
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { formatCredits } from "@/lib/format";
 import { cashableCredits, totalCredits, type CreditBalance } from "@/features/credit/types";
-import { cardClass, cardHeaderClass, cardTitleClass } from "../card-styles";
+import { AccountCard, AccountCardHeader, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./CreditSummaryCard.module.css";
 
 type CreditSummaryCardProps = {
   credits: CreditBalance;
@@ -21,12 +22,12 @@ export function CreditSummaryCard({ credits, title = "크레딧", showHistoryLin
     { label: "출금 처리 중", value: credits.pendingWithdrawal },
   ];
   return (
-    <section aria-labelledby={headingId} className={cardClass}>
-      <div className={cardHeaderClass}>
-        <h2 id={headingId} className={cardTitleClass}>
+    <AccountCard as="section" aria-labelledby={headingId}>
+      <AccountCardHeader>
+        <AccountCardTitle id={headingId}>
           {title}
-        </h2>
-        <div className="flex flex-wrap gap-2">
+        </AccountCardTitle>
+        <div className={styles.box}>
           {showHistoryLink && (
             <LinkButton href="/my/credits" variant="secondary" size="sm">
               크레딧 내역
@@ -38,22 +39,22 @@ export function CreditSummaryCard({ credits, title = "크레딧", showHistoryLin
             </LinkButton>
           )}
         </div>
-      </div>
-      <p className="text-2xl font-extrabold tracking-[-0.03em] tabular-nums">{formatCredits(totalCredits(credits))}</p>
+      </AccountCardHeader>
+      <p className={styles.text}>{formatCredits(totalCredits(credits))}</p>
       {credits.pendingReward > 0 && (
-        <p className="text-sm text-text-muted">
-          승인 대기 <span className="font-semibold text-text tabular-nums">{formatCredits(credits.pendingReward)}</span>
+        <p className={styles.text2}>
+          승인 대기 <span className={styles.label}>{formatCredits(credits.pendingReward)}</span>
           {" "}· 확인되면 잔액에 더해져요
         </p>
       )}
-      <dl className="flex flex-col gap-2 text-sm">
+      <dl className={styles.list}>
         {rows.map((row) => (
-          <div key={row.label} className="flex items-center justify-between gap-4">
-            <dt className="text-text-muted">{row.label}</dt>
-            <dd className="font-semibold tabular-nums">{formatCredits(row.value)}</dd>
+          <div key={row.label} className={styles.root}>
+            <dt className={styles.label2}>{row.label}</dt>
+            <dd className={styles.value}>{formatCredits(row.value)}</dd>
           </div>
         ))}
       </dl>
-    </section>
+    </AccountCard>
   );
 }

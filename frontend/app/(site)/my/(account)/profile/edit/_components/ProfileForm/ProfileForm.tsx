@@ -7,7 +7,9 @@ import type { FormState } from "@/lib/form";
 import { NICKNAME_HINT } from "@/features/member/validation";
 import { type ProfileField, updateProfile } from "@/features/member/actions";
 import type { Profile } from "@/features/member/types";
-import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "../../../../_components/card-styles";
+import { SettingsBody, SettingsSection } from "@/app/(site)/my/(account)/_components/SettingsCard/SettingsCard";
+import { AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./ProfileForm.module.css";
 
 
 const initialState: FormState<ProfileField> = { status: "idle" };
@@ -25,19 +27,19 @@ export function ProfileForm({ profile }: { profile: Profile }) {
 
   const errors = state.status === "error" ? state.errors : {};
   return (
-    <section aria-labelledby="profile-form-heading" className={settingsSectionClass}>
-      <div className="flex flex-col gap-1">
-        <h2 id="profile-form-heading" className={cardTitleClass}>
+    <SettingsSection aria-labelledby="profile-form-heading">
+      <div className={styles.box}>
+        <AccountCardTitle id="profile-form-heading">
           기본 정보
-        </h2>
-        <p className="text-sm text-text-muted">이름과 닉네임을 바꿀 수 있어요.</p>
+        </AccountCardTitle>
+        <p className={styles.text}>이름과 닉네임을 바꿀 수 있어요.</p>
       </div>
-      <div className={settingsBodyClass}>
+      <SettingsBody>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
         {errors.form && <FormMessage status="error" message={errors.form} />}
         {/* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */}
-        <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-          <div className="flex flex-col gap-5">
+        <form action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
+          <div className={styles.box2}>
             <FormField id="profile-name" name="name" label="이름" autoComplete="name" defaultValue={profile.name} error={errors.name} />
             <FormField
               id="profile-nickname"
@@ -50,13 +52,13 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             />
             <FormField id="profile-email" label="이메일" type="email" value={profile.email} readOnly hint="이메일은 바꿀 수 없어요" />
           </div>
-          <div className="flex md:justify-end">
-            <Button type="submit" disabled={pending} className="w-full md:w-auto">
+          <div className={styles.box3}>
+            <Button type="submit" disabled={pending} className={styles.button}>
               {pending ? "저장하는 중…" : "저장"}
             </Button>
           </div>
         </form>
-      </div>
-    </section>
+      </SettingsBody>
+    </SettingsSection>
   );
 }

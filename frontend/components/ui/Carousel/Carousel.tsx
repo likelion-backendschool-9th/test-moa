@@ -4,6 +4,7 @@ import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useEffect, useState, useSyncExternalStore, type FocusEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button/Button";
+import styles from "./Carousel.module.css";
 
 export type CarouselSlide = {
   key: string;
@@ -83,10 +84,10 @@ export function Carousel({ slides, label, intervalMs = 5000, className, ...props
       onMouseLeave={() => setHovered(false)}
       onFocus={() => setFocused(true)}
       onBlur={onBlur}
-      className={cn("relative flex flex-col gap-6", className)}
+      className={cn(styles.root, className)}
       {...props}
     >
-      <div className="grid flex-1" aria-live={paused ? "polite" : "off"}>
+      <div className={styles.box} aria-live={paused ? "polite" : "off"}>
         {slides.map((slide, slideIndex) => {
           const active = slideIndex === index % count;
           return (
@@ -97,7 +98,7 @@ export function Carousel({ slides, label, intervalMs = 5000, className, ...props
               aria-label={`${slideIndex + 1} / ${count}`}
               aria-hidden={!active}
               inert={!active}
-              className={cn("col-start-1 row-start-1", active ? "animate-rise-in" : "invisible")}
+              className={cn(styles.root2, active ? styles.root2Active : styles.root2NotActive)}
             >
               {slide.content}
             </div>
@@ -105,11 +106,11 @@ export function Carousel({ slides, label, intervalMs = 5000, className, ...props
         })}
       </div>
       {count > 1 && (
-        <div className="flex items-center justify-end gap-2 md:absolute md:right-10 md:bottom-10">
+        <div className={styles.box2}>
           <Button variant="ghost" size="sm" aria-label="이전 슬라이드" onClick={() => move(-1)}>
             <CaretLeftIcon aria-hidden size={16} weight="bold" />
           </Button>
-          <span className="min-w-12 text-center text-sm tabular-nums text-text-muted">
+          <span className={styles.label}>
             {(index % count) + 1} / {count}
           </span>
           <Button variant="ghost" size="sm" aria-label="다음 슬라이드" onClick={() => move(1)}>

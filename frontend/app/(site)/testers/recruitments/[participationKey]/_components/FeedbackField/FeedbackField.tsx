@@ -4,8 +4,8 @@ import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { FeedbackMarker } from "../FeedbackMarker/FeedbackMarker";
-import { buttonClass } from "@/components/ui/button-styles";
-import { inputClass } from "@/components/ui/TextField/TextField";
+import { buttonClass } from "@/components/ui/Button/button-class";
+import { TextArea } from "@/components/ui/TextField/TextField";
 import { contentFieldName, imagesFieldName } from "@/features/participation/feedback-fields";
 import {
   checkFeedbackImages,
@@ -14,6 +14,7 @@ import {
   type FileMeta,
 } from "@/features/participation/feedback-images";
 import { FEEDBACK_MAX_LENGTH } from "@/features/participation/types";
+import styles from "./FeedbackField.module.css";
 
 type PickedImage = FileMeta & { url: string };
 
@@ -78,23 +79,23 @@ export function FeedbackField({ fieldKey, number, title, description, required, 
   }
 
   return (
-    <li data-testid="feedback-field" className="flex gap-3 py-6 first:pt-0 last:pb-0 md:gap-4">
+    <li data-testid="feedback-field" className={styles.root}>
       <FeedbackMarker number={number} />
-      <section aria-label={`${title} 피드백`} className="flex min-w-0 flex-1 flex-col gap-3">
-        <div className="flex flex-col gap-2">
-          <div className="flex min-h-8 flex-wrap items-center gap-2">
-            <label htmlFor={ids.content} className="text-lg font-bold">
+      <section aria-label={`${title} 피드백`} className={styles.section}>
+        <div className={styles.box}>
+          <div className={styles.box2}>
+            <label htmlFor={ids.content} className={styles.title}>
               {title}
             </label>
             <Badge tone={required ? "neutral" : "outline"}>{required ? "필수" : "선택"}</Badge>
           </div>
           {description && (
-            <p id={ids.hint} className="max-w-prose leading-relaxed break-words text-text-muted">
+            <p id={ids.hint} className={styles.description}>
               {description}
             </p>
           )}
         </div>
-        <textarea
+        <TextArea
           id={ids.content}
           name={contentFieldName(fieldKey)}
           rows={4}
@@ -103,42 +104,41 @@ export function FeedbackField({ fieldKey, number, title, description, required, 
           onChange={(event) => setContent(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={[description && ids.hint, error && ids.error].filter(Boolean).join(" ") || undefined}
-          className={inputClass}
         />
-        <div className="flex items-start justify-between gap-4">
+        <div className={styles.box3}>
           {error ? (
-            <p id={ids.error} data-testid="feedback-error" className="text-sm font-semibold">
+            <p id={ids.error} data-testid="feedback-error" className={styles.error}>
               {error}
             </p>
           ) : (
             <span />
           )}
-          <span className="shrink-0 text-xs text-text-muted tabular-nums">
+          <span className={styles.label}>
             {content.length} / {FEEDBACK_MAX_LENGTH}자
           </span>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-sm font-bold">
-              이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{images.length} / {FEEDBACK_IMAGE_LIMIT.count}</span>
+        <div className={styles.box4}>
+          <div className={styles.box5}>
+            <p className={styles.text}>
+              이미지 <span className={styles.label2}>{images.length} / {FEEDBACK_IMAGE_LIMIT.count}</span>
             </p>
-            <p id={ids.imageHint} className="text-sm text-text-muted">
+            <p id={ids.imageHint} className={styles.FEEDBACK_IMAGE_HINT}>
               {FEEDBACK_IMAGE_HINT}
             </p>
           </div>
           {images.length > 0 && (
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <ul className={styles.list}>
               {images.map((image) => (
-                <li key={image.url} data-testid="feedback-image" className="relative">
+                <li key={image.url} data-testid="feedback-image" className={styles.root2}>
                   {/* 고른 파일의 임시 주소라 next/image로 최적화할 수 없다 */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-strong object-cover" />
+                  <img src={image.url} alt={image.name} className={styles.image} />
                   <button
                     type="button"
                     aria-label={`${image.name} 빼기`}
                     onClick={() => removeImage(image.url)}
-                    className="absolute top-1 right-1 flex size-7 items-center justify-center rounded-full bg-surface-strong text-text transition-colors duration-300 ease-brand hover:bg-surface-muted"
+                    className={styles.button}
                   >
                     <XIcon aria-hidden size={14} weight="bold" />
                   </button>
@@ -147,14 +147,14 @@ export function FeedbackField({ fieldKey, number, title, description, required, 
             </ul>
           )}
           {imageError && (
-            <p role="alert" id={ids.imageError} className="text-sm font-semibold">
+            <p role="alert" id={ids.imageError} className={styles.imageError}>
               {imageError}
             </p>
           )}
           {!full && (
-            <label className={buttonClass("secondary", "sm", "w-full cursor-pointer self-start focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent md:w-auto")}>
+            <label className={buttonClass("secondary", "sm", styles.fileButton)}>
               <PlusIcon aria-hidden size={16} weight="bold" />
-              <span className="sr-only">{title}</span> 이미지 추가
+              <span className={styles.srOnly}>{title}</span> 이미지 추가
               <input
                 ref={fileInput}
                 type="file"
@@ -162,7 +162,7 @@ export function FeedbackField({ fieldKey, number, title, description, required, 
                 accept={FEEDBACK_IMAGE_LIMIT.types.join(",")}
                 aria-describedby={imageError ? `${ids.imageHint} ${ids.imageError}` : ids.imageHint}
                 onChange={addImages}
-                className="sr-only"
+                className={styles.srOnly2}
               />
             </label>
           )}

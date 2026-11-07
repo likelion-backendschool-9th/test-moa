@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { socialLogin } from "@/features/auth/actions";
 import { SOCIAL_PROVIDERS } from "@/features/auth/types";
+import styles from "./SocialButtons.module.css";
 
 /*
  * 소셜 로그인 버튼 목업. 제공자 목록(SOCIAL_PROVIDERS)대로 버튼이 생긴다.
@@ -20,14 +21,14 @@ const ICONS: Partial<Record<string, ComponentType<IconProps>>> = {
 /** 제공자마다 폼 하나. 누르면 서버 액션이 로그인하고 next로 보낸다 */
 export function SocialButtons({ next }: { next: string }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className={styles.root}>
       {SOCIAL_PROVIDERS.map((provider) => {
         const Icon = ICONS[provider.id];
         return (
           <form key={provider.id} action={socialLogin}>
             <input type="hidden" name="provider" value={provider.id} />
             <input type="hidden" name="next" value={next} />
-            <Button type="submit" variant="secondary" className="w-full">
+            <Button type="submit" variant="secondary" className={styles.button}>
               {Icon && <Icon aria-hidden size={20} weight="bold" />}
               {provider.label}
             </Button>

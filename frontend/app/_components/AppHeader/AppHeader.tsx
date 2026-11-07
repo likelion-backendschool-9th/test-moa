@@ -8,6 +8,7 @@ import { MainNav } from "../MainNav/MainNav";
 import { MobileMenu } from "../MobileMenu/MobileMenu";
 import { NavList } from "../NavList/NavList";
 import { UserMenu } from "../UserMenu/UserMenu";
+import styles from "./AppHeader.module.css";
 
 /*
  * 사이트 이름과 탭은 정적 셸에 들어가고, 세션을 읽는 부분만 Suspense 안에서 스트리밍된다.
@@ -15,20 +16,20 @@ import { UserMenu } from "../UserMenu/UserMenu";
  */
 export function AppHeader() {
   return (
-    <header className="sticky top-0 z-(--z-header) border-b border-line bg-surface">
-      <Container className="flex flex-wrap items-center gap-x-6 gap-y-1 py-3 lg:flex-nowrap">
+    <header className={styles.root}>
+      <Container className={styles.container}>
         {/* 글자 로고. moa만 강조색 (DESIGN.md 로고) */}
-        <Link href="/" aria-label="Test Moa" className="text-2xl font-extrabold tracking-[-0.04em] whitespace-nowrap">
-          test <span className="text-brand-logo">moa</span>
+        <Link href="/" aria-label="Test Moa" className={styles.link}>
+          test <span className={styles.label}>moa</span>
         </Link>
         <Suspense fallback={<NavList items={getNavItems(null)} />}>
           <MainNavSlot />
         </Suspense>
-        <div className="ml-auto flex items-center gap-2">
-          <Suspense fallback={<Skeleton className="h-9 w-32" />}>
+        <div className={styles.box}>
+          <Suspense fallback={<Skeleton className={styles.skeleton} />}>
             <UserMenuSlot />
           </Suspense>
-          <Suspense fallback={<Skeleton className="size-10 md:hidden" />}>
+          <Suspense fallback={<Skeleton className={styles.skeleton2} />}>
             <MobileMenuSlot />
           </Suspense>
         </div>

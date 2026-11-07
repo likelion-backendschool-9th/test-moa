@@ -13,6 +13,8 @@ import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type SelectionMode } from "@/f
 import { FormSection } from "../../../../_components/FormSection/FormSection";
 import { FileField, revoke, useFocusFirstError } from "../../../../_components/ProjectForm/ProjectForm";
 import { TextField } from "@/components/ui/TextField/TextField";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./RecruitmentForm.module.css";
 
 /*
  * 테스트 모집 작성 폼. 보상은 서비스가 정하므로 입력받지 않고 안내만 한다.
@@ -114,19 +116,19 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
   }
 
   return (
-    <form ref={formRef} action={formAction} noValidate className="flex max-w-2xl flex-col gap-6">
+    <form ref={formRef} action={formAction} noValidate className={styles.root}>
       <FormSection title="모집글">
         <TextField name="title" label="모집글 제목" defaultValue={values.title} error={errors.title} hint={`${RECRUITMENT_LIMIT.titleLength}자까지`} />
         <TextField name="request" label="모집 설명" multiline defaultValue={values.request} error={errors.request} hint="테스터에게 해 달라고 할 일을 200자까지 적어 주세요" />
-        <fieldset className="flex flex-col gap-2" aria-describedby={errors.softwareType ? "field-softwareType-error" : undefined}>
-          <legend className="mb-2 text-sm font-bold">유형</legend>
-          <div className="flex flex-wrap gap-2">
+        <fieldset className={styles.fieldset} aria-describedby={errors.softwareType ? "field-softwareType-error" : undefined}>
+          <legend className={styles.legend}>유형</legend>
+          <div className={styles.box}>
             {SOFTWARE_TYPES.map((type) => {
               const ready = type === "web";
               return (
                 <label
                   key={type}
-                  className="flex items-center gap-2 rounded-full bg-surface-strong px-4 py-2 text-sm font-bold has-disabled:text-text-muted"
+                  className={styles.root2}
                 >
                   <input
                     type="radio"
@@ -134,16 +136,16 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                     value={type}
                     defaultChecked={(values.softwareType || "web") === type}
                     disabled={!ready}
-                    className="accent-accent"
+                    className={styles.input}
                   />
                   {SOFTWARE_TYPE_LABEL[type]}
-                  {!ready && <span className="text-xs font-medium">준비 중</span>}
+                  {!ready && <span className={styles.label}>준비 중</span>}
                 </label>
               );
             })}
           </div>
           {errors.softwareType && (
-            <p id="field-softwareType-error" className="text-sm font-semibold">
+            <p id="field-softwareType-error" className={styles.softwareType}>
               {errors.softwareType}
             </p>
           )}
@@ -177,16 +179,16 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
           buttonLabel="이미지 추가"
         >
           {images.length > 0 && (
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <ul className={styles.list}>
               {images.map((image) => (
-                <li key={image.url} data-testid="recruitment-image" className="flex flex-col gap-1">
+                <li key={image.url} data-testid="recruitment-image" className={styles.root3}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-muted object-cover outline -outline-offset-1 outline-line" />
+                  <img src={image.url} alt={image.name} className={styles.image} />
                   <button
                     type="button"
                     onClick={() => removeRecruitmentImage(image.url)}
                     aria-label={`모집글 이미지 ${image.name} 삭제`}
-                    className="text-xs font-semibold text-text-muted hover:text-text"
+                    className={styles.button}
                   >
                     삭제
                   </button>
@@ -198,15 +200,15 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
         <input type="hidden" name="recruitmentImagesMeta" value={JSON.stringify(images.map(({ name, size, type }) => ({ name, size, type })))} />
       </FormSection>
       <FormSection title="선정 조건과 일정">
-        <fieldset className="flex flex-col gap-2" aria-describedby={errors.selectionMode ? "field-selectionMode-error" : undefined}>
-          <legend className="mb-2 text-sm font-bold">모집 선정 조건</legend>
-          <div className="grid gap-2 sm:grid-cols-2">
+        <fieldset className={styles.fieldset2} aria-describedby={errors.selectionMode ? "field-selectionMode-error" : undefined}>
+          <legend className={styles.legend2}>모집 선정 조건</legend>
+          <div className={styles.box2}>
             {(["firstCome", "selection"] as const).map((mode) => {
               const ready = mode === "firstCome" || isSubscription;
               return (
                 <label
                   key={mode}
-                  className="flex items-start gap-3 rounded-2xl bg-surface-strong p-4 has-checked:inset-ring-2 has-checked:inset-ring-accent has-disabled:text-text-muted"
+                  className={styles.root4}
                 >
                   <input
                     type="radio"
@@ -214,37 +216,37 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                     value={mode}
                     defaultChecked={selectionMode === mode}
                     disabled={!ready}
-                    className="mt-1 accent-accent"
+                    className={styles.input2}
                   />
-                  <span className="flex flex-col gap-1">
-                    <span className="text-sm font-bold">
+                  <span className={styles.label2}>
+                    <span className={styles.label3}>
                       {SELECTION_MODE_LABEL[mode]}
-                      {!ready && <span className="ml-2 text-xs font-medium">구독 전용</span>}
+                      {!ready && <span className={styles.label4}>구독 전용</span>}
                     </span>
-                    <span className="text-xs text-text-muted">{SELECTION_MODE_HINT[mode]}</span>
+                    <span className={styles.label5}>{SELECTION_MODE_HINT[mode]}</span>
                   </span>
                 </label>
               );
             })}
           </div>
           {errors.selectionMode && (
-            <p id="field-selectionMode-error" className="text-sm font-semibold">
+            <p id="field-selectionMode-error" className={styles.selectionMode}>
               {errors.selectionMode}
             </p>
           )}
         </fieldset>
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className={styles.box3}>
           <TextField name="recruitDeadline" label="모집 마감일" type="date" defaultValue={values.recruitDeadline} error={errors.recruitDeadline} />
           <TextField name="submitDeadline" label="피드백 제출 마감일" type="date" defaultValue={values.submitDeadline} error={errors.submitDeadline} />
         </div>
       </FormSection>
       <FormSection title="테스트 항목">
-        <fieldset className="flex flex-col gap-3" aria-label="테스트 항목" aria-describedby="field-testItems-hint">
-          <p id="field-testItems-hint" className="text-xs text-text-muted">
+        <fieldset className={styles.fieldset3} aria-label="테스트 항목" aria-describedby="field-testItems-hint">
+          <p id="field-testItems-hint" className={styles.text}>
             테스터가 해 볼 작업을 1~{max}개 적어 주세요. 테스터는 항목별로 피드백을 남겨요. 필수를 끄면 건너뛸 수 있는 항목이 돼요
           </p>
           {items.map((item, index) => (
-            <div key={index} data-testid="test-item-row" className="flex flex-col gap-4 rounded-2xl inset-ring inset-ring-line p-4">
+            <div key={index} data-testid="test-item-row" className={styles.root5}>
               <TextField
                 name="testItemTitle"
                 id={`field-testItemTitle-${index}`}
@@ -274,16 +276,16 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                 buttonLabel="이미지 추가"
               >
                 {item.images.length > 0 && (
-                  <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  <ul className={styles.list2}>
                     {item.images.map((image) => (
-                      <li key={image.url} data-testid="test-item-image" className="flex flex-col gap-1">
+                      <li key={image.url} data-testid="test-item-image" className={styles.root6}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image.url} alt={image.name} className="aspect-square w-full rounded-xl bg-surface-muted object-cover outline -outline-offset-1 outline-line" />
+                        <img src={image.url} alt={image.name} className={styles.image2} />
                         <button
                           type="button"
                           onClick={() => removeImage(index, image.url)}
                           aria-label={`항목 ${index + 1} ${image.name} 삭제`}
-                          className="text-xs font-semibold text-text-muted hover:text-text"
+                          className={styles.button2}
                         >
                           삭제
                         </button>
@@ -297,18 +299,18 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                 name="testItemImagesMeta"
                 value={JSON.stringify(item.images.map(({ name, size, type }) => ({ name, size, type })))}
               />
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className={styles.box4}>
                 {/* 체크를 끈 줄은 값이 안 보내지므로, 몇 번째 줄이 필수인지 줄 번호로 보낸다 */}
-                <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+                <label className={styles.field}>
                   <input
                     type="checkbox"
                     name="testItemRequired"
                     value={index}
                     checked={item.required}
                     onChange={(event) => updateItem(index, { required: event.target.checked })}
-                    className="size-4 accent-accent"
+                    className={styles.input3}
                   />
-                  <span className="sr-only">항목 {index + 1} </span>
+                  <span className={styles.srOnly}>항목 {index + 1} </span>
                   필수
                 </label>
                 {items.length > 1 && (
@@ -316,7 +318,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
                     type="button"
                     size="sm"
                     variant="secondary"
-                    className="w-fit"
+                    className={styles.button3}
                     onClick={() => {
                       item.images.forEach((image) => revoke(image.url));
                       setItems((prev) => prev.filter((_, i) => i !== index));
@@ -331,12 +333,12 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
               </div>
             </div>
           ))}
-          {errors.testItems && <p className="text-sm font-semibold">{errors.testItems}</p>}
+          {errors.testItems && <p className={styles.testItems}>{errors.testItems}</p>}
           <Button
             type="button"
             size="sm"
             variant="secondary"
-            className="w-fit"
+            className={styles.button4}
             disabled={items.length >= max}
             onClick={() => setItems((prev) => [...prev, emptyRow()])}
           >
@@ -344,16 +346,16 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
           </Button>
         </fieldset>
       </FormSection>
-      <div className="flex flex-col gap-1 rounded-2xl bg-surface-muted p-6 text-sm">
-        <p className="font-bold">기본 보상 {formatCredits(baseReward)}</p>
-        <p className="text-text-muted">보상은 서비스가 정해요. 테스터가 피드백을 내면 지급돼요.</p>
+      <Card as="div" className={styles.box5}>
+        <p className={styles.text2}>기본 보상 {formatCredits(baseReward)}</p>
+        <p className={styles.text3}>보상은 서비스가 정해요. 테스터가 피드백을 내면 지급돼요.</p>
         {isSubscription && (
-          <p className="mt-2 font-semibold text-accent">
+          <p className={styles.text4}>
             구독 모집이라 추가 보상 {formatCredits(extraReward)}이 붙어요.
           </p>
         )}
-      </div>
-      <div className="flex gap-2">
+      </Card>
+      <div className={styles.box6}>
         <Button type="submit" disabled={pending}>
           모집 등록
         </Button>

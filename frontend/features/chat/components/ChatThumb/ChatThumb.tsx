@@ -1,12 +1,13 @@
 import Image from "next/image";
 import { cn } from "@/lib/cn";
+import styles from "./ChatThumb.module.css";
 
 type ChatThumbSize = "card" | "header";
 
 /* card: 카드 왼쪽에서 높이를 다 채우는 칸. header: 채팅방 머리의 작은 4:3 이미지 */
 const SIZE_CLASS: Record<ChatThumbSize, string> = {
-  card: "w-24 self-stretch rounded-l-2xl sm:w-32 md:w-40",
-  header: "h-12 w-16 rounded-xl",
+  card: styles.sizeCard,
+  header: styles.sizeHeader,
 };
 
 const IMAGE_SIZES: Record<ChatThumbSize, string> = {
@@ -35,10 +36,7 @@ export function ChatThumb({
     <div
       aria-hidden
       data-thumb
-      className={cn(
-        "@container relative grid shrink-0 place-items-center overflow-hidden bg-thumb text-on-thumb",
-        SIZE_CLASS[size],
-      )}
+      className={cn(styles.root, SIZE_CLASS[size])}
     >
       {imageUrl ? (
         <Image
@@ -47,12 +45,12 @@ export function ChatThumb({
           fill
           sizes={IMAGE_SIZES[size]}
           loading={eager ? "eager" : undefined}
-          className="object-cover transition-transform duration-500 ease-brand group-hover:scale-105"
+          className={styles.image}
         />
       ) : (
         <>
-          <span className="absolute top-2.5 left-2.5 size-3 border-t border-l border-current opacity-30" />
-          <span className="text-[34cqw] leading-none font-extrabold tracking-[-0.04em] transition-transform duration-500 ease-brand group-hover:-translate-y-1">
+          <span className={styles.label} />
+          <span className={styles.label2}>
             {Array.from(projectName)[0]}
           </span>
         </>

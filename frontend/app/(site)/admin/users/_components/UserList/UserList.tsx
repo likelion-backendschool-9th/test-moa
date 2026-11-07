@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/Badge/Badge";
 import { Button } from "@/components/ui/Button/Button";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { USER_FILTERS, USER_QUERY_MAX_LENGTH, type UserFilter, type UserSummary } from "@/features/member/admin";
 import { LinkTabs } from "../../../_components/LinkTabs/LinkTabs";
+import { AdminListRow } from "@/app/(site)/admin/_components/AdminListRow/AdminListRow";
+import styles from "./UserList.module.css";
 
 /** 필터를 바꿔도 검색어는 남긴다 */
 function usersHref(filter: UserFilter, query: string) {
@@ -26,7 +27,7 @@ function usersHref(filter: UserFilter, query: string) {
  */
 export function UserSearch({ filter, query }: { filter: UserFilter; query: string }) {
   return (
-    <Form action="/admin/users" role="search" className="flex max-w-md gap-2">
+    <Form action="/admin/users" role="search" className={styles.userSearch}>
       {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
       <input
         key={query}
@@ -36,7 +37,7 @@ export function UserSearch({ filter, query }: { filter: UserFilter; query: strin
         maxLength={USER_QUERY_MAX_LENGTH}
         aria-label="닉네임 검색"
         placeholder="닉네임 검색"
-        className="min-w-0 flex-1 rounded-full bg-surface-strong px-4 py-2 text-sm text-text placeholder:text-text-muted focus:outline-2 focus:outline-accent"
+        className={styles.userSearchInput}
       />
       <Button type="submit" variant="secondary" size="sm">
         검색
@@ -60,7 +61,6 @@ function emptyTitle(filter: UserFilter, query: string) {
   return "회원이 없어요";
 }
 
-const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-row md:items-center md:gap-4 md:p-6";
 
 type UserListProps = { users: UserSummary[]; filter: UserFilter; query: string };
 
@@ -68,21 +68,21 @@ type UserListProps = { users: UserSummary[]; filter: UserFilter; query: string }
 export function UserList({ users, filter, query }: UserListProps) {
   if (users.length === 0) return <EmptyState title={emptyTitle(filter, query)} />;
   return (
-    <ul aria-label="회원" className="flex flex-col gap-3">
+    <ul aria-label="회원" className={styles.root}>
       {users.map((user) => (
         <li key={user.id}>
-          <Link href={`/admin/users/${user.id}`} className={cn(rowClass, "transition-colors duration-300 ease-brand hover:bg-surface-strong")}>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="font-semibold">{user.nickname}</span>
-              <span className="text-sm text-text-muted">
+          <AdminListRow as={Link} href={`/admin/users/${user.id}`} className={styles.link}>
+            <div className={styles.box}>
+              <span className={styles.nickname}>{user.nickname}</span>
+              <span className={styles.label}>
                 가입 {formatDate(user.joinedAt)}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <div className={styles.box2}>
               {user.sanctionCount > 0 && <Badge tone="neutral">제재 이력 {user.sanctionCount}건</Badge>}
               {user.pendingReportCount > 0 && <Badge tone="muted">검토 대기 신고 {user.pendingReportCount}건</Badge>}
             </div>
-          </Link>
+          </AdminListRow>
         </li>
       ))}
     </ul>
@@ -91,15 +91,15 @@ export function UserList({ users, filter, query }: UserListProps) {
 
 export function UserListSkeleton() {
   return (
-    <div aria-busy="true" aria-label="회원 목록 불러오는 중" className="flex flex-col gap-3">
+    <div aria-busy="true" aria-label="회원 목록 불러오는 중" className={styles.userListSkeleton}>
       {Array.from({ length: 5 }, (_, index) => (
-        <div key={index} className={rowClass} data-skeleton="user">
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-5 w-48" />
+        <AdminListRow key={index} data-skeleton="user">
+          <div className={styles.userListSkeletonBox}>
+            <Skeleton className={styles.userListSkeletonSkeleton} />
+            <Skeleton className={styles.userListSkeletonSkeleton2} />
           </div>
-          <Skeleton className="h-6 w-24" />
-        </div>
+          <Skeleton className={styles.userListSkeletonSkeleton3} />
+        </AdminListRow>
       ))}
     </div>
   );

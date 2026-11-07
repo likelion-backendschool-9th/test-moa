@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useId, useRef } from "react";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./ChatRoomDialog.module.css";
 
 type ChatRoomDialogProps = {
   title: string;
@@ -21,24 +23,24 @@ export function ChatRoomDialog({ title, description, onClose, children }: ChatRo
   }, []);
 
   return (
-    <dialog
+    <Card as="dialog"
       ref={ref}
       aria-labelledby={titleId}
       onClose={onClose}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-surface-muted p-0 text-text backdrop:bg-surface/80 backdrop:backdrop-blur-sm"
+      className={styles.root}
     >
-      <div className="flex animate-rise-in flex-col gap-5 p-6">
-        <div className="flex flex-col gap-1.5">
-          <h2 id={titleId} className="text-lg font-extrabold">
+      <div className={styles.box}>
+        <div className={styles.box2}>
+          <h2 id={titleId} className={styles.title}>
             {title}
           </h2>
-          <p className="text-sm text-text-muted">{description}</p>
+          <p className={styles.description}>{description}</p>
         </div>
         {children}
       </div>
-    </dialog>
+    </Card>
   );
 }

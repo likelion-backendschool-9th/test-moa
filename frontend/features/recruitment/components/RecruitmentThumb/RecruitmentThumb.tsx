@@ -3,6 +3,8 @@ import Image from "next/image";
 import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
 import type { Recruitment } from "@/features/recruitment/types";
 import { ProofStamp } from "@/features/recruitment/components/ProofStamp/ProofStamp";
+import { cn } from "@/lib/cn";
+import styles from "./RecruitmentThumb.module.css";
 
 /**
  * 활자 썸네일. 가짜 스크린샷 대신 교정지 위에 서비스 이름을 크게 앉혀 이름 자체를 그림으로 쓴다.
@@ -31,29 +33,29 @@ export function RecruitmentThumb({
   return (
     <div
       data-thumb
-      className={`@container relative flex aspect-[16/10] items-end overflow-hidden bg-thumb p-3 text-on-thumb sm:p-4 ${inset ? "rounded-xl" : "rounded-2xl border border-line"}`}
+      className={cn(styles.root, inset ? styles.inset : styles.framed)}
     >
       {imageUrl ? (
-        <Image src={imageUrl} alt="" fill sizes="(min-width: 1024px) 25vw, 75vw" className="object-cover" />
+        <Image src={imageUrl} alt="" fill sizes="(min-width: 1024px) 25vw, 75vw" className={styles.image} />
       ) : showImage ? (
-        <div aria-hidden className="absolute inset-0 flex items-center justify-center bg-surface-strong text-text-muted">
+        <div aria-hidden className={styles.box}>
           <ImageSquareIcon size={32} weight="light" />
         </div>
       ) : (
-        <h3 className="text-[15cqw] leading-[1.02] font-extrabold tracking-[-0.04em] text-balance">{recruitment.projectName}</h3>
+        <h3 className={styles.projectName}>{recruitment.projectName}</h3>
       )}
       {showImage && (
-        <h3 className="absolute inset-x-0 bottom-0 bg-thumb/95 px-3 py-2 text-[10cqw] leading-tight font-extrabold tracking-[-0.04em] text-on-thumb sm:px-4">
+        <h3 className={styles.projectName2}>
           {recruitment.projectName}
         </h3>
       )}
       {category && (
-        <span className="absolute top-3 left-3 rounded-full bg-thumb px-2 py-1 text-xs font-bold whitespace-nowrap inset-ring inset-ring-on-thumb/25 sm:top-4 sm:left-4 sm:px-2.5">
+        <span className={styles.category}>
           {category}
         </span>
       )}
       {stamp && <ProofStamp label={stamp} placement="corner" />}
-      {badge && <div className="absolute top-3 left-3 sm:top-4 sm:left-4">{badge}</div>}
+      {badge && <div className={styles.badge}>{badge}</div>}
     </div>
   );
 }

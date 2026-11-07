@@ -1,0 +1,39 @@
+.withdrawalsPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.withdrawalsPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.withdrawals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.withdrawalsSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.withdrawalsSkeletonSkeleton {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.withdrawalsSkeletonSkeleton2 {
+  height: 3rem;
+  width: 100%;
+}
+
+.withdrawalsSkeletonSkeleton3 {
+  height: 3rem;
+  width: 100%;
+}

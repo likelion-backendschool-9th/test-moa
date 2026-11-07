@@ -182,14 +182,14 @@
 }
 
 /* 다크에서도 교정지·썸네일 위 체크·도장·배지는 밝히지 않고 진한 초록에 흰 글씨로 테마와 관계없이 같게 둔다. */
-.hero-paper,
+[data-hero-paper],
 [data-thumb] {
   --accent: var(--paper-accent);
   /* 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
   --on-accent: #ffffff;
 }
 
-/* 라이트의 흰 패널은 재단선으로 나누고, 홈 배너 격자는 CSS로 그려 SVG 패턴 ID 충돌을 피한다. */
+/* 라이트의 흰 패널은 재단선으로 나눈다. Tailwind 클래스로 그린 패널만 해당하고, 옮긴 패널은 Card가 맡는다. Tailwind를 빼면 지운다 */
 @media (prefers-color-scheme: light) {
   .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg) {
     outline: 1px solid var(--line);
@@ -199,42 +199,6 @@
   .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg):focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-  }
-
-  .hero-banner {
-    background-color: var(--hero-mat);
-    background-image:
-      linear-gradient(to right, var(--hero-grid-major) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--hero-grid-major) 1px, transparent 1px),
-      linear-gradient(to right, var(--hero-grid-minor) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--hero-grid-minor) 1px, transparent 1px);
-    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
-    color: #ffffff;
-    --text: #ffffff;
-    --text-muted: var(--hero-muted);
-    --accent: #ffffff;
-    --on-accent: var(--hero-button-text);
-    --surface-strong: rgb(255 255 255 / 0.14);
-    --mark: #ffffff;
-  }
-
-  .hero-banner > svg { display: none; }
-
-  .hero-banner [data-thumb],
-  .hero-banner .hero-paper {
-    --text: #1a1a1a;
-    --accent: var(--hero-mat);
-    --on-accent: #ffffff;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .hero-banner { background-color: var(--surface-muted); }
-
-  /* 배너 주 버튼은 교정지·썸네일과 같은 진한 초록에 흰 글씨. 제목의 초록 글자는 남회색 위에서 읽히게 밝은 초록을 둔다 */
-  .hero-banner .hero-action {
-    --accent: var(--paper-accent);
-    --on-accent: #ffffff;
   }
 }
 
@@ -566,64 +530,5 @@
 
   html {
     scroll-behavior: auto;
-  }
-}
-
-/*
- * 금액 폼의 선택 상자 (DESIGN.md The Money Field Rule).
- * appearance: base-select를 지원하는 브라우저(Chrome·Edge 135+)는 펼친 목록을 칸 바로 아래에 같은 너비·모서리로 붙인다.
- * 지원하지 않는 브라우저는 운영체제 기본 목록을 그대로 쓴다.
- */
-@layer components {
-  .select-field {
-    appearance: none;
-  }
-
-  @supports (appearance: base-select) {
-    .select-field,
-    .select-field::picker(select) {
-      appearance: base-select;
-    }
-
-    /* base-select는 선택값을 위쪽에 둔다. 높이 3rem 안에서 위아래 여백으로 가운데에 맞춘다 */
-    .select-field {
-      padding-block: 0.75rem;
-      line-height: 1.5rem;
-    }
-
-    .select-field::picker-icon {
-      display: none;
-    }
-
-    .select-field::picker(select) {
-      width: anchor-size(width);
-      margin-top: 0.25rem;
-      padding: 0.25rem;
-      border: 1px solid var(--line);
-      border-radius: 0.75rem;
-      background: var(--surface-muted);
-      color: var(--text);
-    }
-
-    .select-field option {
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-    }
-
-    .select-field option::checkmark {
-      display: none;
-    }
-
-    .select-field option:hover,
-    .select-field option:focus-visible {
-      background: var(--surface-strong);
-      outline: none;
-    }
-
-    .select-field option:checked {
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-weight: 700;
-    }
   }
 }

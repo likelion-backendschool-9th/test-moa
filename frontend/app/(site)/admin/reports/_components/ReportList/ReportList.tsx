@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { cn } from "@/lib/cn";
 import { formatElapsed } from "@/lib/format";
 import { LinkTabs } from "../../../_components/LinkTabs/LinkTabs";
 import {
@@ -13,6 +12,9 @@ import {
   type ReportDecision,
 } from "@/features/report/types";
 import { reportDetailHref, reportsHref, type ReportTargetFilter, type ListTab } from "@/features/report/paths";
+import { Card } from "@/components/ui/Card/Card";
+import { AdminListRow } from "@/app/(site)/admin/_components/AdminListRow/AdminListRow";
+import styles from "./ReportList.module.css";
 
 const TABS: { tab: ListTab; label: string }[] = [
   { tab: "pending", label: "검토 대기" },
@@ -46,13 +48,12 @@ function processedMessage(decision: ReportDecision, held: boolean) {
 /** 처리 직후 목록에서 한 번 보여 주는 결과 문구. 보상 보류가 없던 신고는 지급 문구를 뺀다 */
 export function ProcessedNotice({ decision, held }: { decision: ReportDecision; held: boolean }) {
   return (
-    <p role="status" className="rounded-2xl bg-surface-muted px-6 py-4 text-sm font-semibold">
+    <Card as="p" role="status" className={styles.processedNotice}>
       {processedMessage(decision, held)}
-    </p>
+    </Card>
   );
 }
 
-const rowClass = "flex flex-col gap-2 rounded-2xl bg-surface-muted p-5 md:flex-row md:items-center md:gap-4 md:p-6";
 
 /** 신고 목록. 피드백 원문은 상세에서만 보여 준다 */
 export function ReportList({
@@ -72,35 +73,35 @@ export function ReportList({
     return <EmptyState title={target === "all" ? base : `'${REPORT_TARGET_LABEL[target]}' 신고 중에는 ${base}`} />;
   }
   return (
-    <ul aria-label={tab === "pending" ? "검토 대기 신고" : "처리 완료 신고"} className="flex flex-col gap-3">
+    <ul aria-label={tab === "pending" ? "검토 대기 신고" : "처리 완료 신고"} className={styles.root}>
       {reports.map((report) => (
         <li key={report.id}>
-          <Link
+          <AdminListRow as={Link}
             href={reportDetailHref(report.id, { tab, target })}
-            className={cn(rowClass, "transition-colors duration-300 ease-brand hover:bg-surface-strong")}
+            className={styles.link}
           >
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className={styles.box}>
+              <div className={styles.box2}>
                 <Badge tone="muted">{REPORT_TARGET_LABEL[report.targetType]}</Badge>
-                <span className="font-semibold">{report.recruitmentName}</span>
+                <span className={styles.recruitmentName}>{report.recruitmentName}</span>
               </div>
-              <span className="truncate text-sm text-text-muted">{report.reason}</span>
+              <span className={styles.reason}>{report.reason}</span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <div className={styles.box3}>
               {report.review ? (
                 <>
                   <Badge tone="neutral">{REPORT_DECISION_LABEL[report.review.decision]}</Badge>
-                  <span className="text-xs text-text-muted tabular-nums">처리 {formatElapsed(report.review.processedAt, now)}</span>
+                  <span className={styles.label}>처리 {formatElapsed(report.review.processedAt, now)}</span>
                 </>
               ) : (
                 <>
                   {report.holdsReward && <Badge tone="muted">보상 보류</Badge>}
                   {isOverdue(report, now) && <Badge tone="neutral">72시간 지남</Badge>}
-                  <span className="text-xs text-text-muted tabular-nums">접수 {formatElapsed(report.createdAt, now)}</span>
+                  <span className={styles.label2}>접수 {formatElapsed(report.createdAt, now)}</span>
                 </>
               )}
             </div>
-          </Link>
+          </AdminListRow>
         </li>
       ))}
     </ul>
@@ -109,15 +110,15 @@ export function ReportList({
 
 export function ReportListSkeleton() {
   return (
-    <div aria-busy="true" aria-label="신고 목록 불러오는 중" className="flex flex-col gap-3">
+    <div aria-busy="true" aria-label="신고 목록 불러오는 중" className={styles.reportListSkeleton}>
       {Array.from({ length: 4 }, (_, index) => (
-        <div key={index} className={rowClass} data-skeleton="report">
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-5 w-64" />
+        <AdminListRow key={index} data-skeleton="report">
+          <div className={styles.reportListSkeletonBox}>
+            <Skeleton className={styles.reportListSkeletonSkeleton} />
+            <Skeleton className={styles.reportListSkeletonSkeleton2} />
           </div>
-          <Skeleton className="h-6 w-28" />
-        </div>
+          <Skeleton className={styles.reportListSkeletonSkeleton3} />
+        </AdminListRow>
       ))}
     </div>
   );

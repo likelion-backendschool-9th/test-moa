@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { cn } from "@/lib/cn";
+import styles from "./ProjectDescription.module.css";
 
 /**
  * 프로젝트 상세 설명. 대표 이미지 높이까지만 보여 주고, 넘치면 "더 보기"로 펼친다.
@@ -48,13 +50,13 @@ export function ProjectDescription({ text }: { text: string }) {
 
   const clipped = !expanded && limit !== null;
   return (
-    <div className="flex min-w-0 flex-col items-start gap-2">
+    <div className={styles.root}>
       <div
         ref={textRef}
         id={textId}
         data-testid="project-description"
         style={clipped && limit !== undefined ? { maxHeight: limit } : undefined}
-        className={`flex w-full flex-col gap-3${clipped ? " overflow-hidden" : ""}${clipped && limit === undefined ? " max-h-96" : ""}`}
+        className={cn(styles.box, clipped ? styles.boxClipped : undefined, clipped && limit === undefined ? styles.boxLimited : undefined)}
       >
         {text
           .split("\n")
@@ -69,7 +71,7 @@ export function ProjectDescription({ text }: { text: string }) {
           aria-expanded={expanded}
           aria-controls={textId}
           onClick={() => setExpanded((prev) => !prev)}
-          className="text-sm font-bold text-text-muted transition-colors duration-300 ease-brand hover:text-text"
+          className={styles.button}
         >
           {expanded ? "접기" : "더 보기"}
         </button>

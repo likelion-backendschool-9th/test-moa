@@ -12,7 +12,9 @@ import { getFollowupQuestions } from "@/features/recruitment/actions";
 import type { FeedbackView } from "@/features/recruitment/types";
 import type { FeedbackStatus, TestItem } from "@/features/recruitment/types";
 import { CHAT_NOT_READY, FollowupQuestionsDialog, type FollowupState } from "../FollowupQuestionsDialog/FollowupQuestionsDialog";
-import { inputClass } from "@/components/ui/TextField/TextField";
+import { TextArea } from "@/components/ui/TextField/TextField";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./FeedbackList.module.css";
 
 /*
  * 피드백 탭. 피드백마다 어느 테스트 항목에 대한 것인지(없으면 기타 의견)와 붙인 스크린샷을 보여 준다.
@@ -32,8 +34,6 @@ const REPORT_CLOSED = "신고는 제출 후 72시간 안에만 할 수 있어요
 const FOLLOWUP_NETWORK_ERROR = "연결이 불안정해 질문을 받지 못했어요. 잠시 후 다시 시도해 주세요";
 
 const icon = { "aria-hidden": true, size: 16, weight: "bold" } as const;
-/* 다크에서는 흰 글씨가 무거워 보여 카드 버튼 4개만 굵기를 보통으로 낮춘다 */
-const CARD_ACTION = "dark:font-normal";
 
 type FeedbackListProps = {
   feedbacks: FeedbackView[];
@@ -116,50 +116,50 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
 
   return (
     <>
-      <p aria-live="polite" className="sr-only">
+      <p aria-live="polite" className={styles.srOnly}>
         {announcement}
       </p>
-      <p data-testid="feedback-by-item" className="text-sm text-text-muted">
+      <p data-testid="feedback-by-item" className={styles.text}>
         항목별 {byItem.map(([title, count]) => `${title} ${count}건`).join(" · ")}
         <span data-testid="recommended-count"> · 유용해요 {recommendedCount}건</span>
       </p>
-      <ul className="flex flex-col gap-3">
+      <ul className={styles.list}>
         {feedbacks.map((item) => {
           const status = statuses[item.id] ?? item.status;
           const liked = isRecommended(item);
           const nickname = item.testerNickname;
           return (
-            <li key={item.id} data-testid="feedback" className="flex flex-col gap-4 rounded-2xl bg-surface-muted p-5 md:p-6">
-              <div className="flex flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold">{nickname}</span>
+            <Card as="li" key={item.id} data-testid="feedback" className={styles.root}>
+              <div className={styles.box}>
+                <div className={styles.box2}>
+                  <span className={styles.nickname}>{nickname}</span>
                   <Badge tone="neutral">{itemTitle(item.testItemId)}</Badge>
                 </div>
-                <p className="text-xs text-text-muted">
+                <p className={styles.text2}>
                   {formatDate(item.submittedAt)} 제출
                   {status === "waiting" && ` · ${item.hoursUntilPaid}시간 뒤 자동 지급`}
                 </p>
               </div>
-              <p className="text-sm">{item.content}</p>
+              <p className={styles.content}>{item.content}</p>
               {item.images.length > 0 && (
-                <ul className="flex flex-wrap gap-2">
+                <ul className={styles.list2}>
                   {item.images.map((image) => (
                     <li key={image.url}>
-                      <a href={image.url} target="_blank" rel="noopener noreferrer" className="block w-40">
+                      <a href={image.url} target="_blank" rel="noopener noreferrer" className={styles.link}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={image.url}
                           alt={image.name}
-                          className="aspect-video w-full rounded-xl border border-line bg-surface-strong object-cover"
+                          className={styles.image}
                         />
-                        <span className="sr-only"> (새 탭에서 크게 보기)</span>
+                        <span className={styles.srOnly2}> (새 탭에서 크게 보기)</span>
                       </a>
                     </li>
                   ))}
                 </ul>
               )}
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                {notices[item.id] && <p className="mr-auto text-sm text-text-muted">{notices[item.id]}</p>}
+              <div className={styles.box3}>
+                {notices[item.id] && <p className={styles.text3}>{notices[item.id]}</p>}
                 <PaidAction subscribed={isSubscription} label={`${nickname}님과 채팅하기`} onClick={() => showNotice(item, CHAT_NOT_READY)}>
                   <ChatsIcon {...icon} />
                   채팅하기
@@ -171,20 +171,20 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                 <Button
                   size="sm"
                   variant={liked ? "like" : "secondary"}
-                  className={CARD_ACTION}
+                  className={styles.cardAction}
                   aria-pressed={liked}
                   aria-label={`${nickname}님의 피드백이 유용해요`}
                   onClick={() => toggleRecommend(item, !liked)}
                 >
                   {/* 이번에 직접 누른 하트만 튀어 오른다. 처음부터 눌려 있던 피드백은 그냥 보인다 */}
-                  <HeartIcon {...icon} weight={liked ? "fill" : "bold"} className={recommended[item.id] ? "animate-heart-pop" : undefined} />
+                  <HeartIcon {...icon} weight={liked ? "fill" : "bold"} className={recommended[item.id] ? styles.iconOn : undefined} />
                   유용해요
                 </Button>
                 {status === "reported" ? (
                   <Button
                     size="sm"
                     variant="secondary"
-                    className={CARD_ACTION}
+                    className={styles.cardAction}
                     aria-label={`${nickname}님의 피드백 신고 정보`}
                     onClick={() => showNotice(item, REPORT_INFO_NOT_READY)}
                   >
@@ -196,7 +196,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   <Button
                     size="sm"
                     variant="secondary"
-                    className={CARD_ACTION}
+                    className={styles.cardAction}
                     aria-label={`${nickname}님의 피드백 신고하기`}
                     onClick={() => (status === "waiting" && item.hoursUntilPaid > 0 ? openReport(item) : showNotice(item, REPORT_CLOSED))}
                   >
@@ -205,7 +205,7 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
                   </Button>
                 )}
               </div>
-            </li>
+            </Card>
           );
         })}
       </ul>
@@ -221,22 +221,22 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
         />
       )}
 
-      <dialog
+      <Card as="dialog"
         ref={dialogRef}
         aria-labelledby="report-title"
-        className="m-auto w-full max-w-md rounded-2xl bg-surface-muted p-6 text-text backdrop:bg-text/50"
+        className={styles.dialog}
       >
-        <form onSubmit={submitReport} noValidate className="flex flex-col gap-4">
-          <h2 id="report-title" className="text-lg font-extrabold">
+        <form onSubmit={submitReport} noValidate className={styles.form}>
+          <h2 id="report-title" className={styles.title}>
             피드백 신고
           </h2>
-          <p className="text-sm text-text-muted">
+          <p className={styles.text4}>
             {target?.testerNickname}님의 피드백을 신고해요. 운영자가 검토하고, 그동안 보상 지급은 멈춰요.
           </p>
-          <label htmlFor="report-reason" className="text-sm font-bold">
+          <label htmlFor="report-reason" className={styles.field}>
             신고 사유
           </label>
-          <textarea
+          <TextArea
             id="report-reason"
             name="reason"
             rows={4}
@@ -244,21 +244,20 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
             autoFocus
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "report-reason-error" : undefined}
-            className={inputClass}
           />
           {error && (
-            <p id="report-reason-error" className="text-sm font-semibold">
+            <p id="report-reason-error" className={styles.error}>
               {error}
             </p>
           )}
-          <div className="flex justify-end gap-2">
+          <div className={styles.box4}>
             <Button variant="secondary" onClick={() => dialogRef.current?.close()}>
               취소
             </Button>
             <Button type="submit">신고하기</Button>
           </div>
         </form>
-      </dialog>
+      </Card>
     </>
   );
 }
@@ -267,13 +266,13 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
 function PaidAction({ subscribed, label, onClick, children }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode }) {
   if (!subscribed) {
     return (
-      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="paid" className={CARD_ACTION} aria-label={`${label}, 구독하면 쓸 수 있어요`}>
+      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="paid" className={styles.cardAction} aria-label={`${label}, 구독하면 쓸 수 있어요`}>
         {children}
       </LinkButton>
     );
   }
   return (
-    <Button size="sm" variant="paid" className={CARD_ACTION} aria-label={label} onClick={onClick}>
+    <Button size="sm" variant="paid" className={styles.cardAction} aria-label={label} onClick={onClick}>
       {children}
     </Button>
   );

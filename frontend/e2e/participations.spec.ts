@@ -62,7 +62,7 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     await expect(box.locator('td[aria-current="date"]')).toHaveCount(1);
 
     /* 마감은 오늘부터 16일 안이라 이번 달과 다음 달에 모두 들어온다 */
-    const marked = async () => box.locator("td[data-deadline] .sr-only").allTextContents();
+    const marked = async () => box.locator("td[data-deadline] [data-deadline-label]").allTextContents();
     const thisMonth = await marked();
     await box.getByRole("button", { name: "다음 달" }).click();
     await expect(box.getByText(seoulMonthTitle(1), { exact: true })).toBeVisible();

@@ -1,22 +1,23 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import { cardClass, cardTitleClass } from "@/app/(site)/my/(account)/_components/card-styles";
 import { LEDGER_TYPE_LABEL, LEDGER_TYPES, type CreditEntry, type LedgerType } from "@/features/credit/types";
 import { DayGroups } from "../../../_components/DayGroups/DayGroups";
 import { LedgerRow } from "../../../_components/LedgerRow/LedgerRow";
+import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./LedgerList.module.css";
 
 const filterHref = (type: LedgerType) => (type === "all" ? "/my/credits" : `/my/credits?type=${type}`);
 
 /** 전체 크레딧 내역과 받은·쓴 필터. 필터는 링크라 상태가 URL에 남는다 */
 export function LedgerList({ entries, type, now }: { entries: CreditEntry[]; type: LedgerType; now: Date }) {
   return (
-    <section aria-labelledby="ledger-heading" className={cardClass}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="ledger-heading" className={cardTitleClass}>
+    <AccountCard as="section" aria-labelledby="ledger-heading">
+      <div className={styles.box}>
+        <AccountCardTitle id="ledger-heading">
           크레딧 내역
-        </h2>
+        </AccountCardTitle>
         <nav aria-label="내역 필터">
-          <ul className="flex gap-1">
+          <ul className={styles.list}>
             {LEDGER_TYPES.map((item) => {
               const active = item === type;
               return (
@@ -24,10 +25,7 @@ export function LedgerList({ entries, type, now }: { entries: CreditEntry[]; typ
                   <Link
                     href={filterHref(item)}
                     aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "inline-flex rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-                      active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
-                    )}
+                    className={cn(styles.link, active ? styles.linkActive : styles.linkNotActive)}
                   >
                     {LEDGER_TYPE_LABEL[item]}
                   </Link>
@@ -38,7 +36,7 @@ export function LedgerList({ entries, type, now }: { entries: CreditEntry[]; typ
         </nav>
       </div>
       {entries.length === 0 ? (
-        <p className="py-3 text-sm text-text-muted">
+        <p className={styles.text}>
           {type === "all" ? "아직 크레딧 내역이 없어요" : `${LEDGER_TYPE_LABEL[type]} 내역이 없어요`}
         </p>
       ) : (
@@ -46,6 +44,6 @@ export function LedgerList({ entries, type, now }: { entries: CreditEntry[]; typ
           {(entry) => <LedgerRow key={entry.id} entry={entry} />}
         </DayGroups>
       )}
-    </section>
+    </AccountCard>
   );
 }

@@ -8,6 +8,7 @@ import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/A
 import { OldestPendingPanel, OldestPendingPanelSkeleton } from "@/app/(site)/admin/_components/OldestPendingPanel/OldestPendingPanel";
 import { PendingSummary, PendingSummarySkeleton } from "@/app/(site)/admin/_components/PendingSummary/PendingSummary";
 import { RecentRequests, RecentRequestsSkeleton } from "@/app/(site)/admin/_components/RecentRequests/RecentRequests";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "운영자 홈" };
 
@@ -24,7 +25,7 @@ async function AdminHome() {
   if (!(await requireAdmin("/admin"))) return <AccessDenied pageName="운영자 페이지" />;
   return (
     <AdminShell path="/admin" title="운영자 홈">
-      <Container className="flex flex-col gap-20 pt-10">
+      <Container className={styles.adminHomeContainer}>
         <Suspense fallback={<PendingSummarySkeleton />}>
           <SummarySlot />
         </Suspense>

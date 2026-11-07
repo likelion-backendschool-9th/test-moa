@@ -5,6 +5,8 @@ import type { ChatRoom } from "@/features/chat/types";
 import { ChatCardMenu } from "@/features/chat/components/ChatCardMenu/ChatCardMenu";
 import { ChatRoleBadge } from "@/features/chat/components/ChatRoleBadge/ChatRoleBadge";
 import { ChatThumb } from "@/features/chat/components/ChatThumb/ChatThumb";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./ChatCard.module.css";
 
 /**
  * 채팅방 카드 한 장. 왼쪽은 카드 높이를 다 채우는 프로젝트 이미지, 선 없이 바로 옆에
@@ -21,42 +23,42 @@ export function ChatCard({ room, now, eager = false }: { room: ChatRoom; now: Da
   const title = room.roomName ?? room.projectName;
   const today = isTodayInSeoul(room.lastMessageAt, now);
   return (
-    <article className="group relative flex rounded-2xl bg-surface-muted">
+    <Card as="article" data-hover-card className={styles.root}>
       <ChatThumb projectName={room.projectName} imageUrl={room.projectImage} eager={eager} />
-      <div className="flex min-w-0 flex-1 items-start gap-3 px-5 py-4 md:px-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="min-w-0 truncate text-sm leading-relaxed font-bold transition-colors duration-300 ease-brand group-hover:text-accent">
+      <div className={styles.box}>
+        <div className={styles.box2}>
+          <div className={styles.box3}>
+            <h2 className={styles.title}>
               <Link
                 href={roomHref}
-                className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent"
+                className={styles.link}
               >
                 {title}
-                <span className="sr-only"> 채팅방</span>
+                <span className={styles.srOnly}> 채팅방</span>
               </Link>
             </h2>
             <time
               dateTime={room.lastMessageAt}
               data-today={today || undefined}
-              className={cn("flex shrink-0 items-center gap-1.5 text-xs tabular-nums", today ? "text-accent" : "text-text-muted")}
+              className={cn(styles.today, today ? styles.todayToday : styles.todayNotToday)}
             >
-              {today && <span aria-hidden className="size-1.5 rounded-full bg-accent" />}
+              {today && <span aria-hidden className={styles.label} />}
               {formatChatTime(room.lastMessageAt, now)}
             </time>
           </div>
-          <p className="flex min-w-0 items-center gap-2 text-sm">
-            <span className="sr-only">대화 상대 </span>
+          <p className={styles.text}>
+            <span className={styles.srOnly2}>대화 상대 </span>
             <ChatRoleBadge role={room.partner.role} />{" "}
-            <span data-partner className="truncate">
+            <span data-partner className={styles.partner}>
               {room.partner.nickname}
             </span>
           </p>
-          <p data-preview className="line-clamp-1 text-sm leading-relaxed text-text-muted">
+          <p data-preview className={styles.preview}>
             {room.lastMessage}
           </p>
         </div>
-        <ChatCardMenu roomKey={room.roomKey} title={title} className="-mt-1.5 -mr-1.5" />
+        <ChatCardMenu roomKey={room.roomKey} title={title} className={styles.chatCardMenu} />
       </div>
-    </article>
+    </Card>
   );
 }

@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { formatCredits } from "@/lib/format";
 import { ADMIN_REQUEST_PATH, type AdminSummary } from "@/app/(site)/admin/_lib/paths";
+import { cn } from "@/lib/cn";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./PendingSummary.module.css";
 
-const cardClass = "flex flex-col gap-3 rounded-2xl bg-surface-muted p-6 md:p-8";
 
 type SummaryCard = {
   label: string;
@@ -22,7 +24,7 @@ export function PendingSummary({ summary }: { summary: AdminSummary }) {
       href: ADMIN_REQUEST_PATH.report,
       detail: (
         <>
-          보상 보류 <strong className="font-extrabold text-text tabular-nums">{summary.heldRewardCount}</strong>건
+          보상 보류 <strong className={styles.heldRewardCount}>{summary.heldRewardCount}</strong>건
         </>
       ),
     },
@@ -35,30 +37,30 @@ export function PendingSummary({ summary }: { summary: AdminSummary }) {
   ];
 
   return (
-    <section aria-labelledby="pending-heading" className="flex flex-col gap-6">
-      <h2 id="pending-heading" className="text-2xl font-extrabold tracking-[-0.03em]">
+    <section aria-labelledby="pending-heading" className={styles.root}>
+      <h2 id="pending-heading" className={styles.title}>
         처리 대기
       </h2>
-      <ul className="grid gap-4 md:grid-cols-2">
+      <ul className={styles.list}>
         {cards.map((card) => (
           <li key={card.href}>
-            <Link
+            <Card as={Link}
               href={card.href}
-              className={`${cardClass} h-full transition-colors duration-300 ease-brand hover:bg-surface-strong`}
+              className={cn(styles.summaryCard, styles.link)}
             >
-              <span className="text-sm font-semibold">{card.label}</span>
+              <span className={styles.label}>{card.label}</span>
               {card.count === 0 ? (
-                <span className="text-sm text-text-muted">처리할 요청 없음</span>
+                <span className={styles.label2}>처리할 요청 없음</span>
               ) : (
                 <>
-                  <span className="text-4xl font-extrabold tracking-[-0.03em] tabular-nums">
+                  <span className={styles.label3}>
                     {card.count}
-                    <span className="ml-1 text-base font-semibold">건</span>
+                    <span className={styles.label4}>건</span>
                   </span>
-                  <span className="text-sm text-text-muted">{card.detail}</span>
+                  <span className={styles.detail}>{card.detail}</span>
                 </>
               )}
-            </Link>
+            </Card>
           </li>
         ))}
       </ul>
@@ -68,15 +70,15 @@ export function PendingSummary({ summary }: { summary: AdminSummary }) {
 
 export function PendingSummarySkeleton() {
   return (
-    <div aria-busy="true" aria-label="처리 대기 불러오는 중" className="flex flex-col gap-6">
-      <Skeleton className="h-8 w-28" />
-      <div className="grid gap-4 md:grid-cols-2">
+    <div aria-busy="true" aria-label="처리 대기 불러오는 중" className={styles.pendingSummarySkeleton}>
+      <Skeleton className={styles.pendingSummarySkeletonSkeleton} />
+      <div className={styles.pendingSummarySkeletonBox}>
         {Array.from({ length: 2 }, (_, index) => (
-          <div key={index} className={cardClass} data-skeleton="summary">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-10 w-16" />
-            <Skeleton className="h-5 w-32" />
-          </div>
+          <Card key={index} className={styles.summaryCard} data-skeleton="summary">
+            <Skeleton className={styles.pendingSummarySkeletonSkeleton2} />
+            <Skeleton className={styles.pendingSummarySkeletonSkeleton3} />
+            <Skeleton className={styles.pendingSummarySkeletonSkeleton4} />
+          </Card>
         ))}
       </div>
     </div>

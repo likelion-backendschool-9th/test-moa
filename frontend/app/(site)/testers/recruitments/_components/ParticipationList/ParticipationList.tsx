@@ -9,7 +9,8 @@ import {
 } from "@/features/participation/types";
 import { ParticipationRow } from "../ParticipationRow/ParticipationRow";
 import { ParticipationViewToggle } from "../ParticipationViewToggle/ParticipationViewToggle";
-import { VIEW_LIST_CLASS } from "../view-styles";
+import { ParticipationListFrame } from "../ParticipationListFrame/ParticipationListFrame";
+import styles from "./ParticipationList.module.css";
 
 const EMPTY: Record<ParticipationTab, { title: string; description: string }> = {
   applied: {
@@ -47,25 +48,25 @@ export function ParticipationList({ tab, view, urlTab, items, now }: Participati
 
   const earned = items.filter((item) => item.status === "paid").reduce((sum, item) => sum + item.earnedCredits, 0);
   return (
-    <section aria-labelledby="participation-list-heading" className="flex flex-col gap-4">
-      <h2 id="participation-list-heading" className="sr-only">
+    <section aria-labelledby="participation-list-heading" className={styles.root}>
+      <h2 id="participation-list-heading" className={styles.srOnly}>
         {TAB_LABEL[tab]}
       </h2>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      <div className={styles.box}>
         {tab === "history" && (
-          <p className="text-sm text-text-muted">
-            받은 크레딧 합계 <strong className="ml-1 text-base font-extrabold text-text tabular-nums">{formatCredits(earned)}</strong>
+          <p className={styles.text}>
+            받은 크레딧 합계 <strong className={styles.strong}>{formatCredits(earned)}</strong>
           </p>
         )}
         <ParticipationViewToggle active={view} tab={urlTab} />
       </div>
-      <ul className={VIEW_LIST_CLASS[view]}>
+      <ParticipationListFrame view={view}>
         {items.map((item) => (
           <li key={item.key}>
             <ParticipationRow item={item} view={view} now={now} />
           </li>
         ))}
-      </ul>
+      </ParticipationListFrame>
     </section>
   );
 }

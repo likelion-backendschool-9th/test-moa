@@ -6,28 +6,28 @@ import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { REPORT_DECISION_LABEL, type Report } from "@/features/report/types";
 import { maskEmail, maskName, type UserActivity, type UserDetail } from "@/features/member/admin";
+import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
+import styles from "./UserDetail.module.css";
 
-const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
-const infoGridClass = "grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]";
 
 /** 회원 상세. 실명·이메일은 가려서 보여 준다. 제재는 이번에는 이력만 보여 준다(docs/frontend/admin/users.md) */
 export function UserDetailView({ user }: { user: UserDetail }) {
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/admin/users" className="self-start text-sm font-semibold text-text-muted hover:text-text">
+    <div className={styles.userDetailView}>
+      <Link href="/admin/users" className={styles.userDetailViewLink}>
         목록으로
       </Link>
-      <div className="flex flex-col gap-2">
+      <div className={styles.userDetailViewBox}>
         {user.sanctions.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={styles.userDetailViewBox2}>
             <Badge tone="neutral">제재 이력 {user.sanctions.length}건</Badge>
           </div>
         )}
-        <h2 className="text-2xl font-extrabold tracking-[-0.03em]">{user.nickname}</h2>
+        <h2 className={styles.userDetailViewNickname}>{user.nickname}</h2>
       </div>
 
       <Panel id="user-info-heading" title="기본 정보">
-        <dl className={infoGridClass}>
+        <dl className={styles.infoGrid}>
           <Info label="닉네임">{user.nickname}</Info>
           <Info label="가입">{formatDate(user.joinedAt)}</Info>
           <Info label="실명">{maskName(user.realName)}</Info>
@@ -41,7 +41,7 @@ export function UserDetailView({ user }: { user: UserDetail }) {
 
       <Panel id="user-sanctions-heading" title="제재 이력">
         {user.sanctions.length === 0 ? (
-          <p className="text-sm text-text-muted">제재 이력이 없어요</p>
+          <p className={styles.userDetailViewText}>제재 이력이 없어요</p>
         ) : (
           <ReportRows reports={user.sanctions} dateOf={(report) => report.review!.processedAt} dateLabel="처리" />
         )}
@@ -49,7 +49,7 @@ export function UserDetailView({ user }: { user: UserDetail }) {
 
       <Panel id="user-reports-heading" title="받은 신고">
         {user.receivedReports.length === 0 ? (
-          <p className="text-sm text-text-muted">받은 신고가 없어요</p>
+          <p className={styles.userDetailViewText2}>받은 신고가 없어요</p>
         ) : (
           <ReportRows reports={user.receivedReports} dateOf={(report) => report.createdAt} dateLabel="접수" showStatus />
         )}
@@ -60,20 +60,20 @@ export function UserDetailView({ user }: { user: UserDetail }) {
 
 function Panel({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className={panelClass}>
-      <h3 id={id} className="text-lg font-extrabold">
+    <AdminPanel as="section" aria-labelledby={id}>
+      <h3 id={id} className={styles.panelTitle}>
         {title}
       </h3>
       {children}
-    </section>
+    </AdminPanel>
   );
 }
 
 function Info({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
-      <dt className="text-text-muted">{label}</dt>
-      <dd className="font-semibold">{children}</dd>
+      <dt className={styles.infoLabel}>{label}</dt>
+      <dd className={styles.infoChildren}>{children}</dd>
     </>
   );
 }
@@ -82,7 +82,7 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
 function ActivitySummary({ activity }: { activity: UserActivity }) {
   const { tester, developer } = activity;
   return (
-    <div className="flex flex-col gap-5">
+    <div className={styles.activitySummary}>
       <ActivityGroup title="테스터 활동" emptyText="테스터 활동이 없어요" hasActivity={tester !== null}>
         {tester && (
           <>
@@ -109,9 +109,9 @@ type ActivityGroupProps = { title: string; emptyText: string; hasActivity: boole
 
 function ActivityGroup({ title, emptyText, hasActivity, children }: ActivityGroupProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <h4 className="text-sm font-extrabold">{title}</h4>
-      {hasActivity ? <dl className={infoGridClass}>{children}</dl> : <p className="text-sm text-text-muted">{emptyText}</p>}
+    <div className={styles.activityGroup}>
+      <h4 className={styles.activityGroupTitle}>{title}</h4>
+      {hasActivity ? <dl className={styles.infoGrid}>{children}</dl> : <p className={styles.activityGroupEmptyText}>{emptyText}</p>}
     </div>
   );
 }
@@ -127,25 +127,22 @@ type ReportRowsProps = {
 /** 신고 줄. 누르면 신고 상세로 가서 원문과 처리 내용을 본다 */
 function ReportRows({ reports, dateOf, dateLabel, showStatus = false }: ReportRowsProps) {
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className={styles.reportRows}>
       {reports.map((report) => (
         <li key={report.id}>
           <Link
             href={`/admin/reports/${report.id}`}
-            className={cn(
-              "flex flex-col gap-1 rounded-xl bg-surface-strong px-4 py-3 transition-colors duration-300 ease-brand hover:bg-line",
-              "sm:flex-row sm:items-center sm:gap-4",
-            )}
+            className={cn(styles.reportRowsLink, styles.reportRowsLinkExtra)}
           >
-            <span className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="text-sm font-semibold">{report.recruitmentName}</span>
-              <span className="text-sm text-text-muted">{report.reason}</span>
+            <span className={styles.reportRowsLabel}>
+              <span className={styles.reportRowsRecruitmentName}>{report.recruitmentName}</span>
+              <span className={styles.reportRowsReason}>{report.reason}</span>
             </span>
-            <span className="flex flex-wrap items-center gap-2">
+            <span className={styles.reportRowsLabel2}>
               {showStatus && (
                 <Badge tone="neutral">{report.review ? REPORT_DECISION_LABEL[report.review.decision] : "검토 대기"}</Badge>
               )}
-              <span className="text-xs text-text-muted tabular-nums">
+              <span className={styles.reportRowsLabel3}>
                 {dateLabel} {formatDate(dateOf(report))}
               </span>
             </span>
@@ -158,13 +155,13 @@ function ReportRows({ reports, dateOf, dateLabel, showStatus = false }: ReportRo
 
 export function UserDetailSkeleton() {
   return (
-    <div aria-busy="true" aria-label="회원 정보 불러오는 중" className="flex flex-col gap-6">
-      <Skeleton className="h-5 w-16" />
-      <Skeleton className="h-8 w-40" />
-      <div className={panelClass} data-skeleton="user-detail">
-        <Skeleton className="h-6 w-24" />
-        <Skeleton className="h-24 w-full" />
-      </div>
+    <div aria-busy="true" aria-label="회원 정보 불러오는 중" className={styles.userDetailSkeleton}>
+      <Skeleton className={styles.userDetailSkeletonSkeleton} />
+      <Skeleton className={styles.userDetailSkeletonSkeleton2} />
+      <AdminPanel data-skeleton="user-detail">
+        <Skeleton className={styles.userDetailSkeletonSkeleton3} />
+        <Skeleton className={styles.userDetailSkeletonSkeleton4} />
+      </AdminPanel>
     </div>
   );
 }

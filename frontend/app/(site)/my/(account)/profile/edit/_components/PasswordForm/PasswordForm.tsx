@@ -6,7 +6,9 @@ import { FormField, FormMessage } from "@/components/ui/FormField/FormField";
 import type { FormState } from "@/lib/form";
 import { PASSWORD_HINT } from "@/features/member/validation";
 import { changePassword, type PasswordField } from "@/features/member/actions";
-import { cardTitleClass, settingsBodyClass, settingsSectionClass } from "../../../../_components/card-styles";
+import { SettingsBody, SettingsSection } from "@/app/(site)/my/(account)/_components/SettingsCard/SettingsCard";
+import { AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./PasswordForm.module.css";
 
 
 const initialState: FormState<PasswordField> = { status: "idle" };
@@ -30,18 +32,18 @@ export function PasswordForm() {
 
   const errors = state.status === "error" ? state.errors : {};
   return (
-    <section aria-labelledby="password-form-heading" className={settingsSectionClass}>
-      <div className="flex flex-col gap-1">
-        <h2 id="password-form-heading" className={cardTitleClass}>
+    <SettingsSection aria-labelledby="password-form-heading">
+      <div className={styles.box}>
+        <AccountCardTitle id="password-form-heading">
           비밀번호 변경
-        </h2>
-        <p className="text-sm text-text-muted">현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요.</p>
+        </AccountCardTitle>
+        <p className={styles.text}>현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요.</p>
       </div>
-      <div className={settingsBodyClass}>
+      <SettingsBody>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
         {/* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */}
-        <form ref={formRef} action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-          <div className="flex flex-col gap-5">
+        <form ref={formRef} action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
+          <div className={styles.box2}>
             <FormField
               id="password-current"
               name="current"
@@ -68,14 +70,14 @@ export function PasswordForm() {
               error={errors.confirm}
             />
           </div>
-          <div className="flex md:justify-end">
+          <div className={styles.box3}>
             {/* 주 버튼은 기본 정보 "저장" 하나다 (DESIGN.md The One Green Rule) */}
-          <Button type="submit" variant="secondary" disabled={pending} className="w-full md:w-auto">
+          <Button type="submit" variant="secondary" disabled={pending} className={styles.button}>
               {pending ? "바꾸는 중…" : "비밀번호 변경"}
             </Button>
           </div>
         </form>
-      </div>
-    </section>
+      </SettingsBody>
+    </SettingsSection>
   );
 }

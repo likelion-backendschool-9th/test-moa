@@ -7,6 +7,8 @@ import type { FormState } from "@/lib/form";
 import { socialSignup } from "@/features/auth/actions";
 import type { SocialSignupField } from "@/features/auth/types";
 import { Agreements } from "../../../_components/Agreements/Agreements";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./SocialSignupForm.module.css";
 
 const initialState: FormState<SocialSignupField> = { status: "idle" };
 
@@ -23,19 +25,19 @@ export function SocialSignupForm({ email, nickname, next }: { email: string; nic
 
   const errors = state.status === "error" ? state.errors : {};
   return (
-    <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form action={formAction} onSubmit={handleSubmit} noValidate className={styles.root}>
       {errors.form && <FormMessage status="error" message={errors.form} />}
       <input type="hidden" name="next" value={next} />
-      <dl className="flex flex-col gap-3 rounded-lg bg-surface-muted px-4 py-3 text-sm">
-        <div className="flex flex-wrap gap-x-3">
-          <dt className="text-text-muted">이메일</dt>
-          <dd className="font-semibold break-all">{email}</dd>
+      <Card as="dl" radius="lg" className={styles.list}>
+        <div className={styles.box}>
+          <dt className={styles.term}>이메일</dt>
+          <dd className={styles.email}>{email}</dd>
         </div>
-        <div className="flex flex-wrap gap-x-3">
-          <dt className="text-text-muted">닉네임</dt>
-          <dd className="font-semibold break-all">{nickname}</dd>
+        <div className={styles.box2}>
+          <dt className={styles.term2}>닉네임</dt>
+          <dd className={styles.nickname}>{nickname}</dd>
         </div>
-      </dl>
+      </Card>
       <FormField
         id="social-signup-name"
         name="name"
@@ -45,7 +47,7 @@ export function SocialSignupForm({ email, nickname, next }: { email: string; nic
         error={errors.name}
       />
       <Agreements idPrefix="social-signup" error={errors.agreements} />
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button type="submit" disabled={pending} className={styles.button}>
         {pending ? "가입하는 중…" : "가입하기"}
       </Button>
     </form>

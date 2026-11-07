@@ -1,6 +1,7 @@
 import { FlaskIcon, FolderSimpleIcon } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 import { TODO_CATEGORY_LABEL, type TodoCategory } from "@/features/member/types";
+import styles from "./ActivityGroup.module.css";
 
 const ICONS: Record<TodoCategory, typeof FlaskIcon> = {
   participation: FlaskIcon,
@@ -12,9 +13,9 @@ export function ActivityGroup({ kind, children }: { kind: TodoCategory; children
   const Icon = ICONS[kind];
   const title = TODO_CATEGORY_LABEL[kind];
   return (
-    <section aria-label={title} className="flex flex-col gap-3 rounded-xl bg-surface p-4">
-      <h3 className="flex items-center gap-2 text-sm font-extrabold">
-        <span className="inline-flex size-7 items-center justify-center rounded-full bg-surface-strong">
+    <section aria-label={title} className={styles.root}>
+      <h3 className={styles.title}>
+        <span className={styles.label}>
           <Icon aria-hidden size={16} weight="bold" />
         </span>
         {title}

@@ -4,6 +4,8 @@ import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { formatDate } from "@/lib/format";
 import type { AiAnalysis } from "@/features/recruitment/types";
 import type { AiFinding } from "@/features/recruitment/types";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./AiAnalysisPanel.module.css";
 
 /*
  * 분석 탭 아래의 AI 분석 영역. 지금은 AI가 없어 시연용 샘플을 보여 준다.
@@ -13,23 +15,23 @@ import type { AiFinding } from "@/features/recruitment/types";
 /** AI 분석 영역 바깥 틀. 상태와 상관없이 제목은 같다 */
 function Frame({ badge, children }: { badge?: ReactNode; children: ReactNode }) {
   return (
-    <section aria-labelledby="ai-heading" className="flex flex-col gap-5 rounded-2xl bg-surface-muted p-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 id="ai-heading" className="text-xl font-extrabold tracking-[-0.03em]">
+    <Card as="section" aria-labelledby="ai-heading" className={styles.frame}>
+      <div className={styles.frameBox}>
+        <h2 id="ai-heading" className={styles.frameTitle}>
           AI 분석
         </h2>
         {badge}
       </div>
       {children}
-    </section>
+    </Card>
   );
 }
 
 /** 묶음 제목. 항목 수를 옆에 붙인다 */
 function GroupTitle({ title, count }: { title: string; count: number }) {
   return (
-    <h3 className="font-extrabold">
-      {title} <span className="text-text-muted">{count}</span>
+    <h3 className={styles.groupTitle}>
+      {title} <span className={styles.groupTitleCount}>{count}</span>
     </h3>
   );
 }
@@ -44,15 +46,15 @@ export function AiAnalysisPanel({ analysis }: { analysis: AiAnalysis }) {
   if (analysis.state === "notEnough") {
     return (
       <Frame>
-        <p className="font-semibold">피드백이 {analysis.minFeedbacks}건 이상 모이면 AI가 정리해 드려요</p>
-        <p className="text-sm text-text-muted">지금 피드백 {analysis.feedbackCount}건</p>
+        <p className={styles.text}>피드백이 {analysis.minFeedbacks}건 이상 모이면 AI가 정리해 드려요</p>
+        <p className={styles.text2}>지금 피드백 {analysis.feedbackCount}건</p>
       </Frame>
     );
   }
   if (analysis.state === "empty") {
     return (
       <Frame>
-        <p className="font-semibold">아직 정리된 내용이 없어요</p>
+        <p className={styles.text3}>아직 정리된 내용이 없어요</p>
       </Frame>
     );
   }
@@ -60,20 +62,20 @@ export function AiAnalysisPanel({ analysis }: { analysis: AiAnalysis }) {
   const { summary } = analysis;
   return (
     <Frame badge={summary.isSample && <Badge tone="muted">시연용 샘플</Badge>}>
-      <p className="text-lg font-semibold">{summary.headline}</p>
+      <p className={styles.headline}>{summary.headline}</p>
       {/* 고칠 점: 문제마다 바로 아래에 해결 제안을 붙여 무엇을 고치면 되는지 한 번에 보이게 한다 */}
       {summary.issues.length > 0 && (
-        <div className="flex flex-col gap-3">
+        <div className={styles.box}>
           <GroupTitle title="고칠 점" count={summary.issues.length} />
-          <ul className="flex flex-col gap-3">
+          <ul className={styles.list}>
             {summary.issues.map((item) => (
-              <li key={item.text} className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
-                <p className="flex flex-wrap items-center gap-2 font-semibold">
+              <li key={item.text} className={styles.root}>
+                <p className={styles.text4}>
                   {item.text} <Evidence item={item} />
                 </p>
                 {item.suggestion && (
-                  <p className="text-sm text-text-muted">
-                    <span className="font-bold text-text">제안</span> {item.suggestion}
+                  <p className={styles.text5}>
+                    <span className={styles.label}>제안</span> {item.suggestion}
                   </p>
                 )}
               </li>
@@ -82,18 +84,18 @@ export function AiAnalysisPanel({ analysis }: { analysis: AiAnalysis }) {
         </div>
       )}
       {summary.strengths.length > 0 && (
-        <div className="flex flex-col gap-3">
+        <div className={styles.box2}>
           <GroupTitle title="좋았던 점" count={summary.strengths.length} />
-          <ul className="flex flex-col gap-2">
+          <ul className={styles.list2}>
             {summary.strengths.map((item) => (
-              <li key={item.text} className="flex flex-wrap items-center gap-2">
+              <li key={item.text} className={styles.root2}>
                 {item.text} <Evidence item={item} />
               </li>
             ))}
           </ul>
         </div>
       )}
-      <p className="border-t border-line pt-4 text-xs text-text-muted">
+      <p className={styles.text6}>
         AI가 정리한 내용이라 틀릴 수 있어요 · {formatDate(summary.generatedAt)} 정리
       </p>
     </Frame>
@@ -104,10 +106,10 @@ export function AiAnalysisPanel({ analysis }: { analysis: AiAnalysis }) {
 export function AiAnalysisSkeleton() {
   return (
     <Frame>
-      <div data-testid="ai-skeleton" className="flex flex-col gap-3">
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-2/3" />
+      <div data-testid="ai-skeleton" className={styles.aiAnalysisSkeletonBox}>
+        <Skeleton className={styles.aiAnalysisSkeletonSkeleton} />
+        <Skeleton className={styles.aiAnalysisSkeletonSkeleton2} />
+        <Skeleton className={styles.aiAnalysisSkeletonSkeleton3} />
       </div>
     </Frame>
   );

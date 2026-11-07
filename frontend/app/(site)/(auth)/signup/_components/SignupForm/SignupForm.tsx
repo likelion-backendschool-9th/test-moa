@@ -8,6 +8,7 @@ import { NICKNAME_HINT, PASSWORD_HINT } from "@/features/member/validation";
 import { signup } from "@/features/auth/actions";
 import { Agreements } from "../Agreements/Agreements";
 import type { SignupField } from "@/features/auth/types";
+import styles from "./SignupForm.module.css";
 
 const initialState: FormState<SignupField> = { status: "idle" };
 
@@ -25,11 +26,11 @@ export function SignupForm({ next }: { next: string }) {
   const errors = state.status === "error" ? state.errors : {};
   /* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */
   return (
-    <form action={formAction} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form action={formAction} onSubmit={handleSubmit} noValidate className={styles.root}>
       {/* 칸에 붙지 않는 오류(백엔드 연결 실패·시간 초과·서버 오류) */}
       {errors.form && <FormMessage status="error" message={errors.form} />}
       <input type="hidden" name="next" value={next} />
-      <div className="flex flex-col gap-5">
+      <div className={styles.box}>
         <FormField id="signup-name" name="name" label="이름" autoComplete="name" error={errors.name} />
         <FormField id="signup-nickname" name="nickname" label="닉네임" autoComplete="nickname" hint={NICKNAME_HINT} error={errors.nickname} />
         <FormField id="signup-email" name="email" type="email" label="이메일" autoComplete="email" error={errors.email} />
@@ -52,7 +53,7 @@ export function SignupForm({ next }: { next: string }) {
         />
       </div>
       <Agreements idPrefix="signup" error={errors.agreements} />
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button type="submit" disabled={pending} className={styles.button}>
         {pending ? "가입하는 중…" : "가입하기"}
       </Button>
     </form>

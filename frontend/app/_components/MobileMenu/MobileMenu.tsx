@@ -7,14 +7,13 @@ import { createPortal } from "react-dom";
 import { logout } from "@/features/auth/actions";
 import { cn } from "@/lib/cn";
 import { findActivePath, isMyPagePath, MY_PAGE_PATH, type NavItem } from "@/app/_lib/nav";
+import styles from "./MobileMenu.module.css";
 
 type MobileMenuProps = {
   items: NavItem[];
   /** 로그인했으면 헤더에서 숨긴 마이페이지·로그아웃을 패널에 넣는다 */
   isMember: boolean;
 };
-
-const itemClass = "flex w-full rounded-lg px-3 py-3 text-xl font-semibold";
 
 /** 좁은 화면 메뉴 버튼과 전체 높이 패널 */
 export function MobileMenu({ items, isMember }: MobileMenuProps) {
@@ -57,21 +56,15 @@ export function MobileMenu({ items, isMember }: MobileMenuProps) {
         aria-controls="mobile-menu"
         aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
         onClick={() => setOpen((value) => !value)}
-        className="relative inline-flex size-10 items-center justify-center rounded-lg hover:bg-surface-strong md:hidden"
+        className={styles.button}
       >
         <span
           aria-hidden
-          className={cn(
-            "absolute h-0.5 w-5 rounded-full bg-text transition-transform duration-500 ease-brand",
-            open ? "rotate-45" : "-translate-y-1",
-          )}
+          className={cn(styles.label, open ? styles.labelOpen : styles.labelNotOpen)}
         />
         <span
           aria-hidden
-          className={cn(
-            "absolute h-0.5 w-5 rounded-full bg-text transition-transform duration-500 ease-brand",
-            open ? "-rotate-45" : "translate-y-1",
-          )}
+          className={cn(styles.label2, open ? styles.label2Open : styles.label2NotOpen)}
         />
       </button>
       {open &&
@@ -79,27 +72,27 @@ export function MobileMenu({ items, isMember }: MobileMenuProps) {
           <div
             id="mobile-menu"
             data-testid="mobile-menu"
-            className="fixed inset-0 z-(--z-menu) h-dvh overflow-y-auto bg-surface/95 px-4 pt-24 pb-8 backdrop-blur-xl md:hidden"
+            className={styles.box}
           >
             <nav aria-label="모바일 메뉴">
-              <ul className="stagger-children flex flex-col gap-1">
+              <ul className={styles.list}>
                 {links.map((link) => (
-                  <li key={link.href} className="animate-rise-in">
+                  <li key={link.href} className={styles.root}>
                     <Link
                       href={link.href}
                       aria-current={link.active ? "page" : undefined}
                       onClick={() => setOpen(false)}
-                      className={cn(itemClass, link.active ? "bg-accent-soft text-accent" : "hover:bg-surface-strong")}
+                      className={cn(styles.item, link.active ? styles.labelActive : styles.labelNotActive)}
                     >
                       {link.label}
                     </Link>
                   </li>
                 ))}
                 {isMember && (
-                  <li className="animate-rise-in">
+                  <li className={styles.item2}>
                     {/* 로그아웃 뒤 홈으로 가므로 제출과 함께 패널을 닫는다 */}
                     <form action={logout} onSubmit={() => setOpen(false)}>
-                      <button type="submit" className={cn(itemClass, "text-text-muted hover:bg-surface-strong")}>
+                      <button type="submit" className={cn(styles.item, styles.button2)}>
                         로그아웃
                       </button>
                     </form>

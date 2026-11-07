@@ -4,6 +4,7 @@ import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { cn } from "@/lib/cn";
+import styles from "./DeadlineCalendar.module.css";
 
 /** 서울 기준 날짜 열쇠("2026-11-12")와 그날 마감인 서비스 이름 */
 export type CalendarDeadline = { day: string; name: string };
@@ -39,12 +40,12 @@ export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDead
   const monthIndex = month % 12;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <p id={titleId} aria-live="polite" className="text-base font-bold tabular-nums">
+    <div className={styles.root}>
+      <div className={styles.box}>
+        <p id={titleId} aria-live="polite" className={styles.text}>
           {year}년 {monthIndex + 1}월
         </p>
-        <div className="flex items-center gap-1">
+        <div className={styles.box2}>
           <Button variant="secondary" size="sm" aria-label="이전 달" onClick={() => setMonth(month - 1)}>
             <CaretLeftIcon aria-hidden size={16} weight="bold" />
           </Button>
@@ -53,11 +54,11 @@ export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDead
           </Button>
         </div>
       </div>
-      <table aria-labelledby={titleId} className="w-full table-fixed border-separate border-spacing-1 text-sm">
+      <table aria-labelledby={titleId} className={styles.table}>
         <thead>
           <tr>
             {WEEKDAYS.map((weekday) => (
-              <th key={weekday} scope="col" className="pb-1 text-xs font-semibold text-text-muted">
+              <th key={weekday} scope="col" className={styles.root2}>
                 {weekday}
               </th>
             ))}
@@ -76,25 +77,21 @@ export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDead
                     key={dayIndex}
                     data-deadline={names.length > 0 ? "" : undefined}
                     aria-current={isToday ? "date" : undefined}
-                    className={cn(
-                      "relative h-11 rounded-lg px-1 py-1 align-top md:h-16",
-                      names.length > 0 && "bg-surface-strong",
-                      isToday && "inset-ring-2 inset-ring-text",
-                    )}
+                    className={cn(styles.root3, names.length > 0 && styles.root3On, isToday && styles.root3IsToday)}
                   >
-                    <span className={cn("block text-center tabular-nums", (isToday || names.length > 0) && "font-extrabold")}>
+                    <span className={cn(styles.day, (isToday || names.length > 0) && styles.dayOn)}>
                       {day}
                     </span>
                     {names.length > 0 && (
                       <>
-                        <span aria-hidden className="mx-auto mt-0.5 block size-1.5 rounded-full bg-text md:hidden" />
-                        <span aria-hidden className="hidden md:block">
-                          <span className="block truncate text-center text-xs font-semibold">{names[0]}</span>
+                        <span aria-hidden className={styles.label} />
+                        <span aria-hidden className={styles.label2}>
+                          <span className={styles.label3}>{names[0]}</span>
                           {names.length > 1 && (
-                            <span className="block text-center text-xs text-text-muted tabular-nums">외 {names.length - 1}건</span>
+                            <span className={styles.label4}>외 {names.length - 1}건</span>
                           )}
                         </span>
-                        <span className="sr-only">{names.join(", ")} 제출 마감</span>
+                        <span data-deadline-label className={styles.srOnly}>{names.join(", ")} 제출 마감</span>
                       </>
                     )}
                   </td>

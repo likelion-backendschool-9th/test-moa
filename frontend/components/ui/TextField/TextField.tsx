@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
+import styles from "./TextField.module.css";
 
 /* 폼 입력란 공통 모양. 레이블, 입력, 오류 문구를 한 묶음으로 그리고 aria로 잇는다 */
 
@@ -12,8 +13,14 @@ type TextFieldProps = {
   multiline?: boolean;
 } & Omit<ComponentProps<"input">, "name">;
 
-export const inputClass =
-  "w-full rounded-xl bg-surface-strong px-4 py-3 text-base transition-colors duration-300 ease-brand focus:bg-surface-muted aria-invalid:ring-2 aria-invalid:ring-text";
+/** 입력란만. TextField와, 레이블을 따로 그리는 폼이 함께 쓴다 */
+export function TextInput({ className, ...props }: ComponentProps<"input">) {
+  return <input {...props} className={cn(styles.input, className)} />;
+}
+
+export function TextArea({ className, ...props }: ComponentProps<"textarea">) {
+  return <textarea {...props} className={cn(styles.input, className)} />;
+}
 
 /** 레이블과 오류 문구가 붙은 입력란. 오류가 있으면 aria-invalid와 aria-describedby를 단다 */
 export function TextField({ id: idProp, name, label, error, hint, multiline, className, ...props }: TextFieldProps) {
@@ -25,22 +32,22 @@ export function TextField({ id: idProp, name, label, error, hint, multiline, cla
   const shared = { id, name, "aria-invalid": error ? true : undefined, "aria-describedby": describedBy };
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      <label htmlFor={id} className="text-sm font-bold">
+    <div className={cn(styles.root, className)}>
+      <label htmlFor={id} className={styles.label}>
         {label}
       </label>
       {multiline ? (
-        <textarea {...shared} rows={4} defaultValue={props.defaultValue} className={inputClass} />
+        <TextArea {...shared} rows={4} defaultValue={props.defaultValue} />
       ) : (
-        <input {...shared} {...props} className={inputClass} />
+        <TextInput {...shared} {...props} />
       )}
       {hint && (
-        <p id={hintId} className="text-xs text-text-muted">
+        <p id={hintId} className={styles.hint}>
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-sm font-semibold">
+        <p id={errorId} className={styles.error}>
           {error}
         </p>
       )}

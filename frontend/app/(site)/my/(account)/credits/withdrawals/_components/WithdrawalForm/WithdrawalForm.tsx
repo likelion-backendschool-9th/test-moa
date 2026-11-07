@@ -3,20 +3,15 @@
 import { CaretDownIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type FormEvent, type ReactNode, startTransition, useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button/Button";
-import { cardClass, cardTitleClass } from "@/app/(site)/my/(account)/_components/card-styles";
 import { formatCredits, formatWon } from "@/lib/format";
 import { requestWithdrawal, type WithdrawalField, type WithdrawalFormState } from "@/features/credit/actions";
 import { BANKS } from "@/features/credit/types";
+import { cn } from "@/lib/cn";
+import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import { SelectField } from "@/components/ui/SelectField/SelectField";
+import styles from "./WithdrawalForm.module.css";
 
 const initialState: WithdrawalFormState = { status: "idle" };
-
-/*
- * 금액·계좌를 다루는 폼이라 알약 대신 12px 모서리를 쓴다 (DESIGN.md The Money Field Rule).
- * 입력·선택·버튼은 모두 높이 3rem이고, 라벨·안내·오류는 입력 글자와 같은 1rem에서 시작한다
- */
-const fieldClass =
-  "h-12 w-full rounded-xl bg-surface-strong px-4 text-base outline-none focus:bg-surface-muted focus:ring-2 focus:ring-accent aria-invalid:ring-2 aria-invalid:ring-text";
-const insetTextClass = "px-4 text-sm";
 
 /** 출금 신청 폼. 입력 검사는 서버에서 하고, 성공하면 칸을 비운다 */
 export function WithdrawalForm({ cashable }: { cashable: number }) {
@@ -43,20 +38,20 @@ export function WithdrawalForm({ cashable }: { cashable: number }) {
 
   const errors = state.status === "error" ? state.errors : {};
   return (
-    <section aria-labelledby="withdrawal-form-heading" className={cardClass}>
-      <div className="flex flex-col gap-1">
-        <h2 id="withdrawal-form-heading" className={cardTitleClass}>
+    <AccountCard as="section" aria-labelledby="withdrawal-form-heading">
+      <div className={styles.box}>
+        <AccountCardTitle id="withdrawal-form-heading">
           출금 신청
-        </h2>
-        <p className="text-sm text-text-muted">
-          출금 가능 <span className="font-semibold text-text tabular-nums">{formatCredits(cashable)}</span> · 1크레딧은 1원이에요.
+        </AccountCardTitle>
+        <p className={styles.text}>
+          출금 가능 <span className={styles.label}>{formatCredits(cashable)}</span> · 1크레딧은 1원이에요.
           이벤트 크레딧은 출금할 수 없어요.
         </p>
       </div>
-      {disabled && <p className="text-sm font-semibold">출금할 수 있는 크레딧이 없어요</p>}
-      {errors.form && <p className="text-sm font-semibold">{errors.form}</p>}
+      {disabled && <p className={styles.text2}>출금할 수 있는 크레딧이 없어요</p>}
+      {errors.form && <p className={styles.form}>{errors.form}</p>}
       {state.status === "success" && (
-        <p role="status" className="rounded-xl bg-accent-soft px-4 py-3 text-sm font-semibold text-accent">
+        <p role="status" className={styles.message}>
           {state.message}
         </p>
       )}
@@ -70,7 +65,7 @@ export function WithdrawalForm({ cashable }: { cashable: number }) {
           errors={errors}
         />
       </form>
-    </section>
+    </AccountCard>
   );
 }
 
@@ -85,10 +80,10 @@ function Fields({ cashable, disabled, pending, errors }: FieldsProps) {
   const [amount, setAmount] = useState("");
   const amountNumber = /^\d+$/.test(amount) ? Number(amount) : 0;
   return (
-    <div className="flex flex-col gap-6">
-      <fieldset disabled={disabled} className="grid gap-x-4 gap-y-5 md:grid-cols-2">
+    <div className={styles.fields}>
+      <fieldset disabled={disabled} className={styles.fieldsFieldset}>
         <Field id="withdrawal-amount" label="금액(크레딧)" error={errors.amount}>
-          <div className="flex gap-2">
+          <div className={styles.fieldsBox}>
             <input
               id="withdrawal-amount"
               name="amount"
@@ -98,22 +93,22 @@ function Fields({ cashable, disabled, pending, errors }: FieldsProps) {
               onChange={(event) => setAmount(event.target.value)}
               aria-invalid={errors.amount ? true : undefined}
               aria-describedby={errors.amount ? "withdrawal-amount-error" : "withdrawal-amount-summary"}
-              className={fieldClass}
+              className={styles.field}
             />
-            <Button type="button" variant="secondary" shape="field" onClick={() => setAmount(String(cashable))} className="h-12 shrink-0 py-0">
+            <Button type="button" variant="secondary" shape="field" onClick={() => setAmount(String(cashable))} className={styles.fieldsButton}>
               전액
             </Button>
           </div>
         </Field>
         <Field id="withdrawal-bank" label="은행" error={errors.bank}>
-          <div className="relative">
-            <select
+          <div className={styles.fieldsBox2}>
+            <SelectField
               id="withdrawal-bank"
               name="bank"
               defaultValue=""
               aria-invalid={errors.bank ? true : undefined}
               aria-describedby={errors.bank ? "withdrawal-bank-error" : undefined}
-              className={`${fieldClass} select-field pr-11`}
+              className={cn(styles.field, styles.fieldsSelect)}
             >
               {/* 안내 문구는 칸에만 보이고 펼친 목록에는 넣지 않는다 */}
               <option value="" hidden>
@@ -124,12 +119,12 @@ function Fields({ cashable, disabled, pending, errors }: FieldsProps) {
                   {bank}
                 </option>
               ))}
-            </select>
+            </SelectField>
             <CaretDownIcon
               aria-hidden
               size={16}
               weight="bold"
-              className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-text-muted"
+              className={styles.fieldsIcon}
             />
           </div>
         </Field>
@@ -142,7 +137,7 @@ function Fields({ cashable, disabled, pending, errors }: FieldsProps) {
             placeholder="숫자만 입력"
             aria-invalid={errors.account ? true : undefined}
             aria-describedby={errors.account ? "withdrawal-account-error" : undefined}
-            className={fieldClass}
+            className={styles.field}
           />
         </Field>
         <Field id="withdrawal-holder" label="예금주" error={errors.holder}>
@@ -152,16 +147,16 @@ function Fields({ cashable, disabled, pending, errors }: FieldsProps) {
             autoComplete="name"
             aria-invalid={errors.holder ? true : undefined}
             aria-describedby={errors.holder ? "withdrawal-holder-error" : undefined}
-            className={fieldClass}
+            className={styles.field}
           />
         </Field>
       </fieldset>
       {/* 마지막 칸(예금주) 바로 아래 오른쪽에서 끝난다. 누르기 직전에 받을 금액을 한 번 더 보여 준다 */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end md:gap-4">
-        <p id="withdrawal-amount-summary" className="text-sm text-text-muted">
-          받을 금액 <span className="text-lg font-extrabold text-text tabular-nums">{formatWon(amountNumber)}</span>
+      <div className={styles.fieldsBox3}>
+        <p id="withdrawal-amount-summary" className={styles.fieldsText}>
+          받을 금액 <span className={styles.fieldsLabel}>{formatWon(amountNumber)}</span>
         </p>
-        <Button type="submit" shape="field" disabled={disabled || pending} className="w-full md:w-auto">
+        <Button type="submit" shape="field" disabled={disabled || pending} className={styles.fieldsButton2}>
           {pending ? "신청하는 중…" : "출금 신청"}
         </Button>
       </div>
@@ -171,13 +166,13 @@ function Fields({ cashable, disabled, pending, errors }: FieldsProps) {
 
 function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className={`${insetTextClass} font-semibold`}>
+    <div className={styles.field2}>
+      <label htmlFor={id} className={cn(styles.insetText, styles.fieldLabel)}>
         {label}
       </label>
       {children}
       {error && (
-        <p id={`${id}-error`} className={`${insetTextClass} flex items-center gap-1 font-semibold`}>
+        <p id={`${id}-error`} className={cn(styles.insetText, styles.fieldText)}>
           <WarningCircleIcon aria-hidden size={16} weight="bold" />
           {error}
         </p>

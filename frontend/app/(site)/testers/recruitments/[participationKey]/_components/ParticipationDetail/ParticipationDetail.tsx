@@ -19,6 +19,7 @@ import {
 } from "@/features/participation/types";
 import { FeedbackForm } from "../FeedbackForm/FeedbackForm";
 import { FeedbackMarker } from "../FeedbackMarker/FeedbackMarker";
+import styles from "./ParticipationDetail.module.css";
 
 type ParticipationDetailProps = {
   item: ParticipationItem;
@@ -77,7 +78,7 @@ function infoRows(item: ParticipationItem): Array<[string, ReactNode]> {
     ["기본 보상", formatCredits(recruitment.baseReward)],
   ];
   if (recruitment.extraReward !== undefined) {
-    rows.push(["추가 보상", <span key="extra" className="font-bold text-accent">+{formatCredits(recruitment.extraReward)}</span>]);
+    rows.push(["추가 보상", <span key="extra" className={styles.infoRows}>+{formatCredits(recruitment.extraReward)}</span>]);
   }
   rows.push(["지원일", formatDate(item.appliedAt)]);
   if (item.submittedAt) rows.push(["제출일", formatDateTime(item.submittedAt)]);
@@ -93,30 +94,30 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
   const testItem = item.testItems[index];
   const title = testItem?.title ?? "기타 의견";
   return (
-    <li className="flex gap-3 py-6 first:pt-0 last:pb-0 md:gap-4">
+    <li className={styles.submittedFeedback}>
       <FeedbackMarker number={testItem ? index + 1 : undefined} />
-      <section aria-label={title} className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="flex min-h-8 flex-wrap items-center gap-2">
-          <h3 className="text-lg font-bold">{title}</h3>
+      <section aria-label={title} className={styles.submittedFeedbackSection}>
+        <div className={styles.submittedFeedbackBox}>
+          <h3 className={styles.submittedFeedbackTitle}>{title}</h3>
           <Badge tone={testItem?.required ? "neutral" : "outline"}>{testItem?.required ? "필수" : "선택"}</Badge>
         </div>
         {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
-        <p className="text-sm whitespace-pre-wrap wrap-anywhere">{feedback.content}</p>
+        <p className={styles.submittedFeedbackContent}>{feedback.content}</p>
         {feedback.imageNames.length > 0 && (
-          <div className="flex flex-col gap-3 pt-2">
-            <h4 className="text-sm font-bold">
-              첨부 이미지 <span className="ml-1 font-semibold text-text-muted tabular-nums">{feedback.imageNames.length}</span>
+          <div className={styles.submittedFeedbackBox2}>
+            <h4 className={styles.submittedFeedbackTitle2}>
+              첨부 이미지 <span className={styles.submittedFeedbackLength}>{feedback.imageNames.length}</span>
             </h4>
             {/* 작성할 때의 미리 보기와 같은 칸. 시연용이라 파일이 없어 이미지 자리에 아이콘과 이름을 둔다 */}
-            <ul data-testid="feedback-image-names" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <ul data-testid="feedback-image-names" className={styles.submittedFeedbackList}>
               {feedback.imageNames.map((name, index) => (
                 <li
                   key={`${name}-${index}`}
                   title={name}
-                  className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-surface-strong p-3 text-text-muted"
+                  className={styles.submittedFeedback2}
                 >
-                  <ImageIcon aria-hidden size={24} className="shrink-0" />
-                  <span className="w-full truncate text-center text-xs font-semibold">{name}</span>
+                  <ImageIcon aria-hidden size={24} className={styles.submittedFeedbackIcon} />
+                  <span className={styles.submittedFeedbackName}>{name}</span>
                 </li>
               ))}
             </ul>
@@ -135,47 +136,47 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
 
   /* 한 건을 읽고 쓰는 화면이라 넓은 화면에서도 가운데 한 칸에 모은다 */
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+    <div className={styles.root}>
       <Link
         href={participationsPath(tab)}
-        className="inline-flex items-center gap-1 self-start rounded-full text-sm font-bold text-text-muted transition-colors duration-300 ease-brand hover:text-text"
+        className={styles.link}
       >
         <CaretLeftIcon aria-hidden size={16} weight="bold" />
         {TAB_LABEL[tab]}
       </Link>
 
       {justSubmitted && status === "payoutPending" && (
-        <p role="status" className="rounded-2xl bg-accent-soft px-5 py-4 text-sm font-semibold text-accent">
+        <p role="status" className={styles.text}>
           피드백을 제출했어요. 시연용이라 이 브라우저에만 남아요.
         </p>
       )}
 
-      <header className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+      <header className={styles.header}>
         {/* 이름은 제목에 있으니 썸네일은 보조 기술에서 숨긴다. 지급 완료는 상태 배지로도 읽힌다 */}
-        <div aria-hidden className="w-40 shrink-0 md:w-56">
+        <div aria-hidden className={styles.box}>
           <RecruitmentThumb recruitment={recruitment} stamp={status === "paid" ? "지급 완료" : undefined} />
         </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <h1 className="text-3xl font-extrabold tracking-[-0.03em]">{recruitment.projectName}</h1>
-              <p className="flex flex-wrap items-center gap-2">
+        <div className={styles.box2}>
+          <div className={styles.box3}>
+            <div className={styles.box4}>
+              <h1 className={styles.projectName}>{recruitment.projectName}</h1>
+              <p className={styles.text2}>
                 <Badge>{STATUS_LABEL[status]}</Badge>
                 {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
               </p>
             </div>
-            <p className="font-semibold">{recruitment.request}</p>
+            <p className={styles.request}>{recruitment.request}</p>
           </div>
           {/* 테스트 정보는 이 모집 글에 대한 것이라 제목 바로 아래, 목록 행과 같은 모양으로 둔다 */}
           <section aria-labelledby="info-heading">
-            <h2 id="info-heading" className="sr-only">
+            <h2 id="info-heading" className={styles.srOnly}>
               테스트 정보
             </h2>
-            <dl className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <dl className={styles.list}>
               {infoRows(item).map(([label, value]) => (
                 <div key={label}>
-                  <dt className="text-xs text-text-muted">{label}</dt>
-                  <dd className="font-semibold tabular-nums">{value}</dd>
+                  <dt className={styles.label}>{label}</dt>
+                  <dd className={styles.value}>{value}</dd>
                 </div>
               ))}
             </dl>
@@ -183,37 +184,37 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
         </div>
       </header>
 
-      <div className="flex flex-col gap-8">
-        <section aria-labelledby="status-heading" className="flex flex-col gap-2">
-          <h2 id="status-heading" className="text-lg font-extrabold">
+      <div className={styles.box5}>
+        <section aria-labelledby="status-heading" className={styles.section}>
+          <h2 id="status-heading" className={styles.title}>
             진행 상황
           </h2>
-          <p className="text-xl font-extrabold tracking-[-0.03em] tabular-nums">{message.title}</p>
+          <p className={styles.title2}>{message.title}</p>
           {/* 이 참여가 가리키는 모집 글은 설명 문장과 같은 줄 오른쪽에 둔다. 좁은 화면에서는 문장 아래로 내려간다 */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-8">
-            <p className="text-sm text-text-muted">{message.body}</p>
-            <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className="shrink-0 self-start md:self-auto">
+          <div className={styles.box6}>
+            <p className={styles.body}>{message.body}</p>
+            <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className={styles.button}>
               모집 글 보기
             </LinkButton>
           </div>
           {status === "notSelected" && (
-            <LinkButton href="/recruitments" variant="secondary" size="sm" className="mt-2 self-start">
+            <LinkButton href="/recruitments" variant="secondary" size="sm" className={styles.button2}>
               테스트 둘러보기
             </LinkButton>
           )}
         </section>
 
         {status === "beforeSubmit" && (
-          <Card className="flex flex-col gap-4 md:p-8">
-            <h2 className="text-lg font-extrabold">피드백 쓰기</h2>
+          <Card className={styles.card}>
+            <h2 className={styles.title3}>피드백 쓰기</h2>
             <FeedbackForm participationKey={item.key} testItems={item.testItems} />
           </Card>
         )}
 
         {item.feedbacks.length > 0 && (
-          <Card className="flex flex-col gap-6 md:p-8">
-            <h2 className="text-lg font-extrabold">제출한 피드백</h2>
-            <ol className="flex flex-col divide-y divide-line">
+          <Card className={styles.card2}>
+            <h2 className={styles.title4}>제출한 피드백</h2>
+            <ol className={styles.list2}>
               {item.feedbacks.map((feedback) => (
                 <SubmittedFeedback key={feedback.testItemId ?? "other"} item={item} feedback={feedback} />
               ))}
@@ -227,17 +228,17 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
 
 export function ParticipationDetailSkeleton() {
   return (
-    <div data-skeleton="detail" aria-busy="true" aria-label="참여 내역 불러오는 중" className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-      <Skeleton className="h-5 w-32" />
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
-        <Skeleton className="aspect-[16/10] w-40 shrink-0 rounded-2xl md:w-56" />
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-9 w-64 max-w-full" />
-          <Skeleton className="h-5 w-72 max-w-full" />
-          <Skeleton className="h-10 w-96 max-w-full" />
+    <div data-skeleton="detail" aria-busy="true" aria-label="참여 내역 불러오는 중" className={styles.participationDetailSkeleton}>
+      <Skeleton className={styles.participationDetailSkeletonSkeleton} />
+      <div className={styles.participationDetailSkeletonBox}>
+        <Skeleton className={styles.participationDetailSkeletonSkeleton2} />
+        <div className={styles.participationDetailSkeletonBox2}>
+          <Skeleton className={styles.participationDetailSkeletonSkeleton3} />
+          <Skeleton className={styles.participationDetailSkeletonSkeleton4} />
+          <Skeleton className={styles.participationDetailSkeletonSkeleton5} />
         </div>
       </div>
-      <Skeleton className="h-48 w-full rounded-2xl" />
+      <Skeleton className={styles.participationDetailSkeletonSkeleton6} />
     </div>
   );
 }

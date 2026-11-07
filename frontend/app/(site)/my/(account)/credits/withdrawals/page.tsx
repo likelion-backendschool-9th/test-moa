@@ -5,7 +5,8 @@ import { getCreditBalance, getWithdrawals } from "@/features/credit/api";
 import { WithdrawalForm } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalForm/WithdrawalForm";
 import { WithdrawalHistory } from "@/app/(site)/my/(account)/credits/withdrawals/_components/WithdrawalHistory/WithdrawalHistory";
 import { cashableCredits } from "@/features/credit/types";
-import { cardClass } from "@/app/(site)/my/(account)/_components/card-styles";
+import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "출금" };
 
@@ -13,8 +14,8 @@ const PATH = "/my/credits/withdrawals";
 
 export default function WithdrawalsPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-extrabold tracking-[-0.03em]">출금</h1>
+    <div className={styles.withdrawalsPage}>
+      <h1 className={styles.withdrawalsPageTitle}>출금</h1>
       <Suspense fallback={<WithdrawalsSkeleton />}>
         <Withdrawals />
       </Suspense>
@@ -25,7 +26,7 @@ export default function WithdrawalsPage() {
 async function Withdrawals() {
   const [balance, withdrawals] = await Promise.all([getCreditBalance(PATH), getWithdrawals(PATH)]);
   return (
-    <div className="flex flex-col gap-4">
+    <div className={styles.withdrawals}>
       <WithdrawalForm cashable={cashableCredits(balance)} />
       <WithdrawalHistory withdrawals={withdrawals} now={new Date()} />
     </div>
@@ -34,13 +35,13 @@ async function Withdrawals() {
 
 function WithdrawalsSkeleton() {
   return (
-    <div aria-busy="true" aria-label="출금 불러오는 중" className="flex flex-col gap-4">
+    <div aria-busy="true" aria-label="출금 불러오는 중" className={styles.withdrawalsSkeleton}>
       {Array.from({ length: 2 }, (_, index) => (
-        <div key={index} className={cardClass}>
-          <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
+        <AccountCard key={index}>
+          <Skeleton className={styles.withdrawalsSkeletonSkeleton} />
+          <Skeleton className={styles.withdrawalsSkeletonSkeleton2} />
+          <Skeleton className={styles.withdrawalsSkeletonSkeleton3} />
+        </AccountCard>
       ))}
     </div>
   );

@@ -17,7 +17,10 @@ import { cn } from "@/lib/cn";
 import { isTodayInSeoul } from "@/lib/format";
 import { sendChatMessageAction } from "@/features/chat/actions";
 import { CHAT_MESSAGE_MAX, type ChatMessage } from "@/features/chat/types";
-import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from "../bubble";
+import { ChatBubble, ChatBubbleNote, ChatBubbleRow } from "../ChatBubble/ChatBubble";
+import { DayDivider } from "../DayDivider/DayDivider";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./ChatComposer.module.css";
 
 type ChatComposerProps = {
   roomKey: string;
@@ -115,34 +118,36 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
     <>
       {pending.length > 0 && (
         /* 대화 내용과 같은 간격: 날짜 묶음 사이 32px, 보낸 사람이 바뀌면 12px, 같은 사람이면 4px */
-        <div className={cn("flex flex-col gap-4", startsToday ? "mt-8" : lastMessage?.from === "me" ? "mt-1" : "mt-3")}>
+        <div className={cn(styles.box, startsToday ? styles.boxStartsToday : lastMessage?.from === "me" ? styles.afterMe : styles.afterPartner)}>
           {startsToday && (
-            <p aria-hidden data-pending-day className={dayDividerClass}>
+            <DayDivider as="p" aria-hidden data-pending-day>
               오늘
-            </p>
+            </DayDivider>
           )}
-          <ol aria-label="보내는 중인 메시지" className="flex flex-col gap-1">
+          <ol aria-label="보내는 중인 메시지" className={styles.list}>
             {pending.map((message, index) => (
-              <li key={index} data-pending className={bubbleRowClass("me")}>
-                <p className={`${bubbleClass("me", true)} opacity-60`}>{message}</p>
-                <span className={bubbleMetaClass}>보내는 중</span>
-              </li>
+              <ChatBubbleRow key={index} data-pending from="me">
+                <ChatBubble from="me" endsRun className={styles.message}>
+                  {message}
+                </ChatBubble>
+                <ChatBubbleNote>보내는 중</ChatBubbleNote>
+              </ChatBubbleRow>
             ))}
           </ol>
         </div>
       )}
       {/* 대화가 짧으면 mt-auto로 화면 아래까지 내려가고, 길면 화면 아래에 붙는다 */}
-      <div className="sticky bottom-0 mt-auto bg-surface pt-4 pb-4 md:pb-6">
+      <div className={styles.box2}>
         {failed && (
-          <p role="alert" className="mb-2 px-5 text-sm font-semibold">
+          <p role="alert" className={styles.text}>
             보내지 못했어요. 다시 보내 주세요.
           </p>
         )}
-        <form
+        <Card as="form"
           onSubmit={onSubmit}
-          className="flex items-end gap-2 rounded-2xl bg-surface-muted py-2 pr-2 pl-5 transition-shadow duration-300 ease-brand focus-within:ring-2 focus-within:ring-accent"
+          className={styles.form}
         >
-          <label htmlFor={inputId} className="sr-only">
+          <label htmlFor={inputId} className={styles.srOnly}>
             메시지 입력
           </label>
           <textarea
@@ -157,7 +162,7 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
             aria-describedby={hintId}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={onKeyDown}
-            className="max-h-32 min-w-0 flex-1 resize-none bg-transparent py-2 text-sm leading-relaxed field-sizing-content outline-none"
+            className={styles.textarea}
           />
           <button
             type="submit"
@@ -165,13 +170,13 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
             disabled={!canSend}
             /* 누를 때 입력창의 포커스를 뺏지 않는다. 휴대폰에서 보낼 때마다 키보드가 닫히지 않게 */
             onMouseDown={(event) => event.preventDefault()}
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-[opacity,transform] duration-300 ease-brand hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
+            className={styles.button}
           >
             <PaperPlaneRightIcon aria-hidden size={18} weight="fill" />
           </button>
-        </form>
+        </Card>
         {/* 화면에는 md 이상에서만 보이고, 보조 기술에는 늘 입력창 설명으로 읽힌다 */}
-        <p id={hintId} className="mt-2 hidden px-5 text-xs text-text-muted md:block">
+        <p id={hintId} className={styles.text2}>
           {touch ? "Enter로 줄을 바꾸고, 보내기 버튼으로 보내요." : "Enter로 보내고, Shift+Enter로 줄을 바꿔요."}
         </p>
       </div>

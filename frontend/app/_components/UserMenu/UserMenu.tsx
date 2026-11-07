@@ -5,6 +5,7 @@ import { logout } from "@/features/auth/actions";
 import { formatNumber } from "@/lib/format";
 import type { Session } from "@/features/session/session";
 import { MyPageLink } from "../MyPageLink/MyPageLink";
+import styles from "./UserMenu.module.css";
 
 /*
  * 헤더 오른쪽 계정 영역. 비로그인은 로그인·회원가입, 로그인하면 보유 크레딧·마이페이지·로그아웃.
@@ -14,11 +15,11 @@ import { MyPageLink } from "../MyPageLink/MyPageLink";
 export function UserMenu({ session }: { session: Session }) {
   if (session.user === null) {
     return (
-      <div className="flex items-center gap-2">
-        <LinkButton href="/login" variant="ghost" size="sm" className="whitespace-nowrap">
+      <div className={styles.root}>
+        <LinkButton href="/login" variant="ghost" size="sm" className={styles.button}>
           로그인
         </LinkButton>
-        <LinkButton href="/signup" size="sm" className="whitespace-nowrap">
+        <LinkButton href="/signup" size="sm" className={styles.button2}>
           회원가입
         </LinkButton>
       </div>
@@ -27,7 +28,7 @@ export function UserMenu({ session }: { session: Session }) {
 
   const credits = formatNumber(session.user.credits);
   return (
-    <div className="flex items-center gap-2">
+    <div className={styles.root2}>
       {/* 화면에는 동전 아이콘과 숫자만 보이고, 읽는 이름과 마우스 안내는 "보유 크레딧 12,480"이다 */}
       <LinkButton
         href="/my/credits"
@@ -35,14 +36,14 @@ export function UserMenu({ session }: { session: Session }) {
         size="sm"
         aria-label={`보유 크레딧 ${credits}`}
         title={`보유 크레딧 ${credits}`}
-        className="whitespace-nowrap tabular-nums"
+        className={styles.button3}
       >
         <CoinsIcon aria-hidden size={16} weight="bold" />
         {credits}
       </LinkButton>
-      <MyPageLink className="max-md:hidden" />
-      <form action={logout} className="max-md:hidden">
-        <Button type="submit" variant="ghost" size="sm" className="whitespace-nowrap">
+      <MyPageLink className={styles.myPageLink} />
+      <form action={logout} className={styles.form}>
+        <Button type="submit" variant="ghost" size="sm" className={styles.button4}>
           로그아웃
         </Button>
       </form>

@@ -16,6 +16,8 @@ import { cn } from "@/lib/cn";
 import { deleteChatRoomAction, renameChatRoomAction } from "@/features/chat/actions";
 import { CHAT_ROOM_NAME_MAX } from "@/features/chat/types";
 import { ChatRoomDialog } from "@/features/chat/components/ChatRoomDialog/ChatRoomDialog";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./ChatCardMenu.module.css";
 
 type ChatCardMenuProps = {
   roomKey: string;
@@ -28,9 +30,6 @@ type ChatCardMenuProps = {
 };
 
 type DialogKind = "rename" | "delete";
-
-const itemClass =
-  "flex w-full rounded-lg px-3 py-2 text-left text-sm font-semibold whitespace-nowrap transition-colors duration-300 ease-brand hover:bg-surface-strong focus:bg-surface-strong";
 
 function menuItems(root: HTMLElement | null) {
   return [...(root?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
@@ -132,7 +131,7 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
   }
 
   return (
-    <div ref={rootRef} onKeyDown={onKeyDown} className={cn("relative shrink-0", className)}>
+    <div ref={rootRef} onKeyDown={onKeyDown} className={cn(styles.root, className)}>
       <button
         ref={buttonRef}
         type="button"
@@ -141,35 +140,35 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex size-9 items-center justify-center rounded-full text-text-muted transition-colors duration-300 ease-brand hover:bg-surface-strong hover:text-text aria-expanded:bg-accent-soft aria-expanded:text-accent"
+        className={styles.button}
       >
         <DotsThreeIcon aria-hidden size={20} weight="bold" />
       </button>
       {open && (
-        <ul
+        <Card as="ul" radius="xl"
           id={menuId}
           role="menu"
           aria-label={`${title} 채팅 메뉴`}
-          className="absolute top-full right-0 z-(--z-popover) mt-2 flex min-w-40 animate-rise-in flex-col rounded-xl border border-line bg-surface-muted p-1.5"
+          className={styles.list}
         >
           <li role="none">
-            <button type="button" role="menuitem" onClick={() => openDialog("rename")} className={itemClass}>
+            <button type="button" role="menuitem" onClick={() => openDialog("rename")} className={styles.item}>
               대화방 이름 변경
             </button>
           </li>
-          <li role="separator" className="mx-2 my-1 h-px bg-line" />
+          <li role="separator" className={styles.item2} />
           <li role="none">
-            <button type="button" role="menuitem" onClick={() => openDialog("delete")} className={itemClass}>
+            <button type="button" role="menuitem" onClick={() => openDialog("delete")} className={styles.item}>
               대화방 삭제
             </button>
           </li>
-        </ul>
+        </Card>
       )}
       {dialog === "rename" && (
         <ChatRoomDialog title="대화방 이름 변경" description="채팅함과 채팅방에 보이는 이름을 바꿔요." onClose={closeDialog}>
-          <form onSubmit={onRename} className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <label htmlFor={inputId} className="text-sm font-semibold">
+          <form onSubmit={onRename} className={styles.form}>
+            <div className={styles.box}>
+              <label htmlFor={inputId} className={styles.field}>
                 대화방 이름
               </label>
               <input
@@ -178,10 +177,10 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
                 defaultValue={title}
                 maxLength={CHAT_ROOM_NAME_MAX}
                 required
-                className="rounded-full bg-surface-strong px-5 py-3 outline-none transition-colors duration-300 ease-brand focus:bg-surface focus:ring-2 focus:ring-accent"
+                className={styles.input}
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className={styles.box2}>
               <Button variant="ghost" size="sm" onClick={closeDialog}>
                 취소
               </Button>
@@ -198,7 +197,7 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
           description={`"${title}" 대화방이 채팅함 목록에서 사라져요.`}
           onClose={closeDialog}
         >
-          <div className="flex justify-end gap-2">
+          <div className={styles.box3}>
             <Button variant="ghost" size="sm" onClick={closeDialog}>
               취소
             </Button>

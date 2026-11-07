@@ -1,3 +1,4 @@
+import styles from "./MatGrid.module.css";
 /*
  * 재단 매트 격자. 작업대에 까는 재단 매트처럼 24px 잔눈금과 120px 굵은 눈금을 글자색으로 아주 옅게(5% / 10%) 그린다.
  * 다크에서는 밝은 선이 어두운 면 위에서 더 도드라져 60%로 한 단계 더 옅게 한다.
@@ -6,7 +7,7 @@
  */
 export function MatGrid() {
   return (
-    <svg aria-hidden className="pointer-events-none absolute inset-0 size-full text-text dark:opacity-60">
+    <svg aria-hidden className={styles.root}>
       <defs>
         <pattern id="hero-mat-minor" width="24" height="24" patternUnits="userSpaceOnUse">
           <path d="M24 0H0V24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.05" />

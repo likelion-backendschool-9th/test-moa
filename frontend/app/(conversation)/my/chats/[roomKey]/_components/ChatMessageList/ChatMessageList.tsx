@@ -2,7 +2,9 @@ import { cn } from "@/lib/cn";
 import { formatClock } from "@/lib/format";
 import { groupChatMessages } from "@/features/chat/thread";
 import type { ChatMessage, ChatRoom } from "@/features/chat/types";
-import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from "../bubble";
+import { ChatBubble, ChatBubbleRow, ChatBubbleTime } from "../ChatBubble/ChatBubble";
+import { DayDivider } from "../DayDivider/DayDivider";
+import styles from "./ChatMessageList.module.css";
 
 /**
  * 채팅방의 대화 내용. 맨 위에 어느 모집 건의 대화방인지 한 줄로 알리고, 날짜(h2)마다 메시지를 묶는다.
@@ -13,31 +15,26 @@ import { bubbleClass, bubbleMetaClass, bubbleRowClass, dayDividerClass } from ".
 export function ChatMessageList({ room, messages, now }: { room: ChatRoom; messages: ChatMessage[]; now: Date }) {
   const days = groupChatMessages(messages, now);
   return (
-    <div role="log" aria-label="대화 내용" className="flex flex-col gap-8">
-      <p className="text-center text-xs text-text-muted">{room.projectName} 모집 건으로 열린 1대1 대화방이에요.</p>
+    <div role="log" aria-label="대화 내용" className={styles.root}>
+      <p className={styles.text}>{room.projectName} 모집 건으로 열린 1대1 대화방이에요.</p>
       {days.map((day) => (
-        <section key={day.key} aria-labelledby={`day-${day.key}`} className="flex flex-col gap-4">
-          <h2 id={`day-${day.key}`} className={dayDividerClass}>
-            {day.label}
-          </h2>
-          <ol className="flex flex-col">
+        <section key={day.key} aria-labelledby={`day-${day.key}`} className={styles.root2}>
+          <DayDivider id={`day-${day.key}`}>{day.label}</DayDivider>
+          <ol className={styles.list}>
             {day.items.map(({ message, startsRun, endsRun }, index) => (
-              <li
+              <ChatBubbleRow
                 key={message.id}
                 data-message
                 data-from={message.from}
-                className={cn(bubbleRowClass(message.from), index > 0 && (startsRun ? "mt-3" : "mt-1"))}
+                from={message.from}
+                className={cn(index > 0 && (startsRun ? styles.startsRun : styles.continuesRun))}
               >
-                <p className={bubbleClass(message.from, endsRun)}>
-                  <span className="sr-only">{message.from === "me" ? "나" : room.partner.nickname}: </span>
+                <ChatBubble from={message.from} endsRun={endsRun}>
+                  <span className={styles.srOnly}>{message.from === "me" ? "나" : room.partner.nickname}: </span>
                   {message.text}
-                </p>
-                {endsRun && (
-                  <time dateTime={message.sentAt} className={bubbleMetaClass}>
-                    {formatClock(message.sentAt)}
-                  </time>
-                )}
-              </li>
+                </ChatBubble>
+                {endsRun && <ChatBubbleTime dateTime={message.sentAt}>{formatClock(message.sentAt)}</ChatBubbleTime>}
+              </ChatBubbleRow>
             ))}
           </ol>
         </section>

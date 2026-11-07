@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { formatDate, seoulDayKey } from "@/lib/format";
+import styles from "./DayGroups.module.css";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -31,15 +32,15 @@ export function DayGroups<T>({ items, dateOf, idPrefix, now, children }: DayGrou
     else groups.push({ key, iso: dateOf(item), items: [item] });
   }
   return (
-    <div className="flex flex-col gap-5">
+    <div className={styles.root}>
       {groups.map((group) => {
         const headingId = `${idPrefix}-${group.key}`;
         return (
-          <div key={group.key} className="flex flex-col">
-            <h3 id={headingId} className="pb-1 text-sm font-bold">
+          <div key={group.key} className={styles.root2}>
+            <h3 id={headingId} className={styles.title}>
               {relative[group.key] ?? formatDate(group.iso)}
             </h3>
-            <ul aria-labelledby={headingId} className="flex flex-col">
+            <ul aria-labelledby={headingId} className={styles.list}>
               {group.items.map(children)}
             </ul>
           </div>

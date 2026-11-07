@@ -7,6 +7,7 @@ import {
   PublicRecruitmentSkeleton,
 } from "@/app/(site)/recruitments/[slug]/_components/PublicRecruitment/PublicRecruitment";
 import { getPublicRecruitment } from "@/features/recruitment/api";
+import styles from "./page.module.css";
 
 /* 모집글 상세 (/recruitments/:slug). 누구나 볼 수 있다 */
 
@@ -16,7 +17,7 @@ type Props = PageProps<"/recruitments/[slug]">;
 
 export default function RecruitmentPage({ params }: Props) {
   return (
-    <Container className="pt-8">
+    <Container className={styles.recruitmentPage}>
       <Suspense fallback={<PublicRecruitmentSkeleton />}>
         <DetailSlot params={params} />
       </Suspense>

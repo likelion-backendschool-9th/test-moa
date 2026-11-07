@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import styles from "./LinkTabs.module.css";
 
 type LinkTabsProps<T extends string> = {
   /** 탭 묶음 이름. "신고 상태", "회원 필터" */
@@ -15,8 +16,8 @@ type LinkTabsProps<T extends string> = {
  */
 export function LinkTabs<T extends string>({ label, tabs, current }: LinkTabsProps<T>) {
   return (
-    <nav aria-label={label} className="overflow-x-auto">
-      <ul className="flex gap-2 whitespace-nowrap">
+    <nav aria-label={label} className={styles.root}>
+      <ul className={styles.list}>
         {tabs.map((item) => {
           const active = item.tab === current;
           return (
@@ -24,10 +25,7 @@ export function LinkTabs<T extends string>({ label, tabs, current }: LinkTabsPro
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-                  active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
-                )}
+                className={cn(styles.label, active ? styles.labelActive : styles.labelNotActive)}
               >
                 {item.label}
               </Link>

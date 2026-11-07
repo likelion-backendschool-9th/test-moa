@@ -6,6 +6,7 @@ import { submitFeedback, type FeedbackFormState } from "@/features/participation
 import { OTHER_FEEDBACK_KEY } from "@/features/participation/feedback-fields";
 import type { FeedbackTestItem } from "@/features/participation/types";
 import { FeedbackField } from "../FeedbackField/FeedbackField";
+import styles from "./FeedbackForm.module.css";
 
 const initialState: FeedbackFormState = { status: "idle" };
 
@@ -31,11 +32,11 @@ export function FeedbackForm({ participationKey, testItems }: { participationKey
   }
 
   return (
-    <form ref={form} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-      <p className="text-sm text-text-muted">해 본 일, 써 보며 느낀 점, 발견한 버그를 항목마다 적어 주세요. 버그를 찾지 못했다면 그렇다고 적어도 괜찮아요.</p>
+    <form ref={form} onSubmit={handleSubmit} noValidate className={styles.root}>
+      <p className={styles.text}>해 본 일, 써 보며 느낀 점, 발견한 버그를 항목마다 적어 주세요. 버그를 찾지 못했다면 그렇다고 적어도 괜찮아요.</p>
 
       {/* 모집글 상세의 테스트 항목과 같은 번호와 구분선으로 칸을 나눈다 */}
-      <ol className="flex flex-col divide-y divide-line">
+      <ol className={styles.list}>
         {testItems.map((item, index) => (
           <FeedbackField
             key={item.id}
@@ -51,13 +52,13 @@ export function FeedbackForm({ participationKey, testItems }: { participationKey
       </ol>
 
       {formError && (
-        <p role="alert" className="text-sm font-semibold">
+        <p role="alert" className={styles.formError}>
           {formError}
         </p>
       )}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm text-text-muted">제출한 뒤에는 고칠 수 없어요.</p>
-        <Button type="submit" disabled={pending} className="w-full md:w-auto">
+      <div className={styles.box}>
+        <p className={styles.text2}>제출한 뒤에는 고칠 수 없어요.</p>
+        <Button type="submit" disabled={pending} className={styles.button}>
           {pending ? "제출하는 중…" : "피드백 제출"}
         </Button>
       </div>

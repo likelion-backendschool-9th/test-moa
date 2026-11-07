@@ -8,6 +8,7 @@ import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons/Soc
 import { withNext } from "@/features/auth/types";
 import { safeNextPath } from "@/lib/next-path";
 import { getSession } from "@/features/session/session";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "회원가입" };
 
@@ -34,9 +35,9 @@ async function SignupSlot({ searchParams }: { searchParams: SearchParams }) {
       <SignupForm next={next} />
       <OrDivider />
       <SocialButtons next={next} />
-      <p className="text-center text-sm text-text-muted">
+      <p className={styles.signupSlotText}>
         이미 계정이 있나요?{" "}
-        <Link href={withNext("/login", next)} className="font-semibold text-text underline underline-offset-4">
+        <Link href={withNext("/login", next)} className={styles.signupSlotLink}>
           로그인
         </Link>
       </p>

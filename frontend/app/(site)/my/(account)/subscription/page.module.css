@@ -1,0 +1,89 @@
+.subscriptionPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.subscriptionPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.overviewText {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.overviewText2 {
+  border-radius: var(--radius-2xl);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.overviewBox {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 64rem) {
+  .overviewBox {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.subscriptionSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.subscriptionSkeletonBox {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 64rem) {
+  .subscriptionSkeletonBox {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.subscriptionSkeletonSkeleton {
+  height: 1.5rem;
+  width: 5rem;
+}
+
+.subscriptionSkeletonSkeleton2 {
+  height: 2rem;
+  width: 12rem;
+}
+
+.subscriptionSkeletonSkeleton3 {
+  height: 1rem;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.subscriptionSkeletonSkeleton4 {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.subscriptionSkeleton2 {
+  height: 2rem;
+  width: 100%;
+}

@@ -1,4 +1,6 @@
 import { ProofStamp } from "@/features/recruitment/components/ProofStamp/ProofStamp";
+import { cn } from "@/lib/cn";
+import styles from "./HowItWorksSlide.module.css";
 
 /*
  * 배너 두 번째 슬라이드: 교정 체크리스트. 왼쪽에 제목과 보상 약속, 오른쪽에 1° 기운 교정지 한 장 위 네 줄 확인 목록.
@@ -12,7 +14,7 @@ const STEPS = ["지원해요", "참여가 확정되면 써 봐요", "피드백�
 
 function CheckMark({ accent }: { accent: boolean }) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className={`size-6 shrink-0 lg:size-7 ${accent ? "text-accent" : "text-on-thumb/40"}`}>
+    <svg aria-hidden viewBox="0 0 24 24" className={cn(styles.checkMark, accent ? styles.checkMarkAccent : styles.checkMarkMuted)}>
       <path d="M3.5 12.5 9 18 20.5 5.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -24,24 +26,24 @@ export function HowItWorksSlide() {
       큰 제목은 위에, 보상 약속은 아래에 붙이고 교정지는 그 사이(768px 이상은 오른쪽)에서 세로 가운데에 둔다.
       좁은 화면은 제목 → 교정지 → 약속 순서로 위아래에 붙인다.
     */
-    <div className="grid h-full grid-rows-[auto_1fr_auto] gap-5 md:grid-cols-[max-content_minmax(0,1fr)] md:grid-rows-[1fr_1fr] md:gap-x-10 md:gap-y-4 lg:gap-x-16">
-      <h2 className="row-start-1 self-start text-2xl font-extrabold tracking-[-0.035em] md:col-start-1 lg:text-5xl">이렇게 진행돼요</h2>
-      <ul className="row-start-3 flex flex-col gap-1 self-end text-sm text-text-muted md:col-start-1 md:row-start-2 md:max-lg:hidden lg:gap-1.5 lg:text-lg">
+    <div className={styles.root}>
+      <h2 className={styles.title}>이렇게 진행돼요</h2>
+      <ul className={styles.list}>
         <li>
-          <span className="font-bold text-text">1크레딧은 1원</span>으로 출금할 수 있어요
+          <span className={styles.label}>1크레딧은 1원</span>으로 출금할 수 있어요
         </li>
         <li>
-          개발 경험이 없어도 <span className="font-bold text-text">느낀 점만 남기면</span> 보상을 받아요
+          개발 경험이 없어도 <span className={styles.label2}>느낀 점만 남기면</span> 보상을 받아요
         </li>
       </ul>
-      <div className="hero-paper relative row-start-2 w-full max-w-[36rem] self-center justify-self-center rotate-1 md:justify-self-end rounded-2xl border border-line bg-thumb px-4 py-1 text-on-thumb max-md:mb-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mb-8 md:px-5 lg:px-8 lg:py-1.5">
-        <ol className="divide-y divide-on-thumb/10">
+      <div data-hero-paper className={styles.box}>
+        <ol className={styles.list2}>
           {STEPS.map((step, index) => {
             const last = index === STEPS.length - 1;
             return (
-              <li key={step} className="flex items-center gap-3 py-1.5 lg:gap-4 lg:py-2">
+              <li key={step} className={styles.root2}>
                 <CheckMark accent={last} />
-                <span className="flex-1 font-bold lg:text-xl">{step}</span>
+                <span className={styles.step}>{step}</span>
                 {last && <ProofStamp label="크레딧 지급" placement="inline" />}
                 {last && <ProofStamp label="크레딧 지급" placement="edge" />}
               </li>

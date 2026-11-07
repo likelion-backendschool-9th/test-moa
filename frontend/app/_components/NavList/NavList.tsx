@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import type { NavItem } from "@/app/_lib/nav";
+import styles from "./NavList.module.css";
 
 type NavListProps = {
   items: NavItem[];
@@ -10,8 +11,8 @@ type NavListProps = {
 /** 데스크톱 탭 목록. 경로를 직접 읽지 않아서 세션을 읽기 전 fallback으로도 쓴다 */
 export function NavList({ items, activePath }: NavListProps) {
   return (
-    <nav aria-label="주요 메뉴" className="hidden md:order-last md:block md:basis-full md:pb-3 lg:order-none lg:basis-auto lg:pb-0">
-      <ul className="flex gap-1">
+    <nav aria-label="주요 메뉴" className={styles.root}>
+      <ul className={styles.list}>
         {items.map((item) => {
           const active = item.path === activePath;
           return (
@@ -19,10 +20,7 @@ export function NavList({ items, activePath }: NavListProps) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex rounded-full px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors duration-300 ease-brand",
-                  active ? "bg-surface-strong text-text" : "text-text-muted hover:text-text",
-                )}
+                className={cn(styles.label, active ? styles.labelActive : styles.labelNotActive)}
               >
                 {item.label}
               </Link>

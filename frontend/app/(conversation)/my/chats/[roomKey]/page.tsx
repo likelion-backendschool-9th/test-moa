@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/Container/Container";
 import { getChatRoom, getChatRoomTitle } from "@/features/chat/api";
 import { ChatRoomSkeleton, ChatRoomView } from "@/app/(conversation)/my/chats/[roomKey]/_components/ChatRoomView/ChatRoomView";
 import { ChatsBackLink } from "@/app/(conversation)/my/chats/[roomKey]/_components/ChatsBackLink/ChatsBackLink";
+import styles from "./page.module.css";
 
 type RoomPageProps = PageProps<"/my/chats/[roomKey]">;
 
@@ -20,9 +21,9 @@ export async function generateMetadata({ params }: RoomPageProps): Promise<Metad
  */
 export default function ChatRoomPage({ params }: RoomPageProps) {
   return (
-    <Main className="flex flex-col">
-      <Container className="flex flex-1 flex-col pt-6 md:pt-8">
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+    <Main className={styles.chatRoomPage}>
+      <Container className={styles.chatRoomPageContainer}>
+        <div className={styles.chatRoomPageBox}>
           <ChatsBackLink />
           <Suspense fallback={<ChatRoomSkeleton />}>
             <RoomSlot params={params} />

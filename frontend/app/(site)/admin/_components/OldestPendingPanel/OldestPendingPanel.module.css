@@ -1,0 +1,73 @@
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-radius: var(--radius-xl);
+  padding-inline: var(--space-2);
+  padding-block: var(--space-2);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .link:hover {
+    background-color: var(--surface-strong);
+  }
+}
+
+.label {
+  width: 1rem;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.title2 {
+  min-width: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.label2 {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.oldestPendingPanelSkeletonSkeleton {
+  height: 1.5rem;
+  width: 9rem;
+}
+
+.oldestPendingPanelSkeleton {
+  height: 2.5rem;
+  width: 100%;
+}

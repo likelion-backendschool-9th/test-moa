@@ -4,6 +4,8 @@ import { ChatsIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./FollowupQuestionsDialog.module.css";
 
 /*
  * AI 추천 질문 대화상자. 화면에 그려지면 바로 모달로 열린다.
@@ -59,7 +61,7 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
   }
 
   return (
-    <dialog
+    <Card as="dialog"
       ref={ref}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
@@ -67,30 +69,30 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
       onClick={(event) => {
         if (event.target === event.currentTarget) close();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-surface-muted p-0 text-text backdrop:bg-surface/80 backdrop:backdrop-blur-sm"
+      className={styles.root}
     >
-      <div className="flex animate-rise-in flex-col gap-5 p-6">
-        <div className="flex flex-col gap-1.5">
-          <h2 id={titleId} className="text-lg font-extrabold">
+      <div className={styles.box}>
+        <div className={styles.box2}>
+          <h2 id={titleId} className={styles.title}>
             AI 추천 질문
           </h2>
-          <p id={descriptionId} className="text-sm text-text-muted">
+          <p id={descriptionId} className={styles.text}>
             {nickname}님 피드백을 보고 만든 질문이에요. 누르면 복사돼요.
           </p>
         </div>
-        <blockquote className="line-clamp-3 rounded-xl bg-surface-strong px-4 py-3 text-sm text-text-muted">{content}</blockquote>
+        <blockquote className={styles.content}>{content}</blockquote>
 
         {followup.state === "loading" && (
-          <div role="status" className="flex flex-col gap-2">
-            <p className="text-sm text-text-muted">질문을 만들고 있어요. 잠시만 기다려 주세요</p>
+          <div role="status" className={styles.box3}>
+            <p className={styles.text2}>질문을 만들고 있어요. 잠시만 기다려 주세요</p>
             {[0, 1, 2].map((index) => (
-              <Skeleton key={index} className="h-12 rounded-xl" />
+              <Skeleton key={index} className={styles.root2} />
             ))}
           </div>
         )}
         {followup.state === "error" && (
-          <div className="flex flex-col items-start gap-3">
-            <p role="alert" className="text-sm font-semibold">
+          <div className={styles.box4}>
+            <p role="alert" className={styles.message}>
               {followup.message}
             </p>
             <Button size="sm" variant="secondary" onClick={onRetry}>
@@ -99,22 +101,22 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
           </div>
         )}
         {followup.state === "done" && (
-          <ol className="flex flex-col gap-2">
+          <ol className={styles.list}>
             {followup.questions.map((question, index) => (
               <li key={index}>
                 <button
                   type="button"
                   onClick={() => copy(question, index)}
-                  className="flex w-full items-start gap-3 rounded-xl bg-surface-strong px-4 py-3 text-left text-sm transition-colors duration-300 ease-brand hover:bg-line"
+                  className={styles.button}
                 >
-                  <span className="flex-1">{question}</span>
+                  <span className={styles.question}>{question}</span>
                   {copied === index ? (
-                    <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-accent">
+                    <span className={styles.label}>
                       <CheckIcon aria-hidden size={16} weight="bold" />
                       복사했어요
                     </span>
                   ) : (
-                    <CopyIcon aria-hidden size={16} weight="bold" className="mt-0.5 shrink-0 text-text-muted" />
+                    <CopyIcon aria-hidden size={16} weight="bold" className={styles.icon} />
                   )}
                 </button>
               </li>
@@ -122,9 +124,9 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
           </ol>
         )}
 
-        <div className="flex flex-col items-end gap-2">
-          {chatNotice && <p className="text-sm text-text-muted">{chatNotice}</p>}
-          <div className="flex flex-wrap justify-end gap-2">
+        <div className={styles.box5}>
+          {chatNotice && <p className={styles.chatNotice}>{chatNotice}</p>}
+          <div className={styles.box6}>
             <Button size="sm" variant="ghost" onClick={close}>
               닫기
             </Button>
@@ -134,10 +136,10 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
             </Button>
           </div>
         </div>
-        <p aria-live="polite" className="sr-only">
+        <p aria-live="polite" className={styles.srOnly}>
           {announcement}
         </p>
       </div>
-    </dialog>
+    </Card>
   );
 }

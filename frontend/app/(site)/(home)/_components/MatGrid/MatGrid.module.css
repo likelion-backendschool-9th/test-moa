@@ -1,0 +1,14 @@
+.root {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .root {
+    opacity: .6;
+  }
+}

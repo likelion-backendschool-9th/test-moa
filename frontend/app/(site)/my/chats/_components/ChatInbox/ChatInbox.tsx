@@ -5,6 +5,8 @@ import { CHATS_PATH, toChatsHref, type ChatQuery } from "@/features/chat/query";
 import { CHAT_ROLE_LABEL, type ChatInboxData, type ChatRole } from "@/features/chat/types";
 import { ChatCard } from "../ChatCard/ChatCard";
 import { ChatFilters } from "../ChatFilters/ChatFilters";
+import { Card } from "@/components/ui/Card/Card";
+import styles from "./ChatInbox.module.css";
 
 /** 역할 탭에 채팅방이 없을 때의 안내 */
 const ROLE_EMPTY_DESCRIPTION: Record<ChatRole, string> = {
@@ -30,16 +32,16 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
 
   const now = new Date(inbox.now);
   return (
-    <div className="flex flex-col gap-6">
+    <div className={styles.root}>
       <ChatFilters query={query} counts={inbox.counts} />
-      <p aria-live="polite" className="text-sm font-semibold text-text-muted">
+      <p aria-live="polite" className={styles.text}>
         채팅방 {inbox.rooms.length}개
       </p>
       {inbox.rooms.length > 0 ? (
-        <ul aria-label="채팅 목록" className="stagger-children flex flex-col gap-4">
+        <ul aria-label="채팅 목록" className={styles.list}>
           {inbox.rooms.map((room, index) => (
             /* 더보기 메뉴가 열린 카드는 다음 카드 위로 올라온다. 첫 카드 이미지는 화면에서 가장 큰 요소라 바로 불러온다 */
-            <li key={room.roomKey} className="relative animate-rise-in has-[[aria-expanded=true]]:z-(--z-popover)">
+            <li key={room.roomKey} className={styles.root2}>
               <ChatCard room={room} now={now} eager={index === 0} />
             </li>
           ))}
@@ -72,24 +74,24 @@ export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInbox
 /** 검색 영역과 카드 모양을 그대로 본뜬 스켈레톤 */
 export function ChatInboxSkeleton() {
   return (
-    <div aria-busy="true" aria-label="채팅함 불러오는 중" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-12 w-full rounded-full" />
-        <div className="flex items-center justify-between gap-6">
-          <Skeleton className="h-10 w-56 rounded-full" />
-          <Skeleton className="h-5 w-28" />
+    <div aria-busy="true" aria-label="채팅함 불러오는 중" className={styles.chatInboxSkeleton}>
+      <div className={styles.chatInboxSkeletonBox}>
+        <Skeleton className={styles.chatInboxSkeletonSkeleton} />
+        <div className={styles.chatInboxSkeletonBox2}>
+          <Skeleton className={styles.chatInboxSkeletonSkeleton2} />
+          <Skeleton className={styles.chatInboxSkeletonSkeleton3} />
         </div>
       </div>
-      <div className="flex flex-col gap-4">
+      <div className={styles.chatInboxSkeletonBox3}>
         {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="flex rounded-2xl bg-surface-muted">
-            <Skeleton className="w-24 shrink-0 self-stretch rounded-none rounded-l-2xl sm:w-32 md:w-40" />
-            <div className="flex flex-1 flex-col gap-2.5 px-5 py-4 md:px-6">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-4 w-full max-w-md" />
+          <Card as="div" key={index} className={styles.chatInboxSkeleton2}>
+            <Skeleton className={styles.chatInboxSkeletonSkeleton4} />
+            <div className={styles.chatInboxSkeletonBox4}>
+              <Skeleton className={styles.chatInboxSkeletonSkeleton5} />
+              <Skeleton className={styles.chatInboxSkeletonSkeleton6} />
+              <Skeleton className={styles.chatInboxSkeletonSkeleton7} />
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

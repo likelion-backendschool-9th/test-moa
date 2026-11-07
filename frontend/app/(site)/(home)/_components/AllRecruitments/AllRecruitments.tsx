@@ -5,6 +5,7 @@ import { toSearchParams, type RecruitmentQuery } from "@/features/recruitment/qu
 import type { RecruitmentPage } from "@/features/recruitment/types";
 import { RecruitmentFilters } from "../RecruitmentFilters/RecruitmentFilters";
 import { RecruitmentGrid } from "../RecruitmentGrid/RecruitmentGrid";
+import styles from "./AllRecruitments.module.css";
 
 /** 검색어·카테고리·모집 중만 보기 중 하나라도 걸렸는지. 정렬과 페이지는 결과를 줄이지 않아 조건으로 보지 않는다 */
 function hasFilters(query: RecruitmentQuery) {
@@ -20,9 +21,9 @@ function pageHref(query: RecruitmentQuery, page: number) {
 /** 전체 테스트. 검색 조건과 한 페이지 결과를 받아 그린다 */
 export function AllRecruitments({ query, result }: { query: RecruitmentQuery; result: RecruitmentPage }) {
   return (
-    <div className="flex flex-col gap-8">
+    <div className={styles.root}>
       <RecruitmentFilters query={query} />
-      <p aria-live="polite" className="text-sm font-semibold text-text-muted">
+      <p aria-live="polite" className={styles.text}>
         총 {result.total}개
       </p>
       {result.items.length > 0 ? (

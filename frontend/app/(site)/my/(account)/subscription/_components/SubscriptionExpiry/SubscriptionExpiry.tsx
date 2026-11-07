@@ -1,5 +1,6 @@
 import { EXPIRY_KEEPS, EXPIRY_STOPS } from "@/features/subscription/types";
-import { cardClass, cardTitleClass } from "../../../_components/card-styles";
+import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./SubscriptionExpiry.module.css";
 
 const GROUPS = [
   { id: "keeps", title: "그대로 남아요", items: EXPIRY_KEEPS },
@@ -9,17 +10,17 @@ const GROUPS = [
 /** 구독 중인 회원에게 만료 뒤 바뀌는 점을 알려 준다 */
 export function SubscriptionExpiry() {
   return (
-    <section aria-labelledby="subscription-expiry-heading" className={cardClass}>
-      <h2 id="subscription-expiry-heading" className={cardTitleClass}>
+    <AccountCard as="section" aria-labelledby="subscription-expiry-heading">
+      <AccountCardTitle id="subscription-expiry-heading">
         만료되면
-      </h2>
-      <div className="grid gap-4 md:grid-cols-2">
+      </AccountCardTitle>
+      <div className={styles.box}>
         {GROUPS.map((group) => (
-          <div key={group.id} className="flex flex-col gap-2 rounded-xl bg-surface p-4">
-            <h3 id={`subscription-expiry-${group.id}`} className="text-sm font-extrabold">
+          <div key={group.id} className={styles.root}>
+            <h3 id={`subscription-expiry-${group.id}`} className={styles.title}>
               {group.title}
             </h3>
-            <ul aria-labelledby={`subscription-expiry-${group.id}`} className="flex list-disc flex-col gap-1 pl-5 text-sm">
+            <ul aria-labelledby={`subscription-expiry-${group.id}`} className={styles.list}>
               {group.items.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -27,6 +28,6 @@ export function SubscriptionExpiry() {
           </div>
         ))}
       </div>
-    </section>
+    </AccountCard>
   );
 }

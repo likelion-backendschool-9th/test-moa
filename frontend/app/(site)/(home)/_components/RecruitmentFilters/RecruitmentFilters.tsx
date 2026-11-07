@@ -6,13 +6,15 @@ import { useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { SORT_LABEL, toSearchParams, type RecruitmentQuery, type RecruitmentSort } from "@/features/recruitment/query";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES, type SoftwareType } from "@/features/recruitment/types";
+import { SelectField } from "@/components/ui/SelectField/SelectField";
+import styles from "./RecruitmentFilters.module.css";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 const chipClass = (active: boolean) =>
   cn(
-    "rounded-full px-4 py-2 text-sm font-bold transition-colors duration-300 ease-brand",
-    active ? "bg-text text-surface" : "bg-surface-strong text-text hover:bg-line",
+    styles.chip,
+    active ? styles.chipActive : styles.chipIdle,
   );
 
 /** 전체 테스트 그리드의 검색·카테고리·필터·정렬. 상태는 URL에만 둔다 */
@@ -53,28 +55,28 @@ export function RecruitmentFilters({ query }: { query: RecruitmentQuery }) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap lg:gap-4">
-      <label className="order-1 flex min-w-0 flex-1 items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent lg:w-64 lg:flex-none xl:w-96">
-        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="shrink-0 text-text-muted" />
+    <div className={styles.root}>
+      <label className={styles.field}>
+        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className={styles.icon} />
         <input
           type="search"
           aria-label="테스트 검색"
           placeholder="이름이나 할 일로 검색"
           value={value}
           onChange={(event) => onSearch(event.target.value)}
-          className="w-full min-w-0 bg-transparent outline-none"
+          className={styles.input}
         />
       </label>
       {/* 좁은 화면에서는 칩 줄이 둘째 줄로 내려가 가로로 넘어간다 */}
-      <div className="order-3 flex w-full gap-2 overflow-x-auto [scrollbar-width:none] lg:order-2 lg:w-auto lg:min-w-0 lg:flex-1">
-        <div role="group" aria-label="소프트웨어 유형" className="flex shrink-0 gap-2">
+      <div className={styles.box}>
+        <div role="group" aria-label="소프트웨어 유형" className={styles.box2}>
           {categories.map((category) => (
             <button
               key={category.label}
               type="button"
               aria-pressed={query.type === category.value}
               onClick={() => navigate({ type: category.value })}
-              className={cn(chipClass(query.type === category.value), "shrink-0 whitespace-nowrap")}
+              className={cn(chipClass(query.type === category.value), styles.root2)}
             >
               {category.label}
             </button>
@@ -84,29 +86,29 @@ export function RecruitmentFilters({ query }: { query: RecruitmentQuery }) {
           type="button"
           aria-pressed={query.open}
           onClick={() => navigate({ open: !query.open })}
-          className={cn(chipClass(query.open), "shrink-0 whitespace-nowrap")}
+          className={cn(chipClass(query.open), styles.button)}
         >
           모집 중만 보기
         </button>
       </div>
-      <div className="relative order-2 shrink-0 lg:order-3">
-        <select
+      <div className={styles.box3}>
+        <SelectField
           aria-label="정렬"
           value={query.sort}
           onChange={(event) => navigate({ sort: event.target.value as RecruitmentSort })}
-          className="select-field rounded-full bg-surface-strong py-3 pr-10 pl-5 text-sm font-bold text-text transition-colors duration-300 ease-brand hover:bg-line focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+          className={styles.select}
         >
           {(Object.keys(SORT_LABEL) as RecruitmentSort[]).map((sort) => (
             <option key={sort} value={sort}>
               {SORT_LABEL[sort]}
             </option>
           ))}
-        </select>
+        </SelectField>
         <CaretDownIcon
           aria-hidden
           size={14}
           weight="bold"
-          className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-text-muted"
+          className={styles.icon2}
         />
       </div>
     </div>

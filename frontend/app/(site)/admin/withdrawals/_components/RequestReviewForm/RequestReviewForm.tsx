@@ -4,10 +4,11 @@ import { type FormEvent, type ReactNode, startTransition, useActionState } from 
 import { Button } from "@/components/ui/Button/Button";
 import { REVIEW_MEMO_MAX_LENGTH } from "@/features/report/types";
 import { type RequestFormError, type RequestFormState } from "@/features/credit/types";
+import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
+import styles from "./RequestReviewForm.module.css";
 
 const initialState: RequestFormState = { error: null };
 
-const panelClass = "flex flex-col gap-4 rounded-2xl bg-surface-muted p-6 md:p-8";
 
 type RequestReviewFormProps = {
   /** 처리 Server Action. 막히면 오류를 돌려주고, 처리되면 목록으로 이동한다 */
@@ -64,14 +65,14 @@ export function RequestReviewForm({
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} aria-labelledby={`${idPrefix}-review-heading`} className={`${panelClass} group/review`}>
-      <h3 id={`${idPrefix}-review-heading`} className="text-lg font-extrabold">
+    <AdminPanel as="form" action={formAction} onSubmit={handleSubmit} aria-labelledby={`${idPrefix}-review-heading`} className={styles.root}>
+      <h3 id={`${idPrefix}-review-heading`} className={styles.title}>
         처리하기
       </h3>
       <input type="hidden" name={keyName} value={keyValue} />
       {extraFields}
-      <fieldset className="flex flex-col gap-3" aria-describedby={state.error === "decision" ? describedBy : undefined}>
-        <legend className="mb-3 text-sm font-semibold">처리 결과</legend>
+      <fieldset className={styles.fieldset} aria-describedby={state.error === "decision" ? describedBy : undefined}>
+        <legend className={styles.legend}>처리 결과</legend>
         <Choice name="decision" value={accept.value} label={accept.label} detail={accept.detail} />
         <Choice name="decision" value="rejected" label="반려" detail={rejectDetail} />
       </fieldset>
@@ -79,19 +80,19 @@ export function RequestReviewForm({
        * 반려 사유와 메모는 "반려"를 골랐을 때만 보인다. 상태 대신 CSS(:has)로 숨겨서 서버에서 그린 첫 화면부터 맞고,
        * 자바스크립트가 없어도 반려할 수 있다. 숨겨도 고른 값은 남고, 반려가 아니면 서버가 사유·메모를 쓰지 않는다.
        */}
-      <div className="hidden flex-col gap-4 group-has-[input[name=decision][value=rejected]:checked]/review:flex">
-        <fieldset className="flex flex-col gap-3" aria-describedby={state.error === "reason" ? describedBy : undefined}>
-          <legend className="mb-3 text-sm font-semibold">반려 사유</legend>
+      <div className={styles.box}>
+        <fieldset className={styles.fieldset2} aria-describedby={state.error === "reason" ? describedBy : undefined}>
+          <legend className={styles.legend2}>반려 사유</legend>
           {Object.entries(reasons).map(([reason, label]) => (
             <Choice key={reason} name="reason" value={reason} label={label} />
           ))}
         </fieldset>
-        <div className="flex flex-col gap-2 text-sm">
-          <label htmlFor={`${idPrefix}-memo`} className="font-semibold">
+        <div className={styles.box2}>
+          <label htmlFor={`${idPrefix}-memo`} className={styles.field}>
             반려 메모
           </label>
           {/* placeholder는 입력하면 사라져서 안내는 늘 보이게 둔다 */}
-          <p id={hintId} className="text-text-muted">
+          <p id={hintId} className={styles.text}>
             반려할 때 운영자 기록으로 남아요. 사유가 &ldquo;기타&rdquo;이면 이 메모가 {audience}에게 보이는 사유가 돼요.
           </p>
           <textarea
@@ -101,29 +102,29 @@ export function RequestReviewForm({
             maxLength={REVIEW_MEMO_MAX_LENGTH}
             aria-describedby={state.error === "note" || state.error === "memo" ? `${hintId} ${errorId}` : hintId}
             placeholder={`${REVIEW_MEMO_MAX_LENGTH}자까지`}
-            className="rounded-2xl bg-surface-strong px-4 py-3 text-text placeholder:text-text-muted focus:outline-2 focus:outline-accent"
+            className={styles.textarea}
           />
         </div>
       </div>
       {state.error && (
-        <p id={errorId} role="alert" className="text-sm font-semibold">
+        <p id={errorId} role="alert" className={styles.text2}>
           {errorMessage[state.error]}
         </p>
       )}
-      <Button type="submit" disabled={pending} className="self-start">
+      <Button type="submit" disabled={pending} className={styles.button}>
         처리하기
       </Button>
-    </form>
+    </AdminPanel>
   );
 }
 
 function Choice({ name, value, label, detail }: { name: string; value: string; label: string; detail?: string }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-surface-strong px-4 py-3 has-checked:bg-line">
-      <input type="radio" name={name} value={value} className="mt-1 accent-accent" />
-      <span className="flex flex-col gap-1">
-        <span className="text-sm font-bold">{label}</span>
-        {detail && <span className="text-sm text-text-muted">{detail}</span>}
+    <label className={styles.choice}>
+      <input type="radio" name={name} value={value} className={styles.choiceInput} />
+      <span className={styles.choiceLabel}>
+        <span className={styles.choiceLabel2}>{label}</span>
+        {detail && <span className={styles.choiceDetail}>{detail}</span>}
       </span>
     </label>
   );

@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { rememberInboxHref } from "@/features/chat/inbox-href";
 import { CHAT_SORT_LABEL, toChatsHref, type ChatQuery, type ChatSort } from "@/features/chat/query";
 import { CHAT_ROLE_LABEL, CHAT_ROLES, type ChatRole, type ChatRoleCounts } from "@/features/chat/types";
+import styles from "./ChatFilters.module.css";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -99,21 +100,21 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <label className="flex w-full items-center gap-2 rounded-full bg-surface-strong px-5 py-3 transition-colors duration-300 ease-brand focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent">
-        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className="shrink-0 text-text-muted" />
+    <div className={styles.root}>
+      <label className={styles.field}>
+        <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className={styles.icon} />
         <input
           type="search"
           aria-label="채팅방 검색"
           placeholder="프로젝트명이나 닉네임으로 찾아보세요"
           value={value}
           onChange={(event) => onSearch(event.target.value)}
-          className="w-full min-w-0 bg-transparent outline-none"
+          className={styles.input}
         />
       </label>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      <div className={styles.box}>
         {/* 역할 탭(왼쪽). 칩 회색 홈 안에서 고른 탭만 교정지 면으로 올라오고, 고른 탭의 수는 강조색이다 */}
-        <div role="group" aria-label="역할별 보기" className="flex rounded-full bg-surface-strong p-1">
+        <div role="group" aria-label="역할별 보기" className={styles.box2}>
           {roleTabs.map((tab) => {
             const active = query.role === tab.value;
             return (
@@ -122,29 +123,23 @@ export function ChatFilters({ query, counts }: { query: ChatQuery; counts: ChatR
                 type="button"
                 aria-pressed={active}
                 onClick={() => navigateWithPendingSearch({ role: tab.value })}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors duration-300 ease-brand sm:px-4",
-                  active ? "bg-surface-muted text-text" : "text-text-muted hover:text-text",
-                )}
+                className={cn(styles.root2, active ? styles.root2Active : styles.root2NotActive)}
               >
                 {tab.label}{" "}
-                <span className={cn("font-semibold tabular-nums", active ? "text-accent" : "opacity-60")}>{tab.count}</span>
+                <span className={cn(styles.count, active ? styles.countActive : styles.countNotActive)}>{tab.count}</span>
               </button>
             );
           })}
         </div>
         {/* 정렬(오른쪽) */}
-        <div role="group" aria-label="정렬" className="flex gap-4 text-sm">
+        <div role="group" aria-label="정렬" className={styles.box3}>
           {(Object.keys(CHAT_SORT_LABEL) as ChatSort[]).map((sort) => (
             <button
               key={sort}
               type="button"
               aria-pressed={query.sort === sort}
               onClick={() => navigateWithPendingSearch({ sort })}
-              className={cn(
-                "font-bold transition-colors duration-300 ease-brand",
-                query.sort === sort ? "text-text" : "text-text-muted hover:text-text",
-              )}
+              className={cn(styles.root3, query.sort === sort ? styles.root3On : styles.root3Off)}
             >
               {CHAT_SORT_LABEL[sort]}
             </button>

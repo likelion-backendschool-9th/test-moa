@@ -4,7 +4,9 @@ import { PROJECTS_PATH } from "@/features/project/paths";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import type { Activity } from "@/features/member/types";
 import { ActivityGroup } from "../ActivityGroup/ActivityGroup";
-import { cardClass, cardTitleClass } from "../card-styles";
+import { Card } from "@/components/ui/Card/Card";
+import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import styles from "./ActivitySummary.module.css";
 
 type Stat = { label: string; count: number; href: string };
 
@@ -22,11 +24,11 @@ export function ActivitySummary({ activity }: { activity: Activity }) {
     { label: "새 피드백", count: project.newFeedback, href: PROJECTS_PATH },
   ];
   return (
-    <section aria-labelledby="my-activity-heading" className={cardClass}>
-      <h2 id="my-activity-heading" className={cardTitleClass}>
+    <AccountCard as="section" aria-labelledby="my-activity-heading">
+      <AccountCardTitle id="my-activity-heading">
         활동 요약
-      </h2>
-      <div className="grid gap-4 md:grid-cols-2">
+      </AccountCardTitle>
+      <div className={styles.box}>
         <ActivityGroup kind="participation">
           <StatList stats={participationStats} />
         </ActivityGroup>
@@ -34,32 +36,32 @@ export function ActivitySummary({ activity }: { activity: Activity }) {
           {project.projects > 0 ? (
             <StatList stats={projectStats} />
           ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-muted px-4 py-3">
-              <p className="text-sm text-text-muted">아직 등록한 프로젝트가 없어요</p>
+            <Card as="div" radius="lg" className={styles.box2}>
+              <p className={styles.text}>아직 등록한 프로젝트가 없어요</p>
               <LinkButton href={PROJECTS_PATH} variant="secondary" size="sm">
                 내 프로젝트
               </LinkButton>
-            </div>
+            </Card>
           )}
         </ActivityGroup>
       </div>
-    </section>
+    </AccountCard>
   );
 }
 
 function StatList({ stats }: { stats: Stat[] }) {
   return (
-    <ul className="grid grid-cols-3 gap-2">
+    <ul className={styles.statList}>
       {stats.map((stat) => (
         <li key={stat.label}>
-          <Link
+          <Card as={Link} radius="lg"
             href={stat.href}
             aria-label={`${stat.label} ${stat.count}`}
-            className="flex flex-col gap-1 rounded-lg bg-surface-muted px-3 py-3 transition-colors duration-300 ease-brand hover:bg-surface-strong"
+            className={styles.statListLink}
           >
-            <span className="text-xs text-text-muted">{stat.label}</span>
-            <span className="text-xl font-extrabold tabular-nums">{stat.count}</span>
-          </Link>
+            <span className={styles.statListLabel}>{stat.label}</span>
+            <span className={styles.statListCount}>{stat.count}</span>
+          </Card>
         </li>
       ))}
     </ul>

@@ -19,6 +19,7 @@ import {
 import { WithdrawalModalContent } from "@/app/(site)/admin/withdrawals/_components/WithdrawalModalContent/WithdrawalModalContent";
 import { withdrawalsHref } from "@/features/credit/paths";
 import { type ListTab } from "@/features/credit/paths";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "출금 요청 관리" };
 
@@ -40,7 +41,7 @@ async function Withdrawals({ searchParams }: { searchParams: PageProps<"/admin/w
   if (!(await requireAdmin(gatePath))) return <AccessDenied pageName="출금 요청 관리" />;
   return (
     <AdminShell path="/admin/withdrawals" title="출금 요청 관리">
-      <Container className="flex flex-col gap-6 pt-10">
+      <Container className={styles.withdrawalsContainer}>
         {processed && (
           <Suspense fallback={null}>
             <ProcessedNoticeSlot withdrawalKey={processed} />

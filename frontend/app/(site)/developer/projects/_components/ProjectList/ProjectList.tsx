@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import type { ProjectSummary } from "@/features/recruitment/types";
+import styles from "./ProjectList.module.css";
 
 /* 내 프로젝트 목록 화면의 카드 그리드 */
 
@@ -20,16 +21,16 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
     );
   }
   return (
-    <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <ul className={styles.root}>
       {projects.map((project) => (
         <li key={project.key}>
           <Link
             href={projectPath(project.key)}
-            className="group block h-full rounded-2xl"
+            className={styles.link}
           >
-            <Card className="flex h-full flex-col gap-3 border border-line transition-colors duration-300 ease-brand group-hover:bg-surface-strong">
-              <h3 className="text-lg font-extrabold">{project.name}</h3>
-              <p className="mt-auto text-sm font-semibold">
+            <Card className={styles.card}>
+              <h3 className={styles.name}>{project.name}</h3>
+              <p className={styles.text}>
                 모집 {project.recruitmentCount}건 · 모집 중 {project.openRecruitmentCount}건
               </p>
             </Card>
@@ -43,9 +44,9 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
 /** 목록을 불러오는 동안 보이는 카드 모양 자리 */
 export function ProjectListSkeleton() {
   return (
-    <div data-testid="project-skeleton" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div data-testid="project-skeleton" className={styles.projectListSkeleton}>
       {Array.from({ length: 3 }, (_, index) => (
-        <Skeleton key={index} className="h-44 rounded-2xl" />
+        <Skeleton key={index} className={styles.projectListSkeleton2} />
       ))}
     </div>
   );

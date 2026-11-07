@@ -6,6 +6,8 @@
 
 `src` 폴더는 쓰지 않는다(2026-11-06). 앱 코드는 `frontend/` 바로 아래에 두고, 설정 파일(`package.json`, `next.config.ts`, `tsconfig.json`)·`public/`·`e2e/`·`scripts/`와 같은 높이가 된다. Next에서 `src`는 선택 사항이고(`구조:307`), `create-next-app`의 추천 기본값도 `src`를 쓰지 않는다(`설치:89`). `@/` 별칭은 `tsconfig.json`의 `"@/*": ["./*"]`로 바꾸므로 import 문은 그대로다. `src` 위치를 기준으로 쓴 문자열 경로 2곳(로컬 글꼴, OG 이미지 글꼴)만 고친다([이전 범위](04-migration.md#이전-범위) #144).
 
+아래 트리는 부품을 파일 이름으로만 적는다. 실제로는 `_components`·`components/ui`·`features/*/components`의 부품마다 이름과 같은 폴더(`AppHeader/AppHeader.tsx`, 옆에 `AppHeader.module.css`·`hook.ts`)가 있다. (고침 #160: 부품 폴더와 CSS Modules. 규칙은 [5. CSS Modules와 부품 폴더](05-css-modules.md)와 [프론트 README](../../frontend/README.md#부품-폴더))
+
 ```text
 frontend/
 ├── proxy.ts                         # 토큰 갱신. app과 같은 높이 (N14)
@@ -21,8 +23,8 @@ frontend/
 │   │   ├── SiteFooter.tsx           # 푸터 마크업(소개·약관 링크). 서버 전용 코드 없음
 │   │   ├── AppFooter.tsx            # SiteFooter + 개발용 시연 전환기(세션·시연 상황을 읽는다). 서버 전용
 │   │   ├── SiteFrame.tsx            # Main + AppFooter. (site) 레이아웃과 404 두 곳이 쓴다
-│   │   ├── ComingSoon.tsx
-│   │   └── nav.ts                   # 헤더 탭 정의 (lib/nav.ts에서)
+│   │   └── ComingSoon.tsx
+│   ├── _lib/nav.ts                  # 헤더 탭 정의. 부품이 아니라 _lib에 둔다 (고침 #160)
 │   │
 │   ├── (site)/                      # 푸터 있는 화면
 │   │   ├── layout.tsx               # <SiteFrame>{children}</SiteFrame>
@@ -94,7 +96,7 @@ frontend/
 | P4 | 화면 부품을 라우트 **하나**만 쓴다 | 그 라우트 폴더의 `_components/` | N1, N2 |
 | P5 | 화면 부품을 **한 구역 안의** 여러 라우트가 쓴다 | 그 라우트들의 공통 조상 폴더의 `_components/` | 같다 |
 | P6 | 화면 부품을 **여러 구역**이 쓴다 | 도메인을 알면 `features/<도메인>/components/`, 모르면 `components/ui/`. 라우트를 알면(홈 링크 등) `app/_components/` | 전략 C(`구조:349`) |
-| P7 | 라우트 전용인데 화면 부품이 아닌 코드(여러 도메인을 묶은 요약, 그 화면만 쓰는 주소) | 그 라우트 폴더의 `_lib/` | 도메인 폴더가 화면 조립을 맡지 않게 한다(F2) |
+| P7 | 라우트 전용인데 화면 부품이 아닌 코드(여러 도메인을 묶은 요약, 그 화면만 쓰는 주소, 한 구역의 여러 부품이 쓰는 훅) | 그 라우트 폴더의 `_lib/` | 도메인 폴더가 화면 조립을 맡지 않게 한다(F2). 훅은 고침 #160 |
 
 **구역**은 기본적으로 `app/(site)`의 첫 구간(`(home)`, `(auth)`, `recruitments`, `testers`, `developer`, `admin` …)을 기준으로 나눈다. `my/(account)`와 `my/chats`는 같은 `my` 아래여도 서로 다른 구역이며, `app/(conversation)`도 별도 구역이다. 부품 배치는 먼저 사용처의 구역이 같은지 확인한다. 구역이 다르면 공통 조상이 `app/(site)/my`처럼 깊어도 P6의 공유 부품으로 인정하고, 같은 구역 안에서만 P4·P5의 공통 조상을 계산한다.
 
@@ -238,7 +240,7 @@ demo/
 
 ## 3.6 import 경계
 
-### ESLint로 검사하는 것 (B1~B7)
+### ESLint로 검사하는 것 (B1~B8)
 
 [`scripts/structure/eslint-boundaries.mjs`](../../frontend/scripts/structure/eslint-boundaries.mjs)를 `frontend/eslint.config.mjs`에 넣는다. `eslint-config-next`가 `eslint-plugin-import`와 TypeScript 경로 해석기를 이미 등록하므로 새로 설치할 패키지는 없다.
 
@@ -251,12 +253,13 @@ demo/
 | B5 | 다른 도메인의 `actions.ts`를 import하지 않는다 |
 | B6 | `features/session`은 다른 도메인을 import하지 않는다 |
 | B7 | 다른 도메인은 `features/auth`를 import하지 않는다. `auth`를 import하는 것은 `app`뿐이다 |
+| B8 | 부품 폴더의 `api.ts`(`app/**/_components/**`, `components/**`, `features/*/components/**`)는 `demo/`·`lib/backend.ts`·`lib/backend-http.ts`를 import하지 않는다. 데이터는 `features/*/api.ts`를 거친다 (#160) |
 
 문자열과 치환 없는 백틱의 동적 `import()`·`require()`에 같은 경계 규칙을 적용한다. 기존 `eslint-plugin-import`가 건너뛰는 백틱 구문은 보조 규칙이 같은 경로 해석과 제한 설정으로 검사한다. 치환식처럼 경로를 계산할 수 없는 경우는 배치 검사의 R0이 차단한다.
 
 이 규칙은 이전 전 develop(`5db2041`)과 이전 후 코드에서 모두 위반 0건이다. 일부러 어긴 import를 넣었을 때 lint가 차단하는 것도 확인한다. 실행 방법은 [README](README.md#직접-확인하는-방법)에 있다.
 
-### 스크립트로 검사하는 것 (R0~R3)
+### 스크립트로 검사하는 것 (R0~R6)
 
 배치 규칙은 ESLint로 표현하기 어렵다. [`scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.mjs) `--check`가 검사한다. 위반이 있으면 종료 코드 1로 끝나므로 CI에 그대로 넣을 수 있다. import는 TypeScript 구문 트리에서 모은다. 정적 import뿐 아니라 동적 import(`await import("…")`, `next/dynamic`)와 `typeof import("…")`도 센다.
 
@@ -266,8 +269,11 @@ demo/
 | R1 | `features/*/components` 파일은 여러 구역이 쓴다 | 0 |
 | R2 | `_components`·`_lib` 파일은 그 폴더의 부모 경로 안에서만 import한다 | 0 |
 | R3 | `components/ui`는 도메인·세션·시연 코드를 import하지 않는다 | 0 |
+| R4 | 부품(`.tsx`)은 이름과 같은 폴더에 있다. `_components`·`components/ui`·`features/*/components` 바로 아래에 `.tsx`가 없다 (#160) | 0 |
+| R5 | `.module.css`의 간격·글자 크기·줄 높이·모서리·색·모션 값은 토큰이고, 미디어 너비는 40·48·64·80rem, 컨테이너는 48rem이다. 바로 위에 `예외` 주석이 있는 줄은 건너뛴다 (#160) | 0 |
+| R6 | CSS·TSX가 읽는 CSS 변수는 어딘가에서 정의한다. `next/font`가 만드는 `--font-wanted`만 예외다 (#160: Tailwind를 뺀 뒤 `--aspect-video`가 남아 있었다) | 0 |
 
-R0~R3은 모두 0건을 유지한다. 배치 검사는 CI의 프론트 작업에도 연결한다(#151).
+R0~R6은 모두 0건을 유지한다. 배치 검사는 CI의 프론트 작업에도 연결한다(#151).
 
 ## 3.7 서버와 클라이언트
 
@@ -281,7 +287,7 @@ R0~R3은 모두 0건을 유지한다. 배치 검사는 CI의 프론트 작업에
 
 ## 3.8 테스트
 
-- URL이 바뀌지 않으므로 `e2e/pages.spec.ts`의 `PAGES`는 그대로다.
+- URL이 바뀌지 않으므로 `PAGES`는 그대로다. `PAGES`는 `e2e/pages.ts`에 있고 `pages.spec.ts`와 화면 비교(`scripts/visual`)가 함께 쓴다 (고침 #160: 테스트 파일은 다른 테스트 파일에서 import할 수 없어 옮겼다).
 - 시연 기록 쿠키를 만드는 코드는 `e2e/helpers.ts`로 모은다. 테스트가 쿠키 직렬화 형식을 직접 만들지 않는다(F10).
 - 레이아웃은 일반 화면뿐 아니라 채팅방·404의 본문 하나, 본문 밖의 푸터, 본문 건너뛰기까지 확인한다. 일반 화면은 `a11y.spec.ts` S35, 푸터 진입·이탈은 `chat-room.spec.ts` S157·S321이 확인한다. 나머지는 아래 시나리오를 사용한다.
 
@@ -303,5 +309,5 @@ R0~R3은 모두 0건을 유지한다. 배치 검사는 CI의 프론트 작업에
 
 - 파일 이름 표기. 부품은 PascalCase, 그 밖은 소문자다. kebab-case로 바꾸지 않는다.
 - 도메인 폴더 안 파일 모양(`api.ts`·`actions.ts`·`types.ts`·`components/`). `model.ts`·`policy.ts`·`server/queries.ts`로 나누지 않는다. 파일이 커져 변경 이유가 갈릴 때 그 도메인만 나눈다.
-- 디자인 토큰, Tailwind 규칙, `"use client"` 기준.
+- 디자인 토큰, `"use client"` 기준. (고침 #160: 스타일 규칙은 CSS Modules로 바꿨다. [5번 문서](05-css-modules.md))
 - URL.

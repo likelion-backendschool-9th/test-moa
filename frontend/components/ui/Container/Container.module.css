@@ -1,0 +1,12 @@
+.root {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 96rem;
+  padding-inline: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .root {
+    padding-inline: var(--space-10);
+  }
+}

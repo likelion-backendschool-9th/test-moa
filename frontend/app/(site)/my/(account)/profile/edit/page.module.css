@@ -1,0 +1,44 @@
+.profileEditPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.profileEditPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.profileEditSkeletonSkeleton {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.profileEditSkeletonBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 64rem) {
+  .profileEditSkeletonBox {
+    grid-column: span 2/span 2;
+  }
+}
+
+.profileEditSkeletonSkeleton2 {
+  height: 3rem;
+  width: 100%;
+}
+
+.profileEditSkeletonSkeleton3 {
+  height: 3rem;
+  width: 100%;
+}
+
+.profileEditSkeletonSkeleton4 {
+  height: 3rem;
+  width: 100%;
+}

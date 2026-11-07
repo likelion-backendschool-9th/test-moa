@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { recruitmentCreatePath } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
-import { RecruitmentForm } from "@/app/(site)/developer/recruitments/new/_components/RecruitmentForm";
+import { Container } from "@/components/ui/Container/Container";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
+import { RecruitmentForm } from "@/app/(site)/developer/recruitments/new/_components/RecruitmentForm/RecruitmentForm";
 import { getRecruitmentFormInfo } from "@/features/recruitment/api";
+import styles from "./page.module.css";
 
 /* 테스트 모집 작성 (/developer/recruitments/new?project=:projectKey) */
 
@@ -15,8 +16,8 @@ type Props = PageProps<"/developer/recruitments/new">;
 
 export default function NewRecruitmentPage({ searchParams }: Props) {
   return (
-    <Container className="flex flex-col gap-8 py-10">
-      <h1 className="text-4xl font-extrabold tracking-[-0.035em]">테스트 모집 작성</h1>
+    <Container className={styles.newRecruitmentPage}>
+      <h1 className={styles.newRecruitmentPageTitle}>테스트 모집 작성</h1>
       <Suspense fallback={<DetailSkeleton />}>
         <FormSlot searchParams={searchParams} />
       </Suspense>
@@ -30,8 +31,8 @@ async function FormSlot({ searchParams }: Pick<Props, "searchParams">) {
   const projectKey = project;
   const { project: projectInfo, ...info } = await getRecruitmentFormInfo(recruitmentCreatePath(projectKey), projectKey);
   return (
-    <div className="flex flex-col gap-6">
-      <p className="text-text-muted">{projectInfo.name}</p>
+    <div className={styles.formSlot}>
+      <p className={styles.formSlotName}>{projectInfo.name}</p>
       <RecruitmentForm projectKey={projectInfo.key} {...info} />
     </div>
   );

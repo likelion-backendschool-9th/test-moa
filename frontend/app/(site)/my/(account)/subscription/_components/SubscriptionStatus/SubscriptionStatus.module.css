@@ -1,0 +1,136 @@
+.value {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  border-radius: var(--radius-full);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-3);
+  padding-block: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 40rem) {
+  .list {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.term {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.box2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.term2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.box3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.term3 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.text2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.quotaMeter {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-color: var(--line);
+  padding-top: var(--space-4);
+}
+
+.quotaMeterBox {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.quotaMeterTitle {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.quotaMeterBox2 {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+}
+
+.quotaMeterBox3 {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--text);
+}
+
+.quotaMeterBox4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.quotaMeterLabel {
+  font-variant-numeric: tabular-nums;
+}
+
+.quotaMeterHint {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}

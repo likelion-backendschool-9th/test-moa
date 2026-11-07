@@ -1,0 +1,25 @@
+.box {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.link {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--text);
+  }
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}

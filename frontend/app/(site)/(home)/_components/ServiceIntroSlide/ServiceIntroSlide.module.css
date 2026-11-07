@@ -1,0 +1,165 @@
+.root {
+  display: grid;
+  height: 100%;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+@media (min-width: 64rem) {
+  .root {
+    grid-template-columns: max-content minmax(0,1fr);
+  }
+}
+
+@media (min-width: 80rem) {
+  .root {
+    gap: var(--space-16);
+  }
+}
+
+.box {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+@media (min-width: 64rem) {
+  .box {
+    gap: var(--space-6);
+  }
+}
+
+.box2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 64rem) {
+  .box2 {
+    gap: var(--space-5);
+  }
+}
+
+.title {
+  font-size: var(--text-hero);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -.04em;
+  white-space: nowrap;
+}
+
+@media (min-width: 64rem) {
+  .title {
+    font-size: var(--text-hero-lg);
+  }
+}
+
+@media (min-width: 80rem) {
+  .title {
+    font-size: var(--text-hero-xl);
+  }
+}
+
+.label {
+  color: var(--accent);
+}
+
+.text {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  color: var(--text-muted);
+}
+
+.link {
+  display: block;
+  width: 72%;
+  rotate: -3deg;
+  align-self: center;
+  border-radius: var(--radius-2xl);
+  outline-offset: 4px;
+}
+
+@media (min-width: 48rem) {
+  .link {
+    display: none;
+  }
+}
+
+.list {
+  display: none;
+  align-items: flex-start;
+  padding-bottom: var(--space-10);
+}
+
+@media (min-width: 64rem) {
+  .list {
+    display: flex;
+  }
+}
+
+.root2 {
+  width: 55%;
+  flex-shrink: 0;
+}
+
+.root2:focus-within {
+  z-index: 10;
+}
+
+@media (hover: hover) {
+  .root2:hover {
+    z-index: 10;
+  }
+}
+
+@media (min-width: 80rem) {
+  .root2 {
+    width: 40%;
+  }
+}
+
+.link2 {
+  display: block;
+  border-radius: var(--radius-2xl);
+  outline-offset: 4px;
+  transition-property: transform, translate, scale, rotate;
+  transition-duration: var(--duration-500);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .link2:hover {
+    translate: 0 -0.75rem;
+  }
+}
+
+.link2:focus-visible {
+  translate: 0 -0.75rem;
+}
+
+/* 최근 모집 교정지 세 장의 놓인 각도와 위치 */
+.sheetPose1 {
+  margin-top: var(--space-4);
+  rotate: -6deg;
+}
+
+.sheetPose2 {
+  margin-left: -10%;
+  rotate: 2deg;
+}
+
+.sheetPose3 {
+  margin-top: var(--space-8);
+  margin-left: -10%;
+  display: none;
+  rotate: 7deg;
+}
+
+@media (min-width: 80rem) {
+  .sheetPose3 {
+    display: block;
+  }
+}

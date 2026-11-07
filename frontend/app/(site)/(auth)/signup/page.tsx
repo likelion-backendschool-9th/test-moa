@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { AuthCard, AuthFormSkeleton, OrDivider } from "@/app/(site)/(auth)/_components/AuthCard";
-import { SignupForm } from "@/app/(site)/(auth)/signup/_components/SignupForm";
-import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons";
+import { AuthCard, AuthFormSkeleton, OrDivider } from "@/app/(site)/(auth)/_components/AuthCard/AuthCard";
+import { SignupForm } from "@/app/(site)/(auth)/signup/_components/SignupForm/SignupForm";
+import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons/SocialButtons";
 import { withNext } from "@/features/auth/types";
 import { safeNextPath } from "@/lib/next-path";
 import { getSession } from "@/features/session/session";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "회원가입" };
 
@@ -34,9 +35,9 @@ async function SignupSlot({ searchParams }: { searchParams: SearchParams }) {
       <SignupForm next={next} />
       <OrDivider />
       <SocialButtons next={next} />
-      <p className="text-center text-sm text-text-muted">
+      <p className={styles.signupSlotText}>
         이미 계정이 있나요?{" "}
-        <Link href={withNext("/login", next)} className="font-semibold text-text underline underline-offset-4">
+        <Link href={withNext("/login", next)} className={styles.signupSlotLink}>
           로그인
         </Link>
       </p>

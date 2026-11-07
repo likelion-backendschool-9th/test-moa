@@ -1,0 +1,41 @@
+.rootLayoutBody {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.rootLayoutSrOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--accent);
+  padding-inline: var(--space-3);
+  padding-block: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--on-accent);
+}
+
+.rootLayoutSrOnly:focus {
+  clip-path: none;
+  white-space: normal;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  position: fixed;
+  top: var(--space-4);
+  left: var(--space-4);
+  z-index: var(--z-skip);
+}

@@ -1,0 +1,48 @@
+.corner {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-color: var(--mark);
+}
+
+.root {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.label {
+  top: var(--space-3);
+  left: var(--space-3);
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-left-style: solid;
+  border-left-width: 1px;
+}
+
+.label2 {
+  top: var(--space-3);
+  right: var(--space-3);
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-right-style: solid;
+  border-right-width: 1px;
+}
+
+.label3 {
+  bottom: var(--space-3);
+  left: var(--space-3);
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-left-style: solid;
+  border-left-width: 1px;
+}
+
+.label4 {
+  right: var(--space-3);
+  bottom: var(--space-3);
+  border-right-style: solid;
+  border-right-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+}

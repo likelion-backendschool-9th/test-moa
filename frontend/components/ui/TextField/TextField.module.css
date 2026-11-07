@@ -1,0 +1,46 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.hint {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.error {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+/* 입력란. TextField와, 레이블을 따로 그리는 폼(피드백 쓰기·신고 사유)이 함께 쓴다 */
+.input {
+  width: 100%;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.input:focus {
+  background-color: var(--surface-muted);
+}
+
+.input[aria-invalid=true] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+

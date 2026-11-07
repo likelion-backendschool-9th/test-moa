@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 
 const frontend = fileURLToPath(new URL("../../", import.meta.url));
 const script = fileURLToPath(new URL("usage.mjs", import.meta.url));
-const component = "features/fixture/components/Probe.tsx";
-const source = 'import { Probe } from "@/features/fixture/components/Probe"; export default Probe;';
+const component = "features/fixture/components/Probe/Probe.tsx";
+const source = 'import { Probe } from "@/features/fixture/components/Probe/Probe"; export default Probe;';
 
 function fixture(t, routes, { src = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "moa-usage-test-"));
@@ -66,12 +66,56 @@ for (const [name, routes, expected] of [
 }
 
 test("R0 백틱 상수 경로는 사용처에 포함하고 계산할 수 없는 경로는 차단한다", (t) => {
-  const run = fixture(t, { "app/(site)/(home)/page.tsx": "export const probe = () => import(`@/features/fixture/components/Probe`);" });
+  const run = fixture(t, { "app/(site)/(home)/page.tsx": "export const probe = () => import(`@/features/fixture/components/Probe/Probe`);" });
   const result = run("--json");
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout).rows.find(({ file }) => file === component).rule, "app/(site)/(home)/_components");
-  const unknown = fixture(t, { "app/(site)/(home)/page.tsx": 'const part = "fixture"; export const probe = () => import(`@/features/${part}/components/Probe`);' });
+  const unknown = fixture(t, { "app/(site)/(home)/page.tsx": 'const part = "fixture"; export const probe = () => import(`@/features/${part}/components/Probe/Probe`);' });
   const check = unknown("--check");
   assert.equal(check.status, 1, check.stderr);
   assert.match(check.stdout, /^R0\t/m);
+});
+
+/* 여러 구역이 쓰는 부품이라 R1에 걸리지 않는 기본 사용처 */
+const shared = { "app/(site)/(home)/page.tsx": source, "app/(site)/admin/page.tsx": source };
+
+test("#160-S9 부품 폴더와 토큰 값만 있으면 R4·R5 위반이 없다", (t) => {
+  const run = fixture(t, { ...shared, "app/globals.css": ":root {\n  --space-3: 0.75rem;\n  --space-6: 1.5rem;\n}\n", "features/fixture/components/Probe/Probe.module.css": ".root {\n  gap: var(--space-3);\n  border-width: 1px;\n}\n\n@media (min-width: 48rem) {\n  .root {\n    padding: var(--space-6);\n  }\n}\n" });
+  const check = run("--check");
+  assert.equal(check.status, 0, check.stdout);
+  assert.match(check.stdout, /위반 없음/);
+});
+
+test("#160-S10 폴더 없이 둔 부품은 R4로 막는다", (t) => {
+  const run = fixture(t, { ...shared, "app/(site)/admin/_components/Foo.tsx": "export function Foo() { return null; }", "app/(site)/admin/_components/Bar/Baz.tsx": "export function Baz() { return null; }" });
+  const check = run("--check");
+  assert.equal(check.status, 1, check.stdout);
+  assert.match(check.stdout, /^R4\tapp\/\(site\)\/admin\/_components\/Foo\.tsx\t/m);
+  assert.match(check.stdout, /^R4\tapp\/\(site\)\/admin\/_components\/Bar\/Baz\.tsx\t/m);
+});
+
+test("#160-S13 모듈에 토큰 대신 쓴 값과 정하지 않은 너비는 R5로 막는다", (t) => {
+  const css = ".root {\n  gap: 12px;\n  color: #fff;\n}\n\n@media (min-width: 50rem) {\n  .root {\n    gap: var(--space-2);\n  }\n}\n\n/* 너비 예외: 이유 */\n@media (max-width: 23.4rem) {\n  .root {\n    gap: 0;\n  }\n}\n";
+  const run = fixture(t, { ...shared, "features/fixture/components/Probe/Probe.module.css": css });
+  const check = run("--check");
+  assert.equal(check.status, 1, check.stdout);
+  assert.match(check.stdout, /^R5\tfeatures\/fixture\/components\/Probe\/Probe\.module\.css:2\tgap: 12px/m);
+  assert.match(check.stdout, /^R5\t[^\n]*:3\tcolor: #fff/m);
+  assert.match(check.stdout, /^R5\t[^\n]*:6\t@media \(min-width: 50rem\)/m);
+  assert.doesNotMatch(check.stdout, /23\.4rem/);
+});
+
+test("R6 정의하지 않은 CSS 변수를 읽으면 막는다", (t) => {
+  const run = fixture(t, { ...shared, "app/globals.css": ":root {\n  --space-2: 0.5rem;\n}\n", "features/fixture/components/Probe/Probe.module.css": ".root {\n  gap: var(--space-2);\n  aspect-ratio: var(--aspect-video);\n}\n" });
+  const check = run("--check");
+  assert.equal(check.status, 1, check.stdout);
+  assert.match(check.stdout, /^R6\tfeatures\/fixture\/components\/Probe\/Probe\.module\.css:3\t--aspect-video/m);
+  assert.doesNotMatch(check.stdout, /--space-2/);
+});
+
+test("R6 TSX style에서 따옴표로 정의한 변수는 정의로 센다", (t) => {
+  const run = fixture(t, { ...shared, "app/(site)/admin/page.tsx": source + '\nexport const Grid = () => <ul style={{ "--columns": 3 } as React.CSSProperties} />;', "features/fixture/components/Probe/Probe.module.css": ".root {\n  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));\n}\n" });
+  const check = run("--check");
+  assert.equal(check.status, 0, check.stdout);
+  assert.doesNotMatch(check.stdout, /--columns/);
 });

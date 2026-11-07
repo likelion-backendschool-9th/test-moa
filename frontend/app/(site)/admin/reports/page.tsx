@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
 import { getReports } from "@/features/report/api";
 import { requireAdmin } from "@/features/session/guard";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
 import {
   ProcessedNotice,
   ReportList,
   ReportListSkeleton,
   ReportTabs,
   ReportTargetFilters,
-} from "@/app/(site)/admin/reports/_components/ReportList";
+} from "@/app/(site)/admin/reports/_components/ReportList/ReportList";
 import { isReportDecision } from "@/features/report/types";
 import { parseReportTargetFilter, type ListTab, type ReportTargetFilter } from "@/features/report/paths";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "신고·제재 관리" };
 
@@ -34,7 +35,7 @@ async function Reports({ searchParams }: { searchParams: PageProps<"/admin/repor
   const processed = isReportDecision(params.processed) ? params.processed : null;
   return (
     <AdminShell path="/admin/reports" title="신고·제재 관리">
-      <Container className="flex flex-col gap-6 pt-10">
+      <Container className={styles.reportsContainer}>
         {processed && <ProcessedNotice decision={processed} held={params.held === "1"} />}
         <ReportTabs current={tab} target={target} />
         <ReportTargetFilters tab={tab} current={target} />

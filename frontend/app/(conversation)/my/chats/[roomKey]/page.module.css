@@ -1,0 +1,26 @@
+.chatRoomPage {
+  display: flex;
+  flex-direction: column;
+}
+
+.chatRoomPageContainer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding-top: var(--space-6);
+}
+
+@media (min-width: 48rem) {
+  .chatRoomPageContainer {
+    padding-top: var(--space-8);
+  }
+}
+
+.chatRoomPageBox {
+  margin-inline: auto;
+  display: flex;
+  width: 100%;
+  max-width: 48rem;
+  flex: 1;
+  flex-direction: column;
+}

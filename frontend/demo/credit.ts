@@ -104,7 +104,7 @@ const MAX_REQUESTS = 10;
 
 const WITHDRAWAL_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
-type StoredRequest = { id: string; amount: number; bank: string; last4: string; requestedAt: string; };
+type StoredRequest = { id: string; amount: number; bank: string; last4: string; requestedAt: string };
 
 const cookieName = (role: MemberRole) => `${COOKIE_PREFIX}${role}`;
 
@@ -142,7 +142,7 @@ export async function getDemoWithdrawals(role: MemberRole): Promise<Withdrawal[]
 }
 
 /** 신청을 맨 앞에 더한다. 계좌번호는 끝 4자리만 남기고, 오래된 기록부터 지워 최대 10건을 둔다 */
-export async function addDemoWithdrawal(role: MemberRole, request: { amount: number; bank: string; account: string; }) {
+export async function addDemoWithdrawal(role: MemberRole, request: { amount: number; bank: string; account: string }) {
   const now = new Date();
   const next: StoredRequest = {
     id: `demo-${now.getTime()}`,

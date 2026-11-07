@@ -21,7 +21,7 @@ export const DEMO_PASSWORD = "test1234";
 
 const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
 
-type UserSeed = Omit<AdminUser, "realName" | "email" | "joinedAt"> & { joinedDaysAgo: number; };
+type UserSeed = Omit<AdminUser, "realName" | "email" | "joinedAt"> & { joinedDaysAgo: number };
 
 const tester = (confirmedCount: number, submittedCount: number, incompleteCount: number): TesterActivity => ({
   confirmedCount,

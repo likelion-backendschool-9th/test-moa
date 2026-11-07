@@ -41,10 +41,10 @@ const byOldest = (a: ChatRoom, b: ChatRoom) => a.lastMessageAt.localeCompare(b.l
  */
 async function loadMemberThreads(nextPath: string) {
   const session = await getSession();
-  if(session.role === "guest") redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (session.role === "guest") redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   const mode = await getDemoDataMode();
   const [overrides, sent] = await Promise.all([readOverrides(session.role), readSent()]);
-  if(mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
+  if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
   /* 일시는 요청 시각 기준이라 미리 렌더링하지 않는다 */
   await connection();
   const now = new Date();
@@ -55,7 +55,7 @@ async function loadMemberThreads(nextPath: string) {
 /** 로그인한 회원이 들어가 있고 삭제하지 않은 대화방이면 그 회원, 아니면 null */
 async function roomMember(roomKey: string): Promise<Member | null> {
   const { role } = await getSession();
-  if(role === "guest") return null;
+  if (role === "guest") return null;
   const { hidden } = await readOverrides(role);
   const joined = !hidden.includes(roomKey) && buildChatThreads(role, new Date()).some(({ room }) => room.roomKey === roomKey);
   return joined ? role : null;
@@ -88,16 +88,16 @@ export async function getChatInbox(query: ChatQuery): Promise<ChatInboxData> {
 export async function getChatRoom(roomKey: string): Promise<ChatRoomData> {
   const { threads, now } = await loadMemberThreads(`${CHATS_PATH}/${roomKey}`);
   const thread = threads.find(({ room }) => room.roomKey === roomKey);
-  if(!thread) notFound();
+  if (!thread) notFound();
   return { ...thread, now: now.toISOString() };
 }
 
 /** 문서 제목에 쓸 대화방 이름. 열 수 없는 방이면 null */
 export async function getChatRoomTitle(roomKey: string): Promise<string | null> {
   const session = await getSession();
-  if(session.role === "guest" || (await getDemoDataMode()) === "empty") return null;
+  if (session.role === "guest" || (await getDemoDataMode()) === "empty") return null;
   const { hidden, names } = await readOverrides(session.role);
-  if(hidden.includes(roomKey)) return null;
+  if (hidden.includes(roomKey)) return null;
   await connection();
   const thread = buildChatThreads(session.role, new Date()).find(({ room }) => room.roomKey === roomKey);
   return thread ? (names[roomKey] ?? thread.room.projectName) : null;
@@ -107,7 +107,7 @@ export async function getChatRoomTitle(roomKey: string): Promise<string | null> 
 export async function renameChatRoom(roomKey: string, name: string) {
   const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
   const member = trimmed ? await roomMember(roomKey) : null;
-  if(!member) return;
+  if (!member) return;
   const overrides = await readOverrides(member);
   await writeOverrides(member, { ...overrides, names: { ...overrides.names, [roomKey]: trimmed } });
 }
@@ -115,7 +115,7 @@ export async function renameChatRoom(roomKey: string, name: string) {
 /** 대화방을 내 채팅함에서 지운다. 상대의 채팅함에는 그대로 있다 */
 export async function deleteChatRoom(roomKey: string) {
   const member = await roomMember(roomKey);
-  if(!member) return;
+  if (!member) return;
   const overrides = await readOverrides(member);
   await writeOverrides(member, { ...overrides, hidden: [...new Set([...overrides.hidden, roomKey])] });
 }
@@ -125,7 +125,7 @@ export async function sendChatMessage(roomKey: string, text: string) {
   const trimmed = text.trim().slice(0, CHAT_MESSAGE_MAX);
   const member = trimmed ? await roomMember(roomKey) : null;
   const sender = member && chatMemberNickname(member);
-  if(!sender) return;
+  if (!sender) return;
   const sent = await readSent();
   await writeSent([...sent, { roomKey, sender, text: trimmed, sentAt: new Date().toISOString() }]);
 }

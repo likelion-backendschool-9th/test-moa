@@ -12,7 +12,7 @@ export function parseListTab(value: unknown): ListTab {
 }
 
 /** 신고 목록에서 보고 있던 상태 탭과 대상 필터. 상세로 갔다가 돌아올 때 되살린다 */
-export type ReportListView = { tab: ListTab; target: ReportTargetFilter; };
+export type ReportListView = { tab: ListTab; target: ReportTargetFilter };
 
 function viewParams({ tab, target }: ReportListView, extra: Record<string, string>) {
   const params = new URLSearchParams();

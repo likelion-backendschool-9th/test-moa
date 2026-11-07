@@ -26,7 +26,7 @@ export async function decideApplicants(
   recruitmentKey: string,
   ids: string[],
   status: "confirmed" | "rejected",
-): Promise<{ ok: boolean; }> {
+): Promise<{ ok: boolean }> {
   if (status !== "confirmed" && status !== "rejected") return { ok: false };
   return decide(recruitmentKey, ids, status);
 }
@@ -36,7 +36,7 @@ export async function cancelRecruitment(
   recruitmentKey: string,
   _prev: FormState,
   formData: FormData,
-): Promise<FormState & { ok?: boolean; }> {
+): Promise<FormState & { ok?: boolean }> {
   return cancel(recruitmentKey, formData);
 }
 

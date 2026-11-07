@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 
 const PATH = "/my/subscription/checkout";
 
-export type CheckoutFormState = { status: "idle"; } | { status: "error"; error: string; };
+export type CheckoutFormState = { status: "idle" } | { status: "error"; error: string };
 
 export async function payForSubscription(_prev: CheckoutFormState, formData: FormData): Promise<CheckoutFormState> {
   const { subscription, plans, payableCredits } = await getSubscriptionOverview(PATH);

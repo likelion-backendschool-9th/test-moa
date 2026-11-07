@@ -1,12 +1,12 @@
 "use server";
 
 import { requireMember } from "@/features/session/guard";
-import { participationPath,PARTICIPATIONS_PATH,participationsPath } from "@/features/participation/paths";
+import { participationPath, PARTICIPATIONS_PATH, participationsPath } from "@/features/participation/paths";
 import { revalidatePath } from "next/cache";
-import { redirect,RedirectType } from "next/navigation";
-import { getParticipation,saveFeedback } from "@/features/participation/api";
-import { parseFeedbackForm,type FeedbackFieldErrors } from "@/features/participation/feedback-fields";
-import { parseParticipationTab,parseParticipationView } from "@/features/participation/types";
+import { redirect, RedirectType } from "next/navigation";
+import { getParticipation, saveFeedback } from "@/features/participation/api";
+import { parseFeedbackForm, type FeedbackFieldErrors } from "@/features/participation/feedback-fields";
+import { parseParticipationTab, parseParticipationView } from "@/features/participation/types";
 import { saveParticipationView } from "@/features/participation/view-preference";
 
 /*

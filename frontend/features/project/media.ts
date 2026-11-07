@@ -7,7 +7,7 @@ import { PROJECT_MEDIA_LIMIT } from "@/features/project/types";
  */
 
 /** 고른 파일의 이름·크기·형식 */
-export type FileMeta = { name: string; size: number; type: string; };
+export type FileMeta = { name: string; size: number; type: string };
 
 const MB = 1024 * 1024;
 

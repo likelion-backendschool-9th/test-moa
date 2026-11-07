@@ -28,9 +28,9 @@ export type Todo = {
   dueAt?: string;
 };
 
-export type ParticipationCounts = { applied: number; ongoing: number; completed: number; };
+export type ParticipationCounts = { applied: number; ongoing: number; completed: number };
 
-export type ProjectCounts = { projects: number; recruiting: number; newFeedback: number; };
+export type ProjectCounts = { projects: number; recruiting: number; newFeedback: number };
 
 export type Activity = {
   participation: ParticipationCounts;

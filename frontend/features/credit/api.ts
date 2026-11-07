@@ -100,7 +100,7 @@ async function loadAdminWithdrawals() {
   return { now, withdrawals };
 }
 
-const byOldest = (a: { createdAt: string; }, b: { createdAt: string; }) => a.createdAt.localeCompare(b.createdAt);
+const byOldest = (a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt);
 
 /** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
 export function isWithdrawalKey(withdrawalKey: string) {
@@ -108,14 +108,14 @@ export function isWithdrawalKey(withdrawalKey: string) {
 }
 
 /** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
-export async function getAdminWithdrawals(tab: ListTab): Promise<{ now: Date; withdrawals: WithdrawalRequest[]; }> {
+export async function getAdminWithdrawals(tab: ListTab): Promise<{ now: Date; withdrawals: WithdrawalRequest[] }> {
   const { now, withdrawals } = await loadAdminWithdrawals();
   if (tab === "pending") return { now, withdrawals: withdrawals.filter((request) => !request.review).sort(byOldest) };
   const done = withdrawals.filter((request) => request.review);
   return { now, withdrawals: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };
 }
 
-export async function getAdminWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null; }> {
+export async function getAdminWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null }> {
   const { now, withdrawals } = await loadAdminWithdrawals();
   return { now, withdrawal: withdrawals.find((request) => request.id === withdrawalKey) ?? null };
 }

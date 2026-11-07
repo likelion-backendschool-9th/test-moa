@@ -108,7 +108,7 @@ export function isRejectReason(value: unknown): value is RejectReason {
 export type RequestFormError = "decision" | "reason" | "note" | "memo";
 
 /** 출금 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
-export type RequestFormState = { error: RequestFormError | null; };
+export type RequestFormState = { error: RequestFormError | null };
 
 /** 출금 처리 기록. 처리 전 요청에는 없다. 반려에만 reason이 있다 */
 export type WithdrawalReview = {

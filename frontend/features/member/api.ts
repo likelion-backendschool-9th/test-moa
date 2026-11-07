@@ -47,10 +47,10 @@ export function isEmailTaken(email: string): boolean {
   return Object.values(DEMO_PROFILES).some((profile) => profile.email === normalized);
 }
 
-export type DemoAccount = { role: MemberRole; email: string; };
+export type DemoAccount = { role: MemberRole; email: string };
 
 /** 로그인 화면에 안내할 시연 계정과 공통 비밀번호 */
-export function getDemoAccounts(): { accounts: DemoAccount[]; password: string; } {
+export function getDemoAccounts(): { accounts: DemoAccount[]; password: string } {
   const accounts = (Object.entries(DEMO_PROFILES) as [MemberRole, Profile][]).map(([role, profile]) => ({ role, email: profile.email }));
   return { accounts, password: DEMO_PASSWORD };
 }
@@ -93,7 +93,7 @@ export async function getUsers(filter: UserFilter, query: string): Promise<UserS
     .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
 }
 
-export async function getUser(userKey: string): Promise<{ now: Date; user: UserDetail | null; }> {
+export async function getUser(userKey: string): Promise<{ now: Date; user: UserDetail | null }> {
   const { now, users, reports } = await loadUsersAndReports();
   const user = users.find((item) => item.id === userKey);
   if (!user) return { now, user: null };

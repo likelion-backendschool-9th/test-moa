@@ -32,9 +32,9 @@ const PATH = "/my/credits/withdrawals";
 export type WithdrawalField = "amount" | "bank" | "account" | "holder";
 
 export type WithdrawalFormState =
-  | { status: "idle"; }
-  | { status: "error"; errors: Partial<Record<WithdrawalField | "form", string>>; }
-  | { status: "success"; message: string; submittedAt: number; };
+  | { status: "idle" }
+  | { status: "error"; errors: Partial<Record<WithdrawalField | "form", string>> }
+  | { status: "success"; message: string; submittedAt: number };
 
 const ACCOUNT_PATTERN = /^\d{10,14}$/;
 

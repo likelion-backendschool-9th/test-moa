@@ -195,7 +195,7 @@ export function buildChatThreads(
   anchors: Record<string, string> = {},
 ): ChatThreadSeed[] {
   const nickname = MEMBER_NICKNAME[role];
-  if(!nickname) return [];
+  if (!nickname) return [];
   return ROOMS.filter((room) => room.requester === nickname || room.responder === nickname).map(
     ({ requester, responder, messages: seeds, ...room }) => {
       const isDeveloper = requester === nickname;
@@ -266,7 +266,7 @@ const stateCookieName = (member: Member) => `${CHAT_STATE_COOKIE}-${member}`;
 
 export async function readOverrides(member: Member): Promise<ChatOverrides> {
   const raw = (await cookies()).get(stateCookieName(member))?.value;
-  if(!raw) return { hidden: [], names: {} };
+  if (!raw) return { hidden: [], names: {} };
   try {
     const parsed: unknown = JSON.parse(decodeURIComponent(raw));
     const value = (parsed ?? {}) as Partial<Record<keyof ChatOverrides, unknown>>;
@@ -307,7 +307,7 @@ const encodeSent = (list: SentMessage[]) => Buffer.from(JSON.stringify(list)).to
 
 export async function readSent(): Promise<SentMessage[]> {
   const raw = (await cookies()).get(CHAT_SENT_COOKIE)?.value;
-  if(!raw) return [];
+  if (!raw) return [];
   try {
     const parsed: unknown = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
     return Array.isArray(parsed) ? parsed.filter(isSentMessage) : [];

@@ -187,7 +187,7 @@ const MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 /* 브라우저는 이름+값이 4096바이트를 넘는 쿠키를 알리지 않고 버린다. 속성 몫을 남겨 둔다 */
 const COOKIE_MAX_BYTES = 4000;
 
-export type DemoFeedback = { submittedAt: string; entries: FeedbackEntry[]; };
+export type DemoFeedback = { submittedAt: string; entries: FeedbackEntry[] };
 
 const encode = (text: string) => Buffer.from(text, "utf8").toString("base64url");
 

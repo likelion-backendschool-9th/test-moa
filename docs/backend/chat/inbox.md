@@ -133,7 +133,7 @@
 - 응답은 `ApiResponse`로 감싸고 `data`는 `{rooms: [...], total, counts: {all, tester, developer}}`다. 프론트 `ChatInboxData`와 같은 모양이다(`now`는 프론트가 만든다). 나중에 커서나 안 읽은 수 합계(#52)를 더해도 모양이 깨지지 않는다
 - 방 하나는 `{roomKey, recruitmentId, projectName, roomName, projectImage, myRole, partner: {nickname, role}, lastMessage, lastMessageAt}`이다. 앞의 일곱 개는 #49 `ChatRoomResponse`와 같은 값이고, `ChatInboxResponse.Room`이 그것에 최근 메시지 두 필드를 더한다
 - `roomName`은 내가 바꾼 이름이고 바꾸지 않았으면 null이다. "없으면 프로젝트명"은 프론트가 보여 줄 때 한다(#49와 같은 규칙)
-- `lastMessage`는 메시지 전체 내용(최대 500자)이다. 한두 줄로 자르는 것은 프론트 카드가 한다. 메시지가 없으면 null이다. 프론트 `ChatRoom.lastMessage`는 문자열이라 #54에서 null을 다루게 고친다
+- `lastMessage`는 메시지 전체 내용(최대 10,000자)이다. 한두 줄로 자르는 것은 프론트 카드가 한다. 메시지가 없으면 null이다. 프론트 `ChatRoom.lastMessage`는 문자열이라 #54에서 null을 다루게 고친다. (고침 #111: 서버 최대 길이 10,000자로 확대)
 - 정렬 기준은 방의 `last_message_at`이다. `LATEST`는 늦은 것부터, `OLDEST`는 이른 것부터이고, 같으면 둘 다 방 id 내림차순(나중에 연 방이 앞)이다. `last_message_at`은 메시지가 없으면 방을 연 시각이다(#47)
 - 검색: 앞뒤 공백을 뺀 `q`가 내가 바꾼 이름, 프로젝트명, 상대 닉네임 중 하나에 들어 있으면 남긴다. 대소문자는 무시하고 `%`, `_`는 글자 그대로 찾는다. 공백뿐이거나 없으면 검색하지 않는다. 길이 제한은 두지 않는다
 - 거르기·정렬·개수는 서버(서비스)가 한다(11-05 사용자 결정, 일반적인 관행). `total`과 `counts`에 내 방 전부가 필요하므로 내 방을 쿼리 한 번으로 읽고 서비스에서 거르고 센다. 페이지를 나누게 되면 그때 SQL로 옮긴다

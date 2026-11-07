@@ -128,6 +128,16 @@ class ChatInboxControllerTest {
                 .andExpect(jsonPath("$.data.rooms[0].lastMessage").value("확인했어요"));
     }
 
+    @Test @DisplayName("#111-S3 10,000자 메시지로 끝난 방이 맨 위에 표시되고 최근 메시지 전체를 반환")
+    void longLastMessage() throws Exception {
+        String text = "가".repeat(10_000);
+        send(first, me, text);
+        messageTime(first, LocalDateTime.of(2026, 11, 5, 12, 0));
+        inbox(me).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.rooms[*].roomKey", contains(first.getRoomKey(), second.getRoomKey())))
+                .andExpect(jsonPath("$.data.rooms[0].lastMessage").value(text));
+    }
+
     @Test @DisplayName("#48-S3 내가 바꾼 이름은 내 채팅함에만 표시")
     void privateName() throws Exception {
         participantWithRole(first, ChatRole.TESTER).rename("북로그 1차");

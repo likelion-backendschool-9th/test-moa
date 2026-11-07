@@ -21,6 +21,7 @@
 | [2. 점검 결과](02-audit.md) | 문제 F1~F11(심각도, 근거, 원인)과 문제없는 것. 현재 상태 숫자 |
 | [3. 목표 구조](03-target-structure.md) | 목표 폴더 트리, 배치 규칙 P1~P7, 레이아웃, 도메인, `demo/`, import 경계 B1~B7·R0~R3 |
 | [4. 이전 범위](04-migration.md) | 이슈별 범위, 레이아웃 결정, 검증 기준 |
+| [5. CSS Modules와 부품 폴더](05-css-modules.md) | #160. Tailwind 제거, 부품 폴더(`부품.tsx`·`.module.css`·`hook.ts`·`api.ts`), 스타일 토큰, 화면 비교 검증 |
 | [`frontend/scripts/structure/usage.mjs`](../../frontend/scripts/structure/usage.mjs) | 파일마다 누가 쓰는지 계산한다(동적 import 포함, TypeScript 구문 트리). `--check`로 배치 규칙을 검사한다. 위반이 있으면 종료 코드 1 |
 | [`frontend/scripts/structure/eslint-boundaries.mjs`](../../frontend/scripts/structure/eslint-boundaries.mjs) | import 경계 규칙 B1~B7. `eslint.config.mjs`에 그대로 넣는다 |
 

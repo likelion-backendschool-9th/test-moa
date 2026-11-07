@@ -17,23 +17,23 @@
 
 ## API
 
-경로는 `SecurityConfig`가 이미 `ADMIN`만 허용하는 `/api/admin/**` 아래에 둔다. 컨트롤러는 `controller/admin/CashoutController`로 새로 만든다.
+경로는 팀 API 표를 따라 `/api/v1/admin/withdrawals`이고, `SecurityConfig`가 `ADMIN`만 허용한다(`/api/v1/admin/**`). 컨트롤러는 `controller/admin/CashoutController`로 새로 만든다. 경로의 `{withdrawalKey}`는 출금 요청의 `id`다.
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| `GET` | `/api/admin/cashouts?tab=pending\|done` | 목록. `tab` 기본값은 `pending` |
-| `GET` | `/api/admin/cashouts/{id}` | 상세 |
-| `POST` | `/api/admin/cashouts/{id}/pay` | 지급 완료 처리. 본문 없음 |
-| `POST` | `/api/admin/cashouts/{id}/reject` | 반려 처리 |
+| `GET` | `/api/v1/admin/withdrawals?tab=pending\|done` | 목록. `tab` 기본값은 `pending` |
+| `GET` | `/api/v1/admin/withdrawals/{withdrawalKey}` | 상세 |
+| `PUT` | `/api/v1/admin/withdrawals/{withdrawalKey}` | 처리(지급 완료·반려). 본문의 `decision`으로 가른다 |
 
-### 반려 요청 본문
+### 처리 요청 본문
 
 | 필드 | 규칙 |
 | --- | --- |
-| `reason` | 필수. `HOLDER` / `ACCOUNT` / `OTHER` |
-| `memo` | 선택. `reason`이 `OTHER`면 공백 제외 1자 이상 필수. 80자까지(프론트와 같게). 회원에게 그대로 보인다 |
+| `decision` | 필수. `PAID`(지급 완료) 또는 `REJECTED`(반려). `REQUESTED`나 빈 값은 400 |
+| `reason` | 반려(`REJECTED`)일 때 필수. `HOLDER` / `ACCOUNT` / `OTHER`. 지급에 보내면 400 |
+| `memo` | 선택. 지급에 비어 있지 않은 값을 보내면 400. `reason`이 `OTHER`면 공백 제외 1자 이상 필수. 80자까지(프론트와 같게). 회원에게 그대로 보인다 |
 
-형식(필수·80자)은 DTO가, `OTHER`면 메모 필수는 엔티티 `reject()`가 본다. `reject()`가 던지는 `IllegalArgumentException`은 서비스가 `BusinessException(INVALID_INPUT)`으로 바꿔 400으로 내린다.
+형식(결정 필수·80자)은 DTO가, 지급에 사유·메모를 보냈는지와 `REQUESTED` 결정은 서비스 `process()`가, 반려의 사유 필수·`OTHER`면 메모 필수는 엔티티 `reject()`가 본다. `reject()`가 던지는 `IllegalArgumentException`은 서비스가 `BusinessException(INVALID_INPUT)`으로 바꿔 400으로 내린다.
 
 ### 응답 한 줄
 
@@ -80,7 +80,7 @@
 
 ```mermaid
 flowchart LR
-  POST[POST pay / reject] --> Req[request FOR UPDATE]
+  PUT[PUT decision] --> Req[request FOR UPDATE]
   Req --> Wal[wallet FOR UPDATE]
   Wal --> Pay[confirmCashout + pay + 장부 -amount]
   Wal --> Rej[reject + releaseCashout]
@@ -94,19 +94,19 @@ flowchart LR
 
 #68-S1 지급 완료 [테스트]
 - Given 잠김 5,000인 `REQUESTED` 요청 5,000
-- When  `POST …/pay`
+- When  `PUT …/{withdrawalKey}` `decision=PAID`
 - Then  상태 `PAID`, 처리 시각이 있다. 잠김 0, 적립 그대로, 총잔액에서 5,000이 빠진다
 - Then  장부에 `EARNED` −5,000 "출금 지급" 한 줄이 남는다
 
 #68-S2 반려 [테스트]
 - Given 잠김 5,000인 `REQUESTED` 요청 5,000
-- When  `POST …/reject` `reason=ACCOUNT`
+- When  `PUT …/{withdrawalKey}` `decision=REJECTED` `reason=ACCOUNT`
 - Then  상태 `REJECTED`, 사유가 저장된다. 잠김 0, 적립 +5,000
 - Then  장부 행이 없다
 
 #68-S3 이미 처리한 요청은 다시 처리할 수 없다 [테스트]
 - Given `PAID` 요청과 `REJECTED` 요청
-- When  각각 `pay` 또는 `reject`
+- When  각각 지급 또는 반려로 `PUT`
 - Then  409 `CASHOUT_ALREADY_PROCESSED`. 지갑·장부 변화 없음
 
 #68-S4 반려 사유와 메모 규칙 [테스트]
@@ -136,7 +136,7 @@ flowchart LR
 - Then  403. 요청과 지갑 변화 없음
 
 #68-S8 없는 요청 [테스트]
-- When  없는 id로 상세·`pay`·`reject`
+- When  없는 id로 상세·`PUT`
 - Then  404
 
 #68-S9 같은 요청을 동시에 처리하면 한쪽만 적용된다 [테스트]
@@ -148,6 +148,14 @@ flowchart LR
 - API: 위 표의 네 개
 - Then  신청(#67) → 목록(대기) → 지급 또는 반려 → 목록(완료) → 회원 내역(`GET /api/v1/my/credits/withdrawals`)이 이어진다
 
+#68-S14 처리는 PUT 하나로, 결정에 따라 지급·반려한다 [테스트]
+- When  `decision=PAID`로 `PUT`한다
+- Then  지급된다(S1과 같음)
+- When  `decision=REJECTED`와 사유·메모로 `PUT`한다
+- Then  반려된다(S2·S4와 같음)
+- When  `decision`이 없거나 `REQUESTED`이거나, 지급에 사유나 메모를 붙여 `PUT`한다
+- Then  400. 요청과 지갑 변화 없음
+
 ---
 
 ## 화면에서 함께 맞출 것 (#68-S11~)
@@ -158,7 +166,7 @@ flowchart LR
 
 ## 구현 메모
 - `CashoutRepository`: `findByIdForUpdate`(`@Lock(PESSIMISTIC_WRITE)`), `findByStatusOrderByCreatedAtAsc`, `findByStatusInOrderByProcessedAtDesc`. 목록은 `user`를 함께 읽어(`fetch join`) N+1을 피한다
-- 서비스: `CashoutService`(목록·상세·`pay`·`reject`). 읽기 전용 트랜잭션과 쓰기 트랜잭션을 나눈다
+- 서비스: `CashoutService`(목록·상세·`process`). `process`가 결정에 따라 `pay`나 `reject`를 부른다. 읽기 전용 트랜잭션과 쓰기 트랜잭션을 나누고, `process`는 쓰기 트랜잭션이다(같은 클래스 안에서 부르는 `pay`·`reject`가 읽기 전용에 걸리지 않게)
 - 가리는 일은 서비스가 `Masking`(`global/util`)으로 한다. 응답 DTO `AdminCashoutResponse`는 가려진 값을 받아 담고, 닉네임·실명을 더한다
 - 단위 테스트: S1~S6·S8은 서비스, S7은 컨트롤러 인증 테스트(`CreditControllerAuthTest`와 같은 방식), S9는 동시성 테스트(`CashoutConcurrencyTest`와 같은 방식)
 - 테스트 DB가 필요하다. 로컬 Postgres가 꺼져 있으면 컨텍스트 테스트가 실패한다
@@ -181,4 +189,4 @@ flowchart LR
 
 ## 가정
 - `Cashout.pay()`·`reject()`와 지갑 `confirmCashout()`·`releaseCashout()`은 #45·#67에 있다.
-- `ADMIN`만 `/api/admin/**`에 들어올 수 있는 규칙은 `SecurityConfig`에 있다.
+- `ADMIN`만 `/api/v1/admin/**`에 들어올 수 있는 규칙은 `SecurityConfig`에 있다.

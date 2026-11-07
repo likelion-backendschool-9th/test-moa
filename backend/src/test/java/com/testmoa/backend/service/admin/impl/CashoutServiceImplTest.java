@@ -1,5 +1,6 @@
 package com.testmoa.backend.service.admin.impl;
 
+import com.testmoa.backend.dto.request.CashoutProcessRequest;
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
 import com.testmoa.backend.dto.response.CashoutResponse;
@@ -38,6 +39,51 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CashoutServiceImplTest {
+
+    @Test
+    @DisplayName("#68-S14 처리 결정이 PAID면 지급한다")
+    void processPaidPays() {
+        Cashout cashout = requested(5000);
+        CreditWallet wallet = walletWithLocked(cashout, 5000);
+
+        AdminCashoutResponse response = service.process(
+                CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, null, null));
+
+        assertEquals(Cashout.Status.PAID, response.getStatus());
+        assertEquals(0, wallet.getLockedBalance());
+        verify(creditLedgerRepository).save(any(CreditLedger.class));
+    }
+
+    @Test
+    @DisplayName("#68-S14 처리 결정이 REJECTED면 사유·메모로 반려한다")
+    void processRejectedRejects() {
+        Cashout cashout = requested(5000);
+        CreditWallet wallet = walletWithLocked(cashout, 5000);
+
+        AdminCashoutResponse response = service.process(
+                CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.REJECTED, Cashout.RejectReason.HOLDER, "이름이 달라요"));
+
+        assertEquals(Cashout.Status.REJECTED, response.getStatus());
+        assertEquals("이름이 달라요", response.getRejectMemo());
+        assertEquals(5000, wallet.getEarnedBalance());
+        verify(creditLedgerRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("#68-S14 결정이 없거나 REQUESTED이거나 지급에 사유·메모가 붙으면 400이고 요청을 건드리지 않는다")
+    void processRejectsInvalidDecision() {
+        BusinessException requestedDecision = assertThrows(BusinessException.class,
+                () -> service.process(CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.REQUESTED, null, null)));
+        BusinessException paidWithReason = assertThrows(BusinessException.class,
+                () -> service.process(CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, Cashout.RejectReason.OTHER, null)));
+        BusinessException paidWithMemo = assertThrows(BusinessException.class,
+                () -> service.process(CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, null, "메모")));
+
+        assertEquals(ErrorCode.INVALID_INPUT, requestedDecision.getErrorCode());
+        assertEquals(ErrorCode.INVALID_INPUT, paidWithReason.getErrorCode());
+        assertEquals(ErrorCode.INVALID_INPUT, paidWithMemo.getErrorCode());
+        verify(cashoutRepository, never()).findByIdForUpdate(any());
+    }
 
     private static final Long USER_ID = 1L;
     private static final Long CASHOUT_ID = 7L;

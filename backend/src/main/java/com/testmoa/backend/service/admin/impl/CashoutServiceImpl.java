@@ -1,5 +1,6 @@
 package com.testmoa.backend.service.admin.impl;
 
+import com.testmoa.backend.dto.request.CashoutProcessRequest;
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
 import com.testmoa.backend.entity.Cashout;
@@ -54,6 +55,26 @@ public class CashoutServiceImpl implements CashoutService {
     public AdminCashoutResponse getCashout(Long id) {
         return toResponse(cashoutRepository.findWithUserById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND)));
+    }
+
+    /**
+     * 처리 한 번. 결정이 PAID면 지급, REJECTED면 반려다. 쓰기 트랜잭션 안에서 pay·reject를 부른다.
+     * 지급에는 사유·메모를 받지 않는다(빈 값은 없는 것으로 본다).
+     */
+    @Override
+    @Transactional
+    public AdminCashoutResponse process(Long id, CashoutProcessRequest request) {
+        return switch (request.decision()) {
+            case PAID -> {
+                boolean hasMemo = request.memo() != null && !request.memo().isBlank();
+                if (request.reason() != null || hasMemo) {
+                    throw new BusinessException(ErrorCode.INVALID_INPUT, "지급 완료에는 반려 사유와 메모를 보낼 수 없어요");
+                }
+                yield pay(id);
+            }
+            case REJECTED -> reject(id, new CashoutRejectRequest(request.reason(), request.memo()));
+            case REQUESTED -> throw new BusinessException(ErrorCode.INVALID_INPUT, "지급 완료나 반려를 골라 주세요");
+        };
     }
 
     /** 지급 완료. 잠긴 금액을 줄이고 장부에 EARNED −amount "출금 지급" 한 줄을 남긴다 */

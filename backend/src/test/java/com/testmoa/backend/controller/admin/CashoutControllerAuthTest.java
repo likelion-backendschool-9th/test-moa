@@ -22,7 +22,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,32 +72,64 @@ class CashoutControllerAuthTest {
         String member = "Bearer " + jwtProvider.createAccessToken(owner.getId());
         String admin = "Bearer " + jwtProvider.createAccessToken(saveUser(Role.ADMIN).getId());
         String id = String.valueOf(cashout.getId());
-        String reject = "{\"reason\":\"ACCOUNT\"}";
+        String pay = "{\"decision\":\"PAID\"}";
+        String reject = "{\"decision\":\"REJECTED\",\"reason\":\"ACCOUNT\"}";
 
-        mvc.perform(get("/api/admin/cashouts")).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/admin/cashouts/" + id)).andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/admin/cashouts/" + id + "/pay")).andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/admin/cashouts/" + id + "/reject").contentType(MediaType.APPLICATION_JSON).content(reject))
+        mvc.perform(get("/api/v1/admin/withdrawals")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/admin/withdrawals/" + id)).andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/v1/admin/withdrawals/" + id).contentType(MediaType.APPLICATION_JSON).content(pay))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/v1/admin/withdrawals/" + id).contentType(MediaType.APPLICATION_JSON).content(reject))
                 .andExpect(status().isUnauthorized());
 
-        mvc.perform(get("/api/admin/cashouts").header("Authorization", member)).andExpect(status().isForbidden());
-        mvc.perform(get("/api/admin/cashouts/" + id).header("Authorization", member)).andExpect(status().isForbidden());
-        mvc.perform(post("/api/admin/cashouts/" + id + "/pay").header("Authorization", member))
+        mvc.perform(get("/api/v1/admin/withdrawals").header("Authorization", member)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/withdrawals/" + id).header("Authorization", member)).andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/admin/withdrawals/" + id).header("Authorization", member)
+                        .contentType(MediaType.APPLICATION_JSON).content(pay))
                 .andExpect(status().isForbidden());
-        mvc.perform(post("/api/admin/cashouts/" + id + "/reject").header("Authorization", member)
+        mvc.perform(put("/api/v1/admin/withdrawals/" + id).header("Authorization", member)
                         .contentType(MediaType.APPLICATION_JSON).content(reject))
                 .andExpect(status().isForbidden());
 
         assertEquals(Cashout.Status.REQUESTED, cashoutRepository.findById(cashout.getId()).orElseThrow().getStatus());
         assertEquals(5000, creditWalletRepository.findByUserId(owner.getId()).orElseThrow().getLockedBalance());
 
-        mvc.perform(get("/api/admin/cashouts?tab=pending").header("Authorization", admin))
+        mvc.perform(get("/api/v1/admin/withdrawals?tab=pending").header("Authorization", admin))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/admin/cashouts/" + id).header("Authorization", admin))
+        mvc.perform(get("/api/v1/admin/withdrawals/" + id).header("Authorization", admin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("REQUESTED"))
                 .andExpect(jsonPath("$.data.accountNumber").value("100012345678"));
-        mvc.perform(get("/api/admin/cashouts?tab=all").header("Authorization", admin))
+        mvc.perform(get("/api/v1/admin/withdrawals?tab=all").header("Authorization", admin))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("#68-S14 운영자는 PUT 하나로 지급·반려를 처리하고, 잘못된 본문은 400이다")
+    void adminProcessesWithPut() throws Exception {
+        User owner = saveUser(Role.USER);
+        Cashout cashout = saveRequested(owner);
+        String admin = "Bearer " + jwtProvider.createAccessToken(saveUser(Role.ADMIN).getId());
+        String url = "/api/v1/admin/withdrawals/" + cashout.getId();
+
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\":\"REQUESTED\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\":\"PAID\",\"reason\":\"OTHER\"}"))
+                .andExpect(status().isBadRequest());
+        assertEquals(Cashout.Status.REQUESTED, cashoutRepository.findById(cashout.getId()).orElseThrow().getStatus());
+
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\":\"PAID\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PAID"))
+                .andExpect(jsonPath("$.data.accountNumber").value("****5678"));
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\":\"PAID\"}"))
+                .andExpect(status().isConflict());
+        assertEquals(0, creditWalletRepository.findByUserId(owner.getId()).orElseThrow().getLockedBalance());
     }
 }

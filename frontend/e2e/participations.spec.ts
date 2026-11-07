@@ -37,8 +37,8 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     await expect(first).toContainText("D-8");
     await expect(first.getByRole("link", { name: "회의록 정리 피드백 쓰기" })).toHaveAttribute("href", "/testers/recruitments/p-meeting-notes");
     /* 주 버튼은 한 화면에 하나다. 추가 보상 배지도 강조색 면이지만 버튼이 아니다 */
-    await expect(page.getByRole("main").locator("a.bg-accent, button.bg-accent")).toHaveCount(1);
-    await expect(first.locator(".bg-accent")).toHaveCount(1);
+    await expect(page.getByRole("main").locator('a[data-variant="primary"], button[data-variant="primary"]')).toHaveCount(1);
+    await expect(first.locator('[data-variant="primary"]')).toHaveCount(1);
   });
 
   test("#46-S9 내 제출 전 참여가 마감 순으로 목록에 나온다", async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
       "모아플랜D-16",
     ]);
     await expect(deadlineItems(page).nth(1).getByRole("link", { name: "중고책 장터 피드백 쓰기" })).toHaveAttribute("href", "/testers/recruitments/p-used-books");
-    await expect(deadlineItems(page).nth(1).getByRole("link")).not.toHaveClass(/bg-accent/);
+    await expect(deadlineItems(page).nth(1).getByRole("link")).not.toHaveAttribute("data-variant", "primary");
   });
 
   test("#46-S10 캘린더는 이번 달에서 시작해 오늘과 내 마감을 표시한다", async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe("R184 마감 캘린더와 마감 임박 테스트", () => {
     await expect(box.locator('td[aria-current="date"]')).toHaveCount(1);
 
     /* 마감은 오늘부터 16일 안이라 이번 달과 다음 달에 모두 들어온다 */
-    const marked = async () => box.locator("td[data-deadline] .sr-only").allTextContents();
+    const marked = async () => box.locator("td[data-deadline] [data-deadline-label]").allTextContents();
     const thisMonth = await marked();
     await box.getByRole("button", { name: "다음 달" }).click();
     await expect(box.getByText(seoulMonthTitle(1), { exact: true })).toBeVisible();

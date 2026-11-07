@@ -1,0 +1,13 @@
+.signupSlotText {
+  text-align: center;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.signupSlotLink {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+}

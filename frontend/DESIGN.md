@@ -345,7 +345,7 @@ components:
 
 **The No-Kicker Rule.** 제목 위에 작은 머리말(kicker, eyebrow)을 두지 않는다. 섹션 제목 아래 한 줄 설명은 허용한다.
 
-**The Scale Rule.** 크기와 간격은 Tailwind 기본 스케일에서 고른다. 예외는 위 표의 자간 값과 썸네일의 cqw 크기뿐이다.
+**The Scale Rule.** 크기와 간격은 `app/globals.css`의 토큰(`--space-*`·`--text-*`·`--radius-*`)에서 고른다. 간격은 4px 단계다. 예외는 위 표의 자간 값과 썸네일의 cqw 크기뿐이다.
 
 ## Layout
 
@@ -383,7 +383,7 @@ components:
 ### Buttons
 - **Shape:** 완전 둥근 알약(9999px), 굵기 700.
 - **Primary:** 강조색 바탕, on-accent 글씨. 진한 라이트 매트 안에서는 흰 바탕과 진한 초록 글씨로 뒤집는다. 보통 12px 20px / 1rem, 작은 크기 8px 16px / 0.875rem. 한 화면 한 개.
-- **Hover / Active:** primary는 불투명도 90%, secondary는 칩 회색 → 재단 회색, ghost는 투명 → 칩 회색. 누르면 98%로 줄어든다. 전환은 300ms `--ease-brand`.
+- **Hover / Active:** primary는 불투명도 90%, secondary는 칩 회색 → 재단 회색, ghost는 투명 → 칩 회색. 누르면 98%로 줄어든다. 전환은 300ms `--ease`.
 - **Secondary:** 칩 회색 바탕, 먹 글씨. '자세히 보기', 헤더의 크레딧 잔액.
 - **Ghost:** 바탕 없음. 로그인, 내 정보, 슬라이드 이전·다음, 대화상자의 취소.
 - **Strong:** 먹 바탕, 작업대 글씨, hover 때 불투명도 90%. 대화방 삭제 확인처럼 되돌리기 어려운 무거운 행동에 쓴다. 위험 색(빨강)이 없어서 강조색 대신 먹을 쓴다.
@@ -465,7 +465,7 @@ components:
 4:3 칸(12px 모서리)에 이미지가 잘리지 않게 담아 2열(md 3열)로 나열한다. 오른쪽 아래의 32px 원형 돋보기와 zoom-in 커서로 누를 수 있음을 알리고, hover 때 4px 올라간다. 누르면 `<dialog>`(교정지 면, 16px 모서리, 최대 폭 64rem, 뒤 배경은 대화상자와 같다)에 이미지를 확대하고, 위 줄에 이름과 n / 전체, 닫기 버튼을 둔다. 넘기기 버튼은 이미지 띠와 같다.
 
 ### Motion
-이징은 하나, `--ease-brand`(cubic-bezier(0.22, 1, 0.36, 1)). 상태 전환 300ms, 이동 500ms, 등장 `rise-in` 500ms, 순차 등장은 60ms씩 최대 340ms. 스켈레톤은 2초 `soft-pulse`. 피드백 "유용해요"를 누르면 하트가 채워지며 500ms `heart-pop`(1.35배로 커졌다 0.9배를 거쳐 제자리)으로 한 번 튀어 오르고, 처음부터 눌려 있던 하트는 움직이지 않는다 (#134). `prefers-reduced-motion`이면 모두 1ms로 줄인다.
+이징은 하나, `--ease`(cubic-bezier(0.22, 1, 0.36, 1)). 시간은 `--duration-300`·`--duration-500`, 애니메이션은 `--animate-*` 토큰으로 쓴다. 상태 전환 300ms, 이동 500ms, 등장 `rise-in` 500ms, 순차 등장은 60ms씩 최대 340ms. 스켈레톤은 2초 `soft-pulse`. 피드백 "유용해요"를 누르면 하트가 채워지며 500ms `heart-pop`(1.35배로 커졌다 0.9배를 거쳐 제자리)으로 한 번 튀어 오르고, 처음부터 눌려 있던 하트는 움직이지 않는다 (#134). `prefers-reduced-motion`이면 모두 1ms로 줄인다.
 
 ## Do's and Don'ts
 
@@ -475,7 +475,7 @@ components:
 - **Do** 라이트의 흰 페이지와 흰 패널은 1px 안쪽 선으로 나누고, 칩은 옅은 중성색으로 구분한다.
 - **Do** 모집 카드는 프로젝트 대표 이미지를 쓰고 프로젝트명은 본문에 둔다. 채팅 카드와 채팅방 머리도 프로젝트 이미지를 쓴다.
 - **Do** 마감일, 인원, 보상 숫자는 `tabular-nums`로 같은 자리에 둔다.
-- **Do** 모션은 `--ease-brand`와 300/500ms만 쓰고 reduced motion을 지킨다.
+- **Do** 모션은 `--ease`와 300/500ms만 쓰고 reduced motion을 지킨다.
 
 ### Don't:
 - **Don't** `components`, `features`에 hex나 임의 px를 쓰지 않는다.

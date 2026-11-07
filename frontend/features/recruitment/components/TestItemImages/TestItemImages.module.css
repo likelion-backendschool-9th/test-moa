@@ -1,0 +1,130 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .list {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+.button {
+  position: relative;
+  display: block;
+  width: 100%;
+  cursor: zoom-in;
+  border-radius: var(--radius-xl);
+  transition-property: transform, translate, scale, rotate;
+  transition-duration: var(--duration-500);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .button:hover {
+    translate: 0 -0.25rem;
+  }
+}
+
+.image {
+  aspect-ratio: 4/3;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-muted);
+  object-fit: contain;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-offset: -1px;
+  outline-color: var(--line);
+}
+
+.label {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
+  color: var(--text);
+  outline-style: solid;
+  outline-width: 1px;
+  outline-offset: -1px;
+  outline-color: var(--line);
+}
+
+.imageViewer {
+  margin: auto;
+  width: calc(100% - 2rem);
+  max-width: 64rem;
+  padding: 0;
+  color: var(--text);
+}
+
+.imageViewer::backdrop {
+  background-color: var(--surface);
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  backdrop-filter: blur(var(--blur-sm));
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .imageViewer::backdrop {
+    background-color: color-mix(in oklab, var(--surface) 80%, transparent);
+  }
+}
+
+.imageViewerBox {
+  display: flex;
+  animation: var(--animate-rise-in);
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.imageViewerBox2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.imageViewerText {
+  min-width: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  overflow-wrap: break-word;
+}
+
+.imageViewerLabel {
+  margin-left: var(--space-2);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.imageViewerButton {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  padding-inline: 0 !important;
+  padding-block: 0 !important;
+}
+
+.imageViewerBox3 {
+  position: relative;
+}
+
+.imageViewerImage {
+  max-height: 75dvh;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  object-fit: contain;
+}
+
+

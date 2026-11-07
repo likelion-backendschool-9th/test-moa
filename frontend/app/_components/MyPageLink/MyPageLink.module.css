@@ -1,0 +1,8 @@
+.root {
+  white-space: nowrap;
+}
+
+/* 마이페이지 안에 있을 때. ghost 버튼이라 바탕이 없어서 여기서 칠한다 */
+.rootActive {
+  background-color: var(--surface-strong);
+}

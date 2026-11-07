@@ -1,0 +1,91 @@
+.box {
+  margin-top: var(--space-10);
+}
+
+.chatRoomSkeleton {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.chatRoomSkeletonBox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.chatRoomSkeletonSkeleton {
+  height: 3rem;
+  width: 4rem;
+  border-radius: var(--radius-xl);
+}
+
+.chatRoomSkeletonBox2 {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.chatRoomSkeletonSkeleton2 {
+  height: 1.75rem;
+  width: 10rem;
+}
+
+.chatRoomSkeletonSkeleton3 {
+  height: 1rem;
+  width: 12rem;
+}
+
+.chatRoomSkeletonBox3 {
+  margin-top: var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chatRoomSkeletonSkeleton4 {
+  margin-inline: auto;
+  height: 0.75rem;
+  width: 14rem;
+}
+
+.chatRoomSkeletonSkeleton5 {
+  margin-top: var(--space-5);
+  height: 2.75rem;
+  width: 60%;
+}
+
+.chatRoomSkeletonSkeleton6 {
+  height: 2.75rem;
+  width: 40%;
+  align-self: flex-end;
+}
+
+.chatRoomSkeletonSkeleton7 {
+  height: 2.75rem;
+  width: 50%;
+}
+
+.chatRoomSkeletonSkeleton8 {
+  height: 2.75rem;
+  width: 33.3333%;
+  align-self: flex-end;
+}
+
+.chatRoomSkeletonBox4 {
+  margin-top: auto;
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .chatRoomSkeletonBox4 {
+    padding-bottom: var(--space-6);
+  }
+}
+
+.chatRoomSkeletonSkeleton9 {
+  height: 3.5rem;
+  width: 100%;
+}

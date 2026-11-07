@@ -1,0 +1,33 @@
+.root {
+  margin-left: auto;
+  display: flex;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding: var(--space-1);
+}
+
+.root2 {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  padding-inline: var(--space-3);
+  padding-block: var(--space-1-5);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.root2Current {
+  background-color: var(--surface-muted);
+  color: var(--text);
+}
+
+.root2NotCurrent {
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .root2NotCurrent:hover {
+    color: var(--text);
+  }
+}

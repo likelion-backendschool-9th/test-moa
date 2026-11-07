@@ -1,0 +1,141 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.frameBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.frameTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.groupTitle {
+  font-weight: 800;
+}
+
+.groupTitleCount {
+  color: var(--text-muted);
+}
+
+.text {
+  font-weight: 600;
+}
+
+.text2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.text3 {
+  font-weight: 600;
+}
+
+.headline {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 600;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-radius: var(--radius-xl);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--line);
+  background-color: var(--surface);
+  padding: var(--space-4);
+}
+
+.text4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.text5 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.label {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.box2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.root2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.text6 {
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-color: var(--line);
+  padding-top: var(--space-4);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.aiAnalysisSkeletonBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.aiAnalysisSkeletonSkeleton {
+  height: 1.5rem;
+  width: 75%;
+}
+
+.aiAnalysisSkeletonSkeleton2 {
+  height: 1rem;
+  width: 50%;
+}
+
+.aiAnalysisSkeletonSkeleton3 {
+  height: 1rem;
+  width: 66.6667%;
+}

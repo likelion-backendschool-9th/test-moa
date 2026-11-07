@@ -1,0 +1,20 @@
+.homePage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+  padding-top: var(--space-8);
+}
+
+.homePageSection {
+  display: flex;
+  scroll-margin-top: var(--space-24);
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.homePageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}

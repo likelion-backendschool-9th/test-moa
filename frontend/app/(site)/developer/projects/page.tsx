@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { LinkButton } from "@/components/ui/LinkButton";
-import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList";
-import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice";
-import { OverviewStats, TodoList } from "@/app/(site)/developer/projects/_components/ProjectDashboard";
+import { Container } from "@/components/ui/Container/Container";
+import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
+import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList/ProjectList";
+import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice/SavedNotice";
+import { OverviewStats, TodoList } from "@/app/(site)/developer/projects/_components/ProjectDashboard/ProjectDashboard";
 import { getMyDashboard } from "@/features/recruitment/api";
+import styles from "./page.module.css";
 
 /* 내 프로젝트 목록 (/developer/projects) */
 
@@ -14,9 +15,9 @@ export const metadata: Metadata = { title: "내 프로젝트" };
 
 export default function MyProjectsPage({ searchParams }: PageProps<"/developer/projects">) {
   return (
-    <Container className="flex flex-col gap-8 py-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-4xl font-extrabold tracking-[-0.035em]">내 프로젝트</h1>
+    <Container className={styles.myProjectsPage}>
+      <div className={styles.myProjectsPageBox}>
+        <h1 className={styles.myProjectsPageTitle}>내 프로젝트</h1>
         <LinkButton href={PROJECT_NEW_PATH}>프로젝트 등록</LinkButton>
       </div>
       <Suspense fallback={<ProjectListSkeleton />}>
@@ -30,13 +31,13 @@ export default function MyProjectsPage({ searchParams }: PageProps<"/developer/p
 async function ProjectsSlot({ searchParams }: Pick<PageProps<"/developer/projects">, "searchParams">) {
   const [{ projects, todos, overview }, { notice }] = await Promise.all([getMyDashboard(PROJECTS_PATH), searchParams]);
   return (
-    <div className="flex flex-col gap-10">
+    <div className={styles.projectsSlot}>
       <SavedNotice show={notice === "saved"} />
       {projects.length > 0 && <TodoList todos={todos} />}
       {projects.length > 0 && <OverviewStats overview={overview} />}
-      <section aria-labelledby="projects-heading" className="flex flex-col gap-3">
+      <section aria-labelledby="projects-heading" className={styles.projectsSlotSection}>
         {projects.length > 0 && (
-          <h2 id="projects-heading" className="text-xl font-extrabold tracking-[-0.03em]">
+          <h2 id="projects-heading" className={styles.projectsSlotTitle}>
             프로젝트 {projects.length}개
           </h2>
         )}

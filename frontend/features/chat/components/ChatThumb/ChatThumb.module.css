@@ -1,0 +1,80 @@
+.sizeCard {
+  width: 6rem;
+  align-self: stretch;
+  border-top-left-radius: var(--radius-2xl);
+  border-bottom-left-radius: var(--radius-2xl);
+}
+
+@media (min-width: 40rem) {
+  .sizeCard {
+    width: 8rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .sizeCard {
+    width: 10rem;
+  }
+}
+
+.sizeHeader {
+  height: 3rem;
+  width: 4rem;
+  border-radius: var(--radius-xl);
+}
+
+.root {
+  container-type: inline-size;
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--thumb);
+  color: var(--on-thumb);
+}
+
+.image {
+  object-fit: cover;
+  transition-property: transform, translate, scale, rotate;
+  transition-duration: var(--duration-500);
+  transition-timing-function: var(--ease);
+}
+
+/* 감싼 채팅 카드(data-hover-card)에 마우스를 올리면 움직인다. 카드는 다른 모듈이라 클래스 대신 속성으로 가리킨다 */
+@media (hover: hover) {
+  .image:is(:where([data-hover-card]):hover *) {
+    scale: 105% 105%;
+  }
+}
+
+.label {
+  position: absolute;
+  top: var(--space-2-5);
+  left: var(--space-2-5);
+  width: 0.75rem;
+  height: 0.75rem;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-left-style: solid;
+  border-left-width: 1px;
+  border-color: currentColor;
+  opacity: .3;
+}
+
+.label2 {
+  font-size: 34cqw;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -.04em;
+  transition-property: transform, translate, scale, rotate;
+  transition-duration: var(--duration-500);
+  transition-timing-function: var(--ease);
+}
+
+/* 감싼 채팅 카드(data-hover-card)에 마우스를 올리면 움직인다. 카드는 다른 모듈이라 클래스 대신 속성으로 가리킨다 */
+@media (hover: hover) {
+  .label2:is(:where([data-hover-card]):hover *) {
+    translate: 0 -0.25rem;
+  }
+}

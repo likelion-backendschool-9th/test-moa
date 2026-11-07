@@ -1,0 +1,44 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.text {
+  text-align: center;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.root2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+/* 보낸 사람이 바뀌면 12px, 같은 사람이면 4px */
+.startsRun {
+  margin-top: var(--space-3);
+}
+
+.continuesRun {
+  margin-top: var(--space-1);
+}

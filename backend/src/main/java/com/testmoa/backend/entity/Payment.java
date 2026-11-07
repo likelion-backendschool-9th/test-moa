@@ -1,7 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.PaymentMethod;
-import com.testmoa.backend.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -14,6 +12,18 @@ import java.time.LocalDateTime;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment {
+    // 결제 방식
+    public enum Method {
+        CASH,   // 현금
+        CREDIT  // 크레딧
+    }
+
+    // 결제 상태
+    public enum Status {
+        COMPLETED,  // 완료
+        REFUNDED    // 환불
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,7 +37,7 @@ public class Payment {
     // 결제 방식(CASH, CREDIT)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentMethod method;
+    private Method method;
 
     // 결제 금액
     @Column(nullable = false)
@@ -40,7 +50,7 @@ public class Payment {
     // 결제 상태(COMPLETED, REFUNDED)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentStatus status;
+    private Status status;
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
@@ -65,7 +75,7 @@ public class Payment {
     @Builder
     public Payment(
             Subscription subscription,
-            PaymentMethod method,
+            Method method,
             Integer amount,
             LocalDateTime paidAt
     ){
@@ -73,6 +83,6 @@ public class Payment {
         this.method = method;
         this.amount = amount;
         this.paidAt = paidAt;
-        this.status = PaymentStatus.COMPLETED;
+        this.status = Status.COMPLETED;
     }
 }

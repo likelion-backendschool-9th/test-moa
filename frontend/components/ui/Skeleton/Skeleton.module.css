@@ -1,0 +1,9 @@
+.root {
+  animation: var(--animate-soft-pulse);
+  background-color: var(--surface-strong);
+}
+
+/* 모서리는 기본값이다. 부르는 쪽이 자리 모양에 맞춰 바꾸므로 :where로 우선순위를 0으로 두어 import 순서와 관계없이 부르는 쪽이 이기게 한다 */
+:where(.root) {
+  border-radius: var(--radius-lg);
+}

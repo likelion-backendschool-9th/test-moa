@@ -6,7 +6,6 @@ import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.global.security.Provider;
 import com.testmoa.backend.global.security.Role;
-import com.testmoa.backend.entity.enums.SubscriptionStatus;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.security.JwtProvider;
@@ -53,14 +52,14 @@ class UserControllerTest {
         return user;
     }
 
-    private void subscribe(User user, SubscriptionStatus status, LocalDateTime startAt, LocalDateTime endAt) {
+    private void subscribe(User user, Subscription.Status status, LocalDateTime startAt, LocalDateTime endAt) {
         Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000).monthlyRecruitLimit(30)
                 .version(1).periodDays(30).build();
         em.persist(plan);
         Subscription subscription = Subscription.builder().user(user).plan(plan).startAt(startAt).endAt(endAt).build();
         em.persist(subscription);
         // 구독은 항상 ACTIVE로 만들어진다. 환불 메서드가 아직 없어 다른 상태는 DB에서 바꾼다
-        if (status != SubscriptionStatus.ACTIVE) {
+        if (status != Subscription.Status.ACTIVE) {
             em.flush();
             em.createQuery("update subscriptions s set s.status = :status where s.id = :id")
                     .setParameter("status", status).setParameter("id", subscription.getId()).executeUpdate();
@@ -90,7 +89,7 @@ class UserControllerTest {
     @DisplayName("#81-S2 구독 중인 회원")
     void 구독_중인_회원() throws Exception {
         User user = saveUser(Role.USER);
-        subscribe(user, SubscriptionStatus.ACTIVE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(29));
+        subscribe(user, Subscription.Status.ACTIVE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(29));
 
         me(user).andExpect(jsonPath("$.data.subscription.active").value(true))
                 .andExpect(jsonPath("$.data.subscription.plan").value("구독"))
@@ -102,7 +101,7 @@ class UserControllerTest {
     @DisplayName("#81-S3 기간이 끝난 구독은 상태가 ACTIVE여도 구독이 아니다")
     void 기간이_끝난_구독은_상태가_ACTIVE여도_구독이_아니다() throws Exception {
         User user = saveUser(Role.USER);
-        subscribe(user, SubscriptionStatus.ACTIVE, LocalDateTime.now().minusDays(31), LocalDateTime.now().minusDays(1));
+        subscribe(user, Subscription.Status.ACTIVE, LocalDateTime.now().minusDays(31), LocalDateTime.now().minusDays(1));
 
         me(user).andExpect(jsonPath("$.data.subscription.active").value(false));
     }
@@ -111,7 +110,7 @@ class UserControllerTest {
     @DisplayName("#81-S3 해지한 구독은 구독이 아니다")
     void 해지한_구독은_구독이_아니다() throws Exception {
         User user = saveUser(Role.USER);
-        subscribe(user, SubscriptionStatus.CANCELLED, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(29));
+        subscribe(user, Subscription.Status.CANCELLED, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(29));
 
         me(user).andExpect(jsonPath("$.data.subscription.active").value(false));
     }

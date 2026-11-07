@@ -1,0 +1,167 @@
+.field {
+  height: 3rem;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  outline-style: none;
+}
+
+.field:focus {
+  background-color: var(--surface-muted);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.field[aria-invalid=true] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.insetText {
+  padding-inline: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.label {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.text2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.form {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.message {
+  border-radius: var(--radius-xl);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.fieldsFieldset {
+  display: grid;
+  column-gap: var(--space-4);
+  row-gap: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .fieldsFieldset {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.fieldsBox {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.fieldsButton {
+  height: 3rem;
+  flex-shrink: 0;
+}
+
+.fieldsBox2 {
+  position: relative;
+}
+
+.fieldsSelect {
+  padding-right: var(--space-11);
+}
+
+.fieldsIcon {
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  translate: 0 calc(calc(1 / 2 * 100%) * -1);
+  color: var(--text-muted);
+}
+
+.fieldsBox3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .fieldsBox3 {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-4);
+  }
+}
+
+.fieldsText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.fieldsLabel {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldsButton2 {
+  width: 100%;
+}
+
+@media (min-width: 48rem) {
+  .fieldsButton2 {
+    width: auto;
+  }
+}
+
+.field2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fieldLabel {
+  font-weight: 600;
+}
+
+.fieldText {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}

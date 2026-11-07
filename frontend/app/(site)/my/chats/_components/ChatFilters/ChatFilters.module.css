@@ -1,0 +1,129 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-3);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.field:focus-within {
+  background-color: var(--surface-muted);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  background-color: transparent;
+  outline-style: none;
+}
+
+.box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-3);
+}
+
+.box2 {
+  display: flex;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding: var(--space-1);
+}
+
+.root2 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  border-radius: var(--radius-full);
+  padding-inline: var(--space-3);
+  padding-block: var(--space-1-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (min-width: 40rem) {
+  .root2 {
+    padding-inline: var(--space-4);
+  }
+}
+
+.root2Active {
+  background-color: var(--surface-muted);
+  color: var(--text);
+}
+
+.root2NotActive {
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .root2NotActive:hover {
+    color: var(--text);
+  }
+}
+
+.count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.countActive {
+  color: var(--accent);
+}
+
+.countNotActive {
+  opacity: .6;
+}
+
+.box3 {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.root3 {
+  font-weight: 700;
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.root3On {
+  color: var(--text);
+}
+
+.root3Off {
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .root3Off:hover {
+    color: var(--text);
+  }
+}

@@ -1,15 +1,16 @@
 import { Suspense } from "react";
-import { Container } from "@/components/ui/Container";
-import { HeroBanner, HeroBannerFallback } from "@/app/(site)/(home)/_components/HeroBanner";
+import { Container } from "@/components/ui/Container/Container";
+import { HeroBanner, HeroBannerFallback } from "@/app/(site)/(home)/_components/HeroBanner/HeroBanner";
 import { getLatestOpenRecruitments, getSubscriptionRecruitments, searchRecruitments } from "@/features/recruitment/api";
-import { AllRecruitments } from "@/app/(site)/(home)/_components/AllRecruitments";
-import { RecruitmentGridSkeleton } from "@/app/(site)/(home)/_components/RecruitmentGrid";
-import { SubscriptionSection, SubscriptionSectionSkeleton } from "@/app/(site)/(home)/_components/SubscriptionSection";
+import { AllRecruitments } from "@/app/(site)/(home)/_components/AllRecruitments/AllRecruitments";
+import { RecruitmentGridSkeleton } from "@/app/(site)/(home)/_components/RecruitmentGrid/RecruitmentGrid";
+import { SubscriptionSection, SubscriptionSectionSkeleton } from "@/app/(site)/(home)/_components/SubscriptionSection/SubscriptionSection";
 import { parseRecruitmentQuery } from "@/features/recruitment/query";
+import styles from "./page.module.css";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
-    <Container className="flex flex-col gap-20 pt-8">
+    <Container className={styles.homePage}>
       <Suspense fallback={<HeroBannerFallback />}>
         <HeroSlot />
       </Suspense>
@@ -18,9 +19,9 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
         <SubscriptionSlot />
       </Suspense>
 
-      <section id="all-tests" aria-labelledby="all-heading" className="flex scroll-mt-24 flex-col gap-6">
+      <section id="all-tests" aria-labelledby="all-heading" className={styles.homePageSection}>
         {/* 홈의 핵심 목록이라 페이지 제목(h1)으로 쓴다. 다른 페이지도 핵심 목록 제목이 h1이다 */}
-        <h1 id="all-heading" className="text-2xl font-extrabold tracking-[-0.03em]">
+        <h1 id="all-heading" className={styles.homePageTitle}>
           전체 테스트
         </h1>
         <Suspense fallback={<RecruitmentGridSkeleton count={20} />}>

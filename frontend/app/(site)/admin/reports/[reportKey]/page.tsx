@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied";
-import { Container } from "@/components/ui/Container";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
+import { Container } from "@/components/ui/Container/Container";
+import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { getReport, getReportKeys, isReportKey } from "@/features/report/api";
 import { requireAdmin } from "@/features/session/guard";
 import { parseListTab, parseReportTargetFilter, type ReportListView } from "@/features/report/paths";
-import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell";
+import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
 import {
   ReportDetail,
   ReportDetailSkeleton,
   ReviewForm,
   ReviewResult,
   type ReviewFormError,
-} from "@/app/(site)/admin/reports/[reportKey]/_components/ReportDetail";
+} from "@/app/(site)/admin/reports/[reportKey]/_components/ReportDetail/ReportDetail";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "신고 상세" };
 
@@ -48,9 +49,9 @@ async function Detail({ params, searchParams }: DetailProps) {
   const view: ReportListView = { tab: parseListTab(tab), target: parseReportTargetFilter(target) };
   return (
     <AdminShell path="/admin/reports" title="신고·제재 관리">
-      <Container className="pt-10">
+      <Container className={styles.detailContainer}>
         {/* 읽고 판단하는 화면이라 줄 길이를 줄인다 */}
-        <div className="flex max-w-3xl flex-col gap-6">
+        <div className={styles.detailBox}>
           <Suspense fallback={<ReportDetailSkeleton />}>
             <DetailSlot reportKey={reportKey} error={error} view={view} />
           </Suspense>

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { AppHeader } from "@/app/_components/AppHeader";
+import { AppHeader } from "@/app/_components/AppHeader/AppHeader";
 import "./globals.css";
+import styles from "./layout.module.css";
 
 const wantedSans = localFont({
   src: "../node_modules/wanted-sans/fonts/webfonts/variable/complete/woff2/WantedSansVariable.woff2",
@@ -23,10 +24,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={wantedSans.variable}>
-      <body className="flex min-h-dvh flex-col antialiased">
+      <body className={styles.rootLayoutBody}>
         <a
           href="#main"
-          className="sr-only rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-on-accent focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-(--z-skip)"
+          className={styles.rootLayoutSrOnly}
         >
           본문으로 건너뛰기
         </a>

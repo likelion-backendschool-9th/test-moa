@@ -1,0 +1,230 @@
+.externalLink {
+  width: fit-content;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  text-decoration-line: underline;
+}
+
+.externalLinkSrOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.projectBody {
+  container-type: inline-size;
+}
+
+.projectBodyBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 41.6667%;
+    grid-template-rows: auto auto 1fr;
+    column-gap: var(--space-6);
+  }
+}
+
+.projectBodyBox2 {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox2 {
+    grid-column: span 2/span 2;
+  }
+}
+
+.projectBodyTitleH1 {
+  font-size: var(--text-4xl);
+  line-height: var(--text-4xl-leading);
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.projectBodyTitleNotH1 {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.projectBodyBox3 {
+  min-width: 0;
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox3 {
+    grid-column-start: 1;
+    grid-row-start: 2;
+  }
+}
+
+.projectBodyBox4 {
+  width: 100%;
+  max-width: 28rem;
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox4 {
+    grid-column-start: 2;
+    grid-row: span 2/span 2;
+    grid-row-start: 2;
+    max-width: none;
+  }
+}
+
+.projectBodyImage {
+  aspect-ratio: 4/3;
+  width: 100%;
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-muted);
+  object-fit: contain;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-offset: -1px;
+  outline-color: var(--line);
+}
+
+.projectBodyChildren {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@container (min-width: 48rem) {
+  .projectBodyChildren {
+    grid-column-start: 1;
+    grid-row-start: 3;
+  }
+}
+
+.projectInfoBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.projectRecruitmentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.projectRecruitmentList2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .projectRecruitmentList2 {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.projectRecruitmentListBox {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.projectRecruitmentListBox2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.projectRecruitmentListLink {
+  font-weight: 700;
+}
+
+@media (hover: hover) {
+  .projectRecruitmentListLink:hover {
+    text-decoration-line: underline;
+  }
+}
+
+.projectRecruitmentListText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.projectRecruitmentListBox3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.projectRecruitmentListLink2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .projectRecruitmentListLink2:hover {
+    color: var(--text);
+  }
+}
+
+.projectRecruitmentListSrOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.detailSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.detailSkeletonSkeleton {
+  height: 2.5rem;
+  width: 16rem;
+}
+
+.detailSkeletonSkeleton2 {
+  height: 1.5rem;
+  width: 24rem;
+  max-width: 100%;
+}
+
+.detailSkeletonSkeleton3 {
+  height: 8rem;
+}
+
+.detailSkeletonSkeleton4 {
+  height: 8rem;
+}

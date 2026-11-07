@@ -36,6 +36,9 @@ public enum ErrorCode {
     // 구독
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
 
+    // 출금
+    CASHOUT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리한 출금 요청이에요"),
+
     // AI 분석
     AI_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 분석을 잠시 쓸 수 없어요. 잠시 후 다시 시도해 주세요"),
     FOLLOWUP_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 쓸 수 있는 질문 추천을 모두 썼어요. 내일 다시 써 주세요");

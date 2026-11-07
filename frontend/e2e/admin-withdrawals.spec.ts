@@ -183,6 +183,9 @@ test.describe("R35 처리", () => {
     await expect(page.getByRole("status")).toHaveText("출금 요청을 반려했어요. 잠긴 크레딧이 회원에게 돌아가요.");
     await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
     await expect(rows(page).filter({ hasText: "김민준" })).toContainText("반려");
+    /* 메모를 적지 않았으므로 결과에 메모 행이 없다 (#68) */
+    await openWithdrawal(page, "withdrawal-2", "done");
+    await expect(modal(page).getByRole("region", { name: "처리 결과" })).not.toContainText("회원에게 보이는 메모");
   });
 
   test("S209 처리한 요청의 키는 결과 모달을 연다", async ({ page }) => {
@@ -194,6 +197,32 @@ test.describe("R35 처리", () => {
     await expect(result).toContainText("예금주 이름이 회원 정보와 달라요");
     await expect(result).toContainText("처리");
     await expect(modal(page).getByRole("region", { name: "받을 계좌" })).toContainText("****7890");
+  });
+
+  test("#68-S11 반려 메모는 회원에게 그대로 보인다고 안내한다", async ({ page }) => {
+    await openWithdrawal(page, "withdrawal-1");
+    await modal(page).getByRole("radio", { name: /^반려/ }).check();
+    await expect(modal(page)).toContainText("메모는 회원에게 그대로 보여요. 사유가 \u201c기타\u201d이면 꼭 적고, 다른 사유는 필요할 때만 적어요.");
+    await expect(modal(page)).not.toContainText("운영자 기록");
+  });
+
+  test("#68-S12 기타가 아닌 반려의 메모도 회원에게 보이는 메모로 남는다", async ({ page }) => {
+    await decide(page, "withdrawal-1", { decision: "반려", reason: "계좌번호를 확인할 수 없어요", memo: "은행 조회 결과 없음" });
+    await openWithdrawal(page, "withdrawal-1", "done");
+    const result = modal(page).getByRole("region", { name: "처리 결과" });
+    await expect(result).toContainText("계좌번호를 확인할 수 없어요");
+    await expect(result).toContainText("회원에게 보이는 메모");
+    await expect(result).toContainText("은행 조회 결과 없음");
+    await expect(page.getByText("운영자 메모")).toHaveCount(0);
+  });
+
+  test("#68-S13 기타 반려도 사유와 메모를 따로 보여 준다", async ({ page }) => {
+    await decide(page, "withdrawal-3", { decision: "반려", reason: "기타", memo: "서류가 부족해요" });
+    await openWithdrawal(page, "withdrawal-3", "done");
+    const result = modal(page).getByRole("region", { name: "처리 결과" });
+    await expect(result.getByText("반려 사유", { exact: true })).toBeVisible();
+    await expect(result.locator("dd", { hasText: /^기타$/ })).toBeVisible();
+    await expect(result.locator("dd", { hasText: "서류가 부족해요" })).toBeVisible();
   });
 
   test("S219 주소를 바꿔도 처리하지 않은 요청이나 틀린 금액은 문구에 나오지 않는다", async ({ page }) => {

@@ -3,13 +3,13 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.request.CashoutCreateRequest;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
-import com.testmoa.backend.service.CreditService;
+import com.testmoa.backend.service.CashoutService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +32,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 테스트 메서드에 @Transactional을 두지 않는다(스레드가 각자 커밋해야 함).
  */
 @SpringBootTest
-class CreditCashoutConcurrencyTest {
+class CashoutConcurrencyTest {
 
     @Autowired
-    private CreditService creditService;
+    private CashoutService cashoutService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
     private CreditWalletRepository creditWalletRepository;
     @Autowired
-    private CashoutRequestRepository cashoutRequestRepository;
+    private CashoutRepository cashoutRepository;
     @Autowired
     private PlatformTransactionManager transactionManager;
 
@@ -77,7 +77,7 @@ class CreditCashoutConcurrencyTest {
                 ready.countDown();
                 try {
                     start.await(5, TimeUnit.SECONDS);
-                    creditService.requestCashout(userId, request);
+                    cashoutService.requestCashout(userId, request);
                     successes.incrementAndGet();
                 } catch (BusinessException e) {
                     failures.incrementAndGet();
@@ -100,11 +100,11 @@ class CreditCashoutConcurrencyTest {
         assertEquals(1, failures.get());
         assertEquals(5000, wallet.getLockedBalance());
         assertEquals(0, wallet.getEarnedBalance());
-        assertEquals(1, cashoutRequestRepository.findByUserIdOrderByCreatedAtDesc(userId).size());
+        assertEquals(1, cashoutRepository.findByUserIdOrderByCreatedAtDesc(userId).size());
 
         tx.executeWithoutResult(status -> {
-            cashoutRequestRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                    .forEach(cashoutRequestRepository::delete);
+            cashoutRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                    .forEach(cashoutRepository::delete);
             creditWalletRepository.findByUserId(userId).ifPresent(creditWalletRepository::delete);
             userRepository.deleteById(userId);
         });

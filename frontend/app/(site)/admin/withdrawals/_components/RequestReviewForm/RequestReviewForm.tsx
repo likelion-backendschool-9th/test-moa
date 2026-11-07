@@ -2,8 +2,7 @@
 
 import { type FormEvent, type ReactNode, startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/Button/Button";
-import { REVIEW_MEMO_MAX_LENGTH } from "@/features/report/types";
-import { type RequestFormError, type RequestFormState } from "@/features/credit/types";
+import { REVIEW_MEMO_MAX_LENGTH, type RequestFormError, type RequestFormState } from "@/features/credit/types";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
 import styles from "./RequestReviewForm.module.css";
 
@@ -93,7 +92,7 @@ export function RequestReviewForm({
           </label>
           {/* placeholder는 입력하면 사라져서 안내는 늘 보이게 둔다 */}
           <p id={hintId} className={styles.text}>
-            반려할 때 운영자 기록으로 남아요. 사유가 &ldquo;기타&rdquo;이면 이 메모가 {audience}에게 보이는 사유가 돼요.
+            메모는 {audience}에게 그대로 보여요. 사유가 &ldquo;기타&rdquo;이면 꼭 적고, 다른 사유는 필요할 때만 적어요.
           </p>
           <textarea
             id={`${idPrefix}-memo`}

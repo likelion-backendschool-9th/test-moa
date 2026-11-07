@@ -1,7 +1,7 @@
 package com.testmoa.backend.controller;
 
 import com.testmoa.backend.global.exception.GlobalExceptionHandler;
-import com.testmoa.backend.service.CreditService;
+import com.testmoa.backend.service.CashoutService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -20,11 +20,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 출금 신청 @Valid 경로. DB 없이 컨트롤러만 띄운다.
  */
-class CreditControllerCashoutValidationTest {
+class CashoutControllerValidationTest {
 
-    private final CreditService creditService = mock(CreditService.class);
+    private final CashoutService cashoutService = mock(CashoutService.class);
     private final MockMvc mvc = MockMvcBuilders
-            .standaloneSetup(new CreditController(creditService))
+            .standaloneSetup(new CashoutController(cashoutService))
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
 
@@ -41,6 +41,6 @@ class CreditControllerCashoutValidationTest {
                 .andExpect(jsonPath("$.error.fields.amount").value("1 크레딧 이상 입력해 주세요"))
                 .andExpect(jsonPath("$.error.fields.accountNumber").value("계좌번호는 숫자 10~14자리예요"));
 
-        verify(creditService, never()).requestCashout(anyLong(), any());
+        verify(cashoutService, never()).requestCashout(anyLong(), any());
     }
 }

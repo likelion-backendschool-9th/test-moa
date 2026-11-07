@@ -6,7 +6,6 @@ import com.testmoa.backend.entity.User;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.JwtProvider;
@@ -58,7 +57,7 @@ class CreditControllerAuthTest {
                 .creditWallet(wallet)
                 .delta(1000)
                 .description("B의 가입 크레딧")
-                .type(CreditType.EARNED)
+                .type(CreditLedger.Type.EARNED)
                 .build());
         String mine = jwtProvider.createAccessToken(me.getId());
         String theirs = jwtProvider.createAccessToken(other.getId());
@@ -75,11 +74,5 @@ class CreditControllerAuthTest {
                 .andExpect(jsonPath("$.data[?(@.id == " + ledger.getId() + ")]").isEmpty());
 
         mvc.perform(get("/api/v1/my/credits")).andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("#67-S7 토큰 없이 출금 내역을 보면 401")
-    void 토큰_없이_출금_내역을_보면_401() throws Exception {
-        mvc.perform(get("/api/v1/my/credits/withdrawals")).andExpect(status().isUnauthorized());
     }
 }

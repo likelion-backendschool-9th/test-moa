@@ -1,6 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.SubscriptionStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +21,6 @@ class SubscriptionTest {
                 .endAt(start.plusDays(30))
                 .build();
 
-        assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
+        assertEquals(Subscription.Status.ACTIVE, subscription.getStatus());
     }
 }

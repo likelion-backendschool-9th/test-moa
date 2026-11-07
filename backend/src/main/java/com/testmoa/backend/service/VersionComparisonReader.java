@@ -44,15 +44,20 @@ public class VersionComparisonReader {
 
     /**
      * 비교할 두 버전과 분석 서버에 보낼 요청.
-     * 직전 버전은 같은 프로젝트에서 현재보다 버전이 작은 것 중 가장 큰 모집글이고, 두 버전 모두 분석을 마쳐야 함
+     * 직전 버전은 같은 프로젝트에서 현재보다 버전이 작은 것 중 가장 큰 모집글이고, 두 버전 모두 분석 결과가 있고 분석 중이 아니어야 함
      */
     public ComparisonTarget readTarget(Long userId, Long recruitmentId) {
         Recruitment current = findMine(userId, recruitmentId);
         Recruitment previous = recruitmentRepository
                 .findFirstByProjectIdAndVersionLessThanOrderByVersionDescIdDesc(current.getProject().getId(), current.getVersion())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NO_PREVIOUS_VERSION));
-        if (current.getAnalysisStatus() != AnalysisStatus.DONE || previous.getAnalysisStatus() != AnalysisStatus.DONE) {
+        // 분석 결과(analyzed_at)가 있어야 비교함. 다시 분석하다 실패해도(FAILED) 지난 결과가 그대로 남아 비교할 수 있음
+        if (current.getAnalyzedAt() == null || previous.getAnalyzedAt() == null) {
             throw new BusinessException(ErrorCode.ANALYSIS_NOT_DONE);
+        }
+        // 다시 분석하는 중이면 곧 그룹이 바뀌어 끝난 뒤 비교함
+        if (current.getAnalysisStatus() == AnalysisStatus.PENDING || previous.getAnalysisStatus() == AnalysisStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ANALYSIS_IN_PROGRESS);
         }
         ComparisonRequest request = new ComparisonRequest(toVersionGroups(previous), toVersionGroups(current));
         return new ComparisonTarget(current.getProject().getId(), current.getId(), previous.getId(), request);

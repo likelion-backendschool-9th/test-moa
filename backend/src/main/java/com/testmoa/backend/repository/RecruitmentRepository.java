@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -23,11 +24,15 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> 
     Optional<Recruitment> findFirstByProjectIdAndVersionLessThanOrderByVersionDescIdDesc(Long projectId, Integer version);
 
     /**
-     * 분석 시작. 진행 중(PENDING)이 아닐 때만 PENDING으로 바꿔, 동시에 두 번 눌러도 한 번만 바뀐다. 바뀐 행 수를 돌려준다
+     * 분석 시작. 진행 중(PENDING)이 아닐 때만 PENDING으로 바꾸고 접수 시각을 남겨, 동시에 두 번 눌러도 한 번만 바뀐다. 바뀐 행 수를 돌려준다
      */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("update recruitments r set r.analysisStatus = :pending where r.id = :id and r.analysisStatus <> :pending")
-    int markAnalysisPending(@Param("id") Long id, @Param("pending") AnalysisStatus pending);
+    @Query("""
+            update recruitments r set r.analysisStatus = :pending, r.analysisRequestedAt = :requestedAt
+            where r.id = :id and r.analysisStatus <> :pending
+            """)
+    int markAnalysisPending(@Param("id") Long id, @Param("pending") AnalysisStatus pending,
+                            @Param("requestedAt") LocalDateTime requestedAt);
 
     // 분석 실패. 진행 중(PENDING)일 때만 바꾼다
     @Modifying(flushAutomatically = true, clearAutomatically = true)

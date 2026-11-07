@@ -48,12 +48,12 @@ public class ReviewAnalysisWriter {
      */
     @Transactional
     public void markPending(Long recruitmentId) {
-        if (recruitmentRepository.markAnalysisPending(recruitmentId, AnalysisStatus.PENDING) == 0) {
+        if (recruitmentRepository.markAnalysisPending(recruitmentId, AnalysisStatus.PENDING, LocalDateTime.now()) == 0) {
             throw new BusinessException(ErrorCode.ANALYSIS_IN_PROGRESS);
         }
     }
 
-    // 분석 실패. 지난 결과는 건드리지 않음
+    // 분석 실패. 지난 결과와 analyzed_at은 건드리지 않아, 지난 결과가 있으면 버전 비교는 그대로 쓸 수 있음
     @Transactional
     public void markFailed(Long recruitmentId) {
         recruitmentRepository.markAnalysisFailed(recruitmentId, AnalysisStatus.PENDING, AnalysisStatus.FAILED);

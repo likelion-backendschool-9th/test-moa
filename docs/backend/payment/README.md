@@ -38,7 +38,7 @@
 | 결제 | checkout 조회·실행 | `/my/subscription/checkout` |
 
 - 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
-- 구독 중인지는 날짜로 판단하고, `EXPIRED`로 바꾸는 배치는 두지 않는다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다.
+- 구독 중인지는 날짜로 판단하고, 만료로 바꾸는 배치는 두지 않는다. 구독 상태는 `ACTIVE`·`CANCELLED` 둘만 있고 `EXPIRED`는 enum에서 뺐다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다. (2026-11-07)
 - 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림. (#67, 2026-11-06)
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):
@@ -152,7 +152,7 @@ erDiagram
 
 #69-S3 내 구독 상태 [직접]
 - API: `GET /api/users/{userId}/subscription`
-- Then  날짜 규칙으로 `active`·`endAt`·한도
+- Then  날짜 규칙으로 `active`·`endAt`·이용 중인 플랜
 
 ### #70 구독 결제 화면 조회
 
@@ -205,7 +205,7 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 - API: `GET /api/users/{userId}/subscription/payments` 최신순
 
 #71-S3 만료 배치 없음 [직접]
-- Then  `EXPIRED`로 바꾸는 배치를 두지 않는다. 구독 중은 날짜로 판단
+- Then  만료로 바꾸는 배치를 두지 않는다. 구독 중은 날짜로 판단
 
 ## 범위 밖
 - 실제 PG·송금·실명 확인
@@ -222,8 +222,7 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 
 | # | 무엇을 | 고를 것 |
 | --- | --- | --- |
-| 1 | `Subscription.Status.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
-| 2 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
+| 1 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
 
 계좌번호·예금주 저장은 **A 컬럼 암호화**로 정했다 (#67, [cashout.md](cashout.md)). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림이다.
 

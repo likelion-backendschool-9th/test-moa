@@ -210,7 +210,6 @@
 | `tier` | `tier` | String | 불가 | 등급 |
 | `cashPrice` | `cash_price` | Integer | 불가 | 현금 가격 |
 | `creditPrice` | `credit_price` | Integer | 불가 | 크레딧 가격 |
-| `monthlyRecruitLimit` | `monthly_recruit_limit` | Integer | 불가 | 월간 모집 한도 |
 | `version` | `version` | Integer | 불가 | 같은 tier의 몇 번째 조건인지 |
 | `description` | `description` | TEXT | 가능 | 설명 |
 | `imageUrl` | `image_url` | TEXT | 가능 | 이미지 URL |
@@ -235,7 +234,7 @@ List<Plan> findCurrentPlans();
 
 ## 6. 내 구독 (#45-R6)
 
-구독 중인지는 날짜로 판단한다. `EXPIRED`로 바꾸는 배치는 두지 않는다.
+구독 중인지는 날짜로 판단한다. 만료로 바꾸는 배치는 두지 않고, 상태에도 `EXPIRED`가 없다.
 
 ### `subscriptions`
 
@@ -318,5 +317,5 @@ List<Plan> findCurrentPlans();
 - `Payment.subscription`이 `@OneToOne`, `@JoinColumn(nullable = false, unique = true)`다. 한 구독에 결제가 둘 붙을 수 없다
 
 ## 가정
-- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(엔티티 안에 둠), `Subscription.Status` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
+- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(엔티티 안에 둠), `Subscription.Status` ACTIVE/CANCELLED(`EXPIRED`는 뺐다. 만료는 날짜로 판단한다).
 - 단위 테스트 이름은 `@DisplayName("#45-S…")`으로 시나리오와 짝짓는다.

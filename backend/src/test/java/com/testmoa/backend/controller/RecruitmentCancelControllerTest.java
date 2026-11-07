@@ -225,6 +225,9 @@ class RecruitmentCancelControllerTest {
 
         Recruitment recruitment = recruiting(SelectionMode.MANUAL);
         cancel(developer, recruitment, null).andExpect(status().isOk());
+        /* DB는 마이크로초까지 저장한다. 메모리의 값(나노초)과 비교하지 않게 DB에서 다시 읽는다 */
+        em.flush();
+        em.clear();
         LocalDateTime firstCancelledAt = reload(recruitment).getCancelledAt();
         cancel(developer, recruitment, null)
                 .andExpect(status().isConflict())

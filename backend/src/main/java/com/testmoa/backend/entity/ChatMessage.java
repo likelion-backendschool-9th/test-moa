@@ -14,8 +14,8 @@ import java.time.temporal.ChronoUnit;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMessage {
-    // 메시지 한 개의 최대 글자 수. 프론트의 CHAT_MESSAGE_MAX와 같다
-    public static final int CONTENT_MAX = 500;
+    // 메시지 한 개의 최대 글자 수(UTF-16 코드 단위). 프론트의 CHAT_MESSAGE_MAX는 #54에서 맞춘다
+    public static final int CONTENT_MAX = 10_000;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

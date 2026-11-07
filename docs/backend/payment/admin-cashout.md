@@ -71,8 +71,8 @@
 
 **반려 (`reject`)**
 1~3. 지급과 같다
-4. `wallet.releaseCashout(amount)` — 잠김 → 적립
-5. `request.reject(reason, memo, now)`
+4. `request.reject(reason, memo, now)` — 상태·사유·메모를 먼저 검사한다. `OTHER`에 메모가 없으면 `IllegalArgumentException`이라 400이고 전부 롤백한다
+5. `wallet.releaseCashout(amount)` — 잠김 → 적립
 6. 장부는 남기지 않는다
 7. 커밋
 
@@ -83,7 +83,7 @@ flowchart LR
   POST[POST pay / reject] --> Req[request FOR UPDATE]
   Req --> Wal[wallet FOR UPDATE]
   Wal --> Pay[confirmCashout + pay + 장부 -amount]
-  Wal --> Rej[releaseCashout + reject]
+  Wal --> Rej[reject + releaseCashout]
 ```
 
 ---

@@ -92,6 +92,8 @@
 
 ### `cashouts`
 
+테이블 이름은 #68에서 `cashout_requests`를 `cashouts`로 바꿨다. `ddl-auto: update`라서 옛 테이블이 있는 DB에는 빈 `cashouts`가 새로 생긴다. 옛 신청 기록을 살리려면 배포할 때 `ALTER TABLE cashout_requests RENAME TO cashouts`를 한 번 실행한다.
+
 | 필드 | 컬럼 | 타입 | null | 설명 |
 | --- | --- | --- | --- | --- |
 | `id` | `id` | Long | 불가 | PK |

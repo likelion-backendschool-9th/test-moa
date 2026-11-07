@@ -10,6 +10,7 @@ import com.testmoa.backend.entity.Register;
 import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.entity.VersionComparison;
+import com.testmoa.backend.entity.enums.AnalysisStatus;
 import com.testmoa.backend.entity.enums.ClusterCategory;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import com.testmoa.backend.entity.enums.UserStatus;
@@ -255,6 +256,27 @@ class VersionComparisonControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
         verifyNoInteractions(analysisClient);
+    }
+
+    @Test
+    @DisplayName("#108-S7 다시 분석하는 중이면 ANALYSIS_IN_PROGRESS이고, 다시 분석에 실패했어도(FAILED) 지난 결과로 비교한다")
+    void 분석_중이면_막고_실패해도_지난_결과로_비교한다() throws Exception {
+        User developer = saveSubscriber();
+        Versions v = saveVersions(developer);
+        ReflectionTestUtils.setField(v.current(), "analysisStatus", AnalysisStatus.PENDING);
+
+        compare(developer, v.current().getId())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("ANALYSIS_IN_PROGRESS"));
+        verifyNoInteractions(analysisClient);
+
+        // 다시 분석하다 실패해도 analyzed_at과 지난 그룹은 그대로다
+        ReflectionTestUtils.setField(v.current(), "analysisStatus", AnalysisStatus.FAILED);
+        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(List.of(), List.of(), SUMMARY));
+
+        compare(developer, v.current().getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary").value(SUMMARY));
     }
 
     @Test

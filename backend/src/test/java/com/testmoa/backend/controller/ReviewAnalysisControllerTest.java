@@ -191,6 +191,7 @@ class ReviewAnalysisControllerTest {
         start(developer, r.recruitment().getId())
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.data.analysisStatus").value("DONE"))
+                .andExpect(jsonPath("$.data.analysisRequestedAt").isNotEmpty())
                 .andExpect(jsonPath("$.data.praiseSummary").value(PRAISE))
                 .andExpect(jsonPath("$.data.unanalyzedFeedbackCount").value(0))
                 .andExpect(jsonPath("$.data.lastAnalyzedFeedbackAt").isNotEmpty())

@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class VersionComparisonLimiterTest {
     private final MovableClock clock = new MovableClock(Instant.parse("2026-11-09T03:00:00Z")); // 서울 월요일 12:00
-    private final VersionComparisonLimiter limiter = new VersionComparisonLimiter(clock);
+    private final VersionComparisonLimiter limiter = new VersionComparisonLimiter(clock, true);
 
     private void useUp(Long userId) {
         for (int i = 0; i < VersionComparisonLimiter.WEEKLY_LIMIT; i++) limiter.acquire(userId);
@@ -50,6 +50,15 @@ class VersionComparisonLimiterTest {
             limiter.release(1L, limiter.acquire(1L));
         }
         assertThatNoException().isThrownBy(() -> useUp(1L));
+    }
+
+    @Test
+    @DisplayName("#108-S8 한도를 끄면(analysis.weekly-limit-enabled=false) 같은 주에 몇 번이든 쓸 수 있다")
+    void 한도를_끄면_세지_않는다() {
+        VersionComparisonLimiter disabled = new VersionComparisonLimiter(clock, false);
+        assertThatNoException().isThrownBy(() -> {
+            for (int i = 0; i < VersionComparisonLimiter.WEEKLY_LIMIT * 2; i++) disabled.acquire(1L);
+        });
     }
 
     private static final class MovableClock extends Clock {

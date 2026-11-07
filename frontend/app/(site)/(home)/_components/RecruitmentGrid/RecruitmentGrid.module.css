@@ -47,6 +47,7 @@
   row-gap: var(--space-4);
 }
 
+/* 너비 예외: 375px 화면에서 2열이 좁아지지 않게 그보다 좁은 화면(23.4rem 미만)만 1열로 둔다 */
 @media not all and (min-width: 23.4rem) {
   .gridFive {
     grid-template-columns: repeat(1,minmax(0,1fr));

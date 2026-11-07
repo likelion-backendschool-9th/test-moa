@@ -43,6 +43,12 @@
   --hero-grid-major: rgb(255 255 255 / 0.2);
   --hero-muted: #ffffff;
   --hero-button-text: var(--brand-green);
+  /* 매트 위 글씨·도장, 반투명 칩 바탕, 매트 위 교정지 글씨 */
+  --hero-text: #ffffff;
+  --hero-chip: rgb(255 255 255 / 0.14);
+  --hero-paper-text: #1a1a1a;
+  /* 교정지·썸네일의 진한 초록 위 글씨. 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
+  --on-paper-accent: #ffffff;
 
   /* 겹침 순서. 숫자를 컴포넌트에 직접 쓰지 않는다 */
   --z-popover: 20;
@@ -93,6 +99,11 @@
   --text-5xl-leading: 1;
 
   /* 글자 크기와 따로 정하는 줄 높이·자간 */
+  /* 홈 배너 제목. 좁은 화면은 화면 폭에 맞춰 줄이고, lg·xl에서 키운다 */
+  --text-hero: clamp(1.75rem, 9vw, 3rem);
+  --text-hero-lg: 3.25rem;
+  --text-hero-xl: 4rem;
+
   --leading-none: 1;
   --leading-tight: 1.25;
   --leading-snug: 1.375;
@@ -150,8 +161,7 @@
 [data-hero-paper],
 [data-thumb] {
   --accent: var(--paper-accent);
-  /* 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
-  --on-accent: #ffffff;
+  --on-accent: var(--on-paper-accent);
 }
 
 @layer base {

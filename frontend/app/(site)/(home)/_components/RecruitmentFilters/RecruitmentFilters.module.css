@@ -54,7 +54,7 @@
 .input {
   width: 100%;
   min-width: 0;
-  background-color: #0000;
+  background-color: transparent;
   outline-style: none;
 }
 

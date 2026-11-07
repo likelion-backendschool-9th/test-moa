@@ -44,7 +44,7 @@
 }
 
 .title {
-  font-size: clamp(1.75rem,9vw,3rem);
+  font-size: var(--text-hero);
   line-height: 1.05;
   font-weight: 800;
   letter-spacing: -.04em;
@@ -53,13 +53,13 @@
 
 @media (min-width: 64rem) {
   .title {
-    font-size: 3.25rem;
+    font-size: var(--text-hero-lg);
   }
 }
 
 @media (min-width: 80rem) {
   .title {
-    font-size: 4rem;
+    font-size: var(--text-hero-xl);
   }
 }
 

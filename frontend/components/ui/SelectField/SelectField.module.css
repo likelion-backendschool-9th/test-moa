@@ -18,7 +18,7 @@
   /* base-select는 선택값을 위쪽에 둔다. 높이 3rem 안에서 위아래 여백으로 가운데에 맞춘다 */
   :where(.root) {
     padding-block: var(--space-3);
-    line-height: 1.5rem;
+    line-height: calc(var(--text-base-leading) * var(--text-base));
   }
 
   :where(.root)::picker-icon {

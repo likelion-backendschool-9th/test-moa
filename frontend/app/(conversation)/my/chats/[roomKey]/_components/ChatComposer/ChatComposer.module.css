@@ -75,7 +75,7 @@
   min-width: 0;
   flex: 1;
   resize: none;
-  background-color: #0000;
+  background-color: transparent;
   padding-block: var(--space-2);
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);

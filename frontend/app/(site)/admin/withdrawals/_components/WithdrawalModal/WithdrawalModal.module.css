@@ -12,7 +12,7 @@
   overscroll-behavior: contain;
   border-style: solid;
   border-width: 0;
-  background-color: #0000;
+  background-color: transparent;
   padding: var(--space-4);
   color: var(--text);
 }

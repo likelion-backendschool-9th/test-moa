@@ -33,13 +33,13 @@
       linear-gradient(to right, var(--hero-grid-minor) 1px, transparent 1px),
       linear-gradient(to bottom, var(--hero-grid-minor) 1px, transparent 1px);
     background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
-    color: #ffffff;
-    --text: #ffffff;
+    color: var(--hero-text);
+    --text: var(--hero-text);
     --text-muted: var(--hero-muted);
-    --accent: #ffffff;
+    --accent: var(--hero-text);
     --on-accent: var(--hero-button-text);
-    --surface-strong: rgb(255 255 255 / 0.14);
-    --mark: #ffffff;
+    --surface-strong: var(--hero-chip);
+    --mark: var(--hero-text);
   }
 
   .shell > svg {
@@ -49,9 +49,9 @@
   /* 매트 위 교정지·썸네일은 다른 부품이라 클래스 대신 속성으로 가리킨다 */
   .shell [data-thumb],
   .shell [data-hero-paper] {
-    --text: #1a1a1a;
+    --text: var(--hero-paper-text);
     --accent: var(--hero-mat);
-    --on-accent: #ffffff;
+    --on-accent: var(--on-paper-accent);
   }
 }
 
@@ -63,6 +63,6 @@
   /* 배너 주 버튼은 교정지·썸네일과 같은 진한 초록에 흰 글씨. 제목의 초록 글자는 남회색 위에서 읽히게 밝은 초록을 둔다 */
   .shell [data-hero-action] {
     --accent: var(--paper-accent);
-    --on-accent: #ffffff;
+    --on-accent: var(--on-paper-accent);
   }
 }

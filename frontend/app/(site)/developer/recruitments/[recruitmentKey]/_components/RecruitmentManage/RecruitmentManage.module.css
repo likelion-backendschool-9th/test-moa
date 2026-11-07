@@ -221,7 +221,7 @@
 }
 
 .recruitmentTabsLabelNotActive {
-  border-color: #0000;
+  border-color: transparent;
   color: var(--text-muted);
 }
 

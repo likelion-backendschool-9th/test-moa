@@ -37,7 +37,7 @@
   }
 }
 
-@media (width >= 64rem) {
+@media (min-width: 64rem) {
   .list {
     flex-direction: column;
     margin-inline: 0;

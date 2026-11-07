@@ -9,7 +9,7 @@ import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
-import com.testmoa.backend.service.CreditService;
+import com.testmoa.backend.service.CashoutService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +32,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 테스트 메서드에 @Transactional을 두지 않는다(스레드가 각자 커밋해야 함).
  */
 @SpringBootTest
-class CreditCashoutConcurrencyTest {
+class CashoutConcurrencyTest {
 
     @Autowired
-    private CreditService creditService;
+    private CashoutService cashoutService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -77,7 +77,7 @@ class CreditCashoutConcurrencyTest {
                 ready.countDown();
                 try {
                     start.await(5, TimeUnit.SECONDS);
-                    creditService.requestCashout(userId, request);
+                    cashoutService.requestCashout(userId, request);
                     successes.incrementAndGet();
                 } catch (BusinessException e) {
                     failures.incrementAndGet();

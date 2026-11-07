@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.impl;
+package com.testmoa.backend.service.admin.impl;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AdminCashoutServiceImplTest {
+class CashoutServiceImplTest {
 
     private static final Long USER_ID = 1L;
     private static final Long CASHOUT_ID = 7L;
@@ -52,7 +52,7 @@ class AdminCashoutServiceImplTest {
     private CreditLedgerRepository creditLedgerRepository;
 
     @InjectMocks
-    private AdminCashoutServiceImpl service;
+    private CashoutServiceImpl service;
 
     @Test
     @DisplayName("#68-S1 지급하면 잠김이 줄고 장부에 출금 지급 한 줄이 남는다")
@@ -131,7 +131,7 @@ class AdminCashoutServiceImplTest {
 
         assertEquals("통장 사본의 이름과 달라요", holder.getRejectMemo());
         /* 회원 출금 내역(#67-S6)에도 같은 메모가 보인다 */
-        assertEquals("통장 사본의 이름과 달라요", CashoutResponse.of(other).getRejectMemo());
+        assertEquals("통장 사본의 이름과 달라요", CashoutResponse.of(other, other.getAccountNumber(), other.getAccountHolder()).getRejectMemo());
     }
 
     @Test
@@ -161,8 +161,13 @@ class AdminCashoutServiceImplTest {
         Cashout done = requested(5000);
         done.pay(java.time.LocalDateTime.now());
 
-        AdminCashoutResponse pendingView = AdminCashoutResponse.of(pending);
-        AdminCashoutResponse doneView = AdminCashoutResponse.of(done);
+        when(cashoutRepository.findByStatusOrderByCreatedAtAsc(Cashout.Status.REQUESTED))
+                .thenReturn(List.of(pending));
+        when(cashoutRepository.findByStatusInOrderByProcessedAtDesc(
+                List.of(Cashout.Status.PAID, Cashout.Status.REJECTED))).thenReturn(List.of(done));
+
+        AdminCashoutResponse pendingView = service.getCashouts(CashoutTab.PENDING).get(0);
+        AdminCashoutResponse doneView = service.getCashouts(CashoutTab.DONE).get(0);
 
         assertEquals("100012345678", pendingView.getAccountNumber());
         assertEquals("한서윤", pendingView.getAccountHolder());

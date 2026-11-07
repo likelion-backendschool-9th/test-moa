@@ -1,4 +1,4 @@
-package com.testmoa.backend.service;
+package com.testmoa.backend.service.admin;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
@@ -6,7 +6,7 @@ import com.testmoa.backend.entity.enums.CashoutTab;
 
 import java.util.List;
 
-public interface AdminCashoutService {
+public interface CashoutService {
     List<AdminCashoutResponse> getCashouts(CashoutTab tab);
 
     AdminCashoutResponse getCashout(Long id);

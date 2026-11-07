@@ -1,14 +1,9 @@
 package com.testmoa.backend.service.impl;
 
-import com.testmoa.backend.dto.request.CashoutCreateRequest;
-import com.testmoa.backend.dto.response.CashoutResponse;
 import com.testmoa.backend.dto.response.CreditBalanceResponse;
 import com.testmoa.backend.dto.response.CreditLedgerResponse;
-import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditLedger;
 import com.testmoa.backend.entity.CreditWallet;
-import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.RegisterRepository;
@@ -32,20 +27,17 @@ public class CreditServiceImpl implements CreditService {
     private final CreditWalletRepository creditWalletRepository;
     private final CreditLedgerRepository creditLedgerRepository;
     private final RegisterRepository registerRepository;
-    private final CashoutRepository cashoutRepository;
 
     public CreditServiceImpl(
             UserRepository userRepository,
             CreditWalletRepository creditWalletRepository,
             CreditLedgerRepository creditLedgerRepository,
-            RegisterRepository registerRepository,
-            CashoutRepository cashoutRepository
+            RegisterRepository registerRepository
     ) {
         this.userRepository = userRepository;
         this.creditWalletRepository = creditWalletRepository;
         this.creditLedgerRepository = creditLedgerRepository;
         this.registerRepository = registerRepository;
-        this.cashoutRepository = cashoutRepository;
     }
 
     /**
@@ -81,59 +73,6 @@ public class CreditServiceImpl implements CreditService {
             case ALL -> creditLedgerRepository.findByCreditWalletIdOrderByCreatedAtDesc(walletId);
         };
         return ledgers.stream().map(CreditLedgerResponse::of).toList();
-    }
-
-    /**
-     * 내 출금 내역. 최신순. 계좌는 응답 DTO에서 마스킹한다.
-     */
-    @Override
-    public List<CashoutResponse> getCashouts(Long userId) {
-        requireUser(userId);
-        return cashoutRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(CashoutResponse::of)
-                .toList();
-    }
-
-    /**
-     * 출금 신청. 지갑을 FOR UPDATE로 잠근 뒤 적립→잠김만 옮기고 장부는 남기지 않는다.
-     */
-    @Override
-    @Transactional
-    public CashoutResponse requestCashout(Long userId, CashoutCreateRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        if (request.amount() == null || request.amount() < 1) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "1 크레딧 이상 입력해 주세요");
-        }
-        if (!Cashout.Bank.isAllowed(request.bank())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "은행을 골라 주세요");
-        }
-
-        CreditWallet wallet = creditWalletRepository.findByUserIdForUpdate(userId)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.INVALID_INPUT,
-                        "출금할 수 있는 크레딧이 없어요"
-                ));
-        int cashable = wallet.cashable();
-        if (cashable < 1) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "출금할 수 있는 크레딧이 없어요");
-        }
-        if (request.amount() > cashable) {
-            throw new BusinessException(
-                    ErrorCode.INVALID_INPUT,
-                    "출금 가능한 크레딧(" + String.format("%,d", cashable) + ")보다 많아요"
-            );
-        }
-
-        wallet.lockForCashout(request.amount());
-        Cashout cashout = Cashout.builder()
-                .user(user)
-                .amount(request.amount())
-                .bank(request.bank())
-                .accountNumber(request.accountNumber())
-                .accountHolder(request.accountHolder())
-                .build();
-        return CashoutResponse.of(cashoutRepository.save(cashout));
     }
 
     private int pendingRewardOf(Long userId) {

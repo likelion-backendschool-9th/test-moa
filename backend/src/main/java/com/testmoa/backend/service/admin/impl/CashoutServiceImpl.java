@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.impl;
+package com.testmoa.backend.service.admin.impl;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
@@ -12,7 +12,8 @@ import com.testmoa.backend.entity.enums.CashoutTab;
 import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
-import com.testmoa.backend.service.AdminCashoutService;
+import com.testmoa.backend.global.util.Masking;
+import com.testmoa.backend.service.admin.CashoutService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +23,15 @@ import java.util.List;
 /**
  * 운영자 출금 처리. 요청 행 → 지갑 행 순서로 잠가 같은 요청을 두 번 처리하지 못하게 한다.
  */
-@Service
+@Service("adminCashoutService")
 @Transactional(readOnly = true)
-public class AdminCashoutServiceImpl implements AdminCashoutService {
+public class CashoutServiceImpl implements CashoutService {
 
     private final CashoutRepository cashoutRepository;
     private final CreditWalletRepository creditWalletRepository;
     private final CreditLedgerRepository creditLedgerRepository;
 
-    public AdminCashoutServiceImpl(
+    public CashoutServiceImpl(
             CashoutRepository cashoutRepository,
             CreditWalletRepository creditWalletRepository,
             CreditLedgerRepository creditLedgerRepository
@@ -47,12 +48,12 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
                 ? cashoutRepository.findByStatusOrderByCreatedAtAsc(Cashout.Status.REQUESTED)
                 : cashoutRepository.findByStatusInOrderByProcessedAtDesc(
                         List.of(Cashout.Status.PAID, Cashout.Status.REJECTED));
-        return requests.stream().map(AdminCashoutResponse::of).toList();
+        return requests.stream().map(this::toResponse).toList();
     }
 
     @Override
     public AdminCashoutResponse getCashout(Long id) {
-        return AdminCashoutResponse.of(cashoutRepository.findWithUserById(id)
+        return toResponse(cashoutRepository.findWithUserById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND)));
     }
 
@@ -70,7 +71,7 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
                 .description("출금 지급")
                 .type(CreditType.EARNED)
                 .build());
-        return AdminCashoutResponse.of(cashout);
+        return toResponse(cashout);
     }
 
     /** 반려. 잠긴 금액을 적립으로 돌려주고 장부는 남기지 않는다. 메모는 회원에게 그대로 보인다 */
@@ -85,7 +86,18 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
             throw new BusinessException(ErrorCode.INVALID_INPUT, e.getMessage());
         }
         wallet.releaseCashout(cashout.getAmount());
-        return AdminCashoutResponse.of(cashout);
+        return toResponse(cashout);
+    }
+
+    /** 처리 중이면 계좌·예금주를 그대로, 끝났으면 가려서 응답에 담는다 */
+    private AdminCashoutResponse toResponse(Cashout cashout) {
+        String accountNumber = cashout.isRequested()
+                ? cashout.getAccountNumber()
+                : Masking.accountNumber(cashout.getAccountNumber());
+        String accountHolder = cashout.isRequested()
+                ? cashout.getAccountHolder()
+                : Masking.name(cashout.getAccountHolder());
+        return AdminCashoutResponse.of(cashout, accountNumber, accountHolder);
     }
 
     /** 요청 행을 잠그고 아직 처리 전인지 확인한다 */

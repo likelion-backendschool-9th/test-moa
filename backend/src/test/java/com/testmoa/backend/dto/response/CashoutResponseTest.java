@@ -20,7 +20,7 @@ class CashoutResponseTest {
         Cashout holder = baseRequest();
         holder.reject(CashoutRejectReason.HOLDER, "통장 사본의 이름과 달라요", NOW);
 
-        CashoutResponse response = CashoutResponse.of(holder);
+        CashoutResponse response = CashoutResponse.of(holder, holder.getAccountNumber(), holder.getAccountHolder());
 
         assertEquals(CashoutRejectReason.HOLDER, response.getRejectReason());
         assertEquals("통장 사본의 이름과 달라요", response.getRejectMemo());
@@ -32,7 +32,7 @@ class CashoutResponseTest {
         Cashout account = baseRequest();
         account.reject(CashoutRejectReason.ACCOUNT, "  ", NOW);
 
-        assertNull(CashoutResponse.of(account).getRejectMemo());
+        assertNull(CashoutResponse.of(account, account.getAccountNumber(), account.getAccountHolder()).getRejectMemo());
     }
 
     @Test
@@ -41,7 +41,7 @@ class CashoutResponseTest {
         Cashout other = baseRequest();
         other.reject(CashoutRejectReason.OTHER, "서류가 부족해요", NOW);
 
-        CashoutResponse response = CashoutResponse.of(other);
+        CashoutResponse response = CashoutResponse.of(other, other.getAccountNumber(), other.getAccountHolder());
 
         assertEquals(CashoutRejectReason.OTHER, response.getRejectReason());
         assertEquals("서류가 부족해요", response.getRejectMemo());

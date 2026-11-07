@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.impl;
+package com.testmoa.backend.service.admin.impl;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.entity.Cashout;
@@ -13,7 +13,7 @@ import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
-import com.testmoa.backend.service.AdminCashoutService;
+import com.testmoa.backend.service.admin.CashoutService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 테스트 메서드에 @Transactional을 두지 않는다(스레드가 각자 커밋해야 함).
  */
 @SpringBootTest
-class AdminCashoutConcurrencyTest {
+class CashoutConcurrencyTest {
 
-    @Autowired AdminCashoutService adminCashoutService;
+    @Autowired CashoutService cashoutService;
     @Autowired UserRepository userRepository;
     @Autowired CreditWalletRepository creditWalletRepository;
     @Autowired CreditLedgerRepository creditLedgerRepository;
@@ -81,8 +81,8 @@ class AdminCashoutConcurrencyTest {
         CountDownLatch done = new CountDownLatch(2);
         ExecutorService pool = Executors.newFixedThreadPool(2);
 
-        Runnable pay = () -> adminCashoutService.pay(cashoutId);
-        Runnable reject = () -> adminCashoutService.reject(
+        Runnable pay = () -> cashoutService.pay(cashoutId);
+        Runnable reject = () -> cashoutService.reject(
                 cashoutId, new CashoutRejectRequest(CashoutRejectReason.ACCOUNT, null));
         for (Runnable action : new Runnable[]{pay, reject}) {
             pool.submit(() -> {

@@ -45,7 +45,7 @@
 | `nickname`, `userName` | 요청자 닉네임, 가입 실명. 화면의 "예금주 확인 필요" 표시에 쓴다 |
 | `amount` | 금액 |
 | `status` | `REQUESTED` / `PAID` / `REJECTED` |
-| `bank`, `accountNumber`, `accountHolder` | `REQUESTED`는 전체, 완료는 끝 4자리·가운데 가림 ([cashout.md](cashout.md)의 마스킹 규칙 그대로, `AccountMasking`) |
+| `bank`, `accountNumber`, `accountHolder` | `REQUESTED`는 전체, 완료는 끝 4자리·가운데 가림 ([cashout.md](cashout.md)의 마스킹 규칙 그대로, `Masking`) |
 | `rejectReason`, `rejectMemo` | 반려일 때만. 회원 응답과 같은 값이다 |
 | `requestedAt`, `processedAt` | 신청·처리 시각 |
 
@@ -158,9 +158,9 @@ flowchart LR
 
 ## 구현 메모
 - `CashoutRepository`: `findByIdForUpdate`(`@Lock(PESSIMISTIC_WRITE)`), `findByStatusOrderByCreatedAtAsc`, `findByStatusInOrderByProcessedAtDesc`. 목록은 `user`를 함께 읽어(`fetch join`) N+1을 피한다
-- 서비스: `AdminCashoutService`(목록·상세·`pay`·`reject`). 읽기 전용 트랜잭션과 쓰기 트랜잭션을 나눈다
-- 응답 DTO는 `CashoutResponse`의 마스킹(`AccountMasking`)을 재사용한다. 닉네임·실명을 더한 `AdminCashoutResponse`를 새로 둔다
-- 단위 테스트: S1~S6·S8은 서비스, S7은 컨트롤러 인증 테스트(`CreditControllerAuthTest`와 같은 방식), S9는 동시성 테스트(`CreditCashoutConcurrencyTest`와 같은 방식)
+- 서비스: `CashoutService`(목록·상세·`pay`·`reject`). 읽기 전용 트랜잭션과 쓰기 트랜잭션을 나눈다
+- 가리는 일은 서비스가 `Masking`(`global/util`)으로 한다. 응답 DTO `AdminCashoutResponse`는 가려진 값을 받아 담고, 닉네임·실명을 더한다
+- 단위 테스트: S1~S6·S8은 서비스, S7은 컨트롤러 인증 테스트(`CreditControllerAuthTest`와 같은 방식), S9는 동시성 테스트(`CashoutConcurrencyTest`와 같은 방식)
 - 테스트 DB가 필요하다. 로컬 Postgres가 꺼져 있으면 컨텍스트 테스트가 실패한다
 
 ## 범위 밖

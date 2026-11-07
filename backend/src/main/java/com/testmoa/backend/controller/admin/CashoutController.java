@@ -4,7 +4,7 @@ import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.entity.enums.CashoutTab;
-import com.testmoa.backend.service.AdminCashoutService;
+import com.testmoa.backend.service.admin.CashoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,33 +19,34 @@ import java.util.List;
 
 /**
  * 운영자 출금 처리. /api/admin/** 은 SecurityConfig가 ADMIN만 허용한다.
+ * 회원용 {@code CashoutController}와 클래스 이름이 같아서 빈 이름을 따로 준다.
  */
-@RestController
+@RestController("adminCashoutController")
 @RequestMapping("/api/admin/cashouts")
 public class CashoutController {
 
-    private final AdminCashoutService adminCashoutService;
+    private final CashoutService cashoutService;
 
-    public CashoutController(AdminCashoutService adminCashoutService) {
-        this.adminCashoutService = adminCashoutService;
+    public CashoutController(CashoutService cashoutService) {
+        this.cashoutService = cashoutService;
     }
 
     @Operation(summary = "출금 요청 목록 (처리 대기·처리 완료)")
     @GetMapping
     public ApiResponse<List<AdminCashoutResponse>> getCashouts(@RequestParam(defaultValue = "pending") String tab) {
-        return ApiResponse.ok(adminCashoutService.getCashouts(CashoutTab.fromQuery(tab)));
+        return ApiResponse.ok(cashoutService.getCashouts(CashoutTab.fromQuery(tab)));
     }
 
     @Operation(summary = "출금 요청 상세")
     @GetMapping("/{id}")
     public ApiResponse<AdminCashoutResponse> getCashout(@PathVariable Long id) {
-        return ApiResponse.ok(adminCashoutService.getCashout(id));
+        return ApiResponse.ok(cashoutService.getCashout(id));
     }
 
     @Operation(summary = "출금 지급 완료 처리")
     @PostMapping("/{id}/pay")
     public ApiResponse<AdminCashoutResponse> pay(@PathVariable Long id) {
-        return ApiResponse.ok(adminCashoutService.pay(id));
+        return ApiResponse.ok(cashoutService.pay(id));
     }
 
     @Operation(summary = "출금 반려 처리")
@@ -54,6 +55,6 @@ public class CashoutController {
             @PathVariable Long id,
             @Valid @RequestBody CashoutRejectRequest request
     ) {
-        return ApiResponse.ok(adminCashoutService.reject(id, request));
+        return ApiResponse.ok(cashoutService.reject(id, request));
     }
 }

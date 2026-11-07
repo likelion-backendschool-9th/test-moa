@@ -176,4 +176,13 @@ public class Cashout {
         this.rejectMemo = trimmed.isEmpty() ? null : trimmed;
         this.processedAt = now;
     }
+
+    /**
+     * 아직 처리 전인지 확인한다.
+     *
+     * @return 요청(처리 중) 상태면 true
+     */
+    public boolean isRequested() {
+        return status == Status.REQUESTED;
+    }
 }

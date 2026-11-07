@@ -17,7 +17,7 @@
 | `GET` | `/api/v1/my/credits/withdrawals` | 내 출금 내역. 최신순. 로그인 필요 |
 | `POST` | `/api/v1/my/credits/withdrawals` | 출금 신청 |
 
-컨트롤러는 `#66`의 `CreditController`에 메서드를 더하거나, 같은 `/credits` 아래 `CashoutController`로 나눈다. 경로는 위와 같다.
+컨트롤러와 서비스는 크레딧(`CreditController`·`CreditService`)과 나눠 `CashoutController`·`CashoutService`로 둔다. 경로는 위와 같다. 운영자용 `admin/CashoutController`·`admin/CashoutService`와 클래스 이름이 같아서 운영자 쪽이 빈 이름(`adminCashoutController`, `adminCashoutService`)을 따로 가진다.
 
 ### 신청 요청 본문
 

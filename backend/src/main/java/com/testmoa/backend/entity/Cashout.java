@@ -1,6 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.CashoutRejectReason;
 import com.testmoa.backend.global.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,6 +14,13 @@ import java.time.LocalDateTime;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Cashout {
+    // 출금 요청 반려 사유. 사유 라벨은 고정 문구이고, 반려 메모는 모든 사유에서 회원에게 보인다. OTHER만 메모가 필수다
+    public enum RejectReason {
+        HOLDER,   // 예금주 이름이 회원 정보와 달라요
+        ACCOUNT,  // 계좌번호를 확인할 수 없어요
+        OTHER     // 기타
+    }
+
     // 처리 상태. 지급 완료는 PAID만 쓴다
     public enum Status {
         REQUESTED,  // 요청(처리 중)
@@ -95,7 +101,7 @@ public class Cashout {
 
     // 반려 사유(HOLDER, ACCOUNT, OTHER). 반려가 아니면 null. DB에는 문자열로 저장
     @Enumerated(EnumType.STRING)
-    private CashoutRejectReason rejectReason;
+    private RejectReason rejectReason;
 
     // 반려 메모. 사유와 상관없이 회원에게 그대로 보인다. 기타(OTHER)면 필수, 그 외에는 선택
     private String rejectMemo;
@@ -160,7 +166,7 @@ public class Cashout {
      * @param memo   반려 메모. 회원에게 보이는 안내다. 기타면 필수, 그 외에는 선택. 비어 있으면 저장하지 않는다
      * @param now    처리 일시
      */
-    public void reject(CashoutRejectReason reason, String memo, LocalDateTime now) {
+    public void reject(RejectReason reason, String memo, LocalDateTime now) {
         if (status != Status.REQUESTED) {
             throw new IllegalStateException("이미 처리한 출금 요청입니다.");
         }
@@ -168,7 +174,7 @@ public class Cashout {
             throw new IllegalArgumentException("반려 사유가 필요합니다.");
         }
         String trimmed = memo == null ? "" : memo.trim();
-        if (reason == CashoutRejectReason.OTHER && trimmed.isEmpty()) {
+        if (reason == RejectReason.OTHER && trimmed.isEmpty()) {
             throw new IllegalArgumentException("기타 사유로 반려하려면 메모가 필요합니다.");
         }
         this.status = Status.REJECTED;

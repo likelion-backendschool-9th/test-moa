@@ -1,6 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.CreditType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,6 +12,12 @@ import java.time.LocalDateTime;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CreditLedger {
+    // 변동 크레딧 종류. 잠금/해제는 ledger에 남기지 않으므로 LOCKED는 두지 않는다
+    public enum Type {
+        EVENT,  // 이벤트
+        EARNED  // 적립
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,7 +39,7 @@ public class CreditLedger {
     // 변동 크레딧 종류(EVENT, EARNED). 총잔액이 바뀐 일만 남기므로 잠금/해제는 ledger에 남기지 않는다
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CreditType type;
+    private Type type;
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
@@ -59,7 +64,7 @@ public class CreditLedger {
             CreditWallet creditWallet,
             Integer delta,
             String description,
-            CreditType type
+            Type type
     ){
         this.creditWallet = creditWallet;
         this.delta = delta;

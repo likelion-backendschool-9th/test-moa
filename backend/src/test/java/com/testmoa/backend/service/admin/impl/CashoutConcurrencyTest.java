@@ -8,7 +8,6 @@ import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.CashoutRejectReason;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
@@ -83,7 +82,7 @@ class CashoutConcurrencyTest {
 
         Runnable pay = () -> cashoutService.pay(cashoutId);
         Runnable reject = () -> cashoutService.reject(
-                cashoutId, new CashoutRejectRequest(CashoutRejectReason.ACCOUNT, null));
+                cashoutId, new CashoutRejectRequest(Cashout.RejectReason.ACCOUNT, null));
         for (Runnable action : new Runnable[]{pay, reject}) {
             pool.submit(() -> {
                 ready.countDown();

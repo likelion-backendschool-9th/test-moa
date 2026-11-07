@@ -6,7 +6,6 @@ import com.testmoa.backend.entity.User;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.JwtProvider;
@@ -58,7 +57,7 @@ class CreditControllerAuthTest {
                 .creditWallet(wallet)
                 .delta(1000)
                 .description("B의 가입 크레딧")
-                .type(CreditType.EARNED)
+                .type(CreditLedger.Type.EARNED)
                 .build());
         String mine = jwtProvider.createAccessToken(me.getId());
         String theirs = jwtProvider.createAccessToken(other.getId());

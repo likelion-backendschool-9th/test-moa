@@ -9,7 +9,6 @@ import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.LedgerFlow;
 import com.testmoa.backend.entity.enums.RegisterStatus;
@@ -112,7 +111,7 @@ class CreditServiceImplTest {
                 .creditWallet(wallet)
                 .delta(1000)
                 .description("가입 크레딧")
-                .type(CreditType.EVENT)
+                .type(CreditLedger.Type.EVENT)
                 .build();
         ReflectionTestUtils.setField(in, "id", 1L);
         when(creditLedgerRepository.findByCreditWalletIdAndDeltaGreaterThanOrderByCreatedAtDesc(10L, 0))

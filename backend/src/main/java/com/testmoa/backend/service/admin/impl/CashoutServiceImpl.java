@@ -9,7 +9,6 @@ import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.entity.enums.CashoutTab;
-import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.util.Masking;
@@ -69,7 +68,7 @@ public class CashoutServiceImpl implements CashoutService {
                 .creditWallet(wallet)
                 .delta(-cashout.getAmount())
                 .description("출금 지급")
-                .type(CreditType.EARNED)
+                .type(CreditLedger.Type.EARNED)
                 .build());
         return toResponse(cashout);
     }

@@ -222,7 +222,7 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 
 | # | 무엇을 | 고를 것 |
 | --- | --- | --- |
-| 1 | `SubscriptionStatus.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
+| 1 | `Subscription.Status.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
 | 2 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
 
 계좌번호·예금주 저장은 **A 컬럼 암호화**로 정했다 (#67, [cashout.md](cashout.md)). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림이다.

@@ -1,7 +1,6 @@
 package com.testmoa.backend.dto.response;
 
 import com.testmoa.backend.entity.Cashout;
-import com.testmoa.backend.entity.enums.CashoutRejectReason;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -20,7 +19,7 @@ public class CashoutResponse {
     private String bank;
     private String accountNumber;
     private String accountHolder;
-    private CashoutRejectReason rejectReason;
+    private Cashout.RejectReason rejectReason;
     private String rejectMemo;
     private LocalDateTime requestedAt;
     private LocalDateTime processedAt;

@@ -1,6 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.CashoutRejectReason;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -61,10 +60,10 @@ class CashoutTest {
     void reject는_REQUESTED에서_REJECTED로_바꾼다() {
         Cashout request = newRequest();
 
-        request.reject(CashoutRejectReason.HOLDER, "확인 메모", NOW);
+        request.reject(Cashout.RejectReason.HOLDER, "확인 메모", NOW);
 
         assertEquals(Cashout.Status.REJECTED, request.getStatus());
-        assertEquals(CashoutRejectReason.HOLDER, request.getRejectReason());
+        assertEquals(Cashout.RejectReason.HOLDER, request.getRejectReason());
         assertEquals("확인 메모", request.getRejectMemo());
         assertEquals(NOW, request.getProcessedAt());
     }
@@ -76,7 +75,7 @@ class CashoutTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> request.reject(CashoutRejectReason.OTHER, "  ", NOW)
+                () -> request.reject(Cashout.RejectReason.OTHER, "  ", NOW)
         );
     }
 
@@ -85,7 +84,7 @@ class CashoutTest {
     void reject는_OTHER가_아니면_빈_메모를_저장하지_않는다() {
         Cashout request = newRequest();
 
-        request.reject(CashoutRejectReason.ACCOUNT, "   ", NOW);
+        request.reject(Cashout.RejectReason.ACCOUNT, "   ", NOW);
 
         assertNull(request.getRejectMemo());
     }
@@ -102,11 +101,11 @@ class CashoutTest {
     @DisplayName("#45-S20 이미 처리한 요청은 반려 거절")
     void reject는_이미_처리한_요청이면_거절한다() {
         Cashout request = newRequest();
-        request.reject(CashoutRejectReason.HOLDER, null, NOW);
+        request.reject(Cashout.RejectReason.HOLDER, null, NOW);
 
         assertThrows(
                 IllegalStateException.class,
-                () -> request.reject(CashoutRejectReason.ACCOUNT, null, NOW.plusMinutes(1))
+                () -> request.reject(Cashout.RejectReason.ACCOUNT, null, NOW.plusMinutes(1))
         );
     }
 }

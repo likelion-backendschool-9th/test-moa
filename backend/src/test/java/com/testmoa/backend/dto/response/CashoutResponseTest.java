@@ -1,7 +1,6 @@
 package com.testmoa.backend.dto.response;
 
 import com.testmoa.backend.entity.Cashout;
-import com.testmoa.backend.entity.enums.CashoutRejectReason;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -18,11 +17,11 @@ class CashoutResponseTest {
     @DisplayName("#67-S6 HOLDER 반려도 메모가 있으면 회원에게 보인다")
     void keepsMemoForFixedReasons() {
         Cashout holder = baseRequest();
-        holder.reject(CashoutRejectReason.HOLDER, "통장 사본의 이름과 달라요", NOW);
+        holder.reject(Cashout.RejectReason.HOLDER, "통장 사본의 이름과 달라요", NOW);
 
         CashoutResponse response = CashoutResponse.of(holder, holder.getAccountNumber(), holder.getAccountHolder());
 
-        assertEquals(CashoutRejectReason.HOLDER, response.getRejectReason());
+        assertEquals(Cashout.RejectReason.HOLDER, response.getRejectReason());
         assertEquals("통장 사본의 이름과 달라요", response.getRejectMemo());
     }
 
@@ -30,7 +29,7 @@ class CashoutResponseTest {
     @DisplayName("#67-S6 메모 없는 ACCOUNT 반려는 rejectMemo가 null")
     void nullMemoWhenNotWritten() {
         Cashout account = baseRequest();
-        account.reject(CashoutRejectReason.ACCOUNT, "  ", NOW);
+        account.reject(Cashout.RejectReason.ACCOUNT, "  ", NOW);
 
         assertNull(CashoutResponse.of(account, account.getAccountNumber(), account.getAccountHolder()).getRejectMemo());
     }
@@ -39,11 +38,11 @@ class CashoutResponseTest {
     @DisplayName("#67-S6 OTHER 반려는 rejectMemo를 회원에게 보인다")
     void keepsMemoForOther() {
         Cashout other = baseRequest();
-        other.reject(CashoutRejectReason.OTHER, "서류가 부족해요", NOW);
+        other.reject(Cashout.RejectReason.OTHER, "서류가 부족해요", NOW);
 
         CashoutResponse response = CashoutResponse.of(other, other.getAccountNumber(), other.getAccountHolder());
 
-        assertEquals(CashoutRejectReason.OTHER, response.getRejectReason());
+        assertEquals(Cashout.RejectReason.OTHER, response.getRejectReason());
         assertEquals("서류가 부족해요", response.getRejectMemo());
     }
 

@@ -69,7 +69,7 @@
 
 ## 2. 크레딧 내역 (#45-R2)
 
-장부에는 **총잔액이 실제로 바뀐 일만** 남긴다. `CreditType`은 `EVENT`, `EARNED`만 쓴다(`LOCKED` 제거).
+장부에는 **총잔액이 실제로 바뀐 일만** 남긴다. `CreditLedger.Type`은 `EVENT`, `EARNED`만 쓴다(`LOCKED` 제거).
 
 ### `credit_ledgers`
 
@@ -79,12 +79,12 @@
 | `creditWallet` | `credit_wallet_id` | FK → credit_wallets | 불가 | 변동 지갑 |
 | `delta` | `delta` | Integer | 불가 | 변동량(+/−) |
 | `description` | `description` | String | 불가 | 원인 문구 |
-| `type` | `type` | enum `CreditType` | 불가 | `EVENT` / `EARNED` |
+| `type` | `type` | enum `CreditLedger.Type` | 불가 | `EVENT` / `EARNED` |
 
 결제 연결(`payment_id`)은 두지 않는다. 구독 결제 시 이벤트·적립을 각각 쓴 만큼 행을 만든다(0인 쪽은 행 없음). 내역 화면에는 두 줄이 그대로 보인다. **나중에 환불을 만들 때, 결제 하나에서 이벤트와 적립을 각각 얼마씩 뺐는지 장부만으로는 알 수 없다.** 환불은 지금 범위 밖이라 그때 정한다.
 
 #45-S22 장부에는 종류와 변동량만 [직접]
-- `CreditLedger`에 `payment` 필드가 없고, `CreditType`은 `EVENT`, `EARNED` 두 값이다
+- `CreditLedger`에 `payment` 필드가 없고, `CreditLedger.Type`은 `EVENT`, `EARNED` 두 값이다
 
 ## 3. 출금 신청·내역 (#45-R3)
 
@@ -136,7 +136,7 @@
 
 운영자가 지급·반려한다. 대기 건만 계좌 전체, 완료는 끝 4자리(저장은 A 암호화, [cashout.md](cashout.md)).
 
-### 반려 사유 `CashoutRejectReason`
+### 반려 사유 `Cashout.RejectReason`
 
 | 값 | 화면 문구 | 회원에게 보이는 사유 |
 | --- | --- | --- |
@@ -316,5 +316,5 @@ List<Plan> findCurrentPlans();
 - `Payment.subscription`이 `@OneToOne`, `@JoinColumn(nullable = false, unique = true)`다. 한 구독에 결제가 둘 붙을 수 없다
 
 ## 가정
-- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(`Payment` 안에 둠), `SubscriptionStatus` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
+- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(엔티티 안에 둠), `Subscription.Status` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
 - 단위 테스트 이름은 `@DisplayName("#45-S…")`으로 시나리오와 짝짓는다.

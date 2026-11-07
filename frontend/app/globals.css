@@ -1,4 +1,10 @@
-@import "tailwindcss";
+/*
+ * Tailwind는 색 이름(theme)과 유틸리티만 가져온다. 기본 리셋(preflight)은 아래 @layer base에 직접 둔다(#160).
+ * Tailwind를 빼면 이 두 줄을 지운다
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
 /*
  * 디자인 토큰. 색·모션 값은 이 파일에서만 정의한다.
@@ -56,15 +62,69 @@
    * 간격·글자·모서리·모션. 부품의 .module.css는 값 대신 이 토큰을 쓴다(#160-R5).
    * 값은 Tailwind 기본 단계를 그대로 옮겼다. 이름의 숫자도 같은 단계다(p-4 → --space-4)
    */
+  --space-px: 1px;
+  --space-0-5: 0.125rem;
   --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
   --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* 글자 크기와 그 크기의 기본 줄 높이 */
+  --text-xs: 0.75rem;
+  --text-xs-leading: calc(1 / 0.75);
   --text-sm: 0.875rem;
   --text-sm-leading: calc(1.25 / 0.875);
+  --text-base: 1rem;
+  --text-base-leading: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg-leading: calc(1.75 / 1.125);
+  --text-xl: 1.25rem;
+  --text-xl-leading: calc(1.75 / 1.25);
+  --text-2xl: 1.5rem;
+  --text-2xl-leading: calc(2 / 1.5);
+  --text-3xl: 1.875rem;
+  --text-3xl-leading: calc(2.25 / 1.875);
+  --text-4xl: 2.25rem;
+  --text-4xl-leading: calc(2.5 / 2.25);
+  --text-5xl: 3rem;
+  --text-5xl-leading: 1;
+
+  /* 글자 크기와 따로 정하는 줄 높이·자간 */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-relaxed: 1.625;
+  --tracking-tight: -0.025em;
+
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
   --radius-full: 2147483647px;
+
+  --blur-sm: 8px;
+  --blur-xl: 24px;
+
+  /* 모션. 애니메이션은 이름까지 토큰에 둔다. 모듈 안에 쓴 keyframes 이름은 지역 이름으로 바뀌기 때문이다 */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-150: 150ms;
   --duration-300: 300ms;
+  --duration-500: 500ms;
+  --animate-rise-in: rise-in 500ms var(--ease) both;
+  --animate-heart-pop: heart-pop 500ms var(--ease) both;
+  --animate-soft-pulse: soft-pulse 2s var(--ease) infinite;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -179,6 +239,226 @@
 }
 
 @layer base {
+  /* Tailwind preflight를 옮긴 것. 값은 Tailwind 4.3.3의 빌드 결과와 같다 */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+
+  html,
+  :host {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family: var(--font-wanted), system-ui, sans-serif;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  abbr:where([title]) {
+    text-decoration: underline dotted;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  b,
+  strong {
+    font-weight: bolder;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    font-size: 1em;
+  }
+
+  small {
+    font-size: 80%;
+  }
+
+  sub,
+  sup {
+    vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+  }
+
+  sub {
+    bottom: -0.25em;
+  }
+
+  sup {
+    top: -0.5em;
+  }
+
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  :-moz-focusring:where(:not(iframe)) {
+    outline: auto;
+  }
+
+  progress {
+    vertical-align: baseline;
+  }
+
+  summary {
+    display: list-item;
+  }
+
+  ol,
+  ul,
+  menu {
+    list-style: none;
+  }
+
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
+    vertical-align: middle;
+    display: block;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  button,
+  input,
+  select,
+  optgroup,
+  textarea,
+  ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: transparent;
+    border-radius: 0;
+  }
+
+  :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+
+  :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+
+  ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+
+  ::placeholder {
+    opacity: 1;
+  }
+
+  @supports (not (-webkit-appearance: -apple-pay-button)) or (contain-intrinsic-size: 1px) {
+    ::placeholder {
+      color: color-mix(in oklab, currentcolor 50%, transparent);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+  ::-webkit-datetime-edit {
+    display: inline-flex;
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  ::-webkit-datetime-edit-year-field,
+  ::-webkit-datetime-edit-month-field,
+  ::-webkit-datetime-edit-day-field,
+  ::-webkit-datetime-edit-hour-field,
+  ::-webkit-datetime-edit-minute-field,
+  ::-webkit-datetime-edit-second-field,
+  ::-webkit-datetime-edit-millisecond-field,
+  ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+  button,
+  input:where([type="button"], [type="reset"], [type="submit"]),
+  ::file-selector-button {
+    appearance: button;
+  }
+
+  ::-webkit-inner-spin-button,
+  ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+
+  /* 여기부터 프로젝트의 기본 스타일 */
   html {
     color-scheme: light dark;
     scroll-behavior: smooth;

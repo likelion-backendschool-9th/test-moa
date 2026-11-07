@@ -89,3 +89,16 @@ for (const file of ["features/recruitment/api.ts", "features/session/session.ts"
     }
   });
 }
+
+for (const file of ["app/(site)/admin/_components/Probe/api.ts", "components/ui/Probe/api.ts", "features/chat/components/Probe/api.ts"]) {
+  test(`#160-S18 ${file}는 시연 코드와 백엔드 통신을 직접 부르지 않는다(B8)`, async () => {
+    for (const specifier of ["@/demo/chat", "@/lib/backend"]) {
+      const result = await messages(file, specifier);
+      assert.ok(result.some(({ message }) => message.includes("B8")), `${file}: ${specifier}`);
+    }
+  });
+}
+
+test("#160-S17 부품 폴더의 api.ts는 도메인 데이터 접근을 거칠 수 있다(B8)", async () => {
+  assert.deepEqual(await messages("app/(site)/admin/_components/Probe/api.ts", "@/features/chat/api"), []);
+});

@@ -17,6 +17,16 @@ const TARGETS: [path: string, role: Role][] = [
   ["/nope", "guest"],
   ["/my/chats/nope", "tester"],
   ["/admin/reports/nope", "admin"],
+  /* 첫 탭이 아닌 화면. PAGES는 주소마다 첫 탭만 본다 (#160: 피드백 첨부 이미지가 비교에서 빠져 있었다) */
+  ["/developer/recruitments/booklog-first", "developer"],
+  ["/developer/recruitments/booklog-first?tab=feedback", "developer"],
+  ["/developer/recruitments/booklog-first?tab=analytics", "developer"],
+  ["/developer/recruitments/folio-builder?tab=feedback", "developer"],
+  ["/developer/recruitments/folio-builder?tab=analytics", "developer"],
+  ["/admin/reports?tab=done", "admin"],
+  ["/admin/withdrawals?tab=done", "admin"],
+  ["/testers/recruitments?tab=applied", "tester"],
+  ["/testers/recruitments?tab=history", "tester"],
 ];
 
 const VIEWPORTS = [

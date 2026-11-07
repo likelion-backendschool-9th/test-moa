@@ -190,7 +190,7 @@ app ──▶ auth (로그인·가입·로그아웃 액션)
         session (세션 읽기·권한 확인)   ← 어떤 도메인도 import하지 않는다
 ```
 
-- `session`은 다른 도메인을 import하지 않는다(B6). 지금 `lib/session.ts`도 `lib/backend.ts`와 시연 결제 기록만 쓴다. 시연 결제 기록은 `demo/subscription.ts`로 가고, `session/session.ts`는 이것을 직접 읽는다(B4가 허용한다). `subscription/api.ts`를 거치게 하면 `session → subscription`이 되어 B6를 어긴다.
+- `session`은 다른 도메인을 import하지 않는다(B6). 이전 `lib/session.ts`도 `lib/backend.ts`와 시연 결제 기록만 썼다. 시연 결제 기록을 `demo/subscription.ts`로 옮긴 뒤에도 `features/session/session.ts`는 이것을 직접 읽는다(B4가 허용한다). `subscription/api.ts`를 거치게 하면 `session → subscription`이 되어 B6를 어긴다.
 - `auth`를 import하는 것은 `app`뿐이다(B7). `auth`는 `member` 같은 도메인을 import해도 된다. 다른 도메인이 로그인 상태가 필요하면 `auth`가 아니라 `session`에서 가져온다.
 - 나머지 도메인끼리도 한쪽 방향만 쓴다. 다만 이것은 ESLint로 검사하지 않는다. 도메인 쌍마다 방향을 정해 규칙으로 적어야 해서, 지금 단계에서는 리뷰로 확인한다. 지금 서로를 가져다 쓰는 `my ↔ credit`은 `my`가 없어지면서 사라진다(F2).
 - 모집을 `project`에서 `recruitment`로 옮기면 새 양방향이 생길 수 있다. 모집 쪽은 프로젝트 주소·이미지 검사·타입을 쓰고, `Project` 타입은 `recruitments` 필드로 모집을 안다. 방향은 `recruitment → project`로 정한다. 모집 건은 프로젝트에 속하기 때문이다. 그래서 다음 셋을 옮긴다.

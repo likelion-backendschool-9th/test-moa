@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 @Entity(name = "plans")
 @Table(uniqueConstraints = @UniqueConstraint(
@@ -37,7 +39,7 @@ public class Plan {
     @Column(nullable = false)
     private Integer version;
 
-    // 설명
+    // 혜택 문구. 쉼표로 이어 한 칼럼에 넣는다(문구에는 쉼표를 쓰지 않는다). benefits()로 잘라 읽는다
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -87,5 +89,33 @@ public class Plan {
         this.description = description;
         this.imageUrl = imageUrl;
         this.periodDays = periodDays;
+    }
+
+    /**
+     * 혜택 문구 목록. description을 쉼표로 자르고 앞뒤 공백을 지운다. 비어 있으면 빈 목록이다.
+     *
+     * @return 혜택 문구 목록
+     */
+    public List<String> benefits() {
+        if (description == null || description.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(description.split(","))
+                .map(String::trim)
+                .filter(benefit -> !benefit.isEmpty())
+                .toList();
+    }
+
+    /**
+     * 혜택 문구 목록을 description에 넣을 문자열로 잇는다.
+     *
+     * @param benefits 혜택 문구 목록. 문구에 쉼표가 없다고 가정한다
+     * @return 쉼표로 이은 문자열. 비어 있으면 null
+     */
+    public static String joinBenefits(List<String> benefits) {
+        if (benefits == null || benefits.isEmpty()) {
+            return null;
+        }
+        return String.join(",", benefits.stream().map(String::trim).toList());
     }
 }

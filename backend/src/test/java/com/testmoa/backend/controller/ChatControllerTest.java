@@ -190,17 +190,40 @@ class ChatControllerTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.fields.text").value("메시지를 입력해 주세요"));
         assertThat(room.getLastSeq()).isZero();
     }
-    @Test @DisplayName("#49-S12 공백을 포함해 500자까지 허용")
+    @Test @DisplayName("#49-S12 공백을 포함해 10,000자까지 허용")
     void messageLength() throws Exception {
-        for (String text : new String[]{"가".repeat(500), " " + "가".repeat(498) + " "}) {
+        for (String text : new String[]{"가".repeat(10_000), " " + "가".repeat(9_998) + " "}) {
             send(text).andExpect(status().isOk()).andExpect(jsonPath("$.data.text").value(text));
         }
-        for (String text : new String[]{"가".repeat(501), " " + "가".repeat(499) + " "}) {
+        for (String text : new String[]{"가".repeat(10_001), " " + "가".repeat(9_999) + " "}) {
             send(text).andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.error.fields.text").value("메시지는 500자까지 보낼 수 있어요"));
+                    .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+                    .andExpect(jsonPath("$.error.fields.text").value("메시지는 10,000자까지 보낼 수 있어요"));
         }
         reload();
         assertThat(em.find(ChatRoom.class, room.getId()).getLastSeq()).isEqualTo(2);
+    }
+    @Test @DisplayName("#111-S1 줄바꿈이 섞인 10,000자 메시지를 그대로 다시 읽는다")
+    void longMessageWithNewlines() throws Exception {
+        String prefix = "재현 순서\n1. 로그인\n2. 결제";
+        String text = prefix + "가".repeat(10_000 - prefix.length());
+        send(text).andExpect(status().isOk()).andExpect(jsonPath("$.data.text").value(text));
+        reload();
+        call(get(url() + "/messages"), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages[0].text").value(text));
+    }
+    @Test @DisplayName("#111-S2 서로게이트 쌍도 UTF-16 10,000단위까지 허용")
+    void surrogatePairLength() throws Exception {
+        String text = "😀".repeat(5_000);
+        send(text).andExpect(status().isOk()).andExpect(jsonPath("$.data.text").value(text));
+        send(text + "가").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+                .andExpect(jsonPath("$.error.fields.text").value("메시지는 10,000자까지 보낼 수 있어요"));
+        reload();
+        assertThat(em.find(ChatRoom.class, room.getId()).getLastSeq()).isEqualTo(1);
+        call(get(url() + "/messages"), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages.length()").value(1))
+                .andExpect(jsonPath("$.data.messages[0].text").value(text));
     }
     MockHttpServletRequestBuilder[] requests(String base) {
         return new MockHttpServletRequestBuilder[]{get(base), get(base + "/messages"),

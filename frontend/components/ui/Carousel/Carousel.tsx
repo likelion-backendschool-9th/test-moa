@@ -1,9 +1,10 @@
 "use client";
 
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useEffect, useState, useSyncExternalStore, type FocusEvent, type ReactNode } from "react";
+import { useEffect, useState, type FocusEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button/Button";
+import { useHydrated, usePrefersReducedMotion } from "./hook";
 import styles from "./Carousel.module.css";
 
 export type CarouselSlide = {
@@ -18,33 +19,6 @@ type CarouselProps = {
   className?: string;
   "data-testid"?: string;
 };
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function subscribeReducedMotion(onChange: () => void) {
-  const media = window.matchMedia(REDUCED_MOTION_QUERY);
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-
-function usePrefersReducedMotion() {
-  return useSyncExternalStore(
-    subscribeReducedMotion,
-    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
-    () => false,
-  );
-}
-
-const noopSubscribe = () => () => {};
-
-/** 서버 렌더와 하이드레이션 중에는 false, 그 뒤에는 true */
-function useHydrated() {
-  return useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
-  );
-}
 
 /**
  * 슬라이드를 일정 간격으로 순환한다. hover·focus 중이거나 reduced motion이면 멈춘다.

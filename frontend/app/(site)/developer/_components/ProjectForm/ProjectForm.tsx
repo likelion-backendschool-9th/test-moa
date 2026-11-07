@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useActionState, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
@@ -10,6 +10,8 @@ import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState, type ProjectImag
 import { FormSection } from "../FormSection/FormSection";
 import { ProjectBody } from "../ProjectDetail/ProjectDetail";
 import { TextField } from "@/components/ui/TextField/TextField";
+import { FileField, revoke } from "../FileField/FileField";
+import { useFocusFirstError } from "../../_lib/focus-first-error";
 import styles from "./ProjectForm.module.css";
 
 /*
@@ -174,68 +176,3 @@ export function ProjectForm({
  * 브라우저 임시 주소면 풀어 준다. 저장된 이미지 주소는 그대로 둔다.
  * 이미지를 바꾸거나 지울 때만 부른다. Cache Components는 화면을 떠나도 상태를 남겨 뒤로 오면 같은 주소를 다시 쓰고, 남은 주소는 탭을 닫을 때 브라우저가 푼다.
  */
-export function revoke(url: string) {
-  if (url.startsWith("blob:")) URL.revokeObjectURL(url);
-}
-
-type FileFieldProps = {
-  name: string;
-  label: string;
-  accept: string;
-  hint: string;
-  error?: string;
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  buttonLabel: string;
-  multiple?: boolean;
-  children?: ReactNode;
-};
-
-/**
- * 파일 고르기 칸. 브라우저 기본 버튼은 언어를 바꿀 수 없어 입력란을 숨기고 라벨을 버튼처럼 그린다. 시연용이라 파일은 폼으로 보내지 않아서 input에 name을 달지 않는다.
- * 고른 이미지(children)는 입력란 아래에 그린다.
- */
-export function FileField({ name, label, accept, hint, error, onChange, buttonLabel, multiple = false, children }: FileFieldProps) {
-  const id = `field-${name}`;
-  const describedBy = [`${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
-  return (
-    <div className={styles.fileField}>
-      <label htmlFor={id} className={styles.fileFieldLabel}>
-        {label}
-      </label>
-      <input
-        id={id}
-        type="file"
-        accept={accept}
-        multiple={multiple}
-        onChange={onChange}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        className={styles.fileFieldSrOnly}
-      />
-      <label
-        htmlFor={id}
-        className={styles.fileFieldButtonLabel}
-      >
-        {buttonLabel}
-      </label>
-      <p id={`${id}-hint`} className={styles.fileFieldHint}>
-        {hint}
-      </p>
-      {error && (
-        <p id={`${id}-error`} className={styles.fileFieldError}>
-          {error}
-        </p>
-      )}
-      {children}
-    </div>
-  );
-}
-
-/** 서버 검증 결과가 바뀌면 첫 오류 칸으로 포커스를 옮긴다. 모집 작성 폼도 같이 쓴다 */
-export function useFocusFirstError(state: FormState) {
-  const formRef = useRef<HTMLFormElement>(null);
-  useEffect(() => {
-    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
-  }, [state]);
-  return formRef;
-}

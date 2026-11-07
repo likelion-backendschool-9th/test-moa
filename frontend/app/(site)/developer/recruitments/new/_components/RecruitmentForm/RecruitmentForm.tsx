@@ -11,7 +11,8 @@ import { checkImages, formatBytes, type FileMeta } from "@/features/project/medi
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState } from "@/features/project/types";
 import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type SelectionMode } from "@/features/recruitment/types";
 import { FormSection } from "../../../../_components/FormSection/FormSection";
-import { FileField, revoke, useFocusFirstError } from "../../../../_components/ProjectForm/ProjectForm";
+import { FileField, revoke } from "@/app/(site)/developer/_components/FileField/FileField";
+import { useFocusFirstError } from "@/app/(site)/developer/_lib/focus-first-error";
 import { TextField } from "@/components/ui/TextField/TextField";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./RecruitmentForm.module.css";

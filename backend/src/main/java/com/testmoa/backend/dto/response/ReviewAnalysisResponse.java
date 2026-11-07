@@ -16,7 +16,7 @@ import java.util.List;
  * @param analyzedAt              마지막으로 분석을 마친 시각. 분석 전에는 null
  * @param praiseSummary           칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null
  * @param lastAnalyzedFeedbackAt  분석에 들어간 리뷰 중 가장 늦게 제출한 시각. 분석한 리뷰가 없으면 null
- * @param unanalyzedFeedbackCount 이 모집글 리뷰 중 어느 그룹에도 들지 않은 수
+ * @param unanalyzedFeedbackCount 이 모집글의 제출·지급 리뷰 중 어느 그룹에도 들지 않은 수. 신고·보상 제외 리뷰는 세지 않는다
  * @param groups                  심각도 오름차순(null은 맨 뒤), 같으면 테스터 수 내림차순
  */
 public record ReviewAnalysisResponse(

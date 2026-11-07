@@ -4,6 +4,7 @@ import com.testmoa.backend.dto.response.ReviewAnalysisResponse;
 import com.testmoa.backend.dto.response.ReviewAnalysisResponse.Group;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Recruitment;
+import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.global.client.AnalysisClient.AnalysisRequest;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
@@ -35,6 +36,9 @@ public class ReviewAnalysisReader {
     // 분석 서버가 한 번에 받는 리뷰 수
     private static final int MAX_FEEDBACKS = 1000;
 
+    // 분석하는 리뷰 상태. 신고됨(REPORTED)·보상 제외(EXCLUDED) 리뷰는 그룹과 리뷰 수에 넣지 않음
+    private static final List<FeedbackStatus> ANALYZED_STATUSES = List.of(FeedbackStatus.SUBMITTED, FeedbackStatus.REWARDED);
+
     // 심각도 오름차순(null은 맨 뒤) → 테스터 수 내림차순 → 먼저 저장한 그룹
     private static final Comparator<Group> PRIORITY = Comparator
             .comparing(Group::improvementRank, Comparator.nullsLast(Comparator.<Integer>naturalOrder()))
@@ -47,12 +51,12 @@ public class ReviewAnalysisReader {
     private final FeedbackClusterRepository feedbackClusterRepository;
 
     /**
-     * 분석할 리뷰와 분석 서버에 보낼 요청. 그 모집글 참가에 달린 리뷰 전부이고, 1,000개가 넘으면 최근 제출한 1,000개.
+     * 분석할 리뷰와 분석 서버에 보낼 요청. 그 모집글 참가에 달린 제출·지급 리뷰이고, 1,000개가 넘으면 최근 제출한 1,000개.
      * 리뷰가 없으면 409 NO_FEEDBACKS
      */
     public AnalysisTarget readTarget(Long userId, Long recruitmentId) {
         Recruitment recruitment = findMine(userId, recruitmentId);
-        List<Feedback> feedbacks = feedbackRepository.findForAnalysis(recruitment.getId(), Limit.of(MAX_FEEDBACKS));
+        List<Feedback> feedbacks = feedbackRepository.findForAnalysis(recruitment.getId(), ANALYZED_STATUSES, Limit.of(MAX_FEEDBACKS));
         if (feedbacks.isEmpty()) throw new BusinessException(ErrorCode.NO_FEEDBACKS);
         AnalysisRequest request = new AnalysisRequest(
                 AnalysisRequests.context(recruitment),
@@ -81,7 +85,7 @@ public class ReviewAnalysisReader {
                 .sorted(PRIORITY)
                 .toList();
         return ReviewAnalysisResponse.of(recruitment, feedbackClusterRepository.findLastAnalyzedFeedbackAt(id),
-                feedbackRepository.countUnanalyzed(id), groups);
+                feedbackRepository.countUnanalyzed(id, ANALYZED_STATUSES), groups);
     }
 
     // 다른 회원의 모집글은 없는 모집글과 같이 404

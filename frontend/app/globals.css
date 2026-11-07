@@ -1,14 +1,6 @@
 /*
- * Tailwind는 색 이름(theme)과 유틸리티만 가져온다. 기본 리셋(preflight)은 아래 @layer base에 직접 둔다(#160).
- * Tailwind를 빼면 이 두 줄을 지운다
- */
-@layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
-
-/*
  * 디자인 토큰. 색·모션 값은 이 파일에서만 정의한다.
- * 컴포넌트에서는 hex나 임의 px 대신 아래 토큰과 Tailwind 기본 스케일을 쓴다.
+ * 부품의 .module.css는 hex나 임의 px 대신 아래 토큰을 쓴다(#160-R5).
  */
 :root {
   /* 라이트: 흰 교정지 위 진한 초록 재단 매트, 먹, 같은 초록 강조 */
@@ -60,7 +52,7 @@
 
   /*
    * 간격·글자·모서리·모션. 부품의 .module.css는 값 대신 이 토큰을 쓴다(#160-R5).
-   * 값은 Tailwind 기본 단계를 그대로 옮겼다. 이름의 숫자도 같은 단계다(p-4 → --space-4)
+   * 간격은 4px 단계이고 이름의 숫자가 단계다(--space-4 = 16px). 글자 크기마다 기본 줄 높이를 짝으로 둔다
    */
   --space-px: 1px;
   --space-0-5: 0.125rem;
@@ -154,33 +146,6 @@
   }
 }
 
-@theme inline {
-  --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
-  --color-surface-card: var(--surface-card);
-  --color-surface-strong: var(--surface-strong);
-  --color-line: var(--line);
-  --color-text: var(--text);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-brand-logo: var(--brand-logo);
-  --color-accent-soft: var(--accent-soft);
-  --color-on-accent: var(--on-accent);
-  --color-like: var(--like);
-  --color-like-soft: var(--like-soft);
-  --color-paid-start: var(--paid-start);
-  --color-paid-mid: var(--paid-mid);
-  --color-paid-end: var(--paid-end);
-  --color-paid-text: var(--paid-text);
-  --color-thumb: var(--thumb);
-  --color-on-thumb: var(--on-thumb);
-  --color-paper-accent: var(--paper-accent);
-  --color-mark: var(--mark);
-  --color-hero-mat: var(--hero-mat);
-  --font-sans: var(--font-wanted), system-ui, sans-serif;
-  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 /* 다크에서도 교정지·썸네일 위 체크·도장·배지는 밝히지 않고 진한 초록에 흰 글씨로 테마와 관계없이 같게 둔다. */
 [data-hero-paper],
 [data-thumb] {
@@ -189,21 +154,8 @@
   --on-accent: #ffffff;
 }
 
-/* 라이트의 흰 패널은 재단선으로 나눈다. Tailwind 클래스로 그린 패널만 해당하고, 옮긴 패널은 Card가 맡는다. Tailwind를 빼면 지운다 */
-@media (prefers-color-scheme: light) {
-  .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg) {
-    outline: 1px solid var(--line);
-    outline-offset: -1px;
-  }
-
-  .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg):focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
 @layer base {
-  /* Tailwind preflight를 옮긴 것. 값은 Tailwind 4.3.3의 빌드 결과와 같다 */
+  /* 브라우저 기본 스타일을 맞추는 리셋. #160 이전 전과 같은 값이다 */
   *,
   ::after,
   ::before,
@@ -429,9 +381,9 @@
   }
 
   body {
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-wanted), system-ui, sans-serif;
     word-break: keep-all;
   }
 
@@ -446,19 +398,19 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 
   /* 브라우저가 그리는 부분도 팔레트를 따른다 */
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-on-accent);
+    background: var(--accent);
+    color: var(--on-accent);
   }
 
   html {
-    caret-color: var(--color-accent);
-    scrollbar-color: var(--color-line) var(--color-surface);
+    caret-color: var(--accent);
+    scrollbar-color: var(--line) var(--surface);
   }
 
   a {
@@ -466,7 +418,7 @@
   }
 
   input::placeholder {
-    color: var(--color-text-muted);
+    color: var(--text-muted);
   }
 }
 
@@ -475,25 +427,6 @@
     opacity: 0;
     transform: translateY(8px);
   }
-}
-
-@utility animate-rise-in {
-  animation: rise-in 500ms var(--ease-brand) both;
-}
-
-/* 자식이 읽는 순서대로 60ms씩 늦게 등장한다. 전체는 400ms를 넘지 않는다 */
-@utility stagger-children {
-  & > :nth-child(2) { animation-delay: 60ms; }
-  & > :nth-child(3) { animation-delay: 120ms; }
-  & > :nth-child(4) { animation-delay: 180ms; }
-  & > :nth-child(5) { animation-delay: 240ms; }
-  & > :nth-child(6) { animation-delay: 300ms; }
-  & > :nth-child(n + 7) { animation-delay: 340ms; }
-}
-
-/* 유료 기능 그라데이션 바탕. 방향과 색은 --paid-gradient 토큰 하나에서만 바꾼다 */
-@utility bg-paid-gradient {
-  background-image: var(--paid-gradient);
 }
 
 /* 피드백 "유용해요"를 누르면 하트가 한 번 튀어 올랐다 자리를 잡는다 */
@@ -506,18 +439,10 @@
   }
 }
 
-@utility animate-heart-pop {
-  animation: heart-pop 500ms var(--ease-brand) both;
-}
-
 @keyframes soft-pulse {
   50% {
     opacity: 0.5;
   }
-}
-
-@utility animate-soft-pulse {
-  animation: soft-pulse 2s var(--ease-brand) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -132,7 +132,8 @@ AccountNav/
 - 토큰 이름은 지금의 Tailwind 단계를 따른다. 그래야 옮기는 일이 기계적이고 값이 바뀌지 않는다.
   - 간격: `--space-4: 1rem`(`p-4`), `--space-0-5: 0.125rem`
   - 글자 크기와 줄 높이: `--text-sm: 0.875rem`, `--text-sm-leading: calc(1.25 / 0.875)`
-  - 모서리: `--radius-2xl: 1rem`
+  - 모서리: `--radius-2xl: 1rem`, `--radius-full: 2147483647px`(Tailwind `rounded-full`의 빌드 결과 값)
+  - 모션: `--ease`, `--duration-300`, 애니메이션 전체 값 `--animate-rise-in` 등
   - 실제로 쓰는 값만 만든다.
 - 미디어 쿼리 조건에는 CSS 변수를 쓸 수 없다. 그래서 너비는 숫자로 쓰고, 지금 Tailwind 값 네 개만 허용한다.
   - `40rem`(sm), `48rem`(md), `64rem`(lg), `80rem`(xl)
@@ -236,6 +237,7 @@ AccountNav/
 
 고칠 곳:
 
+- `docs/frontend-structure/03-target-structure.md` 3.8의 `e2e/pages.spec.ts`의 `PAGES` → `e2e/pages.ts` (고침 11-07: 1단계에서 옮김)
 - `frontend/README.md`: 첫 줄의 기술 목록, 폴더 구조, "레이아웃과 서버 경계"의 Tailwind 규칙, 확인 명령에 `test:visual` 추가
 - `docs/frontend-structure/03-target-structure.md`
   - 3.1 트리
@@ -272,13 +274,14 @@ npx tsc --noEmit && npm run lint && npm run build && npm run test:visual
 ```
 
 1. **화면 비교 도구** — #160-S4, #160-S5
-   - 파일: `scripts/visual/compare.mjs`, `package.json`(`test:visual`), `.github/workflows/frontend-visual.yml`(`workflow_dispatch`, Playwright 공식 이미지 `mcr.microsoft.com/playwright:v1.64.1-noble`)
+   - 파일: `scripts/visual/compare.mjs`(빌드·서버 실행), `scripts/visual/visual.spec.ts`·`playwright.config.ts`(촬영·비교), `e2e/pages.ts`(`PAGES`를 `pages.spec.ts`에서 옮김. e2e와 비교 도구가 함께 쓴다), `package.json`(`test:visual`), `.github/workflows/frontend-visual.yml`(`workflow_dispatch`, Playwright 공식 이미지 `mcr.microsoft.com/playwright:v1.64.1-noble`)
    - 도구가 하는 일
-     - `--base`로 받은 커밋을 `test-results/visual/base/`에 worktree로 꺼낸다.
+     - `--base`로 받은 커밋을 운영체제 임시 폴더(`$TMPDIR/test-moa-visual/<커밋>`)에 worktree로 꺼낸다. 같은 커밋이면 다음 실행에서 빌드를 다시 쓴다. (고침 11-07: `frontend` 안에 두면 `tsc`·ESLint가 기준 코드까지 읽는다)
      - 기준 커밋과 지금 코드를 각각 `npm ci`·`npm run build` 하고 다른 포트로 띄워서 찍는다.
-     - 픽셀 차이를 계산한다.
+     - 같은 화면을 기준 서버와 작업 서버에서 한 테스트 안에서 연달아 찍고, Playwright의 `toMatchSnapshot`(`maxDiffPixels: 0`)으로 비교한다.
    - 사진과 차이 이미지는 `test-results/visual/`에 둔다. 이 폴더는 이미 git에서 빠져 있다. CI에서는 실행 결과물로 올린다.
-   - 화면을 고정하는 조건: `page.clock`으로 시각 고정, `reducedMotion: "reduce"`, 글꼴 로드를 기다린 뒤 전체 페이지 촬영
+   - 화면을 고정하는 조건: `reducedMotion: "reduce"`, `networkidle`과 글꼴 로드를 기다린 뒤 전체 페이지 촬영. 시각은 고정하지 않고 두 장을 연달아 찍는다. (고침 11-07: 날짜는 서버가 그리므로 `page.clock`으로는 고정되지 않는다)
+   - 애니메이션·전환은 찍기 직전에 두 서버 모두 끈다. Chromium은 `--disable-gpu --disable-partial-raster --disable-skia-runtime-opts --force-color-profile=srgb --disable-lcd-text`로 띄운다. (고침 11-07: 둘 다 없으면 같은 코드끼리도 둥근 테두리 모서리에서 1~34픽셀이 실행마다 달랐다)
    - 확인: `--base de19224`로 `de19224` 자신과 비교해 124장 모두 0픽셀인지 본다. 이것으로 도구가 결정적인지 확인한다
    - 로컬에서 docker를 쓰기 전에 `docker context show`를 확인한다. 기본 컨텍스트가 원격이다
 2. **e2e의 클래스 의존 제거** — #160-S7
@@ -329,9 +332,10 @@ npx tsc --noEmit && npm run lint && npm run build && npm run test:visual
 
 ## 가정
 
-- CSS Modules와 Tailwind는 이전 중에 함께 동작한다. Tailwind의 스타일은 `@layer` 안에 있고 모듈 스타일은 레이어 밖에 있어서 모듈이 이긴다. 3단계에서 확인한다.
+- CSS Modules와 Tailwind는 이전 중에 함께 동작한다. Tailwind의 스타일은 `@layer` 안에 있고 모듈 스타일은 레이어 밖에 있어서 모듈이 이긴다. (확인 11-07: 빌드 결과에 `@layer properties·theme·base·components·utilities`가 있고 모듈 규칙은 레이어 밖이다)
+- 이전 중에는 `next.config.ts`의 Tailwind 규칙이 `.module.css`를 건너뛰게 한다. (고침 11-07: `"*.css"` 규칙이 `as: "*.css"`로 `.module.css`까지 전역 CSS로 바꿔서, 클래스 이름이 해시 없이 `.list`·`.link`로 나갔다. `condition: { not: { path: /\.module\.css$/ } }`를 더했다. Next `turbopack.md:217-262`. 11단계에서 규칙째 지운다)
 - `globals.css`의 `@layer base`에 있는 `:focus-visible` 테두리는 레이어 밖에 있는 모듈의 `outline`에 진다. 그래서 `outline`을 쓰는 모듈(패널 등)은 포커스 링도 같은 모듈에 쓴다. 3단계와 5단계에서 확인한다.
-- 모듈 안에서 `globals.css`의 keyframes 이름(`rise-in` 등)을 쓸 때, CSS Modules가 그 이름을 지역 이름으로 바꿀 수 있다. 3단계에서 Next 16.4.3 Turbopack의 실제 출력으로 확인한다. 바꾼다면 keyframes를 쓰는 부품의 모듈로 옮기거나 `:global`로 감싼다.
+- 모듈 안의 keyframes 이름은 지역 이름으로 바뀐다. (고침 11-07: `animation: rise-in`이 `XKv8aq_rise-in`이 되어 전역 `@keyframes rise-in`을 찾지 못했다. CSS 변수 이름은 바뀌지 않으므로, 애니메이션은 `globals.css`의 토큰 `--animate-rise-in: rise-in 500ms var(--ease) both`처럼 두고 모듈은 `animation: var(--animate-rise-in)`으로 쓴다. 출력이 `var(--animate-rise-in)` 그대로인 것을 확인했다. 색·모션 값은 `globals.css` 토큰에만 둔다는 기존 규칙과 같다)
 - 시연 데이터는 쿠키와 고정 시각만 같으면 같은 화면을 그린다. 차이가 생기면 1단계에서 그 화면만 고정 조건을 더한다.
 - GitHub Actions의 `ubuntu-latest`에서 Playwright 공식 이미지를 컨테이너로 쓸 수 있다. 1단계에서 확인한다.
 - 기준과 작업 브랜치의 사진은 같은 실행 안에서 찍으므로 Linux 이미지와 Chromium 버전이 같다. 다른 실행에서 찍은 사진끼리는 비교하지 않는다.

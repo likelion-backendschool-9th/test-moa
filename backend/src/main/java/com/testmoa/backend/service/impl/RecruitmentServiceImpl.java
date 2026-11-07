@@ -1,5 +1,6 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.dto.response.RecruitmentPageResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse.ProjectInfo;
 import com.testmoa.backend.dto.response.RecruitmentResponse.TestItemInfo;
@@ -10,11 +11,13 @@ import com.testmoa.backend.entity.TestItem;
 import com.testmoa.backend.entity.TestItemImage;
 import com.testmoa.backend.repository.RecruitmentImageRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
+import com.testmoa.backend.repository.RecruitmentSearchRepository.Condition;
 import com.testmoa.backend.repository.RecruitmentTypeRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.TestItemImageRepository;
 import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
+import com.testmoa.backend.entity.enums.TypeCode;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.RecruitmentService;
@@ -24,7 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -84,5 +89,63 @@ public class RecruitmentServiceImpl implements RecruitmentService {
                         Collectors.mapping(TestItemImage::getUrl, Collectors.toList())));
         return items.stream().map(item -> new TestItemInfo(item.getId(), item.getTitle(), item.getDescription(),
                 item.isRequired(), images.getOrDefault(item.getId(), List.of()))).toList();
+    }
+
+    @Override
+    public RecruitmentPageResponse search(String keyword, String type, boolean open, boolean subscription,
+                                                String sort, int page, int size) {
+        String trimmed = keyword == null ? "" : keyword.trim();
+        Condition condition = new Condition(
+                trimmed.isEmpty() ? null : trimmed.toLowerCase(Locale.ROOT),
+                typeOf(type),
+                open,
+                subscription,
+                byDeadline(sort),
+                LocalDateTime.now());
+
+        long total = recruitmentRepository.countPublic(condition);
+        int pageCount = (int) Math.max(1, (total + size - 1) / size);
+        int shown = Math.min(page, pageCount);
+        List<Recruitment> recruitments = recruitmentRepository.findPublic(condition, (shown - 1) * size, size);
+
+        Map<Long, String> types = recruitmentTypeRepository
+                .findByRecruitmentIdIn(recruitments.stream().map(Recruitment::getId).toList()).stream()
+                .collect(Collectors.toMap(item -> item.getRecruitment().getId(),
+                        item -> RecruitmentNames.softwareType(item.getType().getCode()), (first, second) -> first));
+        List<RecruitmentPageResponse.Item> items = recruitments.stream().map(recruitment -> {
+            Project project = recruitment.getProject();
+            return new RecruitmentPageResponse.Item(
+                    recruitment.getId(),
+                    recruitment.getTitle(),
+                    project.getTitle(),
+                    project.getDescription(),
+                    project.getImageUrl(),
+                    types.get(recruitment.getId()),
+                    recruitment.isSubscription(),
+                    RecruitmentNames.phase(recruitment.phaseAt(condition.now())),
+                    recruitment.getCreatedAt(),
+                    recruitment.getRecruitDeadline(),
+                    recruitment.getFeedbackDeadline());
+        }).toList();
+        return new RecruitmentPageResponse(items, total, shown, pageCount);
+    }
+
+    // 프론트 유형 이름(web 등)을 코드로. 없으면 전체, 모르는 값은 400
+    private TypeCode typeOf(String type) {
+        if (type == null || type.isBlank()) return null;
+        return Arrays.stream(TypeCode.values())
+                .filter(code -> RecruitmentNames.softwareType(code).equals(type))
+                .findFirst()
+                .orElseThrow(() -> invalid("type", "유형을 확인해 주세요"));
+    }
+
+    private boolean byDeadline(String sort) {
+        if (sort == null || sort.equals("latest")) return false;
+        if (sort.equals("deadline")) return true;
+        throw invalid("sort", "정렬을 확인해 주세요");
+    }
+
+    private BusinessException invalid(String field, String message) {
+        return new BusinessException(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage(), Map.of(field, message));
     }
 }

@@ -72,8 +72,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
-                        // 공개 모집 조회는 GET만 연다. 같은 주소 아래 지원 같은 쓰기 요청은 로그인이 필요하다
-                        .requestMatchers(HttpMethod.GET, "/api/v1/recruitments/*").permitAll()
+                        // 공개 모집 목록(#112)과 상세(#113)는 GET만 연다. 같은 주소 아래 지원 같은 쓰기 요청은 로그인이 필요하다
+                        .requestMatchers(HttpMethod.GET, "/api/v1/recruitments", "/api/v1/recruitments/*").permitAll()
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resource -> resource

@@ -103,7 +103,7 @@ export function WithdrawalModal({ title, closeHref, withdrawalKey, children }: W
       /* 앞의 flex를 두면 닫힌 dialog의 display:none을 덮어써서 화면에 남는다. open일 때만 flex */
       className="fixed inset-0 m-0 h-dvh max-h-dvh w-full max-w-none items-start justify-center overflow-y-auto overscroll-contain border-0 bg-transparent p-4 text-text open:flex md:p-6 backdrop:bg-surface/80 backdrop:backdrop-blur-sm"
     >
-      <div className="my-4 w-full max-w-3xl animate-rise-in rounded-2xl bg-surface p-6 md:my-auto md:p-8">
+      <div data-modal-panel className="my-4 w-full max-w-3xl animate-rise-in rounded-2xl bg-surface p-6 md:my-auto md:p-8">
         <div className="flex flex-col gap-6">
           <div className="flex items-start justify-between gap-4">
             <h2 id={titleId} className="text-2xl font-extrabold tracking-[-0.03em]">

@@ -8,5 +8,5 @@ type ButtonProps = ComponentProps<"button"> & {
 };
 
 export function Button({ variant, size, shape, className, type = "button", ...props }: ButtonProps) {
-  return <button type={type} className={buttonClass(variant, size, className, shape)} {...props} />;
+  return <button type={type} data-variant={variant ?? "primary"} className={buttonClass(variant, size, className, shape)} {...props} />;
 }

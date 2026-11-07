@@ -100,7 +100,7 @@ test.describe("R34 모달", () => {
   test("#42-S6 바깥을 눌러도 모달이 닫히지 않는다", async ({ page }) => {
     await openWithdrawal(page, "withdrawal-1");
     const dialogBox = await modal(page).boundingBox();
-    const panelBox = await modal(page).locator(".max-w-3xl").boundingBox();
+    const panelBox = await modal(page).locator("[data-modal-panel]").boundingBox();
     expect(dialogBox).toBeTruthy();
     expect(panelBox).toBeTruthy();
     const clickY = dialogBox!.y + 8;

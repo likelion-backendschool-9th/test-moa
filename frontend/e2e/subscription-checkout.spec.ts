@@ -27,8 +27,8 @@ test.describe("R197 결제 내용", () => {
     await expect(form.getByText(`${dateAfter(0)} ~ ${dateAfter(30)}`)).toBeVisible();
     await expect(form.getByText(/결제 뒤 남는 크레딧\s*3,480 크레딧/)).toBeVisible();
     /* 강조색 바탕 버튼은 결제 버튼 하나다 */
-    await expect(page.getByRole("main").locator(".bg-accent")).toHaveCount(1);
-    await expect(form.getByRole("button", { name: "9,000 크레딧 결제하기" })).toHaveClass(/bg-accent/);
+    await expect(page.getByRole("main").locator('[data-variant="primary"]')).toHaveCount(1);
+    await expect(form.getByRole("button", { name: "9,000 크레딧 결제하기" })).toHaveAttribute("data-variant", "primary");
 
     await choice(page, "결제 수단", /현금 10,000원/).check();
     await expect(form.getByRole("button", { name: "10,000원 결제하기" })).toBeVisible();

@@ -8,5 +8,5 @@ type LinkButtonProps = ComponentProps<typeof Link> & {
 };
 
 export function LinkButton({ variant, size, className, ...props }: LinkButtonProps) {
-  return <Link className={buttonClass(variant, size, className)} {...props} />;
+  return <Link data-variant={variant ?? "primary"} className={buttonClass(variant, size, className)} {...props} />;
 }

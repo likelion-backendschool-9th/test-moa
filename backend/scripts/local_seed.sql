@@ -3,8 +3,9 @@
 -- =====================================================================
 -- 용도: 리뷰 분석(#107), 버전 비교(#108), 후속 질문(#109)을 로컬에서 테스트한다.
 -- 실행: 저장소 최상위에서
---   psql -h localhost -U postgres -d testmoa -f backend/src/main/resources/db/seed/local_seed.sql
---   DB 툴에서는 파일 내용을 통째로 실행한다. 애플리케이션 시작 때 자동으로 실행되지 않는다(spring.sql.init 설정 없음).
+--   psql -h localhost -U postgres -d testmoa -f backend/scripts/local_seed.sql
+--   DB 툴에서는 파일 내용을 통째로 실행한다. 애플리케이션 시작 때 자동으로 실행되지 않는다.
+--   서버에서 실수로 돌리지 않도록 배포 이미지에 들어가는 src/main 밖에 둔다(Dockerfile은 src만 복사한다).
 --
 -- 주의: 맨 앞의 TRUNCATE ... CASCADE는 아래 테이블을 참조하는 테이블까지 모두 비운다.
 --   채팅(chat_rooms, chat_participants, chat_messages), 크레딧(credit_wallets, credit_ledgers), 출금(cashout_requests),

@@ -245,7 +245,7 @@ export async function findAiSummary(role: Role, recruitmentKey: string): Promise
 const FOLLOWUP_TIMEOUT_MS = 40_000;
 
 /** 백엔드 FollowupQuestionsResponse */
-type FollowupQuestions = { questions: string[]; };
+type FollowupQuestions = { questions: string[] };
 
 /**
  * 피드백 하나로 테스터에게 되물을 AI 후속 질문을 받는다. 백엔드가 구독 여부와 하루 3번 한도를 확인한다.
@@ -289,7 +289,7 @@ export async function findIsSubscribed(role: Role): Promise<boolean> {
   return role === "developer";
 }
 
-const byCreatedLatest = (a: { createdAt: string; }, b: { createdAt: string; }) => b.createdAt.localeCompare(a.createdAt);
+const byCreatedLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
 
 /** 프로젝트의 모집 건에 상태를 붙인다. 개발자가 취소한 모집 건은 취소 상태다 */
 async function withStatus(role: Role, recruitments: Recruitment[], now: Date): Promise<RecruitmentView[]> {
@@ -330,7 +330,7 @@ export async function getMyDashboard(path: string) {
   const now = new Date();
 
   const applicantTodos: TodoItem[] = [];
-  const feedbackTodos: Array<{ item: TodoItem; hours: number; }> = [];
+  const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
   const overview: ProjectOverview = { recruiting: 0, testing: 0, waitingReports: 0 };
 
   for (const project of projects) {
@@ -437,7 +437,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
 export async function cancelRecruitment(
   recruitmentKey: string,
   formData: FormData,
-): Promise<FormState & { ok?: boolean; }> {
+): Promise<FormState & { ok?: boolean }> {
   const path = recruitmentManagePath(recruitmentKey);
   const { recruitment } = await getMyRecruitment(path, recruitmentKey);
   const canCancel = canCancelRecruitment(recruitment);
@@ -464,7 +464,7 @@ export async function decideApplicants(
   recruitmentKey: string,
   ids: string[],
   status: "confirmed" | "rejected",
-): Promise<{ ok: boolean; }> {
+): Promise<{ ok: boolean }> {
   const path = recruitmentManagePath(recruitmentKey);
   const { role, recruitment } = await getMyRecruitment(path, recruitmentKey);
   const [applications, detail] = await Promise.all([

@@ -20,7 +20,7 @@ export async function loadReports() {
   return { now, reports };
 }
 
-const byOldest = (a: { createdAt: string; }, b: { createdAt: string; }) => a.createdAt.localeCompare(b.createdAt);
+const byOldest = (a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt);
 
 /** 상세 주소의 신고 키가 있는 키인지. 쿠키를 읽지 않아서 Suspense 밖에서 404를 정할 때 쓴다 */
 export function isReportKey(reportKey: string) {
@@ -35,7 +35,7 @@ export function getReportKeys() {
 export async function getReports(
   tab: ListTab,
   target: ReportTargetFilter = "all",
-): Promise<{ now: Date; reports: Report[]; }> {
+): Promise<{ now: Date; reports: Report[] }> {
   const { now, reports: every } = await loadReports();
   const reports = target === "all" ? every : every.filter((report) => report.targetType === target);
   if (tab === "pending") return { now, reports: reports.filter((report) => !report.review).sort(byOldest) };
@@ -43,7 +43,7 @@ export async function getReports(
   return { now, reports: done.sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt)) };
 }
 
-export async function getReport(reportKey: string): Promise<{ now: Date; report: Report | null; }> {
+export async function getReport(reportKey: string): Promise<{ now: Date; report: Report | null }> {
   const { now, reports } = await loadReports();
   return { now, report: reports.find((report) => report.id === reportKey) ?? null };
 }

@@ -1,5 +1,5 @@
 import { getDemoDataMode } from "@/demo/mode";
-import { buildParticipations,readDemoFeedback } from "@/demo/participation";
+import { buildParticipations, readDemoFeedback } from "@/demo/participation";
 import { getRecruitmentsBySlugs } from "@/features/recruitment/api";
 import { getSession } from "@/features/session/session";
 import { connection } from "next/server";

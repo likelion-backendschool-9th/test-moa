@@ -17,7 +17,7 @@ export type Project = {
   createdAt: string;
 };
 
-export type ProjectImage = { url: string; name: string; };
+export type ProjectImage = { url: string; name: string };
 
 /** 대표 이미지를 넣지 않은 프로젝트에 보여 주는 이미지 */
 export const DEFAULT_PROJECT_IMAGE_URL = "/sample/projects/default.svg";

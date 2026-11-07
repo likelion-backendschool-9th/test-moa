@@ -5,7 +5,7 @@
  * 화면 분기는 데이터(구독 여부, 출금 가능 금액, 활동 유무)로만 한다.
  */
 
-export type Subscription = { status: "none"; } | { status: "active"; planId: string; expiresAt: string; };
+export type Subscription = { status: "none" } | { status: "active"; planId: string; expiresAt: string };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -30,7 +30,7 @@ export type SubscriptionOverview = {
 export type BenefitKey = "selection" | "reward" | "chat" | "exposure";
 
 /** 혜택 비교의 행. 월간 모집 인원만 숫자 한도로 비교한다 */
-export const BENEFIT_ROWS: { key: BenefitKey | "monthlyLimit"; label: string; }[] = [
+export const BENEFIT_ROWS: { key: BenefitKey | "monthlyLimit"; label: string }[] = [
   { key: "selection", label: "참여 확정 방식" },
   { key: "monthlyLimit", label: "월간 모집 인원" },
   { key: "reward", label: "테스터 보상" },

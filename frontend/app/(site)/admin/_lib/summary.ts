@@ -1,4 +1,4 @@
-import { type AdminSummary,type PendingItem } from "@/app/(site)/admin/_lib/paths";
+import { type AdminSummary, type PendingItem } from "@/app/(site)/admin/_lib/paths";
 import { isOverdue } from "@/features/report/types";
 import "server-only";
 
@@ -11,11 +11,9 @@ async function loadPending() {
   return { now, reports, withdrawals };
 }
 
-
 const byLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
 
 const byOldest = (a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt);
-
 
 /** 영역별 처리 대기 건수 */
 export async function getAdminSummary(): Promise<AdminSummary> {
@@ -27,7 +25,6 @@ export async function getAdminSummary(): Promise<AdminSummary> {
     withdrawalAmount: withdrawals.reduce((sum, item) => sum + item.amount, 0),
   };
 }
-
 
 /** 두 종류를 합쳐 접수가 오래된 순서로 */
 export async function getOldestPending(limit = 5): Promise<{ now: Date; items: PendingItem[] }> {
@@ -44,7 +41,6 @@ export async function getOldestPending(limit = 5): Promise<{ now: Date; items: P
   ];
   return { now, items: items.sort(byOldest).slice(0, limit) };
 }
-
 
 /** 영역별 최근 접수 */
 export async function getRecentRequests(limit = 3) {

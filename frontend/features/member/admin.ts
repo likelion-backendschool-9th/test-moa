@@ -12,12 +12,12 @@ import type { Report } from "@/features/report/types";
  */
 
 /** 테스터 활동. 미완료는 "악의적인 미완료 반복"을 판단할 때 본다 */
-export type TesterActivity = { confirmedCount: number; submittedCount: number; incompleteCount: number; };
+export type TesterActivity = { confirmedCount: number; submittedCount: number; incompleteCount: number };
 
 /** 개발자 활동. 프로젝트와 구독을 본다 */
-export type DeveloperActivity = { projectCount: number; recruitmentCount: number; subscribed: boolean; };
+export type DeveloperActivity = { projectCount: number; recruitmentCount: number; subscribed: boolean };
 
-export type UserActivity = { tester: TesterActivity | null; developer: DeveloperActivity | null; };
+export type UserActivity = { tester: TesterActivity | null; developer: DeveloperActivity | null };
 
 /** 회원. id가 상세 주소의 userKey다. 주소에는 이름·아이디 대신 번호를 쓴다 */
 export type AdminUser = {
@@ -32,14 +32,14 @@ export type AdminUser = {
 };
 
 /** 목록 한 줄. 제재 이력 = 인정된 신고, 검토 대기 = 아직 처리하지 않은 신고 */
-export type UserSummary = AdminUser & { sanctionCount: number; pendingReportCount: number; };
+export type UserSummary = AdminUser & { sanctionCount: number; pendingReportCount: number };
 
 /** 상세. 받은 신고는 접수가 최근인 순서, 제재 이력은 처리가 최근인 순서 */
-export type UserDetail = AdminUser & { sanctions: Report[]; receivedReports: Report[]; };
+export type UserDetail = AdminUser & { sanctions: Report[]; receivedReports: Report[] };
 
 export type UserFilter = "all" | "sanctioned" | "reported";
 
-export const USER_FILTERS: { filter: UserFilter; label: string; }[] = [
+export const USER_FILTERS: { filter: UserFilter; label: string }[] = [
   { filter: "all", label: "전체" },
   { filter: "sanctioned", label: "제재 이력 있음" },
   { filter: "reported", label: "검토 대기 신고 있음" },

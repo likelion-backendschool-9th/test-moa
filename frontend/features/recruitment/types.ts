@@ -171,7 +171,7 @@ export type AiSummary = {
   /** 한 줄 요약 */
   headline: string;
   /** 고칠 점 (버그·사용성). 해결 제안이 있으면 문제에 짝지어 둔다 */
-  issues: Array<AiFinding & { suggestion?: string; }>;
+  issues: Array<AiFinding & { suggestion?: string }>;
   /** 좋았던 점 */
   strengths: AiFinding[];
   /** 정리한 시각 */
@@ -184,7 +184,7 @@ export type AiSummary = {
 export const AI_MIN_FEEDBACKS = 3;
 
 /** 피드백 하나로 받은 AI 후속 질문 (백엔드 FollowupQuestionsResponse). 실패하면 화면에 보일 문구를 둔다 */
-export type FollowupResult = { ok: true; questions: string[]; } | { ok: false; message: string; };
+export type FollowupResult = { ok: true; questions: string[] } | { ok: false; message: string };
 
 /** 모집 작성 폼과 모집 취소의 글자 수·개수 한도. 기획 확정 전 임시값이다 */
 export const RECRUITMENT_LIMIT = {
@@ -196,7 +196,7 @@ export const RECRUITMENT_LIMIT = {
   cancelReasonLength: 300,
 } as const;
 
-export type ProjectWithRecruitments = Project & { recruitments: Recruitment[]; };
+export type ProjectWithRecruitments = Project & { recruitments: Recruitment[] };
 
 /*
  * 로직 계층. 화면에 필요한 값을 계산하고 폼을 검증한다.
@@ -265,7 +265,7 @@ export function getAnalytics(applications: Application[], feedbacks: Feedback[])
 
 /* ---------- 조회 ---------- */
 
-export type RecruitmentView = Recruitment & { status: RecruitmentStatus; title: string; };
+export type RecruitmentView = Recruitment & { status: RecruitmentStatus; title: string };
 
 export type ProjectSummary = Omit<Project, "recruitments"> & {
   recruitments: RecruitmentView[];
@@ -283,13 +283,13 @@ export type TodoItem = {
 };
 
 /** 모든 프로젝트를 합친 숫자. 진행 중인 모집 건을 상태별로 센다(종료·취소는 세지 않는다) */
-export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed" | "cancelled">, number> & { waitingReports: number; };
+export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed" | "cancelled">, number> & { waitingReports: number };
 
-export type PublicRecruitmentView = PublicRecruitmentData & { now: Date; status: Exclude<RecruitmentStatus, "cancelled">; };
+export type PublicRecruitmentView = PublicRecruitmentData & { now: Date; status: Exclude<RecruitmentStatus, "cancelled"> };
 
-export type FeedbackView = Feedback & { hoursUntilPaid: number; };
+export type FeedbackView = Feedback & { hoursUntilPaid: number };
 
-export type ApplicationView = Application & { submission: SubmissionStatus | null; };
+export type ApplicationView = Application & { submission: SubmissionStatus | null };
 
 /**
  * 개발자가 모집을 취소할 수 있는지. 테스트 전(모집 중)에는 확정된 테스터가 없을 때만,
@@ -307,9 +307,9 @@ export function canSelectApplicants(recruitment: Pick<RecruitmentView, "status" 
 
 /** AI 분석 영역의 상태: 결과 있음, 피드백 부족, 아직 정리 전 */
 export type AiAnalysis =
-  | { state: "ready"; summary: AiSummary; }
-  | { state: "notEnough"; feedbackCount: number; minFeedbacks: number; }
-  | { state: "empty"; };
+  | { state: "ready"; summary: AiSummary }
+  | { state: "notEnough"; feedbackCount: number; minFeedbacks: number }
+  | { state: "empty" };
 
 /* ---------- 폼 검증 ---------- */
 

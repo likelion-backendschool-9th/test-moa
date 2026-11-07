@@ -21,14 +21,14 @@ export async function generateMetadata({ params }: RoomPageProps): Promise<Metad
 export default function ChatRoomPage({ params }: RoomPageProps) {
   return (
     <Main className="flex flex-col">
-    <Container className="flex flex-1 flex-col pt-6 md:pt-8">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
-        <ChatsBackLink />
-        <Suspense fallback={<ChatRoomSkeleton />}>
-          <RoomSlot params={params} />
-        </Suspense>
-      </div>
-    </Container>
+      <Container className="flex flex-1 flex-col pt-6 md:pt-8">
+        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+          <ChatsBackLink />
+          <Suspense fallback={<ChatRoomSkeleton />}>
+            <RoomSlot params={params} />
+          </Suspense>
+        </div>
+      </Container>
     </Main>
   );
 }

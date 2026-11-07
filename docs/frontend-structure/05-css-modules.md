@@ -348,7 +348,7 @@ npx tsc --noEmit && npm run lint && npm run build && npm run test:visual
 - `globals.css`의 `@layer base`에 있는 `:focus-visible` 테두리는 레이어 밖에 있는 모듈의 `outline`에 진다. 그래서 `outline`을 쓰는 모듈(패널 등)은 포커스 링도 같은 모듈에 쓴다. 3단계와 5단계에서 확인한다.
 - 모듈 안의 keyframes 이름은 지역 이름으로 바뀐다. (고침 11-07: `animation: rise-in`이 `XKv8aq_rise-in`이 되어 전역 `@keyframes rise-in`을 찾지 못했다. CSS 변수 이름은 바뀌지 않으므로, 애니메이션은 `globals.css`의 토큰 `--animate-rise-in: rise-in 500ms var(--ease) both`처럼 두고 모듈은 `animation: var(--animate-rise-in)`으로 쓴다. 출력이 `var(--animate-rise-in)` 그대로인 것을 확인했다. 색·모션 값은 `globals.css` 토큰에만 둔다는 기존 규칙과 같다)
 - 시연 데이터는 쿠키와 고정 시각만 같으면 같은 화면을 그린다. 차이가 생기면 1단계에서 그 화면만 고정 조건을 더한다.
-- GitHub Actions의 `ubuntu-latest`에서 Playwright 공식 이미지를 컨테이너로 쓸 수 있다. (11-07: 아직 확인하지 않았다. 워크플로는 push한 뒤 수동 실행으로 확인한다. 지금까지의 비교는 macOS 로컬에서 같은 실행 안의 두 빌드를 비교한 것이다)
+- Linux에서도 화면이 같다. (확인 11-08: 원격 Docker의 Playwright 공식 이미지 `mcr.microsoft.com/playwright:v1.64.1-noble` 컨테이너에서 `de19224`와 `b4ea227`을 비교해 160장 모두 0픽셀, 종료 코드 0. 호스트 커널은 WSL2였다. GitHub Actions의 `Frontend visual`은 수동 실행 워크플로라 기본 브랜치에 파일이 있어야 실행되므로, 병합 뒤에 쓸 수 있다)
 - 화면 비교가 결정적이려면 애니메이션·전환을 끄고 Chromium을 결정적 래스터 옵션으로 띄워야 한다. (확인 11-07: 없으면 같은 코드끼리도 둥근 테두리 모서리에서 1~34픽셀이 실행마다 달랐다. 넣은 뒤 124장 × 3회가 모두 0픽셀)
 - 기준과 작업 브랜치의 사진은 같은 실행 안에서 찍으므로 Linux 이미지와 Chromium 버전이 같다. 다른 실행에서 찍은 사진끼리는 비교하지 않는다.
 

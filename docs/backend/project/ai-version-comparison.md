@@ -13,7 +13,7 @@
 | # | 결정 | 이유 |
 | --- | --- | --- |
 | 1 | 직전 버전은 같은 프로젝트에서 현재보다 `version`이 작은 모집글 중 가장 큰 것이고, 같은 버전이 여럿이면 나중에 만든 모집글이다. 없으면 409 `NO_PREVIOUS_VERSION` | 비교는 항상 두 버전만 한다(이슈 #108) |
-| 2 | 두 버전 중 `analysis_status`가 `DONE`이 아닌 것이 있으면 409 `ANALYSIS_NOT_DONE`이다. 분석을 대신 돌리지 않는다 | 이슈 본문은 "분석을 먼저 돌린 뒤 비교"지만, 리뷰 묶기(#107)는 비동기로 몇 분 걸려 한 요청에서 분석 두 번과 비교를 기다릴 수 없다. 프론트가 분석을 먼저 실행한다 |
+| 2 | 두 버전 모두 분석 결과(`analyzed_at`)가 있어야 하고, 없으면 409 `ANALYSIS_NOT_DONE`이다. 어느 쪽이든 분석 중(`PENDING`)이면 409 `ANALYSIS_IN_PROGRESS`다. 다시 분석하다 실패해도(`FAILED`) 지난 결과가 남아 있어 비교할 수 있다. 분석을 대신 돌리지 않는다 (고침 #108: 처음에는 `DONE`만 받아, 재분석에 한 번 실패하면 다시 성공할 때까지 비교가 막혔다) | 이슈 본문은 "분석을 먼저 돌린 뒤 비교"지만, 리뷰 묶기(#107)는 비동기로 몇 분 걸려 한 요청에서 분석 두 번과 비교를 기다릴 수 없다. 프론트가 분석을 먼저 실행한다. 분석 중이면 곧 그룹이 바뀌어 끝난 뒤 비교한다 |
 | 3 | 구독(`SubscriptionChecker.require`)을 먼저 보고, 다른 회원 프로젝트의 모집글은 없는 모집글과 같이 404다. 실행과 조회 모두 같다 | #109와 같다 |
 | 4 | 그룹 코드는 프로젝트 안에서 1부터 세는 숫자 문자열이다. 새 코드는 그 프로젝트에서 숫자로 읽히는 코드의 최대 + 1이고, 저장하는 동안 프로젝트 행을 잠가(`select … for update`) 동시에 같은 코드를 내지 않는다 | 코드는 백엔드만 발급한다. `group_code`가 문자열 컬럼이라 DB의 `max`로는 "9"가 "10"보다 커진다. #107도 같은 방식으로 발급한다 |
 | 5 | 분석 서버의 짝은 그대로 믿지 않는다. `currentGroupId`가 현재 버전 그룹이 아니거나 `previousGroupId`가 직전 버전 그룹이 아니면 버린다. 한 그룹은 한 번만 짝짓고(앞의 짝을 씀), `newGroupIds`에 있어도 이미 짝지은 그룹은 건너뛴다. 어느 쪽에도 없는 현재 그룹은 코드를 그대로 둔다 | 한 버전 안에서 같은 코드가 두 번 나오면 "같은 문제"라는 뜻이 깨진다 |
@@ -30,7 +30,7 @@
 ### 비교 실행 `POST /api/v1/developer/recruitments/{recruitmentId}/version-comparison`
 - 본문 없음. `recruitmentId`는 현재 버전 모집글이다
 - 성공하면 200이고 본문은 조회와 같다
-- 오류: 401 `UNAUTHORIZED`, 403 `SUBSCRIPTION_REQUIRED`, 404 `NOT_FOUND`(없거나 남의 모집글), 409 `NO_PREVIOUS_VERSION`, 409 `ANALYSIS_NOT_DONE`, 429 `COMPARISON_LIMIT_EXCEEDED`, 503 `AI_UNAVAILABLE`, 500 `INTERNAL_ERROR`(분석 서버 계약 어긋남)
+- 오류: 401 `UNAUTHORIZED`, 403 `SUBSCRIPTION_REQUIRED`, 404 `NOT_FOUND`(없거나 남의 모집글), 409 `NO_PREVIOUS_VERSION`, 409 `ANALYSIS_NOT_DONE`, 409 `ANALYSIS_IN_PROGRESS`, 429 `COMPARISON_LIMIT_EXCEEDED`, 503 `AI_UNAVAILABLE`, 500 `INTERNAL_ERROR`(분석 서버 계약 어긋남)
 
 ### 비교 조회 `GET /api/v1/developer/recruitments/{recruitmentId}/version-comparison`
 - 오류: 401, 403, 404 `NOT_FOUND`, 404 `COMPARISON_NOT_FOUND`(아직 비교 전)
@@ -95,9 +95,13 @@
 - Given 프로젝트에 1버전만 있다
 - Then  409 `NO_PREVIOUS_VERSION`이고 분석 서버를 부르지 않는다
 
-#108-S7 분석 전 버전 [직접]
-- Given 두 버전 중 하나가 `DONE`이 아니다
+#108-S7 분석 결과가 없거나 분석 중인 버전 [테스트] (고침 #108: 재분석에 실패한 버전은 지난 결과로 비교함)
+- Given 두 버전 중 하나가 분석한 적이 없다(`analyzed_at` 없음)
 - Then  409 `ANALYSIS_NOT_DONE`이고 분석 서버를 부르지 않는다
+- Given 두 버전 중 하나를 다시 분석하는 중이다(`PENDING`)
+- Then  409 `ANALYSIS_IN_PROGRESS`이고 분석 서버를 부르지 않는다
+- Given 다시 분석하다 실패했다(`FAILED`, `analyzed_at` 있음)
+- Then  지난 결과로 비교한다
 
 #108-S8 일주일에 3번 [테스트]
 - When  A가 같은 주에 네 번 실행한다

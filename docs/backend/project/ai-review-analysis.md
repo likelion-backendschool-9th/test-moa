@@ -12,10 +12,10 @@
 
 | # | 결정 | 이유 |
 | --- | --- | --- |
-| 1 | 실행은 비동기다. 조건부 UPDATE(`analysis_status <> PENDING`일 때만 PENDING)로 시작을 막고, 분석 서버 호출·저장은 분석 전용 스레드(`analysisTaskExecutor`, 동시 4건, 대기 50건)에서 한다. 실행 API는 202와 현재 상태(PENDING)를 바로 돌려준다 | 분석은 수십 초~몇 분 걸려 nginx 응답 대기(60초)를 넘는다. 조건부 UPDATE는 동시에 두 번 눌러도 한 번만 성공한다 |
+| 1 | 실행은 비동기다. 조건부 UPDATE(`analysis_status <> PENDING`일 때만 PENDING)로 시작을 막으며 접수 시각(`analysis_requested_at`)을 남기고, 분석 서버 호출·저장은 분석 전용 스레드(`analysisTaskExecutor`, 동시 4건, 대기 10건)에서 한다. 실행 API는 202와 현재 상태(PENDING)를 바로 돌려준다 (고침 #107: 대기 50건은 줄 끝이 최악 약 1시간 PENDING이라 10건(최악 약 20분)으로 줄이고 접수 시각을 더함) | 분석은 수십 초~몇 분 걸려 nginx 응답 대기(60초)를 넘는다. 조건부 UPDATE는 동시에 두 번 눌러도 한 번만 성공한다. 화면은 접수 시각으로 "n분째 분석 중"을 보여 준다 |
 | 2 | 분석 서버 응답은 5분까지 기다린다(`analysis.review-analysis-read-timeout`). 후속 질문·비교는 그대로 30초다 | 사용자 요청을 붙잡지 않아 nginx 시간과 상관없다 |
-| 3 | 분석이 실패하면(분석 서버 오류, 계약과 다른 응답, 저장 실패) `FAILED`로 바꾸고 기존 결과는 그대로 둔다. 스레드 대기열이 차서 시작하지 못하면 바로 `FAILED`로 바꾸고 503 `AI_UNAVAILABLE`이다 | 저장은 한 트랜잭션이라 실패하면 지우기 전 상태로 돌아간다 |
-| 4 | 서버가 시작될 때 남아 있는 `PENDING`을 모두 `FAILED`로 바꾼다 (11-07 결정) | 배포로 서버가 다시 시작되면 진행 중이던 분석은 끝나지 않는데, PENDING이 남으면 그 모집글은 다시 분석할 수 없다. 서버가 한 대라서 맞는 방법이다. 여러 대가 되면 시작 시각 컬럼으로 바꾼다 |
+| 3 | 분석이 실패하면(분석 서버 오류, 계약과 다른 응답, 저장 실패) `FAILED`로 바꾸고 기존 결과와 `analyzed_at`은 그대로 둔다. 그래서 지난 결과가 있으면 버전 비교는 계속 쓸 수 있고, 마지막 실패는 상태 `FAILED`로 알린다. 스레드 대기열이 차서 시작하지 못해도 같고 503 `AI_UNAVAILABLE`이다 (고침 #107: 처음에는 비교가 `DONE`만 받아, 재분석에 한 번 실패하면 다시 성공할 때까지 비교가 막혔다) | 저장은 한 트랜잭션이라 실패하면 지우기 전 상태로 돌아간다. 실패를 알리는 값을 따로 두지 않아도 상태(`FAILED`)와 `analyzed_at`으로 "지난 결과는 있고 마지막 시도는 실패"를 나타낼 수 있다 |
+| 4 | 서버가 멈출 때(배포) 진행 중인 분석을 8초까지 기다려, 그 안에 끝나면 저장까지 마친다. 서버가 시작될 때 남아 있는 `PENDING`은 모두 `FAILED`로 바꾼다 (11-07 결정, 고침 #107: 멈출 때 기다리지 않아 배포마다 진행 중인 분석이 실패했다) | `docker stop`은 종료 신호 10초 뒤 강제로 끝내서 그보다 짧게 기다린다. 못 끝낸 분석은 끝나지 않는데, PENDING이 남으면 그 모집글은 다시 분석할 수 없다. 서버가 한 대라서 맞는 방법이다. 여러 대가 되면 접수 시각(`analysis_requested_at`)이 오래된 PENDING만 정리한다 |
 | 5 | 보내는 리뷰는 그 모집글의 참가에 달린 리뷰 전부(신고된 리뷰 포함)이고, 1,000개가 넘으면 최근 제출한 1,000개다. 리뷰가 없으면 409 `NO_FEEDBACKS` | 분석 서버는 1~1,000개를 받는다. 빠진 리뷰는 "아직 분석에 포함되지 않은 리뷰"로 센다 |
 | 6 | 저장할 때 이 모집글의 기존 그룹과 매핑을 지운다. GitHub에 등록한(`git_issue_url`이 있는) 그룹은 매핑과 함께 그대로 둔다 | 등록한 이슈의 링크를 잃지 않는다. 남긴 그룹은 예전 분석 내용 그대로다 |
 | 7 | 응답은 그대로 믿지 않는다. 그룹의 `feedbackIds` 중 이번에 보낸 리뷰만 매핑하고(중복은 한 번), 남는 리뷰가 없으면 그 그룹은 버린다. `representativeFeedbackId`가 그 그룹의 매핑에 있을 때만 대표 리뷰로 표시한다. `key`는 저장하지 않는다 | 리뷰 하나가 여러 그룹에 들어가는 것은 정상이다. 같은 그룹 안 중복은 유니크 제약(`cluster_group_id`, `feedback_id`)에 걸린다 |
@@ -31,7 +31,7 @@
 ### 분석 실행 `POST /api/v1/developer/recruitments/{recruitmentId}/analysis`
 - 본문 없음. 성공하면 202이고 본문은 조회와 같다(보통 `analysisStatus`가 `PENDING`이고 그룹은 지난 결과)
 - 오류: 401 `UNAUTHORIZED`, 403 `SUBSCRIPTION_REQUIRED`, 404 `NOT_FOUND`(없거나 남의 모집글), 409 `NO_FEEDBACKS`, 409 `ANALYSIS_IN_PROGRESS`, 429 `ANALYSIS_LIMIT_EXCEEDED`, 503 `AI_UNAVAILABLE`(대기열이 참)
-- 분석 서버 오류는 응답이 아니라 `analysisStatus: FAILED`로 알린다. 프론트는 PENDING이 끝날 때까지 조회를 다시 부른다
+- 분석 서버 오류는 응답이 아니라 `analysisStatus: FAILED`로 알린다. 화면이 조회하는 방법은 [화면과 맞출 규칙](#화면과-맞출-규칙)을 따른다
 
 ### 분석 조회 `GET /api/v1/developer/recruitments/{recruitmentId}/analysis`
 - 분석한 적이 없으면 `analysisStatus`가 `NONE`이고 그룹이 비어 있다
@@ -44,6 +44,7 @@
     "recruitmentId": 12,
     "version": 1,
     "analysisStatus": "DONE",
+    "analysisRequestedAt": "2026-11-07T09:59:30",
     "analyzedAt": "2026-11-07T10:00:00",
     "praiseSummary": "기록 화면이 깔끔하다는 의견이 많아요",
     "lastAnalyzedFeedbackAt": "2026-11-07T09:40:00",
@@ -73,6 +74,22 @@
 - 요청: `context`(프로젝트 제목·설명, 모집글 제목·설명·버전, 후속 질문과 같은 글자 수 자르기)와 `feedbacks`(`feedbackId`, `userId` = 참가한 테스터, `content`, `testItemTitle`, 기타 의견은 null)
 - 응답: `groups`(`key`, `name`, `category`, `improvementRank`, `representativeFeedbackId`, `feedbackIds`, `gitIssueTitle`, `gitIssueContent`), `praiseSummary`. `groups`가 없으면 계약 어긋남이다
 
+## 화면과 맞출 규칙
+분석은 비동기라 화면이 상태를 다시 조회한다. 분석은 보통 수십 초, 길면 5분이고, 대기열에서 기다리면 최악 약 20분까지 `PENDING`일 수 있다.
+
+| 상황 | 화면 |
+| --- | --- |
+| 실행 POST가 202 | 조회를 시작한다 |
+| 실행 POST가 409 `ANALYSIS_IN_PROGRESS` | 오류로 보이지 않는다. 이미 분석 중이라는 뜻이라 202와 같이 조회를 시작한다(계속 기다리기) |
+| 실행 POST가 503 `AI_UNAVAILABLE` | "잠시 후 다시 시도해 주세요"와 다시 시도 버튼을 보여 준다. 상태는 `FAILED`가 된다 |
+| 조회 결과가 `PENDING` | 5초마다 다시 조회하고, `analysisRequestedAt`으로 "n분째 분석 중"을 보여 준다. 지난 결과(그룹)가 있으면 그대로 보여 준다 |
+| 조회 결과가 `DONE` | 조회를 멈추고 결과를 보여 준다 |
+| 조회 결과가 `FAILED` | 조회를 멈추고 "마지막 분석에 실패했어요"와 다시 시도 버튼을 보여 준다. `analyzedAt`이 있으면 지난 결과를 그대로 보여 준다 |
+| 화면을 떠남 | 조회를 멈춘다 |
+
+- 5초는 분석이 끝난 뒤 늦어도 5초 안에 결과가 보이고, 몇 분 동안 불러도 요청이 많지 않은 간격이다
+- 버전 비교 버튼은 두 버전 모두 `analyzedAt`이 있고 어느 쪽도 `PENDING`이 아닐 때 켠다([버전 비교 결정 2](ai-version-comparison.md#정한-것-11-07))
+
 ## 1. 분석 실행과 저장 (#107-R1)
 
 #107-S1 그룹·매핑·대표 리뷰 저장 [테스트]
@@ -81,7 +98,7 @@
 - Then  분석 서버에 리뷰 4개가 작성자·테스트 항목과 함께 간다
 - Then  그룹 3개와 매핑이 저장되고, 두 그룹에 든 리뷰는 매핑이 두 줄이다. 보내지 않은 리뷰 ID는 버린다
 - Then  대표 리뷰만 `is_representative`가 true이고, 칭찬 그룹은 심각도·이슈 초안이 null이다
-- Then  칭찬 요약, `DONE`, `analyzed_at`이 저장된다
+- Then  칭찬 요약, `DONE`, `analyzed_at`, 접수 시각(`analysis_requested_at`)이 저장된다
 
 #107-S2 새 코드 발급 [테스트: ReviewAnalysisControllerTest #107-S1]
 - Given 같은 프로젝트의 다른 버전에 코드 "5"가 있다
@@ -94,11 +111,13 @@
 
 #107-S4 분석 실패 [테스트]
 - When  분석 서버가 실패한다(5xx, 연결 실패, 계약과 다른 응답)
-- Then  `analysis_status`가 `FAILED`이고 지난 분석 결과는 그대로다. 이번 주 횟수는 되돌린다
+- Then  `analysis_status`가 `FAILED`이고 지난 분석 결과와 `analyzed_at`은 그대로다. 이번 주 횟수는 되돌린다
+- Then  지난 결과가 있으면 버전 비교는 그대로 쓸 수 있다 (#108-S7)
 
-#107-S5 서버 재시작 [직접]
-- Given 분석 중(PENDING)에 서버가 다시 시작됐다
-- Then  서버가 뜨면 그 모집글이 `FAILED`가 되고 다시 실행할 수 있다
+#107-S5 서버 재시작 [직접] (고침 #107: 멈출 때 진행 중인 분석을 기다림)
+- Given 분석 중(PENDING)에 서버가 다시 시작된다(배포)
+- Then  멈출 때 진행 중인 분석을 8초까지 기다려, 그 안에 끝나면 결과를 저장한다
+- Then  못 끝낸 분석은 서버가 뜨면 `FAILED`가 되고 다시 실행할 수 있다. 지난 결과는 그대로다
 
 ## 2. 권한과 조건 (#107-R2)
 

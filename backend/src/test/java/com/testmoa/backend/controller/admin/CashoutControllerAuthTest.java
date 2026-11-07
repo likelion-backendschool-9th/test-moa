@@ -1,12 +1,11 @@
-package com.testmoa.backend.controller;
+package com.testmoa.backend.controller.admin;
 
-import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.CashoutStatus;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.JwtProvider;
@@ -33,13 +32,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class AdminCashoutControllerAuthTest {
+class CashoutControllerAuthTest {
 
     @Autowired MockMvc mvc;
     @Autowired JwtProvider jwtProvider;
     @Autowired UserRepository userRepository;
     @Autowired CreditWalletRepository creditWalletRepository;
-    @Autowired CashoutRequestRepository cashoutRequestRepository;
+    @Autowired CashoutRepository cashoutRepository;
 
     private User saveUser(Role role) {
         return userRepository.save(User.builder()
@@ -51,12 +50,12 @@ class AdminCashoutControllerAuthTest {
                 .build());
     }
 
-    private CashoutRequest saveRequested(User owner) {
+    private Cashout saveRequested(User owner) {
         CreditWallet wallet = CreditWallet.builder().user(owner).build();
         wallet.grantEarned(5000);
         wallet.lockForCashout(5000);
         creditWalletRepository.save(wallet);
-        return cashoutRequestRepository.save(CashoutRequest.builder()
+        return cashoutRepository.save(Cashout.builder()
                 .user(owner)
                 .amount(5000)
                 .bank("토스뱅크")
@@ -69,7 +68,7 @@ class AdminCashoutControllerAuthTest {
     @DisplayName("#68-S7 토큰이 없으면 401, 일반 회원이면 403이고 요청은 그대로")
     void onlyAdminCanUseCashoutApis() throws Exception {
         User owner = saveUser(Role.USER);
-        CashoutRequest cashout = saveRequested(owner);
+        Cashout cashout = saveRequested(owner);
         String member = "Bearer " + jwtProvider.createAccessToken(owner.getId());
         String admin = "Bearer " + jwtProvider.createAccessToken(saveUser(Role.ADMIN).getId());
         String id = String.valueOf(cashout.getId());
@@ -89,7 +88,7 @@ class AdminCashoutControllerAuthTest {
                         .contentType(MediaType.APPLICATION_JSON).content(reject))
                 .andExpect(status().isForbidden());
 
-        assertEquals(CashoutStatus.REQUESTED, cashoutRequestRepository.findById(cashout.getId()).orElseThrow().getStatus());
+        assertEquals(Cashout.Status.REQUESTED, cashoutRepository.findById(cashout.getId()).orElseThrow().getStatus());
         assertEquals(5000, creditWalletRepository.findByUserId(owner.getId()).orElseThrow().getLockedBalance());
 
         mvc.perform(get("/api/admin/cashouts?tab=pending").header("Authorization", admin))

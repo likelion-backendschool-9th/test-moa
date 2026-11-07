@@ -1,9 +1,8 @@
 package com.testmoa.backend.dto.response;
 
-import com.testmoa.backend.entity.CashoutRequest;
-import com.testmoa.backend.global.crypto.AccountMasking;
+import com.testmoa.backend.entity.Cashout;
+import com.testmoa.backend.global.util.AccountMasking;
 import com.testmoa.backend.entity.enums.CashoutRejectReason;
-import com.testmoa.backend.entity.enums.CashoutStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +17,7 @@ import java.time.LocalDateTime;
 public class CashoutResponse {
     private Long id;
     private Integer amount;
-    private CashoutStatus status;
+    private Cashout.Status status;
     private String bank;
     private String accountNumber;
     private String accountHolder;
@@ -27,7 +26,7 @@ public class CashoutResponse {
     private LocalDateTime requestedAt;
     private LocalDateTime processedAt;
 
-    public static CashoutResponse of(CashoutRequest request) {
+    public static CashoutResponse of(Cashout request) {
         return CashoutResponse.builder()
                 .id(request.getId())
                 .amount(request.getAmount())

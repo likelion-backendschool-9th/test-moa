@@ -90,7 +90,7 @@
 
 회원은 금액·계좌로 출금을 신청한다. 신청 시 적립에서 잠긴으로만 옮기고 장부는 없다.
 
-### `cashout_requests`
+### `cashouts`
 
 | 필드 | 컬럼 | 타입 | null | 설명 |
 | --- | --- | --- | --- | --- |
@@ -100,7 +100,7 @@
 | `bank` | `bank` | String | 불가 | 입금 은행 |
 | `accountNumber` | `account_number` | String | 불가 | 계좌 숫자 10~14자리. **A 컬럼 암호화**([cashout.md](cashout.md)). length 넉넉히 |
 | `accountHolder` | `account_holder` | String | 불가 | 예금주. 계좌와 같이 암호화 |
-| `status` | `status` | enum `CashoutStatus` | 불가 | `REQUESTED` / `PAID` / `REJECTED` |
+| `status` | `status` | enum `Cashout.Status` | 불가 | `REQUESTED` / `PAID` / `REJECTED` |
 | `rejectReason` | `reject_reason` | enum (DB String) | 가능 | `HOLDER` / `ACCOUNT` / `OTHER` |
 | `rejectMemo` | `reject_memo` | String | 가능 | 회원에게 보이는 안내. OTHER면 필수, 그 외 선택 |
 | `processedAt` | `processed_at` | datetime | 가능 | 지급·반려 일시 |
@@ -130,7 +130,7 @@
 - Then  `status`가 `REQUESTED`다
 
 #45-S23 출금 상태에 "완료"가 없음 [직접]
-- `CashoutStatus`는 `REQUESTED`, `PAID`, `REJECTED` 세 값이다. 지급 완료는 `PAID` 하나다
+- `Cashout.Status`는 `REQUESTED`, `PAID`, `REJECTED` 세 값이다. 지급 완료는 `PAID` 하나다
 
 ## 4. 운영자 출금 (#45-R4)
 
@@ -316,5 +316,5 @@ List<Plan> findCurrentPlans();
 - `Payment.subscription`이 `@OneToOne`, `@JoinColumn(nullable = false, unique = true)`다. 한 구독에 결제가 둘 붙을 수 없다
 
 ## 가정
-- enum: `PaymentMethod` CASH/CREDIT, `PaymentStatus` COMPLETED/REFUNDED, `SubscriptionStatus` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
+- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(`Payment` 안에 둠), `SubscriptionStatus` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
 - 단위 테스트 이름은 `@DisplayName("#45-S…")`으로 시나리오와 짝짓는다.

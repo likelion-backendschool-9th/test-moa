@@ -45,7 +45,7 @@
 
 | # | 대상 | 정한 것 |
 | --- | --- | --- |
-| 1 | `CashoutRequest` | 계좌·예금주, 반려 사유 enum, `reject_memo`, `pay()`·`reject()` |
+| 1 | `Cashout` | 계좌·예금주, 반려 사유 enum, `reject_memo`, `pay()`·`reject()` |
 | 2 | `CashoutStatus` | `COMPLETED` 제거 |
 | 3 | `CreditType` | `LOCKED` 제거 |
 | 4 | `Payment` ↔ `Subscription` | 구독 1 : 결제 1 |
@@ -60,7 +60,7 @@ flowchart TB
   subgraph credit [Credit]
     Wallet[CreditWallet]
     Ledger[CreditLedger]
-    Cashout[CashoutRequest]
+    Cashout[Cashout]
   end
   subgraph subscription [Subscription]
     PlanEntity[Plan]
@@ -88,14 +88,14 @@ erDiagram
   subscriptions ||--|| payments : one_to_one
   users ||--|| credit_wallets : wallet
   credit_wallets ||--o{ credit_ledgers : ledger
-  users ||--o{ cashout_requests : cashout
+  users ||--o{ cashouts : cashout
 ```
 
 | 테이블 | 한 행이 뜻하는 것 | 자세히 |
 | --- | --- | --- |
 | `credit_wallets` | 회원 한 명의 지갑(이벤트·적립·잠긴 잔액) | [entities.md 1](entities.md#1-잔액-45-r1) |
 | `credit_ledgers` | 총잔액이 실제로 바뀐 일 하나 | [entities.md 2](entities.md#2-크레딧-내역-45-r2) |
-| `cashout_requests` | 출금 신청 하나 | [entities.md 3](entities.md#3-출금-신청내역-45-r3) |
+| `cashouts` | 출금 신청 하나 | [entities.md 3](entities.md#3-출금-신청내역-45-r3) |
 | `plans` | 한 등급의 한 버전 조건 | [entities.md 5](entities.md#5-플랜-45-r5) |
 | `subscriptions` | 결제 한 번으로 산 이용 기간 하나 | [entities.md 6](entities.md#6-내-구독-45-r6) |
 | `payments` | 구독 결제 한 번 | [entities.md 7](entities.md#7-구독-결제-45-r7) |
@@ -131,7 +131,7 @@ erDiagram
 
 #67-S2 출금 신청 API [테스트: cashout.md #67-S2]
 - API: `POST /api/v1/my/credits/withdrawals`
-- Then  `CashoutRequest(REQUESTED)` + `lockForCashout`. 자세한 시나리오는 [cashout.md](cashout.md)
+- Then  `Cashout(REQUESTED)` + `lockForCashout`. 자세한 시나리오는 [cashout.md](cashout.md)
 
 ### #68 운영자 출금
 

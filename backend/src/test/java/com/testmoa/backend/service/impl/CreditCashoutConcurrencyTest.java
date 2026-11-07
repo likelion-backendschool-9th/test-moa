@@ -3,7 +3,7 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.request.CashoutCreateRequest;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.global.security.Role;
@@ -41,7 +41,7 @@ class CreditCashoutConcurrencyTest {
     @Autowired
     private CreditWalletRepository creditWalletRepository;
     @Autowired
-    private CashoutRequestRepository cashoutRequestRepository;
+    private CashoutRepository cashoutRepository;
     @Autowired
     private PlatformTransactionManager transactionManager;
 
@@ -100,11 +100,11 @@ class CreditCashoutConcurrencyTest {
         assertEquals(1, failures.get());
         assertEquals(5000, wallet.getLockedBalance());
         assertEquals(0, wallet.getEarnedBalance());
-        assertEquals(1, cashoutRequestRepository.findByUserIdOrderByCreatedAtDesc(userId).size());
+        assertEquals(1, cashoutRepository.findByUserIdOrderByCreatedAtDesc(userId).size());
 
         tx.executeWithoutResult(status -> {
-            cashoutRequestRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                    .forEach(cashoutRequestRepository::delete);
+            cashoutRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                    .forEach(cashoutRepository::delete);
             creditWalletRepository.findByUserId(userId).ifPresent(creditWalletRepository::delete);
             userRepository.deleteById(userId);
         });

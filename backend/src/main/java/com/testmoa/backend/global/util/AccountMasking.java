@@ -1,6 +1,6 @@
-package com.testmoa.backend.global.crypto;
+package com.testmoa.backend.global.util;
 
-import com.testmoa.backend.entity.enums.CashoutStatus;
+import com.testmoa.backend.entity.Cashout;
 
 /**
  * 출금 계좌 응답 마스킹. 처리 중(REQUESTED)은 전체.
@@ -10,11 +10,11 @@ public final class AccountMasking {
 
     private AccountMasking() {}
 
-    public static String mask(String accountNumber, CashoutStatus status) {
+    public static String mask(String accountNumber, Cashout.Status status) {
         if (accountNumber == null) {
             return null;
         }
-        if (status == CashoutStatus.REQUESTED) {
+        if (status == Cashout.Status.REQUESTED) {
             return accountNumber;
         }
         if (accountNumber.length() <= 4) {
@@ -27,11 +27,11 @@ public final class AccountMasking {
      * 완료 건 예금주. 한 글자는 `*`, 두 글자는 앞 글자만, 세 글자 이상은 앞·뒤만 남긴다.
      * 예: 김철 → 김*, 한서윤 → 한*윤
      */
-    public static String maskHolder(String accountHolder, CashoutStatus status) {
+    public static String maskHolder(String accountHolder, Cashout.Status status) {
         if (accountHolder == null) {
             return null;
         }
-        if (status == CashoutStatus.REQUESTED) {
+        if (status == Cashout.Status.REQUESTED) {
             return accountHolder;
         }
         int length = accountHolder.codePointCount(0, accountHolder.length());

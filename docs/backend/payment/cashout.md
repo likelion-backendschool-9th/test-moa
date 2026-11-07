@@ -79,7 +79,7 @@
 2. 지갑 행을 `PESSIMISTIC_WRITE`로 잠근다 (`findByUserIdForUpdate` — #71 결제와 같은 방식. #66에 없으면 #67에서 추가)
 3. 요청 값 검증 (DTO + `cashable()` 부족·금액 1 미만)
 4. `wallet.lockForCashout(amount)` — 장부 행 없음
-5. `CashoutRequest` 생성 (`REQUESTED`)
+5. `Cashout` 생성 (`REQUESTED`)
 6. 커밋
 
 실패 시 전부 롤백. 장부에는 신청·반려가 안 남고, 지급(#68) 때만 `EARNED` −amount가 남는다 ([entities.md](entities.md)).
@@ -88,9 +88,9 @@
 flowchart LR
   POST[POST withdrawals] --> Lock[wallet FOR UPDATE]
   Lock --> LockBal[lockForCashout]
-  LockBal --> Row[CashoutRequest REQUESTED]
+  LockBal --> Row[Cashout REQUESTED]
   Row --> Enc[Converter encrypt]
-  Enc --> DB[(cashout_requests)]
+  Enc --> DB[(cashouts)]
 ```
 
 ---
@@ -109,7 +109,7 @@ flowchart LR
 #67-S2 출금 신청 성공 [테스트]
 - Given 적립 `cashable` 9,480
 - When  `POST` amount 5,000 · 은행·계좌·예금주 유효
-- Then  `CashoutRequest(REQUESTED)`, 적립 4,480 · 잠김 5,000, 장부 행 없음
+- Then  `Cashout(REQUESTED)`, 적립 4,480 · 잠김 5,000, 장부 행 없음
 - Then  DB의 `account_number`·`account_holder`는 평문이 아니다 (암호문)
 
 #67-S3 신청 검증 실패 [테스트]
@@ -138,7 +138,7 @@ flowchart LR
 ---
 
 ## 구현 메모
-- Repository: `CashoutRequestRepository` (userId 최신순), `CreditWalletRepository.findByUserIdForUpdate`
+- Repository: `CashoutRepository` (userId 최신순), `CreditWalletRepository.findByUserIdForUpdate`
 - Service: 신청·목록. 예외는 `BusinessException` (#66과 동일)
 - Converter + 키 설정. `.env.example`·`application-local` 예시·CI 테스트 키
 - 은행 허용 목록은 프론트 `BANKS`와 맞춤
@@ -159,4 +159,4 @@ flowchart LR
 5. 문서·`.env.example` 정리
 
 ## 가정
-- `CashoutRequest`·`CashoutStatus`·`lockForCashout`는 #45에 있다
+- `Cashout`·`Cashout.Status`·`lockForCashout`는 #45에 있다

@@ -1,4 +1,4 @@
-package com.testmoa.backend.controller;
+package com.testmoa.backend.controller.admin;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
@@ -22,11 +22,11 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/admin/cashouts")
-public class AdminCashoutController {
+public class CashoutController {
 
     private final AdminCashoutService adminCashoutService;
 
-    public AdminCashoutController(AdminCashoutService adminCashoutService) {
+    public CashoutController(AdminCashoutService adminCashoutService) {
         this.adminCashoutService = adminCashoutService;
     }
 

@@ -2,13 +2,12 @@ package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
 import com.testmoa.backend.dto.response.AdminCashoutResponse;
-import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditLedger;
 import com.testmoa.backend.entity.CreditWallet;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
-import com.testmoa.backend.entity.enums.CashoutStatus;
 import com.testmoa.backend.entity.enums.CashoutTab;
 import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.global.exception.BusinessException;
@@ -27,16 +26,16 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AdminCashoutServiceImpl implements AdminCashoutService {
 
-    private final CashoutRequestRepository cashoutRequestRepository;
+    private final CashoutRepository cashoutRepository;
     private final CreditWalletRepository creditWalletRepository;
     private final CreditLedgerRepository creditLedgerRepository;
 
     public AdminCashoutServiceImpl(
-            CashoutRequestRepository cashoutRequestRepository,
+            CashoutRepository cashoutRepository,
             CreditWalletRepository creditWalletRepository,
             CreditLedgerRepository creditLedgerRepository
     ) {
-        this.cashoutRequestRepository = cashoutRequestRepository;
+        this.cashoutRepository = cashoutRepository;
         this.creditWalletRepository = creditWalletRepository;
         this.creditLedgerRepository = creditLedgerRepository;
     }
@@ -44,16 +43,16 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
     /** 처리 대기는 신청이 오래된 순, 처리 완료는 최근 처리 순 */
     @Override
     public List<AdminCashoutResponse> getCashouts(CashoutTab tab) {
-        List<CashoutRequest> requests = tab == CashoutTab.PENDING
-                ? cashoutRequestRepository.findByStatusOrderByCreatedAtAsc(CashoutStatus.REQUESTED)
-                : cashoutRequestRepository.findByStatusInOrderByProcessedAtDesc(
-                        List.of(CashoutStatus.PAID, CashoutStatus.REJECTED));
+        List<Cashout> requests = tab == CashoutTab.PENDING
+                ? cashoutRepository.findByStatusOrderByCreatedAtAsc(Cashout.Status.REQUESTED)
+                : cashoutRepository.findByStatusInOrderByProcessedAtDesc(
+                        List.of(Cashout.Status.PAID, Cashout.Status.REJECTED));
         return requests.stream().map(AdminCashoutResponse::of).toList();
     }
 
     @Override
     public AdminCashoutResponse getCashout(Long id) {
-        return AdminCashoutResponse.of(cashoutRequestRepository.findWithUserById(id)
+        return AdminCashoutResponse.of(cashoutRepository.findWithUserById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND)));
     }
 
@@ -61,7 +60,7 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
     @Override
     @Transactional
     public AdminCashoutResponse pay(Long id) {
-        CashoutRequest cashout = lockRequested(id);
+        Cashout cashout = lockRequested(id);
         CreditWallet wallet = lockWallet(cashout);
         wallet.confirmCashout(cashout.getAmount());
         cashout.pay(LocalDateTime.now());
@@ -78,7 +77,7 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
     @Override
     @Transactional
     public AdminCashoutResponse reject(Long id, CashoutRejectRequest request) {
-        CashoutRequest cashout = lockRequested(id);
+        Cashout cashout = lockRequested(id);
         CreditWallet wallet = lockWallet(cashout);
         try {
             cashout.reject(request.reason(), request.memo(), LocalDateTime.now());
@@ -90,16 +89,16 @@ public class AdminCashoutServiceImpl implements AdminCashoutService {
     }
 
     /** 요청 행을 잠그고 아직 처리 전인지 확인한다 */
-    private CashoutRequest lockRequested(Long id) {
-        CashoutRequest cashout = cashoutRequestRepository.findByIdForUpdate(id)
+    private Cashout lockRequested(Long id) {
+        Cashout cashout = cashoutRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        if (cashout.getStatus() != CashoutStatus.REQUESTED) {
+        if (cashout.getStatus() != Cashout.Status.REQUESTED) {
             throw new BusinessException(ErrorCode.CASHOUT_ALREADY_PROCESSED);
         }
         return cashout;
     }
 
-    private CreditWallet lockWallet(CashoutRequest cashout) {
+    private CreditWallet lockWallet(Cashout cashout) {
         return creditWalletRepository.findByUserIdForUpdate(cashout.getUser().getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }

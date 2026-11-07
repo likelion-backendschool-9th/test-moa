@@ -6,7 +6,7 @@
 
 ## 한눈에
 - 끝나면: 운영자가 출금 요청 목록(처리 대기·처리 완료)과 상세를 보고, 지급 완료나 반려로 처리한다. 처리 결과는 서버가 갖는다.
-- 선행: #67 (`CashoutRequest`, 지갑 `confirmCashout`·`releaseCashout`, 마스킹, 지갑 행 잠금).
+- 선행: #67 (`Cashout`, 지갑 `confirmCashout`·`releaseCashout`, 마스킹, 지갑 행 잠금).
 - 화면: `/admin/withdrawals`, `/admin/withdrawals?open=:withdrawalKey` — [withdrawals.md](../../frontend/admin/withdrawals.md)
 - 프론트 목업 제거와 API 연동은 이 이슈 범위 밖이다. 운영자 화면은 문구·라벨만 이 이슈에서 맞춘다(아래 "화면에서 함께 맞출 것").
 
@@ -17,7 +17,7 @@
 
 ## API
 
-경로는 `SecurityConfig`가 이미 `ADMIN`만 허용하는 `/api/admin/**` 아래에 둔다. 컨트롤러는 `AdminCashoutController`로 새로 만든다.
+경로는 `SecurityConfig`가 이미 `ADMIN`만 허용하는 `/api/admin/**` 아래에 둔다. 컨트롤러는 `controller/admin/CashoutController`로 새로 만든다.
 
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
@@ -157,7 +157,7 @@ flowchart LR
 ---
 
 ## 구현 메모
-- `CashoutRequestRepository`: `findByIdForUpdate`(`@Lock(PESSIMISTIC_WRITE)`), `findByStatusOrderByCreatedAtAsc`, `findByStatusInOrderByProcessedAtDesc`. 목록은 `user`를 함께 읽어(`fetch join`) N+1을 피한다
+- `CashoutRepository`: `findByIdForUpdate`(`@Lock(PESSIMISTIC_WRITE)`), `findByStatusOrderByCreatedAtAsc`, `findByStatusInOrderByProcessedAtDesc`. 목록은 `user`를 함께 읽어(`fetch join`) N+1을 피한다
 - 서비스: `AdminCashoutService`(목록·상세·`pay`·`reject`). 읽기 전용 트랜잭션과 쓰기 트랜잭션을 나눈다
 - 응답 DTO는 `CashoutResponse`의 마스킹(`AccountMasking`)을 재사용한다. 닉네임·실명을 더한 `AdminCashoutResponse`를 새로 둔다
 - 단위 테스트: S1~S6·S8은 서비스, S7은 컨트롤러 인증 테스트(`CreditControllerAuthTest`와 같은 방식), S9는 동시성 테스트(`CreditCashoutConcurrencyTest`와 같은 방식)
@@ -180,5 +180,5 @@ flowchart LR
 6. 문서 정리
 
 ## 가정
-- `CashoutRequest.pay()`·`reject()`와 지갑 `confirmCashout()`·`releaseCashout()`은 #45·#67에 있다.
+- `Cashout.pay()`·`reject()`와 지갑 `confirmCashout()`·`releaseCashout()`은 #45·#67에 있다.
 - `ADMIN`만 `/api/admin/**`에 들어올 수 있는 규칙은 `SecurityConfig`에 있다.

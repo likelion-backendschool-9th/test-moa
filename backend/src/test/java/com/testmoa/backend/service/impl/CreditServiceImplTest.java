@@ -4,16 +4,15 @@ import com.testmoa.backend.dto.request.CashoutCreateRequest;
 import com.testmoa.backend.dto.response.CashoutResponse;
 import com.testmoa.backend.dto.response.CreditBalanceResponse;
 import com.testmoa.backend.dto.response.CreditLedgerResponse;
-import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditLedger;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.CashoutStatus;
 import com.testmoa.backend.entity.enums.CreditType;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.LedgerFlow;
@@ -58,7 +57,7 @@ class CreditServiceImplTest {
     @Mock
     private RegisterRepository registerRepository;
     @Mock
-    private CashoutRequestRepository cashoutRequestRepository;
+    private CashoutRepository cashoutRepository;
 
     @InjectMocks
     private CreditServiceImpl creditService;
@@ -165,8 +164,8 @@ class CreditServiceImplTest {
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(9480);
         when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
-        when(cashoutRequestRepository.save(any(CashoutRequest.class))).thenAnswer(invocation -> {
-            CashoutRequest saved = invocation.getArgument(0);
+        when(cashoutRepository.save(any(Cashout.class))).thenAnswer(invocation -> {
+            Cashout saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 11L);
             return saved;
         });
@@ -175,14 +174,14 @@ class CreditServiceImplTest {
 
         assertEquals(11L, response.getId());
         assertEquals(5000, response.getAmount());
-        assertEquals(CashoutStatus.REQUESTED, response.getStatus());
+        assertEquals(Cashout.Status.REQUESTED, response.getStatus());
         assertEquals("100012345678", response.getAccountNumber());
         assertEquals(4480, wallet.getEarnedBalance());
         assertEquals(5000, wallet.getLockedBalance());
         verify(creditWalletRepository).findByUserIdForUpdate(USER_ID);
         verify(creditLedgerRepository, never()).save(any());
-        ArgumentCaptor<CashoutRequest> captor = ArgumentCaptor.forClass(CashoutRequest.class);
-        verify(cashoutRequestRepository).save(captor.capture());
+        ArgumentCaptor<Cashout> captor = ArgumentCaptor.forClass(Cashout.class);
+        verify(cashoutRepository).save(captor.capture());
         assertEquals("토스뱅크", captor.getValue().getBank());
         assertEquals("한서윤", captor.getValue().getAccountHolder());
     }
@@ -204,7 +203,7 @@ class CreditServiceImplTest {
         assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
         assertEquals(4480, wallet.getEarnedBalance());
         assertEquals(0, wallet.getLockedBalance());
-        verify(cashoutRequestRepository, never()).save(any());
+        verify(cashoutRepository, never()).save(any());
     }
 
     @Test
@@ -220,7 +219,7 @@ class CreditServiceImplTest {
 
         assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
         verify(creditWalletRepository, never()).findByUserIdForUpdate(any());
-        verify(cashoutRequestRepository, never()).save(any());
+        verify(cashoutRepository, never()).save(any());
     }
 
     @Test
@@ -239,7 +238,7 @@ class CreditServiceImplTest {
 
         assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
         assertEquals(0, wallet.getLockedBalance());
-        verify(cashoutRequestRepository, never()).save(any());
+        verify(cashoutRepository, never()).save(any());
     }
 
     @Test
@@ -250,8 +249,8 @@ class CreditServiceImplTest {
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(5000);
         when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
-        when(cashoutRequestRepository.save(any(CashoutRequest.class))).thenAnswer(invocation -> {
-            CashoutRequest saved = invocation.getArgument(0);
+        when(cashoutRepository.save(any(Cashout.class))).thenAnswer(invocation -> {
+            Cashout saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 12L);
             return saved;
         });
@@ -269,7 +268,7 @@ class CreditServiceImplTest {
     void getCashoutsMasksCompletedAccounts() {
         when(userRepository.existsById(USER_ID)).thenReturn(true);
         User user = user();
-        CashoutRequest requested = CashoutRequest.builder()
+        Cashout requested = Cashout.builder()
                 .user(user)
                 .amount(1000)
                 .bank("토스뱅크")
@@ -277,7 +276,7 @@ class CreditServiceImplTest {
                 .accountHolder("한서윤")
                 .build();
         ReflectionTestUtils.setField(requested, "id", 1L);
-        CashoutRequest paid = CashoutRequest.builder()
+        Cashout paid = Cashout.builder()
                 .user(user)
                 .amount(3000)
                 .bank("국민은행")
@@ -286,7 +285,7 @@ class CreditServiceImplTest {
                 .build();
         ReflectionTestUtils.setField(paid, "id", 2L);
         paid.pay(java.time.LocalDateTime.of(2026, 11, 5, 12, 0));
-        when(cashoutRequestRepository.findByUserIdOrderByCreatedAtDesc(USER_ID))
+        when(cashoutRepository.findByUserIdOrderByCreatedAtDesc(USER_ID))
                 .thenReturn(List.of(requested, paid));
 
         List<CashoutResponse> responses = creditService.getCashouts(USER_ID);
@@ -296,7 +295,7 @@ class CreditServiceImplTest {
         assertEquals("****9012", responses.get(1).getAccountNumber());
         assertEquals("한*윤", responses.get(1).getAccountHolder());
         assertNull(responses.get(0).getProcessedAt());
-        assertEquals(CashoutStatus.PAID, responses.get(1).getStatus());
+        assertEquals(Cashout.Status.PAID, responses.get(1).getStatus());
     }
 
     private static User user() {

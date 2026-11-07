@@ -4,16 +4,15 @@ import com.testmoa.backend.dto.request.CashoutCreateRequest;
 import com.testmoa.backend.dto.response.CashoutResponse;
 import com.testmoa.backend.dto.response.CreditBalanceResponse;
 import com.testmoa.backend.dto.response.CreditLedgerResponse;
-import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditLedger;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.global.crypto.CashoutBanks;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.LedgerFlow;
 import com.testmoa.backend.entity.enums.RegisterStatus;
@@ -33,20 +32,20 @@ public class CreditServiceImpl implements CreditService {
     private final CreditWalletRepository creditWalletRepository;
     private final CreditLedgerRepository creditLedgerRepository;
     private final RegisterRepository registerRepository;
-    private final CashoutRequestRepository cashoutRequestRepository;
+    private final CashoutRepository cashoutRepository;
 
     public CreditServiceImpl(
             UserRepository userRepository,
             CreditWalletRepository creditWalletRepository,
             CreditLedgerRepository creditLedgerRepository,
             RegisterRepository registerRepository,
-            CashoutRequestRepository cashoutRequestRepository
+            CashoutRepository cashoutRepository
     ) {
         this.userRepository = userRepository;
         this.creditWalletRepository = creditWalletRepository;
         this.creditLedgerRepository = creditLedgerRepository;
         this.registerRepository = registerRepository;
-        this.cashoutRequestRepository = cashoutRequestRepository;
+        this.cashoutRepository = cashoutRepository;
     }
 
     /**
@@ -90,7 +89,7 @@ public class CreditServiceImpl implements CreditService {
     @Override
     public List<CashoutResponse> getCashouts(Long userId) {
         requireUser(userId);
-        return cashoutRequestRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        return cashoutRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(CashoutResponse::of)
                 .toList();
     }
@@ -106,7 +105,7 @@ public class CreditServiceImpl implements CreditService {
         if (request.amount() == null || request.amount() < 1) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "1 크레딧 이상 입력해 주세요");
         }
-        if (!CashoutBanks.isAllowed(request.bank())) {
+        if (!Cashout.Bank.isAllowed(request.bank())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "은행을 골라 주세요");
         }
 
@@ -127,14 +126,14 @@ public class CreditServiceImpl implements CreditService {
         }
 
         wallet.lockForCashout(request.amount());
-        CashoutRequest cashout = CashoutRequest.builder()
+        Cashout cashout = Cashout.builder()
                 .user(user)
                 .amount(request.amount())
                 .bank(request.bank())
                 .accountNumber(request.accountNumber())
                 .accountHolder(request.accountHolder())
                 .build();
-        return CashoutResponse.of(cashoutRequestRepository.save(cashout));
+        return CashoutResponse.of(cashoutRepository.save(cashout));
     }
 
     private int pendingRewardOf(Long userId) {

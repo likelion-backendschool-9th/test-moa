@@ -1,10 +1,10 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.CashoutRejectRequest;
-import com.testmoa.backend.entity.CashoutRequest;
+import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
-import com.testmoa.backend.repository.CashoutRequestRepository;
+import com.testmoa.backend.repository.CashoutRepository;
 import com.testmoa.backend.repository.CreditLedgerRepository;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
@@ -42,7 +42,7 @@ class AdminCashoutConcurrencyTest {
     @Autowired UserRepository userRepository;
     @Autowired CreditWalletRepository creditWalletRepository;
     @Autowired CreditLedgerRepository creditLedgerRepository;
-    @Autowired CashoutRequestRepository cashoutRequestRepository;
+    @Autowired CashoutRepository cashoutRepository;
     @Autowired PlatformTransactionManager transactionManager;
 
     @Test
@@ -62,7 +62,7 @@ class AdminCashoutConcurrencyTest {
             wallet.grantEarned(5000);
             wallet.lockForCashout(5000);
             creditWalletRepository.save(wallet);
-            CashoutRequest cashout = cashoutRequestRepository.save(CashoutRequest.builder()
+            Cashout cashout = cashoutRepository.save(Cashout.builder()
                     .user(user)
                     .amount(5000)
                     .bank("토스뱅크")
@@ -126,7 +126,7 @@ class AdminCashoutConcurrencyTest {
             creditLedgerRepository.findAll().stream()
                     .filter(ledger -> ledger.getCreditWallet().getId().equals(wallet.getId()))
                     .forEach(creditLedgerRepository::delete);
-            cashoutRequestRepository.deleteById(cashoutId);
+            cashoutRepository.deleteById(cashoutId);
             creditWalletRepository.deleteById(wallet.getId());
             userRepository.deleteById(userId);
         });

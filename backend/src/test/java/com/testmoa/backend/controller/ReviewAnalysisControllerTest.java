@@ -173,10 +173,15 @@ class ReviewAnalysisControllerTest {
     }
 
     @Test
-    @DisplayName("#107-S1 #107-S2 #107-S11 그룹·매핑·대표 리뷰를 저장하고 새 코드를 발급하며, 심각도·테스터 수 순으로 개수를 계산해 돌려준다")
+    @DisplayName("#107-S1 #107-S2 #107-S11 #107-S13 그룹·매핑·대표 리뷰를 저장하고 새 코드를 발급하며, 심각도·테스터 수 순으로 개수를 계산해 돌려준다. 신고·보상 제외 리뷰는 넣지 않는다")
     void 분석_결과를_저장한다() throws Exception {
         User developer = saveSubscriber();
         Reviews r = saveReviews(developer);
+        // 신고된 리뷰와 보상에서 제외된 리뷰는 분석 서버에 보내지 않고 미분석 수에도 세지 않는다
+        saveFeedback(r.f1().getRegister(), null, "신고된 리뷰", LocalDateTime.now().minusMinutes(20)).report();
+        Feedback excluded = saveFeedback(r.f2().getRegister(), null, "보상 제외된 리뷰", LocalDateTime.now().minusMinutes(10));
+        excluded.report();
+        excluded.exclude();
         // 같은 프로젝트의 다른 모집글에 코드 "5"가 있다
         ClusterGroup other = ClusterGroup.builder().recruitment(saveRecruitment(r.project())).groupCode("5").name("다른 버전 그룹")
                 .category(ClusterCategory.BUG).improvementRank(1).build();

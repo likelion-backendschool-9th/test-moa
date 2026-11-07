@@ -19,6 +19,21 @@
   --accent: var(--brand-green);
   --accent-soft: #def7eb;
   --on-accent: #ffffff;
+  /* 피드백 "유용해요"를 누른 상태. 연한 분홍 바탕에 빨강 글씨, 대비 4.82:1 */
+  --like: #c4264a;
+  --like-soft: #fde8ed;
+  /*
+   * 유료 기능 그라데이션. 민트에서 라벤더로 옅게 번지는 바탕이고 글씨는 강조색(글씨 아래 대비 4.51:1 이상).
+   * 피드백의 채팅하기·AI 질문 받기 버튼에 쓰고, 구독 화면 같은 다른 유료 기능 면도 bg-paid-gradient로 가져다 쓴다.
+   * 세 색은 다크에서 바뀌고, --paid-gradient는 그 색을 읽어 두 모드에 맞게 그려진다. 섞는 방식은 시안과 같은 sRGB다
+   */
+  --paid-start: #ddf5ea;
+  --paid-mid: #edf5ee;
+  --paid-end: #eeeaf4;
+  /* 민트를 30%까지 그대로 두고 65%에서 옅어지게 해 초록 쪽 비중을 늘린다 */
+  --paid-gradient: linear-gradient(to right, var(--paid-start) 30%, var(--paid-mid) 65%, var(--paid-end));
+  /* 그라데이션 위 글씨. 라이트는 강조색, 다크는 흰색 */
+  --paid-text: var(--brand-green);
   /* 활자 썸네일의 교정지 면과 재단선 */
   --thumb: #ffffff;
   --on-thumb: #1a1a1a;
@@ -51,6 +66,14 @@
     --accent: #129357;
     --accent-soft: #123625;
     --on-accent: #000000;
+    /* 남회색 패널에서 튀지 않게 어두운 장미색 바탕에 밝힌 분홍 글씨, 대비 6.42:1 */
+    --like: #f47c97;
+    --like-soft: #341520;
+    /* 같은 민트→라벤더 흐름을 어둡게 낮춘 바탕. 글씨는 흰색 */
+    --paid-start: #123625;
+    --paid-mid: #1a2a26;
+    --paid-end: #241f36;
+    --paid-text: #ffffff;
     --thumb: #ffffff;
     --on-thumb: #16181d;
     --mark: #3d434b;
@@ -69,6 +92,12 @@
   --color-brand-logo: var(--brand-logo);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
+  --color-like: var(--like);
+  --color-like-soft: var(--like-soft);
+  --color-paid-start: var(--paid-start);
+  --color-paid-mid: var(--paid-mid);
+  --color-paid-end: var(--paid-end);
+  --color-paid-text: var(--paid-text);
   --color-thumb: var(--thumb);
   --color-on-thumb: var(--on-thumb);
   --color-paper-accent: var(--paper-accent);
@@ -202,6 +231,25 @@
   & > :nth-child(5) { animation-delay: 240ms; }
   & > :nth-child(6) { animation-delay: 300ms; }
   & > :nth-child(n + 7) { animation-delay: 340ms; }
+}
+
+/* 유료 기능 그라데이션 바탕. 방향과 색은 --paid-gradient 토큰 하나에서만 바꾼다 */
+@utility bg-paid-gradient {
+  background-image: var(--paid-gradient);
+}
+
+/* 피드백 "유용해요"를 누르면 하트가 한 번 튀어 올랐다 자리를 잡는다 */
+@keyframes heart-pop {
+  30% {
+    transform: scale(1.35);
+  }
+  60% {
+    transform: scale(0.9);
+  }
+}
+
+@utility animate-heart-pop {
+  animation: heart-pop 500ms var(--ease-brand) both;
 }
 
 @keyframes soft-pulse {

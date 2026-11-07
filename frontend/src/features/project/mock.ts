@@ -292,3 +292,17 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
 
   return { projects, applications, feedbacks, aiSummaries, details, cancellations };
 }
+
+/**
+ * 시연용 AI 후속 질문 3개. 실제로는 백엔드가 AI 분석 서버에서 받아 온다(POST /api/v1/developer/feedbacks/{id}/followup-questions).
+ * 테스트 항목이 없는 기타 의견은 항목 이름 없이 묻는다.
+ */
+export function buildFollowupQuestions(testItemTitle: string | null): string[] {
+  /* 항목 이름 뒤 조사(을/를)가 받침에 따라 달라서 "항목을"로 고정한다 */
+  const where = testItemTitle ? `"${testItemTitle}" 항목을 테스트하실 때` : "테스트하실 때";
+  return [
+    `${where} 어떤 부분이 불편했는지, 그때 무엇을 하려고 하셨는지 자세히 알려주실 수 있을까요?`,
+    "그 순간 화면에 어떤 문구나 버튼이 보였는지 말씀해 주실 수 있을까요?",
+    "같은 상황에서 화면이 어떻게 달라지면 더 편하셨을지 편하게 들려주실 수 있을까요?",
+  ];
+}

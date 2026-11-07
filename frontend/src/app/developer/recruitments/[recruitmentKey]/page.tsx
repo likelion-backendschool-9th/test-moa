@@ -59,7 +59,14 @@ async function ManageSlot({ params, searchParams }: Props) {
           selectionMode={detail.selectionMode}
         />
       )}
-      {current === "feedback" && <FeedbackList feedbacks={feedbacks} testItems={detail.testItems} />}
+      {current === "feedback" && (
+        <FeedbackList
+          feedbacks={feedbacks}
+          testItems={detail.testItems}
+          recruitmentKey={recruitmentKey}
+          isSubscription={recruitment.isSubscription}
+        />
+      )}
       {current === "analytics" && <AnalyticsPanel isSubscription={recruitment.isSubscription} analytics={analytics} />}
       {/* AI 분석은 느릴 수 있어서 숫자 카드와 따로 기다린다. 구독 모집에서만 보인다 */}
       {current === "analytics" && recruitment.isSubscription && (

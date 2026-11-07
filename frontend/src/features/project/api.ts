@@ -1,12 +1,13 @@
 import "server-only";
 import { connection } from "next/server";
 import { cache } from "react";
-import { getDemoDataMode } from "@/lib/demo";
+import { backendFetch, isBackendAuth, type BackendResult } from "@/lib/backend";
+import { getDemoDataMode, waitIfSlow } from "@/lib/demo";
 import type { Role } from "@/lib/session";
 import { buildGeneralRecruitments, buildPastRecruitments, buildPromotedRecruitments } from "@/features/recruitment/mock";
 import type { Recruitment } from "@/features/recruitment/types";
 import { readCancellations, readDecisions, saveCancellation, saveDecisions, type Decision } from "./demo-decisions";
-import { buildDeveloperProjects, type ProjectSeedData } from "./mock";
+import { buildDeveloperProjects, buildFollowupQuestions, type ProjectSeedData } from "./mock";
 import type { AiSummary, Application, Feedback, Project, RecruitmentCancellation, RecruitmentDetail } from "./types";
 
 /*
@@ -142,6 +143,34 @@ export async function findAiSummary(role: Role, recruitmentKey: string): Promise
   /* 느린 응답 시연: 숫자 카드보다 늦게 도착하는 모습을 보여 준다 */
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
   return (await load(role)).aiSummaries[recruitmentKey] ?? null;
+}
+
+/* 백엔드는 AI 분석 서버의 응답을 30초까지 기다린다(연결 5초 별도). 그보다 먼저 끊지 않게 넉넉히 기다린다 */
+const FOLLOWUP_TIMEOUT_MS = 40_000;
+
+/** 백엔드 FollowupQuestionsResponse */
+type FollowupQuestions = { questions: string[] };
+
+/**
+ * 피드백 하나로 테스터에게 되물을 AI 후속 질문을 받는다. 백엔드가 구독 여부와 하루 3번 한도를 확인한다.
+ * AUTH_MODE=backend면 백엔드를 부르고, 아니면 시연용 샘플을 돌려준다.
+ */
+export async function requestFollowupQuestions(
+  role: Role,
+  recruitmentKey: string,
+  feedbackId: string,
+): Promise<BackendResult<FollowupQuestions>> {
+  if (isBackendAuth) {
+    return backendFetch<FollowupQuestions>(`/api/v1/developer/feedbacks/${encodeURIComponent(feedbackId)}/followup-questions`, {
+      method: "POST",
+      timeoutMs: FOLLOWUP_TIMEOUT_MS,
+    });
+  }
+  await waitIfSlow();
+  const { feedbacks, details } = await load(role);
+  const feedback = feedbacks[recruitmentKey]?.find((item) => item.id === feedbackId);
+  const testItem = details[recruitmentKey]?.testItems.find((item) => item.id === feedback?.testItemId);
+  return { ok: true, data: { questions: buildFollowupQuestions(testItem?.title ?? null) } };
 }
 
 /** 모집 건의 모집 조건과 테스트 항목 */

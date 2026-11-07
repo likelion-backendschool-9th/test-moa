@@ -473,20 +473,23 @@ test.describe("R108 피드백 탭", () => {
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     const rows = page.getByTestId("feedback");
     await expect(rows).toHaveCount(4);
-    await expect(rows.nth(0)).toContainText("신고 대기");
+    for (const [index, nickname] of ["김하늘", "이도윤", "박서아", "최지호"].entries()) {
+      await expect(rows.nth(index)).toContainText(nickname);
+    }
     await expect(rows.nth(0)).toContainText(/\d+시간 뒤 자동 지급/);
-    await expect(rows.nth(1)).toContainText("신고됨");
-    await expect(rows.nth(2)).toContainText("지급 완료");
-    await expect(rows.nth(3)).toContainText("지급 완료");
-    await expect(rows.nth(0).getByRole("button", { name: "신고" })).toBeVisible();
-    await expect(rows.nth(1).getByRole("button", { name: "신고" })).toHaveCount(0);
-    await expect(rows.nth(2).getByRole("button", { name: "신고" })).toHaveCount(0);
+    await expect(rows.nth(0).getByRole("button", { name: "신고하기" })).toBeVisible();
+    /* 신고된 피드백은 신고하기 대신 신고 정보, 지급 완료는 신고하기를 눌러도 기간이 지났다고만 알린다 (#134) */
+    await expect(rows.nth(1).getByRole("button", { name: "신고하기" })).toHaveCount(0);
+    await expect(rows.nth(1).getByRole("button", { name: "신고 정보" })).toBeVisible();
+    await rows.nth(2).getByRole("button", { name: "신고하기" }).click();
+    await expect(rows.nth(2)).toContainText("신고는 제출 후 72시간 안에만 할 수 있어요");
+    await expect(page.getByRole("dialog", { name: "피드백 신고" })).toBeHidden();
   });
 
   test("S509 사유를 적어 신고하고, Esc로 닫으면 포커스가 돌아온다", async ({ page }) => {
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     const row = page.getByTestId("feedback").first();
-    const reportButton = row.getByRole("button", { name: "신고" });
+    const reportButton = row.getByRole("button", { name: "신고하기" });
 
     await reportButton.click();
     const dialog = page.getByRole("dialog", { name: "피드백 신고" });
@@ -502,8 +505,8 @@ test.describe("R108 피드백 탭", () => {
     await dialog.getByLabel("신고 사유").fill("내용이 너무 짧아요");
     await dialog.getByRole("button", { name: "신고하기" }).click();
     await expect(dialog).toBeHidden();
-    await expect(row).toContainText("신고됨");
-    await expect(row.getByRole("button", { name: "신고" })).toHaveCount(0);
+    await expect(row.getByRole("button", { name: "신고 정보" })).toBeVisible();
+    await expect(reportButton).toHaveCount(0);
   });
 });
 
@@ -747,7 +750,7 @@ test.describe("#62-R5 항목별 피드백과 스크린샷", () => {
   test("#62-S25 피드백마다 테스트 항목과 스크린샷이 보이고 항목별 수가 있다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
-    await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 2건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건 · 추천 1건");
+    await expect(page.getByTestId("feedback-by-item")).toHaveText("항목별 책 검색하기 2건 · 저장한 문장 다시 찾기 1건 · 기타 의견 1건 · 유용해요 1건");
     const first = page.getByTestId("feedback").filter({ hasText: "김하늘" });
     await expect(first).toContainText("책 검색하기");
     await expect(first.getByRole("img", { name: "표지가 비어 있는 검색 결과" })).toBeVisible();
@@ -756,24 +759,47 @@ test.describe("#62-R5 항목별 피드백과 스크린샷", () => {
 });
 
 test.describe("#62-R6 피드백 추천", () => {
-  test("#62-S26 도움이 된 피드백을 추천하고 다시 누르면 뺀다. 신고된 피드백은 추천할 수 없다", async ({ page, context }) => {
+  test("#62-S26 도움이 된 피드백을 유용해요로 표시하고 다시 누르면 뺀다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto(`${FIRST_MANAGE}?tab=feedback`);
     const count = page.getByTestId("recommended-count");
-    await expect(count).toHaveText("· 추천 1건");
-    await expect(page.getByRole("button", { name: "박서아님의 피드백 추천" })).toHaveAttribute("aria-pressed", "true");
+    await expect(count).toHaveText("· 유용해요 1건");
+    await expect(page.getByRole("button", { name: "박서아님의 피드백이 유용해요" })).toHaveAttribute("aria-pressed", "true");
 
-    const like = page.getByRole("button", { name: "김하늘님의 피드백 추천" });
+    const like = page.getByRole("button", { name: "김하늘님의 피드백이 유용해요" });
     await expect(like).toHaveAttribute("aria-pressed", "false");
     await like.click();
     await expect(like).toHaveAttribute("aria-pressed", "true");
-    await expect(like).toHaveText("추천함");
-    await expect(count).toHaveText("· 추천 2건");
-    await expect(page.locator('[aria-live="polite"]').filter({ hasText: "김하늘님의 피드백을 추천했어요" })).toHaveCount(1);
+    await expect(count).toHaveText("· 유용해요 2건");
+    await expect(page.locator('[aria-live="polite"]').filter({ hasText: "김하늘님의 피드백을 유용해요로 표시했어요" })).toHaveCount(1);
     await like.click();
-    await expect(count).toHaveText("· 추천 1건");
+    await expect(count).toHaveText("· 유용해요 1건");
 
-    await expect(page.getByRole("button", { name: "이도윤님의 피드백 추천" })).toHaveCount(0);
+    /* 신고된 피드백에도 버튼이 있다 (#134: 버튼 4개는 언제나 보인다) */
+    await expect(page.getByRole("button", { name: "이도윤님의 피드백이 유용해요" })).toBeVisible();
+  });
+});
+
+test.describe("#134-R2 유료 기능 버튼", () => {
+  test("#134-S5 AI 질문 받기를 누르면 질문 3개가 보이고, 누른 질문이 복사된다", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await setDemo(context, { role: "developer" });
+    await page.goto(`${FIRST_MANAGE}?tab=feedback`);
+    const open = page.getByRole("button", { name: "김하늘님 피드백으로 AI 질문 받기" });
+    await open.click();
+
+    const dialog = page.getByRole("dialog", { name: "AI 추천 질문" });
+    const questions = dialog.getByRole("listitem");
+    await expect(questions).toHaveCount(3);
+    const first = questions.first().getByRole("button");
+    const text = (await first.innerText()).trim();
+    await first.click();
+    await expect(first).toContainText("복사했어요");
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(text);
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(open).toBeFocused();
   });
 });
 

@@ -16,7 +16,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root,
     rules: {
+      /*
+       * Tailwind는 전역 CSS만 처리한다. .module.css까지 이 규칙을 타면 as: "*.css"로 이름이 바뀌어 CSS Module이 아니게 되고,
+       * 클래스 이름이 해시 없이 전역으로 나간다(#160). Tailwind를 빼면 이 규칙도 지운다
+       */
       "*.css": {
+        condition: { not: { path: /\.module\.css$/ } },
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
       },

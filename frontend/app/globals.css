@@ -51,6 +51,20 @@
   --z-menu: 30;
   --z-header: 40;
   --z-skip: 50;
+
+  /*
+   * 간격·글자·모서리·모션. 부품의 .module.css는 값 대신 이 토큰을 쓴다(#160-R5).
+   * 값은 Tailwind 기본 단계를 그대로 옮겼다. 이름의 숫자도 같은 단계다(p-4 → --space-4)
+   */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm-leading: calc(1.25 / 0.875);
+  --radius-xl: 0.75rem;
+  --radius-full: 2147483647px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-300: 300ms;
 }
 
 @media (prefers-color-scheme: dark) {

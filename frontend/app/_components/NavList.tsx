@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import type { NavItem } from "@/app/_components/nav";
+import type { NavItem } from "@/app/_lib/nav";
 
 type NavListProps = {
   items: NavItem[];

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getNavItems } from "@/app/_components/nav";
+import { getNavItems } from "@/app/_lib/nav";
 import { getSession } from "@/features/session/session";
 import { MainNav } from "./MainNav";
 import { MobileMenu } from "./MobileMenu";

@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> {
+public interface RecruitmentRepository extends JpaRepository<Recruitment, Long>, RecruitmentSearchRepository {
     // 여러 프로젝트의 모집글. 최신순
     List<Recruitment> findByProjectIdInOrderByCreatedAtDescIdDesc(Collection<Long> projectIds);
 

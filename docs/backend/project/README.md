@@ -11,6 +11,7 @@
 | [#107](https://github.com/likelion-backendschool-9th/test-moa/issues/107) | AI 리뷰 묶기·우선순위와 GitHub 이슈 초안 | [ai-review-analysis.md](ai-review-analysis.md) |
 | [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | [ai-version-comparison.md](ai-version-comparison.md) |
 | [#109](https://github.com/likelion-backendschool-9th/test-moa/issues/109) | AI 후속 질문 추천 | [ai-followup.md](ai-followup.md) |
+| [#112](https://github.com/likelion-backendschool-9th/test-moa/issues/112) | 공개 모집 목록·검색 API | [public-recruitment-list.md](public-recruitment-list.md) |
 | [#113](https://github.com/likelion-backendschool-9th/test-moa/issues/113) | 공개 모집글 상세 API | [public-recruitment-detail.md](public-recruitment-detail.md) |
 | [#114](https://github.com/likelion-backendschool-9th/test-moa/issues/114) | 테스트 지원 API | [test-apply.md](test-apply.md) |
 | [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |

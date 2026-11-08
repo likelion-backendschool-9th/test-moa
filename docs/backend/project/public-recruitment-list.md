@@ -41,7 +41,7 @@
   - 배너의 최신 모집 3건: `open=true&size=3`
   - "이런 테스트도 있어요": `subscription=true&open=true`. 모집이 끝난 구독 모집은 지원할 수 없어 뺀다
   - 전체 테스트: 화면 URL의 조건을 그대로 넘긴다(`open=1`도 그대로 받는다)
-- 코드: `controller.RecruitmentController.search`, `RecruitmentService.search`, `RecruitmentPageResponse`, 조건 쿼리는 `RecruitmentSearchRepository`(+`Impl`)다. 상태는 `Recruitment.phaseAt(now)`로 계산한다([README 정한 것 11·15](README.md#정한-것))
+- 코드: `controller.RecruitmentController.search`, `RecruitmentService.search`, 조건은 요청 DTO `RecruitmentSearchRequest`(`@ModelAttribute`로 받고 기본값과 검증을 DTO에 모음, 리뷰 반영), 응답은 `RecruitmentPageResponse`, 조건 쿼리는 `RecruitmentSearchRepository`(+`Impl`)다. 상태는 `Recruitment.phaseAt(now)`로 계산한다([README 정한 것 11·15](README.md#정한-것))
 - 로그인 없이 부를 수 있다. `SecurityConfig`에서 이 주소의 `GET`만 연다. 토큰을 보내면 검사하므로 잘못된 토큰은 다른 API처럼 401이다
 
 #112-S1 기본 목록 [테스트]

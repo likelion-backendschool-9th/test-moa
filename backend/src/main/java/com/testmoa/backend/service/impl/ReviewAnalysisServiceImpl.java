@@ -74,19 +74,21 @@ public class ReviewAnalysisServiceImpl implements ReviewAnalysisService {
     }
 
     /**
-     * 레포가 연결되지 않았으면 차지하기 전에 거절함. 등록을 먼저 차지해 두 번 눌러도 이슈가 하나만 생기게 하고,
-     * GitHub는 트랜잭션 밖에서 부름. GitHub 호출이 실패하면 차지를 풀어 다시 누를 수 있게 함
+     * 주인·초안 확인과 레포 조회는 차지하기 전에 해서 거절할 때 차지를 건드리지 않음. 등록을 먼저 차지해 두 번 눌러도 이슈가 하나만 생기게 하고,
+     * GitHub는 트랜잭션 밖에서 부름. 실패하면(초안 다시 읽기 포함) 차지를 풀어 다시 누를 수 있게 함
      */
     @Override
     public ReviewAnalysisResponse registerIssue(Long userId, Long recruitmentId, Long groupId) {
         subscriptionChecker.require(userId);
-        IssueDraft draft = reviewAnalysisReader.readIssueDraft(userId, recruitmentId, groupId);
-        RepositoryLink repository = repositoryLinkProvider.find(draft.projectId())
+        IssueDraft checked = reviewAnalysisReader.readIssueDraft(userId, recruitmentId, groupId);
+        RepositoryLink repository = repositoryLinkProvider.find(checked.projectId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.GITHUB_REPO_NOT_LINKED));
 
         reviewAnalysisWriter.claimIssueRegistration(groupId);
         IssueRef issue;
         try {
+            // 차지한 뒤에는 초안을 고칠 수 없어서, 여기서 다시 읽은 초안이 화면에 남는 초안과 같음
+            IssueDraft draft = reviewAnalysisReader.readIssueDraft(userId, recruitmentId, groupId);
             issue = gitHubIssueClient.create(repository, draft.title(), draft.body(), draft.labels());
         } catch (RuntimeException e) {
             reviewAnalysisWriter.releaseIssueRegistration(groupId);

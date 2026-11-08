@@ -24,5 +24,7 @@ public record AnalysisGroupUpdateRequest(
         @Size(max = 255, message = "이슈 제목은 255자까지 적을 수 있어요")
         String gitIssueTitle,
 
+        // GitHub 본문 한도(65,536자)에서 근거와 리뷰 인용이 붙을 자리를 남긴다. 완성한 본문 길이는 등록할 때 다시 확인한다
+        @Size(max = 60_000, message = "이슈 내용은 60,000자까지 적을 수 있어요")
         String gitIssueContent
 ) {}

@@ -38,6 +38,9 @@ public class ReviewAnalysisReader {
     // 분석 서버가 한 번에 받는 리뷰 수
     private static final int MAX_FEEDBACKS = 1000;
 
+    // GitHub 이슈 본문의 최대 길이
+    static final int ISSUE_BODY_MAX = 65_536;
+
     // 분석하는 리뷰 상태. 신고됨(REPORTED)·보상 제외(EXCLUDED) 리뷰는 그룹과 리뷰 수에 넣지 않음
     private static final List<FeedbackStatus> ANALYZED_STATUSES = List.of(FeedbackStatus.SUBMITTED, FeedbackStatus.REWARDED);
 
@@ -116,6 +119,11 @@ public class ReviewAnalysisReader {
             body.append("> ").append(content.replace("@", "@\u200B").replace("\n", "\n> ")).append("\n\n");
         }
         body.append("---\ntest-moa 분석 결과에서 생성됨");
+        // GitHub는 넘으면 422로 거절함. length()는 이모지를 2자로 세어 GitHub가 어떻게 세든 한도 안에 듦
+        if (body.length() > ISSUE_BODY_MAX) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT,
+                    "이슈 본문이 GitHub 한도를 넘어요. 이슈 내용을 " + (body.length() - ISSUE_BODY_MAX) + "자 이상 줄여 주세요");
+        }
         return new IssueDraft(recruitment.getProject().getId(), group.getGitIssueTitle(), body.toString(), labelsOf(group));
     }
 
@@ -129,7 +137,7 @@ public class ReviewAnalysisReader {
         Integer rank = group.getImprovementRank();
         if (rank != null) labels.add("severity:" + switch (rank) {
             case 1 -> "critical";
-            case 2 -> "blocker";
+            case 2 -> "major";
             case 3 -> "minor";
             default -> "trivial";
         });

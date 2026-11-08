@@ -1,7 +1,9 @@
 package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.ClusterGroup;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,6 +26,14 @@ public interface ClusterGroupRepository extends JpaRepository<ClusterGroup, Long
             where g.id = :id and g.recruitment.id = :recruitmentId and g.recruitment.project.user.id = :userId
             """)
     Optional<ClusterGroup> findMine(@Param("id") Long id, @Param("recruitmentId") Long recruitmentId, @Param("userId") Long userId);
+
+    // 그룹 수정용. 행을 잠가 이슈 등록 차지와 차례로 실행되게 한다. 잠그지 않으면 수정 저장이 그사이 생긴 등록 중 표시를 덮어쓸 수 있다
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select g from cluster_groups g
+            where g.id = :id and g.recruitment.id = :recruitmentId and g.recruitment.project.user.id = :userId
+            """)
+    Optional<ClusterGroup> findMineForUpdate(@Param("id") Long id, @Param("recruitmentId") Long recruitmentId, @Param("userId") Long userId);
 
     /**
      * GitHub 이슈 등록을 차지한다. 아직 등록하지 않았고 다른 등록이 진행 중이 아닐 때만 바꿔, 버튼을 빠르게 두 번 눌러도 한 번만 성공한다.

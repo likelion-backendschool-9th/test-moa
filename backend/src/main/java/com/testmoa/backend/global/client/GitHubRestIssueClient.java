@@ -18,7 +18,8 @@ import java.util.List;
 
 /**
  * GitHub REST API(POST /repos/{owner}/{repo}/issues)로 이슈를 만든다.
- * 레포에 없는 라벨은 GitHub이 이슈를 만들 때 함께 만든다(push 권한이 있을 때).
+ * 레포에 없는 라벨은 GitHub이 이슈를 만들 때 함께 만든다(push 권한이 있을 때). 권한이 없으면 오류 없이 라벨만 빠지므로,
+ * GitHub App 권한을 정할 때 라벨을 붙이고 만들 수 있는지 함께 확인한다.
  */
 @Slf4j
 @Component

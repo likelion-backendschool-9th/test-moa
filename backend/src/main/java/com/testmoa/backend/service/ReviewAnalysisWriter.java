@@ -134,20 +134,25 @@ public class ReviewAnalysisWriter {
     }
 
     /**
-     * 개발자의 그룹 수정. 보낸 값만 바꿈. 칭찬·미분류 그룹에 심각도·이슈 초안을 보내면 400.
+     * 개발자의 그룹 수정. 보낸 값만 바꿈. 칭찬·미분류 그룹에 심각도·이슈 초안을 보내면 400,
+     * 등록했거나 등록 중(5분 이내)인 그룹의 이슈 초안을 보내면 409 ISSUE_ALREADY_REGISTERED.
      * 다른 모집글이나 다른 회원의 그룹은 없는 그룹과 같이 404
      */
     @Transactional
     public void editGroup(Long userId, Long recruitmentId, Long groupId, AnalysisGroupUpdateRequest request) {
-        ClusterGroup group = clusterGroupRepository.findMine(groupId, recruitmentId, userId)
+        ClusterGroup group = clusterGroupRepository.findMineForUpdate(groupId, recruitmentId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         boolean editsIssue = request.improvementRank() != null || request.gitIssueTitle() != null || request.gitIssueContent() != null;
         if (editsIssue && !group.getCategory().hasIssue()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "칭찬·미분류 그룹에는 심각도와 이슈 초안이 없어요");
         }
-        // 등록한 이슈 초안은 GitHub와 달라지지 않도록 고칠 수 없다
+        // 등록했거나 등록 중인 이슈 초안은 GitHub와 달라지지 않도록 고칠 수 없다
         boolean editsDraft = request.gitIssueTitle() != null || request.gitIssueContent() != null;
-        if (editsDraft && group.getGitIssueUrl() != null) throw new BusinessException(ErrorCode.ISSUE_ALREADY_REGISTERED);
+        LocalDateTime registeringAt = group.getGitIssueRegisteringAt();
+        boolean registering = registeringAt != null && registeringAt.isAfter(LocalDateTime.now().minus(STALE_REGISTERING));
+        if (editsDraft && (group.getGitIssueUrl() != null || registering)) {
+            throw new BusinessException(ErrorCode.ISSUE_ALREADY_REGISTERED);
+        }
         if (request.name() != null) group.rename(request.name().trim());
         if (request.improvementRank() != null) group.changeImprovementRank(request.improvementRank());
         if (editsDraft) {

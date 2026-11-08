@@ -152,4 +152,34 @@ class ChatReadControllerTest {
         assertThat(saved(testerSide.getId()).getLastReadSeq()).isZero();
     }
 
+    void inboxUnread(User user, ChatRoom target, long count) throws Exception {
+        call(get("/api/v1/chats"), user).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.rooms[?(@.roomKey == '" + target.getRoomKey() + "')].unreadCount")
+                        .value(org.hamcrest.Matchers.contains((int) count)));
+    }
+    @Test @DisplayName("#52-S2 일부만 읽으면 남은 상대 메시지만 셈")
+    void partiallyRead() throws Exception {
+        sendThree();
+        read(tester, 2).andExpect(status().isOk()).andExpect(jsonPath("$.data.lastReadSeq").value(2));
+        inboxUnread(tester, room, 1);
+    }
+    @Test @DisplayName("#52-S6 두 역할의 방에서 내 메시지를 제외하고 읽음 반영")
+    void inboxCounts() throws Exception {
+        var member = fixtures.user("다른테스터");
+        var other = newRoom(tester, member, "다른 프로젝트");
+        send(room, developer);
+        send(room, tester);
+        send(room, developer);
+        send(other, tester);
+        inboxUnread(tester, room, 2);
+        inboxUnread(tester, other, 0);
+        read(tester, 3).andExpect(status().isOk());
+        inboxUnread(tester, room, 0);
+        inboxUnread(developer, room, 1);
+    }
+    @Test @DisplayName("#52-S7 메시지가 없는 방은 안 읽은 수 0")
+    void emptyRoom() throws Exception {
+        inboxUnread(tester, room, 0);
+    }
+
 }

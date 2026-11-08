@@ -65,4 +65,11 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
               and not exists (select fc.id from feedback_clusters fc where fc.feedback = f)
             """)
     long countUnanalyzed(@Param("recruitmentId") Long recruitmentId, @Param("statuses") Collection<FeedbackStatus> statuses);
+
+    // 참가의 피드백(#118). 테스트 항목을 함께 읽고, 같은 시각에 저장한 행은 id 순서
+    @Query("select f from feedbacks f left join fetch f.testItem where f.register.id = :registerId order by f.id")
+    List<Feedback> findByRegisterId(@Param("registerId") Long registerId);
+
+    // 참가에 피드백이 있는지(#118). 피드백은 제출할 때만 저장되므로 있으면 낸 것이다
+    boolean existsByRegisterId(Long registerId);
 }

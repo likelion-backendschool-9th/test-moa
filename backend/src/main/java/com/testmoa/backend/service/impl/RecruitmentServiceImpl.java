@@ -58,8 +58,8 @@ public class RecruitmentServiceImpl implements RecruitmentService {
 
         List<String> imageUrls = recruitmentImageRepository.findByRecruitmentIdOrderBySortOrderAsc(recruitmentId).stream()
                 .map(RecruitmentImage::getUrl).toList();
-        String softwareType = recruitmentTypeRepository.findByRecruitmentIdIn(List.of(recruitmentId)).stream()
-                .findFirst().map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
+        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitmentId)
+                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
         String myRegisterStatus = userId == null ? null : registerRepository
                 .findFirstByRecruitmentIdAndUserIdOrderByIdDesc(recruitmentId, userId)
                 .map(register -> RecruitmentNames.registerStatus(register.getStatus())).orElse(null);

@@ -19,6 +19,7 @@
 | --- | --- | --- | --- |
 | 공개 모집글 상세 | `GET /api/v1/recruitments/{recruitmentId}` | 선택 | 200 |
 
+- 코드: 공개 조회는 `controller.RecruitmentController`·`RecruitmentService`·`RecruitmentResponse`이고, 개발자의 모집 작성·취소는 `controller.developer.RecruitmentController`(빈 이름 `developerRecruitmentController`)다. 역할 구분은 패키지로 하고 클래스 이름에 `Public`을 붙이지 않는다([README 정한 것 15](README.md#정한-것), 리뷰 반영)
 - 주소 변수는 모집글 id다([README 정한 것 7](README.md#정한-것)). 프론트 `/recruitments/:slug`의 slug 자리에 같은 id를 넣는다
 - 로그인 없이 부를 수 있다. `SecurityConfig`에서 이 주소의 `GET`만 열고, 같은 주소 아래 지원(#114) 같은 쓰기 요청은 로그인이 필요하다
 - 토큰을 보내면 회원으로 본다. 토큰이 잘못됐거나 만료됐으면 다른 API처럼 401이다. 프론트 proxy가 만료 전에 갱신한다

@@ -1,0 +1,175 @@
+package com.testmoa.backend.controller;
+
+import com.testmoa.backend.entity.*;
+import com.testmoa.backend.entity.enums.*;
+import com.testmoa.backend.global.security.JwtProvider;
+import com.testmoa.backend.support.ChatFixtures;
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.*;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
+import java.util.List;
+import static com.testmoa.backend.support.ChatFixtures.participantWithRole;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Transactional
+class ChatStartControllerTest {
+    @Autowired MockMvc mvc;
+    @Autowired EntityManager em;
+    @Autowired JwtProvider jwt;
+    @Autowired ObjectMapper json;
+    ChatFixtures fixtures;
+    User developer, tester;
+    Recruitment recruitment;
+    Register register;
+    Subscription subscription;
+
+    @BeforeEach
+    void setUp() {
+        fixtures = new ChatFixtures(em);
+        developer = fixtures.user("모아개발");
+        tester = fixtures.user("모아테스터");
+        recruitment = fixtures.recruitment(developer, "북로그");
+        deadlines(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(7));
+        register = fixtures.confirmedRegister(recruitment, tester);
+        var plan = Plan.builder().tier("CHAT-" + developer.getId()).version(1).cashPrice(1000)
+                .creditPrice(1000).periodDays(30).build();
+        em.persist(plan);
+        subscription = Subscription.builder().user(developer).plan(plan)
+                .startAt(LocalDateTime.now().minusDays(1)).endAt(LocalDateTime.now().plusDays(30)).build();
+        em.persist(subscription);
+        em.flush();
+    }
+    void deadlines(LocalDateTime recruit, LocalDateTime feedback) {
+        recruitment.edit(recruitment.getTitle(), null, null, null, SelectionMode.MANUAL, recruit, feedback);
+    }
+    ResultActions call(MockHttpServletRequestBuilder request, User user) throws Exception {
+        return mvc.perform(request.header("Authorization", "Bearer " + jwt.createAccessToken(user.getId())));
+    }
+    ResultActions start(User user, Long id) throws Exception {
+        return call(post("/api/v1/chats").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"registerId\":" + id + "}"), user);
+    }
+    String key(ResultActions result) throws Exception {
+        return json.readTree(result.andReturn().getResponse().getContentAsString()).path("data").path("roomKey").asText();
+    }
+    ChatRoom room(String key) {
+        return em.createQuery("select r from chat_rooms r where r.roomKey = :key", ChatRoom.class)
+                .setParameter("key", key).getSingleResult();
+    }
+    long count(String entity) { return em.createQuery("select count(e) from " + entity + " e", Long.class).getSingleResult(); }
+    void expire() {
+        em.createQuery("update subscriptions s set s.endAt = :end where s.id = :id")
+                .setParameter("end", LocalDateTime.now().minusHours(1)).setParameter("id", subscription.getId()).executeUpdate();
+    }
+    void noRoom() { assertThat(count("chat_rooms")).isZero(); }
+    void error(ResultActions result, int expectedStatus, String code) throws Exception {
+        result.andExpect(status().is(expectedStatus)).andExpect(jsonPath("$.error.code").value(code));
+    }
+
+    @Test @DisplayName("#53-S1 구독 개발자가 확정 참가의 방과 참여자 두 명을 만든다")
+    void create() throws Exception {
+        String key = key(start(developer, register.getId()).andExpect(status().isCreated()));
+        assertThat(key).hasSize(22);
+        var room = room(key);
+        assertThat(room.getRegister().getId()).isEqualTo(register.getId());
+        assertThat(room.getLastSeq()).isZero();
+        assertThat(room.getParticipants()).hasSize(2);
+        assertThat(participantWithRole(room, ChatRole.DEVELOPER).getUser().getId()).isEqualTo(developer.getId());
+        assertThat(participantWithRole(room, ChatRole.TESTER).getUser().getId()).isEqualTo(tester.getId());
+        assertThat(count("chat_rooms")).isEqualTo(1);
+        call(get("/api/v1/chats/" + key), developer).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partner.nickname").value("모아테스터"));
+    }
+
+    @Test @DisplayName("#53-S2 기존 방은 구독 만료와 참가 취소 뒤에도 메시지를 보존한다")
+    void existing() throws Exception {
+        String key = key(start(developer, register.getId()));
+        var room = room(key);
+        var sender = participantWithRole(room, ChatRole.TESTER);
+        em.persist(room.createMessage(sender, "하나"));
+        em.persist(room.createMessage(sender, "둘"));
+        em.flush();
+        assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
+        expire();
+        assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
+        register.cancel();
+        assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
+        assertThat(count("chat_rooms")).isEqualTo(1);
+        assertThat(count("chat_participants")).isEqualTo(2);
+        assertThat(count("chat_messages")).isEqualTo(2);
+    }
+
+    @Test @DisplayName("#53-S5 남의 참가와 없는 참가와 테스터 요청은 404다")
+    void notFound() throws Exception {
+        error(start(fixtures.user("다른개발자"), register.getId()), 404, "NOT_FOUND");
+        error(start(developer, 999999L), 404, "NOT_FOUND");
+        error(start(tester, register.getId()), 404, "NOT_FOUND");
+        noRoom();
+    }
+
+    @Test @DisplayName("#53-S6 미확정·거절·취소 참가는 방을 만들 수 없다")
+    void unconfirmed() throws Exception {
+        for (var state : List.of(RegisterStatus.APPLIED, RegisterStatus.REJECTED, RegisterStatus.CANCELLED)) {
+            em.createQuery("update registers r set r.status = :state where r.id = :id")
+                    .setParameter("state", state).setParameter("id", register.getId()).executeUpdate();
+            em.clear();
+            error(start(developer, register.getId()), 400, "INVALID_INPUT");
+        }
+        noRoom();
+    }
+
+    @Test @DisplayName("#53-S7 구독 없음·만료·취소·시작 전이면 방을 만들 수 없다")
+    void subscriptionRequired() throws Exception {
+        expire();
+        error(start(developer, register.getId()), 403, "SUBSCRIPTION_REQUIRED");
+        em.createQuery("update subscriptions s set s.endAt = :end, s.status = :state where s.id = :id")
+                .setParameter("end", LocalDateTime.now().plusDays(30)).setParameter("state", Subscription.Status.CANCELLED)
+                .setParameter("id", subscription.getId()).executeUpdate();
+        error(start(developer, register.getId()), 403, "SUBSCRIPTION_REQUIRED");
+        em.createQuery("update subscriptions s set s.startAt = :start, s.status = :state where s.id = :id")
+                .setParameter("start", LocalDateTime.now().plusDays(1)).setParameter("state", Subscription.Status.ACTIVE)
+                .setParameter("id", subscription.getId()).executeUpdate();
+        error(start(developer, register.getId()), 403, "SUBSCRIPTION_REQUIRED");
+        em.createQuery("delete from subscriptions s where s.id = :id").setParameter("id", subscription.getId()).executeUpdate();
+        error(start(developer, register.getId()), 403, "SUBSCRIPTION_REQUIRED");
+        noRoom();
+    }
+
+    @Test @DisplayName("#53-S8 피드백 마감과 모집 취소 뒤에는 새 방을 만들 수 없다")
+    void closed() throws Exception {
+        deadlines(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(1));
+        error(start(developer, register.getId()), 403, "CHAT_READ_ONLY");
+        deadlines(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(7));
+        recruitment.cancel(null, LocalDateTime.now());
+        error(start(developer, register.getId()), 403, "CHAT_READ_ONLY");
+        noRoom();
+    }
+
+    @Test @DisplayName("#53-S9 누락·0·음수·문자열 참가 번호는 400이다")
+    void invalidBody() throws Exception {
+        for (String body : List.of("{}", "{\"registerId\":0}", "{\"registerId\":-1}", "{\"registerId\":\"abc\"}")) {
+            error(call(post("/api/v1/chats").contentType(MediaType.APPLICATION_JSON).content(body), developer), 400, "INVALID_INPUT");
+        }
+        noRoom();
+    }
+
+    @Test @DisplayName("#53-S10 비로그인 요청은 401이다")
+    void anonymous() throws Exception {
+        error(mvc.perform(post("/api/v1/chats").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"registerId\":" + register.getId() + "}")), 401, "UNAUTHORIZED");
+    }
+}

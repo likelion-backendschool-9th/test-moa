@@ -13,7 +13,7 @@
 | [#67](https://github.com/likelion-backendschool-9th/test-moa/issues/67) | 출금 신청·내역 API | [cashout.md](cashout.md) |
 | [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [subscription.md](subscription.md) |
 | [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [subscription-checkout.md](subscription-checkout.md) |
-| [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [아래 #71](#71-구독-결제-실행) |
+| [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [subscription-payment.md](subscription-payment.md) |
 | [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
@@ -41,6 +41,8 @@
 - 구독 중인지는 날짜로 판단하고, 만료로 바꾸는 배치는 두지 않는다. 구독 상태는 `ACTIVE`·`CANCELLED` 둘만 있고 `EXPIRED`는 enum에서 뺐다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다. (2026-11-07)
 - 모집 한도는 없다. `Plan.monthlyRecruitLimit`을 지웠고 구독 API에 한도·사용량이 없다. (#69, 2026-11-07)
 - `Plan.tier`는 `String`으로 두고, 유료 등급이 늘어 코드가 등급 이름으로 갈라질 때 `enum`을 더한다. (#69, 2026-11-07)
+- 지갑은 결제할 때 없으면 만든다. 회원가입 코드가 지갑을 만들지 않아서, 구독 결제(#71)가 "없을 때만 넣는" SQL로 지갑을 만든 뒤 그 행을 잠근다. 가입할 때 만드는 일은 인증 담당 코드라 이 이슈에서 하지 않는다. ([subscription-payment.md](subscription-payment.md), #71, 2026-11-08)
+- 구독 결제는 직전 결제 후 5초 안이면 거절한다(409 `DUPLICATE_PAYMENT`). 더블클릭 방지이고 지갑 행을 잠근 채로 확인한다. ([subscription-payment.md](subscription-payment.md), #71, 2026-11-08)
 - 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림. (#67, 2026-11-06)
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):
@@ -122,6 +124,14 @@ erDiagram
 - Then  구독 결제는 EVENT/EARNED 행을 두 줄로 응답한다 (프론트 연동 때 한 줄 목업을 고침)
 - 화면: `/my/credits` (`docs/frontend/payment/credits.md` S352~)
 
+지급·차감 포트(다른 도메인이 지갑을 바꿀 때 부르는 메서드). 지갑 값과 장부 행은 항상 같이 바꾼다:
+
+| 메서드 | 동작 | 호출하는 코드 |
+| --- | --- | --- |
+| `grantEvent` | `wallet.grantEvent` + 장부 EVENT | 아직 없음 |
+| `grantEarned` | `wallet.grantEarned` + 장부 EARNED | 아직 없음(보상 지급 이슈에서 만든다) |
+| `spendForSubscription` | `wallet.spendForSubscription` 후 `SpendResult`로 장부 행 | 구독 결제 `PaymentServiceImpl`(#71) |
+
 ### #67 출금 신청·내역
 
 시나리오·계좌 암호화(A)·신청 트랜잭션은 [cashout.md](cashout.md)에 있다.
@@ -149,50 +159,7 @@ erDiagram
 
 ### #71 구독 결제 실행
 
-| 규칙 | 내용 |
-| --- | --- |
-| 기간 시작 | `start = max(지금, CANCELLED가 아닌 행 중 가장 늦은 end_at)`. 없으면 지금 |
-| 기간 끝 | `start + periodDays` |
-| 더블클릭 | 직전 결제 후 수 초 내면 거절 |
-
-결제 화면 조회(#70)의 `period`·`credit`은 안내용이다. 결제 실행은 조회 응답 값을 받지 않고 결제할 때 시작·끝·잔액을 다시 계산한다. 화면 문구는 "예상 이용 기간"이다.
-
-**동시에 두 번 결제할 때: 지갑 행 잠금.** 잠그지 않으면 두 요청이 같은 "가장 늦은 `end_at`"을 읽어 같은 기간 행이 두 개 생길 수 있다. 결제를 실행할 때 사용자의 지갑 행을 `PESSIMISTIC_WRITE`(`SELECT … FOR UPDATE`)로 잠근다.
-
-- 구독 행이 아니라 **지갑 행**을 잠그는 이유: 처음 구독하는 사용자는 잠글 구독 행이 없다. 지갑은 사용자마다 하나이고 가입할 때 만들어진다.
-- **현금 결제도** 같은 지갑 행을 잠근다. 현금과 크레딧 결제가 섞여도 한 줄로 처리된다.
-- 버전 컬럼(`@Version`)을 쓰지 않으니 컬럼이 늘지 않는다.
-
-```java
-// CreditWalletRepository
-@Lock(LockModeType.PESSIMISTIC_WRITE)
-@Query("select w from credit_wallets w where w.user.id = :userId")
-Optional<CreditWallet> findByUserIdForUpdate(Long userId);
-```
-
-지급·차감 포트(결제와 다른 도메인이 부른다):
-
-| 메서드 | 동작 |
-| --- | --- |
-| `grantEvent` | `wallet.grantEvent` + 장부 EVENT |
-| `grantEarned` | `wallet.grantEarned` + 장부 EARNED |
-| `spendForSubscription` | `wallet.spendForSubscription` 후 SpendResult로 장부 행 |
-
-#71-S1 결제 실행 [직접]
-- API: `POST /api/users/{userId}/subscription/checkout`, body: `planId`, `method`(`CASH`|`CREDIT`)
-- 트랜잭션:
-  1. 지갑 행을 `PESSIMISTIC_WRITE`로 잠근다
-  2. 검증: `eligible`, 플랜이 지금 파는 `version`인지, CREDIT이면 `payable()` 잔액, 더블클릭이면 거절
-  3. `start = max(지금, CANCELLED가 아닌 max end_at)`로 기간 확정
-  4. `Subscription` 생성(ACTIVE) · `Payment` 생성(COMPLETED)
-  5. CREDIT이면 `spendForSubscription` + 장부
-  6. 커밋 (실패 시 전부 롤백·잠금 해제)
-
-#71-S2 결제 이력 [직접]
-- API: `GET /api/users/{userId}/subscription/payments` 최신순
-
-#71-S3 만료 배치 없음 [직접]
-- Then  만료로 바꾸는 배치를 두지 않는다. 구독 중은 날짜로 판단
+시나리오·API·규칙·지갑 행 잠금은 [subscription-payment.md](subscription-payment.md)에 있다. 화면: `/my/subscription/checkout` ([subscription.md](../../frontend/payment/subscription.md))
 
 ## 범위 밖
 - 실제 PG·송금·실명 확인

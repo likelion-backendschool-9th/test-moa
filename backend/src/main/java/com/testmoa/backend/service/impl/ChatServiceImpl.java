@@ -64,10 +64,9 @@ public class ChatServiceImpl implements ChatService {
         }
         var existing = roomRepository.findByRegisterId(registerId);
         if (existing.isPresent()) {
-            var mine = existing.get().getParticipants().stream()
-                    .filter(participant -> participant.getUser().getId().equals(userId)).findFirst().orElseThrow();
-            participantRepository.unhideMine(mine.getId());
-            return new StartResult(new ChatStartResponse(existing.get().getRoomKey()), false);
+            var room = existing.get();
+            participantRepository.unhideMine(room.getId(), userId);
+            return new StartResult(new ChatStartResponse(room.getRoomKey()), false);
         }
         if (register.getStatus() != RegisterStatus.CONFIRMED) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);

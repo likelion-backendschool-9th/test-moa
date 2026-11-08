@@ -74,7 +74,7 @@ public class ChatEventHub {
         try {
             emitter.send(event);
         } catch (IOException | IllegalStateException error) {
-            close(userId, emitter);
+            remove(userId, emitter);
         }
     }
 

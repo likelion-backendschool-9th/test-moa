@@ -1,13 +1,7 @@
 package com.testmoa.backend.service;
 
 import com.testmoa.backend.entity.Feedback;
-import com.testmoa.backend.entity.Project;
-import com.testmoa.backend.entity.Recruitment;
-import com.testmoa.backend.entity.TestItem;
 import com.testmoa.backend.repository.FeedbackRepository;
-import com.testmoa.backend.global.client.AnalysisClient;
-import com.testmoa.backend.global.client.AnalysisClient.Context;
-import com.testmoa.backend.global.client.AnalysisClient.FeedbackItem;
 import com.testmoa.backend.global.client.AnalysisClient.FollowupRequest;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
@@ -32,26 +26,8 @@ public class FollowupRequestReader {
         Feedback feedback = feedbackRepository.findWithRecruitmentById(feedbackId)
                 .filter(found -> found.getRegister().getRecruitment().getProject().getUser().getId().equals(userId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        return toRequest(feedback);
-    }
-
-    // 분석 서버의 글자 수에 맞춰 자름
-    private static FollowupRequest toRequest(Feedback feedback) {
-        Recruitment recruitment = feedback.getRegister().getRecruitment();
-        Project project = recruitment.getProject();
-        TestItem testItem = feedback.getTestItem();
-
         return new FollowupRequest(
-                new Context(
-                        AnalysisClient.cut(project.getTitle(), AnalysisClient.TITLE_MAX),
-                        AnalysisClient.cut(project.getDescription(), AnalysisClient.DESCRIPTION_MAX),
-                        AnalysisClient.cut(recruitment.getTitle(), AnalysisClient.TITLE_MAX),
-                        AnalysisClient.cut(recruitment.getDescription(), AnalysisClient.DESCRIPTION_MAX),
-                        recruitment.getVersion()),
-                new FeedbackItem(
-                        feedback.getId(),
-                        feedback.getRegister().getUser().getId(),
-                        AnalysisClient.cut(feedback.getContent(), AnalysisClient.CONTENT_MAX),
-                        testItem == null ? null : AnalysisClient.cut(testItem.getTitle(), AnalysisClient.TITLE_MAX)));
+                AnalysisRequests.context(feedback.getRegister().getRecruitment()),
+                AnalysisRequests.feedbackItem(feedback));
     }
 }

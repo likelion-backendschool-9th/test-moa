@@ -28,10 +28,17 @@ public class AnalysisClient {
     public static final int CONTENT_MAX = 4000;
 
     private final RestClient restClient;
+    // 리뷰 묶기 전용. 응답까지 몇 분 걸릴 수 있어 응답 대기 시간이 긴 RestClient를 따로 씀
+    private final RestClient reviewAnalysisClient;
     private final String internalToken;
 
     public AnalysisClient(RestClient.Builder builder, String internalToken) {
+        this(builder, builder, internalToken);
+    }
+
+    public AnalysisClient(RestClient.Builder builder, RestClient.Builder reviewAnalysisBuilder, String internalToken) {
         this.restClient = builder.build();
+        this.reviewAnalysisClient = reviewAnalysisBuilder.build();
         this.internalToken = internalToken;
     }
 
@@ -39,7 +46,7 @@ public class AnalysisClient {
      * 리뷰 하나로 테스터에게 보낼 후속 질문을 추천받음(POST /v1/followup-questions)
      */
     public List<String> suggestFollowupQuestions(FollowupRequest request) {
-        FollowupResponse response = post("/v1/followup-questions", request, FollowupResponse.class);
+        FollowupResponse response = post(restClient, "/v1/followup-questions", request, FollowupResponse.class);
         if (response.questions() == null) {
             log.error("분석 서버 응답에 questions가 없음");
             throw new BusinessException(ErrorCode.INTERNAL_ERROR);
@@ -47,7 +54,33 @@ public class AnalysisClient {
         return response.questions();
     }
 
-    private <T> T post(String path, Object body, Class<T> responseType) {
+    /**
+     * 직전 버전과 현재 버전의 분석 그룹을 비교받음(POST /v1/comparisons).
+     * 짝·새 그룹·요약이 없으면 계약과 다른 응답이라 500
+     */
+    public ComparisonResponse compare(ComparisonRequest request) {
+        ComparisonResponse response = post(restClient, "/v1/comparisons", request, ComparisonResponse.class);
+        if (response.matches() == null || response.newGroupIds() == null || response.summary() == null) {
+            log.error("분석 서버 응답에 matches, newGroupIds, summary 중 없는 값이 있음");
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+        }
+        return response;
+    }
+
+    /**
+     * 모집글(버전) 하나의 리뷰를 문제별로 묶고 그룹마다 이슈 초안을 받음(POST /v1/analyses).
+     * 응답까지 몇 분 걸릴 수 있어 비동기로만 부름. groups가 없으면 계약과 다른 응답이라 500
+     */
+    public AnalysisResponse analyze(AnalysisRequest request) {
+        AnalysisResponse response = post(reviewAnalysisClient, "/v1/analyses", request, AnalysisResponse.class);
+        if (response.groups() == null) {
+            log.error("분석 서버 응답에 groups가 없음");
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+        }
+        return response;
+    }
+
+    private <T> T post(RestClient client, String path, Object body, Class<T> responseType) {
         if (internalToken == null || internalToken.isBlank()) {
             log.error("분석 서버 내부 토큰(ANALYSIS_INTERNAL_TOKEN)이 설정되지 않음");
             throw new BusinessException(ErrorCode.AI_UNAVAILABLE);
@@ -56,7 +89,7 @@ public class AnalysisClient {
         long startedAt = System.nanoTime();
         T response;
         try {
-            response = restClient.post()
+            response = client.post()
                     .uri(path)
                     .header(TOKEN_HEADER, internalToken)
                     .header(REQUEST_ID_HEADER, requestId)
@@ -126,4 +159,70 @@ public class AnalysisClient {
     ) {}
 
     record FollowupResponse(List<String> questions) {}
+
+    /**
+     * 버전 비교 요청(ComparisonRequest). previous.version이 current.version보다 작아야 함
+     */
+    public record ComparisonRequest(VersionGroups previous, VersionGroups current) {}
+
+    /**
+     * @param version 모집글 버전
+     * @param groups  그 버전의 분석 그룹(cluster_groups 행)
+     */
+    public record VersionGroups(int version, List<GroupItem> groups) {}
+
+    /**
+     * @param category        BUG, UX, REQUEST, PRAISE, UNCLASSIFIED
+     * @param improvementRank 심각도 1 = 치명 ~ 4 = 사소. 칭찬·미분류는 null
+     * @param sample          대표 리뷰 내용. 대표 리뷰가 없으면 null
+     */
+    public record GroupItem(
+            Long groupId,
+            String name,
+            String category,
+            Integer improvementRank,
+            String sample
+    ) {}
+
+    /**
+     * 버전 비교 결과. 분석 서버가 주는 notReportedGroupIds는 저장하지 않고 그룹 코드로 계산하므로 읽지 않음
+     *
+     * @param matches     같은 문제로 짝지은 그룹
+     * @param newGroupIds 이번 버전에 새로 나타난 현재 버전 그룹
+     * @param summary     변화 요약 문장
+     */
+    public record ComparisonResponse(List<GroupMatch> matches, List<Long> newGroupIds, String summary) {}
+
+    public record GroupMatch(Long currentGroupId, Long previousGroupId) {}
+
+    /**
+     * 리뷰 묶기 요청(AnalysisRequest). feedbacks는 중복 없이 1~1,000개
+     */
+    public record AnalysisRequest(Context context, List<FeedbackItem> feedbacks) {}
+
+    /**
+     * 리뷰 묶기 결과
+     *
+     * @param praiseSummary 칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null
+     */
+    public record AnalysisResponse(List<AnalysisGroup> groups, String praiseSummary) {}
+
+    /**
+     * 묶은 그룹 하나. 응답 안에서만 쓰는 임시 key는 저장하지 않아 읽지 않음.
+     * 리뷰 하나가 여러 그룹의 feedbackIds에 들어 있을 수 있음
+     *
+     * @param category                 BUG, UX, REQUEST, PRAISE, UNCLASSIFIED
+     * @param improvementRank          심각도 1 = 치명 ~ 4 = 사소. 칭찬·미분류는 null
+     * @param representativeFeedbackId 그룹을 대표하는 리뷰
+     * @param gitIssueContent          GitHub 이슈 초안 본문(마크다운). 칭찬·미분류는 null
+     */
+    public record AnalysisGroup(
+            String name,
+            String category,
+            Integer improvementRank,
+            Long representativeFeedbackId,
+            List<Long> feedbackIds,
+            String gitIssueTitle,
+            String gitIssueContent
+    ) {}
 }

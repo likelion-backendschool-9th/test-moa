@@ -5,6 +5,7 @@ import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.dto.response.ChatReadResponse;
 import com.testmoa.backend.entity.ChatMessage;
 import com.testmoa.backend.entity.ChatParticipant;
 import com.testmoa.backend.repository.ChatMessageRepository;
@@ -111,6 +112,16 @@ public class ChatServiceImpl implements ChatService {
         if (participantRepository.hideRoom(me.getId()) == 0) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
+    }
+
+    @Override
+    @Transactional
+    public ChatReadResponse markRead(String roomKey, Long userId, long seq) {
+        var me = requireParticipant(roomKey, userId);
+        participantRepository.markRead(me.getId(), seq);
+        long lastReadSeq = participantRepository.findVisibleLastReadSeq(me.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return new ChatReadResponse(lastReadSeq);
     }
 
     private ChatParticipant requireParticipant(String roomKey, Long userId) {

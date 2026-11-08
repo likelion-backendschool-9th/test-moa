@@ -2,7 +2,6 @@ package com.testmoa.backend.service;
 
 import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.repository.SubscriptionRepository;
-import com.testmoa.backend.entity.enums.SubscriptionStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,7 @@ public class SubscriptionChecker {
     public Optional<Subscription> findActive(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         return subscriptionRepository.findFirstByUserIdAndStatusAndStartAtLessThanEqualAndEndAtAfterOrderByEndAtDesc(
-                userId, SubscriptionStatus.ACTIVE, now, now);
+                userId, Subscription.Status.ACTIVE, now, now);
     }
 
     public boolean isActive(Long userId) {

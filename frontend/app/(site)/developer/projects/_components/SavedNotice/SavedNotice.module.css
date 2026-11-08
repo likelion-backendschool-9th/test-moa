@@ -1,0 +1,10 @@
+.root {
+  border-radius: var(--radius-2xl);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--accent);
+}

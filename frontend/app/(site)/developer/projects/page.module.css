@@ -1,0 +1,40 @@
+.myProjectsPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-block: var(--space-10);
+}
+
+.myProjectsPageBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.myProjectsPageTitle {
+  font-size: var(--text-4xl);
+  line-height: var(--text-4xl-leading);
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.projectsSlot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.projectsSlotSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.projectsSlotTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}

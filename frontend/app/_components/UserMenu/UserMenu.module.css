@@ -1,0 +1,40 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.button {
+  white-space: nowrap;
+}
+
+.button2 {
+  white-space: nowrap;
+}
+
+.root2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.button3 {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+@media not all and (min-width: 48rem) {
+  .myPageLink {
+    display: none;
+  }
+}
+
+@media not all and (min-width: 48rem) {
+  .form {
+    display: none;
+  }
+}
+
+.button4 {
+  white-space: nowrap;
+}

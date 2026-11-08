@@ -12,6 +12,7 @@
 | 백엔드 도메인 전체 | `docs/backend/<도메인>/README.md` | `docs/backend/chat/README.md` |
 | 백엔드 이슈 하나 | `docs/backend/<도메인>/<기능>.md` | `docs/backend/chat/entities.md` |
 | 여러 페이지·도메인 공통 | `docs/<이름>.md` | `docs/page-urls.md` |
+| 여러 페이지·도메인 공통이고 한 파일로 길어 나눈 것 | `docs/<이름>/README.md`와 나눈 파일 | `docs/frontend-structure/`(프론트 폴더 구조) |
 
 ## 도메인 폴더
 프론트와 백엔드는 같은 도메인 이름을 쓴다: `admin`(운영자 화면만), `auth`, `chat`, `payment`, `project`. 새 도메인이 생기면 양쪽에 같은 이름으로 만든다. 프론트 폴더에는 공통 결정이 생길 때만 `README.md`를 둔다.

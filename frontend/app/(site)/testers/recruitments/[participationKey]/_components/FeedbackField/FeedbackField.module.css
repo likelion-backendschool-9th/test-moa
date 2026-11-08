@@ -1,0 +1,206 @@
+.root {
+  display: flex;
+  gap: var(--space-3);
+  padding-block: var(--space-6);
+}
+
+.root:first-child {
+  padding-top: 0;
+}
+
+.root:last-child {
+  padding-bottom: 0;
+}
+
+@media (min-width: 48rem) {
+  .root {
+    gap: var(--space-4);
+  }
+}
+
+.section {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.box2 {
+  display: flex;
+  min-height: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 700;
+}
+
+.description {
+  max-width: 65ch;
+  line-height: var(--leading-relaxed);
+  overflow-wrap: break-word;
+  color: var(--text-muted);
+}
+
+.box3 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.error {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.label {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.box4 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.box5 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.label2 {
+  margin-left: var(--space-1);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.FEEDBACK_IMAGE_HINT {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: var(--space-2);
+}
+
+@media (min-width: 40rem) {
+  .list {
+    grid-template-columns: repeat(5,minmax(0,1fr));
+  }
+}
+
+.root2 {
+  position: relative;
+}
+
+.image {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  object-fit: cover;
+}
+
+.button {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  color: var(--text);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .button:hover {
+    background-color: var(--surface-muted);
+  }
+}
+
+.imageError {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.srOnly2 {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+/* 사진 고르기 label. 모양은 secondary 버튼이고, 숨긴 파일 입력에 포커스가 오면 label에 포커스 링을 그린다 */
+.fileButton {
+  width: 100%;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.fileButton:focus-within {
+  outline-style: solid;
+  outline-width: 2px;
+  outline-offset: 2px;
+  outline-color: var(--accent);
+}
+
+@media (min-width: 48rem) {
+  .fileButton {
+    width: auto;
+  }
+}
+

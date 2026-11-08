@@ -1,0 +1,50 @@
+/* 넓은 화면은 왼쪽 세로 메뉴, 좁은 화면은 본문 위 가로 탭. 좁은 화면에서는 탭 줄이 화면 끝까지 밀리도록 바깥 여백을 되돌린다 */
+.list {
+  display: flex;
+  gap: var(--space-1);
+  margin-inline: calc(var(--space-4) * -1);
+  padding-inline: var(--space-4);
+  overflow-x: auto;
+}
+
+.item {
+  flex-shrink: 0;
+}
+
+.link {
+  display: flex;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.link[aria-current="page"] {
+  background-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .link:not([aria-current="page"]):hover {
+    background-color: var(--surface-strong);
+    color: var(--text);
+  }
+}
+
+@media (min-width: 64rem) {
+  .list {
+    flex-direction: column;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .link {
+    border-radius: var(--radius-xl);
+  }
+}

@@ -1,0 +1,76 @@
+.root {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .root {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .root {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+.link {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-2xl);
+}
+
+.card {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--line);
+  padding: var(--space-6);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .card:is(:where(.link):hover *) {
+    background-color: var(--surface-strong);
+  }
+}
+
+.name {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.text {
+  margin-top: auto;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.projectListSkeleton {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .projectListSkeleton {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .projectListSkeleton {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+.projectListSkeleton2 {
+  height: 11rem;
+}

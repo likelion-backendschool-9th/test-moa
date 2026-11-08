@@ -1,0 +1,28 @@
+.card {
+  background-color: var(--surface-muted);
+}
+
+.radiusLg {
+  border-radius: var(--radius-lg);
+}
+
+.radiusXl {
+  border-radius: var(--radius-xl);
+}
+
+.radius2xl {
+  border-radius: var(--radius-2xl);
+}
+
+/* 라이트의 흰 패널은 재단선으로 나눈다. 다크는 패널 색이 바탕과 달라서 선을 두지 않는다 */
+@media (prefers-color-scheme: light) {
+  .card {
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+  }
+
+  .card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}

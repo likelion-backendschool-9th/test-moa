@@ -1,0 +1,60 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+:where(.list>:not(:last-child)) {
+  border-bottom-style: solid;
+  border-top-style: solid;
+  border-top-width: calc(1px * 0);
+  border-bottom-width: calc(1px * calc(1 - 0));
+  border-color: var(--line);
+}
+
+.formError {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .box {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.text2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.button {
+  width: 100%;
+}
+
+@media (min-width: 48rem) {
+  .button {
+    width: auto;
+  }
+}

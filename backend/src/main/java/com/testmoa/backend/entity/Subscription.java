@@ -1,6 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.SubscriptionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,6 +12,12 @@ import java.time.LocalDateTime;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Subscription {
+    // 구독 상태
+    public enum Status {
+        ACTIVE,     // 구독 중(아직 시작 전인 미리 결제 기간도 ACTIVE)
+        CANCELLED   // 환불로 취소됨
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,10 +42,10 @@ public class Subscription {
     @Column(nullable = false)
     private LocalDateTime endAt;
 
-    // 구독 상태. 만들 때 ACTIVE, 환불하면 CANCELLED. 기간이 지난 것은 날짜로 알 수 있어 EXPIRED로 바꾸지 않는다
+    // 구독 상태. 만들 때 ACTIVE, 환불하면 CANCELLED. 기간이 지난 것은 날짜로 알 수 있어 상태로 바꾸지 않는다
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SubscriptionStatus status;
+    private Status status;
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
@@ -73,6 +78,6 @@ public class Subscription {
         this.plan = plan;
         this.startAt = startAt;
         this.endAt = endAt;
-        this.status = SubscriptionStatus.ACTIVE;
+        this.status = Status.ACTIVE;
     }
 }

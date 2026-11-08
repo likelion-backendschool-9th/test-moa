@@ -11,10 +11,10 @@
 | [#45](https://github.com/likelion-backendschool-9th/test-moa/issues/45) | 결제·구독·크레딧 엔티티 | [entities.md](entities.md) |
 | [#66](https://github.com/likelion-backendschool-9th/test-moa/issues/66) | 크레딧 잔액·내역 조회 API | [credit-balance-ledger.md](credit-balance-ledger.md) |
 | [#67](https://github.com/likelion-backendschool-9th/test-moa/issues/67) | 출금 신청·내역 API | [cashout.md](cashout.md) |
-| [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [아래 #69](#69-구독-플랜내-구독-상태) |
-| [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [아래 #70](#70-구독-결제-화면-조회) |
+| [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [subscription.md](subscription.md) |
+| [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [subscription-checkout.md](subscription-checkout.md) |
 | [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [아래 #71](#71-구독-결제-실행) |
-| [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [아래 #68](#68-운영자-출금) |
+| [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 
@@ -38,14 +38,16 @@
 | 결제 | checkout 조회·실행 | `/my/subscription/checkout` |
 
 - 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
-- 구독 중인지는 날짜로 판단하고, `EXPIRED`로 바꾸는 배치는 두지 않는다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다.
+- 구독 중인지는 날짜로 판단하고, 만료로 바꾸는 배치는 두지 않는다. 구독 상태는 `ACTIVE`·`CANCELLED` 둘만 있고 `EXPIRED`는 enum에서 뺐다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다. (2026-11-07)
+- 모집 한도는 없다. `Plan.monthlyRecruitLimit`을 지웠고 구독 API에 한도·사용량이 없다. (#69, 2026-11-07)
+- `Plan.tier`는 `String`으로 두고, 유료 등급이 늘어 코드가 등급 이름으로 갈라질 때 `enum`을 더한다. (#69, 2026-11-07)
 - 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림. (#67, 2026-11-06)
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):
 
 | # | 대상 | 정한 것 |
 | --- | --- | --- |
-| 1 | `CashoutRequest` | 계좌·예금주, 반려 사유 enum, `reject_memo`, `pay()`·`reject()` |
+| 1 | `Cashout` | 계좌·예금주, 반려 사유 enum, `reject_memo`, `pay()`·`reject()` |
 | 2 | `CashoutStatus` | `COMPLETED` 제거 |
 | 3 | `CreditType` | `LOCKED` 제거 |
 | 4 | `Payment` ↔ `Subscription` | 구독 1 : 결제 1 |
@@ -60,7 +62,7 @@ flowchart TB
   subgraph credit [Credit]
     Wallet[CreditWallet]
     Ledger[CreditLedger]
-    Cashout[CashoutRequest]
+    Cashout[Cashout]
   end
   subgraph subscription [Subscription]
     PlanEntity[Plan]
@@ -88,14 +90,14 @@ erDiagram
   subscriptions ||--|| payments : one_to_one
   users ||--|| credit_wallets : wallet
   credit_wallets ||--o{ credit_ledgers : ledger
-  users ||--o{ cashout_requests : cashout
+  users ||--o{ cashouts : cashout
 ```
 
 | 테이블 | 한 행이 뜻하는 것 | 자세히 |
 | --- | --- | --- |
 | `credit_wallets` | 회원 한 명의 지갑(이벤트·적립·잠긴 잔액) | [entities.md 1](entities.md#1-잔액-45-r1) |
 | `credit_ledgers` | 총잔액이 실제로 바뀐 일 하나 | [entities.md 2](entities.md#2-크레딧-내역-45-r2) |
-| `cashout_requests` | 출금 신청 하나 | [entities.md 3](entities.md#3-출금-신청내역-45-r3) |
+| `cashouts` | 출금 신청 하나 | [entities.md 3](entities.md#3-출금-신청내역-45-r3) |
 | `plans` | 한 등급의 한 버전 조건 | [entities.md 5](entities.md#5-플랜-45-r5) |
 | `subscriptions` | 결제 한 번으로 산 이용 기간 하나 | [entities.md 6](entities.md#6-내-구독-45-r6) |
 | `payments` | 구독 결제 한 번 | [entities.md 7](entities.md#7-구독-결제-45-r7) |
@@ -131,39 +133,19 @@ erDiagram
 
 #67-S2 출금 신청 API [테스트: cashout.md #67-S2]
 - API: `POST /api/v1/my/credits/withdrawals`
-- Then  `CashoutRequest(REQUESTED)` + `lockForCashout`. 자세한 시나리오는 [cashout.md](cashout.md)
+- Then  `Cashout(REQUESTED)` + `lockForCashout`. 자세한 시나리오는 [cashout.md](cashout.md)
 
 ### #68 운영자 출금
 
-#68-S1 운영자 API [직접]
-- `GET /api/admin/cashouts?tab=pending|done`, `POST …/pay`, `POST …/reject`
-- 트랜잭션: 지급 시 `confirmCashout` + `pay` + 장부, 반려 시 `releaseCashout` + `reject`
-- 화면: `/admin/withdrawals` (`docs/frontend/admin/withdrawals.md`)
+시나리오·API·처리 트랜잭션은 [admin-cashout.md](admin-cashout.md)에 있다. 화면: `/admin/withdrawals` ([withdrawals.md](../../frontend/admin/withdrawals.md))
 
 ### #69 구독 플랜·내 구독 상태
-페이지는 조립 API 한 번으로 받는 것을 권장한다.
 
-#69-S1 플랜 목록 [직접]
-- API: `GET /api/plans`
-- Then  tier별 최신 version만. 무료 행 없음
-- 화면 혜택 비교 유료 열: `docs/frontend/payment/subscription.md` S387은 **[직접]**
-
-#69-S2 구독 페이지 구성 [직접]
-- API: `GET /api/users/{userId}/subscription/page`
-- Then  `eligible`, `status`, `plans[]`, `benefits`, `paymentPreview`, `showExpiryHints`
-- 화면: `docs/frontend/payment/subscription.md` S384 등은 **[직접]**
-
-#69-S3 내 구독 상태 [직접]
-- API: `GET /api/users/{userId}/subscription`
-- Then  날짜 규칙으로 `active`·`endAt`·한도
+시나리오·API·규칙은 [subscription.md](subscription.md)에 있다. 화면: `/my/subscription` ([subscription.md](../../frontend/payment/subscription.md))
 
 ### #70 구독 결제 화면 조회
 
-#70-S1 checkout 조회 [직접]
-- API: `GET /api/users/{userId}/subscription/checkout?planId=`
-- 응답: `plan`, `payableCredits`, `active`, `currentEndAt`, `credit {affordable, shortfall, remainingAfter}`, `period {startAt, endAt}`, `eligible`
-- 규칙: 운영자 불가, 크레딧 부족 시 `affordable=false`(현금은 가능). `period.startAt`은 CANCELLED 제외 시작식
-- 화면: `docs/frontend/payment/subscription.md` S533~
+시나리오·API·규칙은 [subscription-checkout.md](subscription-checkout.md)에 있다. 화면: `/my/subscription/checkout` ([subscription.md](../../frontend/payment/subscription.md))
 
 ### #71 구독 결제 실행
 
@@ -172,6 +154,8 @@ erDiagram
 | 기간 시작 | `start = max(지금, CANCELLED가 아닌 행 중 가장 늦은 end_at)`. 없으면 지금 |
 | 기간 끝 | `start + periodDays` |
 | 더블클릭 | 직전 결제 후 수 초 내면 거절 |
+
+결제 화면 조회(#70)의 `period`·`credit`은 안내용이다. 결제 실행은 조회 응답 값을 받지 않고 결제할 때 시작·끝·잔액을 다시 계산한다. 화면 문구는 "예상 이용 기간"이다.
 
 **동시에 두 번 결제할 때: 지갑 행 잠금.** 잠그지 않으면 두 요청이 같은 "가장 늦은 `end_at`"을 읽어 같은 기간 행이 두 개 생길 수 있다. 결제를 실행할 때 사용자의 지갑 행을 `PESSIMISTIC_WRITE`(`SELECT … FOR UPDATE`)로 잠근다.
 
@@ -208,7 +192,7 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 - API: `GET /api/users/{userId}/subscription/payments` 최신순
 
 #71-S3 만료 배치 없음 [직접]
-- Then  `EXPIRED`로 바꾸는 배치를 두지 않는다. 구독 중은 날짜로 판단
+- Then  만료로 바꾸는 배치를 두지 않는다. 구독 중은 날짜로 판단
 
 ## 범위 밖
 - 실제 PG·송금·실명 확인
@@ -225,8 +209,7 @@ Optional<CreditWallet> findByUserIdForUpdate(Long userId);
 
 | # | 무엇을 | 고를 것 |
 | --- | --- | --- |
-| 1 | `SubscriptionStatus.EXPIRED` | 남김(저장 안 함) / enum에서 제거 |
-| 2 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
+| 1 | 미리 결제 가능 기간 | 제한 없음 / 상한(예: 남은 기간 1년) |
 
 계좌번호·예금주 저장은 **A 컬럼 암호화**로 정했다 (#67, [cashout.md](cashout.md)). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림이다.
 

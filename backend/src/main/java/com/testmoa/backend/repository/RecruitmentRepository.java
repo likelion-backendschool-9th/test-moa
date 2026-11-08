@@ -2,7 +2,9 @@ package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.enums.AnalysisStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,11 @@ import java.util.Optional;
 public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> {
     // 여러 프로젝트의 모집글. 최신순
     List<Recruitment> findByProjectIdInOrderByCreatedAtDescIdDesc(Collection<Long> projectIds);
+
+    // 상태를 바꾸려고 읽는 내 모집글과 프로젝트. 취소와 지원이 겹치지 않게 행을 잠근다(#116). 다른 회원의 모집글은 잠그지 않고 없는 것과 같다
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
+    Optional<Recruitment> findMineForUpdate(@Param("id") Long id, @Param("userId") Long userId);
 
     // 내 모집글과 그 프로젝트. 다른 회원의 모집글은 없는 것과 같다
     @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")

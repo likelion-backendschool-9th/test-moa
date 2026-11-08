@@ -15,7 +15,7 @@
 | 3 반려 사유 선택, 반려 상태·처리 일시 | #45-S16, #45-S19 |
 | 4 기타는 메모 필수, 다른 사유 메모는 선택(메모는 모두 회원에게 보임) | #45-S17, #45-S18 |
 | 5 이미 처리한 요청은 다시 처리 불가 | #45-S15, #45-S20 |
-| 6 신청은 적립 → 잠김, 반려는 잠김 → 적립, 장부 없음 | #45-S3, #45-S4, #45-S7, #45-S8 (장부를 남기지 않는 것은 #67-S2, #68-S1) |
+| 6 신청은 적립 → 잠김, 반려는 잠김 → 적립, 장부 없음 | #45-S3, #45-S4, #45-S7, #45-S8 (장부를 남기지 않는 것은 #67-S2, #68-S2) |
 | 7 지급하면 잠김에서 빠지고 장부 한 줄 | #45-S5, #45-S6 (장부 행은 #68-S1) |
 | 8 출금 가능·결제 가능·총잔액 계산 | #45-S1, #45-S2 |
 | 9 장부는 종류·변동량만, 구독 결제는 두 줄 | #45-S9~S11, #45-S22 (장부 행은 #71-S1) |
@@ -69,7 +69,7 @@
 
 ## 2. 크레딧 내역 (#45-R2)
 
-장부에는 **총잔액이 실제로 바뀐 일만** 남긴다. `CreditType`은 `EVENT`, `EARNED`만 쓴다(`LOCKED` 제거).
+장부에는 **총잔액이 실제로 바뀐 일만** 남긴다. `CreditLedger.Type`은 `EVENT`, `EARNED`만 쓴다(`LOCKED` 제거).
 
 ### `credit_ledgers`
 
@@ -79,18 +79,20 @@
 | `creditWallet` | `credit_wallet_id` | FK → credit_wallets | 불가 | 변동 지갑 |
 | `delta` | `delta` | Integer | 불가 | 변동량(+/−) |
 | `description` | `description` | String | 불가 | 원인 문구 |
-| `type` | `type` | enum `CreditType` | 불가 | `EVENT` / `EARNED` |
+| `type` | `type` | enum `CreditLedger.Type` | 불가 | `EVENT` / `EARNED` |
 
 결제 연결(`payment_id`)은 두지 않는다. 구독 결제 시 이벤트·적립을 각각 쓴 만큼 행을 만든다(0인 쪽은 행 없음). 내역 화면에는 두 줄이 그대로 보인다. **나중에 환불을 만들 때, 결제 하나에서 이벤트와 적립을 각각 얼마씩 뺐는지 장부만으로는 알 수 없다.** 환불은 지금 범위 밖이라 그때 정한다.
 
 #45-S22 장부에는 종류와 변동량만 [직접]
-- `CreditLedger`에 `payment` 필드가 없고, `CreditType`은 `EVENT`, `EARNED` 두 값이다
+- `CreditLedger`에 `payment` 필드가 없고, `CreditLedger.Type`은 `EVENT`, `EARNED` 두 값이다
 
 ## 3. 출금 신청·내역 (#45-R3)
 
 회원은 금액·계좌로 출금을 신청한다. 신청 시 적립에서 잠긴으로만 옮기고 장부는 없다.
 
-### `cashout_requests`
+### `cashouts`
+
+테이블 이름은 #68에서 `cashout_requests`를 `cashouts`로 바꿨다. `ddl-auto: update`라서 옛 테이블이 있는 DB에는 빈 `cashouts`가 새로 생긴다. 옛 신청 기록을 살리려면 배포할 때 `ALTER TABLE cashout_requests RENAME TO cashouts`를 한 번 실행한다.
 
 | 필드 | 컬럼 | 타입 | null | 설명 |
 | --- | --- | --- | --- | --- |
@@ -100,7 +102,7 @@
 | `bank` | `bank` | String | 불가 | 입금 은행 |
 | `accountNumber` | `account_number` | String | 불가 | 계좌 숫자 10~14자리. **A 컬럼 암호화**([cashout.md](cashout.md)). length 넉넉히 |
 | `accountHolder` | `account_holder` | String | 불가 | 예금주. 계좌와 같이 암호화 |
-| `status` | `status` | enum `CashoutStatus` | 불가 | `REQUESTED` / `PAID` / `REJECTED` |
+| `status` | `status` | enum `Cashout.Status` | 불가 | `REQUESTED` / `PAID` / `REJECTED` |
 | `rejectReason` | `reject_reason` | enum (DB String) | 가능 | `HOLDER` / `ACCOUNT` / `OTHER` |
 | `rejectMemo` | `reject_memo` | String | 가능 | 회원에게 보이는 안내. OTHER면 필수, 그 외 선택 |
 | `processedAt` | `processed_at` | datetime | 가능 | 지급·반려 일시 |
@@ -130,13 +132,13 @@
 - Then  `status`가 `REQUESTED`다
 
 #45-S23 출금 상태에 "완료"가 없음 [직접]
-- `CashoutStatus`는 `REQUESTED`, `PAID`, `REJECTED` 세 값이다. 지급 완료는 `PAID` 하나다
+- `Cashout.Status`는 `REQUESTED`, `PAID`, `REJECTED` 세 값이다. 지급 완료는 `PAID` 하나다
 
 ## 4. 운영자 출금 (#45-R4)
 
 운영자가 지급·반려한다. 대기 건만 계좌 전체, 완료는 끝 4자리(저장은 A 암호화, [cashout.md](cashout.md)).
 
-### 반려 사유 `CashoutRejectReason`
+### 반려 사유 `Cashout.RejectReason`
 
 | 값 | 화면 문구 | 회원에게 보이는 사유 |
 | --- | --- | --- |
@@ -198,7 +200,7 @@
 
 ## 5. 플랜 (#45-R5)
 
-무료는 `plans` 행으로 두지 않는다. 혜택 비교의 무료 열(월 10명 등)은 상수·설정이다. 조건이 바뀌면 기존 행을 고치지 않고 `version`을 올린 새 행을 만든다.
+무료는 `plans` 행으로 두지 않는다. 혜택 비교의 무료 열은 상수·설정이다. 조건이 바뀌면 기존 행을 고치지 않고 `version`을 올린 새 행을 만든다.
 
 ### `plans`
 
@@ -208,9 +210,8 @@
 | `tier` | `tier` | String | 불가 | 등급 |
 | `cashPrice` | `cash_price` | Integer | 불가 | 현금 가격 |
 | `creditPrice` | `credit_price` | Integer | 불가 | 크레딧 가격 |
-| `monthlyRecruitLimit` | `monthly_recruit_limit` | Integer | 불가 | 월간 모집 한도 |
 | `version` | `version` | Integer | 불가 | 같은 tier의 몇 번째 조건인지 |
-| `description` | `description` | TEXT | 가능 | 설명 |
+| `description` | `description` | TEXT | 가능 | 혜택 문구. 쉼표로 이어 넣고 `Plan.benefits()`가 자른다(문구에 쉼표를 쓰지 않는다) |
 | `imageUrl` | `image_url` | TEXT | 가능 | 이미지 URL |
 | `periodDays` | `period_days` | Integer | 불가 | 이용 기간(일) |
 
@@ -220,11 +221,11 @@
 | --- | --- |
 | 지금 파는 플랜 | tier별 max(`version`)만 목록·결제에 노출 |
 | 플랜 변경 | 새 행 + version+1. 옛 구독은 옛 `plan_id` 유지 |
-| 시드 | 구독, version 1, 10,000원, 9,000크레딧, 30일, 월 30명 |
+| 플랜을 넣는 방법 | 시드 없이 운영자 등록 API(`POST /api/v1/admin/plans`, [subscription.md](subscription.md))로 넣는다. DB가 비어 있으면 플랜이 없다 |
 
 ```java
 // PlanRepository: 지금 파는 플랜 (tier별 최신 version)
-@Query("select p from plans p where p.version = (select max(q.version) from plans q where q.tier = p.tier)")
+@Query("select p from plans p where p.version = (select max(q.version) from plans q where q.tier = p.tier) order by p.id")
 List<Plan> findCurrentPlans();
 ```
 
@@ -233,7 +234,7 @@ List<Plan> findCurrentPlans();
 
 ## 6. 내 구독 (#45-R6)
 
-구독 중인지는 날짜로 판단한다. `EXPIRED`로 바꾸는 배치는 두지 않는다.
+구독 중인지는 날짜로 판단한다. 만료로 바꾸는 배치는 두지 않고, 상태에도 `EXPIRED`가 없다.
 
 ### `subscriptions`
 
@@ -249,7 +250,7 @@ List<Plan> findCurrentPlans();
 | 규칙 | 내용 |
 | --- | --- |
 | 구독 중 | `start_at <= 지금 < end_at`이고 `CANCELLED`가 아님 |
-| 화면 만료일 | 지금 기간과 빈틈없이 이어지는 행 중 가장 늦은 `end_at` |
+| 화면 만료일 | 지금 기간과 빈틈없이 이어지는(앞 행의 `end_at`과 같거나 그 전에 시작하는) 행 중 가장 늦은 `end_at` |
 | 미리 결제 기간 | 아직 시작 전 행도 `ACTIVE` |
 
 예: 30일 플랜, 11/1에 구독하고 11/20에 미리 결제
@@ -316,5 +317,5 @@ List<Plan> findCurrentPlans();
 - `Payment.subscription`이 `@OneToOne`, `@JoinColumn(nullable = false, unique = true)`다. 한 구독에 결제가 둘 붙을 수 없다
 
 ## 가정
-- enum: `PaymentMethod` CASH/CREDIT, `PaymentStatus` COMPLETED/REFUNDED, `SubscriptionStatus` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
+- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(엔티티 안에 둠), `Subscription.Status` ACTIVE/CANCELLED(`EXPIRED`는 뺐다. 만료는 날짜로 판단한다).
 - 단위 테스트 이름은 `@DisplayName("#45-S…")`으로 시나리오와 짝짓는다.

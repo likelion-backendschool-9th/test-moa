@@ -1,0 +1,23 @@
+.newRecruitmentPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-block: var(--space-10);
+}
+
+.newRecruitmentPageTitle {
+  font-size: var(--text-4xl);
+  line-height: var(--text-4xl-leading);
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.formSlot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.formSlotName {
+  color: var(--text-muted);
+}

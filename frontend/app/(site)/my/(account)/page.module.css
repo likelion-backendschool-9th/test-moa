@@ -1,0 +1,87 @@
+.myPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.myPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dashboardBox {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .dashboardBox {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.dashboardSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dashboardSkeletonSkeleton {
+  height: 2rem;
+  width: 8rem;
+}
+
+.dashboardSkeletonSkeleton2 {
+  height: 0.5rem;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.dashboardSkeletonSkeleton3 {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.dashboardSkeletonSkeleton4 {
+  height: 2.5rem;
+  width: 100%;
+}
+
+.dashboardSkeletonSkeleton5 {
+  height: 2.5rem;
+  width: 100%;
+}
+
+.dashboardSkeletonBox {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .dashboardSkeletonBox {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.dashboardSkeletonSkeleton6 {
+  height: 1.5rem;
+  width: 5rem;
+}
+
+.dashboardSkeletonSkeleton7 {
+  height: 2rem;
+  width: 10rem;
+}
+
+.dashboardSkeletonSkeleton8 {
+  height: 2.25rem;
+  width: 7rem;
+}

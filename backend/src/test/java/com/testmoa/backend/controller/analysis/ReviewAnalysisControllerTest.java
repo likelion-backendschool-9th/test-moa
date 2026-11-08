@@ -101,7 +101,7 @@ class ReviewAnalysisControllerTest {
         List<Plan> existing = em.createQuery("select p from plans p where p.tier = '구독' and p.version = 1", Plan.class)
                 .getResultList();
         if (!existing.isEmpty()) return existing.get(0);
-        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000).monthlyRecruitLimit(30)
+        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000)
                 .version(1).periodDays(30).build();
         em.persist(plan);
         return plan;

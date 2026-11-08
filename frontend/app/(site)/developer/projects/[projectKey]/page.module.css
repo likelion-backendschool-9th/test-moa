@@ -1,0 +1,36 @@
+.projectPage {
+  padding-block: var(--space-10);
+}
+
+.projectSlot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.projectSlotLink {
+  width: fit-content;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .projectSlotLink:hover {
+    color: var(--text);
+  }
+}
+
+.projectSlotSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.projectSlotTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}

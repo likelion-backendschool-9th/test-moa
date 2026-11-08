@@ -1,0 +1,237 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.link {
+  align-self: flex-start;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--text);
+  }
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.box2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reason {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.list {
+  display: grid;
+  column-gap: var(--space-6);
+  row-gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+@media (min-width: 40rem) {
+  .list {
+    grid-template-columns: 8rem minmax(0,1fr);
+  }
+}
+
+.targetNickname {
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .targetNickname:hover {
+    color: var(--text-muted);
+  }
+}
+
+.title2 {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.feedback {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  white-space: pre-line;
+}
+
+.button {
+  align-self: flex-start;
+}
+
+.infoLabel {
+  color: var(--text-muted);
+}
+
+.infoChildren {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reviewFormTitle {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.reviewFormFieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reviewFormLegend {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.reviewFormText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.reviewFormField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.reviewFormTextarea {
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+  font-weight: 400;
+  color: var(--text);
+}
+
+.reviewFormTextarea::placeholder {
+  color: var(--text-muted);
+}
+
+.reviewFormTextarea:focus {
+  outline-style: solid;
+  outline-width: 2px;
+  outline-color: var(--accent);
+}
+
+.reviewFormButton {
+  align-self: flex-start;
+}
+
+.choice {
+  display: flex;
+  cursor: pointer;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+}
+
+.choice:has(:checked) {
+  background-color: var(--line);
+}
+
+.choiceInput {
+  margin-top: var(--space-1);
+  accent-color: var(--accent);
+}
+
+.choiceLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.choiceLabel2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.choiceDetail {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.reviewResultTitle {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.reviewResultList {
+  display: grid;
+  column-gap: var(--space-6);
+  row-gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+@media (min-width: 40rem) {
+  .reviewResultList {
+    grid-template-columns: 8rem minmax(0,1fr);
+  }
+}
+
+.reportDetailSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.reportDetailSkeletonSkeleton {
+  height: 1.25rem;
+  width: 4rem;
+}
+
+.reportDetailSkeletonSkeleton2 {
+  height: 2rem;
+  width: 20rem;
+  max-width: 100%;
+}
+
+.reportDetailSkeletonSkeleton3 {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.reportDetailSkeletonSkeleton4 {
+  height: 6rem;
+  width: 100%;
+}

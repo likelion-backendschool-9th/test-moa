@@ -1,0 +1,58 @@
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.rowMe {
+  flex-direction: row-reverse;
+}
+
+.bubble {
+  max-width: 80%;
+  padding-inline: var(--space-4);
+  padding-block: var(--space-2-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.me {
+  border-radius: var(--radius-2xl);
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.me ::selection {
+  background-color: var(--on-accent);
+  color: var(--accent);
+}
+
+.me::selection {
+  background-color: var(--on-accent);
+  color: var(--accent);
+}
+
+.partner {
+  color: var(--text);
+}
+
+.time {
+  flex-shrink: 0;
+  padding-bottom: var(--space-0-5);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* 묶음의 마지막 말풍선은 말하는 쪽 아래 모서리를 덜 둥글린다. 상대 말풍선의 모서리는 Card가 정하므로 선택자를 겹쳐 import 순서와 관계없이 이기게 한다 */
+.bubble.endsMe {
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.bubble.endsPartner {
+  border-bottom-left-radius: var(--radius-md);
+}

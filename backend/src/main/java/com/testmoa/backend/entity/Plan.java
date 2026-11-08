@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 @Entity(name = "plans")
 @Table(uniqueConstraints = @UniqueConstraint(
@@ -32,16 +34,12 @@ public class Plan {
     @Column(nullable = false)
     private Integer creditPrice;
 
-    // 월간 모집 제한 인원
-    @Column(nullable = false)
-    private Integer monthlyRecruitLimit;
-
-    // 같은 tier의 몇 번째 조건인지. 가격·한도가 바뀌면 이 행을 고치지 않고 version을 1 올린 새 행을 만든다.
+    // 같은 tier의 몇 번째 조건인지. 가격이 바뀌면 이 행을 고치지 않고 version을 1 올린 새 행을 만든다.
     // 구독 행은 산 당시의 플랜 행을 가리켜서, 예전 구독의 조건이 그대로 남는다.
     @Column(nullable = false)
     private Integer version;
 
-    // 설명
+    // 혜택 문구. 쉼표로 이어 한 칼럼에 넣는다(문구에는 쉼표를 쓰지 않는다). benefits()로 잘라 읽는다
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -69,7 +67,6 @@ public class Plan {
      * @param tier                  등급
      * @param cashPrice             현금 결제 가격
      * @param creditPrice           크레딧 결제 가격
-     * @param monthlyRecruitLimit   월간 모집 제한 인원
      * @param version               플랜 버전
      * @param description           설명
      * @param imageUrl              플랜 이미지 URL
@@ -80,7 +77,6 @@ public class Plan {
             String tier,
             Integer cashPrice,
             Integer creditPrice,
-            Integer monthlyRecruitLimit,
             Integer version,
             String description,
             String imageUrl,
@@ -89,10 +85,37 @@ public class Plan {
         this.tier = tier;
         this.cashPrice = cashPrice;
         this.creditPrice = creditPrice;
-        this.monthlyRecruitLimit = monthlyRecruitLimit;
         this.version = version;
         this.description = description;
         this.imageUrl = imageUrl;
         this.periodDays = periodDays;
+    }
+
+    /**
+     * 혜택 문구 목록. description을 쉼표로 자르고 앞뒤 공백을 지운다. 비어 있으면 빈 목록이다.
+     *
+     * @return 혜택 문구 목록
+     */
+    public List<String> benefits() {
+        if (description == null || description.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(description.split(","))
+                .map(String::trim)
+                .filter(benefit -> !benefit.isEmpty())
+                .toList();
+    }
+
+    /**
+     * 혜택 문구 목록을 description에 넣을 문자열로 잇는다.
+     *
+     * @param benefits 혜택 문구 목록. 문구에 쉼표가 없다고 가정한다
+     * @return 쉼표로 이은 문자열. 비어 있으면 null
+     */
+    public static String joinBenefits(List<String> benefits) {
+        if (benefits == null || benefits.isEmpty()) {
+            return null;
+        }
+        return String.join(",", benefits.stream().map(String::trim).toList());
     }
 }

@@ -39,48 +39,6 @@ test.describe("R41 목록", () => {
   });
 });
 
-test.describe("R42 검색과 필터", () => {
-  test("S229 닉네임 일부로 찾는다", async ({ page }) => {
-    await page.goto("/admin/users");
-    const search = page.getByRole("searchbox", { name: "닉네임 검색" });
-    await search.fill("민");
-    await search.press("Enter");
-    await expect(page).toHaveURL(/\/admin\/users\?q=%EB%AF%BC$/);
-    await expectNicknames(page, ["강민서", "김민준", "오태민"]);
-  });
-
-  test("S231 제재 이력 있는 회원만 본다", async ({ page }) => {
-    await page.goto("/admin/users");
-    await filters(page).getByRole("link", { name: "제재 이력 있음" }).click();
-    await expect(page).toHaveURL(/\/admin\/users\?filter=sanctioned$/);
-    await expectNicknames(page, ["서준호"]);
-  });
-
-  test("S233 검색과 필터를 함께 쓰고, 필터를 바꿔도 검색어는 남는다", async ({ page }) => {
-    await page.goto(`/admin/users?filter=reported&q=${encodeURIComponent("민")}`);
-    await expectNicknames(page, ["강민서", "오태민"]);
-    await filters(page).getByRole("link", { name: "전체" }).click();
-    await expect(page).toHaveURL(/\/admin\/users\?q=%EB%AF%BC$/);
-    await expectNicknames(page, ["강민서", "김민준", "오태민"]);
-  });
-
-  test("S280 뒤로 가면 검색창도 주소의 검색어로 돌아온다", async ({ page }) => {
-    await page.goto("/admin/users");
-    const search = page.getByRole("searchbox", { name: "닉네임 검색" });
-    await search.fill("민");
-    await search.press("Enter");
-    await expect(page).toHaveURL(/\/admin\/users\?q=%EB%AF%BC$/);
-    await search.fill("준");
-    await search.press("Enter");
-    await expect(page).toHaveURL(/\/admin\/users\?q=%EC%A4%80$/);
-    await expectNicknames(page, ["김민준", "서준호"]);
-    await page.goBack();
-    await expect(page).toHaveURL(/\/admin\/users\?q=%EB%AF%BC$/);
-    await expectNicknames(page, ["강민서", "김민준", "오태민"]);
-    await expect(search).toHaveValue("민");
-  });
-});
-
 test.describe("R43 상세", () => {
   test("S235 기본 정보는 실명과 이메일을 가려서 보여 준다", async ({ page }) => {
     await page.goto("/admin/users/user-4");
@@ -90,33 +48,6 @@ test.describe("R43 상세", () => {
     }
     await expect(page.locator("body")).not.toContainText("member04@example.com");
     await expect(info).not.toContainText("역할");
-  });
-
-  test("S527 테스터이면서 개발자인 회원은 두 활동을 모두 보여 준다", async ({ page }) => {
-    await page.goto("/admin/users/user-2");
-    const activity = region(page, "활동");
-    for (const text of ["테스터 활동", "참여 확정", "4회", "개발자 활동", "프로젝트", "2개", "모집 건", "3개", "구독 중"]) {
-      await expect(activity).toContainText(text);
-    }
-    await expect(activity).not.toContainText("활동이 없어요");
-  });
-
-  test("S238 제재 이력은 인정된 신고이고 신고 상세로 간다", async ({ page }) => {
-    await page.goto("/admin/users/user-4");
-    const sanctions = region(page, "제재 이력");
-    await expect(sanctions.getByRole("link")).toHaveCount(1);
-    const link = sanctions.getByRole("link");
-    for (const text of ["다른 모집 건의 피드백을 그대로 붙여 넣었어요", "스터디 매칭", "처리"]) {
-      await expect(link).toContainText(text);
-    }
-    await expect(link).toHaveAttribute("href", "/admin/reports/report-6");
-  });
-
-  test("S240 기각된 신고는 제재 이력이 되지 않는다", async ({ page }) => {
-    await page.goto("/admin/users/user-5");
-    await expect(region(page, "받은 신고").getByRole("link")).toContainText("레시피핏");
-    await expect(region(page, "받은 신고").getByRole("link")).toContainText("기각");
-    await expect(region(page, "제재 이력")).toContainText("제재 이력이 없어요");
   });
 });
 

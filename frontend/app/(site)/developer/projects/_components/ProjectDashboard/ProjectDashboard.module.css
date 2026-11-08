@@ -1,0 +1,117 @@
+.todoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.todoListTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.todoListText {
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+  color: var(--text-muted);
+}
+
+.todoListList {
+  display: flex;
+  flex-direction: column;
+}
+
+:where(.todoListList>:not(:last-child)) {
+  border-bottom-style: solid;
+  border-top-style: solid;
+  border-top-width: calc(1px * 0);
+  border-bottom-width: calc(1px * calc(1 - 0));
+  border-color: var(--line);
+}
+
+.todoListLink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .todoListLink:hover {
+    background-color: var(--surface-strong);
+  }
+}
+
+.todoListProjectName {
+  width: 8rem;
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.todoListText2 {
+  min-width: 0;
+  flex: 1;
+}
+
+.todoListLabel {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.overviewStats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.overviewStatsTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.overviewStatsList {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .overviewStatsList {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+.overviewStats2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-5);
+}
+
+.overviewStatsTerm {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.overviewStatsValue {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}

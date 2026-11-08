@@ -145,7 +145,8 @@
    - 순서: 참가를 잠가 읽음 → 주인이 아니거나 없으면 404 → 방이 있으면 200 → `CONFIRMED`가 아니면 400 → `subscriptionChecker.require` 403 → `ChatReadOnlyPolicy`의 모집 끝남 403 → `ChatRoom.builder().register(...)` 저장 후 201
    - 확인: `./gradlew test --tests '*ChatStartControllerTest*'`
 3. 지운 방과 동시 요청 — #53-S3, S4
-   - 파일: `repository/ChatParticipantRepository.java`(`unhideMine(id)`: `hidden`·`updated_at`만 바꾸는 update), `ChatServiceImpl.startChat`
+   - 파일: `repository/ChatParticipantRepository.java`(`unhideMine(roomId, userId)`: 방 ID와 회원 ID로 내 행의 `hidden`·`updated_at`만 바꾸는 update), `ChatServiceImpl.startChat`
+   - 참여자 목록을 로딩해 내 ID를 찾는 대신 방 ID와 회원 ID로 바로 갱신한다(사용자 승인). 이름·읽은 순번과 상대의 숨김은 보존한다
    - 동시 요청은 2단계의 참가 행 잠금으로 막는다. 두 번째 요청은 잠금을 기다린 뒤 이미 있는 방을 찾아 200이다
    - 확인: 같은 명령
 4. 읽기 전용 계산과 표시 — #53-S11, S12

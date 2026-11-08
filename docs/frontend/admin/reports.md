@@ -45,7 +45,7 @@ S426 비로그인 [테스트: pages.spec.ts #56-S2]
 - When  `/admin/reports/report-1`에 접속한다
 - Then  URL이 `/login?next=%2Fadmin%2Freports%2Freport-1`이다
 
-S427 없는 신고 [테스트]
+S427 없는 신고 [직접]
 - When  `/admin/reports/nope`에 접속한다
 - Then  맞춤 404("찾는 페이지가 없어요")가 보이고 `noindex`가 붙는다
 - 참고(10-31): 스트리밍 순서에 따라 Next가 `noindex` 메타를 두 번 넣기도 한다. 그래서 테스트는 개수가 아니라 있는지만 본다.
@@ -54,13 +54,13 @@ S427 없는 신고 [테스트]
 ## 3. 목록 (R25)
 검토 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 보여 준다. 탭 상태는 URL(`tab`), 대상 종류 필터는 URL(`target`)에 남고, 둘은 함께 쓸 수 있다. 기본값(검토 대기, 전체)은 주소에 쓰지 않는다. 목록에서 상세로 갈 때도 같은 값을 상세 주소에 붙여(`/admin/reports/report-1?target=feedback`), "목록으로"와 처리한 뒤에 보던 목록으로 돌아온다. 상세의 `tab`·`target`은 돌아갈 곳만 정하고 상세 내용은 바꾸지 않는다. 상태 탭 아래 필터 줄은 상태 탭과 같은 모양이고, 화면 읽기 프로그램은 "신고 대상"으로 구분해 읽는다. 피드백 원문은 목록에 보여 주지 않는다.
 
-S428 검토 대기 [테스트]
+S428 검토 대기 [직접]
 - When  `/admin/reports`에 접속한다
 - Then  "검토 대기" 탭에 `aria-current="page"`가 있고 신고 4건이 접수가 오래된 순서다
 - Then  각 행에 대상 종류, 모집 건 이름, 사유, 경과 시간이 있다
 - Then  첫 행에 "보상 보류"와 "72시간 지남"이 있다
 
-S429 처리 완료 [테스트]
+S429 처리 완료 [직접]
 - When  "처리 완료" 탭을 누른다
 - Then  URL에 `tab=done`이 붙고 신고 2건이 최근 처리 순서다
 - Then  각 행에 결과("기각" 또는 "인정")와 처리 시각이 있다
@@ -69,13 +69,13 @@ S430 없음 [직접]
 - Given `demo-data=empty`
 - Then  "검토할 신고가 없어요"가 보인다
 
-S528 대상 종류 필터 [테스트]
+S528 대상 종류 필터 [직접]
 - When  `/admin/reports`에서 "신고 대상" 필터의 "피드백"·"모집 글"·"회원"을 차례로 누른다
 - Then  URL이 `?target=feedback`·`?target=recruitment`·`?target=user`가 되고, 누른 필터에 `aria-current="page"`가 있다
 - Then  검토 대기 신고가 피드백 2건(회의록 정리, 북로그), 모집 글 1건(포트폴리오 빌더), 회원 1건(가계부 노트)이다
 - Then  "전체"를 누르면 URL이 `/admin/reports`로 돌아오고 4건이 보인다
 
-S529 탭과 필터 함께 [테스트]
+S529 탭과 필터 함께 [직접]
 - When  `/admin/reports?target=feedback`에서 "처리 완료" 탭을 누른다
 - Then  URL이 `?tab=done&target=feedback`이고 2건이 보인다 (주소는 값의 순서가 아니라 값으로 확인한다)
 - When  "회원" 필터를 누른다
@@ -92,7 +92,7 @@ S531 필터 결과가 없을 때 [직접]
 - When  `/admin/reports?target=feedback`에 접속한다
 - Then  "'피드백' 신고 중에는 검토할 신고가 없어요"가 보인다
 
-S532 상세를 거쳐도 보던 탭과 필터가 남는다 [테스트]
+S532 상세를 거쳐도 보던 탭과 필터가 남는다 [직접]
 - When  `/admin/reports?target=feedback`에서 첫 행을 누른다
 - Then  URL이 `/admin/reports/report-1?target=feedback`이다
 - When  "목록으로"를 누른다
@@ -109,7 +109,7 @@ S431 상세로 이동 [직접]
 ## 4. 상세 (R26)
 신고 내용과 대상을 보여 준다. 피드백 원문은 신고 검토에 필요하므로 상세에서만 보여 준다(README 운영 원칙).
 
-S432 피드백 신고 [테스트]
+S432 피드백 신고 [직접]
 - When  `/admin/reports/report-1`에 접속한다
 - Then  신고 사유, 신고한 사람, 대상 테스터, 모집 건 이름, 접수 시각이 보인다
 - Then  "보상 보류 중"과 제출된 피드백 원문이 보인다
@@ -141,12 +141,12 @@ S437 기각 [테스트]
 - When  보상 보류가 없는 `/admin/reports/report-3`에서 "기각"을 고르고 "처리하기"를 누른다
 - Then  "신고를 기각했어요."만 보이고 보상 지급 문구는 없다
 
-S438 인정 [테스트]
+S438 인정 [직접]
 - When  `/admin/reports/report-2`에서 "인정"을 고르고 메모를 적고 "처리하기"를 누른다
 - Then  "신고를 인정했어요. 제재 이력에 반영돼요"가 보인다
 - Then  처리 완료 탭의 "북로그" 행에 "인정"이 있다
 
-S439 처리한 신고의 상세 [테스트]
+S439 처리한 신고의 상세 [직접]
 - Given S438를 마친 상태
 - When  `/admin/reports/report-2`에 접속한다
 - Then  처리 양식은 없고 결과 "인정", 메모, 처리 시각이 보인다

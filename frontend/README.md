@@ -9,8 +9,9 @@ npm install
 npm run dev        # http://localhost:3000
 npm run build      # 프로덕션 빌드
 npm run lint
-npm run test:e2e   # Playwright E2E (처음 한 번: npx playwright install chromium)
-npm run test:visual -- --base origin/develop   # 기준 커밋과 화면을 픽셀 단위로 비교
+npm test           # 브라우저·빌드 없이 규칙을 검사하는 단위 테스트
+npm run test:e2e -- e2e/auth.spec.ts  # 해당 기능의 E2E (처음 한 번: npx playwright install chromium)
+npm run test:visual -- --base origin/develop   # 화면 변경 시 기준 커밋과 비교
 ```
 
 ## 환경 변수
@@ -137,18 +138,54 @@ AccountNav/
 
 ### 확인 명령
 
-새 worktree에서는 `node_modules`를 링크하지 않고 `npm ci`로 설치한다. Next의 전역 라우트 타입이 없으면 `tsc`에 앞서 생성한다.
+변경 범위에 맞는 검사만 실행한다. 기본 검사를 통과하면, 동작 변경이 있는 경우 관련 E2E 파일이나 시나리오를 골라 확인한다. 문서만 바꾸면 `git diff --check`로 확인한다.
+
+새 worktree에서는 `node_modules`를 링크하지 않고 `npm ci`로 설치한다. Next의 전역 라우트 타입이 없거나 라우트를 바꿨으면 `npx next typegen`으로 생성한다.
+
+기본 검사:
 
 ```bash
-npx next typegen
 npx tsc --noEmit
 npm run lint
+npm test
+```
+
+파일 배치·import·구조 검사 스크립트를 바꿨을 때:
+
+```bash
 npm run test:structure
 node scripts/structure/usage.mjs . --check
-npm run build
-npm run test:e2e
-npm run test:visual -- --base origin/develop
 ```
+
+의존성·빌드 설정·서버와 클라이언트 경계를 바꿨을 때:
+
+```bash
+npm run build
+```
+
+화면 동작을 바꿨을 때는 관련 파일 또는 시나리오만 실행한다. E2E 코드의 삭제·정리만 했다면 정적 검사와 테스트 수집(`--list`)으로 확인하고, 남은 테스트의 준비나 검증 로직도 바꿨다면 그 테스트를 실행한다.
+
+```bash
+npm run test:e2e -- e2e/auth.spec.ts
+npm run test:e2e -- e2e/projects.spec.ts --grep 'S491'
+npm run test:e2e -- --list
+```
+
+전체 E2E(`npm run test:e2e`)는 사용자가 요청하거나, 공통 인증·라우팅·전역 레이아웃을 바꿔 영향 범위를 좁힐 수 없을 때 실행한다. 커밋이나 PR 생성 자체는 전체 실행의 이유가 아니다. E2E는 실행 시 프로덕션 빌드와 서버 시작 비용도 든다. CI는 정적 검사·단위 테스트·구조 검사·빌드를 실행하며 E2E를 자동 실행하지 않는다.
+
+### 검증을 나누는 기준
+
+| 층 | 확인할 것 | 이 저장소의 예 |
+| --- | --- | --- |
+| 단위 | 입력과 결과로 판단할 수 있는 규칙·경계값 | 복귀 주소, 피드백 파싱, 이미지·날짜 제한, 크레딧 계산 |
+| 통합 | API·DB·트랜잭션·권한 처리의 연결 | 백엔드 컨트롤러·저장소·동시성 테스트 |
+| E2E | 사용자 조작부터 결과 표시까지의 연결 | 로그인, 결제·출금 후 잔액 반영, 피드백 제출 |
+
+프론트엔드 단위 테스트는 `tests/unit/`에 둔다. 기존 Playwright의 TypeScript 변환·경로 별칭을 재사용하되, `playwright.unit.config.ts`는 E2E 설정과 독립적이다. `page`·`browser` fixture와 Next 서버를 사용하지 않아 브라우저 설치나 프로덕션 빌드가 필요 없다. 파일 하나만 확인하려면 `npm run test:unit -- tests/unit/next-path.test.ts`처럼 실행한다.
+
+서버 액션이 이미 호출하는 일반 함수를 직접 검사한다. 테스트에서 같은 규칙을 다시 구현하거나 프레임워크 전체를 가짜로 만드는 방식은 피한다. 경계값과 입력 변형은 단위 테스트로 모으고, E2E에는 그 규칙이 실제 제출과 화면에 연결되는 대표 사례를 남긴다. 페이지 문서에는 규칙 검사와 화면 확인의 범위를 각각 적는다.
+
+E2E에는 핵심 작업의 성공·실패, 권한·개인정보 보호, 잔액·보상 반영과 주요 회귀 검사를 남긴다. 고정 시연 데이터의 문구·개수·배치, 세부 UI 조작과 데이터 변형은 각 페이지 문서에서 `[직접]`으로 구분한다. 이 시나리오는 자동 검사 대상에서 빠진 것이며, 매 변경마다 모두 수동 확인하라는 뜻은 아니다. 해당 동작을 바꿀 때 확인한다. 새 시나리오마다 E2E를 하나씩 추가하지 않는다.
 
 `lint`는 B1~B8을 검사한다. 배치 검사는 R0(계산할 수 없는 동적 import), R1(한 구역 전용 부품의 공용 배치), R2(비공개 폴더 밖의 사용), R3(범용 UI의 도메인 의존), R4(폴더 없는 부품), R5(토큰이 아닌 모듈 값·정하지 않은 너비), R6(정의한 곳이 없는 CSS 변수)를 검사하며 CI에서도 실행한다.
 

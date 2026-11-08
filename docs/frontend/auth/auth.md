@@ -52,7 +52,7 @@ S286 `next` 유지 [직접]
 - When  `/login?next=%2Fmy` 에 접속한다
 - Then  "회원가입" 링크가 `/signup?next=%2Fmy`로 간다
 
-S287 이미 로그인 [테스트]
+S287 이미 로그인 [직접]
 - Given `demo-role=tester`
 - When  `/login?next=%2Fmy`에 접속한다
 - Then  URL이 `/my`다
@@ -77,7 +77,7 @@ S290 돌아가기 [테스트: auth.spec.ts S316] (고침 #96: 쿼리가 있는 n
 - When  dohyun@example.com / test1234로 로그인한다
 - Then  URL이 `/my/credits`다
 
-S291 운영자 [테스트]
+S291 운영자 [직접]
 - Given `demo-role=guest`, `/login?next=%2Fadmin`
 - When  admin@example.com / test1234로 로그인한다
 - Then  URL이 `/admin`이고 운영자 화면 h1이 보인다
@@ -98,6 +98,7 @@ S294 맞지 않는 계정 [테스트]
 - Then  같은 문구가 보인다 (어느 쪽이 틀렸는지 알리지 않는다)
 
 S295 바깥 주소로 보내지 않음 [테스트]
+- 주소 변형은 `tests/unit/next-path.test.ts`가 `safeNextPath`를 직접 검사한다. `e2e/auth.spec.ts`는 `https://evil.com` 한 가지로 로그인 전후의 실제 이동 연결을 확인한다.
 - Given `next` 값(디코딩된 문자열)이 다음 중 하나다: `https://evil.com`, `//evil.com`, `/\evil.com`, `/` + 실제 탭 문자(U+0009) + `/evil.com`(테스트 코드에서는 `"/\t/evil.com"`), `/a/..//evil.com`, `/a/%2e%2e//evil.com`, `javascript:alert(1)`, `my`(슬래시 없음)
 - When  seoyun@example.com / test1234로 로그인한다
 - Then  URL이 `/`다 (각 값을 `encodeURIComponent`로 한 번만 인코딩해 `/login?next=…`로 넘긴다. 탭은 `%09`로 넘어가 서버에서 실제 탭으로 디코딩된다)
@@ -112,7 +113,7 @@ S316 쿼리가 있는 경로 (고침 11-01: 리뷰) [테스트]
 ## 3. 소셜 로그인 (R157)
 깃허브·구글 버튼은 목업이다. 누르면 테스터 시연 계정으로 로그인하고 `next`로 보낸다. 제공자는 추후 바뀔 수 있어 목록 한 곳(`SOCIAL_PROVIDERS`)만 고치면 버튼이 바뀌게 한다. (고침 11-01: 카카오·구글 → 깃허브·구글)
 
-S296 깃허브 [테스트]
+S296 깃허브 [직접]
 - Given `demo-role=guest`, `/login?next=%2Fmy`
 - When  "깃허브로 계속하기"를 누른다
 - Then  URL이 `/my`이고 헤더에 "내 정보"가 있다
@@ -181,7 +182,7 @@ S307 성공 [테스트]
 - Then  URL이 `/login?joined=1`이다
 - Then  "가입했어요. 로그인해 주세요"가 보인다 (`role="status"`)
 
-S308 `next` 넘기기 [테스트]
+S308 `next` 넘기기 [직접]
 - Given `/signup?next=%2Fmy`
 - When  S307처럼 가입한다
 - Then  URL이 `/login?joined=1&next=%2Fmy`다
@@ -192,14 +193,15 @@ S308 `next` 넘기기 [테스트]
 - When  S307처럼 가입한다
 - Then  URL이 `/login?joined=1`이다 (안전하지 않은 `next`는 넘기지 않는다)
 
-S314 닉네임 길이 (고침 11-01: 깃허브 사용자명 허용 범위) [테스트]
+S314 닉네임 길이 (고침 11-01: 깃허브 사용자명 허용 범위) [직접]
+- 허용 문자와 길이 규칙은 `tests/unit/member-validation.test.ts`에서 확인한다. 아래의 화면 제출·오류 표시는 관련 화면을 바꿀 때 직접 확인한다.
 - When  회원가입·개인정보 수정에서 닉네임 "a"(1자)를 넣고 제출한다
 - Then  닉네임 오류가 없다
 - When  닉네임 39자를 넣는다
 - Then  닉네임 오류가 없다
 - When  닉네임 40자, 또는 "윤슬!!"을 넣는다
 - Then  "닉네임은 한글·영문·숫자 1~39자예요"가 보인다
-- 참고: 개인정보 수정(`e2e/profile.spec.ts`)도 같은 규칙이라 이 번호로 한 번 더 확인한다. 한 시나리오를 두 화면에서 확인하는 경우다.
+- 참고: 가입과 개인정보 수정은 같은 `validateNickname`을 쓰므로 규칙은 한 번 검사한다.
 
 ## 7. 화면 (R161)
 
@@ -305,7 +307,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 #83-S10 이름을 입력하고 동의하면 로그인한 채 돌아갈 곳으로 간다 [테스트]
 - 목업은 테스터로 로그인한다
 
-#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 키는 무시한다 [테스트]
+#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 키는 무시한다 [직접]
 
 #83-S12 `AUTH_MODE=backend`에서 버튼을 누르면 제공자 동의 화면으로 가고, 돌아오면 로그인되거나 이름 입력 화면이 나온다 [직접]
 - 동의 화면 주소의 `client_id`·`redirect_uri`·`state`가 맞고, state 쿠키는 httpOnly다
@@ -322,7 +324,6 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 - 로그인 시도 횟수 제한
 
 ## 작업 순서
-0. 브랜치 — `git switch -c feature/frontend-auth origin/develop && git branch --unset-upstream`, 이 계획을 `docs/frontend/auth/auth.md`로 저장
 1. 공통 코드 분리 (동작 변화 없음) — S315 일부
    - `features/my/components/FormField.tsx` → `components/ui/FormField.tsx`로 옮기고 `ProfileForm`·`PasswordForm` import 수정
    - `features/my/actions.ts`의 `FormState` → `lib/form.ts`

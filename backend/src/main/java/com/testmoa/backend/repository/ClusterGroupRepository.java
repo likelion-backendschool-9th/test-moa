@@ -42,8 +42,11 @@ public interface ClusterGroupRepository extends JpaRepository<ClusterGroup, Long
     @Query("update cluster_groups g set g.gitIssueRegisteringAt = null where g.id = :id and g.gitIssueUrl is null")
     int releaseIssueRegistration(@Param("id") Long id);
 
-    // 다시 분석할 때 지우는 그룹. GitHub에 등록한 그룹은 남김. 매핑을 먼저 지워야 함
+    // 다시 분석할 때 지우는 그룹. GitHub에 등록했거나 등록 중(staleBefore 이후에 시작)인 그룹은 남김. 매핑을 먼저 지워야 함
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("delete from cluster_groups g where g.recruitment.id = :recruitmentId and g.gitIssueUrl is null")
-    int deleteUnregisteredByRecruitmentId(@Param("recruitmentId") Long recruitmentId);
+    @Query("""
+            delete from cluster_groups g where g.recruitment.id = :recruitmentId and g.gitIssueUrl is null
+              and (g.gitIssueRegisteringAt is null or g.gitIssueRegisteringAt < :staleBefore)
+            """)
+    int deleteUnregisteredByRecruitmentId(@Param("recruitmentId") Long recruitmentId, @Param("staleBefore") LocalDateTime staleBefore);
 }

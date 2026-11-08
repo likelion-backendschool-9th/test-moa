@@ -276,6 +276,27 @@ class ReviewAnalysisControllerTest {
     }
 
     @Test
+    @DisplayName("#107-S19 다시 분석해도 GitHub에 등록 중인 그룹(5분 이내)은 남고, 오래된 등록 중 표시는 지워진다")
+    void 등록_중인_그룹은_다시_분석해도_남는다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup registering = saveGroup(r.recruitment(), "1", null, r.f1());
+        ReflectionTestUtils.setField(registering, "gitIssueRegisteringAt", LocalDateTime.now().minusMinutes(1));
+        ClusterGroup stale = saveGroup(r.recruitment(), "2", null, r.f2());
+        ReflectionTestUtils.setField(stale, "gitIssueRegisteringAt", LocalDateTime.now().minusMinutes(10));
+        given(analysisClient.analyze(any())).willReturn(new AnalysisResponse(List.of(
+                group("결제 화면 느림", ClusterCategory.BUG, 3, r.f3(), List.of(r.f3().getId()))), null));
+
+        start(developer, r.recruitment().getId()).andExpect(status().isAccepted());
+
+        em.flush();
+        em.clear();
+        assertThat(groupsOf(r.recruitment())).extracting(ClusterGroup::getId).contains(registering.getId()).doesNotContain(stale.getId());
+        assertThat(mappingsOf(r.recruitment())).extracting(mapping -> mapping.getFeedback().getId())
+                .contains(r.f1().getId()).doesNotContain(r.f2().getId());
+    }
+
+    @Test
     @DisplayName("#107-S4 분석 서버가 실패하면 FAILED이고 지난 분석 결과는 그대로다")
     void 실패하면_FAILED() throws Exception {
         User developer = saveSubscriber();

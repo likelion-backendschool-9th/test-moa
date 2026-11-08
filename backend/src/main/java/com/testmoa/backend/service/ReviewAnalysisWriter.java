@@ -69,8 +69,10 @@ public class ReviewAnalysisWriter {
     public void save(AnalysisTarget target, AnalysisResponse response) {
         // 지우기 전에 최대 코드를 읽어 지운 코드를 다시 쓰지 않음. 끝날 때까지 프로젝트 행을 잠금
         GroupCodeIssuer.Codes codes = groupCodeIssuer.open(target.projectId());
-        feedbackClusterRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId());
-        clusterGroupRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId());
+        // 등록한 그룹과 GitHub에 등록하는 중인 그룹은 남김. 지우면 만들어진 이슈의 링크를 저장할 그룹이 없어짐
+        LocalDateTime staleBefore = LocalDateTime.now().minus(STALE_REGISTERING);
+        feedbackClusterRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
+        clusterGroupRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
 
         Recruitment recruitment = recruitmentRepository.findById(target.recruitmentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));

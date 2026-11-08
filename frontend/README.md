@@ -140,6 +140,8 @@ AccountNav/
 
 변경 범위에 맞는 검사만 실행한다. 기본 검사를 통과하면, 동작 변경이 있는 경우 관련 E2E 파일이나 시나리오를 골라 확인한다. 문서만 바꾸면 `git diff --check`로 확인한다.
 
+AI의 검사 선택·재실행·로그 조회는 [검증 실행과 로그 확인 기준](../docs/testing.md)을 따른다.
+
 새 worktree에서는 `node_modules`를 링크하지 않고 `npm ci`로 설치한다. Next의 전역 라우트 타입이 없거나 라우트를 바꿨으면 `npx next typegen`으로 생성한다.
 
 기본 검사:

@@ -118,6 +118,9 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public ChatReadResponse markRead(String roomKey, Long userId, long seq) {
         var me = requireParticipant(roomKey, userId);
+        if (seq > me.getRoom().getLastSeq()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
         participantRepository.markRead(me.getId(), seq);
         long lastReadSeq = participantRepository.findVisibleLastReadSeq(me.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));

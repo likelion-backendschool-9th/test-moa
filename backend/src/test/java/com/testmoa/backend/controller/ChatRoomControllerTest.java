@@ -18,9 +18,12 @@ import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import java.util.Map;
+import org.springframework.test.json.JsonCompareMode;
 import static com.testmoa.backend.support.ChatFixtures.participantWithRole;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -57,6 +60,15 @@ class ChatRoomControllerTest {
     }
     void reload() { em.flush(); em.clear(); }
 
+    LocalDateTime resetUpdatedAt() {
+        var past = LocalDateTime.of(2020, 1, 1, 0, 0);
+        em.flush();
+        em.createNativeQuery("update chat_participants set updated_at = :past where id = :id")
+                .setParameter("past", past).setParameter("id", testerSide.getId()).executeUpdate();
+        em.clear();
+        return past;
+    }
+
     ResultActions rename(String name) throws Exception {
         return call(patch(url()).contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(Map.of("name", name))), tester);
@@ -89,7 +101,7 @@ class ChatRoomControllerTest {
     @Test @DisplayName("#50-S2 다시 바꾸면 앞뒤 공백을 뺀 이름 저장")
     void renameAgain() throws Exception {
         rename("북로그 1차").andExpect(status().isOk());
-        rename("  결제 문의  ").andExpect(status().isOk())
+        rename("\u00a0  결제 문의  \u00a0").andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roomName").value("결제 문의"));
         reload();
         assertThat(em.find(ChatParticipant.class, testerSide.getId()).getCustomRoomName()).isEqualTo("결제 문의");
@@ -99,9 +111,11 @@ class ChatRoomControllerTest {
     void preserveOtherColumns() throws Exception {
         testerSide.markRead(5);
         reload();
+        var past = resetUpdatedAt();
         rename("북로그 1차").andExpect(status().isOk());
         reload();
         var saved = em.find(ChatParticipant.class, testerSide.getId());
+        assertThat(saved.getUpdatedAt()).isAfter(past);
         assertThat(saved.getLastReadSeq()).isEqualTo(5);
         assertThat(saved.isHidden()).isFalse();
     }
@@ -109,7 +123,7 @@ class ChatRoomControllerTest {
     @Test @DisplayName("#50-S4 빈 이름·공백·누락 거절 후 이름 유지")
     void blankName() throws Exception {
         rename("북로그 1차").andExpect(status().isOk());
-        for (String body : new String[]{"{\"name\":\"\"}", "{\"name\":\"   \"}", "{}"}) {
+        for (String body : new String[]{"{\"name\":\"\"}", "{\"name\":\"   \"}", "{\"name\":\"\u00a0\"}", "{}"}) {
             call(patch(url()).contentType(MediaType.APPLICATION_JSON).content(body), tester)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
@@ -117,6 +131,19 @@ class ChatRoomControllerTest {
         }
         reload();
         roomName(tester, "북로그 1차");
+    }
+
+    @Test @DisplayName("#50-S5 공백 제거 후 30자까지 허용")
+    void nameLength() throws Exception {
+        String name = "가".repeat(30);
+        for (String input : new String[]{name, "  " + name + "  "}) {
+            rename(input).andExpect(status().isOk()).andExpect(jsonPath("$.data.roomName").value(name));
+        }
+        rename(name + "가").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+                .andExpect(jsonPath("$.error.fields.name").value("대화방 이름은 30자까지 쓸 수 있어요"));
+        reload();
+        roomName(tester, name);
     }
 
     @Test @DisplayName("#50-S6 삭제는 내 채팅함에서만 숨기고 방 접근 차단")
@@ -127,7 +154,7 @@ class ChatRoomControllerTest {
         reload();
         call(delete(url()), tester).andExpect(status().isOk())
                 .andExpect(content().json("{\"success\":true,\"data\":null}",
-                        org.springframework.test.json.JsonCompareMode.STRICT));
+                        JsonCompareMode.STRICT));
         reload();
         call(get("/api/v1/chats"), tester).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
@@ -137,11 +164,11 @@ class ChatRoomControllerTest {
                 post(url() + "/messages").contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"안녕하세요\"}")}) {
             call(request, tester).andExpect(status().isNotFound())
                     .andExpect(content().json("{\"success\":false,\"data\":null,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"찾을 수 없어요\"}}",
-                            org.springframework.test.json.JsonCompareMode.STRICT));
+                            JsonCompareMode.STRICT));
         }
         call(get("/api/v1/chats"), developer).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(2))
-                .andExpect(jsonPath("$.data.rooms[*].roomKey", org.hamcrest.Matchers.hasItem(room.getRoomKey())));
+                .andExpect(jsonPath("$.data.rooms[*].roomKey", hasItem(room.getRoomKey())));
     }
 
     @Test @DisplayName("#50-S7 상대가 보내면 이름과 읽은 순번을 유지한 채 다시 표시")
@@ -149,18 +176,22 @@ class ChatRoomControllerTest {
         testerSide.markRead(3);
         reload();
         rename("북로그 1차").andExpect(status().isOk());
+        var beforeHide = resetUpdatedAt();
         call(delete(url()), tester).andExpect(status().isOk());
         reload();
         var hidden = em.find(ChatParticipant.class, testerSide.getId());
         assertThat(hidden.isHidden()).isTrue();
+        assertThat(hidden.getUpdatedAt()).isAfter(beforeHide);
         assertThat(hidden.getCustomRoomName()).isEqualTo("북로그 1차");
         assertThat(hidden.getLastReadSeq()).isEqualTo(3);
+        var beforeUnhide = resetUpdatedAt();
         call(post(url() + "/messages").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"text\":\"다시 확인 부탁드려요\"}"), developer).andExpect(status().isOk());
         reload();
         roomName(tester, "북로그 1차");
         var saved = em.find(ChatParticipant.class, testerSide.getId());
         assertThat(saved.isHidden()).isFalse();
+        assertThat(saved.getUpdatedAt()).isAfter(beforeUnhide);
         assertThat(saved.getLastReadSeq()).isEqualTo(3);
     }
 
@@ -174,7 +205,7 @@ class ChatRoomControllerTest {
         for (var request : roomRequests(base)) {
             call(request, user).andExpect(status().isNotFound())
                     .andExpect(content().json("{\"success\":false,\"data\":null,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"찾을 수 없어요\"}}",
-                            org.springframework.test.json.JsonCompareMode.STRICT));
+                            JsonCompareMode.STRICT));
         }
     }
 
@@ -219,18 +250,4 @@ class ChatRoomControllerTest {
         assertThat(saved.getCustomRoomName()).isEqualTo("북로그 1차");
         assertThat(saved.isHidden()).isTrue();
     }
-
-    @Test @DisplayName("#50-S5 공백 제거 후 30자까지 허용")
-    void nameLength() throws Exception {
-        String name = "가".repeat(30);
-        for (String input : new String[]{name, "  " + name + "  "}) {
-            rename(input).andExpect(status().isOk()).andExpect(jsonPath("$.data.roomName").value(name));
-        }
-        rename(name + "가").andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
-                .andExpect(jsonPath("$.error.fields.name").value("대화방 이름은 30자까지 쓸 수 있어요"));
-        reload();
-        roomName(tester, name);
-    }
 }
-

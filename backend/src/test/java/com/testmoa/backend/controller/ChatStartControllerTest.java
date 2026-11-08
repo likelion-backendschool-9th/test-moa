@@ -113,6 +113,85 @@ class ChatStartControllerTest {
         assertThat(count("chat_messages")).isEqualTo(2);
     }
 
+    @Test @DisplayName("#53-S3 지운 내 방만 복원하고 이름과 읽은 순번은 보존한다")
+    void restoreMine() throws Exception {
+        String key = key(start(developer, register.getId()));
+        var room = room(key);
+        var sender = participantWithRole(room, ChatRole.TESTER);
+        em.persist(room.createMessage(sender, "하나"));
+        em.persist(room.createMessage(sender, "둘"));
+        em.flush();
+        String url = "/api/v1/chats/" + key;
+        call(patch(url).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"북로그 1차\"}"), developer)
+                .andExpect(status().isOk());
+        call(post(url + "/read").contentType(MediaType.APPLICATION_JSON).content("{\"seq\":2}"), developer)
+                .andExpect(status().isOk());
+        call(delete(url), developer).andExpect(status().isOk());
+        call(delete(url), tester).andExpect(status().isOk());
+        assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
+        em.clear();
+        room = room(key);
+        var mine = participantWithRole(room, ChatRole.DEVELOPER);
+        assertThat(mine.isHidden()).isFalse();
+        assertThat(mine.getCustomRoomName()).isEqualTo("북로그 1차");
+        assertThat(mine.getLastReadSeq()).isEqualTo(2);
+        assertThat(participantWithRole(room, ChatRole.TESTER).isHidden()).isTrue();
+        call(get("/api/v1/chats"), developer).andExpect(jsonPath("$.data.rooms[0].roomKey").value(key));
+        call(get(url), developer).andExpect(status().isOk());
+        call(delete(url), developer).andExpect(status().isOk());
+        expire();
+        start(developer, register.getId()).andExpect(status().isOk());
+        em.clear();
+        assertThat(participantWithRole(room(key), ChatRole.DEVELOPER).isHidden()).isFalse();
+    }
+
+    @Test @DisplayName("#53-S4 동시에 시작해도 하나는 201 다른 하나는 200으로 같은 방을 반환한다")
+    void concurrentStart() throws Exception {
+        Long planId = subscription.getPlan().getId();
+        Long projectId = recruitment.getProject().getId();
+        org.springframework.test.context.transaction.TestTransaction.flagForCommit();
+        org.springframework.test.context.transaction.TestTransaction.end();
+        try {
+            try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+                var ready = new java.util.concurrent.CountDownLatch(2);
+                var go = new java.util.concurrent.CountDownLatch(1);
+                java.util.concurrent.Callable<MvcResult> request = () -> {
+                    ready.countDown();
+                    if (!go.await(10, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("시작 대기 초과");
+                    return start(developer, register.getId()).andReturn();
+                };
+                var first = executor.submit(request);
+                var second = executor.submit(request);
+                try { assertThat(ready.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); }
+                finally { go.countDown(); }
+                var a = first.get(20, java.util.concurrent.TimeUnit.SECONDS);
+                var b = second.get(20, java.util.concurrent.TimeUnit.SECONDS);
+                assertThat(List.of(a.getResponse().getStatus(), b.getResponse().getStatus())).containsExactlyInAnyOrder(201, 200);
+                assertThat(json.readTree(a.getResponse().getContentAsString()).path("data").path("roomKey").asText())
+                        .isEqualTo(json.readTree(b.getResponse().getContentAsString()).path("data").path("roomKey").asText());
+            }
+            org.springframework.test.context.transaction.TestTransaction.start();
+            assertThat(count("chat_rooms")).isEqualTo(1);
+            assertThat(count("chat_participants")).isEqualTo(2);
+        } finally {
+            if (!org.springframework.test.context.transaction.TestTransaction.isActive())
+                org.springframework.test.context.transaction.TestTransaction.start();
+            em.createQuery("delete from chat_participants p where p.room.register.id = :id").setParameter("id", register.getId()).executeUpdate();
+            em.createQuery("delete from chat_rooms r where r.register.id = :id").setParameter("id", register.getId()).executeUpdate();
+            for (String entity : List.of("registers", "recruitments", "projects", "subscriptions", "plans")) {
+                Long id = switch (entity) {
+                    case "registers" -> register.getId(); case "recruitments" -> recruitment.getId();
+                    case "projects" -> projectId; case "subscriptions" -> subscription.getId(); default -> planId;
+                };
+                em.createQuery("delete from " + entity + " e where e.id = :id").setParameter("id", id).executeUpdate();
+            }
+            em.createQuery("delete from users u where u.id in :ids")
+                    .setParameter("ids", List.of(developer.getId(), tester.getId())).executeUpdate();
+            org.springframework.test.context.transaction.TestTransaction.flagForCommit();
+            org.springframework.test.context.transaction.TestTransaction.end();
+        }
+    }
+
     @Test @DisplayName("#53-S5 남의 참가와 없는 참가와 테스터 요청은 404다")
     void notFound() throws Exception {
         error(start(fixtures.user("다른개발자"), register.getId()), 404, "NOT_FOUND");

@@ -16,7 +16,7 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     @Query("""
             select new com.testmoa.backend.repository.projection.ChatRoomEntry(
                 room.roomKey, recruitment.id, project.title, me.customRoomName, project.imageUrl,
-                me.role, partnerUser.nickname, partner.role)
+                me.role, partnerUser.nickname, partner.role, partner.lastReadSeq)
             from chat_participants me
             join me.room room
             join room.recruitment recruitment

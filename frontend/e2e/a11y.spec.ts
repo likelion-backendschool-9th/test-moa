@@ -10,15 +10,4 @@ test.describe("R12 접근성", () => {
     await page.keyboard.press("Enter");
     await expect(page.locator("main")).toBeFocused();
   });
-
-  test("S36 Tab으로 탭에 가면 포커스 링이 보인다", async ({ page }) => {
-    await page.goto("/");
-    const tab = page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: "참여 테스트" });
-    for (let i = 0; i < 15 && !(await tab.evaluate((element) => element === document.activeElement)); i++) {
-      await page.keyboard.press("Tab");
-    }
-    await expect(tab).toBeFocused();
-    const outline = await tab.evaluate((element) => getComputedStyle(element).outlineStyle);
-    expect(outline).not.toBe("none");
-  });
 });

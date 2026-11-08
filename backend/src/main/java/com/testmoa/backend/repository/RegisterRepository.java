@@ -58,7 +58,8 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
             @Param("reportedStatus") FeedbackStatus reportedStatus
     );
 
-    // 모집글의 참가 중 상태가 주어진 것들(#116)
+    // 모집글의 참가 중 상태가 주어진 것들(#116). 피드백 제출(findMineForUpdate)과 겹치지 않게 참가 행을 잠근다
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Register> findByRecruitmentIdAndStatusIn(Long recruitmentId, Collection<RegisterStatus> statuses);
 
     // 회원이 이 모집에 이미 낸 참가 중 상태가 주어진 것이 있는지(#114)

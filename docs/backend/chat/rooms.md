@@ -19,21 +19,21 @@
 
 #50-S2 정상: 다시 바꾸기와 앞뒤 공백 [테스트]
 - Given #50-S1에서 B가 "북로그 1차"로 바꿨다
-- When  B가 `{"name": "  결제 문의  "}`를 보낸다
+- When  B가 `{"name": "  결제 문의  "}`를 보내거나 이름 앞뒤에 NBSP(`U+00A0`)를 붙여 보낸다 (고침 #50: 서버 직접 요청도 같은 공백 제거 적용)
 - Then  HTTP 200이고 `roomName`은 앞뒤 공백을 뺀 "결제 문의"다
 - Then  DB의 `custom_room_name`도 "결제 문의"다
 
 #50-S3 정상: 다른 컬럼은 그대로 [테스트]
 - Given B의 `last_read_seq`가 5다
 - When  B가 이름을 "북로그 1차"로 바꾼다
-- Then  B의 `last_read_seq`는 5, `hidden`은 false 그대로다
+- Then  B의 `last_read_seq`는 5, `hidden`은 false 그대로이고 `updated_at`은 갱신된다 (고침 #50: HQL update에도 수정 일시 기록)
 
 ## 2. 이름 검증 (#50-R2)
 앞뒤 공백을 뺀 이름이 비었거나 30자(`ChatParticipant.ROOM_NAME_MAX`, 프론트 `CHAT_ROOM_NAME_MAX`와 같음)를 넘으면 거절하고 이름을 바꾸지 않는다.
 
 #50-S4 실패: 빈 이름 [테스트]
 - Given B의 R 이름이 "북로그 1차"다
-- When  B가 `{"name": ""}`, `{"name": "   "}`, `{}`를 보낸다
+- When  B가 `{"name": ""}`, `{"name": "   "}`, NBSP만 있는 이름, `{}`를 보낸다 (고침 #50: 보이지 않는 이름 거절)
 - Then  모두 HTTP 400, `error.code` "INVALID_INPUT", `error.fields.name` "대화방 이름을 입력해 주세요"다
 - Then  B의 `roomName`은 "북로그 1차" 그대로다
 
@@ -63,6 +63,7 @@
 - When  A가 R에 "다시 확인 부탁드려요"를 보낸다
 - Then  B의 채팅함에 R이 다시 있고 `roomName`은 "북로그 1차"다
 - Then  B의 `last_read_seq`는 3 그대로다
+- Then  삭제와 상대 메시지에 의한 삭제 해제 모두 B의 `updated_at`을 갱신한다 (고침 #50: HQL update에도 수정 일시 기록)
 
 ## 4. 들어갈 수 없는 방 (#50-R4)
 참여자가 아닌 회원·운영자·비로그인은 이름을 바꾸거나 삭제할 수 없다. 없는 방, 내가 삭제한 방도 같다. 응답은 #49-R5와 같다.
@@ -118,16 +119,15 @@
 ## 가정
 - 주소는 #49에서 정한 대로 `PATCH /api/v1/chats/{roomKey}`(본문 `{"name": "…"}`), `DELETE /api/v1/chats/{roomKey}`다. 본문의 칸 이름은 프론트 `renameChatRoom(roomKey, name)`에 맞춰 `name`이다
 - 이름 변경 응답은 #49 방 정보(`ChatRoomResponse`)다. 프론트가 바꾼 뒤 머리와 문서 제목을 다시 그릴 때 따로 조회하지 않아도 된다. 삭제 응답은 `ApiResponse.ok()`(`data` null)다. 지운 방은 더 보여 줄 것이 없다
-- 이름은 메시지(#49: 받은 그대로 저장)와 달리 서버가 앞뒤 공백을 빼고 저장한다. 이슈가 "앞뒤 공백을 뺀 이름"으로 검증을 정했고, 한 줄 이름이라 앞뒤 공백을 지켜야 할 이유가 없다. 요청 레코드의 compact 생성자에서 공백을 뺀 뒤 `@NotBlank`·`@Size(max = 30)`가 그 값을 검사한다. 가운데 공백과 줄바꿈은 바꾸지 않는다(프론트 입력창이 한 줄이라 줄바꿈이 들어오지 않는다)
+- 이름은 메시지(#49: 받은 그대로 저장)와 달리 서버가 앞뒤 공백을 빼고 저장한다. 이슈가 "앞뒤 공백을 뺀 이름"으로 검증을 정했고, 한 줄 이름이라 앞뒤 공백을 지켜야 할 이유가 없다. 요청 레코드의 compact 생성자에서 정규식 `\p{Z}`·`\s`에 해당하는 앞뒤 공백(NBSP 포함)을 뺀 뒤 `@NotBlank`·`@Size(max = 30)`가 그 값을 검사한다. 가운데 공백과 줄바꿈은 바꾸지 않는다(프론트 입력창이 한 줄이라 줄바꿈이 들어오지 않는다)
 - 길이는 #49와 같이 UTF-16 코드 단위로 센다. 프론트 `slice`와 같은 단위다
 - 프로젝트명과 같은 이름도 그대로 저장한다(null로 바꾸지 않는다). 보이는 결과는 같다
 - 프론트는 #54 전까지 30자를 넘으면 잘라서 보내고 빈 이름은 보내지 않는다. 서버는 자르지 않고 400으로 거절한다(#49의 메시지 길이와 같은 이유)
-- 참여자 행은 엔티티를 고쳐 저장하지 않고 바꿀 컬럼만 고치는 update 쿼리로 바꾼다. 이름 변경은 `update chat_participants set custom_room_name = ? where id = ? and hidden = false`, 삭제는 `update … set hidden = true where id = ? and hidden = false`다. 같은 행을 상대의 보내기(`hidden` 해제)나 읽음 처리(#52)가 같은 순간 고쳐도 서로 덮지 않는다. README "아직 정하지 않은 것"의 동시 갱신 가운데 #50 쪽은 이것으로 닫는다. 엔티티의 `rename`·`hide`는 테스트에서 상태를 만드는 데 계속 쓴다
+- 참여자 행은 엔티티를 고쳐 저장하지 않고 바꿀 컬럼만 고치는 update 쿼리로 바꾼다. 이름 변경은 `update chat_participants set custom_room_name = ?, updated_at = localtimestamp where id = ? and hidden = false`, 삭제는 `update … set hidden = true, updated_at = localtimestamp where id = ? and hidden = false`다. `@UpdateTimestamp`는 HQL update에 적용되지 않으므로 수정 일시는 쿼리에서 명시적으로 갱신한다. 같은 행을 상대의 보내기(`hidden` 해제)나 읽음 처리(#52)가 같은 순간 고쳐도 서로 덮지 않는다. README "아직 정하지 않은 것"의 동시 갱신 가운데 #50 쪽은 이것으로 닫는다. 엔티티의 `rename`·`hide`는 테스트에서 상태를 만드는 데 계속 쓴다
 - 참여자는 #49의 `findByRoomRoomKeyAndUserIdAndHiddenFalse`로 먼저 찾는다. 없으면 404다. 찾은 뒤 update가 0행이면(그 사이 같은 회원이 다른 탭에서 삭제) 역시 404다
 - 이미 삭제한 방을 다시 삭제하면 404다. #49에서 "내가 삭제한 방은 없는 방과 같다"로 정했고, 프론트는 삭제한 뒤 목록을 다시 그리거나 채팅함으로 보내 같은 요청을 다시 보내지 않는다
 - 삭제는 이름과 `last_read_seq`를 지우지 않는다. 상대가 보내 다시 나타나면 그대로 이어진다(#49-S9와 같다)
-- `ddl-auto: update`는 컬럼 이름을 바꾸지 않는다. 테스트 서버에 `chat_participants`가 이미 있으면 `custom_room_name`이 새로 생기고 옛 `custom_name`은 남는다. 옛 컬럼은 null을 허용하고 이름 변경 API가 없어 값도 모두 null이라, 남아도 저장과 조회에 영향이 없다
+- `ddl-auto: update`는 컬럼 이름을 바꾸지 않는다. 테스트 서버에 `chat_participants`가 이미 있으면 `custom_room_name`이 새로 생기고 옛 `custom_name`은 남는다. 옛 컬럼은 null을 허용하고 변경된 코드에서 쓰지 않으므로, 남아도 저장과 조회에 영향이 없다
 
 ## 참고 (2026-11-07 확인)
-- `ChatParticipant`에는 `customName`(길이 `ROOM_NAME_MAX` = 30), `hidden`, `lastReadSeq`와 `rename`·`hide`·`unhide`·`markRead`가 있다. `ChatRoomEntry`·`ChatInboxEntry` 조회가 `me.customName`을 쓴다
 - 프론트 `renameChatRoom`은 앞뒤 공백을 빼고 `CHAT_ROOM_NAME_MAX`(30)까지 자르며 빈 이름은 무시한다. `deleteChatRoomAction`은 채팅방 안에서 지우면 채팅함으로 보낸다

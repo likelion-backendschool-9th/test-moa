@@ -66,7 +66,7 @@ public class Recruitment {
     @Column(name = "is_subscription", nullable = false)
     private boolean subscription;
 
-    // 프로젝트 안 모집글 버전. 첫 모집글이 1이고 새로 만들 때마다 1씩 는다
+    // 모집글 버전. 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고 수정해도 그대로다(#177). 작성 서비스가 정한다
     @Column(nullable = false)
     private Integer version;
 

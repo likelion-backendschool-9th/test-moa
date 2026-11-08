@@ -94,6 +94,25 @@ public class ChatServiceImpl implements ChatService {
         return ChatMessageResponse.of(message, me.getId());
     }
 
+    @Override
+    @Transactional
+    public ChatRoomResponse renameRoom(String roomKey, Long userId, String name) {
+        var me = requireParticipant(roomKey, userId);
+        if (participantRepository.renameRoom(me.getId(), name) == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        return getRoom(roomKey, userId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteRoom(String roomKey, Long userId) {
+        var me = requireParticipant(roomKey, userId);
+        if (participantRepository.hideRoom(me.getId()) == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+    }
+
     private ChatParticipant requireParticipant(String roomKey, Long userId) {
         return participantRepository.findByRoomRoomKeyAndUserIdAndHiddenFalse(roomKey, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));

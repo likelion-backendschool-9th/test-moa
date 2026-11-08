@@ -46,7 +46,7 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `status` | `status` | enum `RecruitmentStatus` | 불가 | `RECRUITING`으로 시작 |
 | `selectionMode` | `selection_mode` | enum `SelectionMode` | 불가 | 선정 방식 |
 | `subscription` | `is_subscription` | boolean | 불가 | 구독 모집 여부. 기본값 false (#113) |
-| `version` | `version` | Integer | 불가 | 1로 시작 |
+| `version` | `version` | Integer | 불가 | 1로 시작. 모집 작성 서비스가 프로젝트마다 1, 2, 3으로 매긴다(고침 #177: 처음에는 항상 1이었다) |
 | `analysisStatus` | `analysis_status` | enum `AnalysisStatus` | 불가 | `NONE`/`PENDING`/`DONE`/`FAILED`. `NONE`으로 시작 |
 | `analyzedAt` | `analyzed_at` | LocalDateTime | 가능 | 피드백 분석 완료 시각. 분석 전에는 null (#108) |
 | `praiseSummary` | `praise_summary` | TEXT | 가능 | 칭찬 리뷰 한 줄 요약. 분석 전이거나 칭찬이 없으면 null (#107) |

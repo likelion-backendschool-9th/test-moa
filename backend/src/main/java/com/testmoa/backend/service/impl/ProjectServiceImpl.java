@@ -153,6 +153,7 @@ public class ProjectServiceImpl implements ProjectService {
         if (selectionMode == SelectionMode.MANUAL && !subscribed) {
             throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
         }
+        int version = nextVersion(project);
 
         // 프로젝트 행을 잠가 동시에 만들어도 버전이 겹치지 않게 한다
         projectRepository.findByIdForUpdate(project.getId());
@@ -273,6 +274,11 @@ public class ProjectServiceImpl implements ProjectService {
     // 서버 시간대의 시각을 한국 날짜로 바꾼다. endOf의 반대
     private LocalDate seoulDate(LocalDateTime dateTime) {
         return dateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(SEOUL).toLocalDate();
+    // 다음 모집글 버전. 프로젝트의 가장 큰 버전 + 1이고 첫 모집은 1이다. 취소한 모집도 번호를 차지한다.
+    // 같은 프로젝트에 동시에 작성해도 번호가 겹치지 않게 프로젝트 행을 잠근 뒤 센다(#177)
+    private int nextVersion(Project project) {
+        projectRepository.findByIdForUpdate(project.getId());
+        return recruitmentRepository.findMaxVersionByProjectId(project.getId()).map(max -> max + 1).orElse(1);
     }
 
     private Project findOwned(Long userId, Long projectId) {

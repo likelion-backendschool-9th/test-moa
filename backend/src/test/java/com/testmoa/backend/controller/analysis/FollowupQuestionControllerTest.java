@@ -1,4 +1,4 @@
-package com.testmoa.backend.controller;
+package com.testmoa.backend.controller.analysis;
 
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Plan;

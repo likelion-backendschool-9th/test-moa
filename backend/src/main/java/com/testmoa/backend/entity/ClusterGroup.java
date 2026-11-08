@@ -49,6 +49,12 @@ public class ClusterGroup {
     @Column(columnDefinition = "TEXT")
     private String gitIssueUrl;
 
+    // 등록한 GitHub 이슈 번호. 등록 전에는 null. 나중에 이슈가 닫혔는지 볼 때 쓴다
+    private Integer gitIssueNumber;
+
+    // GitHub에 이슈를 등록하는 중이면 시작한 일시. 같은 그룹을 두 번 등록하지 않도록 GitHub를 부르기 전에 먼저 차지한다
+    private LocalDateTime gitIssueRegisteringAt;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -117,10 +123,25 @@ public class ClusterGroup {
      * @param gitIssueContent 이슈 내용(개선해야 하는 내용)
      */
     public void editIssueDraft(String gitIssueTitle, String gitIssueContent) {
+        if (gitIssueUrl != null) {
+            throw new IllegalStateException("이미 GitHub에 등록한 이슈 초안은 고칠 수 없습니다.");
+        }
         if (!category.hasIssue()) {
             throw new IllegalStateException("칭찬·미분류 그룹에는 이슈 초안이 없습니다.");
         }
         this.gitIssueTitle = gitIssueTitle;
         this.gitIssueContent = gitIssueContent;
+    }
+
+    /**
+     * GitHub 이슈를 등록한 뒤 링크와 번호를 남기고 등록 중 표시를 푼다.
+     *
+     * @param gitIssueUrl    등록한 이슈 링크
+     * @param gitIssueNumber 등록한 이슈 번호
+     */
+    public void markIssueRegistered(String gitIssueUrl, int gitIssueNumber) {
+        this.gitIssueUrl = gitIssueUrl;
+        this.gitIssueNumber = gitIssueNumber;
+        this.gitIssueRegisteringAt = null;
     }
 }

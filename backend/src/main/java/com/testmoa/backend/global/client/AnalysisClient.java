@@ -32,10 +32,6 @@ public class AnalysisClient {
     private final RestClient reviewAnalysisClient;
     private final String internalToken;
 
-    public AnalysisClient(RestClient.Builder builder, String internalToken) {
-        this(builder, builder, internalToken);
-    }
-
     public AnalysisClient(RestClient.Builder builder, RestClient.Builder reviewAnalysisBuilder, String internalToken) {
         this.restClient = builder.build();
         this.reviewAnalysisClient = reviewAnalysisBuilder.build();

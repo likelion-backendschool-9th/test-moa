@@ -40,6 +40,7 @@ public record ReviewAnalysisResponse(
     /**
      * @param improvementRank        심각도 1 = 치명 ~ 4 = 사소. 칭찬·미분류는 null
      * @param gitIssueUrl            등록한 GitHub 이슈 링크. 등록 전에는 null
+     * @param gitIssueNumber         등록한 GitHub 이슈 번호. 등록 전에는 null
      * @param representativeFeedback 대표 리뷰 내용. 없으면 null
      * @param feedbackCount          그룹에 든 리뷰 수
      * @param testerCount            그 리뷰를 쓴 테스터 수. 같은 테스터의 리뷰는 한 명으로 셈
@@ -53,13 +54,14 @@ public record ReviewAnalysisResponse(
             String gitIssueTitle,
             String gitIssueContent,
             String gitIssueUrl,
+            Integer gitIssueNumber,
             String representativeFeedback,
             long feedbackCount,
             long testerCount
     ) {
         public static Group of(ClusterGroup group, String representativeFeedback, long feedbackCount, long testerCount) {
             return new Group(group.getId(), group.getGroupCode(), group.getName(), group.getCategory(), group.getImprovementRank(),
-                    group.getGitIssueTitle(), group.getGitIssueContent(), group.getGitIssueUrl(), representativeFeedback,
+                    group.getGitIssueTitle(), group.getGitIssueContent(), group.getGitIssueUrl(), group.getGitIssueNumber(), representativeFeedback,
                     feedbackCount, testerCount);
         }
     }

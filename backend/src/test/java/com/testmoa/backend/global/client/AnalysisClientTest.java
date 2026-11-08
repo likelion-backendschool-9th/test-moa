@@ -39,7 +39,7 @@ class AnalysisClientTest {
 
     private final RestClient.Builder builder = RestClient.builder().baseUrl(BASE_URL);
     private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-    private final AnalysisClient client = new AnalysisClient(builder, TOKEN);
+    private final AnalysisClient client = new AnalysisClient(builder, builder, TOKEN);
 
     private FollowupRequest request() {
         return new FollowupRequest(
@@ -141,7 +141,7 @@ class AnalysisClientTest {
     void 토큰_없음() {
         RestClient.Builder noTokenBuilder = RestClient.builder().baseUrl(BASE_URL);
         MockRestServiceServer noTokenServer = MockRestServiceServer.bindTo(noTokenBuilder).build();
-        AnalysisClient noToken = new AnalysisClient(noTokenBuilder, "");
+        AnalysisClient noToken = new AnalysisClient(noTokenBuilder, noTokenBuilder, "");
 
         assertErrorCode(() -> noToken.suggestFollowupQuestions(request()), ErrorCode.AI_UNAVAILABLE);
         noTokenServer.verify();

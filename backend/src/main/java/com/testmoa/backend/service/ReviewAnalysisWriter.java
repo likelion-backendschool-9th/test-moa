@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ import java.util.stream.Collectors;
 public class ReviewAnalysisWriter {
     // 그룹 이름·이슈 제목 컬럼(varchar(255))의 길이. 넘으면 저장이 통째로 실패해 미리 자름
     private static final int COLUMN_MAX = 255;
+    // 등록 중 표시가 이 시간보다 오래되면 서버가 멈춰 남은 것으로 보고 다시 등록할 수 있음
+    private static final Duration STALE_REGISTERING = Duration.ofMinutes(5);
 
     private final GroupCodeIssuer groupCodeIssuer;
     private final RecruitmentRepository recruitmentRepository;
@@ -68,8 +71,10 @@ public class ReviewAnalysisWriter {
     public void save(AnalysisTarget target, AnalysisResponse response) {
         // 지우기 전에 최대 코드를 읽어 지운 코드를 다시 쓰지 않음. 끝날 때까지 프로젝트 행을 잠금
         GroupCodeIssuer.Codes codes = groupCodeIssuer.open(target.projectId());
-        feedbackClusterRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId());
-        clusterGroupRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId());
+        // 등록한 그룹과 GitHub에 등록하는 중인 그룹은 남김. 지우면 만들어진 이슈의 링크를 저장할 그룹이 없어짐
+        LocalDateTime staleBefore = LocalDateTime.now().minus(STALE_REGISTERING);
+        feedbackClusterRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
+        clusterGroupRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
 
         Recruitment recruitment = recruitmentRepository.findById(target.recruitmentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
@@ -104,20 +109,53 @@ public class ReviewAnalysisWriter {
     }
 
     /**
-     * 개발자의 그룹 수정. 보낸 값만 바꿈. 칭찬·미분류 그룹에 심각도·이슈 초안을 보내면 400.
+     * GitHub 이슈 등록을 차지함. 이미 등록했거나 등록 중이면 409 ISSUE_ALREADY_REGISTERED
+     */
+    @Transactional
+    public void claimIssueRegistration(Long groupId) {
+        LocalDateTime now = LocalDateTime.now();
+        if (clusterGroupRepository.claimIssueRegistration(groupId, now, now.minus(STALE_REGISTERING)) == 0) {
+            throw new BusinessException(ErrorCode.ISSUE_ALREADY_REGISTERED);
+        }
+    }
+
+    // GitHub 등록에 실패했을 때 차지를 풀어 다시 누를 수 있게 함
+    @Transactional
+    public void releaseIssueRegistration(Long groupId) {
+        clusterGroupRepository.releaseIssueRegistration(groupId);
+    }
+
+    // GitHub 이슈를 만든 뒤 링크와 번호를 저장함
+    @Transactional
+    public void markIssueRegistered(Long groupId, String url, int number) {
+        clusterGroupRepository.findById(groupId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND))
+                .markIssueRegistered(url, number);
+    }
+
+    /**
+     * 개발자의 그룹 수정. 보낸 값만 바꿈. 칭찬·미분류 그룹에 심각도·이슈 초안을 보내면 400,
+     * 등록했거나 등록 중(5분 이내)인 그룹의 이슈 초안을 보내면 409 ISSUE_ALREADY_REGISTERED.
      * 다른 모집글이나 다른 회원의 그룹은 없는 그룹과 같이 404
      */
     @Transactional
     public void editGroup(Long userId, Long recruitmentId, Long groupId, AnalysisGroupUpdateRequest request) {
-        ClusterGroup group = clusterGroupRepository.findMine(groupId, recruitmentId, userId)
+        ClusterGroup group = clusterGroupRepository.findMineForUpdate(groupId, recruitmentId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         boolean editsIssue = request.improvementRank() != null || request.gitIssueTitle() != null || request.gitIssueContent() != null;
         if (editsIssue && !group.getCategory().hasIssue()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "칭찬·미분류 그룹에는 심각도와 이슈 초안이 없어요");
         }
+        // 등록했거나 등록 중인 이슈 초안은 GitHub와 달라지지 않도록 고칠 수 없다
+        boolean editsDraft = request.gitIssueTitle() != null || request.gitIssueContent() != null;
+        LocalDateTime registeringAt = group.getGitIssueRegisteringAt();
+        boolean registering = registeringAt != null && registeringAt.isAfter(LocalDateTime.now().minus(STALE_REGISTERING));
+        if (editsDraft && (group.getGitIssueUrl() != null || registering)) {
+            throw new BusinessException(ErrorCode.ISSUE_ALREADY_REGISTERED);
+        }
         if (request.name() != null) group.rename(request.name().trim());
         if (request.improvementRank() != null) group.changeImprovementRank(request.improvementRank());
-        if (request.gitIssueTitle() != null || request.gitIssueContent() != null) {
+        if (editsDraft) {
             group.editIssueDraft(
                     request.gitIssueTitle() != null ? request.gitIssueTitle() : group.getGitIssueTitle(),
                     request.gitIssueContent() != null ? request.gitIssueContent() : group.getGitIssueContent());

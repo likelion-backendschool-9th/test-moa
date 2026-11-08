@@ -3,6 +3,7 @@ package com.testmoa.backend.repository;
 import com.testmoa.backend.entity.FeedbackCluster;
 import com.testmoa.backend.repository.projection.GroupFeedbackStats;
 import com.testmoa.backend.repository.projection.RepresentativeSample;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -41,12 +42,21 @@ public interface FeedbackClusterRepository extends JpaRepository<FeedbackCluster
             """)
     LocalDateTime findLastAnalyzedFeedbackAt(@Param("recruitmentId") Long recruitmentId);
 
-    // 다시 분석할 때 지우는 매핑. GitHub에 등록한 그룹의 매핑은 남김
+    // 그룹의 리뷰 내용. 대표 리뷰가 먼저이고 나머지는 최근 제출 순. 이슈 본문에 인용할 때 씀
+    @Query("""
+            select f.content from feedback_clusters fc join fc.feedback f
+            where fc.clusterGroup.id = :groupId
+            order by fc.representative desc, f.submittedAt desc
+            """)
+    List<String> findSampleContents(@Param("groupId") Long groupId, Limit limit);
+
+    // 다시 분석할 때 지우는 매핑. GitHub에 등록했거나 등록 중(staleBefore 이후에 시작)인 그룹의 매핑은 남김
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             delete from feedback_clusters fc
             where fc.clusterGroup.id in (
-                select g.id from cluster_groups g where g.recruitment.id = :recruitmentId and g.gitIssueUrl is null)
+                select g.id from cluster_groups g where g.recruitment.id = :recruitmentId and g.gitIssueUrl is null
+                  and (g.gitIssueRegisteringAt is null or g.gitIssueRegisteringAt < :staleBefore))
             """)
-    int deleteUnregisteredByRecruitmentId(@Param("recruitmentId") Long recruitmentId);
+    int deleteUnregisteredByRecruitmentId(@Param("recruitmentId") Long recruitmentId, @Param("staleBefore") LocalDateTime staleBefore);
 }

@@ -44,6 +44,7 @@ public class ChatController {
                                                         @AuthenticationPrincipal Long userId, @Valid @RequestBody ChatMessageSendRequest request) {
         return ApiResponse.ok(chatService.sendMessage(roomKey, userId, request.text()));
     }
+
     @PatchMapping("/{roomKey}")
     public ApiResponse<ChatRoomResponse> renameRoom(@PathVariable String roomKey,
                                                    @AuthenticationPrincipal Long userId,
@@ -57,5 +58,4 @@ public class ChatController {
         chatService.deleteRoom(roomKey, userId);
         return ApiResponse.ok();
     }
-
 }

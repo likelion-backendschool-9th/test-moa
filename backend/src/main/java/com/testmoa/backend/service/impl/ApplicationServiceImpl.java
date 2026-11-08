@@ -55,7 +55,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .user(userRepository.getReferenceById(userId))
                 .build());
         if (recruitment.getSelectionMode() == SelectionMode.FIRST_COME) {
-            register.confirm(RewardPolicy.BASE_REWARD, RewardPolicy.EXTRA_REWARD, now);
+            /* 지원과 동시에 확정하므로 확정 시각을 지원 시각(저장할 때 찍힘)과 같게 둔다 */
+            register.confirm(RewardPolicy.BASE_REWARD, RewardPolicy.EXTRA_REWARD, register.getAppliedAt());
         }
         registerRepository.flush();
         return new ApplicationResponse(register.getId(), recruitmentId, register.getStatus().name().toLowerCase(),

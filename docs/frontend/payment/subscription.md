@@ -86,7 +86,7 @@ S390 가격과 쓸 수 있는 크레딧 [직접]
 - Then  "이벤트 크레딧도 구독 결제에 쓸 수 있어요"와 "크레딧으로 결제하면 현금보다 우대 가격이 적용돼요"가 보인다 (고침 11-02: 크레딧 구분 이름 변경, `payment/credit-labels.md`)
 - Then  "구독하기" 링크가 `/my/subscription/checkout`을 가리킨다 (고침 11-02: 버튼·링크 없음 → 구독 결제로 가는 링크)
 
-S391 출금 처리 중 제외 [직접]
+S391 출금 처리 중 제외 [테스트: credit-balance.test.ts S391]
 - 결제 가능액에서 잠금을 빼는 계산은 `tests/unit/credit-balance.test.ts`가 확인한다. 아래의 문구와 링크 표시는 관련 화면을 바꿀 때 직접 확인한다.
 - Given `demo-role=developer`
 - Then  "구독 결제에 쓸 수 있는 크레딧 2,260 크레딧"이 보인다 (출금 처리 중 1,000 제외)

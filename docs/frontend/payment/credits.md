@@ -33,7 +33,7 @@ S349 출금 [직접]
 ## 2. 잔액 (R124)
 `/my/credits` 위쪽에 총 잔액과 구성, 승인 대기 보상을 보여 준다. 값은 마이페이지 크레딧 카드와 같다.
 
-S350 테스터 [직접]
+S350 테스터 [테스트: credit-balance.test.ts S350]
 - 총 잔액·결제 가능액·출금 가능액의 계산은 `tests/unit/credit-balance.test.ts`가 잠금·이벤트 크레딧·승인 대기 보상을 나누어 확인한다. 아래의 문구와 링크 표시는 관련 화면을 바꿀 때 직접 확인한다.
 - Given `demo-role=tester`, `/my/credits`
 - Then  h1 "크레딧"과 "12,480 크레딧"이 보인다

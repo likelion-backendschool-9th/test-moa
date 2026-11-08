@@ -1,5 +1,7 @@
 package com.testmoa.backend.support;
 
+import com.testmoa.backend.entity.Plan;
+import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.ChatParticipant;
 import com.testmoa.backend.entity.ChatRoom;
 import com.testmoa.backend.entity.Project;
@@ -38,6 +40,18 @@ public class ChatFixtures {
                 .role(Role.USER)
                 .status(UserStatus.ACTIVE)
                 .build());
+    }
+
+    /** 열린 방에서 보내기를 검증할 개발자에게 현재 유효한 구독을 준비한다. */
+    public Subscription subscribe(User developer) {
+        var existing = em.createQuery("select s from subscriptions s where s.user.id = :id", Subscription.class)
+                .setParameter("id", developer.getId()).getResultList();
+        if (!existing.isEmpty()) return existing.getFirst();
+        var plan = persist(Plan.builder().tier("CHAT-" + developer.getId()).version(1)
+                .cashPrice(1000).creditPrice(1000).periodDays(30).build());
+        var now = LocalDateTime.now();
+        return persist(Subscription.builder().user(developer).plan(plan)
+                .startAt(now.minusDays(1)).endAt(now.plusDays(30)).build());
     }
 
     /** 개발자의 프로젝트와 그 프로젝트의 모집 건 */

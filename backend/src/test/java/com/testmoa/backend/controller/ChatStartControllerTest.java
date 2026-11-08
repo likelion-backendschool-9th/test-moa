@@ -26,11 +26,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@org.springframework.test.context.event.RecordApplicationEvents
 class ChatStartControllerTest {
     @Autowired MockMvc mvc;
     @Autowired EntityManager em;
     @Autowired JwtProvider jwt;
     @Autowired ObjectMapper json;
+    @Autowired org.springframework.test.context.event.ApplicationEvents applicationEvents;
     ChatFixtures fixtures;
     User developer, tester;
     Recruitment recruitment;
@@ -45,12 +47,7 @@ class ChatStartControllerTest {
         recruitment = fixtures.recruitment(developer, "북로그");
         deadlines(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(7));
         register = fixtures.confirmedRegister(recruitment, tester);
-        var plan = Plan.builder().tier("CHAT-" + developer.getId()).version(1).cashPrice(1000)
-                .creditPrice(1000).periodDays(30).build();
-        em.persist(plan);
-        subscription = Subscription.builder().user(developer).plan(plan)
-                .startAt(LocalDateTime.now().minusDays(1)).endAt(LocalDateTime.now().plusDays(30)).build();
-        em.persist(subscription);
+        subscription = fixtures.subscribe(developer);
         em.flush();
     }
     void deadlines(LocalDateTime recruit, LocalDateTime feedback) {
@@ -253,6 +250,64 @@ class ChatStartControllerTest {
                 .setParameter("start", LocalDateTime.now().plusDays(1)).setParameter("state", Subscription.Status.ACTIVE)
                 .setParameter("id", subscription.getId()).executeUpdate();
         readOnly(key, true);
+    }
+
+    @Test @DisplayName("#53-S13 읽기 전용 방의 양쪽 전송은 상태와 알림을 바꾸지 않는다")
+    void rejectReadOnlySend() throws Exception {
+        String key = key(start(developer, register.getId()));
+        var room = room(key);
+        var sender = participantWithRole(room, ChatRole.DEVELOPER);
+        em.persist(room.createMessage(sender, "하나"));
+        em.persist(room.createMessage(sender, "둘"));
+        em.flush();
+        var lastAt = room.getLastMessageAt();
+        Long roomId = room.getId();
+        for (String reason : List.of("마감", "취소", "구독")) {
+            em.createQuery("update recruitments r set r.status = :status, r.feedbackDeadline = :deadline where r.id = :id")
+                    .setParameter("status", reason.equals("취소") ? RecruitmentStatus.CANCELLED : RecruitmentStatus.RECRUITING)
+                    .setParameter("deadline", reason.equals("마감") ? LocalDateTime.now().minusDays(1) : LocalDateTime.now().plusDays(7))
+                    .setParameter("id", recruitment.getId()).executeUpdate();
+            if (reason.equals("구독")) expire();
+            em.clear();
+            for (var user : List.of(developer, tester)) {
+                em.createQuery("update chat_participants p set p.hidden = true where p.room.id = :roomId and p.user.id <> :userId")
+                        .setParameter("roomId", roomId).setParameter("userId", user.getId()).executeUpdate();
+                error(call(post("/api/v1/chats/" + key + "/messages").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"추가 질문 있어요\"}"), user), 403, "CHAT_READ_ONLY");
+                em.clear();
+                var saved = em.find(ChatRoom.class, roomId);
+                assertThat(saved.getLastSeq()).isEqualTo(2);
+                assertThat(saved.getLastMessageAt()).isEqualTo(lastAt);
+                assertThat(count("chat_messages")).isEqualTo(2);
+                assertThat(saved.getParticipants().stream().filter(p -> !p.getUser().getId().equals(user.getId()))
+                        .findFirst().orElseThrow().isHidden()).isTrue();
+                em.createQuery("update chat_participants p set p.hidden = false where p.room.id = :id")
+                        .setParameter("id", roomId).executeUpdate();
+                em.clear();
+            }
+        }
+        // SSE message 알림의 원인이 되는 이벤트 자체가 발행되지 않는다.
+        assertThat(applicationEvents.stream(com.testmoa.backend.service.ChatMessageSaved.class).count()).isZero();
+    }
+
+    @Test @DisplayName("#53-S14 읽기 전용 방도 조회·읽음·이름 변경·삭제는 허용한다")
+    void readOnlyOtherActions() throws Exception {
+        String key = key(start(developer, register.getId()));
+        var room = room(key);
+        var sender = participantWithRole(room, ChatRole.DEVELOPER);
+        em.persist(room.createMessage(sender, "하나"));
+        em.persist(room.createMessage(sender, "둘"));
+        em.flush();
+        expire();
+        String url = "/api/v1/chats/" + key;
+        call(get(url + "/messages"), tester).andExpect(status().isOk()).andExpect(jsonPath("$.data.messages.length()").value(2));
+        call(post(url + "/read").contentType(MediaType.APPLICATION_JSON).content("{\"seq\":2}"), tester)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.lastReadSeq").value(2));
+        call(patch(url).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"기록\"}"), tester)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.readOnly").value(true));
+        call(delete(url), tester).andExpect(status().isOk());
+        em.clear();
+        assertThat(participantWithRole(room(key), ChatRole.TESTER).isHidden()).isTrue();
     }
 
     @Test @DisplayName("#53-S5 남의 참가와 없는 참가와 테스터 요청은 404다")

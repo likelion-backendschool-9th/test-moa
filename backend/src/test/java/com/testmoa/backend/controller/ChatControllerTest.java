@@ -47,7 +47,10 @@ class ChatControllerTest {
         fixtures = new ChatFixtures(em);
         developer = fixtures.user("모아개발");
         tester = fixtures.user("모아테스터");
+        fixtures.subscribe(developer);
         var recruitment = fixtures.recruitment(developer, "북로그", "https://img.test/booklog.png");
+        recruitment.edit(recruitment.getTitle(), null, null, null, recruitment.getSelectionMode(),
+                java.time.LocalDateTime.now().minusDays(1), java.time.LocalDateTime.now().plusDays(14));
         room = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, tester)).build();
         em.persist(room);
         developerSide = participantWithRole(room, ChatRole.DEVELOPER);

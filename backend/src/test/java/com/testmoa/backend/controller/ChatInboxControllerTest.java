@@ -64,6 +64,7 @@ class ChatInboxControllerTest {
     }
 
     ChatRoom open(User owner, User member, String name, String image) {
+        fixtures.subscribe(owner);
         var recruitment = fixtures.recruitment(owner, name, image);
         var room = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, member)).build();
         em.persist(room);

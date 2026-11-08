@@ -38,7 +38,7 @@ class ChatEventControllerTest {
     TransactionTemplate tx;
     User developer, tester, outsider, admin;
     String roomKey, otherRoomKey;
-    Long roomId, otherRoomId;
+    Long roomId, otherRoomId, subscriptionId, planId;
     final List<Stream> streams = new ArrayList<>();
     final List<Long> users = new ArrayList<>(), projects = new ArrayList<>(), recruitments = new ArrayList<>(), registers = new ArrayList<>();
     HttpClient client;
@@ -50,6 +50,8 @@ class ChatEventControllerTest {
             var f = new ChatFixtures(em);
             String suffix = UUID.randomUUID().toString();
             developer = f.user("개발" + suffix); tester = f.user("테스터" + suffix);
+            var subscription = f.subscribe(developer);
+            subscriptionId = subscription.getId(); planId = subscription.getPlan().getId();
             outsider = f.user("외부" + suffix); admin = f.user("운영" + suffix);
             users.addAll(List.of(developer.getId(), tester.getId(), outsider.getId(), admin.getId()));
             em.createQuery("update users u set u.role = :role where u.id = :id")
@@ -75,7 +77,8 @@ class ChatEventControllerTest {
             for (String entity : List.of("chat_messages", "chat_participants"))
                 em.createQuery("delete from " + entity + " e where e.room.id in :ids").setParameter("ids", List.of(roomId, otherRoomId)).executeUpdate();
             delete("chat_rooms", List.of(roomId, otherRoomId)); delete("registers", registers);
-            delete("recruitments", recruitments); delete("projects", projects); delete("users", users);
+            delete("recruitments", recruitments); delete("projects", projects);
+            delete("subscriptions", List.of(subscriptionId)); delete("plans", List.of(planId)); delete("users", users);
         });
     }
     void delete(String entity, List<Long> ids) {

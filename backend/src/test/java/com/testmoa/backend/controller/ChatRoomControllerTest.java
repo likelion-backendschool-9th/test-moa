@@ -164,6 +164,62 @@ class ChatRoomControllerTest {
         assertThat(saved.getLastReadSeq()).isEqualTo(3);
     }
 
+    MockHttpServletRequestBuilder[] roomRequests(String base) {
+        return new MockHttpServletRequestBuilder[]{
+                patch(base).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"남의 방\"}"),
+                delete(base)};
+    }
+
+    void notFound(User user, String base) throws Exception {
+        for (var request : roomRequests(base)) {
+            call(request, user).andExpect(status().isNotFound())
+                    .andExpect(content().json("{\"success\":false,\"data\":null,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"찾을 수 없어요\"}}",
+                            org.springframework.test.json.JsonCompareMode.STRICT));
+        }
+    }
+
+    @Test @DisplayName("#50-S8 비로그인의 이름 변경·삭제는 401")
+    void unauthenticated() throws Exception {
+        for (var request : roomRequests(url())) {
+            mvc.perform(request).andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+        }
+        reload();
+        assertThat(em.find(ChatParticipant.class, testerSide.getId()).getCustomRoomName()).isNull();
+        assertThat(em.find(ChatParticipant.class, testerSide.getId()).isHidden()).isFalse();
+    }
+
+    @Test @DisplayName("#50-S9 비참여자·운영자·없는 방은 같은 404이며 상태 유지")
+    void inaccessible() throws Exception {
+        var outsider = fixtures.user("외부회원");
+        var admin = fixtures.user("운영자");
+        em.flush();
+        em.createQuery("update users u set u.role = :role where u.id = :id")
+                .setParameter("role", Role.ADMIN).setParameter("id", admin.getId()).executeUpdate();
+        em.clear();
+        notFound(outsider, url());
+        notFound(admin, url());
+        notFound(tester, "/api/v1/chats/aaaaaaaaaaaaaaaaaaaaaa");
+        reload();
+        for (Long id : new Long[]{testerSide.getId(), developerSide.getId()}) {
+            var saved = em.find(ChatParticipant.class, id);
+            assertThat(saved.getCustomRoomName()).isNull();
+            assertThat(saved.isHidden()).isFalse();
+        }
+    }
+
+    @Test @DisplayName("#50-S10 삭제한 방의 이름 변경·재삭제는 404이며 상태 유지")
+    void hiddenRoom() throws Exception {
+        rename("북로그 1차").andExpect(status().isOk());
+        call(delete(url()), tester).andExpect(status().isOk());
+        reload();
+        notFound(tester, url());
+        reload();
+        var saved = em.find(ChatParticipant.class, testerSide.getId());
+        assertThat(saved.getCustomRoomName()).isEqualTo("북로그 1차");
+        assertThat(saved.isHidden()).isTrue();
+    }
+
     @Test @DisplayName("#50-S5 공백 제거 후 30자까지 허용")
     void nameLength() throws Exception {
         String name = "가".repeat(30);

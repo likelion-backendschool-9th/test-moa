@@ -52,6 +52,7 @@ class ParticipationListControllerTest {
     private Register pendingLater, pendingSooner, notSelected;
     private Register beforeLater, beforeSooner, payoutPending, underReview;
     private Register paid, incomplete, excluded, cancelled;
+    private LocalDateTime cancelledAt;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +81,8 @@ class ParticipationListControllerTest {
         excludedFeedback.exclude();
         Recruitment cancelledRecruitment = saveRecruitment("모집 취소", 3, 10);
         cancelled = applied(cancelledRecruitment);
-        cancelledRecruitment.cancel("일정이 바뀌었어요", now.minusDays(1));
+        cancelledAt = now.minusDays(1).withNano(0);
+        cancelledRecruitment.cancel("일정이 바뀌었어요", cancelledAt);
         cancelled.cancel();
 
         /* 다른 테스터의 참가는 보이지 않는다 */
@@ -180,6 +182,19 @@ class ParticipationListControllerTest {
                 .isEqualTo(LocalDateTime.parse(payout.get("submittedAt").asText()).plusHours(72));
         assertThat(history.get(0).get("earnedCredits").asInt()).isEqualTo(1000);
         assertThat(history.get(1).get("status").asText()).isEqualTo("cancelled");
+
+        /* 행마다 상태에 맞는 날짜(keyDate)가 있다 */
+        assertThat(applied.get(0).get("keyDate").asText()).isEqualTo(applied.get(0).at("/recruitment/recruitDeadline").asText());
+        assertThat(first.get("keyDate").asText()).isEqualTo(first.at("/recruitment/submitDeadline").asText());
+        assertThat(payout.get("keyDate").asText()).isEqualTo(payout.get("payoutAt").asText());
+        assertThat(LocalDateTime.parse(ongoing.get(3).get("keyDate").asText()))
+                .isEqualTo(LocalDateTime.parse(ongoing.get(3).get("submittedAt").asText()));
+        assertThat(LocalDateTime.parse(history.get(0).get("keyDate").asText()))
+                .isEqualTo(LocalDateTime.parse(history.get(0).get("submittedAt").asText()).plusHours(72));
+        /* 참여 취소는 지원 시각이 아니라 모집 취소 시각이다 */
+        assertThat(LocalDateTime.parse(history.get(1).get("keyDate").asText())).isEqualTo(cancelledAt);
+        assertThat(LocalDateTime.parse(history.get(1).get("keyDate").asText()))
+                .isBefore(LocalDateTime.parse(history.get(1).get("appliedAt").asText()));
 
         /* 탭을 비우면 참여 중 탭이다 */
         assertThat(ids(data(send(tester, BASE).andExpect(status().isOk())))).isEqualTo(ids(ongoing));

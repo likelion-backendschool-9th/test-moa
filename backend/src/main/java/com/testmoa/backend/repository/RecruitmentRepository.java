@@ -18,10 +18,10 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> 
     // 여러 프로젝트의 모집글. 최신순
     List<Recruitment> findByProjectIdInOrderByCreatedAtDescIdDesc(Collection<Long> projectIds);
 
-    // 상태를 바꾸려고 읽는 모집글과 프로젝트. 취소와 지원이 겹치지 않게 행을 잠근다(#116)
+    // 상태를 바꾸려고 읽는 내 모집글과 프로젝트. 취소와 지원이 겹치지 않게 행을 잠근다(#116). 다른 회원의 모집글은 잠그지 않고 없는 것과 같다
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select r from recruitments r join fetch r.project where r.id = :id")
-    Optional<Recruitment> findForUpdateById(@Param("id") Long id);
+    @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
+    Optional<Recruitment> findMineForUpdate(@Param("id") Long id, @Param("userId") Long userId);
 
     // 내 모집글과 그 프로젝트. 다른 회원의 모집글은 없는 것과 같다
     @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")

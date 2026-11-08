@@ -38,8 +38,7 @@ public class RecruitmentCancelServiceImpl implements RecruitmentCancelService {
     @Override
     @Transactional
     public RecruitmentCancelResponse cancel(Long userId, Long recruitmentId, String reason) {
-        Recruitment recruitment = recruitmentRepository.findForUpdateById(recruitmentId)
-                .filter(item -> item.getProject().getUser().getId().equals(userId))
+        Recruitment recruitment = recruitmentRepository.findMineForUpdate(recruitmentId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         LocalDateTime now = LocalDateTime.now();
         List<Register> active = registerRepository.findByRecruitmentIdAndStatusIn(
@@ -81,9 +80,10 @@ public class RecruitmentCancelServiceImpl implements RecruitmentCancelService {
 
     private enum Phase { RECRUITING, TESTING, CLOSED }
 
-    // 저장된 상태는 취소 여부만 뜻하고, 모집 중·테스트 중·종료는 마감일로 계산한다(README 정한 것 11)
+    // 저장된 상태는 취소 여부만 뜻하고, 모집 중·테스트 중·종료는 마감일로 계산한다(README 정한 것 11).
+    // 저장 상태가 RECRUITING이 아니면 마감일과 상관없이 끝난 것으로 본다. Recruitment.cancel()의 조건과 같아 500 대신 409로 끝난다
     private Phase phaseOf(Recruitment recruitment, LocalDateTime now) {
-        if (recruitment.getStatus() == RecruitmentStatus.CANCELLED) return Phase.CLOSED;
+        if (recruitment.getStatus() != RecruitmentStatus.RECRUITING) return Phase.CLOSED;
         if (now.isBefore(recruitment.getRecruitDeadline())) return Phase.RECRUITING;
         return now.isBefore(recruitment.getFeedbackDeadline()) ? Phase.TESTING : Phase.CLOSED;
     }

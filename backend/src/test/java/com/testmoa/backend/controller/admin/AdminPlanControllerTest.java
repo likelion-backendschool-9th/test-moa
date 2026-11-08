@@ -118,6 +118,40 @@ class AdminPlanControllerTest {
     }
 
     @Test
+    @DisplayName("#69-S13 이용 기간은 3650일까지, 혜택은 10개·항목당 100자까지 등록되고 넘으면 400이다")
+    void upperLimits() throws Exception {
+        String admin = bearer(Role.ADMIN);
+        long before = planRepository.count();
+        String head = "{\"tier\":\"구독-" + UUID.randomUUID().toString().substring(0, 8)
+                + "\",\"cashPrice\":10000,\"creditPrice\":9000,";
+        String tenBenefits = "[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\"]";
+        String elevenBenefits = "[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\",\"k\"]";
+        String[] tooBig = {
+                head + "\"periodDays\":3651}",
+                head + "\"periodDays\":2147483647}",
+                head + "\"periodDays\":30,\"benefits\":" + elevenBenefits + "}",
+                head + "\"periodDays\":30,\"benefits\":[\"" + "가".repeat(101) + "\"]}"
+        };
+
+        for (String bad : tooBig) {
+            mvc.perform(post(URL).header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content(bad))
+                    .andExpect(status().isBadRequest());
+        }
+        assertEquals(before, planRepository.count());
+
+        mvc.perform(post(URL).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(head + "\"periodDays\":3650,\"benefits\":" + tenBenefits + "}"))
+                .andExpect(status().isCreated());
+        mvc.perform(post(URL).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(head.replace("구독-", "구독b-") + "\"periodDays\":30,\"benefits\":[\"" + "가".repeat(100) + "\"]}"))
+                .andExpect(status().isCreated());
+        assertEquals(before + 2, planRepository.count());
+    }
+
+    @Test
     @DisplayName("#69-S13 등급 이름은 255자까지 등록되고 256자부터는 400이다(500이 아니다)")
     void tierLengthLimit() throws Exception {
         String admin = bearer(Role.ADMIN);

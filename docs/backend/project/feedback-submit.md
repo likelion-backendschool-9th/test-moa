@@ -34,7 +34,7 @@
 - `payoutAt`은 지급 대기일 때 제출 시각 + 72시간이다(README 핵심 흐름). `earnedCredits`는 지급 완료일 때만 보상액이고 나머지는 0이다
 
 ### 참여 상태
-저장하지 않고 참가 상태, 피드백 상태, 마감일로 계산한다(`ParticipationStatuses`, #117 목록과 같은 계산). 이름은 프론트 `ParticipationStatus`와 같다.
+저장하지 않고 참가 상태, 피드백 상태, 마감일로 계산한다(`ParticipationStatuses`, [#117 목록](participation-list.md)과 같은 계산). 이름은 프론트 `ParticipationStatus`와 같다.
 
 | 상태 | 조건 |
 | --- | --- |

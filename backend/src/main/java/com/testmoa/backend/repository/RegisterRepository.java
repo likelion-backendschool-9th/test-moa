@@ -79,6 +79,10 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
     @Query("select r from registers r join fetch r.recruitment rc join fetch rc.project where r.id = :id and r.user.id = :userId")
     Optional<Register> findMine(@Param("id") Long id, @Param("userId") Long userId);
 
+    // 내 참가 전체와 모집글·프로젝트(#117). 목록·요약·마감 일정이 함께 쓴다
+    @Query("select r from registers r join fetch r.recruitment rc join fetch rc.project where r.user.id = :userId")
+    List<Register> findAllMine(@Param("userId") Long userId);
+
     // 피드백을 내려고 읽는 내 참가(#118). 행을 잠가 두 번 눌러도 한 번만 저장된다
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from registers r join fetch r.recruitment rc join fetch rc.project where r.id = :id and r.user.id = :userId")

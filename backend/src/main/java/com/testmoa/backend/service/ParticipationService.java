@@ -1,7 +1,11 @@
 package com.testmoa.backend.service;
 
 import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
+import com.testmoa.backend.dto.response.ParticipationListItemResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
+import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
+
+import java.util.List;
 
 public interface ParticipationService {
     /**
@@ -15,4 +19,16 @@ public interface ParticipationService {
      * 이미 냈으면 FEEDBACK_ALREADY_SUBMITTED, 필수 항목이 비었거나 아무것도 적지 않았으면 INVALID_INPUT
      */
     ParticipationResponse submitFeedback(Long userId, Long registerId, FeedbackSubmitRequest request);
+
+    /**
+     * 탭의 내 참여(#117). 지원한·참여 중 탭은 할 일 순서(상태 순서 → 날짜 가까운 순), 참여했던 탭은 최근 순.
+     * 없는 탭이면 INVALID_INPUT
+     */
+    List<ParticipationListItemResponse> list(Long userId, String tab);
+
+    /** 탭별 개수, 제출할 피드백 수, 지급 대기 크레딧(#117) */
+    ParticipationSummaryResponse summary(Long userId);
+
+    /** 제출 전 참여를 제출 마감이 가까운 순서로(#117). 마감 캘린더와 마감 임박 목록이 쓴다 */
+    List<ParticipationListItemResponse> deadlines(Long userId);
 }

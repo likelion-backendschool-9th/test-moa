@@ -72,4 +72,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     // 참가에 피드백이 있는지(#118). 피드백은 제출할 때만 저장되므로 있으면 낸 것이다
     boolean existsByRegisterId(Long registerId);
+
+    // 여러 참가의 피드백(#117). 참가 id로 묶는다
+    List<Feedback> findByRegisterIdIn(Collection<Long> registerIds);
 }

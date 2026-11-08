@@ -1,6 +1,8 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
+import com.testmoa.backend.dto.response.ParticipationListItemResponse;
+import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse.FeedbackInfo;
 import com.testmoa.backend.dto.response.ParticipationResponse.RecruitmentInfo;
@@ -34,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -110,33 +113,129 @@ public class ParticipationServiceImpl implements ParticipationService {
 
     private ParticipationResponse toResponse(Register register, List<TestItem> testItems, List<Feedback> feedbacks, LocalDateTime now) {
         Recruitment recruitment = register.getRecruitment();
-        Project project = recruitment.getProject();
+        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitment.getId())
+                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
+        Progress progress = progressOf(register, feedbacks, now);
+        return new ParticipationResponse(
+                register.getId(), progress.status(), register.getAppliedAt(), register.getConfirmedAt(), progress.submittedAt(),
+                progress.payoutAt(), progress.earnedCredits(), progress.reward(), recruitmentInfo(recruitment, softwareType, now),
+                register.getStatus() == RegisterStatus.CONFIRMED ? recruitment.getAccessUrl() : null,
+                testItems.stream().map(testItem -> new TestItemInfo(testItem.getId(), testItem.getTitle(), testItem.getDescription(),
+                        testItem.isRequired())).toList(),
+                feedbacks.stream().map(feedback -> new FeedbackInfo(
+                        feedback.getTestItem() == null ? null : feedback.getTestItem().getId(), feedback.getContent())).toList());
+    }
+
+    /**
+     * 참가 한 건의 진행 상황. 상세·목록·요약이 함께 쓰는 계산이고, 화면에 보낼 모양은 만들지 않는다
+     *
+     * @param keyDate 상태마다 행에 보이는 날짜이자 목록의 정렬 기준(프론트 keyDateOf)
+     */
+    private record Progress(Register register, String status, int reward, LocalDateTime submittedAt, LocalDateTime keyDate) {
+        LocalDateTime payoutAt() {
+            return status.equals("payoutPending") ? submittedAt.plus(PAYOUT_WAIT) : null;
+        }
+
+        int earnedCredits() {
+            return status.equals("paid") ? reward : 0;
+        }
+    }
+
+    private static Progress progressOf(Register register, List<Feedback> feedbacks, LocalDateTime now) {
         String status = ParticipationStatuses.of(register, feedbacks, now);
-        boolean confirmed = register.getStatus() == RegisterStatus.CONFIRMED;
-        int reward = confirmed
+        int reward = register.getStatus() == RegisterStatus.CONFIRMED
                 ? register.getBaseRewardSnapshot() + register.getExtraRewardSnapshot()
                 : RewardPolicy.BASE_REWARD + RewardPolicy.EXTRA_REWARD;
         LocalDateTime submittedAt = feedbacks.stream().map(Feedback::getSubmittedAt).min(Comparator.naturalOrder()).orElse(null);
-        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitment.getId())
-                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
+        return new Progress(register, status, reward, submittedAt, keyDateOf(register, status, submittedAt));
+    }
 
-        return new ParticipationResponse(
-                register.getId(),
-                status,
-                register.getAppliedAt(),
-                register.getConfirmedAt(),
-                submittedAt,
-                status.equals("payoutPending") ? submittedAt.plus(PAYOUT_WAIT) : null,
-                status.equals("paid") ? reward : 0,
-                reward,
-                new RecruitmentInfo(recruitment.getId(), recruitment.getTitle(), recruitment.getDescription(), project.getTitle(),
-                        project.getImageUrl(), RecruitmentNames.phase(recruitment.phaseAt(now)),
-                        RecruitmentNames.selectionMode(recruitment.getSelectionMode()), softwareType, recruitment.isSubscription(),
-                        recruitment.getRecruitDeadline(), recruitment.getFeedbackDeadline()),
-                confirmed ? recruitment.getAccessUrl() : null,
-                testItems.stream().map(item -> new TestItemInfo(item.getId(), item.getTitle(), item.getDescription(), item.isRequired())).toList(),
-                feedbacks.stream().map(feedback -> new FeedbackInfo(
-                        feedback.getTestItem() == null ? null : feedback.getTestItem().getId(), feedback.getContent())).toList());
+    // 상태마다 행에 보이는 날짜(프론트 keyDateOf). 지급일·검토 완료일은 저장하지 않아 자동 지급 시각과 제출 시각을 쓴다
+    private static LocalDateTime keyDateOf(Register register, String status, LocalDateTime submittedAt) {
+        Recruitment recruitment = register.getRecruitment();
+        return switch (status) {
+            case "selectionPending", "notSelected" -> recruitment.getRecruitDeadline();
+            case "beforeSubmit", "incomplete" -> recruitment.getFeedbackDeadline();
+            case "payoutPending", "paid" -> submittedAt.plus(PAYOUT_WAIT);
+            case "underReview", "excluded" -> submittedAt;
+            default -> Objects.requireNonNullElse(recruitment.getCancelledAt(), register.getAppliedAt());
+        };
+    }
+
+    private static RecruitmentInfo recruitmentInfo(Recruitment recruitment, String softwareType, LocalDateTime now) {
+        Project project = recruitment.getProject();
+        return new RecruitmentInfo(recruitment.getId(), recruitment.getTitle(), recruitment.getDescription(), project.getTitle(),
+                project.getImageUrl(), RecruitmentNames.phase(recruitment.phaseAt(now)),
+                RecruitmentNames.selectionMode(recruitment.getSelectionMode()), softwareType, recruitment.isSubscription(),
+                recruitment.getRecruitDeadline(), recruitment.getFeedbackDeadline());
+    }
+
+    private static ParticipationListItemResponse toItem(Progress progress, String softwareType, LocalDateTime now) {
+        Register register = progress.register();
+        return new ParticipationListItemResponse(
+                register.getId(), progress.status(), progress.keyDate(), register.getAppliedAt(), register.getConfirmedAt(),
+                progress.submittedAt(), progress.payoutAt(), progress.earnedCredits(), progress.reward(),
+                recruitmentInfo(register.getRecruitment(), softwareType, now));
+    }
+
+    @Override
+    public List<ParticipationListItemResponse> list(Long userId, String tab) {
+        List<String> order = ParticipationStatuses.TAB_STATUSES.get(tab);
+        if (order == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage(), Map.of("tab", "탭을 확인해 주세요"));
+        }
+        Comparator<Progress> byDate = Comparator.comparing(Progress::keyDate).thenComparing(progress -> progress.register().getId());
+        Comparator<Progress> sort = tab.equals("history")
+                ? byDate.reversed()
+                : Comparator.<Progress>comparingInt(progress -> order.indexOf(progress.status())).thenComparing(byDate);
+        return toItems(progresses(userId).stream().filter(progress -> order.contains(progress.status())).sorted(sort).toList());
+    }
+
+    @Override
+    public ParticipationSummaryResponse summary(Long userId) {
+        List<Progress> progresses = progresses(userId);
+        Map<String, Long> counts = progresses.stream()
+                .collect(Collectors.groupingBy(progress -> ParticipationStatuses.tabOf(progress.status()), Collectors.counting()));
+        return new ParticipationSummaryResponse(
+                new ParticipationSummaryResponse.Counts(
+                        counts.getOrDefault("applied", 0L).intValue(),
+                        counts.getOrDefault("ongoing", 0L).intValue(),
+                        counts.getOrDefault("history", 0L).intValue()),
+                (int) progresses.stream().filter(progress -> progress.status().equals("beforeSubmit")).count(),
+                progresses.stream().filter(progress -> progress.status().equals("payoutPending")).mapToInt(Progress::reward).sum());
+    }
+
+    @Override
+    public List<ParticipationListItemResponse> deadlines(Long userId) {
+        return toItems(progresses(userId).stream()
+                .filter(progress -> progress.status().equals("beforeSubmit"))
+                .sorted(Comparator.comparing(Progress::keyDate).thenComparing(progress -> progress.register().getId()))
+                .toList());
+    }
+
+    // 내 참가 전체의 진행 상황. 참가와 피드백을 한 번씩 읽는다
+    private List<Progress> progresses(Long userId) {
+        List<Register> registers = registerRepository.findAllMine(userId);
+        if (registers.isEmpty()) return List.of();
+        LocalDateTime now = LocalDateTime.now();
+        Map<Long, List<Feedback>> feedbacks = feedbackRepository.findByRegisterIdIn(registers.stream().map(Register::getId).toList())
+                .stream().collect(Collectors.groupingBy(feedback -> feedback.getRegister().getId()));
+        return registers.stream()
+                .map(register -> progressOf(register, feedbacks.getOrDefault(register.getId(), List.of()), now))
+                .toList();
+    }
+
+    // 목록 행으로 바꾼다. 소프트웨어 유형은 행 수와 상관없이 한 번 읽는다
+    private List<ParticipationListItemResponse> toItems(List<Progress> progresses) {
+        if (progresses.isEmpty()) return List.of();
+        LocalDateTime now = LocalDateTime.now();
+        Map<Long, String> softwareTypes = recruitmentTypeRepository
+                .findByRecruitmentIdIn(progresses.stream().map(progress -> progress.register().getRecruitment().getId()).distinct().toList())
+                .stream().collect(Collectors.toMap(type -> type.getRecruitment().getId(),
+                        type -> RecruitmentNames.softwareType(type.getType().getCode()), (first, second) -> first));
+        return progresses.stream()
+                .map(progress -> toItem(progress, softwareTypes.get(progress.register().getRecruitment().getId()), now))
+                .toList();
     }
 
     // 칸별 오류의 이름. 프론트가 항목 id로 칸을 찾는다

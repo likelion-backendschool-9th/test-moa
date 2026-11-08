@@ -1,5 +1,6 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.dto.request.RecruitmentSearchRequest;
 import com.testmoa.backend.dto.response.RecruitmentPageResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse.ProjectInfo;
@@ -92,15 +93,17 @@ public class RecruitmentServiceImpl implements RecruitmentService {
     }
 
     @Override
-    public RecruitmentPageResponse search(String keyword, String type, boolean open, boolean subscription,
-                                                String sort, int page, int size) {
-        String trimmed = keyword == null ? "" : keyword.trim();
+    public RecruitmentPageResponse search(RecruitmentSearchRequest request) {
+        String type = request.type();
+        int page = request.page();
+        int size = request.size();
+        String trimmed = request.q() == null ? "" : request.q().trim();
         Condition condition = new Condition(
                 trimmed.isEmpty() ? null : trimmed.toLowerCase(Locale.ROOT),
                 typeOf(type),
-                open,
-                subscription,
-                byDeadline(sort),
+                request.open(),
+                request.subscription(),
+                byDeadline(request.sort()),
                 LocalDateTime.now());
 
         long total = recruitmentRepository.countPublic(condition);

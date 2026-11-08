@@ -27,7 +27,7 @@
 - 다른 회원의 참가와 없는 참가는 404다. 비로그인은 401이다
 
 ### 상세 응답
-`id`, `status`, `appliedAt`, `confirmedAt`, `submittedAt`, `payoutAt`, `earnedCredits`, `reward`, `recruitment`(`id`, `title`, `description`, `projectName`, `projectImageUrl`, `status`, `selectionMode`, `softwareType`, `subscription`, `recruitDeadline`, `submitDeadline`), `accessUrl`, `testItems`(`id`, `title`, `description`, `required`, 저장 순서), `feedbacks`(`testItemId`, `content`, 기타 의견은 `testItemId`가 null)
+`id`, `status`, `appliedAt`, `confirmedAt`, `submittedAt`, `payoutAt`, `earnedCredits`, `reward`, `recruitment`(`id`, `title`, `description`, `projectName`, `projectImageUrl`, `status`, `selectionMode`, `softwareType`, `subscription`, `recruitDeadline`, `submitDeadline`), `accessUrl`, `testItems`(`id`, `title`, `description`, `required`, 배치 순서(`sortOrder`, #175)대로이고 같으면 저장 순서), `feedbacks`(`testItemId`, `content`, 기타 의견은 `testItemId`가 null)
 
 - `accessUrl`(테스트 접속 링크)은 확정된 참가에만 준다. 대기·미선정·참여 취소는 null이다
 - `reward`는 확정한 참가면 고정한 보상(기본 + 추가), 확정 전이면 지금 기준 금액([README 정한 것 14](README.md#정한-것))이다
@@ -70,7 +70,7 @@
 #118-S1 제출 전 상세 [테스트]
 - Given 확정된 참가(필수 항목 1, 선택 항목 1)
 - Then  200이고 `status` `beforeSubmit`, `reward` 1000, `earnedCredits` 0, `accessUrl`이 있다
-- Then  모집글 제목·프로젝트 이름·상태·선정 방식·제출 마감이 있고, 테스트 항목이 저장 순서대로 필수 여부와 함께 온다. `feedbacks`는 비고 `submittedAt`은 null이다
+- Then  모집글 제목·프로젝트 이름·상태·선정 방식·제출 마감이 있고, 테스트 항목이 배치 순서대로 필수 여부와 함께 온다(나중에 저장했어도 앞에 배치한 항목이 먼저). `feedbacks`는 비고 `submittedAt`은 null이다
 
 #118-S2 항목별 피드백 제출 [테스트]
 - When  필수 항목과 기타 의견을 앞뒤 공백과 함께 적고, 선택 항목은 공백만 적어 제출한다

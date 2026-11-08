@@ -155,6 +155,10 @@ class ParticipationControllerTest {
     @DisplayName("#118-S1 제출 전 상세")
     void 확정된_테스터가_제출_전_상세를_본다() throws Exception {
         Register register = confirmed(recruitment, tester);
+        /* 나중에 저장한 선택 항목을 앞에 배치한다 */
+        required.edit(required.getTitle(), required.getDescription(), true, 1);
+        optional.edit(optional.getTitle(), optional.getDescription(), false, 0);
+        em.flush();
 
         JsonNode data = data(detail(tester, register).andExpect(status().isOk()));
 
@@ -169,9 +173,10 @@ class ParticipationControllerTest {
         assertThat(data.at("/recruitment/selectionMode").asText()).isEqualTo("selection");
         assertThat(data.at("/recruitment/submitDeadline").isNull()).isFalse();
         assertThat(data.get("testItems")).hasSize(2);
-        assertThat(data.at("/testItems/0/title").asText()).isEqualTo("밑줄 저장");
-        assertThat(data.at("/testItems/0/required").asBoolean()).isTrue();
-        assertThat(data.at("/testItems/1/required").asBoolean()).isFalse();
+        assertThat(data.at("/testItems/0/title").asText()).isEqualTo("문장 모아 보기");
+        assertThat(data.at("/testItems/0/required").asBoolean()).isFalse();
+        assertThat(data.at("/testItems/1/title").asText()).isEqualTo("밑줄 저장");
+        assertThat(data.at("/testItems/1/required").asBoolean()).isTrue();
         assertThat(data.get("feedbacks")).isEmpty();
         assertThat(data.get("submittedAt").isNull()).isTrue();
     }

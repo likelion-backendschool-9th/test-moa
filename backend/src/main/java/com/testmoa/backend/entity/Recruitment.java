@@ -1,6 +1,7 @@
 package com.testmoa.backend.entity;
 
 import com.testmoa.backend.entity.enums.AnalysisStatus;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import jakarta.persistence.*;
@@ -171,5 +172,18 @@ public class Recruitment {
         this.analysisStatus = AnalysisStatus.DONE;
         this.praiseSummary = praiseSummary;
         this.analyzedAt = now;
+    }
+
+    /**
+     * 지금 진행 단계. 상태는 취소 여부만 저장하므로 모집 중·테스트 중·종료는 마감일로 계산한다(README 정한 것 11).
+     * 저장 상태가 RECRUITING이 아니면(취소 말고는 지금 저장하는 값이 없다) 마감일과 상관없이 종료다. cancel()의 조건과 같다
+     *
+     * @param now 서버 시간대의 지금(LocalDateTime.now())
+     */
+    public RecruitmentPhase phaseAt(LocalDateTime now) {
+        if (status == RecruitmentStatus.CANCELLED) return RecruitmentPhase.CANCELLED;
+        if (status != RecruitmentStatus.RECRUITING) return RecruitmentPhase.CLOSED;
+        if (now.isBefore(recruitDeadline)) return RecruitmentPhase.RECRUITING;
+        return now.isBefore(feedbackDeadline) ? RecruitmentPhase.TESTING : RecruitmentPhase.CLOSED;
     }
 }

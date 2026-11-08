@@ -63,7 +63,7 @@ public class PublicRecruitmentServiceImpl implements PublicRecruitmentService {
                 recruitment.getTitle(),
                 recruitment.getDescription(),
                 recruitment.getConditions(),
-                RecruitmentNames.status(recruitment, LocalDateTime.now()),
+                RecruitmentNames.phase(recruitment.phaseAt(LocalDateTime.now())),
                 RecruitmentNames.selectionMode(recruitment.getSelectionMode()),
                 softwareType,
                 recruitment.isSubscription(),

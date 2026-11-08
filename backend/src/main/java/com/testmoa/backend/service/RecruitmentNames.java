@@ -1,28 +1,20 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.entity.Recruitment;
-import com.testmoa.backend.entity.enums.RecruitmentStatus;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import com.testmoa.backend.entity.enums.TypeCode;
 
-import java.time.LocalDateTime;
-
 /**
- * 모집글 값을 응답에 쓰는 프론트 이름으로 바꾼다. 내 프로젝트(#92)와 공개 모집(#113)이 같이 쓴다
+ * 모집글 값을 응답에 쓰는 프론트 이름으로 바꾸기만 한다. 내 프로젝트(#92)와 공개 모집(#113)이 같이 쓴다.
+ * 진행 단계를 마감일로 계산하는 일은 Recruitment.phaseAt이 한다
  */
 public final class RecruitmentNames {
     private RecruitmentNames() {}
 
-    /**
-     * 모집 상태(recruiting, testing, closed, cancelled). 취소만 저장된 값을 쓰고, 나머지는 마감일로 계산한다(README 정한 것 11)
-     *
-     * @param now 서버 시간대의 지금(LocalDateTime.now())
-     */
-    public static String status(Recruitment recruitment, LocalDateTime now) {
-        if (recruitment.getStatus() == RecruitmentStatus.CANCELLED) return "cancelled";
-        if (now.isBefore(recruitment.getRecruitDeadline())) return "recruiting";
-        return now.isBefore(recruitment.getFeedbackDeadline()) ? "testing" : "closed";
+    /** 진행 단계(recruiting, testing, closed, cancelled). 프론트 상태 이름과 같다 */
+    public static String phase(RecruitmentPhase phase) {
+        return phase.name().toLowerCase();
     }
 
     /** 선정 방식. FIRST_COME → firstCome, MANUAL → selection */

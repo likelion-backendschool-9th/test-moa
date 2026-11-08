@@ -21,6 +21,7 @@ import com.testmoa.backend.repository.TestItemImageRepository;
 import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.repository.TypeRepository;
 import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
@@ -111,7 +112,7 @@ public class ProjectServiceImpl implements ProjectService {
         LocalDateTime now = LocalDateTime.now();
         return recruitments.stream().map(item -> RecruitmentSummaryResponse.of(
                 item,
-                RecruitmentNames.status(item, now),
+                RecruitmentNames.phase(item.phaseAt(now)),
                 RecruitmentNames.selectionMode(item.getSelectionMode()),
                 RecruitmentNames.softwareType(types.get(item.getId())),
                 confirmed.getOrDefault(item.getId(), 0L))).toList();
@@ -173,7 +174,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         return projects.stream().map(project -> {
             List<Recruitment> recruitments = byProject.getOrDefault(project.getId(), List.of());
-            long open = recruitments.stream().filter(item -> RecruitmentNames.status(item, now).equals("recruiting")).count();
+            long open = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.RECRUITING).count();
             return ProjectResponse.of(project, recruitments.size(), open);
         }).toList();
     }

@@ -44,7 +44,7 @@ public class ChatParticipant {
 
     // 내가 바꾼 대화방 이름. 내 채팅함에만 보인다. 바꾸지 않았으면 null
     @Column(length = ROOM_NAME_MAX)
-    private String customName;
+    private String customRoomName;
 
     // 내 채팅함에서 삭제했는지. 상대 채팅함에는 영향이 없다
     @Column(nullable = false)
@@ -79,7 +79,7 @@ public class ChatParticipant {
         this.lastReadSeq = 0;
     }
 
-    public void rename(String customName) { this.customName = customName; }
+    public void rename(String customRoomName) { this.customRoomName = customRoomName; }
 
     public void hide() { this.hidden = true; }
 

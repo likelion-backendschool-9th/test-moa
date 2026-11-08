@@ -1,6 +1,7 @@
 package com.testmoa.backend.controller;
 
 import com.testmoa.backend.dto.request.ChatMessageSendRequest;
+import com.testmoa.backend.dto.request.ChatRoomRenameRequest;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
@@ -42,5 +43,19 @@ public class ChatController {
     public ApiResponse<ChatMessageResponse> sendMessage(@PathVariable String roomKey,
                                                         @AuthenticationPrincipal Long userId, @Valid @RequestBody ChatMessageSendRequest request) {
         return ApiResponse.ok(chatService.sendMessage(roomKey, userId, request.text()));
+    }
+
+    @PatchMapping("/{roomKey}")
+    public ApiResponse<ChatRoomResponse> renameRoom(@PathVariable String roomKey,
+                                                   @AuthenticationPrincipal Long userId,
+                                                   @Valid @RequestBody ChatRoomRenameRequest request) {
+        return ApiResponse.ok(chatService.renameRoom(roomKey, userId, request.name()));
+    }
+
+    @DeleteMapping("/{roomKey}")
+    public ApiResponse<Void> deleteRoom(@PathVariable String roomKey,
+                                         @AuthenticationPrincipal Long userId) {
+        chatService.deleteRoom(roomKey, userId);
+        return ApiResponse.ok();
     }
 }

@@ -114,8 +114,10 @@ class ChatReadControllerTest {
         assertThat(me.getCustomRoomName()).isEqualTo("북로그 1차");
         assertThat(me.isHidden()).isFalse();
     }
-    @Test @DisplayName("#52-S12 비로그인의 읽음 처리는 401")
+    @Test @DisplayName("#52-S12 비로그인의 읽음 처리와 헤더 수는 401")
     void unauthenticated() throws Exception {
+        mvc.perform(get("/api/v1/chats/unread")).andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
         mvc.perform(post(url() + "/read").contentType(MediaType.APPLICATION_JSON).content("{\"seq\":1}"))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
@@ -180,6 +182,46 @@ class ChatReadControllerTest {
     @Test @DisplayName("#52-S7 메시지가 없는 방은 안 읽은 수 0")
     void emptyRoom() throws Exception {
         inboxUnread(tester, room, 0);
+    }
+
+    void headerUnread(User user, long count) throws Exception {
+        call(get("/api/v1/chats/unread"), user).andExpect(status().isOk())
+                .andExpect(content().json("{\"success\":true,\"data\":{\"count\":" + count + "}}", JsonCompareMode.STRICT));
+    }
+    @Test @DisplayName("#52-S8 헤더 합계에서 지운 방과 읽은 메시지는 제외")
+    void headerCounts() throws Exception {
+        var other = newRoom(developer, tester, "다른 프로젝트");
+        send(room, developer);
+        send(room, tester);
+        send(room, developer);
+        send(other, developer);
+        headerUnread(tester, 3);
+        call(delete("/api/v1/chats/" + other.getRoomKey()), tester).andExpect(status().isOk());
+        headerUnread(tester, 2);
+        read(tester, 3).andExpect(status().isOk());
+        headerUnread(tester, 0);
+    }
+    @Test @DisplayName("#52-S9 지운 방이 다시 나타나면 지우기 전 안 읽은 메시지도 셈")
+    void reappear() throws Exception {
+        send(room, developer);
+        send(room, developer);
+        call(delete(url()), tester).andExpect(status().isOk());
+        headerUnread(tester, 0);
+        send(room, developer);
+        inboxUnread(tester, room, 3);
+        headerUnread(tester, 3);
+        assertThat(saved(testerSide.getId()).getLastReadSeq()).isZero();
+    }
+    @Test @DisplayName("#52-S10 방이 없는 회원과 운영자는 헤더 수 0")
+    void noRooms() throws Exception {
+        var outsider = fixtures.user("외부회원");
+        var admin = fixtures.user("운영자");
+        em.flush();
+        em.createQuery("update users u set u.role = :role where u.id = :id")
+                .setParameter("role", Role.ADMIN).setParameter("id", admin.getId()).executeUpdate();
+        em.clear();
+        headerUnread(outsider, 0);
+        headerUnread(admin, 0);
     }
 
 }

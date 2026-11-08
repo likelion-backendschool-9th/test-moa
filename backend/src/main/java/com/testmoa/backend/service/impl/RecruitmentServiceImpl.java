@@ -1,8 +1,8 @@
 package com.testmoa.backend.service.impl;
 
-import com.testmoa.backend.dto.response.PublicRecruitmentResponse;
-import com.testmoa.backend.dto.response.PublicRecruitmentResponse.ProjectInfo;
-import com.testmoa.backend.dto.response.PublicRecruitmentResponse.TestItemInfo;
+import com.testmoa.backend.dto.response.RecruitmentResponse;
+import com.testmoa.backend.dto.response.RecruitmentResponse.ProjectInfo;
+import com.testmoa.backend.dto.response.RecruitmentResponse.TestItemInfo;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.RecruitmentImage;
@@ -17,7 +17,7 @@ import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
-import com.testmoa.backend.service.PublicRecruitmentService;
+import com.testmoa.backend.service.RecruitmentService;
 import com.testmoa.backend.service.RecruitmentNames;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PublicRecruitmentServiceImpl implements PublicRecruitmentService {
+public class RecruitmentServiceImpl implements RecruitmentService {
 
     private final RecruitmentRepository recruitmentRepository;
     private final RecruitmentImageRepository recruitmentImageRepository;
@@ -44,7 +44,7 @@ public class PublicRecruitmentServiceImpl implements PublicRecruitmentService {
      * 공개 모집글 상세. 마감된 모집도 보여 주고, 취소된 모집은 없는 것처럼 404다
      */
     @Override
-    public PublicRecruitmentResponse find(Long recruitmentId, Long userId) {
+    public RecruitmentResponse find(Long recruitmentId, Long userId) {
         Recruitment recruitment = recruitmentRepository.findWithProjectById(recruitmentId)
                 .filter(item -> item.getStatus() != RecruitmentStatus.CANCELLED)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
@@ -58,7 +58,7 @@ public class PublicRecruitmentServiceImpl implements PublicRecruitmentService {
                 .findFirstByRecruitmentIdAndUserIdOrderByIdDesc(recruitmentId, userId)
                 .map(register -> RecruitmentNames.registerStatus(register.getStatus())).orElse(null);
 
-        return new PublicRecruitmentResponse(
+        return new RecruitmentResponse(
                 recruitment.getId(),
                 recruitment.getTitle(),
                 recruitment.getDescription(),

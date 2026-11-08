@@ -3,6 +3,7 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.response.ApplicationResponse;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Register;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
@@ -39,8 +40,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .filter(item -> item.getStatus() != RecruitmentStatus.CANCELLED)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         LocalDateTime now = LocalDateTime.now();
-        /* 모집 중은 모집 마감 전이다(README 정한 것 11). 저장 상태가 RECRUITING이 아니면 마감으로 본다 */
-        if (recruitment.getStatus() != RecruitmentStatus.RECRUITING || !now.isBefore(recruitment.getRecruitDeadline())) {
+        /* 모집 중일 때만 지원한다. 저장 상태가 RECRUITING이 아니면 마감일과 상관없이 끝난 것이다(Recruitment.phaseAt) */
+        if (recruitment.phaseAt(now) != RecruitmentPhase.RECRUITING) {
             throw new BusinessException(ErrorCode.RECRUITMENT_CLOSED);
         }
         if (recruitment.getProject().getUser().getId().equals(userId)) {

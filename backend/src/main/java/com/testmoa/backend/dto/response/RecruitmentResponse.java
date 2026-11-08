@@ -11,7 +11,7 @@ import java.util.List;
  * @param imageUrls         모집글 이미지. 보낸 순서대로. 프로젝트 대표 이미지는 project.imageUrl
  * @param myRegisterStatus  로그인한 회원의 가장 최근 참가 상태. 참가가 없거나 비로그인이면 null
  */
-public record PublicRecruitmentResponse(
+public record RecruitmentResponse(
         Long id,
         String title,
         String description,

@@ -7,4 +7,4 @@ import java.time.LocalDateTime;
 public record ChatInboxEntry(Long roomId, String roomKey, Long recruitmentId, String projectName,
                              String roomName, String projectImage, ChatRole myRole,
                              String partnerNickname, ChatRole partnerRole,
-                             String lastMessage, LocalDateTime lastMessageAt) {}
+                             String lastMessage, LocalDateTime lastMessageAt, long unreadCount) {}

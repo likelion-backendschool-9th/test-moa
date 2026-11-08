@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.chat;
+package com.testmoa.backend.service;
 
 import java.util.List;
 

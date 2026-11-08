@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.chat;
+package com.testmoa.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

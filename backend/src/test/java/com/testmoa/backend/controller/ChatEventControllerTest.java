@@ -5,7 +5,7 @@ import com.testmoa.backend.entity.User;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.service.ChatService;
-import com.testmoa.backend.service.chat.ChatEventHub;
+import com.testmoa.backend.service.ChatEventHub;
 import com.testmoa.backend.support.ChatFixtures;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;

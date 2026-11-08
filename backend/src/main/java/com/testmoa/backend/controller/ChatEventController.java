@@ -1,6 +1,6 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.service.chat.ChatEventHub;
+import com.testmoa.backend.service.ChatEventHub;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.chat;
+package com.testmoa.backend.service;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;

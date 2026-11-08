@@ -147,7 +147,7 @@
 
 ## 작업 순서
 1. 연결의 가장 얇은 경로 — #51-S1, S4
-   - 파일: `global/sse/` 또는 채팅 패키지의 `ChatEventHub.java`(새로, 회원 id → 연결 목록, `ConcurrentHashMap`·`CopyOnWriteArrayList`), `controller/ChatEventController.java`(새로, `@GetMapping(value = "/api/v1/chats/events", produces = TEXT_EVENT_STREAM_VALUE)`, `SseEmitter`를 만들어 허브에 넣고 `ready`·`retry`를 보낸다), `application.yml`(`chat.sse.timeout: 30m`, `chat.sse.heartbeat: 25s`, `chat.sse.max-connections: 5`), 테스트 `controller/ChatEventControllerTest.java`(새로, `@SpringBootTest(webEnvironment = RANDOM_PORT)`와 `java.net.http.HttpClient`로 줄 단위로 읽는다. 트랜잭션 없이 돌고 끝나면 만든 행을 지운다)
+   - 파일: `service/`의 `ChatEventHub.java`(새로, 회원 id → 연결 목록, `ConcurrentHashMap`·`CopyOnWriteArrayList`), `controller/ChatEventController.java`(새로, `@GetMapping(value = "/api/v1/chats/events", produces = TEXT_EVENT_STREAM_VALUE)`, `SseEmitter`를 만들어 허브에 넣고 `ready`·`retry`를 보낸다), `application.yml`(`chat.sse.timeout: 30m`, `chat.sse.heartbeat: 25s`, `chat.sse.max-connections: 5`), 테스트 `controller/ChatEventControllerTest.java`(새로, `@SpringBootTest(webEnvironment = RANDOM_PORT)`와 `java.net.http.HttpClient`로 줄 단위로 읽는다. 트랜잭션 없이 돌고 끝나면 만든 행을 지운다)
    - 확인: `./gradlew test --tests '*ChatEventControllerTest'`
 2. 하트비트·연결 시간·정리·제한 — #51-S2, S3, S15, S16
    - 파일: `ChatEventHub.java`(`@Scheduled`로 하트비트 주석 전송, 실패한 연결 제거, `onCompletion`·`onTimeout`·`onError`에서 제거, 6번째에 가장 오래된 연결 `complete()`), 스케줄링 설정(`@EnableScheduling`이 없으면 더한다), 테스트 설정에서 간격·시간을 짧게(`@TestPropertySource`)

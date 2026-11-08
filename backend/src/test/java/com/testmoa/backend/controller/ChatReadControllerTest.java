@@ -1,0 +1,122 @@
+package com.testmoa.backend.controller;
+
+import com.testmoa.backend.entity.ChatParticipant;
+import com.testmoa.backend.entity.ChatRoom;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.ChatRole;
+import com.testmoa.backend.global.security.JwtProvider;
+import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.support.ChatFixtures;
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.*;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.json.JsonCompareMode;
+import java.time.LocalDateTime;
+import static com.testmoa.backend.support.ChatFixtures.participantWithRole;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Transactional
+class ChatReadControllerTest {
+    @Autowired MockMvc mvc;
+    @Autowired EntityManager em;
+    @Autowired JwtProvider jwt;
+    ChatFixtures fixtures;
+    User developer, tester;
+    ChatRoom room;
+    ChatParticipant developerSide, testerSide;
+
+    @BeforeEach
+    void setUp() {
+        fixtures = new ChatFixtures(em);
+        developer = fixtures.user("모아개발");
+        tester = fixtures.user("모아테스터");
+        room = newRoom(developer, tester, "북로그");
+        developerSide = participantWithRole(room, ChatRole.DEVELOPER);
+        testerSide = participantWithRole(room, ChatRole.TESTER);
+        em.flush();
+    }
+    ChatRoom newRoom(User owner, User member, String title) {
+        var recruitment = fixtures.recruitment(owner, title);
+        var created = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, member)).build();
+        em.persist(created);
+        return created;
+    }
+    String url() { return "/api/v1/chats/" + room.getRoomKey(); }
+    ResultActions call(MockHttpServletRequestBuilder request, User user) throws Exception {
+        return mvc.perform(request.header("Authorization", "Bearer " + jwt.createAccessToken(user.getId())));
+    }
+    ResultActions read(User user, long seq) throws Exception {
+        return call(post(url() + "/read").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"seq\":" + seq + "}"), user);
+    }
+    void send(ChatRoom target, User user) throws Exception {
+        call(post("/api/v1/chats/" + target.getRoomKey() + "/messages")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"안녕하세요\"}"), user)
+                .andExpect(status().isOk());
+    }
+    void sendThree() throws Exception {
+        for (int i = 0; i < 3; i++) send(room, developer);
+    }
+    ChatParticipant saved(Long id) {
+        em.flush();
+        em.clear();
+        return em.find(ChatParticipant.class, id);
+    }
+    LocalDateTime resetUpdatedAt() {
+        var past = LocalDateTime.of(2020, 1, 1, 0, 0);
+        em.flush();
+        em.createNativeQuery("update chat_participants set updated_at = :past where id = :id")
+                .setParameter("past", past).setParameter("id", testerSide.getId()).executeUpdate();
+        em.clear();
+        return past;
+    }
+    @Test @DisplayName("#52-S1 읽은 순번과 갱신 일시를 올리고 상대 읽음은 유지")
+    void markRead() throws Exception {
+        sendThree();
+        var past = resetUpdatedAt();
+        read(tester, 3).andExpect(status().isOk()).andExpect(jsonPath("$.data.lastReadSeq").value(3));
+        var me = saved(testerSide.getId());
+        assertThat(me.getLastReadSeq()).isEqualTo(3);
+        assertThat(me.getUpdatedAt()).isAfter(past);
+        assertThat(saved(developerSide.getId()).getLastReadSeq()).isZero();
+    }
+    @Test @DisplayName("#52-S3 작거나 같은 순번은 읽음과 갱신 일시를 바꾸지 않음")
+    void neverGoBack() throws Exception {
+        sendThree();
+        read(tester, 3).andExpect(status().isOk());
+        var past = resetUpdatedAt();
+        for (long seq : new long[]{2, 3}) {
+            read(tester, seq).andExpect(status().isOk()).andExpect(jsonPath("$.data.lastReadSeq").value(3));
+            var me = saved(testerSide.getId());
+            assertThat(me.getLastReadSeq()).isEqualTo(3);
+            assertThat(me.getUpdatedAt()).isEqualTo(past);
+        }
+    }
+    @Test @DisplayName("#52-S4 읽음 처리는 이름과 삭제 여부를 유지")
+    void preserveOtherColumns() throws Exception {
+        sendThree();
+        call(patch(url()).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"북로그 1차\"}"), tester)
+                .andExpect(status().isOk());
+        read(tester, 3).andExpect(status().isOk());
+        var me = saved(testerSide.getId());
+        assertThat(me.getCustomRoomName()).isEqualTo("북로그 1차");
+        assertThat(me.isHidden()).isFalse();
+    }
+    @Test @DisplayName("#52-S12 비로그인의 읽음 처리는 401")
+    void unauthenticated() throws Exception {
+        mvc.perform(post(url() + "/read").contentType(MediaType.APPLICATION_JSON).content("{\"seq\":1}"))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+    }
+}

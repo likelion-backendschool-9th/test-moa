@@ -34,7 +34,7 @@
 - When  `grep -rnE "/my/(participations|projects)" frontend/src frontend/e2e docs`를 실행한다
 - Then  결과가 `docs/frontend/project/role-urls.md`(이 문서)의 이전 경로 설명, `projects.spec.ts`의 #101-S4(옛 주소 404), `home.md` S26의 과거 변경 메모에만 나온다
 
-#101-S4 옛 주소는 404다 [테스트]
+#101-S4 옛 주소는 404다 [직접]
 - Given 개발자로 로그인
 - When  `/my/projects`, `/my/participations`에 접속한다
 - Then  "찾는 페이지가 없어요" 화면이다
@@ -42,7 +42,7 @@
 ## 2. 모집 작성은 쿼리로 프로젝트를 받는다 (#101-R2)
 `/developer/recruitments/new`는 `?project=`로 프로젝트 키를 받는다. 키가 없거나 내 프로젝트가 아니면 404다.
 
-#101-S5 작성 폼 [테스트]
+#101-S5 작성 폼 [직접]
 - Given 개발자로 로그인
 - When  `/developer/projects/booklog`에서 "모집글 작성"을 누른다 (고침 #130: 문구 변경)
 - Then  URL이 `/developer/recruitments/new?project=booklog`이고 폼 위에 "북로그"가 보인다
@@ -51,13 +51,15 @@
 - Given 개발자로 로그인
 - When  `/developer/recruitments/new`, `/developer/recruitments/new?project=nope`에 접속한다
 - Then  두 주소 모두 "찾는 페이지가 없어요" 화면이다
+- When  `project` 쿼리가 두 개이거나, 로그인한 다른 회원(`demo-role=tester`)이 `/developer/recruitments/new?project=booklog`에 접속한다
+- Then  "찾는 페이지가 없어요" 화면이며 모집 등록 버튼이 없다
 
 S500 작성 성공은 그대로 `/developer/projects/booklog?notice=saved`로 간다. 작성 폼의 "취소"는 `/developer/projects/booklog`로 간다(S497).
 
 ## 3. 모집 관리는 모집 키만으로 연다 (#101-R3)
 `/developer/recruitments/:recruitmentKey`는 내 프로젝트들 가운데 그 모집 건을 가진 프로젝트를 찾아 연다. 찾지 못하면 404다. 모집 키는 전체에서 하나뿐이다. 백엔드는 지금 `recruitment_id`(PK)를 키로 넘기고([결정 7](../../backend/project/README.md)), 목업은 slug를 쓴다. 백엔드는 키로 모집 건을 찾은 뒤 그 프로젝트의 회원이 나인지 확인한다. 목업에서 내 프로젝트를 모두 뒤지는 방식은 목업에만 해당한다.
 
-#101-S7 관리 화면 [테스트]
+#101-S7 관리 화면 [직접]
 - Given 개발자로 로그인
 - When  `/developer/recruitments/booklog`에 접속한다
 - Then  "현재 위치"가 "내 프로젝트 › 북로그"이고, 두 링크는 `/developer/projects`, `/developer/projects/booklog`다
@@ -69,7 +71,7 @@ S485 없는 프로젝트·모집 건은 `/developer/projects/nope`, `/developer/
 ## 4. 헤더 탭의 현재 위치 (#101-R4)
 "참여 테스트" 탭은 `/testers/recruitments` 아래에서, "내 프로젝트" 탭은 `/developer/projects`와 `/developer/recruitments` 아래에서 현재 탭이다.
 
-#101-S8 모집 관리에서도 "내 프로젝트"가 현재 탭 [테스트]
+#101-S8 모집 관리에서도 "내 프로젝트"가 현재 탭 [직접]
 - Given 개발자로 로그인
 - When  `/developer/recruitments/booklog`에 접속한다
 - Then  "주요 메뉴"의 "내 프로젝트"에 `aria-current="page"`가 있다

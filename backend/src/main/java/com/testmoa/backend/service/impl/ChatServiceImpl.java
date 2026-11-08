@@ -94,6 +94,16 @@ public class ChatServiceImpl implements ChatService {
         return ChatMessageResponse.of(message, me.getId());
     }
 
+    @Override
+    @Transactional
+    public ChatRoomResponse renameRoom(String roomKey, Long userId, String name) {
+        var me = requireParticipant(roomKey, userId);
+        if (participantRepository.renameRoom(me.getId(), name) == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        return getRoom(roomKey, userId);
+    }
+
     private ChatParticipant requireParticipant(String roomKey, Long userId) {
         return participantRepository.findByRoomRoomKeyAndUserIdAndHiddenFalse(roomKey, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));

@@ -41,6 +41,9 @@ public enum ErrorCode {
     RECRUITMENT_CLOSED(HttpStatus.CONFLICT, "모집이 마감됐어요"),
     ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 지원한 테스트예요"),
     OWN_RECRUITMENT(HttpStatus.CONFLICT, "내 모집에는 지원할 수 없어요"),
+    PARTICIPATION_NOT_CONFIRMED(HttpStatus.CONFLICT, "참여가 확정된 테스트만 피드백을 낼 수 있어요"),
+    FEEDBACK_DEADLINE_PASSED(HttpStatus.CONFLICT, "피드백 제출 기한이 지났어요"),
+    FEEDBACK_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 피드백을 제출했어요"),
 
     // 출금
     CASHOUT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리한 출금 요청이에요"),

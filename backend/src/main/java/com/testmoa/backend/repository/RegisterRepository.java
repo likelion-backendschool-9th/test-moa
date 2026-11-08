@@ -3,7 +3,9 @@ package com.testmoa.backend.repository;
 import com.testmoa.backend.entity.Register;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -61,4 +63,13 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
 
     // 회원이 이 모집에 이미 낸 참가 중 상태가 주어진 것이 있는지(#114)
     boolean existsByRecruitmentIdAndUserIdAndStatusIn(Long recruitmentId, Long userId, Collection<RegisterStatus> statuses);
+
+    // 내 참가 하나와 모집글·프로젝트(#118). 다른 회원의 참가는 없는 것과 같다
+    @Query("select r from registers r join fetch r.recruitment rc join fetch rc.project where r.id = :id and r.user.id = :userId")
+    Optional<Register> findMine(@Param("id") Long id, @Param("userId") Long userId);
+
+    // 피드백을 내려고 읽는 내 참가(#118). 행을 잠가 두 번 눌러도 한 번만 저장된다
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from registers r join fetch r.recruitment rc join fetch rc.project where r.id = :id and r.user.id = :userId")
+    Optional<Register> findMineForUpdate(@Param("id") Long id, @Param("userId") Long userId);
 }

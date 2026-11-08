@@ -19,6 +19,10 @@ import com.testmoa.backend.global.client.AnalysisClient.AnalysisGroup;
 import com.testmoa.backend.global.client.AnalysisClient.AnalysisRequest;
 import com.testmoa.backend.global.client.AnalysisClient.AnalysisResponse;
 import com.testmoa.backend.global.client.AnalysisClient.FeedbackItem;
+import com.testmoa.backend.global.client.GitHubIssueClient;
+import com.testmoa.backend.global.client.GitHubIssueClient.IssueRef;
+import com.testmoa.backend.service.ProjectRepositoryLinkProvider;
+import com.testmoa.backend.service.ProjectRepositoryLinkProvider.RepositoryLink;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.JwtProvider;
@@ -41,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +56,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,6 +78,8 @@ class ReviewAnalysisControllerTest {
     @Autowired EntityManager em;
     @Autowired JwtProvider jwtProvider;
     @MockitoBean AnalysisClient analysisClient;
+    @MockitoBean GitHubIssueClient gitHubIssueClient;
+    @MockitoBean ProjectRepositoryLinkProvider repositoryLinkProvider;
 
     // 분석을 비동기로 넘기지 않고 요청 스레드에서 바로 실행함
     @TestBean(name = "analysisTaskExecutor") TaskExecutor analysisTaskExecutor;
@@ -309,5 +320,118 @@ class ReviewAnalysisControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("ANALYSIS_IN_PROGRESS"));
         verifyNoInteractions(analysisClient);
+    }
+
+    // 이슈 초안이 있는 그룹(BUG, 심각도 2). 대표 리뷰는 f1이다
+    private ClusterGroup saveIssueGroup(Reviews r) {
+        ClusterGroup group = saveGroup(r.recruitment(), "1", null, r.f1());
+        group.editIssueDraft("로그인 시 앱 종료", "## 재현\n구글 로그인을 누른다");
+        return group;
+    }
+
+    private ResultActions register(User user, Reviews r, ClusterGroup group) throws Exception {
+        return mvc.perform(post("/api/v1/developer/recruitments/{id}/analysis/groups/{groupId}/github-issue",
+                r.recruitment().getId(), group.getId()).header("Authorization", "Bearer " + jwtProvider.createAccessToken(user.getId())));
+    }
+
+    private ResultActions editDraft(User user, Reviews r, ClusterGroup group, String json) throws Exception {
+        return mvc.perform(patch("/api/v1/developer/recruitments/{id}/analysis/groups/{groupId}", r.recruitment().getId(), group.getId())
+                .header("Authorization", "Bearer " + jwtProvider.createAccessToken(user.getId()))
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(json));
+    }
+
+    private void linkRepository(Reviews r) {
+        given(repositoryLinkProvider.find(r.project().getId())).willReturn(Optional.of(new RepositoryLink("octo", "booklog", "t0ken")));
+    }
+
+    @Test
+    @DisplayName("#107-S14 이슈를 등록하면 URL·번호를 저장하고, 본문에는 근거와 리뷰 인용만 있고 테스터 정보는 없다")
+    void 이슈를_등록한다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+        linkRepository(r);
+        given(gitHubIssueClient.create(any(), anyString(), anyString(), anyList()))
+                .willReturn(new IssueRef("https://github.com/octo/booklog/issues/7", 7));
+
+        register(developer, r, group)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.groups[0].gitIssueUrl").value("https://github.com/octo/booklog/issues/7"))
+                .andExpect(jsonPath("$.data.groups[0].gitIssueNumber").value(7));
+
+        ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<List<String>> labels = ArgumentCaptor.forClass(List.class);
+        verify(gitHubIssueClient).create(any(), org.mockito.ArgumentMatchers.eq("로그인 시 앱 종료"), body.capture(), labels.capture());
+        assertThat(body.getValue()).contains("## 재현", "리뷰 1개 · 테스터 1명 · 테스트 버전 v1", "> 로그인하면 앱이 꺼져요", "test-moa 분석 결과에서 생성됨")
+                .doesNotContain(r.a().getNickname(), r.a().getEmail());
+        assertThat(labels.getValue()).containsExactlyInAnyOrder("test-moa", "bug", "severity:blocker");
+
+        // 등록한 그룹은 다시 등록할 수 없고 GitHub를 다시 부르지 않는다
+        register(developer, r, group).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("ISSUE_ALREADY_REGISTERED"));
+        verify(gitHubIssueClient, times(1)).create(any(), anyString(), anyString(), anyList());
+    }
+
+    @Test
+    @DisplayName("#107-S15 등록이 이미 진행 중이면(두 번 누름) 거절하고 GitHub를 부르지 않는다")
+    void 등록_중이면_거절한다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+        linkRepository(r);
+        ReflectionTestUtils.setField(group, "gitIssueRegisteringAt", LocalDateTime.now());
+
+        register(developer, r, group).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("ISSUE_ALREADY_REGISTERED"));
+        verifyNoInteractions(gitHubIssueClient);
+    }
+
+    @Test
+    @DisplayName("#107-S16 레포가 연결되지 않았으면 GITHUB_REPO_NOT_LINKED이고, 구독하지 않았으면 SUBSCRIPTION_REQUIRED다")
+    void 레포가_없거나_구독이_없으면_거절한다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+
+        register(developer, r, group).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("GITHUB_REPO_NOT_LINKED"));
+
+        User free = saveUser();
+        Reviews others = saveReviews(free);
+        register(free, others, saveIssueGroup(others)).andExpect(status().isForbidden());
+        verifyNoInteractions(gitHubIssueClient);
+    }
+
+    @Test
+    @DisplayName("#107-S17 GitHub 호출이 실패하면 미등록으로 남아 다시 누를 수 있다")
+    void 실패하면_다시_등록할_수_있다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+        linkRepository(r);
+        given(gitHubIssueClient.create(any(), anyString(), anyString(), anyList()))
+                .willThrow(new BusinessException(ErrorCode.GITHUB_UNAVAILABLE))
+                .willReturn(new IssueRef("https://github.com/octo/booklog/issues/8", 8));
+
+        register(developer, r, group).andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.error.code").value("GITHUB_UNAVAILABLE"));
+        register(developer, r, group).andExpect(status().isOk()).andExpect(jsonPath("$.data.groups[0].gitIssueNumber").value(8));
+    }
+
+    @Test
+    @DisplayName("#107-S18 이슈 초안은 일부만 고칠 수 있고, 등록한 그룹·칭찬 그룹·빈 제목은 거절한다")
+    void 이슈_초안을_고친다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+
+        editDraft(developer, r, group, "{\"gitIssueTitle\":\"새 제목\"}").andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.groups[0].gitIssueTitle").value("새 제목"))
+                .andExpect(jsonPath("$.data.groups[0].gitIssueContent").value("## 재현\n구글 로그인을 누른다"));
+        editDraft(developer, r, group, "{\"gitIssueTitle\":\" \"}").andExpect(status().isBadRequest());
+
+        ClusterGroup praise = ClusterGroup.builder().recruitment(r.recruitment()).groupCode("9").name("칭찬").category(ClusterCategory.PRAISE).build();
+        em.persist(praise);
+        editDraft(developer, r, praise, "{\"gitIssueTitle\":\"제목\"}").andExpect(status().isBadRequest());
+
+        ReflectionTestUtils.setField(group, "gitIssueUrl", "https://github.com/octo/booklog/issues/1");
+        editDraft(developer, r, group, "{\"gitIssueContent\":\"내용\"}").andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("ISSUE_ALREADY_REGISTERED"));
     }
 }

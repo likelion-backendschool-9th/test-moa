@@ -1,0 +1,10 @@
+.detailContainer {
+  padding-top: var(--space-10);
+}
+
+.detailBox {
+  display: flex;
+  max-width: 48rem;
+  flex-direction: column;
+  gap: var(--space-6);
+}

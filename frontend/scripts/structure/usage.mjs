@@ -212,7 +212,83 @@ const rows = Object.keys(info)
  *  R1 features/<도메인>/components 파일이 한 구역 안에서만 쓰인다 → 그 구역의 _components로
  *  R2 _components·_lib 파일을 그 폴더의 부모 경로 밖에서 import한다
  *  R3 components/ui 파일이 features·app·demo, 세션·쿠키를 import한다
+ *  R4 부품(.tsx)이 이름과 같은 폴더에 있지 않다. 대상은 _components·components/ui·features/<도메인>/components 바로 아래 (#160-R4)
+ *  R5 .module.css의 간격·글자·모서리·색·모션 값이 토큰이 아니거나, 미디어·컨테이너 조건이 정한 너비가 아니다 (#160-R5)
+ *  R6 CSS·TSX가 읽는 CSS 변수(var(--…))를 어디에서도 정의하지 않는다. next/font가 만드는 --font-wanted는 예외 (#160)
  */
+const COMPONENT_DIR = /(^|\/)_components$|^components\/ui$|^features\/[^/]+\/components$/;
+function componentFolders() {
+  const out = [];
+  for (const k of Object.keys(info)) {
+    if (!k.endsWith(".tsx")) continue;
+    const dir = path.posix.dirname(k);
+    const name = path.posix.basename(k, ".tsx");
+    if (COMPONENT_DIR.test(dir)) out.push(`R4\t${k}\t폴더 없이 있다 → ${dir}/${name}/${name}.tsx`);
+    else if (COMPONENT_DIR.test(path.posix.dirname(dir)) && path.posix.basename(dir) !== name) out.push(`R4\t${k}\t폴더 이름(${path.posix.basename(dir)})과 파일 이름이 다르다`);
+  }
+  return out;
+}
+
+/* 값으로 토큰을 써야 하는 속성. 부품 고유 크기(너비·높이·격자 칸)와 선 두께는 대상이 아니다 */
+const TOKEN_PROPS = /^(padding|margin)(-|$)|^(gap|row-gap|column-gap)$|^inset|^(font-size|line-height|color|background|background-color)$|radius$|^transition(-duration|-timing-function)?$|^animation(-duration|-timing-function)?$/;
+const RAW_VALUE = /(?<![\w-])-?\d*\.?\d+(px|rem)\b|#[0-9a-fA-F]{3,8}\b|rgba?\(/;
+const WIDTHS = "(40|48|64|80)rem";
+const MEDIA = new RegExp(`^\\((min|max)-width: ?${WIDTHS}\\)$|^\\(hover: ?hover\\)$|^\\(prefers-color-scheme: ?(light|dark)\\)$|^\\(prefers-reduced-motion: ?(reduce|no-preference)\\)$`);
+const CONTAINER = /^\(min-width: ?48rem\)$/;
+function moduleValues() {
+  const out = [];
+  const css = [];
+  (function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) { if (e.name !== "node_modules" && !e.name.startsWith(".")) walk(p); } else if (e.name.endsWith(".module.css")) css.push(p);
+    }
+  })(root);
+  for (const f of css) {
+    /* 주석은 같은 길이의 공백으로 바꿔 줄 번호를 지킨다. "예외"라고 쓴 주석 바로 아래 줄은 검사하지 않는다 */
+    const raw = fs.readFileSync(f, "utf8");
+    const excused = new Set();
+    raw.split("\n").forEach((line, i) => /\/\*.*예외.*\*\//.test(line) && excused.add(i + 1));
+    const lines = raw.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).split("\n");
+    lines.forEach((line, i) => {
+      if (excused.has(i)) return;
+      const at = `${rel(f)}:${i + 1}`;
+      const decl = /^\s*([a-z-]+)\s*:\s*(.+?);?\s*$/.exec(line);
+      if (decl && !line.includes("{") && TOKEN_PROPS.test(decl[1])) {
+        const value = decl[2].replace(/!important/, "").trim();
+        if (RAW_VALUE.test(value) && !/^-?1px$/.test(value)) out.push(`R5\t${at}\t${decl[1]}: ${value} → globals.css의 토큰을 쓴다`);
+      }
+      const rule = /^\s*@(media|container)\s+(.+?)\s*\{/.exec(line);
+      if (rule) for (const cond of rule[2].replace(/^not all and /, "").split(/\s+and\s+(?=\()/)) {
+        const c = cond.trim();
+        if (!(rule[1] === "container" ? CONTAINER.test(c) : MEDIA.test(c))) out.push(`R5\t${at}\t@${rule[1]} ${rule[2]} → 너비는 40·48·64·80rem(컨테이너는 48rem)만 쓴다`);
+      }
+    });
+  }
+  return out;
+}
+
+/* 다른 곳에서 만드는 변수. next/font의 variable 옵션이 html에 단다 */
+const EXTERNAL_VARIABLES = new Set(["--font-wanted"]);
+function undefinedVariables() {
+  const sources = [];
+  (function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) { if (e.name !== "node_modules" && !e.name.startsWith(".") && (d !== root || !isProjectRoot || APP_DIRS.includes(e.name))) walk(p); } else if (/\.(css|tsx?)$/.test(e.name)) sources.push(p);
+    }
+  })(root);
+  const defined = new Set(EXTERNAL_VARIABLES);
+  const used = [];
+  for (const f of sources) {
+    const text = fs.readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    /* CSS의 --x: 값, TSX style의 "--x": 값, { --x: } 모두 정의로 센다 */
+    for (const m of text.matchAll(/(?:^|[\s{;,"'(])(--[a-zA-Z0-9-]+)["']?\s*:/g)) defined.add(m[1]);
+    text.split("\n").forEach((line, i) => { for (const m of line.matchAll(/var\((--[a-zA-Z0-9-]+)/g)) used.push([m[1], `${rel(f)}:${i + 1}`]); });
+  }
+  return used.filter(([name]) => !defined.has(name)).map(([name, at]) => `R6\t${at}\t${name}를 정의한 곳이 없다`);
+}
+
 function check() {
   const out = unresolved.map((at) => `R0\t${at}\t경로를 알 수 없는 동적 import`);
   for (const r of rows) {
@@ -225,6 +301,7 @@ function check() {
     if (m) for (const by of info[k].importedBy) if (!by.startsWith(m[1] + "/")) out.push(`R2\t${k}\t${by}가 import`);
     if (k.startsWith("components/ui/")) for (const im of info[k].imports) if (/^(features|app|demo)\//.test(im) || /^lib\/(session|backend|demo)/.test(im)) out.push(`R3\t${k}\t${im}을 import`);
   }
+  out.push(...componentFolders(), ...moduleValues(), ...undefinedVariables());
   console.log(out.join("\n") || "위반 없음");
   if (out.length > 0) process.exitCode = 1; // CI에서 위반이 있으면 실패하게 한다
 }

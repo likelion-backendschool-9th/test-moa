@@ -17,7 +17,7 @@
     --text: #1a1a1a; --text-muted: #5c5c58; --accent: #0f7c4a; --accent-soft: #def7eb; --on-accent: #ffffff;
     --hero-mat: #0f7c4a; --hero-grid-minor: rgb(255 255 255 / 0.09); --hero-grid-major: rgb(255 255 255 / 0.2);
     --thumb: #ffffff; --on-thumb: #1a1a1a; --mark: #1a1a1a;
-    --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark {
     --surface: #000000; --surface-muted: #16181d; --surface-strong: #1f222a; --line: #2a3037;
@@ -79,7 +79,7 @@
   .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 18px; }
   .ctl b { display: block; font-size: 13px; font-weight: 800; margin-bottom: 10px; }
   .ctl small { display: block; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
-  .btn { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9999px; font: 700 16px/1.5 inherit; font-family: inherit; padding: 12px 20px; cursor: pointer; transition: background-color 300ms var(--ease-brand), transform 300ms var(--ease-brand); }
+  .btn { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9999px; font: 700 16px/1.5 inherit; font-family: inherit; padding: 12px 20px; cursor: pointer; transition: background-color 300ms var(--ease), transform 300ms var(--ease); }
   .btn:active { transform: scale(0.98); }
   .btn.sm { font-size: 14px; padding: 8px 16px; }
   .btn.primary { background: var(--accent); color: var(--on-accent); }
@@ -121,7 +121,7 @@
   .sig b { display: block; margin-top: 12px; font-size: 13px; font-weight: 800; }
 
   /* 아이콘 버튼 · 더보기 메뉴 */
-  .icobtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 9999px; background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color 300ms var(--ease-brand), color 300ms var(--ease-brand); }
+  .icobtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 9999px; background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color 300ms var(--ease), color 300ms var(--ease); }
   .icobtn:hover { background: var(--surface-strong); color: var(--text); }
   .icobtn.on { background: var(--accent-soft); color: var(--accent); }
   .seg { display: inline-flex; padding: 4px; border-radius: 9999px; background: var(--surface-strong); }
@@ -145,13 +145,13 @@
   .chatcard { position: relative; display: flex; border-radius: 16px; background: var(--surface-muted); }
   .sheet.page-bg { background: var(--surface); }
   .cthumb { position: relative; flex: none; align-self: stretch; display: grid; place-items: center; width: 160px; min-height: 115px; overflow: hidden; border-radius: 16px 0 0 16px; background: var(--thumb); color: var(--on-thumb); font-size: 54px; font-weight: 800; letter-spacing: -0.04em; }
-  .cthumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease-brand); }
+  .cthumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease); }
   .chatcard:hover .cthumb img { transform: scale(1.05); }
   .cthumb i { position: absolute; width: 12px; height: 12px; opacity: 0.3; border-color: currentColor; border-style: solid; }
   .cthumb .a { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
   .chatcard .body { flex: 1; min-width: 0; display: grid; gap: 6px; padding: 16px 24px; }
   .chatcard .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .chatcard .row b { font-size: 14px; font-weight: 700; transition: color 300ms var(--ease-brand); }
+  .chatcard .row b { font-size: 14px; font-weight: 700; transition: color 300ms var(--ease); }
   .chatcard:hover .row b { color: var(--accent); }
   .chatcard time { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .chatcard time.today { display: flex; align-items: center; gap: 6px; color: var(--accent); }
@@ -263,7 +263,7 @@
   <!-- 02 -->
   <section>
     <h2><span>02</span>글꼴과 공통 규격</h2>
-    <p class="desc">글꼴은 Wanted Sans Variable 하나예요. 제목은 800, 본문 400, 숫자는 항상 <code>tabular-nums</code>. 크기는 Tailwind 기본 단계만 써요.</p>
+    <p class="desc">글꼴은 Wanted Sans Variable 하나예요. 제목은 800, 본문 400, 숫자는 항상 <code>tabular-nums</code>. 크기는 <code>globals.css</code>의 <code>--text-*</code> 토큰만 써요.</p>
     <div class="sheet">
       <div class="type-row"><div><b>Display</b><small>48px(모바일 36px) · 800 · 행간 1 · -0.035em<br>배너 제목</small></div><div style="font-size:48px;font-weight:800;letter-spacing:-0.035em;line-height:1">써 보고, 남기고, <span style="color:var(--accent)">받고</span></div></div>
       <div class="type-row"><div><b>Headline</b><small>24px · 800 · 행간 32 · -0.03em<br>섹션 제목</small></div><div style="font-size:24px;font-weight:800;letter-spacing:-0.03em;line-height:1.333">구독 모집 · 전체 테스트</div></div>
@@ -274,7 +274,7 @@
       <div class="type-row"><div><b>Thumb Name</b><small>썸네일 폭의 15% · 800 · 행간 1.02 · -0.04em<br>활자 썸네일 이름</small></div><div style="font-size:32px;font-weight:800;letter-spacing:-0.04em;line-height:1.02">포트폴리오 빌더</div></div>
     </div>
     <div class="rules">
-      <div class="rule"><b>간격 (Tailwind 단계)</b>
+      <div class="rule"><b>간격 (<code>--space-*</code> 토큰, 4px 단계)</b>
         <div class="scale">
           <span><i style="height:4px"></i>4</span><span><i style="height:8px"></i>8</span><span><i style="height:12px"></i>12</span><span><i style="height:16px"></i>16</span><span><i style="height:24px"></i>24</span><span><i style="height:32px"></i>32</span><span><i style="height:40px"></i>40</span><span><i style="height:48px"></i>48</span><span><i style="height:80px"></i>80</span>
         </div>
@@ -285,7 +285,7 @@
         <p class="muted" style="margin-top:8px">버튼·칩·탭·검색창은 full · 배너·패널·썸네일은 16 · 메뉴 면은 12</p>
       </div>
       <div class="rule"><b>모션 · 깊이 · 겹침</b>
-        <p>이징 <code>--ease-brand</code> cubic-bezier(0.22, 1, 0.36, 1)</p>
+        <p>이징 <code>--ease</code> cubic-bezier(0.22, 1, 0.36, 1)</p>
         <p class="muted">상태 변화 300ms · 이동 500ms · 순차 등장 60ms 간격, 최대 340ms · reduced motion이면 1ms</p>
         <p class="muted" style="margin-top:6px">그림자 없음. 바탕 → 칩 → 패널 밝기 세 단계로 층을 나눠요. 겹침 <code>--z-popover 20 · --z-menu 30 · --z-header 40 · --z-skip 50</code></p>
       </div>
@@ -486,7 +486,7 @@
         <h3 class="do">이렇게 해요</h3>
         <ul>
           <li>색·모션 값은 <code>globals.css</code> 토큰으로만 써요</li>
-          <li>간격·글자 크기·모서리는 Tailwind 기본 단계를 써요</li>
+          <li>간격·글자 크기·모서리도 <code>globals.css</code> 토큰(<code>--space-*</code>·<code>--text-*</code>·<code>--radius-*</code>)으로 써요</li>
           <li>강조색은 주 버튼(채팅방의 보내기 포함), 내 말풍선, 로고의 moa, 추가 보상, 도장, 새로 생긴 것(오늘 온 대화), 포커스·고른 탭에만 써요</li>
           <li>강조는 굵기와 크기로 하고, 숫자는 <code>tabular-nums</code>를 써요</li>
           <li>모집 글에는 마감일·인원·보상을 같은 자리에 보여 줘요</li>

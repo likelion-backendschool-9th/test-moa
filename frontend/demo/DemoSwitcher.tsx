@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import styles from "./DemoSwitcher.module.css";
 
 type Option = { value: string; label: string };
 
@@ -35,14 +36,14 @@ export function DemoSwitcher({ role, data, personaOnly = false }: DemoSwitcherPr
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">
+    <div className={styles.root}>
       <span>시연용</span>
-      <label className="flex items-center gap-2">
+      <label className={styles.field}>
         역할
         <select
           defaultValue={role}
           onChange={(event) => update("demo-role", event.target.value)}
-          className="rounded-md bg-surface-strong px-2 py-1 text-text"
+          className={styles.select}
         >
           {ROLE_OPTIONS.filter((option) => !personaOnly || option.value === "tester" || option.value === "developer").map((option) => (
             <option key={option.value} value={option.value}>
@@ -51,12 +52,12 @@ export function DemoSwitcher({ role, data, personaOnly = false }: DemoSwitcherPr
           ))}
         </select>
       </label>
-      <label className="flex items-center gap-2">
+      <label className={styles.field2}>
         데이터
         <select
           defaultValue={data}
           onChange={(event) => update("demo-data", event.target.value)}
-          className="rounded-md bg-surface-strong px-2 py-1 text-text"
+          className={styles.select2}
         >
           {DATA_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>

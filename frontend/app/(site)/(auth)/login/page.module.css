@@ -1,0 +1,49 @@
+.loginSlotText {
+  text-align: center;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.loginSlotLink {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+}
+
+.demoAccounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-inline: var(--space-6);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+@media (min-width: 48rem) {
+  .demoAccounts {
+    padding-inline: var(--space-8);
+  }
+}
+
+.demoAccountsTitle {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.demoAccountsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.demoAccountsEmail {
+  color: var(--text);
+}
+
+.demoAccountsPassword {
+  font-weight: 600;
+  color: var(--text);
+}

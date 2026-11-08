@@ -1,0 +1,24 @@
+.accountLayout {
+  display: grid;
+  gap: var(--space-6);
+  padding-block: var(--space-8);
+}
+
+@media (min-width: 64rem) {
+  .accountLayout {
+    grid-template-columns: 12rem minmax(0,1fr);
+    gap: var(--space-10);
+  }
+}
+
+@media (min-width: 64rem) {
+  .accountLayoutAside {
+    position: sticky;
+    top: var(--space-24);
+    align-self: flex-start;
+  }
+}
+
+.accountLayoutChildren {
+  min-width: 0;
+}

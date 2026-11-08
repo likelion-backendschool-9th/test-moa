@@ -1,0 +1,192 @@
+.withdrawalProcessedNotice {
+  padding-inline: var(--space-6);
+  padding-block: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.withdrawalKey {
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .withdrawalKey:hover {
+    background-color: var(--surface-strong);
+  }
+}
+
+.box {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.nickname {
+  font-weight: 600;
+}
+
+.bank {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.box2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .box2 {
+    justify-content: flex-end;
+  }
+}
+
+.label {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.label2 {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.label3 {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.withdrawalListSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.withdrawalListSkeletonBox {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.withdrawalListSkeletonSkeleton {
+  height: 1.5rem;
+  width: 8rem;
+}
+
+.withdrawalListSkeletonSkeleton2 {
+  height: 1.25rem;
+  width: 5rem;
+}
+
+.withdrawalListSkeletonSkeleton3 {
+  height: 1.5rem;
+  width: 7rem;
+}
+
+.withdrawalModalSkeleton {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  background-color: var(--surface);
+  padding: var(--space-4);
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  backdrop-filter: blur(var(--blur-sm));
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .withdrawalModalSkeleton {
+    background-color: color-mix(in oklab, var(--surface) 80%, transparent);
+  }
+}
+
+@media (min-width: 48rem) {
+  .withdrawalModalSkeleton {
+    padding: var(--space-6);
+  }
+}
+
+.withdrawalModalSkeletonBox {
+  margin-block: var(--space-4);
+  width: 100%;
+  max-width: 48rem;
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface);
+  padding: var(--space-6);
+}
+
+@media (min-width: 48rem) {
+  .withdrawalModalSkeletonBox {
+    margin-block: auto;
+    padding: var(--space-8);
+  }
+}
+
+.withdrawalModalSkeletonBox2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.withdrawalModalSkeletonBox3 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.withdrawalModalSkeletonSkeleton {
+  height: 2rem;
+  width: 12rem;
+}
+
+.withdrawalModalSkeletonSkeleton2 {
+  height: 1.25rem;
+  width: 2.5rem;
+}
+
+.withdrawalModalSkeletonSkeleton3 {
+  height: 10rem;
+  width: 100%;
+}
+
+.withdrawalModalSkeletonSkeleton4 {
+  height: 7rem;
+  width: 100%;
+}

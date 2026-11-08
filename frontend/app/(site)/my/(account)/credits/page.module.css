@@ -1,0 +1,49 @@
+.creditsPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.creditsPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.credits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.creditsSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.creditsSkeletonSkeleton {
+  height: 1.5rem;
+  width: 5rem;
+}
+
+.creditsSkeletonSkeleton2 {
+  height: 2rem;
+  width: 10rem;
+}
+
+.creditsSkeletonSkeleton3 {
+  height: 4rem;
+  width: 100%;
+}
+
+.creditsSkeletonSkeleton4 {
+  height: 1.5rem;
+  width: 7rem;
+}
+
+.creditsSkeleton2 {
+  height: 2rem;
+  width: 100%;
+}

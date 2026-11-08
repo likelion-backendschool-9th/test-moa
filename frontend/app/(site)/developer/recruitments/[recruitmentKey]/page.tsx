@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { recruitmentManagePath } from "@/features/project/paths";
-import { Container } from "@/components/ui/Container";
-import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList";
-import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList";
-import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail";
+import { Container } from "@/components/ui/Container/Container";
+import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList/ApplicantList";
+import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList/FeedbackList";
+import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
 import {
   AnalyticsPanel,
   parseManageTab,
   RecruitmentSummary,
   RecruitmentTabs,
-} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage";
+} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage/RecruitmentManage";
 import {
   AiAnalysisPanel,
   AiAnalysisSkeleton,
-} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel";
+} from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel/AiAnalysisPanel";
 import { canSelectApplicants } from "@/features/recruitment/types";
 import { getAiAnalysis, getRecruitmentDetail } from "@/features/recruitment/api";
+import styles from "./page.module.css";
 
 /* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
 
@@ -26,7 +27,7 @@ type Props = PageProps<"/developer/recruitments/[recruitmentKey]">;
 
 export default function RecruitmentManagePage({ params, searchParams }: Props) {
   return (
-    <Container className="py-10">
+    <Container className={styles.recruitmentManagePage}>
       <Suspense fallback={<DetailSkeleton />}>
         <ManageSlot params={params} searchParams={searchParams} />
       </Suspense>
@@ -44,7 +45,7 @@ async function ManageSlot({ params, searchParams }: Props) {
   const current = parseManageTab(tab);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className={styles.manageSlot}>
       <RecruitmentSummary
         project={project}
         recruitment={recruitment}

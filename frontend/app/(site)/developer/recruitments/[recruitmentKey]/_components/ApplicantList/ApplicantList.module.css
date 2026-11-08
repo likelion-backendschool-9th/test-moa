@@ -1,0 +1,139 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.text {
+  font-weight: 700;
+}
+
+.text2 {
+  color: var(--text-muted);
+}
+
+.text3 {
+  color: var(--text-muted);
+}
+
+.box2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-2);
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-3);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+
+.button {
+  margin-left: auto;
+}
+
+.error {
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+:where(.list>:not(:last-child)) {
+  border-bottom-style: solid;
+  border-top-style: solid;
+  border-top-width: calc(1px * 0);
+  border-bottom-width: calc(1px * calc(1 - 0));
+  border-color: var(--line);
+}
+
+.root2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+}
+
+.input2 {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+
+.testerNickname {
+  min-width: 4rem;
+  font-weight: 700;
+}
+
+.label {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.link {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--text);
+  }
+}
+
+.label2 {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+}

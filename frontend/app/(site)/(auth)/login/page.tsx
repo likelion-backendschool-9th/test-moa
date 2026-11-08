@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { FormMessage } from "@/components/ui/FormField";
-import { AuthCard, AuthFormSkeleton, OrDivider } from "@/app/(site)/(auth)/_components/AuthCard";
-import { LoginForm } from "@/app/(site)/(auth)/login/_components/LoginForm";
-import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons";
+import { FormMessage } from "@/components/ui/FormField/FormField";
+import { AuthCard, AuthFormSkeleton, OrDivider } from "@/app/(site)/(auth)/_components/AuthCard/AuthCard";
+import { LoginForm } from "@/app/(site)/(auth)/login/_components/LoginForm/LoginForm";
+import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons/SocialButtons";
 import { OAUTH_ERRORS, type OAuthErrorKey } from "@/features/auth/oauth";
 import { withNext } from "@/features/auth/types";
 import { getDemoAccounts } from "@/features/member/api";
 import { isBackendAuth } from "@/lib/backend";
 import { safeNextPath } from "@/lib/next-path";
 import { getSession } from "@/features/session/session";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "로그인" };
 
@@ -49,9 +50,9 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
       <LoginForm next={next} />
       <OrDivider />
       <SocialButtons next={next} />
-      <p className="text-center text-sm text-text-muted">
+      <p className={styles.loginSlotText}>
         계정이 없나요?{" "}
-        <Link href={withNext("/signup", next)} className="font-semibold text-text underline underline-offset-4">
+        <Link href={withNext("/signup", next)} className={styles.loginSlotLink}>
           회원가입
         </Link>
       </p>
@@ -63,19 +64,19 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
 function DemoAccounts() {
   const { accounts, password } = getDemoAccounts();
   return (
-    <section aria-labelledby="demo-accounts-heading" className="flex flex-col gap-2 px-6 text-sm text-text-muted md:px-8">
-      <h2 id="demo-accounts-heading" className="font-semibold text-text">
+    <section aria-labelledby="demo-accounts-heading" className={styles.demoAccounts}>
+      <h2 id="demo-accounts-heading" className={styles.demoAccountsTitle}>
         시연 계정
       </h2>
-      <ul className="flex flex-col gap-1">
+      <ul className={styles.demoAccountsList}>
         {accounts.map((account) => (
           <li key={account.role}>
-            {ROLE_LABEL[account.role]} · <span className="text-text">{account.email}</span>
+            {ROLE_LABEL[account.role]} · <span className={styles.demoAccountsEmail}>{account.email}</span>
           </li>
         ))}
       </ul>
       <p>
-        비밀번호는 모두 <span className="font-semibold text-text">{password}</span>
+        비밀번호는 모두 <span className={styles.demoAccountsPassword}>{password}</span>
       </p>
     </section>
   );

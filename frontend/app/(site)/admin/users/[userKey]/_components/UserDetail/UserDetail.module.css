@@ -1,0 +1,196 @@
+.infoGrid {
+  display: grid;
+  column-gap: var(--space-6);
+  row-gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+@media (min-width: 40rem) {
+  .infoGrid {
+    grid-template-columns: 8rem minmax(0,1fr);
+  }
+}
+
+.userDetailView {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.userDetailViewLink {
+  align-self: flex-start;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .userDetailViewLink:hover {
+    color: var(--text);
+  }
+}
+
+.userDetailViewBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.userDetailViewBox2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.userDetailViewNickname {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.userDetailViewText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.userDetailViewText2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.panelTitle {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.infoLabel {
+  color: var(--text-muted);
+}
+
+.infoChildren {
+  font-weight: 600;
+}
+
+.activitySummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.activityGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.activityGroupTitle {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 800;
+}
+
+.activityGroupEmptyText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.reportRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reportRowsLink {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-3);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .reportRowsLink:hover {
+    background-color: var(--line);
+  }
+}
+
+@media (min-width: 40rem) {
+  .reportRowsLinkExtra {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+  }
+}
+
+.reportRowsLabel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.reportRowsRecruitmentName {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.reportRowsReason {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.reportRowsLabel2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reportRowsLabel3 {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.userDetailSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.userDetailSkeletonSkeleton {
+  height: 1.25rem;
+  width: 4rem;
+}
+
+.userDetailSkeletonSkeleton2 {
+  height: 2rem;
+  width: 10rem;
+}
+
+.userDetailSkeletonSkeleton3 {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.userDetailSkeletonSkeleton4 {
+  height: 6rem;
+  width: 100%;
+}

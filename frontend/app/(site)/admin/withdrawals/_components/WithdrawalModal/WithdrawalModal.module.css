@@ -1,0 +1,91 @@
+.root {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: 100%;
+  max-width: none;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-style: solid;
+  border-width: 0;
+  background-color: transparent;
+  padding: var(--space-4);
+  color: var(--text);
+}
+
+.root::backdrop {
+  background-color: var(--surface);
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  backdrop-filter: blur(var(--blur-sm));
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .root::backdrop {
+    background-color: color-mix(in oklab, var(--surface) 80%, transparent);
+  }
+}
+
+.root:is([open],:popover-open,:open) {
+  display: flex;
+}
+
+@media (min-width: 48rem) {
+  .root {
+    padding: var(--space-6);
+  }
+}
+
+.modalPanel {
+  margin-block: var(--space-4);
+  width: 100%;
+  max-width: 48rem;
+  animation: var(--animate-rise-in);
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface);
+  padding: var(--space-6);
+}
+
+@media (min-width: 48rem) {
+  .modalPanel {
+    margin-block: auto;
+    padding: var(--space-8);
+  }
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.box2 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.button {
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .button:hover {
+    color: var(--text);
+  }
+}

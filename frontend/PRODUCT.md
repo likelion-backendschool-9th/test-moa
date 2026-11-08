@@ -28,7 +28,7 @@ web
 
 ## Capabilities and Constraints
 - 첫 지원 대상은 접속 링크로 이용하는 웹서비스. 모바일 앱, 게임, API·라이브러리는 이후 확장 대상이다.
-- 스택: Next.js 16 (App Router, Cache Components), Tailwind CSS v4, TypeScript. 로그인과 API는 아직 목업이다.
+- 스택: Next.js 16 (App Router, Cache Components), CSS Modules, TypeScript. 로그인과 API는 아직 목업이다.
 - 라이트·다크 모드를 모두 지원하고 시스템 설정을 따른다.
 - 5명 팀이 페이지를 나눠 개발한다. 디자인 토큰과 공통 컴포넌트(`components/ui`)를 다른 페이지에서 그대로 재사용할 수 있어야 한다.
 - 페이지 URL은 `test-moa/docs/page-urls.md`를 따른다.

@@ -3,22 +3,23 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PARTICIPATIONS_PATH, participationsPath } from "@/features/participation/paths";
-import { Container } from "@/components/ui/Container";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Container } from "@/components/ui/Container/Container";
+import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import {
   getParticipationCounts,
   getParticipations,
   getParticipationSummary,
   getUpcomingDeadlines,
 } from "@/features/participation/api";
-import { DeadlinePanel, DeadlinePanelSkeleton } from "@/app/(site)/testers/recruitments/_components/DeadlinePanel";
-import { NoParticipations, ParticipationList } from "@/app/(site)/testers/recruitments/_components/ParticipationList";
-import { ParticipationSkeleton } from "@/app/(site)/testers/recruitments/_components/ParticipationSkeleton";
-import { ParticipationTabs } from "@/app/(site)/testers/recruitments/_components/ParticipationTabs";
+import { DeadlinePanel, DeadlinePanelSkeleton } from "@/app/(site)/testers/recruitments/_components/DeadlinePanel/DeadlinePanel";
+import { NoParticipations, ParticipationList } from "@/app/(site)/testers/recruitments/_components/ParticipationList/ParticipationList";
+import { ParticipationSkeleton } from "@/app/(site)/testers/recruitments/_components/ParticipationSkeleton/ParticipationSkeleton";
+import { ParticipationTabs } from "@/app/(site)/testers/recruitments/_components/ParticipationTabs/ParticipationTabs";
 import { parseParticipationTab, type ParticipationTab, type ParticipationView } from "@/features/participation/types";
 import { readParticipationView } from "@/features/participation/view-preference";
 import { formatCredits } from "@/lib/format";
 import { getSession } from "@/features/session/session";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "참여 테스트" };
 
@@ -27,20 +28,20 @@ type SearchParams = PageProps<"/testers/recruitments">["searchParams"];
 /* 제목과 탭은 데이터를 기다리지 않고, 요약·마감 일정·목록만 Suspense 안에서 스트리밍된다 */
 export default function ParticipationsPage({ searchParams }: PageProps<"/testers/recruitments">) {
   return (
-    <Container className="flex flex-col gap-8 pt-8">
+    <Container className={styles.participationsPage}>
       <Suspense fallback={null}>
         <LoginGate searchParams={searchParams} />
       </Suspense>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-[-0.03em]">참여 테스트</h1>
-        <Suspense fallback={<Skeleton className="h-5 w-64 max-w-full" />}>
+      <div className={styles.participationsPageBox}>
+        <h1 className={styles.participationsPageTitle}>참여 테스트</h1>
+        <Suspense fallback={<Skeleton className={styles.participationsPageSkeleton} />}>
           <SummarySlot />
         </Suspense>
       </div>
       <Suspense fallback={<DeadlinePanelSkeleton />}>
         <DeadlineSlot />
       </Suspense>
-      <div className="flex flex-col gap-6">
+      <div className={styles.participationsPageBox2}>
         <Suspense fallback={<ParticipationTabs />}>
           <TabsSlot searchParams={searchParams} />
         </Suspense>
@@ -65,9 +66,9 @@ async function LoginGate({ searchParams }: { searchParams: SearchParams }) {
 async function SummarySlot() {
   const summary = await getParticipationSummary();
   return (
-    <p className="text-sm text-text-muted">
-      제출할 피드백 <span className="font-semibold text-text tabular-nums">{summary.feedbackToSubmit}개</span> · 지급 대기{" "}
-      <span className="font-semibold text-text tabular-nums">{formatCredits(summary.payoutPendingCredits)}</span>
+    <p className={styles.summarySlot}>
+      제출할 피드백 <span className={styles.summarySlotLabel}>{summary.feedbackToSubmit}개</span> · 지급 대기{" "}
+      <span className={styles.summarySlotLabel2}>{formatCredits(summary.payoutPendingCredits)}</span>
     </p>
   );
 }

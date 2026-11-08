@@ -1,8 +1,6 @@
-@import "tailwindcss";
-
 /*
  * 디자인 토큰. 색·모션 값은 이 파일에서만 정의한다.
- * 컴포넌트에서는 hex나 임의 px 대신 아래 토큰과 Tailwind 기본 스케일을 쓴다.
+ * 부품의 .module.css는 hex나 임의 px 대신 아래 토큰을 쓴다(#160-R5).
  */
 :root {
   /* 라이트: 흰 교정지 위 진한 초록 재단 매트, 먹, 같은 초록 강조 */
@@ -45,12 +43,91 @@
   --hero-grid-major: rgb(255 255 255 / 0.2);
   --hero-muted: #ffffff;
   --hero-button-text: var(--brand-green);
+  /* 매트 위 글씨·도장, 반투명 칩 바탕, 매트 위 교정지 글씨 */
+  --hero-text: #ffffff;
+  --hero-chip: rgb(255 255 255 / 0.14);
+  --hero-paper-text: #1a1a1a;
+  /* 교정지·썸네일의 진한 초록 위 글씨. 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
+  --on-paper-accent: #ffffff;
 
   /* 겹침 순서. 숫자를 컴포넌트에 직접 쓰지 않는다 */
   --z-popover: 20;
   --z-menu: 30;
   --z-header: 40;
   --z-skip: 50;
+
+  /*
+   * 간격·글자·모서리·모션. 부품의 .module.css는 값 대신 이 토큰을 쓴다(#160-R5).
+   * 간격은 4px 단계이고 이름의 숫자가 단계다(--space-4 = 16px). 글자 크기마다 기본 줄 높이를 짝으로 둔다
+   */
+  --space-px: 1px;
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* 글자 크기와 그 크기의 기본 줄 높이 */
+  --text-xs: 0.75rem;
+  --text-xs-leading: calc(1 / 0.75);
+  --text-sm: 0.875rem;
+  --text-sm-leading: calc(1.25 / 0.875);
+  --text-base: 1rem;
+  --text-base-leading: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg-leading: calc(1.75 / 1.125);
+  --text-xl: 1.25rem;
+  --text-xl-leading: calc(1.75 / 1.25);
+  --text-2xl: 1.5rem;
+  --text-2xl-leading: calc(2 / 1.5);
+  --text-3xl: 1.875rem;
+  --text-3xl-leading: calc(2.25 / 1.875);
+  --text-4xl: 2.25rem;
+  --text-4xl-leading: calc(2.5 / 2.25);
+  --text-5xl: 3rem;
+  --text-5xl-leading: 1;
+
+  /* 글자 크기와 따로 정하는 줄 높이·자간 */
+  /* 홈 배너 제목. 좁은 화면은 화면 폭에 맞춰 줄이고, lg·xl에서 키운다 */
+  --text-hero: clamp(1.75rem, 9vw, 3rem);
+  --text-hero-lg: 3.25rem;
+  --text-hero-xl: 4rem;
+
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-relaxed: 1.625;
+  --tracking-tight: -0.025em;
+
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 2147483647px;
+
+  --blur-sm: 8px;
+  --blur-xl: 24px;
+
+  /* 모션. 애니메이션은 이름까지 토큰에 둔다. 모듈 안에 쓴 keyframes 이름은 지역 이름으로 바뀌기 때문이다 */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-150: 150ms;
+  --duration-300: 300ms;
+  --duration-500: 500ms;
+  --animate-rise-in: rise-in 500ms var(--ease) both;
+  --animate-heart-pop: heart-pop 500ms var(--ease) both;
+  --animate-soft-pulse: soft-pulse 2s var(--ease) infinite;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -80,100 +157,243 @@
   }
 }
 
-@theme inline {
-  --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
-  --color-surface-card: var(--surface-card);
-  --color-surface-strong: var(--surface-strong);
-  --color-line: var(--line);
-  --color-text: var(--text);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-brand-logo: var(--brand-logo);
-  --color-accent-soft: var(--accent-soft);
-  --color-on-accent: var(--on-accent);
-  --color-like: var(--like);
-  --color-like-soft: var(--like-soft);
-  --color-paid-start: var(--paid-start);
-  --color-paid-mid: var(--paid-mid);
-  --color-paid-end: var(--paid-end);
-  --color-paid-text: var(--paid-text);
-  --color-thumb: var(--thumb);
-  --color-on-thumb: var(--on-thumb);
-  --color-paper-accent: var(--paper-accent);
-  --color-mark: var(--mark);
-  --color-hero-mat: var(--hero-mat);
-  --font-sans: var(--font-wanted), system-ui, sans-serif;
-  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 /* 다크에서도 교정지·썸네일 위 체크·도장·배지는 밝히지 않고 진한 초록에 흰 글씨로 테마와 관계없이 같게 둔다. */
-.hero-paper,
+[data-hero-paper],
 [data-thumb] {
   --accent: var(--paper-accent);
-  /* 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
-  --on-accent: #ffffff;
-}
-
-/* 라이트의 흰 패널은 재단선으로 나누고, 홈 배너 격자는 CSS로 그려 SVG 패턴 ID 충돌을 피한다. */
-@media (prefers-color-scheme: light) {
-  .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg) {
-    outline: 1px solid var(--line);
-    outline-offset: -1px;
-  }
-
-  .bg-surface-muted:is(.rounded-2xl, .rounded-xl, .rounded-lg):focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-
-  .hero-banner {
-    background-color: var(--hero-mat);
-    background-image:
-      linear-gradient(to right, var(--hero-grid-major) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--hero-grid-major) 1px, transparent 1px),
-      linear-gradient(to right, var(--hero-grid-minor) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--hero-grid-minor) 1px, transparent 1px);
-    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
-    color: #ffffff;
-    --text: #ffffff;
-    --text-muted: var(--hero-muted);
-    --accent: #ffffff;
-    --on-accent: var(--hero-button-text);
-    --surface-strong: rgb(255 255 255 / 0.14);
-    --mark: #ffffff;
-  }
-
-  .hero-banner > svg { display: none; }
-
-  .hero-banner [data-thumb],
-  .hero-banner .hero-paper {
-    --text: #1a1a1a;
-    --accent: var(--hero-mat);
-    --on-accent: #ffffff;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .hero-banner { background-color: var(--surface-muted); }
-
-  /* 배너 주 버튼은 교정지·썸네일과 같은 진한 초록에 흰 글씨. 제목의 초록 글자는 남회색 위에서 읽히게 밝은 초록을 둔다 */
-  .hero-banner .hero-action {
-    --accent: var(--paper-accent);
-    --on-accent: #ffffff;
-  }
+  --on-accent: var(--on-paper-accent);
 }
 
 @layer base {
+  /* 브라우저 기본 스타일을 맞추는 리셋. #160 이전 전과 같은 값이다 */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+
+  html,
+  :host {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family: var(--font-wanted), system-ui, sans-serif;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  abbr:where([title]) {
+    text-decoration: underline dotted;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  b,
+  strong {
+    font-weight: bolder;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    font-size: 1em;
+  }
+
+  small {
+    font-size: 80%;
+  }
+
+  sub,
+  sup {
+    vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+  }
+
+  sub {
+    bottom: -0.25em;
+  }
+
+  sup {
+    top: -0.5em;
+  }
+
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  :-moz-focusring:where(:not(iframe)) {
+    outline: auto;
+  }
+
+  progress {
+    vertical-align: baseline;
+  }
+
+  summary {
+    display: list-item;
+  }
+
+  ol,
+  ul,
+  menu {
+    list-style: none;
+  }
+
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
+    vertical-align: middle;
+    display: block;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  button,
+  input,
+  select,
+  optgroup,
+  textarea,
+  ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: transparent;
+    border-radius: 0;
+  }
+
+  :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+
+  :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+
+  ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+
+  ::placeholder {
+    opacity: 1;
+  }
+
+  @supports (not (-webkit-appearance: -apple-pay-button)) or (contain-intrinsic-size: 1px) {
+    ::placeholder {
+      color: color-mix(in oklab, currentcolor 50%, transparent);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+  ::-webkit-datetime-edit {
+    display: inline-flex;
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  ::-webkit-datetime-edit-year-field,
+  ::-webkit-datetime-edit-month-field,
+  ::-webkit-datetime-edit-day-field,
+  ::-webkit-datetime-edit-hour-field,
+  ::-webkit-datetime-edit-minute-field,
+  ::-webkit-datetime-edit-second-field,
+  ::-webkit-datetime-edit-millisecond-field,
+  ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+  button,
+  input:where([type="button"], [type="reset"], [type="submit"]),
+  ::file-selector-button {
+    appearance: button;
+  }
+
+  ::-webkit-inner-spin-button,
+  ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+
+  /* 여기부터 프로젝트의 기본 스타일 */
   html {
     color-scheme: light dark;
     scroll-behavior: smooth;
   }
 
   body {
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-wanted), system-ui, sans-serif;
     word-break: keep-all;
   }
 
@@ -188,19 +408,19 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 
   /* 브라우저가 그리는 부분도 팔레트를 따른다 */
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-on-accent);
+    background: var(--accent);
+    color: var(--on-accent);
   }
 
   html {
-    caret-color: var(--color-accent);
-    scrollbar-color: var(--color-line) var(--color-surface);
+    caret-color: var(--accent);
+    scrollbar-color: var(--line) var(--surface);
   }
 
   a {
@@ -208,7 +428,7 @@
   }
 
   input::placeholder {
-    color: var(--color-text-muted);
+    color: var(--text-muted);
   }
 }
 
@@ -217,25 +437,6 @@
     opacity: 0;
     transform: translateY(8px);
   }
-}
-
-@utility animate-rise-in {
-  animation: rise-in 500ms var(--ease-brand) both;
-}
-
-/* 자식이 읽는 순서대로 60ms씩 늦게 등장한다. 전체는 400ms를 넘지 않는다 */
-@utility stagger-children {
-  & > :nth-child(2) { animation-delay: 60ms; }
-  & > :nth-child(3) { animation-delay: 120ms; }
-  & > :nth-child(4) { animation-delay: 180ms; }
-  & > :nth-child(5) { animation-delay: 240ms; }
-  & > :nth-child(6) { animation-delay: 300ms; }
-  & > :nth-child(n + 7) { animation-delay: 340ms; }
-}
-
-/* 유료 기능 그라데이션 바탕. 방향과 색은 --paid-gradient 토큰 하나에서만 바꾼다 */
-@utility bg-paid-gradient {
-  background-image: var(--paid-gradient);
 }
 
 /* 피드백 "유용해요"를 누르면 하트가 한 번 튀어 올랐다 자리를 잡는다 */
@@ -248,18 +449,10 @@
   }
 }
 
-@utility animate-heart-pop {
-  animation: heart-pop 500ms var(--ease-brand) both;
-}
-
 @keyframes soft-pulse {
   50% {
     opacity: 0.5;
   }
-}
-
-@utility animate-soft-pulse {
-  animation: soft-pulse 2s var(--ease-brand) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -272,64 +465,5 @@
 
   html {
     scroll-behavior: auto;
-  }
-}
-
-/*
- * 금액 폼의 선택 상자 (DESIGN.md The Money Field Rule).
- * appearance: base-select를 지원하는 브라우저(Chrome·Edge 135+)는 펼친 목록을 칸 바로 아래에 같은 너비·모서리로 붙인다.
- * 지원하지 않는 브라우저는 운영체제 기본 목록을 그대로 쓴다.
- */
-@layer components {
-  .select-field {
-    appearance: none;
-  }
-
-  @supports (appearance: base-select) {
-    .select-field,
-    .select-field::picker(select) {
-      appearance: base-select;
-    }
-
-    /* base-select는 선택값을 위쪽에 둔다. 높이 3rem 안에서 위아래 여백으로 가운데에 맞춘다 */
-    .select-field {
-      padding-block: 0.75rem;
-      line-height: 1.5rem;
-    }
-
-    .select-field::picker-icon {
-      display: none;
-    }
-
-    .select-field::picker(select) {
-      width: anchor-size(width);
-      margin-top: 0.25rem;
-      padding: 0.25rem;
-      border: 1px solid var(--line);
-      border-radius: 0.75rem;
-      background: var(--surface-muted);
-      color: var(--text);
-    }
-
-    .select-field option {
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-    }
-
-    .select-field option::checkmark {
-      display: none;
-    }
-
-    .select-field option:hover,
-    .select-field option:focus-visible {
-      background: var(--surface-strong);
-      outline: none;
-    }
-
-    .select-field option:checked {
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-weight: 700;
-    }
   }
 }

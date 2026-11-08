@@ -1,0 +1,48 @@
+.dialog {
+  margin: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--space-6);
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background-color: var(--text);
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .dialog::backdrop {
+    background-color: color-mix(in oklab, var(--text) 50%, transparent);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.reason {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.box {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

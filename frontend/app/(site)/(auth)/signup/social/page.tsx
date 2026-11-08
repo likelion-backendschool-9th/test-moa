@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { AuthCard, AuthFormSkeleton } from "@/app/(site)/(auth)/_components/AuthCard";
-import { SocialSignupForm } from "@/app/(site)/(auth)/signup/social/_components/SocialSignupForm";
+import { AuthCard, AuthFormSkeleton } from "@/app/(site)/(auth)/_components/AuthCard/AuthCard";
+import { SocialSignupForm } from "@/app/(site)/(auth)/signup/social/_components/SocialSignupForm/SocialSignupForm";
 import { readSignup } from "@/features/auth/oauth";
 import { isBackendAuth } from "@/lib/backend";
 import { safeNextPath } from "@/lib/next-path";

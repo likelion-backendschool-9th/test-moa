@@ -1,4 +1,4 @@
-// 목표 구조의 import 경계 규칙(B1~B7). frontend/eslint.config.mjs에 그대로 붙여 쓴다.
+// 목표 구조의 import 경계 규칙(B1~B8). frontend/eslint.config.mjs에 그대로 붙여 쓴다.
 //
 //   import { boundaries } from "./eslint-boundaries.mjs";   // 또는 이 배열을 config에 직접 넣는다
 //   export default defineConfig([...nextVitals, ...nextTs, ...boundaries, globalIgnores([...])]);
@@ -85,6 +85,10 @@ const baseBoundaries = {
 };
 
 const featuresPattern = R === "./src" ? "src/features" : "features";
+const srcPrefix = R === "./src" ? "src/" : "";
+
+/** 부품 폴더의 api.ts. 데이터 접근은 features/<도메인>/api.ts를 거친다(#160-R7) */
+const componentApi = [`${srcPrefix}app/**/_components/**/api.ts`, `${srcPrefix}components/**/api.ts`, `${featuresPattern}/*/components/**/api.ts`];
 
 export const boundaries = [
   baseBoundaries,
@@ -102,6 +106,24 @@ export const boundaries = [
               target: `${R}/features`,
               from: `${R}/demo`,
               message: "B4 시연 코드는 features/*/api.ts와 features/session/session.ts에서만 import한다",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: componentApi,
+    rules: {
+      "import/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            ...baseBoundaries.rules["import/no-restricted-paths"][1].zones,
+            {
+              target: [`${R}/app`, `${R}/components`, `${R}/features`],
+              from: [`${R}/demo`, `${R}/lib/backend.ts`, `${R}/lib/backend-http.ts`],
+              message: "B8 부품 폴더의 api.ts는 시연 코드와 백엔드 통신을 직접 부르지 않는다. features/<도메인>/api.ts를 거친다",
             },
           ],
         },

@@ -1,0 +1,68 @@
+.infoGrid {
+  display: grid;
+  column-gap: var(--space-6);
+  row-gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+@media (min-width: 40rem) {
+  .infoGrid {
+    grid-template-columns: 8rem minmax(0,1fr);
+  }
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.label {
+  font-variant-numeric: tabular-nums;
+}
+
+.title2 {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.label2 {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.infoLabel {
+  color: var(--text-muted);
+}
+
+.infoChildren {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.withdrawalResultTitle {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}

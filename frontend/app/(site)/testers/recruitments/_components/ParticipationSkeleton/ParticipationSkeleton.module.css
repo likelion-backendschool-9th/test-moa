@@ -1,0 +1,54 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+@media (min-width: 64rem) {
+  .rootNotGrid {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-6);
+  }
+}
+
+.skeleton {
+  aspect-ratio: 16/10;
+}
+
+.skeletonGrid {
+  width: 100%;
+}
+
+.skeletonNotGrid {
+  width: 12rem;
+  flex-shrink: 0;
+}
+
+.box {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeleton2 {
+  height: 1.25rem;
+  width: 66.6667%;
+}
+
+.skeleton3 {
+  height: 1.25rem;
+  width: 6rem;
+}
+
+.skeleton4 {
+  height: 1rem;
+  width: 50%;
+}
+
+.skeleton5 {
+  height: 2.25rem;
+  width: 7rem;
+}

@@ -1,0 +1,9 @@
+.recruitmentManagePage {
+  padding-block: var(--space-10);
+}
+
+.manageSlot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}

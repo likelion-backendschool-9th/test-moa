@@ -1,0 +1,88 @@
+.form {
+  display: flex;
+  max-width: 42rem;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.box {
+  display: flex;
+  width: 8rem;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.image {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-muted);
+  object-fit: cover;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-offset: -1px;
+  outline-color: var(--line);
+}
+
+.button {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .button:hover {
+    color: var(--text);
+  }
+}
+
+.box2 {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dialog {
+  margin: auto;
+  width: 100%;
+  max-width: 42rem;
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface);
+  padding: var(--space-6);
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background-color: var(--text);
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .dialog::backdrop {
+    background-color: color-mix(in oklab, var(--text) 50%, transparent);
+  }
+}
+
+.box3 {
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.card {
+  padding: var(--space-6);
+}

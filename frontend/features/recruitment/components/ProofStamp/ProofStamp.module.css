@@ -1,0 +1,72 @@
+.placementCorner {
+  position: absolute;
+  top: 7%;
+  right: 5%;
+  width: max(30%,4.5rem);
+  rotate: -8deg;
+}
+
+.placementBottomRight {
+  position: absolute;
+  right: 5%;
+  bottom: 7%;
+  width: max(45%,6rem);
+  rotate: -8deg;
+}
+
+.placementInline {
+  display: none;
+  width: 6rem;
+  flex-shrink: 0;
+  rotate: -6deg;
+}
+
+@media (min-width: 48rem) {
+  .placementInline {
+    display: block;
+  }
+}
+
+@media (min-width: 64rem) {
+  .placementInline {
+    width: 7rem;
+  }
+}
+
+.placementEdge {
+  position: absolute;
+  right: var(--space-3);
+  bottom: calc(var(--space-4) * -1);
+  width: 5rem;
+  rotate: -6deg;
+}
+
+@media (min-width: 48rem) {
+  .placementEdge {
+    display: none;
+  }
+}
+
+.root {
+  pointer-events: none;
+}
+
+.rect {
+  fill: var(--thumb);
+}
+
+.paper {
+  color: var(--paper-accent);
+  mix-blend-mode: normal;
+}
+
+.ink {
+  color: var(--accent);
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ink {
+    mix-blend-mode: normal;
+  }
+}

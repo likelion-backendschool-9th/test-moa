@@ -51,6 +51,17 @@ public class ReviewAnalysisController {
         return ApiResponse.ok(reviewAnalysisService.find(userId, recruitmentId));
     }
 
+    @Operation(summary = "분석 그룹 GitHub 이슈 등록", description = "로그인·구독 필요. 그룹의 이슈 초안을 프로젝트에 연결된 GitHub 레포에 이슈로 등록한다. "
+            + "이미 등록했거나 칭찬·미분류 그룹이거나 레포가 연결되지 않았으면 거절한다")
+    @PostMapping("/{recruitmentId}/analysis/groups/{groupId}/github-issue")
+    public ApiResponse<ReviewAnalysisResponse> registerIssue(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @PathVariable Long recruitmentId,
+            @PathVariable Long groupId
+    ) {
+        return ApiResponse.ok(reviewAnalysisService.registerIssue(userId, recruitmentId, groupId));
+    }
+
     @Operation(summary = "AI 분석 그룹 수정", description = "로그인·구독 필요. 그룹 이름·심각도·이슈 제목·내용 중 보낸 값만 바꾼다. "
             + "칭찬·미분류 그룹에는 심각도와 이슈 초안을 보낼 수 없다")
     @PatchMapping("/{recruitmentId}/analysis/groups/{groupId}")

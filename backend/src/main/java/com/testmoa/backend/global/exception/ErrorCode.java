@@ -45,6 +45,13 @@ public enum ErrorCode {
     ANALYSIS_IN_PROGRESS(HttpStatus.CONFLICT, "리뷰 분석이 진행 중이에요. 끝나면 다시 시도해 주세요"),
     ANALYSIS_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "이번 주에 쓸 수 있는 리뷰 분석을 모두 썼어요. 다음 주에 다시 써 주세요"),
 
+    // GitHub 이슈 등록
+    ISSUE_ALREADY_REGISTERED(HttpStatus.CONFLICT, "이미 등록했거나 등록 중인 이슈예요"),
+    GITHUB_REPO_NOT_LINKED(HttpStatus.CONFLICT, "프로젝트에 GitHub 레포가 연결되지 않았어요"),
+    GITHUB_AUTH_REQUIRED(HttpStatus.FAILED_DEPENDENCY, "GitHub 연결을 다시 해 주세요"),
+    GITHUB_REPO_UNAVAILABLE(HttpStatus.FAILED_DEPENDENCY, "GitHub 레포를 찾을 수 없거나 이슈를 만들 권한이 없어요. 레포 연결을 확인해 주세요"),
+    GITHUB_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "GitHub에 잠시 이슈를 등록할 수 없어요. 잠시 후 다시 시도해 주세요"),
+
     // AI 버전 비교
     NO_PREVIOUS_VERSION(HttpStatus.CONFLICT, "비교할 이전 버전이 없어요"),
     ANALYSIS_NOT_DONE(HttpStatus.CONFLICT, "두 버전의 리뷰 분석을 먼저 해 주세요"),

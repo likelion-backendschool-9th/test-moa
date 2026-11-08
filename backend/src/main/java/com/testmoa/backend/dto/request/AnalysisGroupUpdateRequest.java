@@ -19,6 +19,8 @@ public record AnalysisGroupUpdateRequest(
         @Max(value = 4, message = "심각도는 1~4 중에서 골라 주세요")
         Integer improvementRank,
 
+        // 보내면 비워 둘 수 없다(null은 그대로). 컬럼이 255자라 GitHub 제한(256자)보다 1자 짧다
+        @Pattern(regexp = "(?s).*\\S.*", message = "이슈 제목을 적어 주세요")
         @Size(max = 255, message = "이슈 제목은 255자까지 적을 수 있어요")
         String gitIssueTitle,
 

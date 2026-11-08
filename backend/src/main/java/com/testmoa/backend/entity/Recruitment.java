@@ -177,6 +177,20 @@ public class Recruitment {
     }
 
     /**
+     * 모집 정보 수정. 바꿀 수 있는 상태인지와 마감일 규칙은 서비스가 확인한다
+     */
+    public void edit(String title, String description, String accessUrl, String conditions, SelectionMode selectionMode,
+                     LocalDateTime recruitDeadline, LocalDateTime feedbackDeadline) {
+        this.title = title;
+        this.description = description;
+        this.accessUrl = accessUrl;
+        this.conditions = conditions;
+        this.selectionMode = selectionMode;
+        this.recruitDeadline = recruitDeadline;
+        this.feedbackDeadline = feedbackDeadline;
+    }
+
+    /**
      * 지금 진행 단계. 상태는 취소 여부만 저장하므로 모집 중·테스트 중·종료는 마감일로 계산한다(README 정한 것 11).
      * 저장 상태가 RECRUITING이 아니면(취소 말고는 지금 저장하는 값이 없다) 마감일과 상관없이 종료다. cancel()의 조건과 같다
      *

@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getProfile } from "@/features/member/api";
 import { PasswordForm } from "@/app/(site)/my/(account)/profile/edit/_components/PasswordForm/PasswordForm";
 import { ProfileForm } from "@/app/(site)/my/(account)/profile/edit/_components/ProfileForm/ProfileForm";
-import { SettingsCard, SettingsSection } from "@/app/(site)/my/(account)/_components/SettingsCard/SettingsCard";
+import { SettingsCard, SettingsSection } from "@/components/ui/SettingsCard/SettingsCard";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "개인정보 수정" };

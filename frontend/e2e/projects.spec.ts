@@ -281,8 +281,7 @@ test.describe("#62-R3 모집 취소", () => {
   test("#62-S17 확정 테스터가 있는 테스트 전 모집과 이미 취소한 모집은 취소할 수 없다", async ({ page }) => {
     for (const manage of [BOOKLOG_MANAGE, FOLIO_MANAGE]) {
       await page.goto(manage);
-      await expect(page.getByText("확정된 테스터가 있어 취소할 수 없어요")).toBeVisible();
-      await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "모집 취소", exact: true })).toBeDisabled();
     }
     await page.goto(FOLIO_OLD_MANAGE);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

@@ -14,6 +14,8 @@ export type Project = {
   description: string;
   /** 대표 이미지 (백엔드 project.image_url). 없으면 null이고 화면에는 기본 이미지가 나온다 */
   image: ProjectImage | null;
+  /** 연결한 GitHub 저장소 "owner/repo". 없으면 연결 전이다. AI 분석의 이슈 등록이 쓴다 */
+  repository?: string;
   createdAt: string;
 };
 

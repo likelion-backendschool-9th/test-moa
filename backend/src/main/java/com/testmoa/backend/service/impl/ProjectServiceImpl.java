@@ -2,6 +2,8 @@ package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
+import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
+import com.testmoa.backend.dto.request.TestItemsUpdateRequest;
 import com.testmoa.backend.dto.response.ProjectResponse;
 import com.testmoa.backend.dto.response.RecruitmentCreateResponse;
 import com.testmoa.backend.dto.response.RecruitmentSummaryResponse;
@@ -42,6 +44,8 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -167,8 +171,108 @@ public class ProjectServiceImpl implements ProjectService {
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());
         recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());
-        request.testItems().forEach(item -> saveTestItem(recruitment, item));
+        for (int index = 0; index < request.testItems().size(); index++) {
+            saveTestItem(recruitment, request.testItems().get(index), index);
+        }
         return new RecruitmentCreateResponse(recruitment.getId());
+    }
+
+    /**
+     * 모집 정보 수정. 보낸 값만 바꾸고 종료·취소한 모집은 409.
+     * 지원이 있으면 선정 방식을, 모집 마감이 지나면 모집 마감일을 바꿀 수 없고 마감일은 미루기만 한다
+     */
+    @Override
+    @Transactional
+    public void updateRecruitment(Long userId, Long recruitmentId, RecruitmentUpdateRequest request) {
+        Recruitment recruitment = findEditable(userId, recruitmentId);
+
+        SelectionMode selectionMode = request.selectionMode() == null ? recruitment.getSelectionMode() : selectionModeOf(request.selectionMode());
+        if (selectionMode != recruitment.getSelectionMode()) {
+            if (registerRepository.existsByRecruitmentId(recruitmentId)) throw invalid("selectionMode", "지원자가 있어 선정 방식을 바꿀 수 없어요");
+            if (selectionMode == SelectionMode.MANUAL && !recruitment.isSubscription()) {
+                throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
+            }
+        }
+
+        LocalDateTime recruitDeadline = recruitment.getRecruitDeadline();
+        if (request.recruitDeadline() != null && !request.recruitDeadline().equals(seoulDate(recruitDeadline))) {
+            if (recruitment.phaseAt(LocalDateTime.now()) != RecruitmentPhase.RECRUITING) throw invalid("recruitDeadline", "모집이 마감돼 바꿀 수 없어요");
+            if (request.recruitDeadline().isBefore(seoulDate(recruitDeadline))) throw invalid("recruitDeadline", "모집 마감일은 미루기만 할 수 있어요");
+            recruitDeadline = endOf(request.recruitDeadline());
+        }
+        LocalDateTime feedbackDeadline = recruitment.getFeedbackDeadline();
+        if (request.submitDeadline() != null && !request.submitDeadline().equals(seoulDate(feedbackDeadline))) {
+            if (request.submitDeadline().isBefore(seoulDate(feedbackDeadline))) throw invalid("submitDeadline", "제출 마감일은 미루기만 할 수 있어요");
+            feedbackDeadline = endOf(request.submitDeadline());
+        }
+        if (!feedbackDeadline.isAfter(recruitDeadline)) throw invalid("submitDeadline", "제출 마감일은 모집 마감일보다 뒤여야 해요");
+
+        recruitment.edit(
+                request.title() == null ? recruitment.getTitle() : request.title().trim(),
+                request.description() == null ? recruitment.getDescription() : request.description().trim(),
+                request.accessUrl() == null ? recruitment.getAccessUrl() : request.accessUrl().trim(),
+                request.conditions() == null ? recruitment.getConditions() : blankToNull(request.conditions()),
+                selectionMode, recruitDeadline, feedbackDeadline);
+        if (request.softwareTypes() != null) replaceTypes(recruitment, request.softwareTypes());
+    }
+
+    /**
+     * 테스트 항목을 보낸 순서대로 맞춘다. 빠진 항목은 이미지와 함께 지우고, id가 없는 항목은 새로 만든다.
+     * 다른 모집글의 항목 id는 400, 피드백이 달린 항목을 빼면 400
+     */
+    @Override
+    @Transactional
+    public void updateTestItems(Long userId, Long recruitmentId, TestItemsUpdateRequest request) {
+        Recruitment recruitment = findEditable(userId, recruitmentId);
+        Map<Long, TestItem> current = testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(recruitmentId).stream()
+                .collect(Collectors.toMap(TestItem::getId, item -> item));
+        List<Long> keptIds = request.testItems().stream().map(TestItemsUpdateRequest.Item::id).filter(Objects::nonNull).toList();
+        if (!current.keySet().containsAll(keptIds) || keptIds.size() != keptIds.stream().distinct().count()) {
+            throw invalid("testItems", "테스트 항목을 확인해 주세요");
+        }
+        List<Long> removedIds = current.keySet().stream().filter(id -> !keptIds.contains(id)).toList();
+        if (feedbackRepository.findTestItemIdsWithFeedback(recruitmentId).stream().anyMatch(removedIds::contains)) {
+            throw invalid("testItems", "피드백이 달린 항목은 지울 수 없어요");
+        }
+        testItemImageRepository.deleteByTestItemIdIn(removedIds);
+        testItemRepository.deleteAllById(removedIds);
+
+        for (int index = 0; index < request.testItems().size(); index++) {
+            TestItemsUpdateRequest.Item item = request.testItems().get(index);
+            String description = blankToNull(item.description());
+            if (item.id() == null) {
+                testItemRepository.save(TestItem.builder().recruitment(recruitment).title(item.title().trim())
+                        .description(description).required(item.required()).sortOrder(index).build());
+            } else {
+                current.get(item.id()).edit(item.title().trim(), description, item.required(), index);
+            }
+        }
+    }
+
+    // 내 모집글을 잠가 읽는다. 종료·취소한 모집은 바꿀 수 없다
+    private Recruitment findEditable(Long userId, Long recruitmentId) {
+        Recruitment recruitment = recruitmentRepository.findMineForUpdate(recruitmentId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        RecruitmentPhase phase = recruitment.phaseAt(LocalDateTime.now());
+        if (phase == RecruitmentPhase.CLOSED || phase == RecruitmentPhase.CANCELLED) {
+            throw new BusinessException(ErrorCode.RECRUITMENT_NOT_EDITABLE);
+        }
+        return recruitment;
+    }
+
+    // 고른 유형만 남긴다. 그대로인 유형은 두고 빠진 것은 지우고 새로 고른 것은 더한다
+    private void replaceTypes(Recruitment recruitment, List<String> softwareTypes) {
+        Set<TypeCode> chosen = softwareTypes.stream().map(value -> TypeCode.valueOf(value.toUpperCase())).collect(Collectors.toSet());
+        List<RecruitmentType> current = recruitmentTypeRepository.findByRecruitmentIdIn(List.of(recruitment.getId()));
+        recruitmentTypeRepository.deleteAll(current.stream().filter(item -> !chosen.contains(item.getType().getCode())).toList());
+        Set<TypeCode> kept = current.stream().map(item -> item.getType().getCode()).collect(Collectors.toSet());
+        chosen.stream().filter(code -> !kept.contains(code)).forEach(code ->
+                recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(code)).build()));
+    }
+
+    // 서버 시간대의 시각을 한국 날짜로 바꾼다. endOf의 반대
+    private LocalDate seoulDate(LocalDateTime dateTime) {
+        return dateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(SEOUL).toLocalDate();
     }
 
     private Project findOwned(Long userId, Long projectId) {
@@ -208,12 +312,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
-    private void saveTestItem(Recruitment recruitment, RecruitmentCreateRequest.TestItemRequest item) {
+    private void saveTestItem(Recruitment recruitment, RecruitmentCreateRequest.TestItemRequest item, int sortOrder) {
         TestItem testItem = testItemRepository.save(TestItem.builder()
                 .recruitment(recruitment)
                 .title(item.title().trim())
                 .description(blankToNull(item.description()))
                 .required(item.required())
+                .sortOrder(sortOrder)
                 .build());
         List<String> imageUrls = item.imageUrls() == null ? List.of() : item.imageUrls();
         for (int index = 0; index < imageUrls.size(); index++) {

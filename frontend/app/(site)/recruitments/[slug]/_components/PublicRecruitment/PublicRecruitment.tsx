@@ -57,7 +57,9 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
         <div className={styles.box}>
           <RecruitmentStatusBadge status={status} />
           {recruitment.extraReward !== undefined && <Badge tone="muted">추가 보상</Badge>}
-          <Badge tone="outline">{SOFTWARE_TYPE_LABEL[recruitment.softwareType]}</Badge>
+          {recruitment.softwareTypes.map((type) => (
+            <Badge key={type} tone="outline">{SOFTWARE_TYPE_LABEL[type]}</Badge>
+          ))}
         </div>
         <h1 className={styles.title}>{detail?.title || recruitment.request}</h1>
         {detail?.title && <p className={styles.request}>{recruitment.request}</p>}

@@ -1,8 +1,8 @@
+import type { ComponentProps } from "react";
 import { ArrowLeftIcon, ArrowUpRightIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { projectPath } from "@/features/project/paths";
 import { Badge } from "@/components/ui/Badge/Badge";
-import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
@@ -11,13 +11,10 @@ import {
   SELECTION_MODE_LABEL,
   type SelectionMode,
   type RecruitmentCancellation,
-  type RecruitmentDetail,
 } from "@/features/recruitment/types";
 import { type Project } from "@/features/project/types";
-import { CancelRecruitmentButton } from "../CancelRecruitmentButton/CancelRecruitmentButton";
-import { ExternalLink } from "../../../../_components/ProjectDetail/ProjectDetail";
+import { RecruitmentEdit } from "../RecruitmentEdit/RecruitmentEdit";
 import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge/RecruitmentStatusBadge";
-import { TestItemImages } from "@/features/recruitment/components/TestItemImages/TestItemImages";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./RecruitmentManage.module.css";
 
@@ -89,47 +86,17 @@ export function RecruitmentHeader({
   );
 }
 
-type InfoProps = {
-  recruitment: RecruitmentView;
+type InfoProps = ComponentProps<typeof RecruitmentEdit> & {
   analytics: RecruitmentAnalytics;
-  detail: RecruitmentDetail;
   cancellation: RecruitmentCancellation | null;
-  canCancel: boolean;
 };
 
-/** 모집 정보 탭: 요청 내용, 접속 링크, 숫자 요약, 모집 조건과 테스트 항목, 모집 취소 */
-export function RecruitmentInfoPanel({ recruitment, analytics, detail, cancellation, canCancel }: InfoProps) {
-  const beforeTest = recruitment.status === "recruiting";
-  const facts = [
-    ["확정 인원", `${recruitment.confirmedCount}명`],
-    ["지원", `${analytics.applicationCount}명`],
-    ["피드백 제출", `${analytics.feedbackCount}건`],
-    ["모집 마감", formatDate(recruitment.recruitDeadline)],
-    ["제출 마감", formatDate(recruitment.submitDeadline)],
-    ["유형", SOFTWARE_TYPE_LABEL[recruitment.softwareType]],
-    ["선정 방식", SELECTION_MODE_LABEL[detail.selectionMode]],
-  ];
+/** 모집 정보 탭: 취소 안내와 영역별 수정 */
+export function RecruitmentInfoPanel({ analytics, cancellation, ...editProps }: InfoProps) {
   return (
     <div className={styles.infoPanel}>
       {cancellation && <CancelStatus cancellation={cancellation} feedbackCount={analytics.feedbackCount} />}
-      {detail.title && <p className={styles.infoRequest}>{recruitment.request}</p>}
-      {detail.accessUrl && <ExternalLink href={detail.accessUrl}>{detail.accessUrl}</ExternalLink>}
-      <Card as="dl" className={styles.recruitmentSummaryList2}>
-        {facts.map(([term, value]) => (
-          <div key={term} className={styles.recruitmentSummary2}>
-            <dt className={styles.recruitmentSummaryTerm}>{term}</dt>
-            <dd className={styles.recruitmentSummaryValue}>{value}</dd>
-          </div>
-        ))}
-      </Card>
-      <RecruitmentDetailBox detail={detail} />
-      {/* 되돌리기 어려운 행동이라 맨 아래에 둔다 */}
-      {canCancel && (
-        <div className={styles.infoCancel}>
-          <CancelRecruitmentButton recruitmentKey={recruitment.slug} reasonRequired={recruitment.status === "testing"} />
-        </div>
-      )}
-      {beforeTest && !canCancel && <p className={styles.infoCancelNote}>확정된 테스터가 있어 취소할 수 없어요</p>}
+      <RecruitmentEdit {...editProps} />
     </div>
   );
 }
@@ -147,38 +114,6 @@ function CancelStatus({ cancellation, feedbackCount }: { cancellation: Recruitme
         {cancellation.reason && `취소 사유: ${cancellation.reason} · `}
         {formatDate(cancellation.cancelledAt)} 취소
       </p>
-    </Card>
-  );
-}
-
-/** 모집 조건과 테스트 항목. 길어질 수 있어 접어 두고 필요할 때 연다 */
-function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
-  return (
-    <Card as="details" className={styles.recruitmentDetailBox}>
-      <summary className={styles.recruitmentDetailBoxSummary}>모집 조건과 테스트 항목 {detail.testItems.length}개</summary>
-      <div className={styles.recruitmentDetailBoxBox}>
-        <div className={styles.recruitmentDetailBoxBox2}>
-          <p className={styles.recruitmentDetailBoxText}>모집 조건</p>
-          <p className={styles.recruitmentDetailBoxText2}>{detail.conditions || "따로 정한 조건이 없어요"}</p>
-        </div>
-        <div className={styles.recruitmentDetailBoxBox3}>
-          <p className={styles.recruitmentDetailBoxText3}>테스트 항목</p>
-          <ol className={styles.recruitmentDetailBoxList}>
-            {detail.testItems.map((item) => (
-              <li key={item.id}>
-                <span className={styles.recruitmentDetailBoxTitle}>{item.title}</span>
-                <Badge tone={item.required ? "neutral" : "outline"} className={styles.recruitmentDetailBoxBadge}>
-                  {item.required ? "필수" : "선택"}
-                </Badge>
-                {item.description && <span className={styles.recruitmentDetailBoxLabel}> · {item.description}</span>}
-                <div className={styles.recruitmentDetailBoxBox4}>
-                  <TestItemImages item={item} />
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div>
     </Card>
   );
 }

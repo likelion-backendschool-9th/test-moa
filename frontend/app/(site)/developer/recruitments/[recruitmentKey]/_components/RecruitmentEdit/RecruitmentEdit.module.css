@@ -1,0 +1,249 @@
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.label {
+  padding: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 빨간색 토큰이 따로 없어 좋아요 색을 쓴다. 다크 모드 값도 함께 바뀐다 */
+.required {
+  margin-left: var(--space-0-5);
+  color: var(--like);
+}
+
+.error {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* 읽기 전용일 때 한 번에 끄려고 감싼 묶음. 모양은 없다 */
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.control {
+  position: relative;
+}
+
+.control :disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* 글자 수·변경불가가 입력 글자와 겹치지 않게 자리를 비운다 */
+.withNoteRight {
+  padding-right: var(--space-20);
+}
+
+/* 한 줄에서 시작해 내용만큼 늘어난다(높이는 fitHeight가 맞춘다) */
+.grow {
+  /* 인라인이면 아래에 글줄 여백이 생겨 글자 수가 마지막 줄보다 내려간다 */
+  display: block;
+  resize: none;
+  overflow: hidden;
+}
+
+/*
+ * 마지막 글줄 오른쪽. 입력란 위아래 여백(space-3)이 같아서, 한 줄이면 가운데에 오고 줄이 늘면 마지막 줄을 따라 내려간다.
+ * 높이는 입력 글자 한 줄 높이다
+ */
+.note {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  height: calc(var(--text-base) * var(--text-base-leading));
+  pointer-events: none;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.note[data-locked] {
+  font-weight: 300;
+  color: var(--like);
+}
+
+.note[data-over] {
+  font-weight: 700;
+  color: var(--like);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text);
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.statusEnd {
+  margin-left: auto;
+}
+
+.dates {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .dates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.actions {
+  display: flex;
+}
+
+@media (min-width: 48rem) {
+  .actions {
+    justify-content: flex-end;
+  }
+}
+
+.save {
+  width: 100%;
+}
+
+@media (min-width: 48rem) {
+  .save {
+    width: auto;
+  }
+}
+
+.end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.add {
+  align-self: flex-start;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+
+.item[data-dragging] {
+  opacity: 0.5;
+}
+
+.itemBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.handle {
+  display: inline-flex;
+  color: var(--text-muted);
+  cursor: grab;
+}
+
+.itemNumber {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.itemTools {
+  display: flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+/* 수정 화면에서는 항목 이미지를 작은 썸네일로 줄인다. 누르면 크게 보는 동작은 그대로다 */
+.thumbs ul {
+  grid-template-columns: repeat(auto-fill, minmax(0, var(--space-24)));
+  gap: var(--space-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.projectImage {
+  width: 100%;
+  max-width: 16rem;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}

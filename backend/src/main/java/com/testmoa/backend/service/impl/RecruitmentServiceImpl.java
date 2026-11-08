@@ -75,9 +75,9 @@ public class RecruitmentServiceImpl implements RecruitmentService {
                 myRegisterStatus);
     }
 
-    // 항목은 저장 순서대로, 항목 이미지는 한 번에 읽어 항목별로 나눈다
+    // 항목은 화면 배치 순서대로, 항목 이미지는 한 번에 읽어 항목별로 나눈다
     private List<TestItemInfo> testItems(Long recruitmentId) {
-        List<TestItem> items = testItemRepository.findByRecruitmentIdOrderByIdAsc(recruitmentId);
+        List<TestItem> items = testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(recruitmentId);
         Map<Long, List<String>> images = testItemImageRepository
                 .findByTestItemIdInOrderBySortOrderAsc(items.stream().map(TestItem::getId).toList()).stream()
                 .collect(Collectors.groupingBy(image -> image.getTestItem().getId(),

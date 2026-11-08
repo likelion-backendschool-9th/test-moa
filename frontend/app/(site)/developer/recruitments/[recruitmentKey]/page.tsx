@@ -40,7 +40,7 @@ export default function RecruitmentManagePage({ params, searchParams }: Props) {
 async function ManageSlot({ params, searchParams }: Props) {
   const { recruitmentKey } = await params;
   const basePath = recruitmentManagePath(recruitmentKey);
-  const [{ project, recruitment, applications, feedbacks, analytics, detail, cancellation, canCancel }, { tab }] = await Promise.all([
+  const [{ project, recruitment, applications, feedbacks, analytics, detail, cancellation, canCancel, locks }, { tab }] = await Promise.all([
     getRecruitmentDetail(basePath, recruitmentKey),
     searchParams,
   ]);
@@ -59,6 +59,8 @@ async function ManageSlot({ params, searchParams }: Props) {
       </div>
       {current === "info" && (
         <RecruitmentInfoPanel
+          project={project}
+          locks={locks}
           recruitment={recruitment}
           analytics={analytics}
           detail={detail}

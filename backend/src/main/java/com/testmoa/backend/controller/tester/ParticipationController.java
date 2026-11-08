@@ -1,7 +1,9 @@
 package com.testmoa.backend.controller.tester;
 
 import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
+import com.testmoa.backend.dto.response.ParticipationListItemResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
+import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.ParticipationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,8 +17,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 테스터의 내 참여(#117, #118). 로그인이 필요하고 자기 참가만 본다. 역할별 기능이라 tester 패키지에 둔다(README 정한 것 15)
@@ -26,6 +31,26 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ParticipationController {
     private final ParticipationService participationService;
+
+    @Operation(summary = "내 참여 목록", description = "탭(applied 지원한, ongoing 참여 중, history 참여했던)의 참여. "
+            + "지원한·참여 중은 할 일 순서, 참여했던은 최근 순. 참여 취소는 참여했던 탭에 있다")
+    @GetMapping
+    public ApiResponse<List<ParticipationListItemResponse>> list(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                                                 @RequestParam(defaultValue = "ongoing") String tab) {
+        return ApiResponse.ok(participationService.list(userId, tab));
+    }
+
+    @Operation(summary = "내 참여 요약", description = "탭별 개수, 제출할 피드백 수, 지급 대기 크레딧")
+    @GetMapping("/summary")
+    public ApiResponse<ParticipationSummaryResponse> summary(@Parameter(hidden = true) @AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(participationService.summary(userId));
+    }
+
+    @Operation(summary = "내 마감 일정", description = "피드백 제출 전 참여를 제출 마감이 가까운 순서로. 마감 캘린더와 마감 임박 목록이 쓴다")
+    @GetMapping("/deadlines")
+    public ApiResponse<List<ParticipationListItemResponse>> deadlines(@Parameter(hidden = true) @AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(participationService.deadlines(userId));
+    }
 
     @Operation(summary = "내 참여 상세", description = "진행 상황, 테스트 정보, 테스트 항목, 제출한 피드백. 접속 링크는 확정된 참가에만 준다. 다른 회원의 참가는 404")
     @GetMapping("/{registerId}")

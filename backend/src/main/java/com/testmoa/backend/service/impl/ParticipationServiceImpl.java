@@ -1,6 +1,8 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
+import com.testmoa.backend.dto.response.ParticipationListItemResponse;
+import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse.FeedbackInfo;
 import com.testmoa.backend.dto.response.ParticipationResponse.RecruitmentInfo;
@@ -34,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -110,17 +113,31 @@ public class ParticipationServiceImpl implements ParticipationService {
 
     private ParticipationResponse toResponse(Register register, List<TestItem> testItems, List<Feedback> feedbacks, LocalDateTime now) {
         Recruitment recruitment = register.getRecruitment();
+        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitment.getId())
+                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
+        ParticipationListItemResponse item = toItem(register, feedbacks, softwareType, now);
+        boolean confirmed = register.getStatus() == RegisterStatus.CONFIRMED;
+
+        return new ParticipationResponse(
+                item.id(), item.status(), item.appliedAt(), item.confirmedAt(), item.submittedAt(), item.payoutAt(),
+                item.earnedCredits(), item.reward(), item.recruitment(),
+                confirmed ? recruitment.getAccessUrl() : null,
+                testItems.stream().map(testItem -> new TestItemInfo(testItem.getId(), testItem.getTitle(), testItem.getDescription(),
+                        testItem.isRequired())).toList(),
+                feedbacks.stream().map(feedback -> new FeedbackInfo(
+                        feedback.getTestItem() == null ? null : feedback.getTestItem().getId(), feedback.getContent())).toList());
+    }
+
+    // 상세와 목록이 함께 쓰는 참가 한 건의 값
+    private ParticipationListItemResponse toItem(Register register, List<Feedback> feedbacks, String softwareType, LocalDateTime now) {
+        Recruitment recruitment = register.getRecruitment();
         Project project = recruitment.getProject();
         String status = ParticipationStatuses.of(register, feedbacks, now);
-        boolean confirmed = register.getStatus() == RegisterStatus.CONFIRMED;
-        int reward = confirmed
+        int reward = register.getStatus() == RegisterStatus.CONFIRMED
                 ? register.getBaseRewardSnapshot() + register.getExtraRewardSnapshot()
                 : RewardPolicy.BASE_REWARD + RewardPolicy.EXTRA_REWARD;
         LocalDateTime submittedAt = feedbacks.stream().map(Feedback::getSubmittedAt).min(Comparator.naturalOrder()).orElse(null);
-        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitment.getId())
-                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
-
-        return new ParticipationResponse(
+        return new ParticipationListItemResponse(
                 register.getId(),
                 status,
                 register.getAppliedAt(),
@@ -132,11 +149,76 @@ public class ParticipationServiceImpl implements ParticipationService {
                 new RecruitmentInfo(recruitment.getId(), recruitment.getTitle(), recruitment.getDescription(), project.getTitle(),
                         project.getImageUrl(), RecruitmentNames.phase(recruitment.phaseAt(now)),
                         RecruitmentNames.selectionMode(recruitment.getSelectionMode()), softwareType, recruitment.isSubscription(),
-                        recruitment.getRecruitDeadline(), recruitment.getFeedbackDeadline()),
-                confirmed ? recruitment.getAccessUrl() : null,
-                testItems.stream().map(item -> new TestItemInfo(item.getId(), item.getTitle(), item.getDescription(), item.isRequired())).toList(),
-                feedbacks.stream().map(feedback -> new FeedbackInfo(
-                        feedback.getTestItem() == null ? null : feedback.getTestItem().getId(), feedback.getContent())).toList());
+                        recruitment.getRecruitDeadline(), recruitment.getFeedbackDeadline()));
+    }
+
+    @Override
+    public List<ParticipationListItemResponse> list(Long userId, String tab) {
+        List<String> order = ParticipationStatuses.TAB_STATUSES.get(tab);
+        if (order == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage(), Map.of("tab", "탭을 확인해 주세요"));
+        }
+        Comparator<Row> byDate = Comparator.comparing(Row::keyDate).thenComparing(row -> row.item().id());
+        Comparator<Row> sort = tab.equals("history")
+                ? byDate.reversed()
+                : Comparator.<Row>comparingInt(row -> order.indexOf(row.item().status())).thenComparing(byDate);
+        return rows(userId).stream().filter(row -> order.contains(row.item().status())).sorted(sort).map(Row::item).toList();
+    }
+
+    @Override
+    public ParticipationSummaryResponse summary(Long userId) {
+        List<ParticipationListItemResponse> items = rows(userId).stream().map(Row::item).toList();
+        Map<String, Long> counts = items.stream()
+                .collect(Collectors.groupingBy(item -> ParticipationStatuses.tabOf(item.status()), Collectors.counting()));
+        return new ParticipationSummaryResponse(
+                new ParticipationSummaryResponse.Counts(
+                        counts.getOrDefault("applied", 0L).intValue(),
+                        counts.getOrDefault("ongoing", 0L).intValue(),
+                        counts.getOrDefault("history", 0L).intValue()),
+                (int) items.stream().filter(item -> item.status().equals("beforeSubmit")).count(),
+                items.stream().filter(item -> item.status().equals("payoutPending")).mapToInt(ParticipationListItemResponse::reward).sum());
+    }
+
+    @Override
+    public List<ParticipationListItemResponse> deadlines(Long userId) {
+        return rows(userId).stream().map(Row::item)
+                .filter(item -> item.status().equals("beforeSubmit"))
+                .sorted(Comparator.comparing((ParticipationListItemResponse item) -> item.recruitment().submitDeadline())
+                        .thenComparing(ParticipationListItemResponse::id))
+                .toList();
+    }
+
+    /** 목록의 한 행과 정렬에 쓰는 날짜 */
+    private record Row(ParticipationListItemResponse item, LocalDateTime keyDate) {}
+
+    // 내 참가 전체. 피드백과 소프트웨어 유형은 참가 수와 상관없이 한 번씩 읽는다
+    private List<Row> rows(Long userId) {
+        List<Register> registers = registerRepository.findAllMine(userId);
+        if (registers.isEmpty()) return List.of();
+        LocalDateTime now = LocalDateTime.now();
+        Map<Long, List<Feedback>> feedbacks = feedbackRepository.findByRegisterIdIn(registers.stream().map(Register::getId).toList())
+                .stream().collect(Collectors.groupingBy(feedback -> feedback.getRegister().getId()));
+        Map<Long, String> softwareTypes = recruitmentTypeRepository
+                .findByRecruitmentIdIn(registers.stream().map(register -> register.getRecruitment().getId()).distinct().toList())
+                .stream().collect(Collectors.toMap(type -> type.getRecruitment().getId(),
+                        type -> RecruitmentNames.softwareType(type.getType().getCode()), (first, second) -> first));
+        return registers.stream().map(register -> {
+            ParticipationListItemResponse item = toItem(register, feedbacks.getOrDefault(register.getId(), List.of()),
+                    softwareTypes.get(register.getRecruitment().getId()), now);
+            return new Row(item, keyDateOf(item, register));
+        }).toList();
+    }
+
+    // 상태마다 행에 보이는 날짜(프론트 keyDateOf). 지급일·검토 완료일은 저장하지 않아 자동 지급 시각과 제출 시각을 쓴다
+    private static LocalDateTime keyDateOf(ParticipationListItemResponse item, Register register) {
+        return switch (item.status()) {
+            case "selectionPending", "notSelected" -> item.recruitment().recruitDeadline();
+            case "beforeSubmit", "incomplete" -> item.recruitment().submitDeadline();
+            case "payoutPending" -> item.payoutAt();
+            case "paid" -> item.submittedAt().plus(PAYOUT_WAIT);
+            case "underReview", "excluded" -> item.submittedAt();
+            default -> Objects.requireNonNullElse(register.getRecruitment().getCancelledAt(), item.appliedAt());
+        };
     }
 
     // 칸별 오류의 이름. 프론트가 항목 id로 칸을 찾는다

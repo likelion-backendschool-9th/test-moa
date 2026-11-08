@@ -16,7 +16,6 @@ import com.testmoa.backend.repository.PlanRepository;
 import com.testmoa.backend.repository.SubscriptionRepository;
 import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.service.SubscriptionService;
-import com.testmoa.backend.service.SubscriptionTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,10 +99,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         if (user.getRole() == Role.ADMIN) {
             return PayableCreditsResponse.notEligible();
         }
-        int payable = creditWalletRepository.findByUserId(userId)
+        return PayableCreditsResponse.of(payableOf(userId));
+    }
+
+    /** 결제 가능 크레딧(이벤트 + 적립, 출금 처리 중 제외). 지갑이 없으면 0 */
+    private int payableOf(Long userId) {
+        return creditWalletRepository.findByUserId(userId)
                 .map(CreditWallet::payable)
                 .orElse(0);
-        return PayableCreditsResponse.of(payable);
     }
 
     @Override
@@ -113,7 +116,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     /**
      * 기준 시각의 결제 화면 값. 이용 시작은 max(기준, ACTIVE 기간 중 가장 늦은 end_at)이고,
-     * 결제 실행(#71)이 쓸 규칙과 같다. 이용 끝은 {@link SubscriptionTime#endAt}(한국 날짜의 끝)이다. 운영자는 플랜을 찾지 않고 eligible=false만 돌려준다.
+     * 결제 실행(#71)이 쓸 규칙과 같다. 이용 끝은 시작 + periodDays일이다. 운영자는 플랜을 찾지 않고 eligible=false만 돌려준다.
      */
     CheckoutResponse checkoutAt(Long userId, Long planId, LocalDateTime now) {
         User user = requireUser(userId);
@@ -130,18 +133,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         LocalDateTime startAt = periods.stream()
                 .map(Subscription::getEndAt)
                 .max(LocalDateTime::compareTo)
-                .filter(latest -> latest.isAfter(now))
                 .orElse(now);
-        int payable = creditWalletRepository.findByUserId(userId)
-                .map(CreditWallet::payable)
-                .orElse(0);
+        int payable = payableOf(userId);
 
         return CheckoutResponse.of(
                 PlanResponse.of(plan),
                 payable,
                 status.active(),
                 status.endAt(),
-                new CheckoutResponse.Period(startAt, SubscriptionTime.endAt(startAt, plan.getPeriodDays()))
+                new CheckoutResponse.Period(startAt, startAt.plusDays(plan.getPeriodDays()))
         );
     }
 

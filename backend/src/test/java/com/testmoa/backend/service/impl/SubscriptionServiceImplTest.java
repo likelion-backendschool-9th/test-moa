@@ -23,10 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -230,12 +227,6 @@ class SubscriptionServiceImplTest {
 
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 25, 12, 0);
 
-    /** 한국 날짜의 23:59:59를 서버 시간대의 시각으로 바꾼 값(기대값) */
-    private static LocalDateTime endOfKoreanDay(int year, int month, int day) {
-        return LocalDate.of(year, month, day).atTime(LocalTime.of(23, 59, 59))
-                .atZone(ZoneId.of("Asia/Seoul")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
-    }
-
     private void walletHas(User user, int event, int earned) {
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         if (event > 0) {
@@ -270,7 +261,7 @@ class SubscriptionServiceImplTest {
         assertFalse(response.active());
         assertNull(response.currentEndAt());
         assertEquals(NOW, response.period().startAt());
-        assertEquals(endOfKoreanDay(2026, 12, 25), response.period().endAt());
+        assertEquals(NOW.plusDays(30), response.period().endAt());
     }
 
     @Test
@@ -331,7 +322,7 @@ class SubscriptionServiceImplTest {
         assertTrue(one.active());
         assertEquals(dec1, one.currentEndAt());
         assertEquals(dec1, one.period().startAt());
-        assertEquals(endOfKoreanDay(2026, 12, 31), one.period().endAt());
+        assertEquals(dec1.plusDays(30), one.period().endAt());
         assertEquals(dec31, two.currentEndAt());
         assertEquals(dec31, two.period().startAt());
     }
@@ -372,7 +363,7 @@ class SubscriptionServiceImplTest {
         assertFalse(response.active());
         assertNull(response.currentEndAt());
         assertEquals(dec31, response.period().startAt());
-        assertEquals(endOfKoreanDay(2027, 1, 30), response.period().endAt());
+        assertEquals(dec31.plusDays(30), response.period().endAt());
     }
 
     @Test

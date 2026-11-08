@@ -72,13 +72,13 @@ public class ParticipationServiceImpl implements ParticipationService {
         Map<Long, String> contents = contentsOf(request, testItems);
         String etc = trimToNull(request.etc());
 
-        /* 필수 항목이 비었으면 칸마다, 아무것도 적지 않았으면 첫 칸에 알린다 */
+        /* 필수 항목이 비었으면 칸마다, 아무것도 적지 않았으면 첫 칸에 알린다. 모집에는 항목이 늘 1개 이상 있다 */
         Map<String, String> errors = new LinkedHashMap<>();
         for (TestItem item : testItems) {
             if (item.isRequired() && contents.get(item.getId()) == null) errors.put(fieldOf(item.getId()), EMPTY_MESSAGE);
         }
         if (errors.isEmpty() && contents.values().stream().allMatch(Objects::isNull) && etc == null) {
-            errors.put(testItems.isEmpty() ? "etc" : fieldOf(testItems.get(0).getId()), EMPTY_MESSAGE);
+            errors.put(fieldOf(testItems.get(0).getId()), EMPTY_MESSAGE);
         }
         if (!errors.isEmpty()) throw new BusinessException(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage(), errors);
 
@@ -117,8 +117,8 @@ public class ParticipationServiceImpl implements ParticipationService {
                 ? register.getBaseRewardSnapshot() + register.getExtraRewardSnapshot()
                 : RewardPolicy.BASE_REWARD + RewardPolicy.EXTRA_REWARD;
         LocalDateTime submittedAt = feedbacks.stream().map(Feedback::getSubmittedAt).min(Comparator.naturalOrder()).orElse(null);
-        String softwareType = recruitmentTypeRepository.findByRecruitmentIdIn(List.of(recruitment.getId())).stream()
-                .findFirst().map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
+        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitment.getId())
+                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
 
         return new ParticipationResponse(
                 register.getId(),

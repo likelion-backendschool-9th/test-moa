@@ -3,8 +3,8 @@
 구독 개발자가 자기 모집 건에 확정된 테스터에게 채팅을 거는 API와, 모집·구독이 끝난 방을 읽기 전용으로 두는 규칙. 채팅 전체에서 정한 것과 데이터 구조는 [README.md](README.md)에 있고, 방 정보·채팅함 응답은 [messages.md](messages.md)(#49)와 [inbox.md](inbox.md)(#48)의 모양에 필드를 더한다. 보내기는 [messages.md](messages.md)의 `POST /api/v1/chats/{roomKey}/messages`다.
 
 ## 한눈에
-- 끝나면: 구독 중인 개발자가 `POST /api/v1/chats`에 `{"registerId": 12}`를 보내면 그 참가의 채팅방이 생기고 HTTP 201 `{"roomKey"}`를 받는다. 이미 방이 있으면 HTTP 200으로 그 방의 `roomKey`를 받는다. 방 정보와 채팅함의 방마다 `readOnly`가 오고, 읽기 전용 방에서는 개발자·테스터 모두 보내기가 HTTP 403 `CHAT_READ_ONLY`로 거절된다. 읽기 전용은 모집이 끝났거나(`Recruitment.phaseAt(now) == CLOSED`: 피드백 마감이 지났거나 모집 취소) 개발자의 구독이 끝난 방이다
-- 결정 필요: 없음 (Q1~Q3 11-08 답변: 개발자 구독 상태로 판단, 보내기 막기까지 #53, 끝난 기준은 `phaseAt == CLOSED`)
+- 끝나면: 구독 중인 개발자가 `POST /api/v1/chats`에 `{"registerId": 12}`를 보내면 그 참가의 채팅방이 생기고 HTTP 201 `{"roomKey"}`를 받는다. 이미 방이 있으면 HTTP 200으로 그 방의 `roomKey`를 받는다. 방 정보와 채팅함의 방마다 `readOnly`가 오고, 읽기 전용 방에서는 개발자·테스터 모두 보내기가 HTTP 403 `CHAT_READ_ONLY`로 거절된다. 읽기 전용은 모집이 끝났거나(`Recruitment.phaseAt(now)`가 `CLOSED`·`CANCELLED`: 피드백 마감이 지났거나 모집 취소) 개발자의 구독이 끝난 방이다
+- 결정 필요: 없음 (Q1~Q3 11-08 답변: 개발자 구독 상태로 판단, 보내기 막기까지 #53, 끝난 기준은 `phaseAt`의 `CLOSED`·`CANCELLED`)
 - 규모: 6단계(준비 1, 구현 4, 문서 1)
 
 ## 1. 채팅 걸기 (#53-R1)
@@ -91,7 +91,7 @@
 - Then  HTTP 401, `error.code` "UNAUTHORIZED"이다
 
 ## 3. 읽기 전용 표시 (#53-R3)
-방 정보와 채팅함의 방마다 `readOnly`가 온다. 모집 건의 `phaseAt(now)`가 `CLOSED`이거나 그 방 개발자의 구독이 끝났으면 true다. 두 참여자에게 같은 값이다.
+방 정보와 채팅함의 방마다 `readOnly`가 온다. 모집 건의 `phaseAt(now)`가 `CLOSED`·`CANCELLED`이거나 그 방 개발자의 구독이 끝났으면 true다. 두 참여자에게 같은 값이다.
 
 #53-S11 정상: 열린 방 [테스트]
 - Given #53-S1의 방 R(모집 건 `TESTING`, A 구독 중)이 있다
@@ -124,7 +124,7 @@
 #53-S14 정상: 읽기 전용 방의 다른 기능 [테스트]
 - Given #53-S13의 방 R
 - When  B가 메시지 조회, `{"seq": 2}` 읽음 처리, 이름 변경, 삭제를 차례로 한다
-- Then  모두 성공(200, 삭제는 204)이다
+- Then  모두 HTTP 200으로 성공한다 (고침 #53: 기존 삭제 API의 응답 유지)
 
 #53-S15 정상: 열린 방의 보내기는 그대로 [테스트: ChatControllerTest #49-S7]
 - 구독 중인 개발자의 `TESTING` 모집 건 방에서 보내기는 #49와 같다. #49의 테스트 준비에 구독과 마감일을 넣어 계속 통과시킨다
@@ -150,14 +150,14 @@
    - 확인: 같은 명령
 4. 읽기 전용 계산과 표시 — #53-S11, S12
    - 파일: `service/ChatReadOnlyPolicy.java`(새로 만듦, 읽기 전용 판단은 여기에만 둔다), `service/SubscriptionChecker.java`(`activeUserIds(Collection<Long>)`: `findActive`와 같은 조건으로 구독 중인 회원 id만), `repository/projection/ChatRoomEntry.java`·`ChatInboxEntry.java`(`developerId` 추가), `ChatParticipantRepository`의 두 조회(`project.user.id`), `dto/response/ChatRoomResponse.java`·`ChatInboxResponse.java`(`readOnly`)
-   - `ChatReadOnlyPolicy`: `isClosed(Recruitment, now)`는 `phaseAt(now) == CLOSED`, `isReadOnly(Recruitment, developerActive, now)`는 `isClosed || !developerActive`
+   - `ChatReadOnlyPolicy`: `isClosed(Recruitment, now)`는 `phaseAt(now)`가 `CLOSED` 또는 `CANCELLED`인지 본다(취소 단계가 별도인 현재 도메인에 맞춤, 11-08 승인), `isReadOnly(Recruitment, developerActive, now)`는 `isClosed || !developerActive`
    - 채팅함은 쿼리를 방마다 더 하지 않는다. 모집 건은 `recruitmentRepository.findAllById`로, 구독은 `activeUserIds`로 한 번씩 읽는다
    - 확인: `./gradlew test --tests '*ChatStartControllerTest*' --tests '*ChatInboxControllerTest*' --tests '*ChatControllerTest*'`
 5. 읽기 전용 방의 보내기 — #53-S13, S14, S15
    - 파일: `ChatServiceImpl.sendMessage`(방을 잠근 뒤, 메시지를 만들기 전에 `ChatReadOnlyPolicy`로 확인), 기존 채팅 테스트의 준비 데이터(개발자 구독, 모집 건 마감일이 미래)
    - 확인: `./gradlew test --tests '*Chat*'`
 6. 문서
-   - 파일: `docs/backend/chat/README.md` 정한 것에 "끝난 기준은 `phaseAt == CLOSED`, 읽기 전용은 보내기만 막고 `CHAT_READ_ONLY` 403" 한 줄을 더한다. `messages.md:128`과 `inbox.md:115`의 "#53"에 `(고침 #53: 끝난 기준 정함)`을 붙인다
+   - 파일: `docs/backend/chat/README.md` 정한 것에 "끝난 기준은 `phaseAt`의 `CLOSED`·`CANCELLED`, 읽기 전용은 보내기만 막고 `CHAT_READ_ONLY` 403" 한 줄을 더한다. `messages.md:128`과 `inbox.md:115`의 "#53"에 `(고침 #53: 끝난 기준 정함)`을 붙인다
    - 확인: 문서 링크가 열린다
 
 ## 가정
@@ -166,7 +166,7 @@
 - 테스터가 부르면 "내 모집 건이 아님"과 같은 404다
 - 끝난 모집 건과 읽기 전용 방의 보내기는 같은 `CHAT_READ_ONLY`(403, "대화가 끝난 방이라 메시지를 보낼 수 없어요")다. 화면은 이 코드로 입력창을 닫는다
 - 구독 판단은 `SubscriptionChecker`만 쓴다. `CANCELLED`를 만료일까지 이용으로 볼지 바뀌면 그 클래스만 고친다(그 클래스의 주석)
-- `phaseAt`의 `CLOSED`는 피드백 마감(한국 시간 그날 23:59:59, 프로젝트 README 정한 것 10)이 지났거나 저장 상태가 `RECRUITING`이 아닌 것이다. 저장값 `RecruitmentStatus.CLOSED`(모집 마감)는 쓰지 않는다
+- `phaseAt`은 취소 시 `CANCELLED`, 피드백 마감(한국 시간 그날 23:59:59, 프로젝트 README 정한 것 10)이 지났거나 저장 상태가 모집 중·취소가 아니면 `CLOSED`를 반환한다. `ChatReadOnlyPolicy`에서 두 단계를 모두 종료로 판단한다(11-08 승인). 저장값 `RecruitmentStatus.CLOSED`(모집 마감)는 직접 판단하지 않는다
 - 읽기 전용이어도 읽음 처리·이름 변경·삭제는 내 행만 바꾸므로 막지 않는다
 - 동시 요청은 `register_id` unique 제약을 믿고 위반을 잡는 대신 참가 행을 잠근다. Postgres는 제약 위반이 난 트랜잭션을 중단시켜 같은 트랜잭션에서 다시 조회할 수 없다([entities.md](entities.md))
 - `RegisterRepository`는 프로젝트 담당 파일이다. 잠금 조회 메서드 하나만 더하고 기존 메서드는 바꾸지 않는다
@@ -175,6 +175,6 @@
 - 기획 4장 "채팅·노출·구독 만료": 구독 개발자와 선정된 테스터만, 선정 후 시작, 만료 뒤 기록 조회 가능, 메시지 전송은 구독 중에만 (`project-lion/.scratch/tester-platform-planning/spec.md`)
 - 채팅 README 정한 것: "모집이 끝나거나 구독이 끝난 방은 읽기 전용(#53, 11-04)", "거는 시점에 개발자가 구독 중이고 `Register`가 `CONFIRMED`(#53, 11-05)"
 - `messages.md:128`: `RecruitmentStatus.CLOSED`로 막으면 테스트 중 대화가 막혀서 끝나는 기준을 #53에서 정하기로 함
-- `Recruitment.phaseAt(now)`(develop, #113): 저장 상태가 `RECRUITING`이 아니면 `CLOSED`, 모집 마감 전 `RECRUITING`, 피드백 마감 전 `TESTING`, 그 뒤 `CLOSED`
+- `Recruitment.phaseAt(now)`(develop, #113): 취소는 `CANCELLED`, 나머지 저장 상태가 `RECRUITING`이 아니면 `CLOSED`, 모집 마감 전 `RECRUITING`, 피드백 마감 전 `TESTING`, 그 뒤 `CLOSED`
 - `SubscriptionChecker.require`: 구독 중이 아니면 403 `SUBSCRIPTION_REQUIRED`
 - `ChatRoom` 생성자가 개발자(`recruitment.project.user`)와 테스터 참여자를 함께 만들고, "구독·선정 확인은 호출하는 쪽에서" 한다

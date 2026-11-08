@@ -38,6 +38,35 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
     private final ApplicationEventPublisher events;
+    private final com.testmoa.backend.repository.RegisterRepository registerRepository;
+    private final com.testmoa.backend.service.SubscriptionChecker subscriptionChecker;
+    private final com.testmoa.backend.service.ChatReadOnlyPolicy readOnlyPolicy;
+
+    @Override
+    @Transactional
+    public StartResult startChat(Long userId, Long registerId) {
+        // 참가 행을 잠근 뒤 방을 조회해야 동시 요청도 기존 방을 반환한다.
+        var register = registerRepository.findLockedById(registerId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        var recruitment = register.getRecruitment();
+        if (!recruitment.getProject().getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        var existing = roomRepository.findByRegisterId(registerId);
+        if (existing.isPresent()) {
+            return new StartResult(new com.testmoa.backend.dto.response.ChatStartResponse(existing.get().getRoomKey()), false);
+        }
+        if (register.getStatus() != com.testmoa.backend.entity.enums.RegisterStatus.CONFIRMED) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        subscriptionChecker.require(userId);
+        if (readOnlyPolicy.isClosed(recruitment, java.time.LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.CHAT_READ_ONLY);
+        }
+        var room = roomRepository.save(com.testmoa.backend.entity.ChatRoom.builder().register(register).build());
+        return new StartResult(new com.testmoa.backend.dto.response.ChatStartResponse(room.getRoomKey()), true);
+    }
+
 
     @Override
     public ChatInboxResponse getInbox(Long userId, ChatInboxQuery query) {

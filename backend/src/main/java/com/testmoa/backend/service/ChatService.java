@@ -9,6 +9,9 @@ import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 
 public interface ChatService {
+    record StartResult(com.testmoa.backend.dto.response.ChatStartResponse response, boolean created) {}
+    StartResult startChat(Long userId, Long registerId);
+
     ChatUnreadResponse getUnread(Long userId);
     ChatReadResponse markRead(String roomKey, Long userId, long seq);
     ChatInboxResponse getInbox(Long userId, ChatInboxQuery query);

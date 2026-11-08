@@ -34,6 +34,7 @@ public enum ErrorCode {
     LAST_LOGIN_METHOD(HttpStatus.CONFLICT, "마지막 로그인 방법은 해제할 수 없어요"),
 
     // 구독
+    CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
     DUPLICATE_PAYMENT(HttpStatus.CONFLICT, "방금 결제했어요. 잠시 후 다시 시도해 주세요"),
     INSUFFICIENT_CREDIT(HttpStatus.CONFLICT, "쓸 수 있는 크레딧이 부족해요"),

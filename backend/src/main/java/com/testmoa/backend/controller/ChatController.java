@@ -24,6 +24,15 @@ import org.springframework.web.bind.annotation.*;
 public class ChatController {
     private final ChatService chatService;
 
+    @PostMapping
+    public org.springframework.http.ResponseEntity<ApiResponse<com.testmoa.backend.dto.response.ChatStartResponse>> startChat(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody com.testmoa.backend.dto.request.ChatStartRequest request) {
+        var result = chatService.startChat(userId, request.registerId());
+        return org.springframework.http.ResponseEntity.status(result.created() ? 201 : 200)
+                .body(ApiResponse.ok(result.response()));
+    }
+
     @GetMapping
     public ApiResponse<ChatInboxResponse> getInbox(@AuthenticationPrincipal Long userId,
                                                    @ModelAttribute ChatInboxQuery query) {

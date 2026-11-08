@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RegisterRepository extends JpaRepository<Register, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from registers r join fetch r.recruitment recruitment join fetch recruitment.project where r.id = :id")
+    Optional<Register> findLockedById(@Param("id") Long id);
+
     // 모집글별 상태가 같은 참가 수. 참가가 없는 모집글은 결과에 없다
     @Query("select r.recruitment.id as recruitmentId, count(r) as count from registers r "
             + "where r.recruitment.id in :recruitmentIds and r.status = :status group by r.recruitment.id")

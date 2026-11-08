@@ -20,7 +20,7 @@
 | --- | --- | --- | --- |
 | 모집 취소 | `POST /api/v1/developer/recruitments/{recruitmentId}/cancel` | 필요 | 200 |
 
-본문은 `{"reason": "…"}`이고 생략할 수 있다. 사유는 300자까지다.
+본문은 `{"reason": "…"}`이고 생략할 수 있다. 사유는 300자까지다. 길이는 앞뒤 공백을 지우기 전 문자열로 재고, 사유를 저장하지 않는 모집 중에도 검사한다(요청 값 검사가 상태보다 먼저라서).
 
 | 모집 상태(마감일로 계산) | 취소 | 사유 |
 | --- | --- | --- |
@@ -30,7 +30,8 @@
 
 - 선착순 예외: 선착순은 지원하자마자 확정되어 "확정 테스터가 없을 때만" 규칙으로는 첫 지원 뒤 취소할 수 없다. 11-07 팀 채팅에서 선착순은 예외로 두기로 했다([README 정한 것 13](README.md#정한-것)). 다른 의견이 나오면 이 줄만 바꾼다
 - 테스터 처리: 대기(`APPLIED`) 지원과 피드백을 하나도 내지 않은 확정(`CONFIRMED`) 참가는 참여 취소(`CANCELLED`)가 된다. 피드백을 낸 확정 참가는 그대로 남아 72시간 신고 규칙대로 보상을 받는다. 거절(`REJECTED`)은 그대로 둔다
-- 같은 모집에 취소와 지원(#114)이 겹치지 않게 모집글 행을 잠그고(`PESSIMISTIC_WRITE`) 판단한다. 지원 API도 같은 잠금으로 모집글을 읽어야 한다
+- 같은 모집에 취소와 지원(#114)이 겹치지 않게 모집글 행을 잠그고(`PESSIMISTIC_WRITE`) 판단한다. 잠그는 쿼리가 주인 조건까지 보므로 다른 회원의 모집은 잠그지 않고 404다. 지원 API도 같은 잠금으로 모집글을 읽어야 한다
+- 저장 상태가 `RECRUITING`이 아니면(취소, 나중에 `CLOSED`를 저장하게 되면 그것도) 마감일과 상관없이 종료로 보고 409다. 엔티티 `cancel()`의 조건과 같다
 - 응답: `id`, `status`(`cancelled`), `cancelReason`(테스트 전 취소는 null), `cancelledAt`, `cancelledRegisterCount`(참여 취소가 된 수), `keptRegisterCount`(확정으로 남은 수)
 - 프로젝트의 모집 건 목록(`GET /api/v1/developer/projects/{projectId}/recruitments`, #92) 항목에 `cancelReason`, `cancelledAt`을 더했다. 취소하지 않은 모집은 둘 다 null이다
 - 취소된 모집은 공개 목록(#112)과 공개 상세(#113, 404)에 나오지 않는다. 그 확인은 각 이슈의 테스트가 한다
@@ -73,6 +74,8 @@
 - Given 방금 취소한 모집
 - When  다시 취소한다
 - Then  409이고 처음 취소 시각이 그대로다
+- Given 저장 상태가 `CLOSED`이고 마감일이 남은 모집(지금은 저장하는 코드가 없다)
+- Then  500이 아니라 409다
 
 #116-S6 남의 모집, 비로그인, 긴 사유 [테스트]
 - Then  다른 회원의 모집, 없는 모집은 404, 토큰이 없으면 401, 301자 사유는 400(`error.fields.reason`)이고 모집은 그대로다
@@ -83,7 +86,7 @@
 - Then  그 항목의 `status`가 `cancelled`이고 `cancelReason`, `cancelledAt`이 있다
 
 ## 범위 밖
-- 프론트 연결(`saveRecruitmentCancellation`, `findCancellation` 본문 바꾸기). 화면의 #62-S17은 지금 선착순 모집(`folio-builder`)도 취소할 수 없다고 안내하므로, 연결할 때 선착순 예외에 맞춰 함께 고친다
+- 프론트 연결(`saveRecruitmentCancellation`, `findCancellation` 본문 바꾸기). 화면의 #62-S17은 지금 선착순 모집(`folio-builder`)도 취소할 수 없다고 안내하므로, 연결할 때 선착순 예외에 맞춰 화면과 [프로젝트 화면 문서](../../frontend/project/projects.md)의 "정해야 할 것"을 함께 고친다. 모집 관리 상세 화면을 다른 작업이 고치고 있어 이 PR에서는 프론트 문서를 건드리지 않는다
 - 모집 건 상세의 취소 정보(#115에서 같은 값을 준다)
 - 취소된 참여의 테스터 알림
 

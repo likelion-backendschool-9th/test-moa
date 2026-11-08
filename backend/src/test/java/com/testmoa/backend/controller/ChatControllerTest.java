@@ -87,7 +87,7 @@ class ChatControllerTest {
         assertThat(testerSide.getLastReadSeq()).isZero();
     }
     @Test @DisplayName("#49-S2 개발자 이름 변경은 본인에게만 보인다")
-    void customName() throws Exception {
+    void customRoomName() throws Exception {
         developerSide.rename("결제 테스트");
         call(get(url()), developer).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roomName").value("결제 테스트"))
@@ -174,7 +174,7 @@ class ChatControllerTest {
         reload();
         var saved = em.find(ChatParticipant.class, developerSide.getId());
         assertThat(saved.isHidden()).isFalse();
-        assertThat(saved.getCustomName()).isEqualTo("결제 테스트");
+        assertThat(saved.getCustomRoomName()).isEqualTo("결제 테스트");
         assertThat(saved.getLastReadSeq()).isEqualTo(2);
         call(get(url()), developer).andExpect(status().isOk());
         call(get(url() + "/messages"), developer).andExpect(status().isOk())

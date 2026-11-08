@@ -5,8 +5,11 @@ import { setDemo } from "./helpers";
 
 const BOOKLOG = "/developer/projects/booklog";
 const BOOKLOG_MANAGE = "/developer/recruitments/booklog";
+/* 모집 관리의 기본 탭은 모집 정보라 지원자 목록은 테스터 관리 탭에서 본다 */
+const BOOKLOG_TESTERS = `${BOOKLOG_MANAGE}?tab=testers`;
 /* 모집이 끝나고 테스트 중인 지난 모집. 피드백·AI 분석이 있다 */
 const FIRST_MANAGE = "/developer/recruitments/booklog-first";
+const FIRST_TESTERS = `${FIRST_MANAGE}?tab=testers`;
 const FOLIO_MANAGE = "/developer/recruitments/folio-builder";
 /* 개발자가 취소한 지난 무료 모집 */
 const FOLIO_OLD_MANAGE = "/developer/recruitments/folio-builder-old";
@@ -133,7 +136,7 @@ test.describe("R107 테스터 관리 탭", () => {
   });
 
   test("S521 여러 명을 골라 한 번에 확정한다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
+    await page.goto(BOOKLOG_TESTERS);
     const bulkButton = page.getByRole("button", { name: /^선택한 \d+명 확정$/ });
     await expect(bulkButton).toHaveText("선택한 0명 확정");
     await expect(bulkButton).toBeDisabled();
@@ -154,9 +157,9 @@ test.describe("R107 테스터 관리 탭", () => {
   });
 
   test("S526 확정 요청이 끊기면 안내를 보여 주고 서버 목록으로 화면을 맞춘다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
+    await page.goto(BOOKLOG_TESTERS);
     /* 확정 요청(서버 액션 POST)만 끊는다. 화면을 다시 불러오는 GET은 통과한다 */
-    await page.route(`**${BOOKLOG_MANAGE}`, (route) => (route.request().method() === "POST" ? route.abort() : route.fallback()));
+    await page.route((url) => url.pathname === BOOKLOG_MANAGE, (route) => (route.request().method() === "POST" ? route.abort() : route.fallback()));
     const refetch = page.waitForRequest((request) => request.method() === "GET" && request.headers()["rsc"] === "1" && !request.headers()["next-router-prefetch"]);
     await page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true }).click();
 
@@ -169,11 +172,11 @@ test.describe("R107 테스터 관리 탭", () => {
   });
 
   test("S525 모집이 끝난 모집은 서버도 확정·거절을 저장하지 않는다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
+    await page.goto(BOOKLOG_TESTERS);
     /*
      * 화면으로는 보낼 수 없는 요청을 만든다: 북로그 확정 요청을 모집이 끝난 1차 모집의 대기 지원자(조하은) 거절로 바꾼다.
      */
-    await page.route(`**${BOOKLOG_MANAGE}`, async (route) => {
+    await page.route((url) => url.pathname === BOOKLOG_MANAGE, async (route) => {
       const request = route.request();
       if (request.method() !== "POST") return route.fallback();
       const body = request.postData() ?? "";
@@ -184,19 +187,19 @@ test.describe("R107 테스터 관리 탭", () => {
     await page.getByTestId("applicant").filter({ hasText: "권나연" }).getByRole("button", { name: "확정", exact: true }).click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText("확정하지 못했어요");
 
-    await page.goto(FIRST_MANAGE);
+    await page.goto(FIRST_TESTERS);
     await expect(page.getByTestId("applicant").filter({ hasText: "조하은" }).getByText("지원", { exact: true })).toBeVisible();
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명");
   });
 
   test("S525 확정 결과는 요약·분석·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {
-    await page.goto(BOOKLOG_MANAGE);
+    await page.goto(BOOKLOG_TESTERS);
     await page.getByRole("checkbox", { name: "전체 선택" }).check();
     await page.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
     await page.getByRole("button", { name: "선택한 7명 확정" }).click();
     const summaryValue = (term: string) =>
       page.locator("dl div").filter({ has: page.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) }) }).getByRole("definition");
-    await expect(summaryValue("확정 인원")).toHaveText("20명");
+    await expect(page.getByRole("main").getByText(/^확정 20명 · /)).toBeVisible();
     await expect(page.getByRole("main").getByText("모집 중", { exact: true })).toBeVisible();
 
     await page.reload();
@@ -302,6 +305,7 @@ test.describe("#62-R3 모집 취소", () => {
     await expect(status).toContainText("취소 사유: 심각한 장애로 테스트를 이어갈 수 없어요");
 
     /* 피드백을 낸 4명은 확정으로 남고, 안 낸 윤슬과 대기 지원자는 참여 취소다 */
+    await page.goto(FIRST_TESTERS);
     await expect(page.getByTestId("applicant").filter({ hasText: "김하늘" })).toContainText("확정");
     await expect(page.getByTestId("applicant").filter({ hasText: "윤슬" })).toContainText("참여 취소");
     await expect(page.getByTestId("applicant").filter({ hasText: "참여 취소" })).toHaveCount(3);

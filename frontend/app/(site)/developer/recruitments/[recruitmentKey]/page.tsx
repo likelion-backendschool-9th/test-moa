@@ -5,10 +5,12 @@ import { Container } from "@/components/ui/Container/Container";
 import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList/ApplicantList";
 import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList/FeedbackList";
 import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
+import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import {
   AnalyticsPanel,
   parseManageTab,
-  RecruitmentSummary,
+  RecruitmentHeader,
+  RecruitmentInfoPanel,
   RecruitmentTabs,
 } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/RecruitmentManage/RecruitmentManage";
 import {
@@ -19,7 +21,7 @@ import { canSelectApplicants } from "@/features/recruitment/types";
 import { getAiAnalysis, getRecruitmentDetail } from "@/features/recruitment/api";
 import styles from "./page.module.css";
 
-/* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=testers|feedback|analytics */
+/* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=info|testers|feedback|analytics|versions, 없으면 모집 정보 */
 
 export const metadata: Metadata = { title: "테스트 모집 관리" };
 
@@ -46,15 +48,24 @@ async function ManageSlot({ params, searchParams }: Props) {
 
   return (
     <div className={styles.manageSlot}>
-      <RecruitmentSummary
-        project={project}
-        recruitment={recruitment}
-        analytics={analytics}
-        detail={detail}
-        cancellation={cancellation}
-        canCancel={canCancel}
-      />
-      <RecruitmentTabs basePath={basePath} current={current} />
+      <div className={styles.manageHead}>
+        <RecruitmentHeader
+          project={project}
+          recruitment={recruitment}
+          feedbackCount={analytics.feedbackCount}
+          selectionMode={detail.selectionMode}
+        />
+        <RecruitmentTabs basePath={basePath} current={current} feedbackCount={analytics.feedbackCount} />
+      </div>
+      {current === "info" && (
+        <RecruitmentInfoPanel
+          recruitment={recruitment}
+          analytics={analytics}
+          detail={detail}
+          cancellation={cancellation}
+          canCancel={canCancel}
+        />
+      )}
       {current === "testers" && (
         <ApplicantList
           applications={applications}
@@ -79,6 +90,7 @@ async function ManageSlot({ params, searchParams }: Props) {
           <AiSlot basePath={basePath} recruitmentKey={recruitmentKey} />
         </Suspense>
       )}
+      {current === "versions" && <EmptyState title="버전 별 분석은 준비 중이에요" description="이 화면은 다음 작업에서 만들 예정이에요." />}
     </div>
   );
 }

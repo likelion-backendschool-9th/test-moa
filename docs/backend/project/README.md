@@ -89,7 +89,7 @@ erDiagram
 | 크레딧(#66) | 승인 대기 보상을 `Feedback(SUBMITTED)` 행의 합이 아니라 제출된 참가 건의 `Register` 스냅샷 합으로 계산한다. 피드백 행마다 더하면 중복된다. [결제·구독·크레딧](../payment/README.md#정한-것)의 관련 문장도 고친다 |
 | 신고 | 신고가 접수되면 `report()`, 처리되면 `reward()` 또는 `exclude()`를 부른다 |
 | 보상액 | `confirm`에 넘길 기본·추가 보상액을 정한다. 정할 때까지는 정한 것 14의 임시 금액(기본 1,000, 추가 0)을 쓴다 |
-| AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 #89에서 컬럼만 만들었다. 분석을 마치면 `completeAnalysis(praiseSummary, now)`로 `DONE`·`praise_summary`·`analyzed_at`을 함께 기록하고, 시작·실패는 조건부 UPDATE로 바꾼다([ai-review-analysis.md](ai-review-analysis.md) 결정 1·3). 그룹 코드는 프로젝트 안 숫자 문자열이고 최대 + 1로 발급한다([ai-version-comparison.md](ai-version-comparison.md) 결정 4) |
+| AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 #89에서 컬럼만 만들었다. `version`은 모집을 작성할 때 프로젝트의 가장 큰 버전 + 1로 매긴다(고침 #175: 늘 1이라 직전 버전을 찾지 못함). 분석을 마치면 `completeAnalysis(praiseSummary, now)`로 `DONE`·`praise_summary`·`analyzed_at`을 함께 기록하고, 시작·실패는 조건부 UPDATE로 바꾼다([ai-review-analysis.md](ai-review-analysis.md) 결정 1·3). 그룹 코드는 프로젝트 안 숫자 문자열이고 최대 + 1로 발급한다([ai-version-comparison.md](ai-version-comparison.md) 결정 4) |
 
 ## 아직 정하지 않은 것
 

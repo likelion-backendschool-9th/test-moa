@@ -390,13 +390,17 @@ export async function getMyProject(path: string, projectKey: string) {
 export async function getProjectDetail(path: string, projectKey: string) {
   const [{ project, recruitments }, role] = await Promise.all([getMyProject(path, projectKey), requireRole(path)]);
   const rows: ProjectRecruitmentRow[] = await Promise.all(
-    recruitments.map(async (item, index) => {
+    recruitments.map(async (item) => {
       const [feedbacks, summary] = await Promise.all([findFeedbacks(role, item.slug), findAiSummary(role, item.slug)]);
-      /* shortcut: 백엔드 모집글 버전은 아직 늘지 않아서(항상 1) 만든 순서로 센다. 백엔드가 버전을 내려 주면 그 값을 쓴다 */
-      return { ...item, version: recruitments.length - index, feedbackCount: feedbacks.length, analyzedAt: summary?.generatedAt ?? null };
+      return { ...item, version: versionOf(recruitments, item), feedbackCount: feedbacks.length, analyzedAt: summary?.generatedAt ?? null };
     }),
   );
   return { project, recruitments: rows };
+}
+
+/* shortcut: 백엔드 모집글 버전은 아직 늘지 않아서(항상 1) 프로젝트 안에서 만든 순서로 센다(첫 모집이 v1). 백엔드가 버전을 내려 주면 그 값을 쓴다 */
+function versionOf(projectRecruitments: Pick<Recruitment, "createdAt">[], recruitment: Pick<Recruitment, "createdAt">) {
+  return projectRecruitments.filter((item) => item.createdAt <= recruitment.createdAt).length;
 }
 
 /** 공개 모집글에 필요한 값. 없거나 취소된 모집 건이면 null */
@@ -429,7 +433,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
   ]);
-  const recruitment = { ...currentRecruitment, title: detail.title };
+  const recruitment = { ...currentRecruitment, title: detail.title, version: versionOf(project.recruitments, currentRecruitment) };
   const now = new Date();
   return {
     project,

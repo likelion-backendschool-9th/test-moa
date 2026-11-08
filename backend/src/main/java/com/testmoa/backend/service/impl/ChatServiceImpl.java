@@ -127,7 +127,10 @@ public class ChatServiceImpl implements ChatService {
         if (seq > me.getRoom().getLastSeq()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        participantRepository.markRead(me.getId(), seq);
+        if (participantRepository.markRead(me.getId(), seq) == 1) {
+            return new ChatReadResponse(seq);
+        }
+        // 0행: 이미 같거나 더 읽었거나, 그 사이 방이 삭제됐다
         long lastReadSeq = participantRepository.findVisibleLastReadSeq(me.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         return new ChatReadResponse(lastReadSeq);

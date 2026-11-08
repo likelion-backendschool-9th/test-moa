@@ -1,101 +1,102 @@
+import type { ComponentProps } from "react";
+import { ArrowLeftIcon, ArrowUpRightIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
-import { PROJECTS_PATH, projectPath } from "@/features/project/paths";
+import { projectPath } from "@/features/project/paths";
 import { Badge } from "@/components/ui/Badge/Badge";
-import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import type { RecruitmentAnalytics, RecruitmentView } from "@/features/recruitment/types";
 import {
   SELECTION_MODE_LABEL,
+  type SelectionMode,
   type RecruitmentCancellation,
-  type RecruitmentDetail,
 } from "@/features/recruitment/types";
 import { type Project } from "@/features/project/types";
-import { CancelRecruitmentButton } from "../CancelRecruitmentButton/CancelRecruitmentButton";
-import { ExternalLink } from "../../../../_components/ProjectDetail/ProjectDetail";
+import { RecruitmentEdit } from "../RecruitmentEdit/RecruitmentEdit";
 import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge/RecruitmentStatusBadge";
-import { TestItemImages } from "@/features/recruitment/components/TestItemImages/TestItemImages";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./RecruitmentManage.module.css";
 
-/* 테스트 모집 관리 화면의 머리 요약, 탭 줄, 분석 탭 */
+/* 테스트 모집 관리 화면의 머리, 탭 줄, 모집 정보 탭, 분석 탭 */
 
 export const MANAGE_TABS = [
-  { value: "testers", label: "테스터 관리" },
-  { value: "feedback", label: "피드백" },
-  { value: "analytics", label: "분석" },
+  { value: "info", label: "모집 정보", pro: false },
+  { value: "testers", label: "테스터 관리", pro: false },
+  { value: "feedback", label: "피드백", pro: false },
+  { value: "analytics", label: "리뷰 분석", pro: true },
+  /* 아직 만들지 않아 준비 중으로 보여 준다 */
+  { value: "versions", label: "버전 별 분석", pro: true },
 ] as const;
 
 export type ManageTab = (typeof MANAGE_TABS)[number]["value"];
 
-/** URL의 tab 값을 읽는다. 없거나 모르는 값이면 테스터 관리 */
+/** URL의 tab 값을 읽는다. 없거나 모르는 값이면 모집 정보 */
 export function parseManageTab(value: string | string[] | undefined): ManageTab {
-  return MANAGE_TABS.find((tab) => tab.value === value)?.value ?? "testers";
+  return MANAGE_TABS.find((tab) => tab.value === value)?.value ?? "info";
 }
 
-type SummaryProps = {
+/* "북로그로", "할 일 메모로", "새 서비스앱으로". 받침이 있으면(ㄹ 받침 제외) "으로" */
+function withRo(name: string) {
+  const code = name.charCodeAt(name.length - 1) - 0xac00;
+  const final = code >= 0 && code < 11172 ? code % 28 : 0;
+  return final === 0 || final === 8 ? "로" : "으로";
+}
+
+/** 모집 건 머리. 탭 위에 늘 보인다 */
+export function RecruitmentHeader({
+  project,
+  recruitment,
+  feedbackCount,
+  selectionMode,
+}: {
   project: Project;
-  recruitment: RecruitmentView;
+  recruitment: RecruitmentView & { version: number };
+  feedbackCount: number;
+  selectionMode: SelectionMode;
+}) {
+  return (
+    <div className={styles.header}>
+      <Link href={projectPath(project.key)} className={styles.backLink}>
+        <ArrowLeftIcon aria-hidden size={16} weight="bold" />
+        {project.name}
+        {withRo(project.name)} 돌아가기
+      </Link>
+      <div className={styles.headerMain}>
+        <div className={styles.headerText}>
+          <div className={styles.headerBadges}>
+            <Badge tone="muted">v{recruitment.version}</Badge>
+            <RecruitmentStatusBadge status={recruitment.status} />
+            {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
+          </div>
+          <h1 className={styles.headerTitle}>{recruitment.title || recruitment.request}</h1>
+          <p className={styles.headerMeta}>
+            확정 {recruitment.confirmedCount}명 · 피드백 {feedbackCount}건 · {SELECTION_MODE_LABEL[selectionMode]}
+          </p>
+        </div>
+        {/* 취소된 모집은 공개 페이지가 없다 */}
+        {recruitment.status !== "cancelled" && (
+          <LinkButton href={`/recruitments/${recruitment.slug}`} variant="ghost" size="sm" className={styles.publicButton}>
+            <ArrowUpRightIcon aria-hidden size={14} weight="bold" />
+            공개 페이지
+          </LinkButton>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type InfoProps = ComponentProps<typeof RecruitmentEdit> & {
   analytics: RecruitmentAnalytics;
-  detail: RecruitmentDetail;
   cancellation: RecruitmentCancellation | null;
-  canCancel: boolean;
 };
 
-/** 모집 건 요약. 탭 위에 늘 보인다 */
-export function RecruitmentSummary({ project, recruitment, analytics, detail, cancellation, canCancel }: SummaryProps) {
-  const beforeTest = recruitment.status === "recruiting";
-  const facts = [
-    ["확정 인원", `${recruitment.confirmedCount}명`],
-    ["지원", `${analytics.applicationCount}명`],
-    ["피드백 제출", `${analytics.feedbackCount}건`],
-    ["모집 마감", formatDate(recruitment.recruitDeadline)],
-    ["제출 마감", formatDate(recruitment.submitDeadline)],
-    ["유형", SOFTWARE_TYPE_LABEL[recruitment.softwareType]],
-    ["선정 방식", SELECTION_MODE_LABEL[detail.selectionMode]],
-  ];
+/** 모집 정보 탭: 취소 안내와 영역별 수정 */
+export function RecruitmentInfoPanel({ analytics, cancellation, ...editProps }: InfoProps) {
   return (
-    <div className={styles.recruitmentSummary}>
-      {/* 할 일에서 바로 들어와도 목록까지 한 번에 돌아갈 수 있게 경로를 보여 준다 */}
-      <nav aria-label="현재 위치">
-        <ol className={styles.recruitmentSummaryList}>
-          <li>
-            <Link href={PROJECTS_PATH} className={styles.recruitmentSummaryLink}>
-              내 프로젝트
-            </Link>
-          </li>
-          <li aria-hidden="true">›</li>
-          <li>
-            <Link href={projectPath(project.key)} className={styles.recruitmentSummaryName}>
-              {project.name}
-            </Link>
-          </li>
-        </ol>
-      </nav>
-      <div className={styles.recruitmentSummaryBox}>
-        <RecruitmentStatusBadge status={recruitment.status} />
-        {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
-        {canCancel && (
-          <span className={styles.recruitmentSummaryLabel}>
-            <CancelRecruitmentButton recruitmentKey={recruitment.slug} reasonRequired={recruitment.status === "testing"} />
-          </span>
-        )}
-        {beforeTest && !canCancel && <span className={styles.recruitmentSummaryLabel2}>확정된 테스터가 있어 취소할 수 없어요</span>}
-      </div>
-      <h1 className={styles.recruitmentSummaryTitle}>{detail.title || recruitment.request}</h1>
-      {detail.title && <p className={styles.recruitmentSummaryRequest}>{recruitment.request}</p>}
-      {detail.accessUrl && <ExternalLink href={detail.accessUrl}>{detail.accessUrl}</ExternalLink>}
-      <Card as="dl" className={styles.recruitmentSummaryList2}>
-        {facts.map(([term, value]) => (
-          <div key={term} className={styles.recruitmentSummary2}>
-            <dt className={styles.recruitmentSummaryTerm}>{term}</dt>
-            <dd className={styles.recruitmentSummaryValue}>{value}</dd>
-          </div>
-        ))}
-      </Card>
+    <div className={styles.infoPanel}>
       {cancellation && <CancelStatus cancellation={cancellation} feedbackCount={analytics.feedbackCount} />}
-      <RecruitmentDetailBox detail={detail} />
+      <RecruitmentEdit {...editProps} />
     </div>
   );
 }
@@ -117,40 +118,8 @@ function CancelStatus({ cancellation, feedbackCount }: { cancellation: Recruitme
   );
 }
 
-/** 모집 조건과 테스트 항목. 길어질 수 있어 접어 두고 필요할 때 연다 */
-function RecruitmentDetailBox({ detail }: { detail: RecruitmentDetail }) {
-  return (
-    <Card as="details" className={styles.recruitmentDetailBox}>
-      <summary className={styles.recruitmentDetailBoxSummary}>모집 조건과 테스트 항목 {detail.testItems.length}개</summary>
-      <div className={styles.recruitmentDetailBoxBox}>
-        <div className={styles.recruitmentDetailBoxBox2}>
-          <p className={styles.recruitmentDetailBoxText}>모집 조건</p>
-          <p className={styles.recruitmentDetailBoxText2}>{detail.conditions || "따로 정한 조건이 없어요"}</p>
-        </div>
-        <div className={styles.recruitmentDetailBoxBox3}>
-          <p className={styles.recruitmentDetailBoxText3}>테스트 항목</p>
-          <ol className={styles.recruitmentDetailBoxList}>
-            {detail.testItems.map((item) => (
-              <li key={item.id}>
-                <span className={styles.recruitmentDetailBoxTitle}>{item.title}</span>
-                <Badge tone={item.required ? "neutral" : "outline"} className={styles.recruitmentDetailBoxBadge}>
-                  {item.required ? "필수" : "선택"}
-                </Badge>
-                {item.description && <span className={styles.recruitmentDetailBoxLabel}> · {item.description}</span>}
-                <div className={styles.recruitmentDetailBoxBox4}>
-                  <TestItemImages item={item} />
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-/** 탭 줄. 탭 상태는 URL의 tab에만 둔다 */
-export function RecruitmentTabs({ basePath, current }: { basePath: string; current: ManageTab }) {
+/** 탭 줄. 탭 상태는 URL의 tab에만 둔다. 피드백 탭에는 피드백 수, 유료 기능 탭에는 PRO를 붙인다 */
+export function RecruitmentTabs({ basePath, current, feedbackCount }: { basePath: string; current: ManageTab; feedbackCount: number }) {
   return (
     <nav aria-label="모집 관리 탭" className={styles.recruitmentTabs}>
       <ul className={styles.recruitmentTabsList}>
@@ -165,6 +134,8 @@ export function RecruitmentTabs({ basePath, current }: { basePath: string; curre
                 className={cn(styles.recruitmentTabsLabel, active ? styles.recruitmentTabsLabelActive : styles.recruitmentTabsLabelNotActive)}
               >
                 {tab.label}
+                {tab.value === "feedback" && <span className={styles.tabCount}>{feedbackCount}</span>}
+                {tab.pro && <span className={styles.proMark}>PRO</span>}
               </Link>
             </li>
           );

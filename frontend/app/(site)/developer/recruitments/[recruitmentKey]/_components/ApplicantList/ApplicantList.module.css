@@ -14,10 +14,6 @@
   line-height: var(--text-sm-leading);
 }
 
-.text {
-  font-weight: 700;
-}
-
 .text2 {
   color: var(--text-muted);
 }

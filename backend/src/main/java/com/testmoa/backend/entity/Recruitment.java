@@ -66,7 +66,7 @@ public class Recruitment {
     @Column(name = "is_subscription", nullable = false)
     private boolean subscription;
 
-    // 모집글 버전. 1로 시작
+    // 모집글 버전. 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고 수정해도 그대로다(#177). 작성 서비스가 정한다
     @Column(nullable = false)
     private Integer version;
 
@@ -114,8 +114,9 @@ public class Recruitment {
      * @param feedbackDeadline  피드백 제출 마감 일시
      * @param selectionMode     테스터 선택 방식
      * @param subscription      구독 모집 여부
+     * @param version           프로젝트 안 모집글 버전. 비우면 1
      *
-     * 상태는 RECRUITING, 버전은 1, 분석 상태는 NONE으로 시작한다.
+     * 상태는 RECRUITING, 분석 상태는 NONE으로 시작한다.
      */
     @Builder
     public Recruitment(
@@ -127,7 +128,8 @@ public class Recruitment {
             LocalDateTime recruitDeadline,
             LocalDateTime feedbackDeadline,
             SelectionMode selectionMode,
-            boolean subscription
+            boolean subscription,
+            Integer version
     ){
         this.project = project;
         this.title = title;
@@ -139,7 +141,7 @@ public class Recruitment {
         this.selectionMode = selectionMode;
         this.subscription = subscription;
         this.status = RecruitmentStatus.RECRUITING;
-        this.version = 1;
+        this.version = version == null ? 1 : version;
         this.analysisStatus = AnalysisStatus.NONE;
     }
 
@@ -172,6 +174,20 @@ public class Recruitment {
         this.analysisStatus = AnalysisStatus.DONE;
         this.praiseSummary = praiseSummary;
         this.analyzedAt = now;
+    }
+
+    /**
+     * 모집 정보 수정. 바꿀 수 있는 상태인지와 마감일 규칙은 서비스가 확인한다
+     */
+    public void edit(String title, String description, String accessUrl, String conditions, SelectionMode selectionMode,
+                     LocalDateTime recruitDeadline, LocalDateTime feedbackDeadline) {
+        this.title = title;
+        this.description = description;
+        this.accessUrl = accessUrl;
+        this.conditions = conditions;
+        this.selectionMode = selectionMode;
+        this.recruitDeadline = recruitDeadline;
+        this.feedbackDeadline = feedbackDeadline;
     }
 
     /**

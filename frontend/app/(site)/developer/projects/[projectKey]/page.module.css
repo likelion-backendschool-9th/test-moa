@@ -8,16 +8,29 @@
   gap: var(--space-10);
 }
 
+/* 채팅방의 "채팅함" 링크와 같은 모양. 왼쪽 여백을 당겨 화살표가 본문 왼쪽 선에 맞는다 */
 .projectSlotLink {
-  width: fit-content;
+  margin-left: calc(var(--space-1-5) * -1);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  border-radius: var(--radius-full);
+  padding-block: var(--space-1-5);
+  padding-right: var(--space-3);
+  padding-left: var(--space-1-5);
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);
   font-weight: 600;
   color: var(--text-muted);
+  transition-property: color, background-color;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
 }
 
 @media (hover: hover) {
   .projectSlotLink:hover {
+    background-color: var(--surface-strong);
     color: var(--text);
   }
 }
@@ -28,9 +41,24 @@
   gap: var(--space-4);
 }
 
+.projectSlotHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 .projectSlotTitle {
   font-size: var(--text-2xl);
   line-height: var(--text-2xl-leading);
   font-weight: 800;
   letter-spacing: -.03em;
+}
+
+.projectSlotCount {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }

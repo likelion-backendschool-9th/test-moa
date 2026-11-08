@@ -53,7 +53,7 @@ public class ParticipationServiceImpl implements ParticipationService {
     public ParticipationResponse find(Long userId, Long registerId) {
         Register register = registerRepository.findMine(registerId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        return toResponse(register, testItemRepository.findByRecruitmentIdOrderByIdAsc(register.getRecruitment().getId()),
+        return toResponse(register, testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(register.getRecruitment().getId()),
                 feedbackRepository.findByRegisterId(registerId), LocalDateTime.now());
     }
 
@@ -68,7 +68,7 @@ public class ParticipationServiceImpl implements ParticipationService {
         if (!now.isBefore(register.getRecruitment().getFeedbackDeadline())) throw new BusinessException(ErrorCode.FEEDBACK_DEADLINE_PASSED);
         if (feedbackRepository.existsByRegisterId(registerId)) throw new BusinessException(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
 
-        List<TestItem> testItems = testItemRepository.findByRecruitmentIdOrderByIdAsc(register.getRecruitment().getId());
+        List<TestItem> testItems = testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(register.getRecruitment().getId());
         Map<Long, String> contents = contentsOf(request, testItems);
         String etc = trimToNull(request.etc());
 

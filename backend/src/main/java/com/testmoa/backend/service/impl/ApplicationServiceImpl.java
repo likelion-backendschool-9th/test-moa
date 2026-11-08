@@ -1,5 +1,7 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.dto.request.ApplicantDecisionRequest;
+import com.testmoa.backend.dto.response.ApplicantResponse;
 import com.testmoa.backend.dto.response.ApplicationResponse;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Register;
@@ -9,6 +11,7 @@ import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
+import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.UserRepository;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final RecruitmentRepository recruitmentRepository;
     private final RegisterRepository registerRepository;
     private final UserRepository userRepository;
+    private final FeedbackRepository feedbackRepository;
 
     @Override
     @Transactional
@@ -62,5 +67,38 @@ public class ApplicationServiceImpl implements ApplicationService {
         registerRepository.flush();
         return new ApplicationResponse(register.getId(), recruitmentId, register.getStatus().name().toLowerCase(),
                 register.getAppliedAt(), register.getConfirmedAt(), register.getBaseRewardSnapshot());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplicantResponse> findApplicants(Long userId, Long recruitmentId) {
+        recruitmentRepository.findMineWithProject(recruitmentId, userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        Set<Long> submitted = Set.copyOf(feedbackRepository.findRegisterIdsWithFeedback(recruitmentId));
+        return registerRepository.findWithUserByRecruitmentId(recruitmentId).stream()
+                .map(register -> new ApplicantResponse(register.getId(), register.getUser().getNickname(),
+                        register.getStatus().name().toLowerCase(), register.getAppliedAt(), submitted.contains(register.getId())))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void decide(Long userId, Long recruitmentId, ApplicantDecisionRequest request) {
+        /* 모집글 행을 잠가 지원·모집 취소와 겹치지 않게 한다 */
+        Recruitment recruitment = recruitmentRepository.findMineForUpdate(recruitmentId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (!recruitment.isSubscription() || recruitment.getSelectionMode() != SelectionMode.MANUAL
+                || recruitment.phaseAt(LocalDateTime.now()) != RecruitmentPhase.RECRUITING) {
+            throw new BusinessException(ErrorCode.APPLICANTS_NOT_SELECTABLE);
+        }
+        List<Long> ids = request.registerIds().stream().distinct().toList();
+        List<Register> registers = registerRepository.findByIdInAndRecruitmentId(ids, recruitmentId);
+        if (registers.size() != ids.size() || registers.stream().anyMatch(register -> register.getStatus() != RegisterStatus.APPLIED)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 처리했거나 이 모집의 지원이 아닌 지원자가 있어요");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (Register register : registers) {
+            if ("confirmed".equals(request.status())) register.confirm(RewardPolicy.BASE_REWARD, RewardPolicy.EXTRA_REWARD, now);
+            else register.reject();
+        }
     }
 }

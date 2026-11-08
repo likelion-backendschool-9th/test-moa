@@ -2,6 +2,7 @@ package com.testmoa.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -34,6 +35,11 @@ public class TestItem {
     @Column(name = "is_required", nullable = false)
     private boolean required;
 
+    // 화면 배치 순서. 순서 칸을 넣기 전에 만든 항목은 0이라 같은 순서 안에서는 저장 순서대로 놓는다
+    @ColumnDefault("0")
+    @Column(nullable = false)
+    private int sortOrder;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -51,17 +57,30 @@ public class TestItem {
      * @param title         테스트 작업 제목
      * @param description   테스트 작업 설명
      * @param required      필수 여부
+     * @param sortOrder     화면 배치 순서
      */
     @Builder
     public TestItem(
             Recruitment recruitment,
             String title,
             String description,
-            boolean required
+            boolean required,
+            int sortOrder
     ){
         this.recruitment = recruitment;
         this.title = title;
         this.description = description;
         this.required = required;
+        this.sortOrder = sortOrder;
+    }
+
+    /**
+     * 테스트 작업 수정. 모집 정보 탭에서 내용과 순서를 함께 바꾼다
+     */
+    public void edit(String title, String description, boolean required, int sortOrder) {
+        this.title = title;
+        this.description = description;
+        this.required = required;
+        this.sortOrder = sortOrder;
     }
 }

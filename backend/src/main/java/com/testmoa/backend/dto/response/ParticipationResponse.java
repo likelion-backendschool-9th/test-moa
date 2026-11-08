@@ -31,7 +31,7 @@ public record ParticipationResponse(
                                   String status, String selectionMode, String softwareType, boolean subscription,
                                   LocalDateTime recruitDeadline, LocalDateTime submitDeadline) {}
 
-    /** 피드백을 쓸 테스트 항목. 저장 순서대로 */
+    /** 피드백을 쓸 테스트 항목. 화면 배치 순서대로, 같으면 저장 순서대로 */
     public record TestItemInfo(Long id, String title, String description, boolean required) {}
 
     /** 제출한 피드백 한 건 */

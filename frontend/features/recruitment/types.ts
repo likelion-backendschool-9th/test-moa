@@ -23,7 +23,8 @@ export type Recruitment = {
   summary: string;
   /** 테스터에게 요청하는 내용 한 줄 */
   request: string;
-  softwareType: SoftwareType;
+  /** 카테고리. 하나 이상이고 모집 정보 탭에서 여러 개 고른다 (백엔드 TypeCode) */
+  softwareTypes: SoftwareType[];
   /** 구독 개발자의 모집 건이면 상단 순환 노출과 추가 보상 대상 */
   isSubscription: boolean;
   createdAt: string;
@@ -242,6 +243,8 @@ export type RecruitmentAnalytics = {
   applicationCount: number;
   confirmedCount: number;
   feedbackCount: number;
+  /** 피드백을 한 건이라도 낸 확정 테스터 수 */
+  submittedCount: number;
   /** 피드백을 낸 확정 테스터 수 ÷ 확정 수 백분율. 확정이 0이면 0 */
   submitRate: number;
   reportCount: number;
@@ -257,6 +260,7 @@ export function getAnalytics(applications: Application[], feedbacks: Feedback[])
   return {
     applicationCount: applications.length,
     confirmedCount,
+    submittedCount,
     feedbackCount: feedbacks.length,
     submitRate: confirmedCount === 0 ? 0 : Math.round((submittedCount / confirmedCount) * 100),
     reportCount: feedbacks.filter((item) => item.status === "reported").length,
@@ -266,6 +270,9 @@ export function getAnalytics(applications: Application[], feedbacks: Feedback[])
 /* ---------- 조회 ---------- */
 
 export type RecruitmentView = Recruitment & { status: RecruitmentStatus; title: string };
+
+/** 프로젝트 상세의 모집글 한 줄. 버전은 프로젝트 안에서 만든 순서(첫 모집이 v1)이고, AI 분석을 안 했으면 analyzedAt이 null이다 */
+export type ProjectRecruitmentRow = RecruitmentView & { version: number; feedbackCount: number; analyzedAt: string | null };
 
 export type ProjectSummary = Omit<Project, "recruitments"> & {
   recruitments: RecruitmentView[];
@@ -316,8 +323,8 @@ export type AiAnalysis =
 /* 브라우저는 폼을 보낼 때 줄바꿈을 두 글자(\r\n)로 바꾼다. 화면에서 센 글자 수와 맞도록 되돌린다 */
 const text = (formData: FormData, name: string) => String(formData.get(name) ?? "").replace(/\r\n/g, "\n").trim();
 
-/** 오늘 날짜(한국 시간) "2026-10-30" */
-function todayInSeoul(now: Date) {
+/** 그 시각의 한국 날짜 "2026-10-30". 날짜 칸 값과 비교한다 */
+export function seoulDate(now: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(now);
 }
 
@@ -345,7 +352,7 @@ export function validateRecruitmentForm(formData: FormData, isSubscription: bool
   if (values.selectionMode !== "firstCome" && values.selectionMode !== "selection") errors.selectionMode = "선정 방식을 골라 주세요";
   else if (values.selectionMode === "selection" && !isSubscription) errors.selectionMode = "선발형은 구독 모집에서만 쓸 수 있어요";
   if (!values.recruitDeadline) errors.recruitDeadline = "모집 마감일을 골라 주세요";
-  else if (values.recruitDeadline < todayInSeoul(now)) errors.recruitDeadline = "모집 마감일은 오늘 이후로 골라 주세요";
+  else if (values.recruitDeadline < seoulDate(now)) errors.recruitDeadline = "모집 마감일은 오늘 이후로 골라 주세요";
   if (!values.submitDeadline) errors.submitDeadline = "피드백 제출 마감일을 골라 주세요";
   else if (values.recruitDeadline && values.submitDeadline <= values.recruitDeadline) {
     errors.submitDeadline = "제출 마감일은 모집 마감일보다 뒤여야 해요";
@@ -387,6 +394,125 @@ export function validateRecruitmentForm(formData: FormData, isSubscription: bool
     }
   });
   return { values, errors };
+}
+
+/* ---------- 모집 정보 수정 ---------- */
+
+/**
+ * 모집 정보 탭에서 막는 범위. 이미 참여한 테스터와 어긋나는 변경을 막는다.
+ * 종료·취소한 모집은 전부 읽기 전용이다.
+ */
+export type RecruitmentEditLocks = {
+  readOnly: boolean;
+  /** 지원자가 한 명이라도 있으면 선정 방식을 바꿀 수 없다 */
+  selectionMode: boolean;
+  /** 모집 마감이 지나면 모집 마감일을 바꿀 수 없다. 다시 열리면 안 되기 때문이다 */
+  recruitDeadline: boolean;
+  /** 피드백이 달린 테스트 항목. 지울 수 없다 */
+  lockedItemIds: string[];
+};
+
+export function getEditLocks(
+  recruitment: Pick<RecruitmentView, "status">,
+  applicationCount: number,
+  feedbacks: Pick<Feedback, "testItemId">[],
+): RecruitmentEditLocks {
+  return {
+    readOnly: recruitment.status === "closed" || recruitment.status === "cancelled",
+    selectionMode: applicationCount > 0,
+    recruitDeadline: recruitment.status !== "recruiting",
+    lockedItemIds: [...new Set(feedbacks.flatMap((item) => (item.testItemId ? [item.testItemId] : [])))],
+  };
+}
+
+/** 모집 정보 탭에서 따로 저장하는 영역 */
+export type RecruitmentEditSection = "post" | "terms" | "testItems" | "repository";
+
+/** 저장 결과. ok면 화면에 저장 완료를 알린다 */
+export type EditState = FormState & { ok?: boolean };
+
+/** 글 정보: 제목, 설명, 접속 링크, 카테고리 */
+export function validatePostEdit(formData: FormData): EditState {
+  const values = { title: text(formData, "title"), request: text(formData, "request"), accessUrl: text(formData, "accessUrl") };
+  const errors: Record<string, string> = {};
+  if (!values.title) errors.title = "모집글 제목을 적어 주세요";
+  else if (values.title.length > RECRUITMENT_LIMIT.titleLength) errors.title = `모집글 제목은 ${RECRUITMENT_LIMIT.titleLength}자까지 적을 수 있어요`;
+  if (!values.request) errors.request = "모집 설명을 적어 주세요";
+  else if (values.request.length > 200) errors.request = "모집 설명은 200자까지 적을 수 있어요";
+  if (!isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
+  const picked = formData.getAll("categories").map(String);
+  if (picked.length === 0 || !picked.every((value) => SOFTWARE_TYPES.includes(value as SoftwareType))) {
+    errors.categories = "카테고리를 하나 이상 골라 주세요";
+  }
+  return { values, errors };
+}
+
+type TermsCurrent = Pick<Recruitment, "isSubscription" | "recruitDeadline" | "submitDeadline"> & { selectionMode: SelectionMode };
+
+/**
+ * 모집 정보: 모집 조건, 선정 방식, 마감일. 마감일은 미루기만 할 수 있다.
+ * 잠긴 선정 방식과 모집 마감일은 화면에서 꺼 둬 값이 오지 않으면 지금 값으로 본다. 다른 값이 오면 조작된 요청이라 막는다
+ */
+export function validateTermsEdit(formData: FormData, current: TermsCurrent, locks: RecruitmentEditLocks): EditState {
+  const recruitBefore = seoulDate(new Date(current.recruitDeadline));
+  const submitBefore = seoulDate(new Date(current.submitDeadline));
+  const values = {
+    conditions: text(formData, "conditions"),
+    selectionMode: text(formData, "selectionMode") || current.selectionMode,
+    recruitDeadline: text(formData, "recruitDeadline") || (locks.recruitDeadline ? recruitBefore : ""),
+    submitDeadline: text(formData, "submitDeadline"),
+  };
+  const errors: Record<string, string> = {};
+  if (values.conditions.length > RECRUITMENT_LIMIT.conditionsLength) {
+    errors.conditions = `모집 조건은 ${RECRUITMENT_LIMIT.conditionsLength}자까지 적을 수 있어요`;
+  }
+  if (values.selectionMode !== "firstCome" && values.selectionMode !== "selection") errors.selectionMode = "선정 방식을 골라 주세요";
+  else if (locks.selectionMode && values.selectionMode !== current.selectionMode) errors.selectionMode = "지원자가 있어 선정 방식을 바꿀 수 없어요";
+  else if (values.selectionMode === "selection" && !current.isSubscription) errors.selectionMode = "선발형은 구독 모집에서만 쓸 수 있어요";
+
+  if (!values.recruitDeadline) errors.recruitDeadline = "모집 마감일을 골라 주세요";
+  else if (locks.recruitDeadline && values.recruitDeadline !== recruitBefore) errors.recruitDeadline = "모집이 마감돼 바꿀 수 없어요";
+  else if (values.recruitDeadline < recruitBefore) errors.recruitDeadline = "모집 마감일은 미루기만 할 수 있어요";
+  if (!values.submitDeadline) errors.submitDeadline = "피드백 제출 마감일을 골라 주세요";
+  else if (values.submitDeadline < submitBefore) errors.submitDeadline = "제출 마감일은 미루기만 할 수 있어요";
+  else if (values.recruitDeadline && values.submitDeadline <= values.recruitDeadline) {
+    errors.submitDeadline = "제출 마감일은 모집 마감일보다 뒤여야 해요";
+  }
+  return { values, errors };
+}
+
+/**
+ * 테스트 정보: 테스트 항목의 순서와 내용. 줄마다 testItemId(새 줄은 빈 값)가 온다.
+ * 피드백이 달린 항목이 빠졌으면 막는다
+ */
+export function validateTestItemsEdit(formData: FormData, lockedItemIds: string[]): EditState {
+  const { min, max, titleLength, descriptionLength } = RECRUITMENT_LIMIT.testItems;
+  const ids = formData.getAll("testItemId").map(String);
+  const titles = formData.getAll("testItemTitle").map((item) => String(item).trim());
+  const descriptions = formData.getAll("testItemDescription").map((item) => String(item).trim());
+  const errors: Record<string, string> = {};
+  if (ids.length < min) errors.testItems = `테스트 항목을 ${min}개 이상 적어 주세요`;
+  else if (ids.length > max) errors.testItems = `테스트 항목은 ${max}개까지 적을 수 있어요`;
+  else if (!lockedItemIds.every((id) => ids.includes(id))) errors.testItems = "피드백이 달린 항목은 지울 수 없어요";
+  ids.forEach((_, index) => {
+    const title = titles[index] ?? "";
+    if (!title) errors[`testItemTitle-${index}`] = "항목 이름을 적어 주세요";
+    else if (title.length > titleLength) errors[`testItemTitle-${index}`] = `항목 이름은 ${titleLength}자까지 적을 수 있어요`;
+    if ((descriptions[index] ?? "").length > descriptionLength) {
+      errors[`testItemDescription-${index}`] = `항목 설명은 ${descriptionLength}자까지 적을 수 있어요`;
+    }
+  });
+  return { values: {}, errors };
+}
+
+/* GitHub 저장소 "owner/repo". 주소를 붙여 넣어도 받는다 (백엔드 RepositoryLink의 owner, repo) */
+const GITHUB_REPO = /^(?:https:\/\/github\.com\/)?([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/;
+
+/** 프로젝트에 GitHub 저장소를 연결한다. 맞으면 values.repository에 "owner/repo"로 바꿔 둔다 */
+export function validateRepository(formData: FormData): EditState {
+  const match = GITHUB_REPO.exec(text(formData, "repository"));
+  if (!match) return { values: { repository: text(formData, "repository") }, errors: { repository: "owner/repo 형식이나 GitHub 주소를 적어 주세요" } };
+  return { values: { repository: `${match[1]}/${match[2]}` }, errors: {} };
 }
 
 export type PublicRecruitmentData = {

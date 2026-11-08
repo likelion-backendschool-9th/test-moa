@@ -17,6 +17,7 @@ import {
   type SelectionMode,
 } from "@/features/recruitment/types";
 import { Card } from "@/components/ui/Card/Card";
+import { ManageDashboard } from "../ManageDashboard/ManageDashboard";
 import styles from "./ApplicantList.module.css";
 
 /*
@@ -34,7 +35,9 @@ type ApplicantListProps = {
   isSubscription: boolean;
   selectionMode: SelectionMode;
   recruitmentKey: string;
+  recruitDeadline: string;
 };
+
 
 const TONE: Record<ApplicationStatus, "accent" | "neutral" | "muted"> = {
   applied: "neutral",
@@ -65,7 +68,7 @@ async function canReachServer() {
 }
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
-export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, recruitmentKey }: ApplicantListProps) {
+export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, recruitmentKey, recruitDeadline }: ApplicantListProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
@@ -163,7 +166,31 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
     setChecked(selected.length === pendingIds.length ? new Set() : new Set(pendingIds));
   }
 
-  if (applications.length === 0) return <EmptyState title="아직 지원자가 없어요" />;
+  /* 정원이 없어서(#78) 게이지는 지원자 가운데 확정된 비율이다. 확정·거절을 누르면 목록과 함께 바로 바뀐다 */
+  const dashboard = (
+    <ManageDashboard
+      id="applicant-dashboard-heading"
+      title="확정 / 지원"
+      value={confirmedCount}
+      total={rows.length}
+      valueLabel="확정"
+      totalLabel="지원자"
+      valueTestId="confirmed-count"
+      stats={[
+        ["지원자", `${rows.length}명`],
+        ["거절", `${rows.filter((item) => item.status === "rejected").length}명`],
+        ["모집 마감", formatDate(recruitDeadline)],
+      ]}
+    />
+  );
+  if (applications.length === 0) {
+    return (
+      <div className={styles.root}>
+        {dashboard}
+        <EmptyState title="아직 지원자가 없어요" />
+      </div>
+    );
+  }
 
   /* 제출 현황은 테스트가 시작된 뒤에만 값이 있다 */
   const submissions = rows.map((item) => item.submission).filter((value) => value !== null);
@@ -171,17 +198,17 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
 
   return (
     <div className={styles.root}>
-      <div className={styles.box}>
-        <p className={styles.text} data-testid="confirmed-count">
-          확정 {confirmedCount}명
-        </p>
-        {selectionMode === "firstCome" && <p className={styles.text2}>선착순 모집이라 지원하면 바로 확정돼요</p>}
-        {submissions.length > 0 && (
-          <p data-testid="submission-summary" className={styles.text3}>
-            피드백 제출 {countOf("submitted")}명 · 미제출 {countOf("pending")}명 · 미완료 {countOf("incomplete")}명
-          </p>
-        )}
-      </div>
+      {dashboard}
+      {(selectionMode === "firstCome" || submissions.length > 0) && (
+        <div className={styles.box}>
+          {selectionMode === "firstCome" && <p className={styles.text2}>선착순 모집이라 지원하면 바로 확정돼요</p>}
+          {submissions.length > 0 && (
+            <p data-testid="submission-summary" className={styles.text3}>
+              피드백 제출 {countOf("submitted")}명 · 미제출 {countOf("pending")}명 · 미완료 {countOf("incomplete")}명
+            </p>
+          )}
+        </div>
+      )}
 
       {canBulk && (
         <div className={styles.box2}>

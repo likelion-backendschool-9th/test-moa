@@ -6,7 +6,7 @@ import { FormField, FormMessage } from "@/components/ui/FormField/FormField";
 import type { FormState } from "@/lib/form";
 import { PASSWORD_HINT } from "@/features/member/validation";
 import { changePassword, type PasswordField } from "@/features/member/actions";
-import { SettingsBody, SettingsSection } from "@/app/(site)/my/(account)/_components/SettingsCard/SettingsCard";
+import { SettingsBody, SettingsSection } from "@/components/ui/SettingsCard/SettingsCard";
 import { AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./PasswordForm.module.css";
 

@@ -290,7 +290,7 @@ class ParticipationControllerTest {
         Recruitment closed = saveRecruitment(-9, -1);
         cases.put("incomplete", confirmed(closed, saveUser()));
         Register reported = confirmed(recruitment, saveUser());
-        feedback(reported, required).report();
+        feedback(reported, required).report("광고 글이에요");
         feedback(reported, optional);
         cases.put("underReview", reported);
         Register paid = confirmed(recruitment, saveUser());
@@ -298,7 +298,7 @@ class ParticipationControllerTest {
         cases.put("paid", paid);
         Register excluded = confirmed(recruitment, saveUser());
         Feedback excludedFeedback = feedback(excluded, required);
-        excludedFeedback.report();
+        excludedFeedback.report("광고 글이에요");
         excludedFeedback.exclude();
         cases.put("excluded", excluded);
         Register cancelled = applied(recruitment, saveUser());

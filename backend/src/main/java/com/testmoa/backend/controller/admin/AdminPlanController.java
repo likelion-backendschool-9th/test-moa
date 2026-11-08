@@ -3,7 +3,7 @@ package com.testmoa.backend.controller.admin;
 import com.testmoa.backend.dto.request.PlanCreateRequest;
 import com.testmoa.backend.dto.response.PlanResponse;
 import com.testmoa.backend.global.util.ApiResponse;
-import com.testmoa.backend.service.admin.PlanService;
+import com.testmoa.backend.service.admin.AdminPlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,15 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 운영자 플랜 등록. /api/v1/admin/** 은 SecurityConfig가 ADMIN만 허용한다.
- * 회원용 {@code PlanController}와 클래스 이름이 같아서 빈 이름을 따로 준다.
  */
-@RestController("adminPlanController")
+@RestController
 @RequestMapping("/api/v1/admin/plans")
-public class PlanController {
+public class AdminPlanController {
 
-    private final PlanService planService;
+    private final AdminPlanService planService;
 
-    public PlanController(PlanService planService) {
+    public AdminPlanController(AdminPlanService planService) {
         this.planService = planService;
     }
 

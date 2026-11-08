@@ -25,13 +25,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class PlanServiceImplTest {
+class AdminPlanServiceImplTest {
 
     @Mock
     private PlanRepository planRepository;
 
     @InjectMocks
-    private PlanServiceImpl service;
+    private AdminPlanServiceImpl service;
 
     private PlanCreateRequest request(String tier, List<String> benefits) {
         return new PlanCreateRequest(tier, 10000, 9000, 30, benefits);

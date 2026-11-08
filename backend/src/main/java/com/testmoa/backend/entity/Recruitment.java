@@ -66,7 +66,7 @@ public class Recruitment {
     @Column(name = "is_subscription", nullable = false)
     private boolean subscription;
 
-    // 모집글 버전. 1로 시작
+    // 모집글 버전. 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고 수정해도 그대로다(#177). 작성 서비스가 정한다
     @Column(nullable = false)
     private Integer version;
 
@@ -127,7 +127,8 @@ public class Recruitment {
             LocalDateTime recruitDeadline,
             LocalDateTime feedbackDeadline,
             SelectionMode selectionMode,
-            boolean subscription
+            boolean subscription,
+            Integer version
     ){
         this.project = project;
         this.title = title;
@@ -139,7 +140,7 @@ public class Recruitment {
         this.selectionMode = selectionMode;
         this.subscription = subscription;
         this.status = RecruitmentStatus.RECRUITING;
-        this.version = 1;
+        this.version = version == null ? 1 : version;
         this.analysisStatus = AnalysisStatus.NONE;
     }
 

@@ -44,6 +44,15 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
             """)
     List<ChatInboxEntry> findInboxByUserId(@Param("userId") Long userId);
 
+    @Query("""
+            select count(message.id)
+            from chat_participants me
+            join chat_messages message on message.room = me.room
+            where me.user.id = :userId and me.hidden = false
+                and message.seq > me.lastReadSeq and message.sender.id <> me.id
+            """)
+    long countUnreadByUserId(@Param("userId") Long userId);
+
     @Query("select p.lastReadSeq from chat_participants p where p.id = :id and p.hidden = false")
     Optional<Long> findVisibleLastReadSeq(@Param("id") Long id);
 

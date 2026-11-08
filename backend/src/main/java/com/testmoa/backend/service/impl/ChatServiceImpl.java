@@ -6,6 +6,7 @@ import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 import com.testmoa.backend.dto.response.ChatRoomResponse;
 import com.testmoa.backend.dto.response.ChatReadResponse;
+import com.testmoa.backend.dto.response.ChatUnreadResponse;
 import com.testmoa.backend.entity.ChatMessage;
 import com.testmoa.backend.entity.ChatParticipant;
 import com.testmoa.backend.repository.ChatMessageRepository;
@@ -49,6 +50,11 @@ public class ChatServiceImpl implements ChatService {
                 .sorted(order).map(ChatInboxResponse.Room::of).toList();
         return new ChatInboxResponse(rooms, entries.size(),
                 new ChatInboxResponse.Counts(matched.size(), testers, matched.size() - testers));
+    }
+
+    @Override
+    public ChatUnreadResponse getUnread(Long userId) {
+        return new ChatUnreadResponse(participantRepository.countUnreadByUserId(userId));
     }
 
     private boolean matches(ChatInboxEntry entry, String keyword) {

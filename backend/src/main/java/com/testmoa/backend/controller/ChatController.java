@@ -5,6 +5,7 @@ import com.testmoa.backend.dto.request.ChatRoomRenameRequest;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
 import com.testmoa.backend.dto.request.ChatReadRequest;
 import com.testmoa.backend.dto.response.ChatReadResponse;
+import com.testmoa.backend.dto.response.ChatUnreadResponse;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
@@ -27,6 +28,11 @@ public class ChatController {
     public ApiResponse<ChatInboxResponse> getInbox(@AuthenticationPrincipal Long userId,
                                                    @ModelAttribute ChatInboxQuery query) {
         return ApiResponse.ok(chatService.getInbox(userId, query));
+    }
+
+    @GetMapping("/unread")
+    public ApiResponse<ChatUnreadResponse> getUnread(@AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(chatService.getUnread(userId));
     }
 
     @GetMapping("/{roomKey}")

@@ -12,6 +12,7 @@ import com.testmoa.backend.entity.RecruitmentType;
 import com.testmoa.backend.entity.TestItem;
 import com.testmoa.backend.entity.TestItemImage;
 import com.testmoa.backend.entity.Type;
+import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.ProjectRepository;
 import com.testmoa.backend.repository.RecruitmentImageRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
@@ -58,6 +59,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final RecruitmentImageRepository recruitmentImageRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
     private final RegisterRepository registerRepository;
+    private final FeedbackRepository feedbackRepository;
     private final TestItemRepository testItemRepository;
     private final TestItemImageRepository testItemImageRepository;
     private final TypeRepository typeRepository;
@@ -106,8 +108,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         Map<Long, TypeCode> types = recruitmentTypeRepository.findByRecruitmentIdIn(recruitmentIds).stream()
                 .collect(Collectors.toMap(item -> item.getRecruitment().getId(), item -> item.getType().getCode(), (first, second) -> first));
-        Map<Long, Long> confirmed = registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED).stream()
-                .collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
+        Map<Long, Long> confirmed = countMap(registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED));
+        Map<Long, Long> feedbacks = countMap(feedbackRepository.countByRecruitmentIds(recruitmentIds));
 
         LocalDateTime now = LocalDateTime.now();
         return recruitments.stream().map(item -> RecruitmentSummaryResponse.of(
@@ -115,7 +117,12 @@ public class ProjectServiceImpl implements ProjectService {
                 RecruitmentNames.phase(item.phaseAt(now)),
                 RecruitmentNames.selectionMode(item.getSelectionMode()),
                 RecruitmentNames.softwareType(types.get(item.getId())),
-                confirmed.getOrDefault(item.getId(), 0L))).toList();
+                confirmed.getOrDefault(item.getId(), 0L),
+                feedbacks.getOrDefault(item.getId(), 0L))).toList();
+    }
+
+    private static Map<Long, Long> countMap(List<RegisterRepository.RecruitmentCount> counts) {
+        return counts.stream().collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
     }
 
     /**
@@ -143,6 +150,9 @@ public class ProjectServiceImpl implements ProjectService {
             throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
         }
 
+        // 프로젝트 행을 잠가 동시에 만들어도 버전이 겹치지 않게 한다
+        projectRepository.findByIdForUpdate(project.getId());
+        int version = recruitmentRepository.findMaxVersionByProjectId(project.getId()).map(max -> max + 1).orElse(1);
         Recruitment recruitment = recruitmentRepository.save(Recruitment.builder()
                 .project(project)
                 .title(request.title().trim())
@@ -153,6 +163,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .feedbackDeadline(endOf(request.submitDeadline()))
                 .selectionMode(selectionMode)
                 .subscription(subscribed)
+                .version(version)
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());
         recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());

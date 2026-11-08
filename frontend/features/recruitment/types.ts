@@ -267,6 +267,9 @@ export function getAnalytics(applications: Application[], feedbacks: Feedback[])
 
 export type RecruitmentView = Recruitment & { status: RecruitmentStatus; title: string };
 
+/** 프로젝트 상세의 모집글 한 줄. 버전은 프로젝트 안에서 만든 순서(첫 모집이 v1)이고, AI 분석을 안 했으면 analyzedAt이 null이다 */
+export type ProjectRecruitmentRow = RecruitmentView & { version: number; feedbackCount: number; analyzedAt: string | null };
+
 export type ProjectSummary = Omit<Project, "recruitments"> & {
   recruitments: RecruitmentView[];
   recruitmentCount: number;

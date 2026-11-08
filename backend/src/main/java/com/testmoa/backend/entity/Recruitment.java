@@ -66,7 +66,7 @@ public class Recruitment {
     @Column(name = "is_subscription", nullable = false)
     private boolean subscription;
 
-    // 모집글 버전. 1로 시작
+    // 프로젝트 안 모집글 버전. 첫 모집글이 1이고 새로 만들 때마다 1씩 는다
     @Column(nullable = false)
     private Integer version;
 
@@ -114,8 +114,9 @@ public class Recruitment {
      * @param feedbackDeadline  피드백 제출 마감 일시
      * @param selectionMode     테스터 선택 방식
      * @param subscription      구독 모집 여부
+     * @param version           프로젝트 안 모집글 버전. 비우면 1
      *
-     * 상태는 RECRUITING, 버전은 1, 분석 상태는 NONE으로 시작한다.
+     * 상태는 RECRUITING, 분석 상태는 NONE으로 시작한다.
      */
     @Builder
     public Recruitment(
@@ -127,7 +128,8 @@ public class Recruitment {
             LocalDateTime recruitDeadline,
             LocalDateTime feedbackDeadline,
             SelectionMode selectionMode,
-            boolean subscription
+            boolean subscription,
+            Integer version
     ){
         this.project = project;
         this.title = title;
@@ -139,7 +141,7 @@ public class Recruitment {
         this.selectionMode = selectionMode;
         this.subscription = subscription;
         this.status = RecruitmentStatus.RECRUITING;
-        this.version = 1;
+        this.version = version == null ? 1 : version;
         this.analysisStatus = AnalysisStatus.NONE;
     }
 

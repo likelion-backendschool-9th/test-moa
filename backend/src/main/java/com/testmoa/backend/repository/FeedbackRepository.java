@@ -24,6 +24,11 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             """)
     Optional<Feedback> findWithRecruitmentById(@Param("id") Long id);
 
+    // 모집글별 피드백 수. 피드백이 없는 모집글은 결과에 없다
+    @Query("select f.register.recruitment.id as recruitmentId, count(f) as count from feedbacks f "
+            + "where f.register.recruitment.id in :recruitmentIds group by f.register.recruitment.id")
+    List<RegisterRepository.RecruitmentCount> countByRecruitmentIds(@Param("recruitmentIds") Collection<Long> recruitmentIds);
+
     // 모집글에서 피드백을 하나라도 낸 참가 id(#116). 피드백은 제출할 때만 저장되므로 행이 있으면 낸 것이다
     @Query("select distinct f.register.id from feedbacks f where f.register.recruitment.id = :recruitmentId")
     List<Long> findRegisterIdsWithFeedback(@Param("recruitmentId") Long recruitmentId);

@@ -30,6 +30,7 @@ import {
   BASE_REWARD,
   EXTRA_REWARD,
   type ProjectOverview,
+  type ProjectRecruitmentRow,
   type ProjectSummary,
   RECRUITMENT_LIMIT,
   type RecruitmentView,
@@ -383,6 +384,19 @@ export async function getMyProject(path: string, projectKey: string) {
   const project = (await findProjects(role)).find((item) => item.key === projectKey);
   if (!project) notFound();
   return { project, recruitments: await withStatus(role, [...project.recruitments].sort(byCreatedLatest), new Date()) };
+}
+
+/** 프로젝트 상세 화면: 프로젝트와 최신순 모집글. 모집글마다 버전, 피드백 수, AI 분석 시각을 붙인다 */
+export async function getProjectDetail(path: string, projectKey: string) {
+  const [{ project, recruitments }, role] = await Promise.all([getMyProject(path, projectKey), requireRole(path)]);
+  const rows: ProjectRecruitmentRow[] = await Promise.all(
+    recruitments.map(async (item, index) => {
+      const [feedbacks, summary] = await Promise.all([findFeedbacks(role, item.slug), findAiSummary(role, item.slug)]);
+      /* shortcut: 백엔드 모집글 버전은 아직 늘지 않아서(항상 1) 만든 순서로 센다. 백엔드가 버전을 내려 주면 그 값을 쓴다 */
+      return { ...item, version: recruitments.length - index, feedbackCount: feedbacks.length, analyzedAt: summary?.generatedAt ?? null };
+    }),
+  );
+  return { project, recruitments: rows };
 }
 
 /** 공개 모집글에 필요한 값. 없거나 취소된 모집 건이면 null */

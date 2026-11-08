@@ -1,3 +1,4 @@
+import { ArrowUpRightIcon, PlusIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { projectEditPath, recruitmentCreatePath, recruitmentManagePath } from "@/features/project/paths";
@@ -6,8 +7,8 @@ import { Button } from "@/components/ui/Button/Button";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { formatDate } from "@/lib/format";
-import type { RecruitmentView } from "@/features/recruitment/types";
+import { formatDate, formatShortDate } from "@/lib/format";
+import type { ProjectRecruitmentRow } from "@/features/recruitment/types";
 import { DEFAULT_PROJECT_IMAGE_URL, type Project } from "@/features/project/types";
 import { ProjectDescription } from "@/features/project/components/ProjectDescription/ProjectDescription";
 import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge/RecruitmentStatusBadge";
@@ -45,7 +46,7 @@ export function ProjectBody({
     <div data-project-body className={styles.projectBody}>
       {/*
         좁은 화면과 미리보기는 이름·설명 → 이미지 → 버튼 순서로 쌓고,
-        넓은 상세 화면은 왼쪽에 설명과 버튼, 오른쪽에 이미지를 나란히 둔다. 이미지는 이름 아래, 설명과 같은 높이에서 시작한다.
+        넓은 상세 화면은 왼쪽에 이름·설명과 버튼, 오른쪽에 이미지를 나란히 둔다. 이미지는 이름과 같은 높이에서 시작한다.
         글이 이미지보다 짧아도 버튼이 글 바로 아래에 오도록 마지막 줄이 남는 높이를 받는다.
       */}
       <div
@@ -82,7 +83,10 @@ export function ProjectInfo({ project }: { project: Project }) {
   return (
     <ProjectBody project={project}>
       <div className={styles.projectInfoBox}>
-        <LinkButton href={recruitmentCreatePath(project.key)}>모집글 작성</LinkButton>
+        <LinkButton href={recruitmentCreatePath(project.key)}>
+          <PlusIcon aria-hidden size={16} weight="bold" />
+          모집글 작성
+        </LinkButton>
         <LinkButton href={projectEditPath(project.key)} variant="secondary">
           수정
         </LinkButton>
@@ -91,8 +95,11 @@ export function ProjectInfo({ project }: { project: Project }) {
   );
 }
 
-/** 프로젝트의 모집 건 목록. 항목을 누르면 관리 화면으로 간다 */
-export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKey: string; recruitments: RecruitmentView[] }) {
+/**
+ * 프로젝트의 모집 건 목록. 넓은 화면은 한 줄을 [배지·제목 | 숫자·분석 기록 | 버튼] 세 칸으로, 좁은 화면은 위아래로 쌓는다.
+ * 제목을 누르면 관리 화면으로 간다
+ */
+export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKey: string; recruitments: ProjectRecruitmentRow[] }) {
   if (recruitments.length === 0) {
     return (
       <EmptyState
@@ -103,37 +110,59 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
     );
   }
   return (
-    <ul className={styles.projectRecruitmentList}>
-      {recruitments.map((item) => (
-        <Card as="li" key={item.slug} className={styles.projectRecruitmentList2}>
-          <div className={styles.projectRecruitmentListBox}>
-            <div className={styles.projectRecruitmentListBox2}>
-              <RecruitmentStatusBadge status={item.status} />
-              {item.isSubscription && <Badge tone="muted">구독 모집</Badge>}
-            </div>
-            <Link href={recruitmentManagePath(item.slug)} className={styles.projectRecruitmentListLink}>
-              {item.title || item.request}
-            </Link>
-            <p className={styles.projectRecruitmentListText}>
-              확정 {item.confirmedCount}명 · 모집 마감 {formatDate(item.recruitDeadline)} · 제출 마감{" "}
-              {formatDate(item.submitDeadline)}
-            </p>
-          </div>
-          {/* 취소된 모집은 공개 페이지가 없다 */}
-          {item.status !== "cancelled" && (
-            <div className={styles.projectRecruitmentListBox3}>
-              <Link href={`/recruitments/${item.slug}`} className={styles.projectRecruitmentListLink2}>
-                공개 페이지 보기
+    <ul className={styles.recruitmentList}>
+      {recruitments.map((item) => {
+        const title = item.title || item.request;
+        const managePath = recruitmentManagePath(item.slug);
+        const cancelled = item.status === "cancelled";
+        return (
+          <Card as="li" key={item.slug} className={styles.recruitmentRow}>
+            <div className={styles.recruitmentHead}>
+              <div className={styles.recruitmentBadges}>
+                <Badge tone="muted">v{item.version}</Badge>
+                <RecruitmentStatusBadge status={item.status} />
+                {item.isSubscription && <Badge tone="muted">구독 모집</Badge>}
+              </div>
+              <Link href={managePath} className={styles.recruitmentTitle}>
+                {title}
               </Link>
-              {/* 동작은 아직 정하지 않았다 (#64) */}
-              <Button size="sm" variant="secondary">
-                <span className={styles.projectRecruitmentListSrOnly}>{item.title || item.request} </span>
-                분석하기
-              </Button>
             </div>
-          )}
-        </Card>
-      ))}
+            <div className={styles.recruitmentMeta}>
+              <p>
+                확정 {item.confirmedCount}명 · 피드백 {item.feedbackCount}건 · 제출 마감 {formatDate(item.submitDeadline)}
+              </p>
+              {!cancelled && (
+                <p className={styles.recruitmentAnalysis}>
+                  {item.analyzedAt ? `분석 기록 있음 | ${formatShortDate(item.analyzedAt)} 기준` : "분석 기록 없음"}
+                </p>
+              )}
+            </div>
+            {/* 취소된 모집은 공개 페이지도 분석도 없다 */}
+            {!cancelled && (
+              <div className={styles.recruitmentActions}>
+                {item.analyzedAt ? (
+                  <LinkButton href={`${managePath}?tab=analytics`} size="sm" variant="ghost" className={styles.resultButton}>
+                    <span className={styles.srOnly}>{title} </span>
+                    결과보기
+                    <span className={`${styles.proMark} ${styles.proMarkSoft}`}>PRO</span>
+                  </LinkButton>
+                ) : (
+                  /* 동작은 아직 정하지 않았다 (#64) */
+                  <Button size="sm">
+                    <span className={styles.srOnly}>{title} </span>
+                    분석하기
+                    <span className={`${styles.proMark} ${styles.proMarkOnAccent}`}>PRO</span>
+                  </Button>
+                )}
+                <Link href={`/recruitments/${item.slug}`} className={styles.recruitmentPublicLink}>
+                  공개 페이지 보기
+                  <ArrowUpRightIcon aria-hidden size={14} weight="bold" />
+                </Link>
+              </div>
+            )}
+          </Card>
+        );
+      })}
     </ul>
   );
 }

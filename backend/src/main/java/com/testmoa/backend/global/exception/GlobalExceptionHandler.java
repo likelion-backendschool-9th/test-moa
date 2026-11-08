@@ -3,6 +3,7 @@ package com.testmoa.backend.global.exception;
 import com.testmoa.backend.global.util.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -28,7 +29,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
         ErrorCode code = e.getErrorCode();
-        return ResponseEntity.status(code.getStatus()).body(ApiResponse.fail(code, e.getMessage(), e.getFields()));
+        // SSE만 Accept한 요청도 인증 실패 본문은 JSON으로 받는다.
+        return ResponseEntity.status(code.getStatus()).contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.fail(code, e.getMessage(), e.getFields()));
     }
 
     // 예상하지 못한 오류. 내용은 로그에만 남기고 응답에는 싣지 않는다

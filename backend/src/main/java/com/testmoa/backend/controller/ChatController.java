@@ -43,8 +43,9 @@ public class ChatController {
 
     @GetMapping("/{roomKey}/messages")
     public ApiResponse<ChatMessageSliceResponse> getMessages(@PathVariable String roomKey,
-                                                             @AuthenticationPrincipal Long userId, @RequestParam(required = false) @Min(1) Long before) {
-        return ApiResponse.ok(chatService.getMessages(roomKey, userId, before));
+                                                             @AuthenticationPrincipal Long userId, @RequestParam(required = false) @Min(1) Long before,
+                                                             @RequestParam(required = false) @Min(0) Long after) {
+        return ApiResponse.ok(chatService.getMessages(roomKey, userId, before, after));
     }
 
     @PostMapping("/{roomKey}/messages")

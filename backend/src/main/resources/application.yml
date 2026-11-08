@@ -58,3 +58,9 @@ oauth:
   github:
     client-id: ${GITHUB_CLIENT_ID:}
     client-secret: ${GITHUB_CLIENT_SECRET:}
+
+chat:
+  sse:
+    timeout: 30m
+    heartbeat: 25s
+    max-connections: 5

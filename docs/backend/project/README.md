@@ -8,8 +8,8 @@
 | --- | --- | --- |
 | [#89](https://github.com/likelion-backendschool-9th/test-moa/issues/89) | 프로젝트·테스터·피드백 엔티티 | [entities.md](entities.md) |
 | [#92](https://github.com/likelion-backendschool-9th/test-moa/issues/92) | 프로젝트 등록·조회·수정과 모집 작성 API | [project-recruitment-api.md](project-recruitment-api.md) |
-| [#107](https://github.com/likelion-backendschool-9th/test-moa/issues/107) | AI 리뷰 묶기·우선순위와 GitHub 이슈 초안 | |
-| [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | |
+| [#107](https://github.com/likelion-backendschool-9th/test-moa/issues/107) | AI 리뷰 묶기·우선순위와 GitHub 이슈 초안 | [ai-review-analysis.md](ai-review-analysis.md) |
+| [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | [ai-version-comparison.md](ai-version-comparison.md) |
 | [#109](https://github.com/likelion-backendschool-9th/test-moa/issues/109) | AI 후속 질문 추천 | [ai-followup.md](ai-followup.md) |
 | [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |
 
@@ -49,7 +49,7 @@
 | 2 | 분석 서버 호출은 DB 트랜잭션 밖에서 하고, 결과는 받은 뒤 짧은 트랜잭션으로 저장한다. 그래서 `spring.jpa.open-in-view`를 끈다 (#109, 11-06) | 응답을 기다리는 동안 DB 연결을 잡고 있지 않는다(분석 서버 README 권장). 켜 두면 트랜잭션이 없어도 요청이 끝날 때까지 연결이 묶여, 분석이 느릴 때 연결 풀(기본 10개)이 바닥난다. 지금 서비스는 모두 트랜잭션 안에서 응답을 만들어 끄더라도 영향이 없다 |
 | 3 | 분석 서버의 5xx·연결 실패·시간 초과는 503 `AI_UNAVAILABLE`, 401·422와 계약과 다른 응답(JSON이 아님, 필드 없음)은 메인 백엔드의 설정·계약 문제라 500 `INTERNAL_ERROR`로 바꾼다 (#109, 11-06) | 분석 서버 오류는 `type`(`llm-upstream-error`, `validation-error` 등)으로 나뉜다. 사용자가 다시 시도해서 나아지는 것만 503이다 |
 | 4 | 요청마다 `X-Request-ID`를 만들어 보내고, 성공·실패 모두 로그에 남긴다 (#109, 11-06) | 두 서버 로그를 같은 ID로 이어 본다 |
-| 5 | 응답 대기는 nginx의 응답 대기(기본 60초)보다 짧게 둔다 (#109, 11-06) | 백엔드가 먼저 끊어야 사용자가 nginx의 504 대신 503 안내를 본다 |
+| 5 | 응답 대기는 nginx의 응답 대기(기본 60초)보다 짧게 둔다 (#109, 11-06). 리뷰 묶기만 비동기로 불러 5분까지 기다린다 (#107, 11-07) | 백엔드가 먼저 끊어야 사용자가 nginx의 504 대신 503 안내를 본다. 리뷰 묶기는 사용자 요청을 붙잡지 않는다 |
 
 ## 데이터 구조
 
@@ -84,7 +84,7 @@ erDiagram
 | 크레딧(#66) | 승인 대기 보상을 `Feedback(SUBMITTED)` 행의 합이 아니라 제출된 참가 건의 `Register` 스냅샷 합으로 계산한다. 피드백 행마다 더하면 중복된다. [결제·구독·크레딧](../payment/README.md#정한-것)의 관련 문장도 고친다 |
 | 신고 | 신고가 접수되면 `report()`, 처리되면 `reward()` 또는 `exclude()`를 부른다 |
 | 보상액 | `confirm`에 넘길 기본·추가 보상액을 정한다 |
-| AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 #89에서 컬럼만 만들었다 |
+| AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 #89에서 컬럼만 만들었다. 분석을 마치면 `completeAnalysis(praiseSummary, now)`로 `DONE`·`praise_summary`·`analyzed_at`을 함께 기록하고, 시작·실패는 조건부 UPDATE로 바꾼다([ai-review-analysis.md](ai-review-analysis.md) 결정 1·3). 그룹 코드는 프로젝트 안 숫자 문자열이고 최대 + 1로 발급한다([ai-version-comparison.md](ai-version-comparison.md) 결정 4) |
 
 ## 아직 정하지 않은 것
 

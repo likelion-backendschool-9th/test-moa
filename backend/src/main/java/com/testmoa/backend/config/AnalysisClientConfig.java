@@ -9,6 +9,7 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import java.net.http.HttpClient;
+import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(AnalysisProperties.class)
@@ -21,12 +22,19 @@ public class AnalysisClientConfig {
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(properties.connectTimeout())
                 .build();
-        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
-        requestFactory.setReadTimeout(properties.readTimeout());
 
         RestClient.Builder builder = RestClient.builder()
                 .baseUrl(properties.baseUrl())
-                .requestFactory(requestFactory);
-        return new AnalysisClient(builder, properties.internalToken());
+                .requestFactory(requestFactory(httpClient, properties.readTimeout()));
+        // 리뷰 묶기만 응답 대기 시간을 길게 둠. 연결 설정은 같음
+        RestClient.Builder reviewAnalysisBuilder = builder.clone()
+                .requestFactory(requestFactory(httpClient, properties.reviewAnalysisReadTimeout()));
+        return new AnalysisClient(builder, reviewAnalysisBuilder, properties.internalToken());
+    }
+
+    private static JdkClientHttpRequestFactory requestFactory(HttpClient httpClient, Duration readTimeout) {
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(readTimeout);
+        return requestFactory;
     }
 }

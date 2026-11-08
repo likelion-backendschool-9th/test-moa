@@ -200,7 +200,7 @@
 
 ## 5. 플랜 (#45-R5)
 
-무료는 `plans` 행으로 두지 않는다. 혜택 비교의 무료 열(월 10명 등)은 상수·설정이다. 조건이 바뀌면 기존 행을 고치지 않고 `version`을 올린 새 행을 만든다.
+무료는 `plans` 행으로 두지 않는다. 혜택 비교의 무료 열은 상수·설정이다. 조건이 바뀌면 기존 행을 고치지 않고 `version`을 올린 새 행을 만든다.
 
 ### `plans`
 
@@ -210,9 +210,8 @@
 | `tier` | `tier` | String | 불가 | 등급 |
 | `cashPrice` | `cash_price` | Integer | 불가 | 현금 가격 |
 | `creditPrice` | `credit_price` | Integer | 불가 | 크레딧 가격 |
-| `monthlyRecruitLimit` | `monthly_recruit_limit` | Integer | 불가 | 월간 모집 한도 |
 | `version` | `version` | Integer | 불가 | 같은 tier의 몇 번째 조건인지 |
-| `description` | `description` | TEXT | 가능 | 설명 |
+| `description` | `description` | TEXT | 가능 | 혜택 문구. 쉼표로 이어 넣고 `Plan.benefits()`가 자른다(문구에 쉼표를 쓰지 않는다) |
 | `imageUrl` | `image_url` | TEXT | 가능 | 이미지 URL |
 | `periodDays` | `period_days` | Integer | 불가 | 이용 기간(일) |
 
@@ -222,11 +221,11 @@
 | --- | --- |
 | 지금 파는 플랜 | tier별 max(`version`)만 목록·결제에 노출 |
 | 플랜 변경 | 새 행 + version+1. 옛 구독은 옛 `plan_id` 유지 |
-| 시드 | 구독, version 1, 10,000원, 9,000크레딧, 30일, 월 30명 |
+| 플랜을 넣는 방법 | 시드 없이 운영자 등록 API(`POST /api/v1/admin/plans`, [subscription.md](subscription.md))로 넣는다. DB가 비어 있으면 플랜이 없다 |
 
 ```java
 // PlanRepository: 지금 파는 플랜 (tier별 최신 version)
-@Query("select p from plans p where p.version = (select max(q.version) from plans q where q.tier = p.tier)")
+@Query("select p from plans p where p.version = (select max(q.version) from plans q where q.tier = p.tier) order by p.id")
 List<Plan> findCurrentPlans();
 ```
 
@@ -235,7 +234,7 @@ List<Plan> findCurrentPlans();
 
 ## 6. 내 구독 (#45-R6)
 
-구독 중인지는 날짜로 판단한다. `EXPIRED`로 바꾸는 배치는 두지 않는다.
+구독 중인지는 날짜로 판단한다. 만료로 바꾸는 배치는 두지 않고, 상태에도 `EXPIRED`가 없다.
 
 ### `subscriptions`
 
@@ -251,7 +250,7 @@ List<Plan> findCurrentPlans();
 | 규칙 | 내용 |
 | --- | --- |
 | 구독 중 | `start_at <= 지금 < end_at`이고 `CANCELLED`가 아님 |
-| 화면 만료일 | 지금 기간과 빈틈없이 이어지는 행 중 가장 늦은 `end_at` |
+| 화면 만료일 | 지금 기간과 빈틈없이 이어지는(앞 행의 `end_at`과 같거나 그 전에 시작하는) 행 중 가장 늦은 `end_at` |
 | 미리 결제 기간 | 아직 시작 전 행도 `ACTIVE` |
 
 예: 30일 플랜, 11/1에 구독하고 11/20에 미리 결제
@@ -318,5 +317,5 @@ List<Plan> findCurrentPlans();
 - `Payment.subscription`이 `@OneToOne`, `@JoinColumn(nullable = false, unique = true)`다. 한 구독에 결제가 둘 붙을 수 없다
 
 ## 가정
-- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(엔티티 안에 둠), `Subscription.Status` ACTIVE/EXPIRED/CANCELLED(`EXPIRED`는 저장 시 미사용, 남길지는 [README.md](README.md#아직-정하지-않은-것)의 2번).
+- enum: `Payment.Method` CASH/CREDIT, `Payment.Status` COMPLETED/REFUNDED(엔티티 안에 둠), `Subscription.Status` ACTIVE/CANCELLED(`EXPIRED`는 뺐다. 만료는 날짜로 판단한다).
 - 단위 테스트 이름은 `@DisplayName("#45-S…")`으로 시나리오와 짝짓는다.

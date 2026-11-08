@@ -39,9 +39,9 @@
 | --- | --- |
 | `SubscriptionController`·`SubscriptionService` | `/status`, `/payable-credits`, `/my/profile/subscription` |
 | `PlanController`·`PlanService` | `GET /api/v1/plans` |
-| `controller/admin/PlanController`·`service/admin/PlanService` | `POST /api/v1/admin/plans` |
+| `controller/admin/AdminPlanController`·`service/admin/AdminPlanService` | `POST /api/v1/admin/plans` |
 
-`PlanController`·`PlanService`가 회원용과 운영자용 두 쌍이라 클래스 이름이 같다. #67·#68처럼 운영자 쪽이 빈 이름(`adminPlanController`, `adminPlanService`)을 따로 가진다. 지금 있는 `SubscriptionChecker`는 "구독 중인지" 판단하는 도우미라 그대로 쓴다.
+회원용은 `PlanController`·`PlanService`, 운영자용은 `AdminPlanController`·`AdminPlanService`로 클래스 이름을 나눠서 빈 이름을 따로 지정하지 않는다(코드 리뷰 반영). 지금 있는 `SubscriptionChecker`는 "구독 중인지" 판단하는 도우미라 그대로 쓴다.
 
 운영자는 구독 대상이 아니라서 로그인이 필요한 구독 API는 `eligible=false`만 돌려준다. 플랜 목록은 회원과 상관없이 같은 값이다. 공개로 열려면 `SecurityConfig`의 `PUBLIC_PATHS`에 `/api/v1/plans`를 더한다. `/api/v1/admin/**`는 이미 `ADMIN`만 허용한다([admin-cashout.md](admin-cashout.md)).
 
@@ -79,8 +79,8 @@
 | --- | --- |
 | `tier` | 필수. 비어 있지 않고 255자까지 |
 | `cashPrice`, `creditPrice` | 필수. 0 이상의 정수 |
-| `periodDays` | 필수. 1 이상의 정수 |
-| `benefits` | 선택. 문자열 목록. 각 항목은 비어 있지 않고 쉼표가 없다 |
+| `periodDays` | 필수. 1 이상 3650 이하의 정수(10년). 상한이 없으면 결제(#71)에서 만료 시각이 DB 날짜 범위를 넘을 수 있다 |
+| `benefits` | 선택. 문자열 목록. 최대 10개, 각 항목은 비어 있지 않고 100자까지, 쉼표가 없다 |
 
 `version`은 서버가 정한다. 그 `tier`의 행이 없으면 1, 있으면 가장 큰 `version`에 1을 더한다. 옛 행은 고치지도 지우지도 않는다. 응답은 만든 플랜 한 건(위 플랜 응답과 같은 모양)이다. `benefits`는 쉼표로 이어 `description`에 저장한다.
 
@@ -174,7 +174,7 @@
 - Then  `version`이 2인 새 행이 생기고 `GET /api/v1/plans`에는 2만 나온다. `version` 1 행은 그대로 남는다(그 행을 가리키는 구독이 있어도 바뀌지 않는다)
 
 #69-S13 플랜 등록 입력 검사 [테스트]
-- When  `tier`가 비었거나 255자를 넘거나 가격이 음수거나 `periodDays`가 1 미만이거나 혜택 항목이 비었거나 쉼표를 담고 있다
+- When  `tier`가 비었거나 255자를 넘거나 가격이 음수거나 `periodDays`가 1 미만이거나 3650을 넘거나 혜택이 11개 이상이거나 혜택 항목이 비었거나 100자를 넘거나 쉼표를 담고 있다
 - Then  400. 플랜 행이 늘지 않는다
 
 #69-S14 플랜 등록은 운영자만 [테스트]
@@ -194,6 +194,11 @@
 - Then  `subscription`의 `active`·`plan`·`endAt`이 `/status`와 같다. 운영자는 `/me`의 `subscription`이 `null`이고 `/status`는 `eligible=false`다
 - 인증 문서의 #81-S2(구독 중이면 플랜·만료일)가 이 이슈에서 바뀐 동작이다(고침 #69)
 
+#69-S17 화면의 "구독 중"과 구독자 전용 기능의 권한 검사가 같은 답을 낸다 [테스트]
+- Given 기간이 없는 회원, 지금 기간, 끝난 기간, 시작 전 기간, 취소된 지금 기간, 이어 붙은 기간, 빈틈 뒤 기간, 취소 뒤 미리 결제한 기간, 지금 기간과 취소된 이어 붙은 기간
+- When  `SubscriptionService.getStatus`(화면)와 `SubscriptionChecker.isActive`(구독자 전용 기능의 권한 검사)를 읽는다
+- Then  둘 다 규칙 표대로(지금 기간이 있어야 구독 중) 같은 값이다. 한쪽만 고치면 화면은 "구독 중"인데 API는 403이 되는 일을 막는다(코드 리뷰 반영)
+
 ---
 
 ## 시작 전에 정할 것
@@ -201,6 +206,9 @@
 | # | 무엇을 | 추천 |
 | --- | --- | --- |
 | 1 | 같은 `tier`를 동시에 등록할 때 | `uk_plans_tier_version`이 한쪽을 막는다. 막힌 쪽의 응답(그대로 500이 될 수 있다)을 409로 바꿀지는 정하지 않았다. 운영자 한 명이 하는 일이라 이 이슈에서는 정하지 않고 둔다 |
+
+## 배포 전에 할 것
+- 이 변경이 들어간 서버를 배포하기 전에 [backend/scripts/drop-plans-monthly-recruit-limit.sql](../../../backend/scripts/drop-plans-monthly-recruit-limit.sql)을 한 번 실행한다(`ALTER TABLE plans DROP COLUMN IF EXISTS monthly_recruit_limit;`). `ddl-auto: update`는 칼럼을 지우지 않아서, 이 칼럼이 `NOT NULL`로 남은 DB는 플랜 등록이 500으로 실패한다. 플랜 행이 있든 없든 칼럼이 있는 DB는 모두 해당한다. 빈 DB(CI, `create-drop`)는 영향이 없다. 다시 실행해도 안전하다.
 
 ## 범위 밖
 - 구독 결제 화면 조회(#70)와 결제 실행(#71)
@@ -212,10 +220,10 @@
 
 ## 작업 순서
 1. `Plan`·`PlanRepository`(지금 파는 플랜 쿼리, [entities.md](entities.md)에 있음)와 혜택 쉼표 변환
-2. 플랜 목록·플랜 등록(`PlanService` 두 쌍과 컨트롤러, `SecurityConfig`에 `/api/v1/plans` 공개)
+2. 플랜 목록·플랜 등록(`PlanService`·`AdminPlanService`와 컨트롤러, `SecurityConfig`에 `/api/v1/plans` 공개)
 3. 이어 붙은 기간을 읽는 `SubscriptionRepository` 메서드와 만료일 계산
 4. `SubscriptionService`·`SubscriptionController`(구독 상태, 결제 가능 크레딧, 대시보드 구독 상태)와 응답 DTO
-5. 시나리오 S1·S3~S10, S12~S16 테스트
+5. 시나리오 S1·S3~S10, S12~S17 테스트
 6. 문서 정리(README 이슈 표와 이 문서 링크, 진행 표기 확인)
 
 ## 가정

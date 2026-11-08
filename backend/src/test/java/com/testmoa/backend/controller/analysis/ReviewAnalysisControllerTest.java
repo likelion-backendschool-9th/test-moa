@@ -385,7 +385,7 @@ class ReviewAnalysisControllerTest {
         verify(gitHubIssueClient).create(any(), org.mockito.ArgumentMatchers.eq("로그인 시 앱 종료"), body.capture(), labels.capture());
         assertThat(body.getValue()).contains("## 재현", "리뷰 1개 · 테스터 1명 · 테스트 버전 v1", "> 로그인하면 앱이 꺼져요", "test-moa 분석 결과에서 생성됨")
                 .doesNotContain(r.a().getNickname(), r.a().getEmail());
-        assertThat(labels.getValue()).containsExactlyInAnyOrder("test-moa", "bug", "severity:blocker");
+        assertThat(labels.getValue()).containsExactlyInAnyOrder("test-moa", "bug", "severity:major");
 
         // 등록한 그룹은 다시 등록할 수 없고 GitHub를 다시 부르지 않는다
         register(developer, r, group).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("ISSUE_ALREADY_REGISTERED"));
@@ -454,5 +454,43 @@ class ReviewAnalysisControllerTest {
         ReflectionTestUtils.setField(group, "gitIssueUrl", "https://github.com/octo/booklog/issues/1");
         editDraft(developer, r, group, "{\"gitIssueContent\":\"내용\"}").andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("ISSUE_ALREADY_REGISTERED"));
+    }
+
+    @Test
+    @DisplayName("#107-S20 근거·인용을 붙인 본문이 GitHub 한도(65,536자)를 넘으면 INVALID_INPUT이고 GitHub를 부르지 않는다. 이슈 내용은 60,000자까지 고칠 수 있다")
+    void 본문이_너무_길면_거절한다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+        linkRepository(r);
+        group.editIssueDraft("로그인 시 앱 종료", "가".repeat(65_536));
+
+        register(developer, r, group).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        verifyNoInteractions(gitHubIssueClient);
+        // 거절은 차지하기 전이라 등록 중 표시가 남지 않는다
+        em.refresh(group);
+        assertThat(group.getGitIssueRegisteringAt()).isNull();
+
+        editDraft(developer, r, group, "{\"gitIssueContent\":\"" + "가".repeat(60_001) + "\"}").andExpect(status().isBadRequest());
+        editDraft(developer, r, group, "{\"gitIssueContent\":\"" + "가".repeat(60_000) + "\"}").andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("#107-S21 등록 중(5분 이내)인 그룹은 이슈 초안을 고칠 수 없고 이름은 고칠 수 있다. 오래된 등록 중 표시는 막지 않는다")
+    void 등록_중에는_초안을_고칠_수_없다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveIssueGroup(r);
+        ReflectionTestUtils.setField(group, "gitIssueRegisteringAt", LocalDateTime.now());
+
+        editDraft(developer, r, group, "{\"gitIssueTitle\":\"새 제목\"}").andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("ISSUE_ALREADY_REGISTERED"));
+        editDraft(developer, r, group, "{\"name\":\"새 이름\"}").andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.groups[0].name").value("새 이름"));
+
+        ReflectionTestUtils.setField(group, "gitIssueRegisteringAt", LocalDateTime.now().minusMinutes(6));
+        editDraft(developer, r, group, "{\"gitIssueTitle\":\"새 제목\"}").andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.groups[0].gitIssueTitle").value("새 제목"));
     }
 }

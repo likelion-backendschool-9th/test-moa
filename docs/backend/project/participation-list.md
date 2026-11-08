@@ -26,7 +26,7 @@
 - 자기 참가만 본다. 참가가 없으면 빈 배열이고 요약은 모두 0이다
 
 ### 목록 행
-`id`(참가 id, 상세 주소의 key), `status`, `appliedAt`, `confirmedAt`, `submittedAt`, `payoutAt`, `earnedCredits`, `reward`, `recruitment`(상세와 같은 모양: `id`, `title`, `description`, `projectName`, `projectImageUrl`, `status`, `selectionMode`, `softwareType`, `subscription`, `recruitDeadline`, `submitDeadline`)
+`id`(참가 id, 상세 주소의 key), `status`, `keyDate`(상태에 맞는 날짜, 아래 표), `appliedAt`, `confirmedAt`, `submittedAt`, `payoutAt`, `earnedCredits`, `reward`, `recruitment`(상세와 같은 모양: `id`, `title`, `description`, `projectName`, `projectImageUrl`, `status`, `selectionMode`, `softwareType`, `subscription`, `recruitDeadline`, `submitDeadline`)
 
 - 값의 뜻은 [내 참여 상세](feedback-submit.md#상세-응답)와 같다. 상태도 같은 계산(`ParticipationStatuses`)을 쓴다
 - 테스트 항목, 제출한 피드백, 접속 링크는 목록에 주지 않는다. 상세에서 본다
@@ -40,7 +40,7 @@
 | `ongoing` 참여 중인 | `beforeSubmit`, `payoutPending`, `underReview` | 상태 순서 → 날짜 가까운 순 |
 | `history` 참여했던 | `paid`, `incomplete`, `excluded`, `cancelled` | 날짜 최근 순 |
 
-정렬에 쓰는 날짜는 프론트 `keyDateOf`와 같고, 날짜가 같으면 참가 id 순이다.
+행에 보이는 날짜는 응답의 `keyDate`이고 정렬도 이 값으로 한다. 기준은 프론트 `keyDateOf`와 같고, 날짜가 같으면 참가 id 순이다. 프론트가 가진 값만으로는 지급 완료·보상 제외·참여 취소의 날짜를 알 수 없어 서버가 정해서 준다(고침 #117: 리뷰에서 참여 취소 날짜가 응답에 없다고 지적받음)
 
 | 상태 | 날짜 |
 | --- | --- |
@@ -65,6 +65,7 @@
 - Then  지원한 탭은 선정 대기(가까운 마감부터) → 미선정 순이다
 - Then  참여 중 탭은 제출 전(가까운 마감부터) → 지급 대기 → 검토 중 순이다
 - Then  참여했던 탭은 지급 완료 → 참여 취소 → 보상 제외 → 미제출로 날짜 최근 순이고, 참여 취소가 여기에 있다
+- Then  행마다 `keyDate`가 위 표의 날짜다. 참여 취소는 지원 시각이 아니라 모집 취소 시각이다
 - Then  행에 상태, 보상 1000, 모집글 제목·프로젝트 이름·제출 마감이 있고, 지급 대기의 `payoutAt`은 제출 + 72시간, 지급 완료의 `earnedCredits`는 1000이다. 접속 링크와 피드백은 없다
 - Then  다른 테스터의 참가는 어느 탭에도 없고, 탭을 비우면 참여 중 탭과 같다
 
@@ -89,4 +90,4 @@
 ## 가정
 1. 참여 취소는 프론트에 없는 상태라 끝난 참여와 함께 참여했던 탭에 둔다
 2. 지급일과 검토 완료일을 저장하지 않아서, 지급 완료는 자동 지급 시각(제출 + 72시간), 보상 제외는 제출 시각으로 정렬한다. 운영자가 늦게 지급하거나 검토하면 실제 날짜와 다를 수 있다
-3. 참여 목록은 탭마다 한 번에 모두 준다. 참가와 피드백, 소프트웨어 유형을 한 번씩 읽어 참가 수만큼 쿼리가 늘지 않는다
+3. 참여 목록은 탭마다 한 번에 모두 준다. 참가와 피드백, 소프트웨어 유형을 한 번씩 읽어 참가 수만큼 쿼리가 늘지 않는다. 요약은 상태와 보상만 계산하고 소프트웨어 유형과 목록 행은 만들지 않는다

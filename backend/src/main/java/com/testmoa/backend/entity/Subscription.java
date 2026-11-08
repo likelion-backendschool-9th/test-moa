@@ -38,7 +38,7 @@ public class Subscription {
     @Column(nullable = false)
     private LocalDateTime startAt;
 
-    // 이 이용 기간의 만료 일시(startAt + periodDays). 만들 때 정하고 고치지 않는다
+    // 이 이용 기간의 만료 일시(시작한 한국 날짜 + periodDays일의 23:59:59, SubscriptionTime.endAt). 만들 때 정하고 고치지 않는다
     @Column(nullable = false)
     private LocalDateTime endAt;
 
@@ -63,7 +63,7 @@ public class Subscription {
      * @param user      구독자
      * @param plan      이 기간을 산 당시의 플랜 행
      * @param startAt   이 이용 기간의 시작 일시. max(지금, CANCELLED가 아닌 행 중 가장 늦은 endAt)
-     * @param endAt     이 이용 기간의 만료 일시(startAt + periodDays). 만들 때 정하고 고치지 않는다
+     * @param endAt     이 이용 기간의 만료 일시(시작한 한국 날짜 + periodDays일의 23:59:59, SubscriptionTime.endAt). 만들 때 정하고 고치지 않는다
      *
      * 상태는 밖에서 받지 않고 항상 ACTIVE로 시작한다. 환불하면 CANCELLED로 바꾼다.
      */

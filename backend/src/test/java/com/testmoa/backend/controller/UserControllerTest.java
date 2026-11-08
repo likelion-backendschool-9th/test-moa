@@ -53,7 +53,7 @@ class UserControllerTest {
     }
 
     private void subscribe(User user, Subscription.Status status, LocalDateTime startAt, LocalDateTime endAt) {
-        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000).monthlyRecruitLimit(30)
+        Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000)
                 .version(1).periodDays(30).build();
         em.persist(plan);
         Subscription subscription = Subscription.builder().user(user).plan(plan).startAt(startAt).endAt(endAt).build();

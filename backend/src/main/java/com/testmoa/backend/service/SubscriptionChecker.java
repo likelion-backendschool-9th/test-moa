@@ -1,15 +1,16 @@
 package com.testmoa.backend.service;
 
 import com.testmoa.backend.entity.Subscription;
-import com.testmoa.backend.repository.SubscriptionRepository;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
+import com.testmoa.backend.repository.SubscriptionRepository;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 /**
  * 유료 구독 여부 확인. 토큰에 구독 여부를 넣지 않고 요청할 때마다 subscriptions를 읽어서,
@@ -30,6 +31,11 @@ public class SubscriptionChecker {
         LocalDateTime now = LocalDateTime.now();
         return subscriptionRepository.findFirstByUserIdAndStatusAndStartAtLessThanEqualAndEndAtAfterOrderByEndAtDesc(
                 userId, Subscription.Status.ACTIVE, now, now);
+    }
+
+    public Set<Long> activeUserIds(Collection<Long> userIds) {
+        if (userIds.isEmpty()) return Set.of();
+        return subscriptionRepository.findActiveUserIds(userIds, Subscription.Status.ACTIVE, LocalDateTime.now());
     }
 
     public boolean isActive(Long userId) {

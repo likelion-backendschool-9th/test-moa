@@ -10,12 +10,12 @@ public record ChatInboxResponse(List<Room> rooms, long total, Counts counts) {
 
     public record Room(String roomKey, Long recruitmentId, String projectName, String roomName,
                        String projectImage, ChatRole myRole, ChatPartnerResponse partner,
-                       String lastMessage, LocalDateTime lastMessageAt, long unreadCount) {
-        public static Room of(ChatInboxEntry entry) {
+                       String lastMessage, LocalDateTime lastMessageAt, long unreadCount, boolean readOnly) {
+        public static Room of(ChatInboxEntry entry, boolean readOnly) {
             return new Room(entry.roomKey(), entry.recruitmentId(), entry.projectName(), entry.roomName(),
                     entry.projectImage(), entry.myRole(),
                     new ChatPartnerResponse(entry.partnerNickname(), entry.partnerRole()),
-                    entry.lastMessage(), entry.lastMessageAt(), entry.unreadCount());
+                    entry.lastMessage(), entry.lastMessageAt(), entry.unreadCount(), readOnly);
         }
     }
 }

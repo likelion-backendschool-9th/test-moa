@@ -12,6 +12,7 @@
 | [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | [ai-version-comparison.md](ai-version-comparison.md) |
 | [#109](https://github.com/likelion-backendschool-9th/test-moa/issues/109) | AI 후속 질문 추천 | [ai-followup.md](ai-followup.md) |
 | [#113](https://github.com/likelion-backendschool-9th/test-moa/issues/113) | 공개 모집글 상세 API | [public-recruitment-detail.md](public-recruitment-detail.md) |
+| [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |
 
 진행 상태는 이슈와 PR에서 본다.
 
@@ -39,6 +40,7 @@
 | 10 | 모집 마감일·피드백 마감일은 날짜로 받고, 한국 시간 그날 23:59:59까지로 본다 (#92, 11-06 팀 결정) | 마감일 당일까지 지원·제출할 수 있게 한다. 저장은 9를 따라 서버 시간대의 시각으로 바꾼다 |
 | 11 | 모집 상태는 취소만 저장하고, 모집 중·테스트 중·종료는 마감일로 계산한다 (#92, 11-06 팀 결정) | 프론트가 같은 방식이고, 마감일이 지나면 따로 바꾸지 않아도 상태가 맞는다. 공개 목록·상세, 지원, 보상 지급 판단이 같은 계산을 쓴다 |
 | 12 | 구독 모집 여부는 모집 작성 때 작성자의 구독 여부로 정해 `recruitments.is_subscription`에 저장한다 (#113, 11-06) | 공개 상세·목록의 추가 보상 표시와 구독 모집 영역에 필요하다. 작성 뒤 구독이 끝나도 그 모집은 구독 모집으로 남는다. 보상액은 보상 담당이 정할 때까지 저장하지 않는다 |
+| 13 | 선착순 모집은 확정 테스터가 있어도 모집 중이면 취소할 수 있다 (#116, 11-07 팀 채팅) | 선착순은 지원하자마자 확정되어 "확정 테스터가 없을 때만" 규칙으로는 첫 지원 뒤 취소할 수 없다. 다른 의견이 있을 수 있어 바뀌면 이 줄과 #116 계획을 고친다. 12는 #113이 쓴다 |
 
 ### AI 분석 서버 연동 (#107~#109)
 리뷰 묶기·버전 비교·후속 질문은 파이썬 분석 서버(`analysis-server`, 별도 EC2)가 만들고, 메인 백엔드는 데이터를 모아 보내고 결과를 받는다. 분석 서버는 DB에 연결하지 않는다.

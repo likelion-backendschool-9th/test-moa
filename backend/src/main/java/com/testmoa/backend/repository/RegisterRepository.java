@@ -55,4 +55,7 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
             @Param("submittedStatus") FeedbackStatus submittedStatus,
             @Param("reportedStatus") FeedbackStatus reportedStatus
     );
+
+    // 모집글의 참가 중 상태가 주어진 것들(#116)
+    List<Register> findByRecruitmentIdAndStatusIn(Long recruitmentId, Collection<RegisterStatus> statuses);
 }

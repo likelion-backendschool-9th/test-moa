@@ -36,6 +36,9 @@ public enum ErrorCode {
     // 구독
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
 
+    // 모집
+    RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),
+
     // 출금
     CASHOUT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리한 출금 요청이에요"),
 

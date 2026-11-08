@@ -224,4 +224,22 @@ class ChatReadControllerTest {
         headerUnread(admin, 0);
     }
 
+    @Test @DisplayName("#52-S11 방 정보와 이름 변경 응답에 상대의 읽은 순번 제공")
+    void partnerReadSeq() throws Exception {
+        sendThree();
+        send(room, tester);
+        call(get(url()), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partnerLastReadSeq").value(0));
+        read(developer, 4).andExpect(status().isOk());
+        call(get(url()), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partnerLastReadSeq").value(4));
+        call(get(url()), developer).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partnerLastReadSeq").value(0));
+        call(patch(url()).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"북로그 1차\"}"), tester)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.partnerLastReadSeq").value(4));
+        call(delete(url()), developer).andExpect(status().isOk());
+        call(get(url()), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.partnerLastReadSeq").value(4));
+    }
+
 }

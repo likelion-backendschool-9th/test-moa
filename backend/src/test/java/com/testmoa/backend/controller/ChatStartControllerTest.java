@@ -92,7 +92,8 @@ class ChatStartControllerTest {
         assertThat(participantWithRole(room, ChatRole.TESTER).getUser().getId()).isEqualTo(tester.getId());
         assertThat(count("chat_rooms")).isEqualTo(1);
         call(get("/api/v1/chats/" + key), developer).andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.partner.nickname").value("모아테스터"));
+                .andExpect(jsonPath("$.data.partner.nickname").value("모아테스터"))
+                .andExpect(jsonPath("$.data.readOnly").value(false));
     }
 
     @Test @DisplayName("#53-S2 기존 방은 구독 만료와 참가 취소 뒤에도 메시지를 보존한다")
@@ -143,6 +144,7 @@ class ChatStartControllerTest {
         start(developer, register.getId()).andExpect(status().isOk());
         em.clear();
         assertThat(participantWithRole(room(key), ChatRole.DEVELOPER).isHidden()).isFalse();
+        call(get(url), developer).andExpect(jsonPath("$.data.readOnly").value(true));
     }
 
     @Test @DisplayName("#53-S4 동시에 시작해도 하나는 201 다른 하나는 200으로 같은 방을 반환한다")
@@ -190,6 +192,67 @@ class ChatStartControllerTest {
             org.springframework.test.context.transaction.TestTransaction.flagForCommit();
             org.springframework.test.context.transaction.TestTransaction.end();
         }
+    }
+
+    void readOnly(String key, boolean expected) throws Exception {
+        for (var user : List.of(developer, tester)) {
+            call(get("/api/v1/chats/" + key), user).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.readOnly").value(expected));
+            var response = call(get("/api/v1/chats"), user).andExpect(status().isOk()).andReturn();
+            var rooms = json.readTree(response.getResponse().getContentAsString()).path("data").path("rooms");
+            boolean found = false;
+            for (var room : rooms) {
+                if (room.path("roomKey").asText().equals(key)) {
+                    found = true;
+                    assertThat(room.path("readOnly").asBoolean()).isEqualTo(expected);
+                }
+            }
+            assertThat(found).isTrue();
+        }
+    }
+
+    @Test @DisplayName("#53-S11 테스트 중인 방과 모집 중 확정 참가의 방은 양쪽 모두 쓰기 가능하다")
+    void openRooms() throws Exception {
+        String key = key(start(developer, register.getId()));
+        var recruiting = fixtures.recruitment(developer, "다음 모집");
+        var otherTester = fixtures.user("선착순테스터");
+        recruiting.edit(recruiting.getTitle(), null, null, null, SelectionMode.FIRST_COME,
+                LocalDateTime.now().plusDays(3), LocalDateTime.now().plusDays(7));
+        var otherRegister = fixtures.confirmedRegister(recruiting, otherTester);
+        String otherKey = key(start(developer, otherRegister.getId()).andExpect(status().isCreated()));
+        readOnly(key, false);
+        call(get("/api/v1/chats/" + otherKey), developer).andExpect(jsonPath("$.data.readOnly").value(false));
+        var inbox = call(get("/api/v1/chats"), developer).andReturn();
+        var rooms = json.readTree(inbox.getResponse().getContentAsString()).path("data").path("rooms");
+        assertThat(rooms.size()).isEqualTo(2);
+        for (var room : rooms) assertThat(room.path("readOnly").asBoolean()).isFalse();
+    }
+
+    @Test @DisplayName("#53-S12 마감·모집 취소·개발자 구독 종료는 방 정보와 채팅함에 반영된다")
+    void readOnlyRooms() throws Exception {
+        String key = key(start(developer, register.getId()));
+        deadlines(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(1));
+        readOnly(key, true);
+        deadlines(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(7));
+        recruitment.cancel(null, LocalDateTime.now());
+        readOnly(key, true);
+        em.flush();
+        em.createQuery("update recruitments r set r.status = :state where r.id = :id")
+                .setParameter("state", RecruitmentStatus.RECRUITING).setParameter("id", recruitment.getId()).executeUpdate();
+        em.clear();
+        readOnly(key, false);
+        expire();
+        readOnly(key, true);
+        call(patch("/api/v1/chats/" + key).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"기록\"}"), tester)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.readOnly").value(true));
+        em.createQuery("update subscriptions s set s.endAt = :end, s.status = :state where s.id = :id")
+                .setParameter("end", LocalDateTime.now().plusDays(30)).setParameter("state", Subscription.Status.CANCELLED)
+                .setParameter("id", subscription.getId()).executeUpdate();
+        readOnly(key, true);
+        em.createQuery("update subscriptions s set s.startAt = :start, s.status = :state where s.id = :id")
+                .setParameter("start", LocalDateTime.now().plusDays(1)).setParameter("state", Subscription.Status.ACTIVE)
+                .setParameter("id", subscription.getId()).executeUpdate();
+        readOnly(key, true);
     }
 
     @Test @DisplayName("#53-S5 남의 참가와 없는 참가와 테스터 요청은 404다")

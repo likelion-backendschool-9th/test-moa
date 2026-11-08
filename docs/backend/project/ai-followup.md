@@ -113,7 +113,7 @@
 3. 하루 한도 — #109-S7~S9
    - 파일: `service/FollowupQuestionLimiter`
 4. 조회·서비스·API — #109-S1~S5
-   - 파일: `domain/repository/FeedbackRepository`, `service/FollowupQuestionService` + `impl`, `controller/FollowupQuestionController`, `domain/dto/response/FollowupQuestionsResponse`, `ErrorCode`(`AI_UNAVAILABLE`, `FOLLOWUP_LIMIT_EXCEEDED`)
+   - 파일: `domain/repository/FeedbackRepository`, `service/FollowupQuestionService` + `impl`, `controller/analysis/FollowupQuestionController`, `domain/dto/response/FollowupQuestionsResponse`, `ErrorCode`(`AI_UNAVAILABLE`, `FOLLOWUP_LIMIT_EXCEEDED`)
 5. 테스트
    - 파일: `AnalysisClientTest`(분석 서버 흉내: `MockRestServiceServer`), `FollowupQuestionLimiterTest`, `FollowupQuestionControllerTest`(분석 서버 클라이언트는 `@MockitoBean`)
    - 확인: 로컬에서는 컴파일만 하고(`./gradlew compileJava compileTestJava`), 테스트는 CI에서 돌린다

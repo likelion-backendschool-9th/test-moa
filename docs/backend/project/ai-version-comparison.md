@@ -140,7 +140,7 @@
    - 파일: `service/PeriodUsageLimiter`(#109 `FollowupQuestionLimiter`에서 꺼냄), `service/VersionComparisonLimiter`
 3. 분석 서버 클라이언트 — `global/client/AnalysisClient.compare`
 4. 조회·저장·서비스·API — #108-S1~S7, S10~S12
-   - 파일: `ClusterGroupRepository`, `FeedbackClusterRepository`, `VersionComparisonRepository`, `RecruitmentRepository`·`ProjectRepository`에 쿼리 추가, `service/VersionComparisonReader`(읽기 트랜잭션), `service/VersionComparisonWriter`(저장 트랜잭션), `service/VersionComparisonService` + `impl`, `controller/VersionComparisonController`, `dto/response/VersionComparisonResponse`, `ErrorCode`
+   - 파일: `ClusterGroupRepository`, `FeedbackClusterRepository`, `VersionComparisonRepository`, `RecruitmentRepository`·`ProjectRepository`에 쿼리 추가, `service/VersionComparisonReader`(읽기 트랜잭션), `service/VersionComparisonWriter`(저장 트랜잭션), `service/VersionComparisonService` + `impl`, `controller/analysis/VersionComparisonController`, `dto/response/VersionComparisonResponse`, `ErrorCode`
 5. 테스트 — `VersionComparisonControllerTest`(분석 서버 클라이언트는 `@MockitoBean`), `VersionComparisonLimiterTest`
 
 ## 가정

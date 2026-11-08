@@ -119,6 +119,51 @@ class ChatRoomControllerTest {
         roomName(tester, "북로그 1차");
     }
 
+    @Test @DisplayName("#50-S6 삭제는 내 채팅함에서만 숨기고 방 접근 차단")
+    void deleteRoom() throws Exception {
+        var recruitment = fixtures.recruitment(developer, "다른 프로젝트");
+        var other = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, tester)).build();
+        em.persist(other);
+        reload();
+        call(delete(url()), tester).andExpect(status().isOk())
+                .andExpect(content().json("{\"success\":true,\"data\":null}",
+                        org.springframework.test.json.JsonCompareMode.STRICT));
+        reload();
+        call(get("/api/v1/chats"), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.rooms.length()").value(1))
+                .andExpect(jsonPath("$.data.rooms[0].roomKey").value(other.getRoomKey()));
+        for (var request : new MockHttpServletRequestBuilder[]{get(url()), get(url() + "/messages"),
+                post(url() + "/messages").contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"안녕하세요\"}")}) {
+            call(request, tester).andExpect(status().isNotFound())
+                    .andExpect(content().json("{\"success\":false,\"data\":null,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"찾을 수 없어요\"}}",
+                            org.springframework.test.json.JsonCompareMode.STRICT));
+        }
+        call(get("/api/v1/chats"), developer).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(2))
+                .andExpect(jsonPath("$.data.rooms[*].roomKey", org.hamcrest.Matchers.hasItem(room.getRoomKey())));
+    }
+
+    @Test @DisplayName("#50-S7 상대가 보내면 이름과 읽은 순번을 유지한 채 다시 표시")
+    void reappear() throws Exception {
+        testerSide.markRead(3);
+        reload();
+        rename("북로그 1차").andExpect(status().isOk());
+        call(delete(url()), tester).andExpect(status().isOk());
+        reload();
+        var hidden = em.find(ChatParticipant.class, testerSide.getId());
+        assertThat(hidden.isHidden()).isTrue();
+        assertThat(hidden.getCustomRoomName()).isEqualTo("북로그 1차");
+        assertThat(hidden.getLastReadSeq()).isEqualTo(3);
+        call(post(url() + "/messages").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"text\":\"다시 확인 부탁드려요\"}"), developer).andExpect(status().isOk());
+        reload();
+        roomName(tester, "북로그 1차");
+        var saved = em.find(ChatParticipant.class, testerSide.getId());
+        assertThat(saved.isHidden()).isFalse();
+        assertThat(saved.getLastReadSeq()).isEqualTo(3);
+    }
+
     @Test @DisplayName("#50-S5 공백 제거 후 30자까지 허용")
     void nameLength() throws Exception {
         String name = "가".repeat(30);

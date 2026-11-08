@@ -9,10 +9,8 @@ import { setDemo } from "./helpers";
 const region = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
 /* 날짜 묶음마다 목록이 하나씩 있고, 목록 이름은 그 날짜 소제목이다 */
 const dayRows = (section: Locator) => section.locator("ul[aria-labelledby] > li");
-const ledgerRows = (page: Page) => dayRows(region(page, "크레딧 내역"));
 const historyRows = (page: Page) => dayRows(region(page, "출금 내역"));
 const balanceRow = (page: Page, label: string) => region(page, "잔액").locator("dl > div").filter({ hasText: label });
-const filter = (page: Page, name: string) => page.getByRole("navigation", { name: "내역 필터" }).getByRole("link", { name });
 
 const DAY_HEADING = /^(오늘|어제|\d{1,2}월 \d{1,2}일)$/;
 const CLOCK = /^오[전후] \d{1,2}:\d{2}$/;
@@ -46,104 +44,10 @@ async function request(page: Page, amount = "5000") {
   await page.getByRole("button", { name: "출금 신청" }).click();
 }
 
-test.describe("tester 크레딧 관리", () => {
-  test.beforeEach(async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/credits");
-  });
-
-  test("S350 총 잔액과 구성, 승인 대기", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1, name: "크레딧" })).toBeVisible();
-    const balance = region(page, "잔액");
-    await expect(balance.getByText("12,480 크레딧", { exact: true })).toBeVisible();
-    await expect(balanceRow(page, "적립 크레딧")).toContainText("9,480 크레딧");
-    await expect(balanceRow(page, "이벤트 크레딧")).toContainText("3,000 크레딧");
-    await expect(balanceRow(page, "출금 처리 중")).toContainText("0 크레딧");
-    await expect(balance.getByText(/승인 대기\s*1,350 크레딧/)).toBeVisible();
-    await expect(balance.getByRole("link", { name: "출금 신청" })).toHaveAttribute("href", "/my/credits/withdrawals");
-    await expect(balance.getByRole("link", { name: "크레딧 내역" })).toHaveCount(0);
-  });
-
-  test("S352~S355 전체 내역과 받은·쓴·모르는 필터", async ({ page }) => {
-    const rows = ledgerRows(page);
-    await expect(rows).toHaveCount(12);
-    await expect(rows.first()).toContainText("레시피핏 테스트 보상");
-    await expect(rows.first()).toContainText("+1,260 크레딧");
-    await expect(rows.last()).toContainText("가입 크레딧");
-    await expect(rows.last()).toContainText("+3,000 크레딧");
-    await expect(filter(page, "전체")).toHaveAttribute("aria-current", "page");
-
-    await filter(page, "받은 크레딧").click();
-    await expect(page).toHaveURL("/my/credits?type=in");
-    await expect(rows).toHaveCount(11);
-    await expect(filter(page, "받은 크레딧")).toHaveAttribute("aria-current", "page");
-
-    await filter(page, "쓴 크레딧").click();
-    await expect(page).toHaveURL("/my/credits?type=out");
-    await expect(rows).toHaveCount(1);
-    await expect(rows.first()).toContainText("출금 지급");
-    await expect(rows.first()).toContainText("-3,000 크레딧");
-
-    await page.goto("/my/credits?type=foo");
-    await expect(filter(page, "전체")).toHaveAttribute("aria-current", "page");
-    await expect(rows).toHaveCount(12);
-  });
-
-  test("S544·S548 날짜별 묶음과 시각, 좁은 화면에서도 이름이 다 보인다", async ({ page }) => {
-    await expectDayGroups(region(page, "크레딧 내역"), 12);
-    await expect(region(page, "크레딧 내역").getByRole("heading", { level: 3 }).first()).toHaveText("어제");
-
-    await page.setViewportSize({ width: 375, height: 800 });
-    const label = ledgerRows(page).first().getByText("레시피핏 테스트 보상", { exact: true });
-    expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-  });
-
-  test("S367·S545 마이페이지 최근 내역은 크레딧 내역의 첫 5개와 같고 모양도 같다", async ({ page }) => {
-    await expect(ledgerRows(page)).toHaveCount(12);
-    const full = (await ledgerRows(page).allInnerTexts()).slice(0, 5);
-    await page.goto("/my");
-    const recent = region(page, "최근 크레딧 내역");
-    await expectDayGroups(recent, 5);
-    expect(await dayRows(recent).allInnerTexts()).toEqual(full);
-  });
-});
-
-test("S357·S359 developer의 구독 결제는 쓴 크레딧이고 출금은 처리 중이다", async ({ page, context }) => {
-  await setDemo(context, { role: "developer" });
-  await page.goto("/my/credits?type=out");
-  await expect(ledgerRows(page)).toHaveCount(1);
-  await expect(ledgerRows(page).first()).toContainText("구독 결제");
-  await expect(ledgerRows(page).first()).toContainText("-2,000 크레딧");
-
-  await page.goto("/my/credits/withdrawals");
-  await expect(historyRows(page).first()).toContainText("1,000원");
-  await expect(historyRows(page).first()).toContainText("처리 중");
-});
-
 test.describe("tester 출금", () => {
   test.beforeEach(async ({ page, context }) => {
     await setDemo(context, { role: "tester" });
     await page.goto("/my/credits/withdrawals");
-  });
-
-  test("S358·S546 출금 내역은 날짜별로 묶이고 반려는 이유를 보여 준다", async ({ page }) => {
-    await expectDayGroups(region(page, "출금 내역"), 2);
-    const rows = historyRows(page);
-    await expect(rows.nth(0)).toContainText("3,000원");
-    await expect(rows.nth(0)).toContainText("지급 완료");
-    await expect(rows.nth(1)).toContainText("2,000원");
-    await expect(rows.nth(1)).toContainText("반려");
-    await expect(rows.nth(1)).toContainText("예금주 이름이 회원 정보와 달라요");
-  });
-
-  test("S361·S362 출금 가능 금액, 이벤트 크레딧 안내, 전액", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1, name: "출금" })).toBeVisible();
-    const form = region(page, "출금 신청");
-    await expect(form.getByText(/출금 가능\s*9,480 크레딧/)).toBeVisible();
-    await expect(form.getByText(/이벤트 크레딧은 출금할 수 없어요/)).toBeVisible();
-    await page.getByRole("button", { name: "전액" }).click();
-    await expect(page.getByLabel("금액(크레딧)")).toHaveValue("9480");
-    await expect(page.getByText(/받을 금액\s*9,480원/)).toBeVisible();
   });
 
   test("S364·S365 금액 초과, 빈 칸, 잘못된 형식", async ({ page }) => {

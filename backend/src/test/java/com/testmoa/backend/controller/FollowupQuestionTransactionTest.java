@@ -86,7 +86,7 @@ class FollowupQuestionTransactionTest {
             List<Plan> plans = em.createQuery("select p from plans p where p.tier = '구독' and p.version = 1", Plan.class)
                     .getResultList();
             Plan plan = plans.isEmpty() ? save(Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000)
-                    .monthlyRecruitLimit(30).version(1).periodDays(30).build()) : plans.get(0);
+                    .version(1).periodDays(30).build()) : plans.get(0);
             save(Subscription.builder().user(developer).plan(plan).startAt(now.minusDays(1)).endAt(now.plusDays(29)).build());
             Project project = save(Project.builder().user(developer).title("북로그").description("독서 기록 앱").build());
             Recruitment recruitment = save(Recruitment.builder().project(project).title("1차 베타 테스트")

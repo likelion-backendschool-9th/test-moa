@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "npm run test:unit",
+    "test:unit": "playwright test --config=playwright.unit.config.ts",
     "test:e2e": "playwright test",
     "test:structure": "node --test scripts/structure/*.test.mjs",
     "test:visual": "node scripts/visual/compare.mjs"

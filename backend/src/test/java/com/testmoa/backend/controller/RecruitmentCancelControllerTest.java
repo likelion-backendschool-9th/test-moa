@@ -233,6 +233,15 @@ class RecruitmentCancelControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("RECRUITMENT_NOT_CANCELLABLE"));
         assertThat(reload(recruitment).getCancelledAt()).isEqualTo(firstCancelledAt);
+
+        /* 저장 상태가 RECRUITING이 아니면(지금은 쓰지 않는 CLOSED) 마감일이 남아도 500이 아니라 409다 */
+        Recruitment storedClosed = recruiting(SelectionMode.MANUAL);
+        em.flush();
+        em.createNativeQuery("update recruitments set status = 'CLOSED' where id = :id")
+                .setParameter("id", storedClosed.getId()).executeUpdate();
+        cancel(developer, storedClosed, null)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("RECRUITMENT_NOT_CANCELLABLE"));
     }
 
     @Test

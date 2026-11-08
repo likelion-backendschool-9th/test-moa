@@ -12,6 +12,7 @@
 | [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | [ai-version-comparison.md](ai-version-comparison.md) |
 | [#109](https://github.com/likelion-backendschool-9th/test-moa/issues/109) | AI 후속 질문 추천 | [ai-followup.md](ai-followup.md) |
 | [#113](https://github.com/likelion-backendschool-9th/test-moa/issues/113) | 공개 모집글 상세 API | [public-recruitment-detail.md](public-recruitment-detail.md) |
+| [#114](https://github.com/likelion-backendschool-9th/test-moa/issues/114) | 테스트 지원 API | [test-apply.md](test-apply.md) |
 | [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |
 
 진행 상태는 이슈와 PR에서 본다.
@@ -41,6 +42,7 @@
 | 11 | 모집 상태는 취소만 저장하고, 모집 중·테스트 중·종료는 마감일로 계산한다 (#92, 11-06 팀 결정) | 계산은 엔티티 `Recruitment.phaseAt(now)`가 한다(#113). 프론트가 같은 방식이고, 마감일이 지나면 따로 바꾸지 않아도 상태가 맞는다. 공개 목록·상세, 지원, 보상 지급 판단이 같은 계산을 쓴다 |
 | 12 | 구독 모집 여부는 모집 작성 때 작성자의 구독 여부로 정해 `recruitments.is_subscription`에 저장한다 (#113, 11-06) | 공개 상세·목록의 추가 보상 표시와 구독 모집 영역에 필요하다. 작성 뒤 구독이 끝나도 그 모집은 구독 모집으로 남는다. 보상액은 보상 담당이 정할 때까지 저장하지 않는다 |
 | 13 | 선착순 모집은 확정 테스터가 있어도 모집 중이면 취소할 수 있다 (#116, 11-07 팀 채팅) | 선착순은 지원하자마자 확정되어 "확정 테스터가 없을 때만" 규칙으로는 첫 지원 뒤 취소할 수 없다. 다른 의견이 있을 수 있어 바뀌면 이 줄과 #116 계획을 고친다. 12는 #113이 쓴다 |
+| 14 | 참가를 확정할 때 기본 보상 1,000 크레딧, 추가 보상 0을 고정한다. 금액은 `RewardPolicy` 상수 하나다 (#114, 11-07 팀 채팅) | 추가 보상은 기준이 애매해 빼고, 기본 보상만 임의 금액으로 먼저 개발하기로 했다. 프론트 `BASE_REWARD`와 같은 값이다. 바꾸면 그 뒤 확정부터 적용되고 이미 확정한 참가는 스냅샷이라 그대로다 |
 
 ### AI 분석 서버 연동 (#107~#109)
 리뷰 묶기·버전 비교·후속 질문은 파이썬 분석 서버(`analysis-server`, 별도 EC2)가 만들고, 메인 백엔드는 데이터를 모아 보내고 결과를 받는다. 분석 서버는 DB에 연결하지 않는다.
@@ -85,7 +87,7 @@ erDiagram
 | --- | --- |
 | 크레딧(#66) | 승인 대기 보상을 `Feedback(SUBMITTED)` 행의 합이 아니라 제출된 참가 건의 `Register` 스냅샷 합으로 계산한다. 피드백 행마다 더하면 중복된다. [결제·구독·크레딧](../payment/README.md#정한-것)의 관련 문장도 고친다 |
 | 신고 | 신고가 접수되면 `report()`, 처리되면 `reward()` 또는 `exclude()`를 부른다 |
-| 보상액 | `confirm`에 넘길 기본·추가 보상액을 정한다 |
+| 보상액 | `confirm`에 넘길 기본·추가 보상액을 정한다. 정할 때까지는 정한 것 14의 임시 금액(기본 1,000, 추가 0)을 쓴다 |
 | AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 #89에서 컬럼만 만들었다. 분석을 마치면 `completeAnalysis(praiseSummary, now)`로 `DONE`·`praise_summary`·`analyzed_at`을 함께 기록하고, 시작·실패는 조건부 UPDATE로 바꾼다([ai-review-analysis.md](ai-review-analysis.md) 결정 1·3). 그룹 코드는 프로젝트 안 숫자 문자열이고 최대 + 1로 발급한다([ai-version-comparison.md](ai-version-comparison.md) 결정 4) |
 
 ## 아직 정하지 않은 것

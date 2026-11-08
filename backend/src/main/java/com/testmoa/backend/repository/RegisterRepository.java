@@ -58,4 +58,7 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
 
     // 모집글의 참가 중 상태가 주어진 것들(#116)
     List<Register> findByRecruitmentIdAndStatusIn(Long recruitmentId, Collection<RegisterStatus> statuses);
+
+    // 회원이 이 모집에 이미 낸 참가 중 상태가 주어진 것이 있는지(#114)
+    boolean existsByRecruitmentIdAndUserIdAndStatusIn(Long recruitmentId, Long userId, Collection<RegisterStatus> statuses);
 }

@@ -28,6 +28,11 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> 
     @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
     Optional<Recruitment> findMineForUpdate(@Param("id") Long id, @Param("userId") Long userId);
 
+    // 지원하려고 읽는 모집글과 프로젝트(#114). 취소(#116)와 같은 행 잠금이라 지원과 취소, 같은 회원의 두 번 누르기가 차례로 처리된다
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from recruitments r join fetch r.project where r.id = :id")
+    Optional<Recruitment> findForApplyById(@Param("id") Long id);
+
     // 내 모집글과 그 프로젝트. 다른 회원의 모집글은 없는 것과 같다
     @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
     Optional<Recruitment> findMineWithProject(@Param("id") Long id, @Param("userId") Long userId);

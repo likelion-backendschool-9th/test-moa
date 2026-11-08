@@ -50,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class PublicRecruitmentControllerTest {
+class RecruitmentControllerTest {
     private static final String DETAIL = "/api/v1/recruitments/";
     private static final ObjectMapper JSON = new ObjectMapper();
 

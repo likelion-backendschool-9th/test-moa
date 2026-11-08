@@ -31,6 +31,7 @@
 - 선착순 예외: 선착순은 지원하자마자 확정되어 "확정 테스터가 없을 때만" 규칙으로는 첫 지원 뒤 취소할 수 없다. 11-07 팀 채팅에서 선착순은 예외로 두기로 했다([README 정한 것 13](README.md#정한-것)). 다른 의견이 나오면 이 줄만 바꾼다
 - 테스터 처리: 대기(`APPLIED`) 지원과 피드백을 하나도 내지 않은 확정(`CONFIRMED`) 참가는 참여 취소(`CANCELLED`)가 된다. 피드백을 낸 확정 참가는 그대로 남아 72시간 신고 규칙대로 보상을 받는다. 거절(`REJECTED`)은 그대로 둔다
 - 같은 모집에 취소와 지원(#114)이 겹치지 않게 모집글 행을 잠그고(`PESSIMISTIC_WRITE`) 판단한다. 잠그는 쿼리가 주인 조건까지 보므로 다른 회원의 모집은 잠그지 않고 404다. 지원 API도 같은 잠금으로 모집글을 읽어야 한다
+- 취소할 참가 목록도 잠가서 읽는다. 피드백 제출(#118)은 참가 행만 잠그므로, 이것이 없으면 제출한 참가가 "피드백 없음"으로 읽혀 취소될 수 있다(고침 #118: 리뷰에서 찾은 동시 실행 문제, [#118-S8](feedback-submit.md))
 - 저장 상태가 `RECRUITING`이 아니면(취소, 나중에 `CLOSED`를 저장하게 되면 그것도) 마감일과 상관없이 종료로 보고 409다. 엔티티 `cancel()`의 조건과 같다
 - 응답: `id`, `status`(`cancelled`), `cancelReason`(테스트 전 취소는 null), `cancelledAt`, `cancelledRegisterCount`(참여 취소가 된 수), `keptRegisterCount`(확정으로 남은 수)
 - 프로젝트의 모집 건 목록(`GET /api/v1/developer/projects/{projectId}/recruitments`, #92) 항목에 `cancelReason`, `cancelledAt`을 더했다. 취소하지 않은 모집은 둘 다 null이다

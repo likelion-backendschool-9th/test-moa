@@ -153,6 +153,11 @@ public class ChatServiceImpl implements ChatService {
         var room = roomRepository.findLockedByRoomKey(roomKey)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         var me = requireParticipant(roomKey, userId);
+        var recruitment = room.getRecruitment();
+        if (readOnlyPolicy.isReadOnly(recruitment,
+                subscriptionChecker.isActive(recruitment.getProject().getUser().getId()), LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.CHAT_READ_ONLY);
+        }
         var message = room.createMessage(me, text);
         messageRepository.save(message);
         participantRepository.unhidePartner(room.getId(), me.getId());

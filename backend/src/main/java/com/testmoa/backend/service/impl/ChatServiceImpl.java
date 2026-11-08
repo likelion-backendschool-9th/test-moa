@@ -104,6 +104,15 @@ public class ChatServiceImpl implements ChatService {
         return getRoom(roomKey, userId);
     }
 
+    @Override
+    @Transactional
+    public void deleteRoom(String roomKey, Long userId) {
+        var me = requireParticipant(roomKey, userId);
+        if (participantRepository.hideRoom(me.getId()) == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+    }
+
     private ChatParticipant requireParticipant(String roomKey, Long userId) {
         return participantRepository.findByRoomRoomKeyAndUserIdAndHiddenFalse(roomKey, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));

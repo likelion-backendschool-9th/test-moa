@@ -49,4 +49,8 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     @Query("update chat_participants p set p.customRoomName = :name where p.id = :id and p.hidden = false")
     int renameRoom(@Param("id") Long id, @Param("name") String name);
 
+    @Modifying
+    @Query("update chat_participants p set p.hidden = true where p.id = :id and p.hidden = false")
+    int hideRoom(@Param("id") Long id);
+
 }

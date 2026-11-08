@@ -51,4 +51,11 @@ public class ChatController {
         return ApiResponse.ok(chatService.renameRoom(roomKey, userId, request.name()));
     }
 
+    @DeleteMapping("/{roomKey}")
+    public ApiResponse<Void> deleteRoom(@PathVariable String roomKey,
+                                         @AuthenticationPrincipal Long userId) {
+        chatService.deleteRoom(roomKey, userId);
+        return ApiResponse.ok();
+    }
+
 }

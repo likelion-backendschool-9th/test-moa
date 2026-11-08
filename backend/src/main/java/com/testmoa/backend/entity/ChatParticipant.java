@@ -79,6 +79,7 @@ public class ChatParticipant {
         this.lastReadSeq = 0;
     }
 
+    // 아래 변경 메서드는 테스트 준비용. 운영 코드는 동시 갱신 시 다른 컬럼을 덮어쓰지 않도록 ChatParticipantRepository의 update 쿼리를 쓴다.
     public void rename(String customRoomName) { this.customRoomName = customRoomName; }
 
     public void hide() { this.hidden = true; }

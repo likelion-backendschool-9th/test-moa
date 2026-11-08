@@ -75,6 +75,7 @@ async function ManageSlot({ params, searchParams }: Props) {
           recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
           selectionMode={detail.selectionMode}
+          recruitDeadline={recruitment.recruitDeadline}
         />
       )}
       {current === "feedback" && (

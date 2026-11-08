@@ -45,6 +45,10 @@ public class Feedback {
     @Column(name = "is_recommended", nullable = false)
     private boolean recommended;
 
+    // 개발자가 적은 신고 사유. 신고 전에는 null
+    @Column(columnDefinition = "TEXT")
+    private String reportReason;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -89,13 +93,16 @@ public class Feedback {
     }
 
     /**
-     * 신고 접수. 제출 상태일 때만 할 수 있다.
+     * 신고 접수. 제출 상태일 때만 할 수 있다. 72시간 안인지는 서비스가 확인한다.
+     *
+     * @param reason 신고 사유
      */
-    public void report() {
+    public void report(String reason) {
         if (status != FeedbackStatus.SUBMITTED) {
             throw new IllegalStateException("제출 상태일 때만 신고할 수 있습니다.");
         }
         this.status = FeedbackStatus.REPORTED;
+        this.reportReason = reason;
     }
 
     /**

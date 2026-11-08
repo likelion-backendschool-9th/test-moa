@@ -84,6 +84,10 @@ async function ManageSlot({ params, searchParams }: Props) {
           testItems={detail.testItems}
           recruitmentKey={recruitmentKey}
           isSubscription={recruitment.isSubscription}
+          confirmedCount={analytics.confirmedCount}
+          submittedCount={analytics.submittedCount}
+          submitDeadline={recruitment.submitDeadline}
+          selectionMode={detail.selectionMode}
         />
       )}
       {current === "analytics" && <AnalyticsPanel isSubscription={recruitment.isSubscription} analytics={analytics} />}

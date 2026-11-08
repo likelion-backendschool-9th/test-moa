@@ -24,6 +24,16 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             """)
     Optional<Feedback> findWithRecruitmentById(@Param("id") Long id);
 
+    // 모집글의 피드백과 쓴 회원. 최근 제출 순
+    @Query("""
+            select f from feedbacks f
+            join fetch f.register r
+            join fetch r.user
+            where r.recruitment.id = :recruitmentId
+            order by f.submittedAt desc, f.id desc
+            """)
+    List<Feedback> findWithUserByRecruitmentId(@Param("recruitmentId") Long recruitmentId);
+
     // 모집글별 피드백 수. 피드백이 없는 모집글은 결과에 없다
     @Query("select f.register.recruitment.id as recruitmentId, count(f) as count from feedbacks f "
             + "where f.register.recruitment.id in :recruitmentIds group by f.register.recruitment.id")

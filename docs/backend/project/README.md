@@ -16,6 +16,7 @@
 | [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 모집 정보 수정 API | [recruitment-edit.md](recruitment-edit.md) |
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 테스터 관리 API(지원 목록, 확정·거절) | [tester-management.md](tester-management.md) |
+| [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 피드백 관리 API(목록, 유용해요, 신고) | [feedback-management.md](feedback-management.md) |
 
 진행 상태는 이슈와 PR에서 본다.
 

@@ -243,6 +243,8 @@ export type RecruitmentAnalytics = {
   applicationCount: number;
   confirmedCount: number;
   feedbackCount: number;
+  /** 피드백을 한 건이라도 낸 확정 테스터 수 */
+  submittedCount: number;
   /** 피드백을 낸 확정 테스터 수 ÷ 확정 수 백분율. 확정이 0이면 0 */
   submitRate: number;
   reportCount: number;
@@ -258,6 +260,7 @@ export function getAnalytics(applications: Application[], feedbacks: Feedback[])
   return {
     applicationCount: applications.length,
     confirmedCount,
+    submittedCount,
     feedbackCount: feedbacks.length,
     submitRate: confirmedCount === 0 ? 0 : Math.round((submittedCount / confirmedCount) * 100),
     reportCount: feedbacks.filter((item) => item.status === "reported").length,

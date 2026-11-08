@@ -20,7 +20,7 @@ class FeedbackTest {
 
     private Feedback reported() {
         Feedback feedback = submitted();
-        feedback.report();
+        feedback.report("신고 사유");
         return feedback;
     }
 
@@ -82,7 +82,9 @@ class FeedbackTest {
     @Test
     @DisplayName("#89-S22 신고 접수")
     void report는_제출에서_신고됨으로_바꾼다() {
-        assertEquals(FeedbackStatus.REPORTED, reported().getStatus());
+        Feedback feedback = reported();
+        assertEquals(FeedbackStatus.REPORTED, feedback.getStatus());
+        assertEquals("신고 사유", feedback.getReportReason());
     }
 
     @Test
@@ -104,9 +106,9 @@ class FeedbackTest {
     @DisplayName("#89-S25 허용하지 않는 상태 변경")
     void 허용하지_않는_상태_변경을_거절한다() {
         assertRejected(submitted(), Feedback::exclude);
-        assertRejected(reported(), Feedback::report);
+        assertRejected(reported(), feedback -> feedback.report("다시 신고"));
         for (Feedback feedback : List.of(rewarded(), excluded())) {
-            assertRejected(feedback, Feedback::report);
+            assertRejected(feedback, item -> item.report("신고 사유"));
             assertRejected(feedback, Feedback::reward);
             assertRejected(feedback, Feedback::exclude);
         }

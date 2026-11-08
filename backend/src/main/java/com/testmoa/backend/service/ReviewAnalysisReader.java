@@ -146,12 +146,12 @@ public class ReviewAnalysisReader {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 
+    public record IssueDraft(Long projectId, String title, String body, List<String> labels) {}
+
     /**
      * 분석할 모집글과 보낸 리뷰. 저장할 때 다시 읽도록 엔티티 대신 id만 둠
      *
      * @param feedbackIds 이번에 보낸 리뷰. 응답의 리뷰 ID가 이 안에 있어야 매핑함
      */
-    public record IssueDraft(Long projectId, String title, String body, List<String> labels) {}
-
     public record AnalysisTarget(Long projectId, Long recruitmentId, List<Long> feedbackIds, AnalysisRequest request) {}
 }

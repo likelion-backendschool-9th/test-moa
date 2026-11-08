@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 public class ReviewAnalysisWriter {
     // 그룹 이름·이슈 제목 컬럼(varchar(255))의 길이. 넘으면 저장이 통째로 실패해 미리 자름
     private static final int COLUMN_MAX = 255;
+    // 등록 중 표시가 이 시간보다 오래되면 서버가 멈춰 남은 것으로 보고 다시 등록할 수 있음
+    private static final Duration STALE_REGISTERING = Duration.ofMinutes(5);
 
     private final GroupCodeIssuer groupCodeIssuer;
     private final RecruitmentRepository recruitmentRepository;
@@ -106,9 +108,6 @@ public class ReviewAnalysisWriter {
         recruitment.completeAnalysis(response.praiseSummary(), LocalDateTime.now());
     }
 
-    // 등록 중 표시가 이 시간보다 오래되면 서버가 멈춰 남은 것으로 보고 다시 등록할 수 있음
-    private static final Duration STALE_REGISTERING = Duration.ofMinutes(5);
-
     /**
      * GitHub 이슈 등록을 차지함. 이미 등록했거나 등록 중이면 409 ISSUE_ALREADY_REGISTERED
      */
@@ -151,7 +150,7 @@ public class ReviewAnalysisWriter {
         if (editsDraft && group.getGitIssueUrl() != null) throw new BusinessException(ErrorCode.ISSUE_ALREADY_REGISTERED);
         if (request.name() != null) group.rename(request.name().trim());
         if (request.improvementRank() != null) group.changeImprovementRank(request.improvementRank());
-        if (request.gitIssueTitle() != null || request.gitIssueContent() != null) {
+        if (editsDraft) {
             group.editIssueDraft(
                     request.gitIssueTitle() != null ? request.gitIssueTitle() : group.getGitIssueTitle(),
                     request.gitIssueContent() != null ? request.gitIssueContent() : group.getGitIssueContent());

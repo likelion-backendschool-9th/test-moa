@@ -33,7 +33,9 @@ export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
           </div>
         )}
         <div className={styles.box2}>
-          <Badge tone="outline" className={styles.badge}>{SOFTWARE_TYPE_LABEL[recruitment.softwareType]}</Badge>
+          {recruitment.softwareTypes.map((type) => (
+            <Badge key={type} tone="outline" className={styles.badge}>{SOFTWARE_TYPE_LABEL[type]}</Badge>
+          ))}
           {recruitment.extraReward !== undefined && (
             <Badge tone="accentSolid">추가 보상</Badge>
           )}

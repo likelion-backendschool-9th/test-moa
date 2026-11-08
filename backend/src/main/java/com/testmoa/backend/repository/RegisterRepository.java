@@ -60,5 +60,15 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
     List<Register> findByRecruitmentIdAndStatusIn(Long recruitmentId, Collection<RegisterStatus> statuses);
 
     // 회원이 이 모집에 이미 낸 참가 중 상태가 주어진 것이 있는지(#114)
+    // 모집글의 지원 전체와 지원한 회원. 지원한 순서대로
+    @Query("select r from registers r join fetch r.user where r.recruitment.id = :recruitmentId order by r.appliedAt, r.id")
+    List<Register> findWithUserByRecruitmentId(@Param("recruitmentId") Long recruitmentId);
+
+    // 모집글의 지원 중 고른 것. 다른 모집글의 지원 id는 빠진다
+    List<Register> findByIdInAndRecruitmentId(Collection<Long> ids, Long recruitmentId);
+
+    // 모집글에 지원이 한 건이라도 있는지. 있으면 선정 방식을 바꿀 수 없다
+    boolean existsByRecruitmentId(Long recruitmentId);
+
     boolean existsByRecruitmentIdAndUserIdAndStatusIn(Long recruitmentId, Long userId, Collection<RegisterStatus> statuses);
 }

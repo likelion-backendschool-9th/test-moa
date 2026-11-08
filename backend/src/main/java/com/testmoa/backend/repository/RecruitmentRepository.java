@@ -37,7 +37,7 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, Long>,
     @Query("select r from recruitments r join fetch r.project p where r.id = :id and p.user.id = :userId")
     Optional<Recruitment> findMineWithProject(@Param("id") Long id, @Param("userId") Long userId);
 
-    // 프로젝트의 가장 큰 모집글 버전. 취소한 모집글도 센다. 모집글이 없으면 비어 있다(#177)
+    // 프로젝트의 가장 큰 모집글 버전. 모집글이 없으면 비어 있다
     @Query("select max(r.version) from recruitments r where r.project.id = :projectId")
     Optional<Integer> findMaxVersionByProjectId(@Param("projectId") Long projectId);
 

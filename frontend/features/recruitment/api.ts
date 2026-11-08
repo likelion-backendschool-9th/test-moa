@@ -30,13 +30,21 @@ import {
   BASE_REWARD,
   EXTRA_REWARD,
   type ProjectOverview,
+  type ProjectRecruitmentRow,
   type ProjectSummary,
   RECRUITMENT_LIMIT,
   type RecruitmentView,
   type TodoItem,
   canCancelRecruitment,
   canSelectApplicants,
+  type EditState,
+  type RecruitmentEditSection,
   getAnalytics,
+  getEditLocks,
+  validatePostEdit,
+  validateRepository,
+  validateTermsEdit,
+  validateTestItemsEdit,
   getHoursUntilPaid,
   getRecruitmentStatus,
   getSubmissionStatus,
@@ -102,7 +110,7 @@ export async function searchRecruitments(query: RecruitmentQuery): Promise<Recru
   const byUpcomingDeadline = (a: Recruitment, b: Recruitment) => Number(isClosed(a)) - Number(isClosed(b)) || byDeadline(a, b);
   const sorter = { latest: byLatest, deadline: byUpcomingDeadline }[query.sort];
   const matched = [...subscription, ...general]
-    .filter((item) => !query.type || item.softwareType === query.type)
+    .filter((item) => !query.type || item.softwareTypes.includes(query.type))
     .filter((item) => !query.open || !isClosed(item))
     .filter((item) => !keyword || [item.projectName, item.summary, item.request].some((text) => text.toLowerCase().includes(keyword)))
     .sort(sorter);
@@ -385,6 +393,23 @@ export async function getMyProject(path: string, projectKey: string) {
   return { project, recruitments: await withStatus(role, [...project.recruitments].sort(byCreatedLatest), new Date()) };
 }
 
+/** 프로젝트 상세 화면: 프로젝트와 최신순 모집글. 모집글마다 버전, 피드백 수, AI 분석 시각을 붙인다 */
+export async function getProjectDetail(path: string, projectKey: string) {
+  const [{ project, recruitments }, role] = await Promise.all([getMyProject(path, projectKey), requireRole(path)]);
+  const rows: ProjectRecruitmentRow[] = await Promise.all(
+    recruitments.map(async (item) => {
+      const [feedbacks, summary] = await Promise.all([findFeedbacks(role, item.slug), findAiSummary(role, item.slug)]);
+      return { ...item, version: versionOf(recruitments, item), feedbackCount: feedbacks.length, analyzedAt: summary?.generatedAt ?? null };
+    }),
+  );
+  return { project, recruitments: rows };
+}
+
+/* shortcut: 백엔드 모집글 버전은 아직 늘지 않아서(항상 1) 프로젝트 안에서 만든 순서로 센다(첫 모집이 v1). 백엔드가 버전을 내려 주면 그 값을 쓴다 */
+function versionOf(projectRecruitments: Pick<Recruitment, "createdAt">[], recruitment: Pick<Recruitment, "createdAt">) {
+  return projectRecruitments.filter((item) => item.createdAt <= recruitment.createdAt).length;
+}
+
 /** 공개 모집글에 필요한 값. 없거나 취소된 모집 건이면 null */
 export async function getPublicRecruitment(slug: string) {
   const data = await findPublicRecruitment(slug);
@@ -415,7 +440,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
   ]);
-  const recruitment = { ...currentRecruitment, title: detail.title };
+  const recruitment = { ...currentRecruitment, title: detail.title, version: versionOf(project.recruitments, currentRecruitment) };
   const now = new Date();
   return {
     project,
@@ -430,7 +455,87 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
       .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
       .map((item) => ({ ...item, hoursUntilPaid: getHoursUntilPaid(item, now) })),
     analytics: getAnalytics(applications, feedbacks),
+    locks: getEditLocks(recruitment, applications.length, feedbacks),
   };
+}
+
+
+const NOT_EDITABLE: EditState = { values: {}, errors: { form: "종료되거나 취소된 모집은 바꿀 수 없어요" } };
+
+/**
+ * 모집 정보 탭의 영역 하나를 저장한다. 잠금은 화면에서 막아도 요청이 조작될 수 있어서 여기서 다시 본다.
+ * 검증을 통과하면 백엔드에 저장한다. 백엔드도 같은 잠금을 다시 확인한다
+ */
+export async function updateRecruitment(recruitmentKey: string, section: RecruitmentEditSection, formData: FormData): Promise<EditState> {
+  const path = recruitmentManagePath(recruitmentKey);
+  const { role, recruitment } = await getMyRecruitment(path, recruitmentKey);
+  /* 저장소는 프로젝트 정보라 모집이 끝나도 연결할 수 있다. shortcut: 레포 연결 API가 없어 검증만 한다(#168의 다음 작업) */
+  if (section === "repository") return withOk(validateRepository(formData));
+  const [applications, feedbacks, detail] = await Promise.all([
+    findApplications(role, recruitmentKey),
+    findFeedbacks(role, recruitmentKey),
+    findRecruitmentDetail(role, recruitmentKey),
+  ]);
+  const locks = getEditLocks(recruitment, applications.length, feedbacks);
+  if (locks.readOnly) return NOT_EDITABLE;
+  const state =
+    section === "post"
+      ? validatePostEdit(formData)
+      : section === "terms"
+        ? validateTermsEdit(formData, { ...recruitment, selectionMode: detail.selectionMode }, locks)
+        : validateTestItemsEdit(formData, locks.lockedItemIds);
+  if (Object.keys(state.errors).length > 0) return withOk(state);
+  return withOk(await saveEdit(recruitmentKey, section, formData, state));
+}
+
+const withOk = (state: EditState): EditState => ({ ...state, ok: Object.keys(state.errors).length === 0 });
+
+/**
+ * 검증을 마친 영역을 백엔드에 저장한다. 글 정보·모집 정보는 PATCH, 테스트 항목은 전체를 PUT으로 보낸다.
+ * shortcut: 목업에서는 저장하지 않는다(새로고침하면 처음 값). 모집 관리 화면이 백엔드에서 읽게 되면 목업 분기를 지운다
+ */
+async function saveEdit(recruitmentKey: string, section: RecruitmentEditSection, formData: FormData, state: EditState): Promise<EditState> {
+  if (!isBackendAuth) return state;
+  const path = `/api/v1/developer/recruitments/${encodeURIComponent(recruitmentKey)}`;
+  const { values } = state;
+  const result =
+    section === "testItems"
+      ? await backendFetch<null>(`${path}/test-items`, { method: "PUT", body: { testItems: testItemRows(formData) } })
+      : await backendFetch<null>(path, {
+          method: "PATCH",
+          body:
+            section === "post"
+              ? { title: values.title, description: values.request, accessUrl: values.accessUrl, softwareTypes: formData.getAll("categories").map(String) }
+              : { conditions: values.conditions, selectionMode: values.selectionMode, recruitDeadline: values.recruitDeadline, submitDeadline: values.submitDeadline },
+        });
+  if (result.ok) return state;
+  return { values, errors: result.fields ? toFormFields(result.fields) : { form: result.message } };
+}
+
+/* 테스트 항목 줄. 필수는 체크한 줄의 번호로 온다 */
+function testItemRows(formData: FormData) {
+  const titles = formData.getAll("testItemTitle").map((item) => String(item).trim());
+  const descriptions = formData.getAll("testItemDescription").map((item) => String(item).trim());
+  const required = new Set(formData.getAll("testItemRequired").map(String));
+  return formData.getAll("testItemId").map((id, index) => ({
+    id: id ? Number(id) : null,
+    title: titles[index] ?? "",
+    description: descriptions[index] ?? "",
+    required: required.has(String(index)),
+  }));
+}
+
+/* 백엔드 칸 이름(요청 필드)을 화면 칸 이름으로 바꾼다. testItems[0].title → testItemTitle-0 */
+function toFormFields(fields: Record<string, string>) {
+  const names: Record<string, string> = { description: "request", softwareTypes: "categories" };
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, message]) => {
+      const row = /^testItems\[(\d+)]\.(title|description)$/.exec(key);
+      if (row) return [`testItem${row[2] === "title" ? "Title" : "Description"}-${row[1]}`, message];
+      const base = key.replace(/\[\d+]$/, "");
+      return [names[base] ?? base, message];
+    }),
+  );
 }
 
 /** 모집 취소. 취소할 수 있는 상태인지 서버에서 다시 보고, 테스트 중이면 사유를 받는다 */

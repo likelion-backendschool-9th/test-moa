@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatsIcon, FlagIcon, HeartIcon, SparkleIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, FlagIcon, HeartIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { unstable_rethrow } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge/Badge";
@@ -10,8 +10,10 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { formatDate } from "@/lib/format";
 import { getFollowupQuestions } from "@/features/recruitment/actions";
 import type { FeedbackView } from "@/features/recruitment/types";
-import type { FeedbackStatus, TestItem } from "@/features/recruitment/types";
+import { type FeedbackStatus, SELECTION_MODE_LABEL, type SelectionMode, type TestItem } from "@/features/recruitment/types";
+import { SelectField } from "@/components/ui/SelectField/SelectField";
 import { CHAT_NOT_READY, FollowupQuestionsDialog, type FollowupState } from "../FollowupQuestionsDialog/FollowupQuestionsDialog";
+import { ManageDashboard } from "../ManageDashboard/ManageDashboard";
 import { TextArea } from "@/components/ui/TextField/TextField";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./FeedbackList.module.css";
@@ -41,10 +43,34 @@ type FeedbackListProps = {
   recruitmentKey: string;
   /** 구독 모집이면 채팅하기·AI 질문 받기를 바로 쓴다 */
   isSubscription: boolean;
+  confirmedCount: number;
+  /** 피드백을 한 건이라도 낸 확정 테스터 수 */
+  submittedCount: number;
+  submitDeadline: string;
+  selectionMode: SelectionMode;
 };
 
-/** 피드백 목록과 신고·AI 질문 대화상자 */
-export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscription }: FeedbackListProps) {
+/* 테스트 항목 거르기의 "전체"와 "기타 의견". 항목 id와 겹치지 않는 값이다 */
+const ALL_ITEMS = "__all";
+const OTHER_ITEMS = "__other";
+const ORDER_LABEL = { latest: "최신순", oldest: "오래된순" } as const;
+
+/** 맨 위 현황, 검색·항목·정렬 도구, 피드백 목록과 신고·AI 질문 대화상자 */
+export function FeedbackList({
+  feedbacks,
+  testItems,
+  recruitmentKey,
+  isSubscription,
+  confirmedCount,
+  submittedCount,
+  submitDeadline,
+  selectionMode,
+}: FeedbackListProps) {
+  /* 검색어는 검색 버튼(엔터)을 눌러야 적용한다 */
+  const [draft, setDraft] = useState("");
+  const [query, setQuery] = useState("");
+  const [itemFilter, setItemFilter] = useState(ALL_ITEMS);
+  const [order, setOrder] = useState<keyof typeof ORDER_LABEL>("latest");
   const [statuses, setStatuses] = useState<Record<string, FeedbackStatus>>({});
   const [recommended, setRecommended] = useState<Record<string, boolean>>({});
   /** 버튼을 눌렀지만 API가 없을 때 카드에 보여 줄 안내 */
@@ -103,28 +129,97 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
     dialogRef.current?.close();
   }
 
-  if (feedbacks.length === 0) return <EmptyState title="아직 제출된 피드백이 없어요" />;
+  const dashboard = (
+    <ManageDashboard
+      id="feedback-dashboard-heading"
+      title="제출 / 확정"
+      value={submittedCount}
+      total={confirmedCount}
+      valueLabel="제출"
+      totalLabel="확정 테스터"
+      valueTestId="submitted-count"
+      stats={[
+        ["제출된 피드백", `${feedbacks.length}건`],
+        ["제출 마감", formatDate(submitDeadline)],
+        ["선발 방식", SELECTION_MODE_LABEL[selectionMode]],
+      ]}
+    />
+  );
+  if (feedbacks.length === 0) {
+    return (
+      <div className={styles.page}>
+        {dashboard}
+        <EmptyState title="아직 제출된 피드백이 없어요" />
+      </div>
+    );
+  }
+
+  const isOther = (feedback: FeedbackView) => !testItems.some((item) => item.id === feedback.testItemId);
+  /* 검색은 피드백 내용에서만 찾는다 */
+  const keyword = query.trim().toLowerCase();
+  const shown = feedbacks
+    .filter((item) => itemFilter === ALL_ITEMS || (itemFilter === OTHER_ITEMS ? isOther(item) : item.testItemId === itemFilter))
+    .filter((item) => !keyword || item.content.toLowerCase().includes(keyword))
+    .sort((a, b) => (order === "latest" ? b.submittedAt.localeCompare(a.submittedAt) : a.submittedAt.localeCompare(b.submittedAt)));
 
   const itemTitle = (id: string | null) => testItems.find((item) => item.id === id)?.title ?? "기타 의견";
-  /* 항목별 피드백 수. 기타 의견은 있을 때만 센다 */
-  const byItem = [
-    ...testItems.map((item) => [item.title, feedbacks.filter((feedback) => feedback.testItemId === item.id).length] as const),
-    ["기타 의견", feedbacks.filter((feedback) => !testItems.some((item) => item.id === feedback.testItemId)).length] as const,
-  ].filter(([title, count]) => title !== "기타 의견" || count > 0);
+  /* 드롭다운 항목 옆에 붙이는 항목별 피드백 수 */
+  const countOf = (testItemId: string) => feedbacks.filter((feedback) => feedback.testItemId === testItemId).length;
   const isRecommended = (item: FeedbackView) => recommended[item.id] ?? item.recommended;
-  const recommendedCount = feedbacks.filter(isRecommended).length;
 
   return (
-    <>
+    <div className={styles.page}>
+      {dashboard}
+      <div className={styles.toolbar}>
+        <form
+          role="search"
+          className={styles.search}
+          onSubmit={(event) => {
+            event.preventDefault();
+            setQuery(draft);
+          }}
+        >
+          <label className={styles.searchField}>
+            <MagnifyingGlassIcon aria-hidden size={18} weight="bold" className={styles.searchIcon} />
+            <input
+              type="search"
+              aria-label="피드백 내용 검색"
+              placeholder="피드백 내용으로 검색"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              className={styles.searchInput}
+            />
+          </label>
+          <Button type="submit" size="sm">
+            검색
+          </Button>
+        </form>
+        <div className={styles.selectBox}>
+          <SelectField aria-label="테스트 항목" value={itemFilter} onChange={(event) => setItemFilter(event.target.value)} className={styles.select}>
+            <option value={ALL_ITEMS}>모든 테스트 항목 {feedbacks.length}</option>
+            {testItems.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title} {countOf(item.id)}
+              </option>
+            ))}
+            <option value={OTHER_ITEMS}>기타 의견 {feedbacks.filter(isOther).length}</option>
+          </SelectField>
+          <CaretDownIcon aria-hidden size={14} weight="bold" className={styles.selectIcon} />
+        </div>
+        <div role="group" aria-label="정렬" className={styles.sort}>
+          {(["latest", "oldest"] as const).map((value) => (
+            <Button key={value} size="sm" variant={order === value ? "primary" : "secondary"} aria-pressed={order === value} onClick={() => setOrder(value)}>
+              {ORDER_LABEL[value]}
+            </Button>
+          ))}
+        </div>
+      </div>
       <p aria-live="polite" className={styles.srOnly}>
         {announcement}
       </p>
-      <p data-testid="feedback-by-item" className={styles.text}>
-        항목별 {byItem.map(([title, count]) => `${title} ${count}건`).join(" · ")}
-        <span data-testid="recommended-count"> · 유용해요 {recommendedCount}건</span>
-      </p>
+      {shown.length === 0 && <EmptyState title="조건에 맞는 피드백이 없어요" />}
       <ul className={styles.list}>
-        {feedbacks.map((item) => {
+        {shown.map((item) => {
           const status = statuses[item.id] ?? item.status;
           const liked = isRecommended(item);
           const nickname = item.testerNickname;
@@ -161,11 +256,9 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
               <div className={styles.box3}>
                 {notices[item.id] && <p className={styles.text3}>{notices[item.id]}</p>}
                 <PaidAction subscribed={isSubscription} label={`${nickname}님과 채팅하기`} onClick={() => showNotice(item, CHAT_NOT_READY)}>
-                  <ChatsIcon {...icon} />
                   채팅하기
                 </PaidAction>
                 <PaidAction subscribed={isSubscription} label={`${nickname}님 피드백으로 AI 질문 받기`} onClick={() => askFollowup(item)}>
-                  <SparkleIcon {...icon} />
                   AI 질문 받기
                 </PaidAction>
                 <Button
@@ -258,22 +351,30 @@ export function FeedbackList({ feedbacks, testItems, recruitmentKey, isSubscript
           </div>
         </form>
       </Card>
-    </>
+    </div>
   );
 }
 
-/** 유료 기능 버튼. 구독 모집이면 바로 쓰고, 무료 모집이면 구독 안내로 간다 */
+/** 유료 기능 버튼. 보통 버튼에 PRO 표시를 붙인다. 구독 모집이면 바로 쓰고, 무료 모집이면 구독 안내로 간다 */
 function PaidAction({ subscribed, label, onClick, children }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode }) {
+  const content = (
+    <>
+      {children}
+      <span aria-hidden="true" className={styles.proMark}>
+        PRO
+      </span>
+    </>
+  );
   if (!subscribed) {
     return (
-      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="paid" className={styles.cardAction} aria-label={`${label}, 구독하면 쓸 수 있어요`}>
-        {children}
+      <LinkButton href={SUBSCRIPTION_PATH} size="sm" variant="secondary" className={styles.cardAction} aria-label={`${label}, 구독하면 쓸 수 있어요`}>
+        {content}
       </LinkButton>
     );
   }
   return (
-    <Button size="sm" variant="paid" className={styles.cardAction} aria-label={label} onClick={onClick}>
-      {children}
+    <Button size="sm" variant="secondary" className={styles.cardAction} aria-label={label} onClick={onClick}>
+      {content}
     </Button>
   );
 }

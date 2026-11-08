@@ -7,7 +7,7 @@ import type { FormState } from "@/lib/form";
 import { NICKNAME_HINT } from "@/features/member/validation";
 import { type ProfileField, updateProfile } from "@/features/member/actions";
 import type { Profile } from "@/features/member/types";
-import { SettingsBody, SettingsSection } from "@/app/(site)/my/(account)/_components/SettingsCard/SettingsCard";
+import { SettingsBody, SettingsSection } from "@/components/ui/SettingsCard/SettingsCard";
 import { AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./ProfileForm.module.css";
 

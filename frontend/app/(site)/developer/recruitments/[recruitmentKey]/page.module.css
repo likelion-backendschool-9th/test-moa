@@ -7,3 +7,10 @@
   flex-direction: column;
   gap: var(--space-8);
 }
+
+/* 머리와 탭 줄은 한 덩어리라 탭 아래 내용보다 가깝게 둔다 */
+.manageHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}

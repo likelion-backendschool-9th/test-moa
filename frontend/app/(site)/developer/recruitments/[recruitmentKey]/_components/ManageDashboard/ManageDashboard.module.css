@@ -1,0 +1,98 @@
+/* 넓은 화면은 게이지 왼쪽, 숫자 오른쪽. 좁으면 위아래로 쌓는다 */
+.dashboard {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .dashboard {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-6);
+  }
+}
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gaugeHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+}
+
+.gaugeTitle {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.gaugeValue {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.gaugeTotal {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.gaugeTrack {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+}
+
+.gaugeFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--accent);
+  transition-property: width;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+/* 넓은 화면에서 게이지와 숫자 사이의 흐린 세로 구분선 */
+@media (min-width: 48rem) {
+  .stats {
+    border-left: 1px solid var(--line);
+    padding-left: var(--space-8);
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.statTerm {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.statValue {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}

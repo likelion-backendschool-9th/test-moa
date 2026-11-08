@@ -22,7 +22,7 @@ export type BackendError = {
 export type BackendResult<T> = { ok: true; data: T } | BackendError;
 
 export type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   /** Bearer로 붙일 access 토큰 */
   token?: string;

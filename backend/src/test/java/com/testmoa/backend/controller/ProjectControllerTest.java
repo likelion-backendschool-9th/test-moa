@@ -1,6 +1,7 @@
 package com.testmoa.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
@@ -224,6 +225,9 @@ class ProjectControllerTest {
         confirmed.confirm(1000, 300, LocalDateTime.now());
         em.persist(confirmed);
         em.persist(Register.builder().recruitment(first).user(me).build());
+        em.persist(Feedback.builder().register(confirmed).content("검색이 느려요").submittedAt(LocalDateTime.now()).build());
+        em.persist(Feedback.builder().register(confirmed).content("저장이 편해요").submittedAt(LocalDateTime.now()).build());
+        first.completeAnalysis("칭찬 요약", LocalDateTime.now());
 
         send(me, get(PROJECTS + "/" + project.getId() + "/recruitments"), null)
                 .andExpect(status().isOk())
@@ -231,7 +235,13 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.data[0].confirmedCount").value(0))
                 .andExpect(jsonPath("$.data[1].confirmedCount").value(1))
                 .andExpect(jsonPath("$.data[1].status").value("recruiting"))
-                .andExpect(jsonPath("$.data[1].selectionMode").value("firstCome"));
+                .andExpect(jsonPath("$.data[1].selectionMode").value("firstCome"))
+                .andExpect(jsonPath("$.data[1].subscription").value(false))
+                .andExpect(jsonPath("$.data[1].version").value(1))
+                .andExpect(jsonPath("$.data[0].feedbackCount").value(0))
+                .andExpect(jsonPath("$.data[1].feedbackCount").value(2))
+                .andExpect(jsonPath("$.data[0].analyzedAt").value(nullValue()))
+                .andExpect(jsonPath("$.data[1].analyzedAt").isNotEmpty());
     }
 
     @Test
@@ -291,6 +301,13 @@ class ProjectControllerTest {
         Recruitment saved = em.find(Recruitment.class, id);
         assertThat(saved.getSelectionMode()).isEqualTo(SelectionMode.FIRST_COME);
         assertThat(saved.getConditions()).isEqualTo("책을 읽는 분");
+        assertThat(saved.getVersion()).isEqualTo(1);
+
+        /* 같은 프로젝트에 다시 만들면 버전이 1 늘고, 다른 프로젝트는 1부터 센다 */
+        String next = create(project, recruitment()).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        assertThat(em.find(Recruitment.class, JSON.readTree(next).at("/data/id").asLong()).getVersion()).isEqualTo(2);
+        String otherProject = create(saveProject(me, "모아플랜"), recruitment()).andReturn().getResponse().getContentAsString();
+        assertThat(em.find(Recruitment.class, JSON.readTree(otherProject).at("/data/id").asLong()).getVersion()).isEqualTo(1);
 
         RecruitmentType type = em.createQuery("select t from recruitment_types t where t.recruitment.id = :id", RecruitmentType.class)
                 .setParameter("id", id).getSingleResult();

@@ -18,6 +18,20 @@ export function formatDate(iso: string) {
   return dateFormatter.format(new Date(iso));
 }
 
+const shortDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "2-digit",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Seoul",
+});
+
+/** "26.11.10". 좁은 자리에 연도까지 짧게 쓸 때 */
+export function formatShortDate(iso: string) {
+  const parts = shortDateFormatter.formatToParts(new Date(iso));
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value;
+  return `${part("year")}.${part("month")}.${part("day")}`;
+}
+
 /** "11월 6일 오후 3시" */
 export function formatDateTime(iso: string) {
   const date = new Date(iso);

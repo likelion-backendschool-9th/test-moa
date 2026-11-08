@@ -38,6 +38,9 @@ public enum ErrorCode {
 
     // 모집
     RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),
+    RECRUITMENT_NOT_EDITABLE(HttpStatus.CONFLICT, "종료되거나 취소된 모집은 바꿀 수 없어요"),
+    FEEDBACK_NOT_REPORTABLE(HttpStatus.CONFLICT, "신고는 제출 후 72시간 안에만 할 수 있어요"),
+    APPLICANTS_NOT_SELECTABLE(HttpStatus.CONFLICT, "선발형 구독 모집의 모집 기간에만 지원자를 확정·거절할 수 있어요"),
     RECRUITMENT_CLOSED(HttpStatus.CONFLICT, "모집이 마감됐어요"),
     ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 지원한 테스트예요"),
     OWN_RECRUITMENT(HttpStatus.CONFLICT, "내 모집에는 지원할 수 없어요"),

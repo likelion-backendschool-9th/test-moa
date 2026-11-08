@@ -7,8 +7,9 @@ import {
   decideApplicants as decide,
   getRecruitmentFormInfo,
   recommendFollowupQuestions,
+  updateRecruitment as update,
 } from "@/features/recruitment/api";
-import type { FollowupResult } from "@/features/recruitment/types";
+import type { EditState, FollowupResult, RecruitmentEditSection } from "@/features/recruitment/types";
 import { validateRecruitmentForm } from "@/features/recruitment/types";
 import { redirect } from "next/navigation";
 
@@ -39,6 +40,19 @@ export async function cancelRecruitment(
 ): Promise<FormState & { ok?: boolean }> {
   return cancel(recruitmentKey, formData);
 }
+
+/** 모집 정보 탭의 영역 하나 저장. 영역 이름은 화면이 정하지만 조작될 수 있어 다시 확인한다 */
+export async function updateRecruitment(
+  recruitmentKey: string,
+  section: RecruitmentEditSection,
+  _prev: EditState,
+  formData: FormData,
+): Promise<EditState> {
+  if (!EDIT_SECTIONS.includes(section)) return { values: {}, errors: { form: "잘못된 요청이에요" } };
+  return update(recruitmentKey, section, formData);
+}
+
+const EDIT_SECTIONS: RecruitmentEditSection[] = ["post", "terms", "testItems", "repository"];
 
 /** 피드백 하나로 AI 후속 질문을 받는다. 하루 3번 한도는 백엔드가 센다 */
 export async function getFollowupQuestions(recruitmentKey: string, feedbackId: string): Promise<FollowupResult> {

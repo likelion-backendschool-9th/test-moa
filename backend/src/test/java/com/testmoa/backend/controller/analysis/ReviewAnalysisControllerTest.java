@@ -189,9 +189,9 @@ class ReviewAnalysisControllerTest {
         User developer = saveSubscriber();
         Reviews r = saveReviews(developer);
         // 신고된 리뷰와 보상에서 제외된 리뷰는 분석 서버에 보내지 않고 미분석 수에도 세지 않는다
-        saveFeedback(r.f1().getRegister(), null, "신고된 리뷰", LocalDateTime.now().minusMinutes(20)).report();
+        saveFeedback(r.f1().getRegister(), null, "신고된 리뷰", LocalDateTime.now().minusMinutes(20)).report("신고 사유");
         Feedback excluded = saveFeedback(r.f2().getRegister(), null, "보상 제외된 리뷰", LocalDateTime.now().minusMinutes(10));
-        excluded.report();
+        excluded.report("신고 사유");
         excluded.exclude();
         // 같은 프로젝트의 다른 모집글에 코드 "5"가 있다
         ClusterGroup other = ClusterGroup.builder().recruitment(saveRecruitment(r.project())).groupCode("5").name("다른 버전 그룹")

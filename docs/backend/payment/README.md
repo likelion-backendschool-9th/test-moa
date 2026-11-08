@@ -41,7 +41,6 @@
 - 구독 중인지는 날짜로 판단하고, 만료로 바꾸는 배치는 두지 않는다. 구독 상태는 `ACTIVE`·`CANCELLED` 둘만 있고 `EXPIRED`는 enum에서 뺐다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다. (2026-11-07)
 - 모집 한도는 없다. `Plan.monthlyRecruitLimit`을 지웠고 구독 API에 한도·사용량이 없다. (#69, 2026-11-07)
 - `Plan.tier`는 `String`으로 두고, 유료 등급이 늘어 코드가 등급 이름으로 갈라질 때 `enum`을 더한다. (#69, 2026-11-07)
-- 구독 이용 기간의 끝은 한국 날짜의 끝(23:59:59)이다. 시작한 한국 날짜 + `periodDays`일의 23:59:59이고, 저장하는 시각은 다른 코드처럼 서버 시간대의 값이다(서버가 UTC면 14:59:59). 결제 화면 조회와 결제 실행이 `SubscriptionTime.endAt`을 같이 쓴다. ([subscription-checkout.md](subscription-checkout.md), #70, 2026-11-08)
 - 출금 계좌번호·예금주는 **A 컬럼 암호화**(JPA `AttributeConverter` + AES-GCM, 키는 env). 응답 마스킹은 대기=전체, 완료=계좌 끝 4자리·예금주 가운데 가림. (#67, 2026-11-06)
 
 #45에서 엔티티에 정한 것(자세한 규칙과 시나리오는 [entities.md](entities.md)):
@@ -153,8 +152,10 @@ erDiagram
 | 규칙 | 내용 |
 | --- | --- |
 | 기간 시작 | `start = max(지금, CANCELLED가 아닌 행 중 가장 늦은 end_at)`. 없으면 지금 |
-| 기간 끝 | `SubscriptionTime.endAt(start, periodDays)`: (start가 속한 한국 날짜 + `periodDays`일)의 23:59:59. 서버 시간대로 바꿔 저장한다 |
+| 기간 끝 | `start + periodDays` |
 | 더블클릭 | 직전 결제 후 수 초 내면 거절 |
+
+결제 화면 조회(#70)의 `period`·`credit`은 안내용이다. 결제 실행은 조회 응답 값을 받지 않고 결제할 때 시작·끝·잔액을 다시 계산한다. 화면 문구는 "예상 이용 기간"이다.
 
 **동시에 두 번 결제할 때: 지갑 행 잠금.** 잠그지 않으면 두 요청이 같은 "가장 늦은 `end_at`"을 읽어 같은 기간 행이 두 개 생길 수 있다. 결제를 실행할 때 사용자의 지갑 행을 `PESSIMISTIC_WRITE`(`SELECT … FOR UPDATE`)로 잠근다.
 

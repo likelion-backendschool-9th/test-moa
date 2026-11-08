@@ -14,10 +14,9 @@
 - **경로는 `GET /api/v1/my/subscription/checkout?planId=`다.** #69와 같이 토큰의 회원을 쓰고 경로에 회원 id를 받지 않는다. 이슈 본문의 `/api/users/{userId}/subscription/checkout`은 쓰지 않는다.
 - **`planId`는 지금 파는 플랜의 id여야 한다.** 없는 id이거나 옛 `version` 행이면 404다. 결제는 지금 파는 조건으로만 받기 때문이다. `planId`가 빠졌거나 숫자가 아니면 400이다.
 - **`period.startAt`은 `max(지금, ACTIVE 행 중 가장 늦은 endAt)`이다.** #71 결제 실행이 쓸 시작 규칙과 같게 둔다([README.md](README.md)의 #71). `currentEndAt`은 #69의 화면 만료일(지금 기간에서 빈틈없이 이어 붙인 끝)이다. 결제가 항상 가장 늦은 끝에 이어 붙어서 빈틈이 생기지 않으므로 보통 둘은 같다. 다르게 나오는 경우가 둘 있다. ① 지금 기간이 환불로 `CANCELLED`가 됐는데 미리 결제한 다음 기간이 `ACTIVE`로 남은 경우, ② 시작 전인 `ACTIVE` 행만 있는 경우다. 이때는 `active=false`, `currentEndAt=null`이지만 `period.startAt`은 지금이 아니라 남은 `ACTIVE` 행의 가장 늦은 `endAt`이다. 그래서 화면은 이용 기간을 `currentEndAt`이 아니라 `period`로 보여 준다. (2026-11-08)
-- **`period.endAt`은 한국 날짜의 끝이다(23:59:59).** (시작이 속한 한국 날짜 + `periodDays`일)의 23:59:59다. 예: 11/8 11:15에 시작하는 30일 플랜은 12/8 23:59:59에 끝난다. 시작한 날은 일부만 쓰고 그 뒤 `periodDays`일을 모두 쓰는 셈이다. 이어 붙은 다음 기간은 앞 기간의 끝(한국 날짜의 23:59:59)에서 시작해도 그 한국 날짜가 기준이라 `periodDays`일씩 정확히 늘어난다. (2026-11-08, 팀의 "마감은 그날 23:59:59까지" 규칙 [프로젝트 README](../project/README.md) 10을 따름)
-- **날짜는 한국 시간으로 정하고, 저장하는 시각은 다른 코드처럼 서버 시간대의 값이다.** 한국 날짜의 끝을 서버 시간대로 바꿔 돌려준다. 서버가 UTC면 23:59:59가 14:59:59가 된다. 서버 설정을 바꾸지 않고, 시각을 다른 테이블과 같은 기준으로 비교하기 위해서다([프로젝트 README](../project/README.md) 9). 계산은 `SubscriptionTime.endAt`이 하고 결제 실행(#71)도 같은 메서드를 쓴다. (2026-11-08)
+- **`period.endAt`은 `period.startAt` + `periodDays`일이다.** 시작한 시각 기준이라 시·분·초가 시작과 같다. 예: 11/8 11:15에 시작하는 30일 플랜은 12/8 11:15에 끝난다. 이어 붙은 다음 기간은 앞 기간의 끝에서 시작해 매번 정확히 `periodDays`일씩 늘어난다.
 - **크레딧이 모자라면 `remainingAfter`는 `null`이다.** 0이나 음수로 내려주지 않는다. 현금 결제는 크레딧과 상관없이 할 수 있다.
-- **응답 시각에는 시간대 정보가 없다.** `2026-12-08T14:59:59`처럼 서버 시간대의 값이다. 서버가 UTC면 한국 시간으로 바꿔 보여 줘야 해서, 프론트가 만료일을 날짜로 보여 줄 때 이 점을 알려야 한다(#92부터 모든 API가 같다).
+- **응답 시각에는 시간대 정보가 없다.** `startAt`·`endAt`·`currentEndAt`은 서버 시간대의 값이다(다른 API와 같다, #92부터). 서버가 UTC면 한국 시간으로 바꿔 보여 줘야 해서, 프론트가 시각이나 남은 시간을 계산할 때 이 점을 알려야 한다.
 - **운영자는 `eligible=false`만 돌려준다.** 플랜을 찾는 일도 하지 않는다.
 
 ## API
@@ -50,9 +49,9 @@
 | 결제 가능 크레딧 | #69와 같다: 이벤트 + 적립, 출금 처리 중(잠김) 제외 |
 | 구독 중 | #69와 같다(`ACTIVE`이고 `startAt <= 지금 < endAt`) |
 | 이용 시작 | 끝나지 않은 `ACTIVE` 행이 없으면 지금, 있으면 그 가운데 가장 늦은 `endAt`. 구독 중이 아니어도(시작 전 `ACTIVE` 행만 있어도) 그 행의 끝이다. 취소된 행은 세지 않는다 |
-| 이용 끝 | (시작이 속한 한국 날짜 + `periodDays`일)의 23:59:59. 서버 시간대로 바꿔 돌려준다 |
+| 이용 끝 | 시작 + `periodDays`일 |
 | 운영자 | 결제 대상이 아니다(`eligible=false`) |
-| 끝 시각 | 끝은 포함하지 않는다. 구독 중인지는 `지금 < endAt`으로 보므로 23:59:59.000부터는 구독 중이 아니다("23:59:59까지"보다 1초 짧다) |
+| 끝 시각 | 끝은 포함하지 않는다. 구독 중인지는 `지금 < endAt`으로 본다 |
 
 ---
 
@@ -62,7 +61,7 @@
 - Given 구독 행이 없고 payable이 10,000인 회원, 크레딧 9,000·현금 10,000·30일 플랜
 - When  `GET /api/v1/my/subscription/checkout?planId=`
 - Then  `plan`이 그 플랜이고 `payableCredits=10000`, `active=false`, `currentEndAt=null`이다
-- Then  `period.startAt`은 지금이고 `period.endAt`은 시작한 한국 날짜 + 30일의 23:59:59다
+- Then  `period.startAt`은 지금이고 `period.endAt`은 시작 + 30일이다
 
 #70-S2 크레딧이 모자란 회원 [테스트]
 - Given payable이 4,000이고 크레딧 가격이 9,000
@@ -76,7 +75,7 @@
 
 #70-S4 구독 중이면 만료일부터 이어 붙는다 [테스트]
 - Given 지금 기간이 12/1까지인 회원, 30일 플랜
-- Then  `active=true`, `currentEndAt=12/1`, `period.startAt=12/1`, `period.endAt=12/31 23:59:59`이다
+- Then  `active=true`, `currentEndAt=12/1`, `period.startAt=12/1`, `period.endAt=12/31`이다
 - Given 12/1~12/31으로 미리 결제해 이어 붙은 기간이 있는 회원
 - Then  `currentEndAt`과 `period.startAt`이 12/31이다
 
@@ -108,27 +107,18 @@
 - API: 위 표의 하나
 - Given 일반 회원과 운영자 토큰(`POST /api/auth/login`), 운영자가 `POST /api/v1/admin/plans`로 등록한 플랜(`planId`)
 - Then  모두 `GET /api/v1/my/subscription/checkout?planId=`로 확인한다
-  1. 구독 전, 크레딧 9,000 미만: `active=false`, `currentEndAt=null`, `credit.affordable=false`, `shortfall=9000-payableCredits`, `remainingAfter=null`, `period.endAt`은 시작한 한국 날짜 + `periodDays`일의 23:59:59
+  1. 구독 전, 크레딧 9,000 미만: `active=false`, `currentEndAt=null`, `credit.affordable=false`, `shortfall=9000-payableCredits`, `remainingAfter=null`, `period.endAt`은 시작에서 `periodDays`일 뒤
   2. 지갑에 이벤트 크레딧 10,000: `affordable=true`, `shortfall=0`, `remainingAfter=1000`. 정확히 9,000이면 `remainingAfter=0`
-  3. `subscriptions`에 `ACTIVE` 행(시작=지금−10일, 끝=지금+20일): `active=true`, `currentEndAt`과 `period.startAt`이 그 끝, `period.endAt`은 거기서 `periodDays`일 뒤의 23:59:59. 끝이 이어지는 행을 더 넣으면 두 번째 행의 끝부터
+  3. `subscriptions`에 `ACTIVE` 행(시작=지금−10일, 끝=지금+20일): `active=true`, `currentEndAt`과 `period.startAt`이 그 끝, `period.endAt`은 거기서 `periodDays`일 뒤. 끝이 이어지는 행을 더 넣으면 두 번째 행의 끝부터
   4. 그 행을 `CANCELLED`로 바꾸거나 `end_at`을 과거로 바꾼다: `active=false`, `currentEndAt=null`, `period.startAt`은 지금
   5. 운영자 토큰: 200, `eligible=false`, `plan`·`credit`·`period`는 `null`
   6. `planId` 없음·`abc` → 400, 없는 id → 404, 같은 `tier`를 다시 등록한 뒤 옛 id → 404·새 id → 200, 토큰 없음 → 401
   7. 위를 여러 번 불러도 `credit_wallets` 잔액과 `subscriptions` 행 수가 그대로다(조회 전용)
 
-#70-S10 이용 끝은 한국 날짜의 끝이다 [테스트]
-- Given 서버 시간대가 서울이고 11/8 11:15에 시작하는 30일 플랜
-- Then  `period.endAt`은 12/8 23:59:59다
-- Given 서버 시간대가 UTC이고 11/8 02:15(UTC)에 시작한다
-- Then  `period.endAt`은 12/8 14:59:59(UTC)다. 한국 시간으로 12/8 23:59:59와 같은 순간이다
-- Given UTC 11/8 16:00(한국 11/9 01:00)에 시작한다
-- Then  한국 날짜가 11/9라서 `period.endAt`은 12/9 14:59:59(UTC)다
-- Given 앞 기간의 끝(12/8 23:59:59)에서 이어 붙는다
-- Then  다음 끝은 1/7 23:59:59다(`periodDays`일씩 정확히 늘어난다)
-
 ---
 
 ## 범위 밖
+- 이용 끝을 한국 날짜의 끝(23:59:59)으로 맞추는 안: 팀의 마감 규칙([프로젝트 README](../project/README.md) 10)을 구독에 적용할지 기획·팀과 확인한 뒤 정한다. 정하면 `period.endAt` 계산과 #71이 같이 바뀐다.
 - 결제 실행(#71)과 더블클릭 방지
 - 프론트 목업 제거·API 연동
 - 결제 수단별 수수료나 쿠폰
@@ -143,3 +133,4 @@
 ## 가정
 - `SubscriptionService.getStatus`·`getPayableCredits`·`PlanRepository.findCurrentPlans`는 #69에 있다.
 - 조회 단계에서는 지갑 행을 잠그지 않는다. 값은 안내용이고, 결제 실행(#71)이 잠근 채로 다시 계산한다.
+- 조회한 값과 결제할 때의 값은 다를 수 있다(시간이 지나 시작·끝이 달라지고, 그 사이 크레딧이 바뀌면 `affordable`도 달라진다). 그래서 #71은 조회 응답 값을 받지 않고 결제할 때 시작·끝·잔액을 다시 계산한다. 화면 문구는 "예상 이용 기간"이다.

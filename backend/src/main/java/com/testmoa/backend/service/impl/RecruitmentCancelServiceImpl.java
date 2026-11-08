@@ -3,7 +3,6 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.response.RecruitmentCancelResponse;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Register;
-import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import com.testmoa.backend.global.exception.BusinessException;
@@ -44,7 +43,7 @@ public class RecruitmentCancelServiceImpl implements RecruitmentCancelService {
         List<Register> active = registerRepository.findByRecruitmentIdAndStatusIn(
                 recruitmentId, List.of(RegisterStatus.APPLIED, RegisterStatus.CONFIRMED));
 
-        String savedReason = switch (phaseOf(recruitment, now)) {
+        String savedReason = switch (recruitment.phaseAt(now)) {
             case RECRUITING -> {
                 boolean hasConfirmed = active.stream().anyMatch(item -> item.getStatus() == RegisterStatus.CONFIRMED);
                 if (hasConfirmed && recruitment.getSelectionMode() != SelectionMode.FIRST_COME) {
@@ -59,7 +58,7 @@ public class RecruitmentCancelServiceImpl implements RecruitmentCancelService {
                 }
                 yield reason;
             }
-            case CLOSED -> throw new BusinessException(ErrorCode.RECRUITMENT_NOT_CANCELLABLE);
+            case CLOSED, CANCELLED -> throw new BusinessException(ErrorCode.RECRUITMENT_NOT_CANCELLABLE);
         };
 
         Set<Long> submitted = new HashSet<>(feedbackRepository.findRegisterIdsWithFeedback(recruitmentId));
@@ -76,15 +75,5 @@ public class RecruitmentCancelServiceImpl implements RecruitmentCancelService {
         recruitment.cancel(savedReason, now);
         return new RecruitmentCancelResponse(recruitment.getId(), "cancelled", recruitment.getCancelReason(),
                 recruitment.getCancelledAt(), cancelled, kept);
-    }
-
-    private enum Phase { RECRUITING, TESTING, CLOSED }
-
-    // 저장된 상태는 취소 여부만 뜻하고, 모집 중·테스트 중·종료는 마감일로 계산한다(README 정한 것 11).
-    // 저장 상태가 RECRUITING이 아니면 마감일과 상관없이 끝난 것으로 본다. Recruitment.cancel()의 조건과 같아 500 대신 409로 끝난다
-    private Phase phaseOf(Recruitment recruitment, LocalDateTime now) {
-        if (recruitment.getStatus() != RecruitmentStatus.RECRUITING) return Phase.CLOSED;
-        if (now.isBefore(recruitment.getRecruitDeadline())) return Phase.RECRUITING;
-        return now.isBefore(recruitment.getFeedbackDeadline()) ? Phase.TESTING : Phase.CLOSED;
     }
 }

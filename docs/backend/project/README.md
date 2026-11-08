@@ -11,6 +11,7 @@
 | [#107](https://github.com/likelion-backendschool-9th/test-moa/issues/107) | AI 리뷰 묶기·우선순위와 GitHub 이슈 초안 | [ai-review-analysis.md](ai-review-analysis.md) |
 | [#108](https://github.com/likelion-backendschool-9th/test-moa/issues/108) | AI 버전 간 비교 | [ai-version-comparison.md](ai-version-comparison.md) |
 | [#109](https://github.com/likelion-backendschool-9th/test-moa/issues/109) | AI 후속 질문 추천 | [ai-followup.md](ai-followup.md) |
+| [#113](https://github.com/likelion-backendschool-9th/test-moa/issues/113) | 공개 모집글 상세 API | [public-recruitment-detail.md](public-recruitment-detail.md) |
 | [#114](https://github.com/likelion-backendschool-9th/test-moa/issues/114) | 테스트 지원 API | [test-apply.md](test-apply.md) |
 | [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |
 
@@ -38,9 +39,11 @@
 | 8 | 이미지는 프로젝트 대표(`projects.image_url`)·모집글(`recruitment_images`)·테스트 항목(`test_item_images`) 세 가지로 나눈다 (#92, 11-06) | 모집글 상세 이미지 띠와 항목별 이미지를 따로 보여 준다. 자세히는 [project-recruitment-api.md](project-recruitment-api.md#1-프로젝트모집-작성-api-92-r1) |
 | 9 | 시각은 다른 코드처럼 서버 시간대로 저장하고 비교한다(`LocalDateTime.now()`). 한국 날짜 기준 규칙(마감은 그날 23:59:59까지)은 서버 시간대의 시각으로 바꿔 저장한다 (#92, 11-06) | 다른 담당 코드가 모두 서버 시간대(컨테이너는 UTC)를 써서, #92만 한국 시각으로 저장하면 한 행 안에서 9시간 차이가 났다(#92-S12 확인 중 발견). 서버 설정을 바꾸지 않고 #92에서 맞췄다 |
 | 10 | 모집 마감일·피드백 마감일은 날짜로 받고, 한국 시간 그날 23:59:59까지로 본다 (#92, 11-06 팀 결정) | 마감일 당일까지 지원·제출할 수 있게 한다. 저장은 9를 따라 서버 시간대의 시각으로 바꾼다 |
-| 11 | 모집 상태는 취소만 저장하고, 모집 중·테스트 중·종료는 마감일로 계산한다 (#92, 11-06 팀 결정) | 프론트가 같은 방식이고, 마감일이 지나면 따로 바꾸지 않아도 상태가 맞는다. 공개 목록·상세, 지원, 보상 지급 판단이 같은 계산을 쓴다 |
+| 11 | 모집 상태는 취소만 저장하고, 모집 중·테스트 중·종료는 마감일로 계산한다 (#92, 11-06 팀 결정) | 계산은 엔티티 `Recruitment.phaseAt(now)`가 한다(#113). 프론트가 같은 방식이고, 마감일이 지나면 따로 바꾸지 않아도 상태가 맞는다. 공개 목록·상세, 지원, 보상 지급 판단이 같은 계산을 쓴다 |
+| 12 | 구독 모집 여부는 모집 작성 때 작성자의 구독 여부로 정해 `recruitments.is_subscription`에 저장한다 (#113, 11-06) | 공개 상세·목록의 추가 보상 표시와 구독 모집 영역에 필요하다. 작성 뒤 구독이 끝나도 그 모집은 구독 모집으로 남는다. 보상액은 보상 담당이 정할 때까지 저장하지 않는다 |
 | 13 | 선착순 모집은 확정 테스터가 있어도 모집 중이면 취소할 수 있다 (#116, 11-07 팀 채팅) | 선착순은 지원하자마자 확정되어 "확정 테스터가 없을 때만" 규칙으로는 첫 지원 뒤 취소할 수 없다. 다른 의견이 있을 수 있어 바뀌면 이 줄과 #116 계획을 고친다. 12는 #113이 쓴다 |
 | 14 | 참가를 확정할 때 기본 보상 1,000 크레딧, 추가 보상 0을 고정한다. 금액은 `RewardPolicy` 상수 하나다 (#114, 11-07 팀 채팅) | 추가 보상은 기준이 애매해 빼고, 기본 보상만 임의 금액으로 먼저 개발하기로 했다. 프론트 `BASE_REWARD`와 같은 값이다. 바꾸면 그 뒤 확정부터 적용되고 이미 확정한 참가는 스냅샷이라 그대로다 |
+| 15 | 역할별 기능은 역할 패키지(`controller.developer`, `controller.admin` 등)에 두고, 클래스 이름은 모집글 자체를 기준으로 붙인다(`RecruitmentController`, `RecruitmentService`, `RecruitmentResponse`). `Public` 같은 접두사를 붙이지 않고, 같은 이름이 겹치면 빈 이름을 `developerRecruitmentController`처럼 준다 (#113 리뷰, 11-08) | `controller.admin.CashoutController`(`adminCashoutController`)와 같은 방식이다. 지금은 개발자 모집 컨트롤러만 옮겼고, 다른 개발자 컨트롤러(`ProjectController` 등)는 옮기지 않았다 |
 
 ### AI 분석 서버 연동 (#107~#109)
 리뷰 묶기·버전 비교·후속 질문은 파이썬 분석 서버(`analysis-server`, 별도 EC2)가 만들고, 메인 백엔드는 데이터를 모아 보내고 결과를 받는다. 분석 서버는 DB에 연결하지 않는다.

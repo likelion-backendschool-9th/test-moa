@@ -21,6 +21,7 @@ import com.testmoa.backend.repository.TestItemImageRepository;
 import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.repository.TypeRepository;
 import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
@@ -28,6 +29,7 @@ import com.testmoa.backend.entity.enums.TypeCode;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.SubscriptionChecker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -110,9 +112,9 @@ public class ProjectServiceImpl implements ProjectService {
         LocalDateTime now = LocalDateTime.now();
         return recruitments.stream().map(item -> RecruitmentSummaryResponse.of(
                 item,
-                statusOf(item, now),
-                selectionModeName(item.getSelectionMode()),
-                softwareTypeName(types.get(item.getId())),
+                RecruitmentNames.phase(item.phaseAt(now)),
+                RecruitmentNames.selectionMode(item.getSelectionMode()),
+                RecruitmentNames.softwareType(types.get(item.getId())),
                 confirmed.getOrDefault(item.getId(), 0L))).toList();
     }
 
@@ -136,7 +138,8 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = findOwned(userId, request.projectId());
         checkDeadlines(request.recruitDeadline(), request.submitDeadline());
         SelectionMode selectionMode = selectionModeOf(request.selectionMode());
-        if (selectionMode == SelectionMode.MANUAL && !subscriptionChecker.isActive(userId)) {
+        boolean subscribed = subscriptionChecker.isActive(userId);
+        if (selectionMode == SelectionMode.MANUAL && !subscribed) {
             throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
         }
 
@@ -149,6 +152,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .recruitDeadline(endOf(request.recruitDeadline()))
                 .feedbackDeadline(endOf(request.submitDeadline()))
                 .selectionMode(selectionMode)
+                .subscription(subscribed)
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());
         recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());
@@ -170,16 +174,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         return projects.stream().map(project -> {
             List<Recruitment> recruitments = byProject.getOrDefault(project.getId(), List.of());
-            long open = recruitments.stream().filter(item -> statusOf(item, now).equals("recruiting")).count();
+            long open = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.RECRUITING).count();
             return ProjectResponse.of(project, recruitments.size(), open);
         }).toList();
-    }
-
-    // 모집 상태. 취소만 저장된 값을 쓰고, 나머지는 프론트처럼 마감일로 계산한다
-    private String statusOf(Recruitment recruitment, LocalDateTime now) {
-        if (recruitment.getStatus() == RecruitmentStatus.CANCELLED) return "cancelled";
-        if (now.isBefore(recruitment.getRecruitDeadline())) return "recruiting";
-        return now.isBefore(recruitment.getFeedbackDeadline()) ? "testing" : "closed";
     }
 
     // 모집 마감은 오늘부터, 제출 마감은 모집 마감 뒤여야 한다
@@ -229,14 +226,6 @@ public class ProjectServiceImpl implements ProjectService {
 
     private SelectionMode selectionModeOf(String value) {
         return "selection".equals(value) ? SelectionMode.MANUAL : SelectionMode.FIRST_COME;
-    }
-
-    private String selectionModeName(SelectionMode selectionMode) {
-        return selectionMode == SelectionMode.MANUAL ? "selection" : "firstCome";
-    }
-
-    private String softwareTypeName(TypeCode code) {
-        return code == null ? null : code.name().toLowerCase();
     }
 
     private String blankToNull(String value) {

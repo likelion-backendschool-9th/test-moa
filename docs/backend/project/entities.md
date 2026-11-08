@@ -45,6 +45,7 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `recruitDeadline`, `feedbackDeadline` | 같은 이름 | LocalDateTime | 불가 | 모집·피드백 마감 |
 | `status` | `status` | enum `RecruitmentStatus` | 불가 | `RECRUITING`으로 시작 |
 | `selectionMode` | `selection_mode` | enum `SelectionMode` | 불가 | 선정 방식 |
+| `subscription` | `is_subscription` | boolean | 불가 | 구독 모집 여부. 기본값 false (#113) |
 | `version` | `version` | Integer | 불가 | 1로 시작 |
 | `analysisStatus` | `analysis_status` | enum `AnalysisStatus` | 불가 | `NONE`/`PENDING`/`DONE`/`FAILED`. `NONE`으로 시작 |
 | `analyzedAt` | `analyzed_at` | LocalDateTime | 가능 | 피드백 분석 완료 시각. 분석 전에는 null (#108) |

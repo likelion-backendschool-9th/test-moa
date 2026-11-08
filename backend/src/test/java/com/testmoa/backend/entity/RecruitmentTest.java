@@ -1,7 +1,9 @@
 package com.testmoa.backend.entity;
 
 import com.testmoa.backend.entity.enums.AnalysisStatus;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -63,5 +65,25 @@ class RecruitmentTest {
 
         assertEquals("처음 사유", recruitment.getCancelReason());
         assertEquals(NOW, recruitment.getCancelledAt());
+    }
+
+    @Test
+    @DisplayName("#113-S7 진행 단계는 저장 상태와 마감일로 계산한다")
+    void 진행_단계() {
+        LocalDateTime now = LocalDateTime.of(2026, 11, 8, 12, 0);
+        Recruitment recruitment = Recruitment.builder().title("1차 모집")
+                .recruitDeadline(now.plusDays(1)).feedbackDeadline(now.plusDays(8)).build();
+
+        assertEquals(RecruitmentPhase.RECRUITING, recruitment.phaseAt(now));
+        assertEquals(RecruitmentPhase.TESTING, recruitment.phaseAt(now.plusDays(1)));
+        assertEquals(RecruitmentPhase.CLOSED, recruitment.phaseAt(now.plusDays(8)));
+
+        /* 저장 상태가 RECRUITING이 아니면 마감일이 남아도 종료다(지금은 CLOSED를 저장하는 코드가 없다) */
+        ReflectionTestUtils.setField(recruitment, "status", RecruitmentStatus.CLOSED);
+        assertEquals(RecruitmentPhase.CLOSED, recruitment.phaseAt(now));
+
+        recruitment = Recruitment.builder().title("2차 모집").recruitDeadline(now.plusDays(1)).feedbackDeadline(now.plusDays(8)).build();
+        recruitment.cancel(null, now);
+        assertEquals(RecruitmentPhase.CANCELLED, recruitment.phaseAt(now));
     }
 }

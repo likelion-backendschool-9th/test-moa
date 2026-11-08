@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class PlanControllerTest {
+class AdminPlanControllerTest {
 
     private static final String URL = "/api/v1/admin/plans";
 

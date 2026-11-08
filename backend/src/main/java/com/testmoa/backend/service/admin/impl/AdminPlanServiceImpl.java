@@ -6,7 +6,7 @@ import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.PlanRepository;
-import com.testmoa.backend.service.admin.PlanService;
+import com.testmoa.backend.service.admin.AdminPlanService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +14,14 @@ import java.util.List;
 
 /**
  * 운영자 플랜 등록. 조건이 바뀌면 옛 행을 고치지 않고 version을 올린 새 행을 만든다.
- * 회원용 {@code PlanServiceImpl}과 클래스 이름이 같아서 빈 이름을 따로 준다.
  */
-@Service("adminPlanService")
+@Service
 @Transactional
-public class PlanServiceImpl implements PlanService {
+public class AdminPlanServiceImpl implements AdminPlanService {
 
     private final PlanRepository planRepository;
 
-    public PlanServiceImpl(PlanRepository planRepository) {
+    public AdminPlanServiceImpl(PlanRepository planRepository) {
         this.planRepository = planRepository;
     }
 

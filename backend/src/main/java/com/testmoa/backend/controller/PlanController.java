@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * 구독 플랜 조회. 구독 설명 페이지와 구독 화면이 같이 쓰므로 로그인 없이 읽는다.
- * 운영자용 {@code admin.PlanController}와 클래스 이름이 같아서, 운영자 쪽이 빈 이름을 따로 가진다.
+ * 플랜 등록은 운영자용 {@code admin.AdminPlanController}가 맡는다.
  */
 @RestController
 @RequestMapping("/api/v1/plans")

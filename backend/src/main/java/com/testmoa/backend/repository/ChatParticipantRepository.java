@@ -68,6 +68,10 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     int unhidePartner(@Param("roomId") Long roomId, @Param("senderId") Long senderId);
 
     @Modifying
+    @Query("update chat_participants p set p.hidden = false, p.updatedAt = local datetime where p.id = :id and p.hidden = true")
+    int unhideMine(@Param("id") Long id);
+
+    @Modifying
     @Query("update chat_participants p set p.customRoomName = :name, p.updatedAt = local datetime where p.id = :id and p.hidden = false")
     int renameRoom(@Param("id") Long id, @Param("name") String name);
 

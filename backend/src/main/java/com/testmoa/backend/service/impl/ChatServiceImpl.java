@@ -54,6 +54,9 @@ public class ChatServiceImpl implements ChatService {
         }
         var existing = roomRepository.findByRegisterId(registerId);
         if (existing.isPresent()) {
+            var mine = existing.get().getParticipants().stream()
+                    .filter(participant -> participant.getUser().getId().equals(userId)).findFirst().orElseThrow();
+            participantRepository.unhideMine(mine.getId());
             return new StartResult(new com.testmoa.backend.dto.response.ChatStartResponse(existing.get().getRoomKey()), false);
         }
         if (register.getStatus() != com.testmoa.backend.entity.enums.RegisterStatus.CONFIRMED) {

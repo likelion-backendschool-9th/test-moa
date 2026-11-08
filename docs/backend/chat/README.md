@@ -10,7 +10,7 @@
 | [#49](https://github.com/likelion-backendschool-9th/test-moa/issues/49) | 메시지 조회·보내기 | [messages.md](messages.md) |
 | [#48](https://github.com/likelion-backendschool-9th/test-moa/issues/48) | 채팅함 조회 | [inbox.md](inbox.md) |
 | [#111](https://github.com/likelion-backendschool-9th/test-moa/issues/111) | 메시지 최대 길이 10,000자로 확대 | [message-length.md](message-length.md) |
-| [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | rooms.md |
+| [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | [rooms.md](rooms.md) |
 | [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | read.md |
 | [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | realtime.md |
 | [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |

@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+import com.testmoa.backend.dto.response.CheckoutResponse;
 import com.testmoa.backend.dto.response.PayableCreditsResponse;
 import com.testmoa.backend.dto.response.SubscriptionResponse;
 import com.testmoa.backend.global.util.ApiResponse;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -38,5 +40,14 @@ public class SubscriptionController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId
     ) {
         return ApiResponse.ok(subscriptionService.getPayableCredits(userId));
+    }
+
+    @Operation(summary = "구독 결제 화면 조회", description = "고른 플랜의 크레딧 결제 가능 여부와 이번 결제의 이용 기간. 조회만 한다")
+    @GetMapping("/subscription/checkout")
+    public ApiResponse<CheckoutResponse> getCheckout(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @RequestParam Long planId
+    ) {
+        return ApiResponse.ok(subscriptionService.getCheckout(userId, planId));
     }
 }

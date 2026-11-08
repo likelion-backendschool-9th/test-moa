@@ -1,14 +1,18 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.dto.response.CheckoutResponse;
 import com.testmoa.backend.dto.response.PayableCreditsResponse;
+import com.testmoa.backend.dto.response.PlanResponse;
 import com.testmoa.backend.dto.response.SubscriptionResponse;
 import com.testmoa.backend.entity.CreditWallet;
+import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.repository.CreditWalletRepository;
+import com.testmoa.backend.repository.PlanRepository;
 import com.testmoa.backend.repository.SubscriptionRepository;
 import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.service.SubscriptionService;
@@ -33,15 +37,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final CreditWalletRepository creditWalletRepository;
+    private final PlanRepository planRepository;
 
     public SubscriptionServiceImpl(
             UserRepository userRepository,
             SubscriptionRepository subscriptionRepository,
-            CreditWalletRepository creditWalletRepository
+            CreditWalletRepository creditWalletRepository,
+            PlanRepository planRepository
     ) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.creditWalletRepository = creditWalletRepository;
+        this.planRepository = planRepository;
     }
 
     @Override
@@ -60,8 +67,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return SubscriptionResponse.notEligible();
         }
 
-        List<Subscription> periods = subscriptionRepository
+        return statusOf(unfinishedPeriods(userId, now), now);
+    }
+
+    /** 아직 끝나지 않은 ACTIVE 기간(시작이 빠른 순). 취소된 기간과 이미 끝난 기간은 빠진다 */
+    private List<Subscription> unfinishedPeriods(Long userId, LocalDateTime now) {
+        return subscriptionRepository
                 .findByUserIdAndStatusAndEndAtAfterOrderByStartAtAsc(userId, Subscription.Status.ACTIVE, now);
+    }
+
+    private SubscriptionResponse statusOf(List<Subscription> periods, LocalDateTime now) {
         Optional<Subscription> current = periods.stream()
                 .filter(period -> !period.getStartAt().isAfter(now))
                 .max((a, b) -> a.getEndAt().compareTo(b.getEndAt()));
@@ -84,10 +99,50 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         if (user.getRole() == Role.ADMIN) {
             return PayableCreditsResponse.notEligible();
         }
-        int payable = creditWalletRepository.findByUserId(userId)
+        return PayableCreditsResponse.of(payableOf(userId));
+    }
+
+    /** 결제 가능 크레딧(이벤트 + 적립, 출금 처리 중 제외). 지갑이 없으면 0 */
+    private int payableOf(Long userId) {
+        return creditWalletRepository.findByUserId(userId)
                 .map(CreditWallet::payable)
                 .orElse(0);
-        return PayableCreditsResponse.of(payable);
+    }
+
+    @Override
+    public CheckoutResponse getCheckout(Long userId, Long planId) {
+        return checkoutAt(userId, planId, LocalDateTime.now());
+    }
+
+    /**
+     * 기준 시각의 결제 화면 값. 이용 시작은 max(기준, ACTIVE 기간 중 가장 늦은 end_at)이고,
+     * 결제 실행(#71)이 쓸 규칙과 같다. 이용 끝은 시작 + periodDays일이다. 운영자는 플랜을 찾지 않고 eligible=false만 돌려준다.
+     */
+    CheckoutResponse checkoutAt(Long userId, Long planId, LocalDateTime now) {
+        User user = requireUser(userId);
+        if (user.getRole() == Role.ADMIN) {
+            return CheckoutResponse.notEligible();
+        }
+        Plan plan = planRepository.findCurrentPlans().stream()
+                .filter(current -> current.getId().equals(planId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+
+        List<Subscription> periods = unfinishedPeriods(userId, now);
+        SubscriptionResponse status = statusOf(periods, now);
+        LocalDateTime startAt = periods.stream()
+                .map(Subscription::getEndAt)
+                .max(LocalDateTime::compareTo)
+                .orElse(now);
+        int payable = payableOf(userId);
+
+        return CheckoutResponse.of(
+                PlanResponse.of(plan),
+                payable,
+                status.active(),
+                status.endAt(),
+                new CheckoutResponse.Period(startAt, startAt.plusDays(plan.getPeriodDays()))
+        );
     }
 
     /** 지금 기간 끝에서 시작하는(빈틈 없는) 기간을 이어 붙인 마지막 end_at */

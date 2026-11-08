@@ -237,4 +237,65 @@ class SubscriptionControllerAuthTest {
         assertNull(JsonPath.read(me, "$.data.subscription"));
         assertEquals(false, JsonPath.read(status, "$.data.eligible"));
     }
+
+    @Test
+    @DisplayName("#70-S8 토큰 없이 결제 화면 조회는 401")
+    void checkoutRequiresLogin() throws Exception {
+        mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", "1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("#70-S6 운영자는 결제 화면에서 eligible=false이다")
+    void checkoutAdmin() throws Exception {
+        mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", "1")
+                        .header("Authorization", bearer(saveUser(Role.ADMIN))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.eligible").value(false))
+                .andExpect(jsonPath("$.data.plan").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("#70-S7 planId가 없거나 숫자가 아니면 400, 지금 파는 플랜이 아니면 404")
+    void checkoutPlanIdChecks() throws Exception {
+        String member = bearer(saveUser(Role.USER));
+        String tier = "구독-" + UUID.randomUUID().toString().substring(0, 8);
+        Plan old = planRepository.save(Plan.builder()
+                .tier(tier).cashPrice(10000).creditPrice(9000).periodDays(30).version(1).build());
+        planRepository.save(Plan.builder()
+                .tier(tier).cashPrice(11000).creditPrice(9900).periodDays(30).version(2).build());
+
+        mvc.perform(get("/api/v1/my/subscription/checkout").header("Authorization", member))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", "abc").header("Authorization", member))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", String.valueOf(old.getId()))
+                        .header("Authorization", member))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("#70-S1~S3 지금 파는 플랜으로 결제 화면 값이 나온다")
+    void checkoutForMember() throws Exception {
+        User user = saveUser(Role.USER);
+        Plan plan = planRepository.save(Plan.builder()
+                .tier("구독-" + UUID.randomUUID().toString().substring(0, 8))
+                .cashPrice(10000).creditPrice(9000).periodDays(30).version(1).build());
+        CreditWallet wallet = CreditWallet.builder().user(user).build();
+        wallet.grantEvent(10000);
+        creditWalletRepository.save(wallet);
+
+        mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", String.valueOf(plan.getId()))
+                        .header("Authorization", bearer(user)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.eligible").value(true))
+                .andExpect(jsonPath("$.data.plan.id").value(plan.getId()))
+                .andExpect(jsonPath("$.data.payableCredits").value(10000))
+                .andExpect(jsonPath("$.data.active").value(false))
+                .andExpect(jsonPath("$.data.credit.affordable").value(true))
+                .andExpect(jsonPath("$.data.credit.shortfall").value(0))
+                .andExpect(jsonPath("$.data.credit.remainingAfter").value(1000))
+                .andExpect(jsonPath("$.data.period.startAt").exists())
+                .andExpect(jsonPath("$.data.period.endAt").exists());
+    }
 }

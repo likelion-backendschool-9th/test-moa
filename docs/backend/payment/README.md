@@ -12,7 +12,7 @@
 | [#66](https://github.com/likelion-backendschool-9th/test-moa/issues/66) | 크레딧 잔액·내역 조회 API | [credit-balance-ledger.md](credit-balance-ledger.md) |
 | [#67](https://github.com/likelion-backendschool-9th/test-moa/issues/67) | 출금 신청·내역 API | [cashout.md](cashout.md) |
 | [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [subscription.md](subscription.md) |
-| [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [아래 #70](#70-구독-결제-화면-조회) |
+| [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [subscription-checkout.md](subscription-checkout.md) |
 | [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [아래 #71](#71-구독-결제-실행) |
 | [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 
@@ -145,11 +145,7 @@ erDiagram
 
 ### #70 구독 결제 화면 조회
 
-#70-S1 checkout 조회 [직접]
-- API: `GET /api/users/{userId}/subscription/checkout?planId=`
-- 응답: `plan`, `payableCredits`, `active`, `currentEndAt`, `credit {affordable, shortfall, remainingAfter}`, `period {startAt, endAt}`, `eligible`
-- 규칙: 운영자 불가, 크레딧 부족 시 `affordable=false`(현금은 가능). `period.startAt`은 CANCELLED 제외 시작식
-- 화면: `docs/frontend/payment/subscription.md` S533~
+시나리오·API·규칙은 [subscription-checkout.md](subscription-checkout.md)에 있다. 화면: `/my/subscription/checkout` ([subscription.md](../../frontend/payment/subscription.md))
 
 ### #71 구독 결제 실행
 
@@ -158,6 +154,8 @@ erDiagram
 | 기간 시작 | `start = max(지금, CANCELLED가 아닌 행 중 가장 늦은 end_at)`. 없으면 지금 |
 | 기간 끝 | `start + periodDays` |
 | 더블클릭 | 직전 결제 후 수 초 내면 거절 |
+
+결제 화면 조회(#70)의 `period`·`credit`은 안내용이다. 결제 실행은 조회 응답 값을 받지 않고 결제할 때 시작·끝·잔액을 다시 계산한다. 화면 문구는 "예상 이용 기간"이다.
 
 **동시에 두 번 결제할 때: 지갑 행 잠금.** 잠그지 않으면 두 요청이 같은 "가장 늦은 `end_at`"을 읽어 같은 기간 행이 두 개 생길 수 있다. 결제를 실행할 때 사용자의 지갑 행을 `PESSIMISTIC_WRITE`(`SELECT … FOR UPDATE`)로 잠근다.
 

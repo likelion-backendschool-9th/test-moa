@@ -119,4 +119,37 @@ class ChatReadControllerTest {
         mvc.perform(post(url() + "/read").contentType(MediaType.APPLICATION_JSON).content("{\"seq\":1}"))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
+    @Test @DisplayName("#52-S5 누락·잘못된 타입·범위 밖 순번은 400이며 읽음 유지")
+    void invalidSeq() throws Exception {
+        sendThree();
+        read(tester, 1).andExpect(status().isOk());
+        for (String body : new String[]{"{}", "{\"seq\":0}", "{\"seq\":-1}", "{\"seq\":\"abc\"}", "{\"seq\":4}"}) {
+            call(post(url() + "/read").contentType(MediaType.APPLICATION_JSON).content(body), tester)
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        }
+        assertThat(saved(testerSide.getId()).getLastReadSeq()).isEqualTo(1);
+    }
+    void notFound(User user, String base) throws Exception {
+        call(post(base + "/read").contentType(MediaType.APPLICATION_JSON).content("{\"seq\":1}"), user)
+                .andExpect(status().isNotFound())
+                .andExpect(content().json("{\"success\":false,\"data\":null,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"찾을 수 없어요\"}}", JsonCompareMode.STRICT));
+    }
+    @Test @DisplayName("#52-S13 비참여자·운영자·없는 방·지운 방은 같은 404")
+    void inaccessible() throws Exception {
+        sendThree();
+        var outsider = fixtures.user("외부회원");
+        var admin = fixtures.user("운영자");
+        em.flush();
+        em.createQuery("update users u set u.role = :role where u.id = :id")
+                .setParameter("role", Role.ADMIN).setParameter("id", admin.getId()).executeUpdate();
+        em.clear();
+        notFound(outsider, url());
+        notFound(admin, url());
+        notFound(tester, "/api/v1/chats/aaaaaaaaaaaaaaaaaaaaaa");
+        call(delete(url()), tester).andExpect(status().isOk());
+        notFound(tester, url());
+        assertThat(saved(developerSide.getId()).getLastReadSeq()).isZero();
+        assertThat(saved(testerSide.getId()).getLastReadSeq()).isZero();
+    }
+
 }

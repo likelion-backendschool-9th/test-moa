@@ -16,7 +16,7 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     @Query("""
             select new com.testmoa.backend.repository.projection.ChatRoomEntry(
                 room.roomKey, recruitment.id, project.title, me.customRoomName, project.imageUrl,
-                me.role, partnerUser.nickname, partner.role)
+                me.role, partnerUser.nickname, partner.role, partner.lastReadSeq)
             from chat_participants me
             join me.room room
             join room.recruitment recruitment
@@ -30,7 +30,9 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     @Query("""
             select new com.testmoa.backend.repository.projection.ChatInboxEntry(
                 room.id, room.roomKey, recruitment.id, project.title, me.customRoomName, project.imageUrl,
-                me.role, partnerUser.nickname, partner.role, message.content, room.lastMessageAt)
+                me.role, partnerUser.nickname, partner.role, message.content, room.lastMessageAt,
+                (select count(unread.id) from chat_messages unread
+                 where unread.room = room and unread.seq > me.lastReadSeq and unread.sender.id <> me.id))
             from chat_participants me
             join me.room room
             join room.recruitment recruitment
@@ -41,6 +43,22 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
             where me.user.id = :userId and me.hidden = false
             """)
     List<ChatInboxEntry> findInboxByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            select count(message.id)
+            from chat_participants me
+            join chat_messages message on message.room = me.room
+            where me.user.id = :userId and me.hidden = false
+                and message.seq > me.lastReadSeq and message.sender.id <> me.id
+            """)
+    long countUnreadByUserId(@Param("userId") Long userId);
+
+    @Query("select p.lastReadSeq from chat_participants p where p.id = :id and p.hidden = false")
+    Optional<Long> findVisibleLastReadSeq(@Param("id") Long id);
+
+    @Modifying
+    @Query("update chat_participants p set p.lastReadSeq = :seq, p.updatedAt = local datetime where p.id = :id and p.hidden = false and p.lastReadSeq < :seq")
+    int markRead(@Param("id") Long id, @Param("seq") long seq);
 
     @Modifying
     @Query("update chat_participants p set p.hidden = false, p.updatedAt = local datetime where p.room.id = :roomId and p.id <> :senderId and p.hidden = true")

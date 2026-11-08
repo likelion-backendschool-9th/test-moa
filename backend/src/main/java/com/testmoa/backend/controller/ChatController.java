@@ -3,6 +3,9 @@ package com.testmoa.backend.controller;
 import com.testmoa.backend.dto.request.ChatMessageSendRequest;
 import com.testmoa.backend.dto.request.ChatRoomRenameRequest;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.dto.request.ChatReadRequest;
+import com.testmoa.backend.dto.response.ChatReadResponse;
+import com.testmoa.backend.dto.response.ChatUnreadResponse;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
@@ -27,6 +30,11 @@ public class ChatController {
         return ApiResponse.ok(chatService.getInbox(userId, query));
     }
 
+    @GetMapping("/unread")
+    public ApiResponse<ChatUnreadResponse> getUnread(@AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(chatService.getUnread(userId));
+    }
+
     @GetMapping("/{roomKey}")
     public ApiResponse<ChatRoomResponse> getRoom(@PathVariable String roomKey,
                                                  @AuthenticationPrincipal Long userId) {
@@ -43,6 +51,13 @@ public class ChatController {
     public ApiResponse<ChatMessageResponse> sendMessage(@PathVariable String roomKey,
                                                         @AuthenticationPrincipal Long userId, @Valid @RequestBody ChatMessageSendRequest request) {
         return ApiResponse.ok(chatService.sendMessage(roomKey, userId, request.text()));
+    }
+
+    @PostMapping("/{roomKey}/read")
+    public ApiResponse<ChatReadResponse> markRead(@PathVariable String roomKey,
+                                                  @AuthenticationPrincipal Long userId,
+                                                  @Valid @RequestBody ChatReadRequest request) {
+        return ApiResponse.ok(chatService.markRead(roomKey, userId, request.seq()));
     }
 
     @PatchMapping("/{roomKey}")

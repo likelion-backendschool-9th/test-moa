@@ -93,6 +93,7 @@ class ApplicationControllerTest {
 
         apply(tester, recruitment.getId())
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.registerId").exists())
                 .andExpect(jsonPath("$.data.recruitmentId").value(recruitment.getId()))
                 .andExpect(jsonPath("$.data.status").value("applied"))
                 .andExpect(jsonPath("$.data.appliedAt").exists())
@@ -112,6 +113,7 @@ class ApplicationControllerTest {
 
         apply(tester, recruitment.getId())
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.registerId").exists())
                 .andExpect(jsonPath("$.data.status").value("confirmed"))
                 .andExpect(jsonPath("$.data.confirmedAt").exists())
                 .andExpect(jsonPath("$.data.baseReward").value(1000));
@@ -120,7 +122,7 @@ class ApplicationControllerTest {
         assertThat(saved.getStatus()).isEqualTo(RegisterStatus.CONFIRMED);
         assertThat(saved.getBaseRewardSnapshot()).isEqualTo(1000);
         assertThat(saved.getExtraRewardSnapshot()).isZero();
-        assertThat(saved.getConfirmedAt()).isNotNull();
+        assertThat(saved.getConfirmedAt()).isEqualTo(saved.getAppliedAt());
     }
 
     @Test
@@ -165,6 +167,16 @@ class ApplicationControllerTest {
                 .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
 
         apply(tester, 999_999_999L).andExpect(status().isNotFound());
+
+        /* 저장 상태가 RECRUITING이 아니면(지금은 쓰지 않는 CLOSED) 마감일이 남아도 마감이다 */
+        Recruitment storedClosed = saveRecruitment(SelectionMode.FIRST_COME, 3);
+        em.flush();
+        em.createNativeQuery("update recruitments set status = 'CLOSED' where id = :id")
+                .setParameter("id", storedClosed.getId()).executeUpdate();
+        apply(tester, storedClosed.getId())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("RECRUITMENT_CLOSED"));
+        assertThat(registersOf(tester, storedClosed)).isEmpty();
 
         assertThat(registersOf(tester, closed)).isEmpty();
         assertThat(registersOf(tester, cancelled)).isEmpty();

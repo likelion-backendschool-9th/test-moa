@@ -69,20 +69,6 @@ public class ProjectServiceImpl implements ProjectService {
     private static final Duration PAYOUT_WAIT = Duration.ofHours(72);
 
     private final FileStorage fileStorage;
-
-    @Override
-    public String uploadImage(java.util.List<MultipartFile> files) {
-        if (files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");
-        MultipartFile file = files.getFirst();
-        var kind = FileStorage.detect(file)
-                .filter(value -> value != FileStorage.Kind.PDF)
-                .filter(value -> !file.isEmpty())
-                .orElseThrow(() -> invalid("file", "PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
-        var stored = fileStorage.save("images", file, kind);
-        return FileStorage.IMAGE_URL_PREFIX
-                + stored.path().substring("images/".length());
-    }
-
     private final ProjectRepository projectRepository;
     private final RecruitmentRepository recruitmentRepository;
     private final RecruitmentImageRepository recruitmentImageRepository;
@@ -94,6 +80,19 @@ public class ProjectServiceImpl implements ProjectService {
     private final TypeRepository typeRepository;
     private final UserRepository userRepository;
     private final SubscriptionChecker subscriptionChecker;
+
+    @Override
+    public String uploadImage(List<MultipartFile> files) {
+        if (files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");
+        MultipartFile file = files.getFirst();
+        var kind = FileStorage.detect(file)
+                .filter(value -> value != FileStorage.Kind.PDF)
+                .filter(value -> !file.isEmpty())
+                .orElseThrow(() -> invalid("file", "PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
+        var stored = fileStorage.save("images", file, kind);
+        return FileStorage.IMAGE_URL_PREFIX
+                + stored.path().substring("images/".length());
+    }
 
     /**
      * 프로젝트 등록

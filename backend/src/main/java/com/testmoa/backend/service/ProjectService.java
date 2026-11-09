@@ -13,7 +13,7 @@ import com.testmoa.backend.dto.response.RecruitmentSummaryResponse;
 import java.util.List;
 
 public interface ProjectService {
-    String uploadImage(java.util.List<MultipartFile> files);
+    String uploadImage(List<MultipartFile> files);
 
     ProjectResponse create(Long userId, ProjectSaveRequest request);
 

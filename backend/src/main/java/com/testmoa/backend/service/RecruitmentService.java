@@ -1,6 +1,5 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.global.file.FileStorage.ImageFile;
 import com.testmoa.backend.dto.request.RecruitmentSearchRequest;
 import com.testmoa.backend.dto.response.RecruitmentPageResponse;

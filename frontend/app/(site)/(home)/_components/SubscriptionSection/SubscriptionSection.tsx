@@ -1,3 +1,4 @@
+import { isBackendAuth } from "@/lib/backend";
 import type { ReactNode } from "react";
 import type { Recruitment } from "@/features/recruitment/types";
 import { RecruitmentGrid, RecruitmentGridSkeleton } from "../RecruitmentGrid/RecruitmentGrid";
@@ -11,7 +12,7 @@ function SubscriptionFrame({ children }: { children: ReactNode }) {
         <h2 id="subscription-heading" className={styles.subscriptionFrameTitle}>
           이런 테스트도 있어요
         </h2>
-        <p className={styles.subscriptionFrameText}>기본 보상에 추가 보상이 붙는 테스트예요.</p>
+        <p className={styles.subscriptionFrameText}>{isBackendAuth ? "구독 모집으로 올라온 테스트예요." : "기본 보상에 추가 보상이 붙는 테스트예요."}</p>
       </div>
       {children}
     </section>

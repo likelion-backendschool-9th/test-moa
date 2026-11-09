@@ -521,4 +521,16 @@ export type PublicRecruitmentData = {
   detail: RecruitmentDetail | null;
   /** 이 모집 건의 프로젝트. 샘플이 없는 모집 건은 null */
   project: Pick<Project, "description" | "image"> | null;
+  /** 로그인한 회원의 참가 상태. 참가가 없거나 비로그인·목업이면 없다 */
+  myRegisterStatus?: ApplicationStatus | null;
 };
+
+/** 지원 결과. 선착순은 바로 확정되고 선발형은 개발자의 확정을 기다린다 */
+export type ApplyState = { status: "idle" } | { status: "done"; confirmed: boolean } | { status: "error"; message: string };
+
+/** 지금 지원할 수 없으면 이유를 돌려준다. 참여 취소만 있으면 다시 지원할 수 있다 */
+export function getApplyBlockedMessage(status: RecruitmentStatus, myRegisterStatus?: ApplicationStatus | null) {
+  if (status !== "recruiting") return "모집이 마감됐어요";
+  if (myRegisterStatus && myRegisterStatus !== "cancelled") return "이미 지원한 테스트예요";
+  return null;
+}

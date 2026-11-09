@@ -10,7 +10,7 @@ import {
   saveDecisions,
   type Decision,
 } from "@/demo/recruitment";
-import { findBackendProject, findBackendProjects, readProjectApi } from "@/features/project/api";
+import { findBackendProject, findBackendProjects, isBackendId, readProjectApi } from "@/features/project/api";
 import { parseFileMeta } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
 import { type FormState } from "@/features/project/types";
@@ -29,6 +29,8 @@ import type {
 import {
   AI_MIN_FEEDBACKS,
   type AiAnalysis,
+  type ApplicationStatus,
+  type ApplyState,
   BASE_REWARD,
   EXTRA_REWARD,
   type ProjectOverview,
@@ -36,6 +38,7 @@ import {
   type ProjectSummary,
   RECRUITMENT_LIMIT,
   type RecruitmentView,
+  type SelectionMode,
   type SoftwareType,
   type TodoItem,
   canCancelRecruitment,
@@ -57,7 +60,7 @@ import {
 import { requireRole } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
 import { backendFetch, isBackendAuth, type BackendResult } from "@/lib/backend";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 import "server-only";
@@ -87,14 +90,72 @@ async function loadAll() {
 const byLatest = (a: Recruitment, b: Recruitment) => b.createdAt.localeCompare(a.createdAt);
 const byDeadline = (a: Recruitment, b: Recruitment) => a.recruitDeadline.localeCompare(b.recruitDeadline);
 
+const RECRUITMENTS_API = "/api/v1/recruitments";
+/* 백엔드 검색 요청의 한도. 넘으면 400이라 주소를 고쳐 쓴 요청도 목록을 보여 주도록 맞춘다 */
+const MAX_SEARCH_LENGTH = 100;
+const MAX_SEARCH_PAGE = 2147483647;
+
+/** 백엔드 RecruitmentPageResponse */
+type RecruitmentPageResponse = {
+  items: Array<{
+    id: number;
+    title: string;
+    projectName: string;
+    projectDescription: string | null;
+    projectImageUrl: string | null;
+    softwareType: SoftwareType | null;
+    subscription: boolean;
+    createdAt: string;
+    recruitDeadline: string;
+    submitDeadline: string;
+  }>;
+  total: number;
+  page: number;
+  pageCount: number;
+};
+
+/** 공개 모집 목록을 읽어 화면의 모집 건으로 바꾼다. 카드 문구는 모집글 제목이다 */
+async function readRecruitmentPage(params: URLSearchParams): Promise<RecruitmentPage> {
+  /* 로그인이 필요 없는 목록이다. 토큰을 붙이면 로그아웃·정지로 막힌 회원은 401을 받아 홈이 열리지 않는다 */
+  const result = await backendFetch<RecruitmentPageResponse>(`${RECRUITMENTS_API}?${params}`, { withToken: false });
+  if (!result.ok) throw new Error(result.message);
+  const { items, total, page, pageCount } = result.data;
+  return {
+    total,
+    page,
+    pageCount,
+    items: items.map((item) => ({
+      slug: String(item.id),
+      projectName: item.projectName,
+      ...(item.projectImageUrl ? { projectImage: item.projectImageUrl } : {}),
+      summary: item.projectDescription ?? "",
+      request: item.title,
+      softwareTypes: item.softwareType ? [item.softwareType] : [],
+      isSubscription: item.subscription,
+      createdAt: item.createdAt,
+      recruitDeadline: item.recruitDeadline,
+      submitDeadline: item.submitDeadline,
+      confirmedCount: 0,
+      /* 공개 API에는 금액이 없어 서비스 상수로 채운다. 추가 보상은 지급하지 않아 넣지 않는다 */
+      baseReward: BASE_REWARD,
+    })),
+  };
+}
+
 /** 구독 개발자의 모집 건 (상단 노출 혜택) */
 export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
+  if (isBackendAuth) {
+    /* 더 보기가 없는 영역이라 백엔드 한도(50)까지 읽는다 */
+    const params = new URLSearchParams({ subscription: "true", open: "true", size: "50" });
+    return (await readRecruitmentPage(params)).items;
+  }
   const { subscription } = await loadAll();
   return [...subscription].sort(byLatest);
 }
 
 /** 모집 마감 전인 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
 export async function getLatestOpenRecruitments(limit = 3): Promise<Recruitment[]> {
+  if (isBackendAuth) return (await readRecruitmentPage(new URLSearchParams({ open: "true", size: String(limit) }))).items;
   const { now, subscription, general } = await loadAll();
   return [...subscription, ...general]
     .filter((item) => new Date(item.recruitDeadline) > now)
@@ -106,6 +167,17 @@ export const RECRUITMENT_PAGE_SIZE = 20;
 
 /** 전체 모집 건을 검색 조건으로 거르고 한 페이지만 잘라 준다. 검색 대상은 이름, 소개, 요청 내용이다 */
 export async function searchRecruitments(query: RecruitmentQuery): Promise<RecruitmentPage> {
+  if (isBackendAuth) {
+    const params = new URLSearchParams({
+      sort: query.sort,
+      page: String(Math.min(query.page, MAX_SEARCH_PAGE)),
+      size: String(RECRUITMENT_PAGE_SIZE),
+    });
+    if (query.q) params.set("q", query.q.slice(0, MAX_SEARCH_LENGTH));
+    if (query.type) params.set("type", query.type);
+    if (query.open) params.set("open", "true");
+    return readRecruitmentPage(params);
+  }
   const { now, subscription, general } = await loadAll();
   const keyword = query.q.toLowerCase();
   const isClosed = (item: Recruitment) => new Date(item.recruitDeadline) <= now;
@@ -202,6 +274,7 @@ export async function saveApplicationDecisions(ids: string[], status: Decision):
  * 시연용 상세 샘플은 개발자 데모 계정의 모집 건에만 있다.
  */
 export async function findPublicRecruitment(slug: string): Promise<PublicRecruitmentData | null> {
+  if (isBackendAuth) return readPublicRecruitment(slug);
   const mode = await getDemoDataMode();
   if (mode === "slow") await new Promise((resolve) => setTimeout(resolve, SLOW_DELAY_MS));
   await connection();
@@ -214,6 +287,88 @@ export async function findPublicRecruitment(slug: string): Promise<PublicRecruit
     owner?.recruitments.find((item) => item.slug === slug) ?? [...home, ...buildPastRecruitments(now)].find((item) => item.slug === slug);
   if (!recruitment) return null;
   return { recruitment, detail: seed.details[slug] ?? null, project: owner ?? null };
+}
+
+/** 백엔드 RecruitmentResponse */
+type PublicRecruitmentResponse = {
+  id: number;
+  title: string;
+  description: string;
+  conditions: string | null;
+  selectionMode: SelectionMode;
+  softwareType: SoftwareType | null;
+  subscription: boolean;
+  recruitDeadline: string;
+  submitDeadline: string;
+  project: { id: number; name: string; description: string | null; imageUrl: string | null };
+  imageUrls: string[];
+  testItems: Array<{ id: number; title: string; description: string | null; required: boolean; imageUrls: string[] }>;
+  myRegisterStatus: ApplicationStatus | null;
+};
+
+/** 공개 모집글을 읽어 화면 모양으로 바꾼다. 없거나 취소됐거나 id로 쓸 수 없는 주소면 null */
+async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentData | null> {
+  if (!isBackendId(slug)) return null;
+  const path = `${RECRUITMENTS_API}/${slug}`;
+  /* 내 지원 상태를 받으려고 토큰을 붙인다. 토큰이 막혔으면 비로그인으로 다시 읽어 공개 글은 보여 준다 */
+  let result = await backendFetch<PublicRecruitmentResponse>(path);
+  if (!result.ok && result.status === 401) result = await backendFetch<PublicRecruitmentResponse>(path, { withToken: false });
+  if (!result.ok) {
+    if (result.status === 404) return null;
+    throw new Error(result.message);
+  }
+  const { data } = result;
+  const projectDescription = data.project.description ?? "";
+  const toImages = (urls: string[], name: string) => urls.map((url, index) => ({ url, name: `${name} 이미지 ${index + 1}` }));
+  return {
+    recruitment: {
+      slug: String(data.id),
+      projectName: data.project.name,
+      ...(data.project.imageUrl ? { projectImage: data.project.imageUrl } : {}),
+      summary: projectDescription,
+      request: data.description,
+      softwareTypes: data.softwareType ? [data.softwareType] : [],
+      isSubscription: data.subscription,
+      /* 상세 응답에는 작성일이 없고, 화면은 마감일로만 상태를 계산한다 */
+      createdAt: "",
+      recruitDeadline: data.recruitDeadline,
+      submitDeadline: data.submitDeadline,
+      confirmedCount: 0,
+      baseReward: BASE_REWARD,
+    },
+    detail: {
+      title: data.title,
+      selectionMode: data.selectionMode,
+      /* 접속 링크는 확정된 테스터에게만 안내해서 공개 응답에 없다 */
+      accessUrl: "",
+      conditions: data.conditions ?? "",
+      images: toImages(data.imageUrls, data.title),
+      testItems: data.testItems.map((item) => ({
+        id: String(item.id),
+        title: item.title,
+        description: item.description ?? "",
+        required: item.required,
+        images: toImages(item.imageUrls, item.title),
+      })),
+    },
+    project: {
+      description: projectDescription,
+      image: data.project.imageUrl ? { url: data.project.imageUrl, name: `${data.project.name} 대표 이미지` } : null,
+    },
+    myRegisterStatus: data.myRegisterStatus,
+  };
+}
+
+/** 테스트에 지원한다. 마감·자기 모집·중복 지원은 서버가 거절한 이유를 그대로 보여 준다 */
+export async function submitApplication(slug: string): Promise<ApplyState> {
+  const path = `/recruitments/${slug}/apply`;
+  await requireRole(path);
+  if (!isBackendAuth) return { status: "error", message: "지금은 지원할 수 없어요" };
+  if (!isBackendId(slug)) notFound();
+  const result = await backendFetch<{ status: ApplicationStatus }>(`${RECRUITMENTS_API}/${slug}/applications`, { method: "POST" });
+  if (result.ok) return { status: "done", confirmed: result.data.status === "confirmed" };
+  if (result.status === 401) redirect(`/login?next=${encodeURIComponent(path)}`);
+  return { status: "error", message: result.message };
 }
 
 /** 회원의 프로젝트 전체 */

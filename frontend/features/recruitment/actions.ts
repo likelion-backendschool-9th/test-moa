@@ -8,9 +8,10 @@ import {
   getRecruitmentFormInfo,
   recommendFollowupQuestions,
   saveBackendRecruitment,
+  submitApplication,
   updateRecruitment as update,
 } from "@/features/recruitment/api";
-import type { EditState, FollowupResult, RecruitmentEditSection } from "@/features/recruitment/types";
+import type { ApplyState, EditState, FollowupResult, RecruitmentEditSection } from "@/features/recruitment/types";
 import { validateRecruitmentForm } from "@/features/recruitment/types";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
@@ -29,6 +30,16 @@ export async function createRecruitment(projectKey: string, _prev: FormState, fo
     revalidatePath(PROJECTS_PATH, "layout");
   }
   redirect(`${projectPath(projectKey)}?notice=saved`);
+}
+
+/** 테스트 지원. 뒤로 가기로 돌아간 상세와 내 참여 화면에 지원 전 상태가 남지 않게 한다 */
+export async function applyToRecruitment(slug: string): Promise<ApplyState> {
+  const result = await submitApplication(slug);
+  if (result.status === "done") {
+    revalidatePath(`/recruitments/${slug}`);
+    revalidatePath("/testers/recruitments", "layout");
+  }
+  return result;
 }
 
 /** 지원자 확정·거절. 시연용이라 결과는 브라우저 쿠키에 남고, 요약·분석·내 프로젝트 화면에도 반영된다 */

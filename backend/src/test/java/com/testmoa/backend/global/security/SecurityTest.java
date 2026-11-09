@@ -108,7 +108,7 @@ class SecurityTest {
     @DisplayName("#79-S4 위조된 토큰은 401")
     void 위조된_토큰은_401() throws Exception {
         String token = jwtProvider.createAccessToken(saveUser(Role.USER, UserStatus.ACTIVE));
-        call("/api/anything", token.substring(0, token.length() - 2) + "xx").andExpect(status().isUnauthorized());
+        call("/api/anything", tamper(token)).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -125,5 +125,11 @@ class SecurityTest {
                 .getTokenValue();
 
         call("/api/anything", token).andExpect(status().isUnauthorized());
+    }
+
+    // 서명의 끝에서 다섯째 글자를 바꾼다. 마지막 글자는 Base64 남는 비트가 있어 바꿔도 같은 서명이 될 수 있다
+    private static String tamper(String jwt) {
+        int i = jwt.length() - 5;
+        return jwt.substring(0, i) + (jwt.charAt(i) == 'A' ? 'B' : 'A') + jwt.substring(i + 1);
     }
 }

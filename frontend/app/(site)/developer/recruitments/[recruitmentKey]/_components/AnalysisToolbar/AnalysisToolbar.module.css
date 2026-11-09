@@ -1,0 +1,24 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1-5);
+}
+
+.button {
+  gap: var(--space-1-5);
+}
+
+/* 공용 secondary 버튼의 마우스 오버 색보다 앞서게 툴바 안에서만 바꾼다 */
+@media (hover: hover) {
+  .toolbar .button:hover:not(:disabled) {
+    background-color: var(--accent-selected);
+  }
+}
+
+.status {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}

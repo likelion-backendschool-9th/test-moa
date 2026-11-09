@@ -31,6 +31,16 @@ import {
   type AiAnalysis,
   type ApplicationStatus,
   type ApplyState,
+  type AnalysisStatus,
+  type GithubIssue,
+  compareVersions,
+  type BackendAnalysisGroup,
+  type BackendGroupReview,
+  fromBackendGroups,
+  buildTrends,
+  toGroupReviews,
+  toGroupView,
+  type VersionComparison,
   BASE_REWARD,
   EXTRA_REWARD,
   type ProjectOverview,
@@ -210,7 +220,7 @@ export async function getRecruitmentsBySlugs(slugs: string[]): Promise<Recruitme
   );
 }
 
-const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {}, details: {}, cancellations: {} };
+const EMPTY: ProjectSeedData = { projects: [], applications: {}, feedbacks: {}, aiSummaries: {}, versionComparisons: {}, details: {}, cancellations: {} };
 
 /** 한 요청 안에서는 목업을 한 번만 만든다 */
 const load = cache(async (role: Role): Promise<ProjectSeedData> => {
@@ -619,7 +629,7 @@ export async function getProjectDetail(path: string, projectKey: string) {
   const rows: ProjectRecruitmentRow[] = await Promise.all(
     recruitments.map(async (item) => {
       const [feedbacks, summary] = await Promise.all([findFeedbacks(role, item.slug), findAiSummary(role, item.slug)]);
-      return { ...item, version: versionOf(recruitments, item), feedbackCount: feedbacks.length, analyzedAt: summary?.generatedAt ?? null };
+      return { ...item, version: versionOf(recruitments, item), feedbackCount: feedbacks.length, analyzedAt: summary?.analyzedAt ?? null };
     }),
   );
   return { project, recruitments: rows };
@@ -804,14 +814,282 @@ export async function decideApplicants(
 
 /** AI 분석 결과. 신고된 피드백을 뺀 피드백이 최소 수보다 적으면 분석하지 않는다 */
 export async function getAiAnalysis(path: string, recruitmentKey: string): Promise<AiAnalysis> {
+  if (isBackendAuth) return getBackendAiAnalysis(path, recruitmentKey);
   const { role } = await getMyRecruitment(path, recruitmentKey);
   const feedbacks = await findFeedbacks(role, recruitmentKey);
   const feedbackCount = feedbacks.filter((item) => item.status !== "reported").length;
   if (feedbackCount < AI_MIN_FEEDBACKS) {
     return { state: "notEnough", feedbackCount, minFeedbacks: AI_MIN_FEEDBACKS };
   }
-  const summary = await findAiSummary(role, recruitmentKey);
-  return summary ? { state: "ready", summary } : { state: "empty" };
+  const [summary, detail] = await Promise.all([findAiSummary(role, recruitmentKey), findRecruitmentDetail(role, recruitmentKey)]);
+  if (!summary) return { state: "empty", status: "NONE" };
+  /* 신고된 리뷰는 분석에 넣지 않으니 수에서도 뺀다 */
+  const counted = feedbacks.filter((item) => item.status !== "reported").map((item) => item.submittedAt);
+  const groups = summary.groups.map((group) => toGroupView(group, feedbacks, detail.testItems));
+  /* shortcut: 백엔드는 "어느 그룹에도 들지 않은 리뷰 수"(unanalyzedFeedbackCount)를 주는데, 목업은 마지막 분석 뒤에 낸 리뷰로 센다. 분석 조회 API를 붙이면 그 값을 쓴다 */
+  const unanalyzedCount = counted.filter((submittedAt) => submittedAt > summary.analyzedAt).length;
+  /* 칭찬 리뷰는 대표 없이 최근 제출 순(백엔드 GET .../analysis/praises와 같다) */
+  const praiseReviews = toGroupReviews(summary.praiseFeedbackIds, null, feedbacks, detail.testItems);
+  return {
+    state: "ready",
+    status: "DONE",
+    summary: { ...summary, groups, praiseReviews, totalCount: feedbackCount, unanalyzedCount, ...buildTrends(counted, new Date()) },
+  };
+}
+
+/** 모집 건 하나의 분석 시각과 리뷰를 붙인 그룹. 분석 전이면 null */
+async function findAnalyzedGroups(role: Role, recruitmentKey: string) {
+  const [summary, feedbacks, detail] = await Promise.all([
+    findAiSummary(role, recruitmentKey),
+    findFeedbacks(role, recruitmentKey),
+    findRecruitmentDetail(role, recruitmentKey),
+  ]);
+  if (!summary) return null;
+  return {
+    title: detail.title,
+    analyzedAt: summary.analyzedAt,
+    groups: summary.groups.map((group) => toGroupView(group, feedbacks, detail.testItems)),
+    /* shortcut: getAiAnalysis와 같이 마지막 분석 뒤에 낸 리뷰로 센다. 분석 조회 API를 붙이면 unanalyzedFeedbackCount를 쓴다 */
+    unanalyzedCount: feedbacks.filter((item) => item.status !== "reported" && item.submittedAt > summary.analyzedAt).length,
+  };
+}
+
+/**
+ * 버전 별 분석. 직전 버전은 같은 프로젝트에서 버전이 바로 앞인 모집글이고(취소한 모집도 버전을 차지한다), 두 버전 모두 분석을 마쳐야 비교할 수 있다.
+ * 백엔드 GET .../version-comparison과 같은 규칙으로, 저장된 요약에 두 버전 그룹을 분류 코드로 이어 붙인다.
+ * AUTH_MODE=backend면 비교 조회, 두 버전의 분석 조회, 그룹 리뷰 목록을 부르고, 아니면 목업으로 만든다
+ */
+export async function getVersionComparison(path: string, recruitmentKey: string): Promise<VersionComparison> {
+  if (isBackendAuth) return getBackendVersionComparison(path, recruitmentKey);
+  const { role, project, recruitment } = await getMyRecruitment(path, recruitmentKey);
+  const currentVersion = versionOf(project.recruitments, recruitment);
+  const previousVersion = currentVersion - 1;
+  const previous = project.recruitments.find((item) => versionOf(project.recruitments, item) === previousVersion);
+  if (!previous) return { state: "noPrevious", currentVersion };
+  const [before, after, sample] = await Promise.all([
+    findAnalyzedGroups(role, previous.slug),
+    findAnalyzedGroups(role, recruitmentKey),
+    load(role).then((seed) => seed.versionComparisons[recruitmentKey] ?? null),
+  ]);
+  if (!before || !after) return { state: "notAnalyzed", previousVersion, currentVersion };
+  if (!sample) return { state: "notCompared", previousVersion, currentVersion };
+  return {
+    state: "ready",
+    ...sample,
+    previousKey: previous.slug,
+    previousVersion,
+    currentVersion,
+    previousTitle: before.title,
+    currentTitle: after.title,
+    /* 비교한 뒤 어느 버전을 다시 분석했으면 오래된 비교다(백엔드 정한 것 8) */
+    stale: sample.comparedAt < before.analyzedAt || sample.comparedAt < after.analyzedAt,
+    unreflectedCount: before.unanalyzedCount + after.unanalyzedCount,
+    groups: compareVersions(before.groups, after.groups),
+  };
+}
+
+const DEVELOPER_RECRUITMENTS = "/api/v1/developer/recruitments";
+
+/** 백엔드 VersionComparisonResponse 중 화면이 쓰는 값. 그룹은 두 버전의 분석 조회에서 코드로 다시 잇는다 */
+type BackendVersionComparison = {
+  currentVersion: number;
+  currentTitle: string;
+  previousRecruitmentId: number;
+  previousVersion: number;
+  previousTitle: string;
+  summary: string;
+  comparedAt: string;
+  stale: boolean;
+};
+
+/** 백엔드 ReviewAnalysisResponse 중 화면이 쓰는 값 */
+type BackendAnalysis = {
+  version: number;
+  analysisStatus: AnalysisStatus;
+  analyzedAt: string | null;
+  analyticsSummary: string | null;
+  praiseSummary: string | null;
+  unanalyzedFeedbackCount: number;
+  groups: BackendAnalysisGroup[];
+};
+
+/** 백엔드 FeedbackResponse 중 화면이 쓰는 값. status는 submitted, reported, rewarded, excluded */
+type BackendFeedback = { status: string; submittedAt: string };
+
+/** 백엔드 PraiseReviewResponse (GET .../analysis/praises) */
+type BackendPraise = Omit<BackendGroupReview, "representative">;
+
+/** 백엔드 오류를 화면 오류로 바꾼다. 없거나 남의 모집글은 404, 나머지는 오류 화면에 문구를 보인다 */
+function unwrap<T>(result: BackendResult<T>): T {
+  if (result.ok) return result.data;
+  if (result.status === 404) notFound();
+  throw new Error(result.message);
+}
+
+const backendGet = <T,>(path: string) => backendFetch<T>(`${DEVELOPER_RECRUITMENTS}/${path}`).then(unwrap);
+
+/** 분석 그룹에 그룹마다의 리뷰를 붙여 화면 그룹으로 바꾼다 */
+async function withGroupReviews(recruitmentId: string | number, analysis: BackendAnalysis) {
+  /* shortcut: 그룹마다 리뷰 목록을 따로 부른다(그룹 수만큼 요청). 그룹이 많아져 느리면 고른 그룹의 리뷰만 불러온다 */
+  const reviews = await Promise.all(
+    analysis.groups.map((group) => backendGet<BackendGroupReview[]>(`${recruitmentId}/analysis/groups/${group.groupId}/reviews`)),
+  );
+  const byGroup = Object.fromEntries(analysis.groups.map((group, index) => [group.groupId, reviews[index]]));
+  return fromBackendGroups(analysis.groups, byGroup);
+}
+
+/** 모집글 한 버전의 분석 그룹과 그룹마다의 리뷰 */
+async function findBackendGroups(recruitmentId: string | number) {
+  const analysis = await backendGet<BackendAnalysis>(`${recruitmentId}/analysis`);
+  return { analysis, groups: await withGroupReviews(recruitmentId, analysis) };
+}
+
+/**
+ * 리뷰 분석 탭(백엔드). 리뷰 수와 시간대별 수는 피드백 목록의 제출·지급 리뷰로 세고(백엔드 분석과 같은 기준),
+ * 그룹·요약·칭찬·미반영 수는 분석 조회에서 온다. 분석한 적이 없으면 "empty", 분석 중이어도 지난 결과가 있으면 그대로 보인다
+ */
+async function getBackendAiAnalysis(path: string, recruitmentId: string): Promise<AiAnalysis> {
+  await requireRole(path);
+  const id = encodeURIComponent(recruitmentId);
+  const [feedbacks, analysis] = await Promise.all([backendGet<BackendFeedback[]>(`${id}/feedbacks`), backendGet<BackendAnalysis>(`${id}/analysis`)]);
+  const counted = feedbacks.filter((item) => item.status === "submitted" || item.status === "rewarded").map((item) => item.submittedAt);
+  if (counted.length < AI_MIN_FEEDBACKS) return { state: "notEnough", feedbackCount: counted.length, minFeedbacks: AI_MIN_FEEDBACKS };
+  const status = analysis.analysisStatus;
+  if (analysis.analyzedAt === null) return { state: "empty", status };
+
+  const [groups, praises] = await Promise.all([withGroupReviews(id, analysis), backendGet<BackendPraise[]>(`${id}/analysis/praises`)]);
+  return {
+    state: "ready",
+    status,
+    summary: {
+      analyzedAt: analysis.analyzedAt,
+      analyticsSummary: analysis.analyticsSummary,
+      praiseSummary: analysis.praiseSummary,
+      groups,
+      praiseReviews: praises.map((praise) => ({
+        id: String(praise.feedbackId),
+        testerNickname: praise.nickname,
+        content: praise.content,
+        submittedAt: praise.submittedAt,
+        testItemTitle: praise.testItemTitle,
+        representative: false,
+      })),
+      totalCount: counted.length,
+      unanalyzedCount: analysis.unanalyzedFeedbackCount,
+      ...buildTrends(counted, new Date()),
+    },
+  };
+}
+
+/**
+ * 버전 별 분석(백엔드). 비교 조회의 오류로 상태를 가른다: 직전 버전 없음(409 NO_PREVIOUS_VERSION),
+ * 분석 전(409 ANALYSIS_NOT_DONE), 비교 전(404 COMPARISON_NOT_FOUND). 소유와 구독은 백엔드가 확인한다
+ */
+async function getBackendVersionComparison(path: string, recruitmentId: string): Promise<VersionComparison> {
+  await requireRole(path);
+  const result = await backendFetch<BackendVersionComparison>(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentId)}/version-comparison`);
+  if (!result.ok && ["NO_PREVIOUS_VERSION", "ANALYSIS_NOT_DONE", "COMPARISON_NOT_FOUND"].includes(result.code)) {
+    const { version: currentVersion } = await backendGet<BackendAnalysis>(`${encodeURIComponent(recruitmentId)}/analysis`);
+    if (result.code === "NO_PREVIOUS_VERSION") return { state: "noPrevious", currentVersion };
+    /* 모집글 버전은 프로젝트마다 1, 2, 3으로 이어진다(#177) */
+    const previousVersion = currentVersion - 1;
+    return { state: result.code === "ANALYSIS_NOT_DONE" ? "notAnalyzed" : "notCompared", previousVersion, currentVersion };
+  }
+  const comparison = unwrap(result);
+  const [before, after] = await Promise.all([
+    findBackendGroups(comparison.previousRecruitmentId),
+    findBackendGroups(encodeURIComponent(recruitmentId)),
+  ]);
+  return {
+    state: "ready",
+    summary: comparison.summary,
+    comparedAt: comparison.comparedAt,
+    previousKey: String(comparison.previousRecruitmentId),
+    previousVersion: comparison.previousVersion,
+    currentVersion: comparison.currentVersion,
+    previousTitle: comparison.previousTitle,
+    currentTitle: comparison.currentTitle,
+    stale: comparison.stale,
+    unreflectedCount: before.analysis.unanalyzedFeedbackCount + after.analysis.unanalyzedFeedbackCount,
+    groups: compareVersions(before.groups, after.groups),
+  };
+}
+
+/* 백엔드는 AI 분석 서버의 응답을 30초까지 기다린다(연결 5초 별도). 그보다 먼저 끊지 않게 넉넉히 기다린다 */
+const COMPARISON_TIMEOUT_MS = 40_000;
+
+/* 이슈 등록은 백엔드가 GitHub 응답을 기다린다 */
+const ISSUE_TIMEOUT_MS = 20_000;
+
+/** 결과가 없는 요청의 성공·실패. 실패 문구는 백엔드 ErrorCode 문구를 그대로 쓴다 */
+export type ActionResult = { ok: true } | { ok: false; message: string };
+
+const toActionResult = (result: BackendResult<unknown>): ActionResult =>
+  result.ok ? { ok: true } : { ok: false, message: result.message };
+
+/** AI 버전 비교를 실행한다. 백엔드가 구독·직전 버전·분석 여부와 일주일 3번 한도를 확인한다. 목업에서는 아무것도 바꾸지 않는다 */
+export async function runVersionComparison(recruitmentKey: string): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  return toActionResult(
+    await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/version-comparison`, {
+      method: "POST",
+      timeoutMs: COMPARISON_TIMEOUT_MS,
+    }),
+  );
+}
+
+/**
+ * AI 리뷰 분석을 시작한다. 백엔드는 바로 202로 답하고 분석은 따로 돌아, 화면이 조회로 끝나길 기다린다.
+ * 이미 분석 중(409)이면 그 분석을 기다리면 되니 성공으로 본다. 구독·일주일 3번 한도는 백엔드가 확인한다
+ */
+export async function runReviewAnalysis(recruitmentKey: string): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  const result = await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/analysis`, { method: "POST" });
+  if (!result.ok && result.code === "ANALYSIS_IN_PROGRESS") return { ok: true };
+  return toActionResult(result);
+}
+
+/** 그룹의 GitHub 이슈 초안을 고친다. 등록했거나 등록 중인 초안은 백엔드가 거절한다(409) */
+export async function saveIssueDraft(
+  recruitmentKey: string,
+  groupId: string,
+  draft: { title: string; content: string },
+): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  return toActionResult(
+    await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/analysis/groups/${encodeURIComponent(groupId)}`, {
+      method: "PATCH",
+      body: { gitIssueTitle: draft.title, gitIssueContent: draft.content },
+    }),
+  );
+}
+
+/** 이슈 등록 결과. 목업에서는 issue가 null이고 화면이 시연용 번호를 만든다 */
+export type RegisterIssueResult = { ok: true; issue: GithubIssue | null } | { ok: false; message: string };
+
+/** 그룹의 이슈 초안을 연결된 GitHub 레포에 등록한다. 레포가 없으면 백엔드가 409로 거절한다 */
+export async function registerGithubIssue(recruitmentKey: string, groupId: string): Promise<RegisterIssueResult> {
+  if (!isBackendAuth) return { ok: true, issue: null };
+  const result = await backendFetch<BackendAnalysis>(
+    `${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/analysis/groups/${encodeURIComponent(groupId)}/github-issue`,
+    { method: "POST", timeoutMs: ISSUE_TIMEOUT_MS },
+  );
+  if (!result.ok) return { ok: false, message: result.message };
+  const group = result.data.groups.find((item) => String(item.groupId) === groupId);
+  const issue = group?.gitIssueUrl && group.gitIssueNumber !== null ? { number: group.gitIssueNumber, url: group.gitIssueUrl } : null;
+  return { ok: true, issue };
+}
+
+/** 고친 짝을 저장한다. 목업에서는 화면에만 남는다 */
+export async function saveVersionLinks(
+  recruitmentKey: string,
+  links: Array<{ groupId: string; previousGroupId: string | null }>,
+): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  const body = { links: links.map((link) => ({ groupId: Number(link.groupId), previousGroupId: link.previousGroupId === null ? null : Number(link.previousGroupId) })) };
+  return toActionResult(
+    await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/version-comparison/links`, { method: "PUT", body }),
+  );
 }
 
 const FOLLOWUP_NOT_FOUND = "이 피드백을 찾지 못했어요. 새로고침한 뒤 다시 시도해 주세요";

@@ -1,6 +1,8 @@
-package com.testmoa.backend.controller.analysis;
+package com.testmoa.backend.controller.developer;
 
 import com.testmoa.backend.dto.request.AnalysisGroupUpdateRequest;
+import com.testmoa.backend.dto.response.GroupReviewResponse;
+import com.testmoa.backend.dto.response.PraiseReviewResponse;
 import com.testmoa.backend.dto.response.ReviewAnalysisResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.ReviewAnalysisService;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * AI 리뷰 묶기·우선순위. 묶기와 이슈 초안은 분석 서버가 하고, 리뷰 수·테스터 수·순서는 메인 백엔드가 계산함
@@ -49,6 +53,27 @@ public class ReviewAnalysisController {
             @PathVariable Long recruitmentId
     ) {
         return ApiResponse.ok(reviewAnalysisService.find(userId, recruitmentId));
+    }
+
+    @Operation(summary = "칭찬 리뷰 목록", description = "로그인·구독 필요. AI가 칭찬으로 묶은 리뷰를 최근 제출 순으로 준다. "
+            + "신고·보상 제외 리뷰는 빼고, 여러 칭찬 그룹에 든 리뷰는 한 번만 준다. 분석 전이면 빈 목록")
+    @GetMapping("/{recruitmentId}/analysis/praises")
+    public ApiResponse<List<PraiseReviewResponse>> findPraises(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @PathVariable Long recruitmentId
+    ) {
+        return ApiResponse.ok(reviewAnalysisService.findPraises(userId, recruitmentId));
+    }
+
+    @Operation(summary = "분석 그룹 리뷰 목록", description = "로그인·구독 필요. 그룹에 든 리뷰를 대표 리뷰 먼저, 나머지는 최근 제출 순으로 준다. "
+            + "신고·보상 제외 리뷰는 뺀다. 다른 모집글의 그룹이면 404")
+    @GetMapping("/{recruitmentId}/analysis/groups/{groupId}/reviews")
+    public ApiResponse<List<GroupReviewResponse>> findGroupReviews(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @PathVariable Long recruitmentId,
+            @PathVariable Long groupId
+    ) {
+        return ApiResponse.ok(reviewAnalysisService.findGroupReviews(userId, recruitmentId, groupId));
     }
 
     @Operation(summary = "분석 그룹 GitHub 이슈 등록", description = "로그인·구독 필요. 그룹의 이슈 초안을 프로젝트에 연결된 GitHub 레포에 이슈로 등록한다. "

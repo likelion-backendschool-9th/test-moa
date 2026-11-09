@@ -48,29 +48,24 @@ public class VersionComparisonReader {
      */
     public ComparisonTarget readTarget(Long userId, Long recruitmentId) {
         Recruitment current = findMine(userId, recruitmentId);
-        Recruitment previous = recruitmentRepository
-                .findFirstByProjectIdAndVersionLessThanOrderByVersionDescIdDesc(current.getProject().getId(), current.getVersion())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NO_PREVIOUS_VERSION));
-        // 분석 결과(analyzed_at)가 있어야 비교함. 다시 분석하다 실패해도(FAILED) 지난 결과가 그대로 남아 비교할 수 있음
-        if (current.getAnalyzedAt() == null || previous.getAnalyzedAt() == null) {
-            throw new BusinessException(ErrorCode.ANALYSIS_NOT_DONE);
-        }
-        // 다시 분석하는 중이면 곧 그룹이 바뀌어 끝난 뒤 비교함
-        if (current.getAnalysisStatus() == AnalysisStatus.PENDING || previous.getAnalysisStatus() == AnalysisStatus.PENDING) {
-            throw new BusinessException(ErrorCode.ANALYSIS_IN_PROGRESS);
-        }
+        Recruitment previous = findAnalyzedPrevious(current);
+        requireNotAnalyzing(current, previous);
         ComparisonRequest request = new ComparisonRequest(toVersionGroups(previous), toVersionGroups(current));
         return new ComparisonTarget(current.getProject().getId(), current.getId(), previous.getId(), request);
     }
 
     /**
      * 저장된 비교 결과. 현재 버전 그룹은 직전 버전에 같은 코드가 있으면 "이전에도 있음",
-     * 직전 버전 그룹 중 현재 버전에 같은 코드가 없는 것은 "이번 버전에서 보고되지 않음"
+     * 직전 버전 그룹 중 현재 버전에 같은 코드가 없는 것은 "이번 버전에서 보고되지 않음".
+     * 비교 전이면 화면이 상태를 가르도록 직전 버전 없음 → 분석 전 → 비교 전 순으로 알림
      */
     public VersionComparisonResponse readResult(Long userId, Long recruitmentId) {
         Recruitment current = findMine(userId, recruitmentId);
-        VersionComparison comparison = versionComparisonRepository.findByRecruitmentId(current.getId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.COMPARISON_NOT_FOUND));
+        VersionComparison comparison = versionComparisonRepository.findByRecruitmentId(current.getId()).orElse(null);
+        if (comparison == null) {
+            findAnalyzedPrevious(current);
+            throw new BusinessException(ErrorCode.COMPARISON_NOT_FOUND);
+        }
         Recruitment previous = comparison.getPreviousRecruitment();
 
         List<ClusterGroup> currentGroups = clusterGroupRepository.findByRecruitmentIdOrderByIdAsc(current.getId());
@@ -86,6 +81,25 @@ public class VersionComparisonReader {
                 .map(NotReportedGroup::of)
                 .toList();
         return VersionComparisonResponse.of(comparison, current, previous, isStale(comparison, current, previous), groups, notReported);
+    }
+
+    // 직전 버전은 같은 프로젝트에서 현재보다 버전이 작은 것 중 가장 큰 모집글.
+    // 분석 결과(analyzed_at)가 있어야 비교함. 다시 분석하다 실패해도(FAILED) 지난 결과가 그대로 남아 비교할 수 있음
+    private Recruitment findAnalyzedPrevious(Recruitment current) {
+        Recruitment previous = recruitmentRepository
+                .findFirstByProjectIdAndVersionLessThanOrderByVersionDescIdDesc(current.getProject().getId(), current.getVersion())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NO_PREVIOUS_VERSION));
+        if (current.getAnalyzedAt() == null || previous.getAnalyzedAt() == null) {
+            throw new BusinessException(ErrorCode.ANALYSIS_NOT_DONE);
+        }
+        return previous;
+    }
+
+    // 다시 분석하는 중이면 곧 그룹이 바뀌어 끝난 뒤 비교하거나 짝을 고침
+    static void requireNotAnalyzing(Recruitment current, Recruitment previous) {
+        if (current.getAnalysisStatus() == AnalysisStatus.PENDING || previous.getAnalysisStatus() == AnalysisStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ANALYSIS_IN_PROGRESS);
+        }
     }
 
     // 다른 회원의 모집글은 없는 모집글과 같이 404

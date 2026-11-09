@@ -1,14 +1,18 @@
-package com.testmoa.backend.controller.analysis;
+package com.testmoa.backend.controller.developer;
 
+import com.testmoa.backend.dto.request.VersionLinksUpdateRequest;
 import com.testmoa.backend.dto.response.VersionComparisonResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.VersionComparisonService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,5 +46,16 @@ public class VersionComparisonController {
             @PathVariable Long recruitmentId
     ) {
         return ApiResponse.ok(versionComparisonService.find(userId, recruitmentId));
+    }
+
+    @Operation(summary = "버전 비교 짝 저장", description = "로그인·구독 필요. 이번 버전 그룹마다 이을 직전 버전 그룹(null이면 짝 없음)을 받아 그룹 코드를 고친다. "
+            + "비교 결과가 있어야 하고 분석 중이면 409. 요약과 비교 시각은 그대로이고 한도를 쓰지 않는다. 응답은 비교 조회와 같다")
+    @PutMapping("/{recruitmentId}/version-comparison/links")
+    public ApiResponse<VersionComparisonResponse> relink(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @PathVariable Long recruitmentId,
+            @Valid @RequestBody VersionLinksUpdateRequest request
+    ) {
+        return ApiResponse.ok(versionComparisonService.relink(userId, recruitmentId, request));
     }
 }

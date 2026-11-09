@@ -1,0 +1,397 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.note {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.empty {
+  padding: var(--space-6);
+  color: var(--text-muted);
+}
+
+/* 넓은 화면: 왼쪽 그룹 목록, 오른쪽 분류된 리뷰 목록과 이슈 초안. 그룹 목록은 오른쪽 영역 안에서 스크롤을 따라 내려온다 */
+
+.layout {
+  display: grid;
+  gap: var(--space-8);
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: calc(var(--space-24) * 4 + var(--space-16)) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .listSection {
+    position: sticky;
+    top: var(--space-20);
+    max-height: calc(100dvh - var(--space-24));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.listSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 표. 칸마다 제목을 두고, 문제 칸이 남는 폭을 쓴다 */
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  border-bottom: 1px solid var(--line);
+  background-color: var(--surface-muted);
+  padding: var(--space-3) var(--space-2);
+  text-align: left;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-4) var(--space-2);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--space-4);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--space-4);
+}
+
+.table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--line);
+}
+
+.row {
+  cursor: pointer;
+  transition: background-color var(--duration-150) var(--ease);
+}
+
+/* 고른 줄은 넓게 까는 선택 초록(--accent-tint)으로 칠한다 */
+.row[data-selected="true"] {
+  background-color: var(--accent-tint);
+}
+
+.selectedArrow {
+  vertical-align: middle;
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .row[data-selected="false"]:hover {
+    background-color: var(--surface-muted);
+  }
+}
+
+.table .problemCell {
+  width: 100%;
+  white-space: normal;
+}
+
+.table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.name {
+  text-align: left;
+  cursor: pointer;
+}
+
+.name:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+
+
+/* 오른쪽: AI 깃허브 이슈(상자 → 버튼) → 분류된 리뷰 목록(제목 줄 오른쪽에 그룹 정보) */
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+
+
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+
+
+
+.reviews {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding: var(--space-4) var(--space-5);
+}
+
+.review:not(:last-child) {
+  border-bottom: 1px solid var(--line);
+}
+
+.reviewMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.nickname {
+  color: var(--text);
+}
+
+.representative {
+  border-radius: var(--radius-md);
+  background-color: var(--accent-tint);
+  padding: var(--space-0-5) var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.reviewContent {
+  line-height: var(--leading-relaxed);
+}
+
+/* 목록 아래 가운데에서 테두리에 살짝 걸친다. 목록 간격(space-3)만큼 올리고 12px 더 올려도 마지막 리뷰의 아래 여백(space-4) 안이라 글자를 가리지 않는다 */
+.toggle {
+  align-self: center;
+  margin-top: calc(var(--space-3) * -2);
+}
+
+/* GitHub 이슈 초안. 이슈 화면처럼 상태·제목 머리줄, 본문, 아래 버튼 줄 */
+
+/* 짧은 초안이어도 이 높이(22rem)를 지키고, 길면 그만큼 늘어난다 */
+.draft {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(var(--space-24) * 3 + var(--space-16));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.draftHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--line);
+  background-color: var(--surface-muted);
+  padding: var(--space-4) var(--space-5);
+}
+
+.githubIcon {
+  flex-shrink: 0;
+  width: var(--space-6);
+  height: var(--space-6);
+}
+
+.draftLabel {
+  font-weight: 700;
+}
+
+.issueName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 700;
+}
+
+.issueNumber {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.stateOpen {
+  border-radius: var(--radius-full);
+  padding: var(--space-0-5) var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.stateOpen {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.markdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  line-height: var(--leading-relaxed);
+}
+
+.markdown h4 {
+  margin-bottom: var(--space-1);
+  font-weight: 700;
+}
+
+.bullet {
+  position: relative;
+  padding-left: var(--space-4);
+}
+
+.bullet::before {
+  content: "•";
+  position: absolute;
+  left: var(--space-1);
+  color: var(--text-muted);
+}
+
+.draftForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+
+.fieldLabel {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  padding: var(--space-2-5) var(--space-3);
+  font: inherit;
+  color: var(--text);
+}
+
+.textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.error {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--like);
+}
+
+.draftActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.hint {
+  margin-right: auto;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.register {
+  gap: var(--space-1-5);
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+
+/* 이슈 초안 위 안내. AI 결과를 검토하고 등록하라고 알린다 */
+.footnote {
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}

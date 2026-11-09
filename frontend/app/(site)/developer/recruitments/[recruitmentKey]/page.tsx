@@ -5,9 +5,9 @@ import { Container } from "@/components/ui/Container/Container";
 import { ApplicantList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/ApplicantList/ApplicantList";
 import { FeedbackList } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/FeedbackList/FeedbackList";
 import { DetailSkeleton } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
-import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
+import { VersionComparisonPanel } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/VersionComparisonPanel/VersionComparisonPanel";
 import {
-  AnalyticsPanel,
+  AnalyticsLocked,
   parseManageTab,
   RecruitmentHeader,
   RecruitmentInfoPanel,
@@ -18,7 +18,7 @@ import {
   AiAnalysisSkeleton,
 } from "@/app/(site)/developer/recruitments/[recruitmentKey]/_components/AiAnalysisPanel/AiAnalysisPanel";
 import { canSelectApplicants } from "@/features/recruitment/types";
-import { getAiAnalysis, getRecruitmentDetail } from "@/features/recruitment/api";
+import { getAiAnalysis, getRecruitmentDetail, getVersionComparison } from "@/features/recruitment/api";
 import styles from "./page.module.css";
 
 /* 테스트 모집 관리 (/developer/recruitments/:recruitmentKey). 탭은 ?tab=info|testers|feedback|analytics|versions, 없으면 모집 정보 */
@@ -90,18 +90,34 @@ async function ManageSlot({ params, searchParams }: Props) {
           selectionMode={detail.selectionMode}
         />
       )}
-      {current === "analytics" && <AnalyticsPanel isSubscription={recruitment.isSubscription} analytics={analytics} />}
-      {/* AI 분석은 느릴 수 있어서 숫자 카드와 따로 기다린다. 구독 모집에서만 보인다 */}
+      {current === "analytics" && !recruitment.isSubscription && <AnalyticsLocked />}
+      {/* AI 분석은 느릴 수 있어서 머리·탭과 따로 기다린다. 구독 모집에서만 보인다 */}
       {current === "analytics" && recruitment.isSubscription && (
         <Suspense fallback={<AiAnalysisSkeleton />}>
-          <AiSlot basePath={basePath} recruitmentKey={recruitmentKey} />
+          <AiSlot basePath={basePath} recruitmentKey={recruitmentKey} repository={project.repository} />
         </Suspense>
       )}
-      {current === "versions" && <EmptyState title="버전 별 분석은 준비 중이에요" description="이 화면은 다음 작업에서 만들 예정이에요." />}
+      {current === "versions" && !recruitment.isSubscription && (
+        <AnalyticsLocked
+          title="구독 모집에서 버전 별 분석을 볼 수 있어요"
+          description="구독하면 AI가 직전 버전과 리뷰 그룹을 견줘 어떤 문제가 이어지고 새로 생겼는지 알려 줘요."
+        />
+      )}
+      {current === "versions" && recruitment.isSubscription && (
+        <Suspense fallback={<AiAnalysisSkeleton />}>
+          <VersionSlot basePath={basePath} recruitmentKey={recruitmentKey} />
+        </Suspense>
+      )}
     </div>
   );
 }
 
-async function AiSlot({ basePath, recruitmentKey }: { basePath: string; recruitmentKey: string }) {
-  return <AiAnalysisPanel analysis={await getAiAnalysis(basePath, recruitmentKey)} />;
+async function VersionSlot({ basePath, recruitmentKey }: { basePath: string; recruitmentKey: string }) {
+  return <VersionComparisonPanel comparison={await getVersionComparison(basePath, recruitmentKey)} recruitmentKey={recruitmentKey} />;
+}
+
+async function AiSlot({ basePath, recruitmentKey, repository }: { basePath: string; recruitmentKey: string; repository?: string }) {
+  return (
+    <AiAnalysisPanel analysis={await getAiAnalysis(basePath, recruitmentKey)} repository={repository} recruitmentKey={recruitmentKey} />
+  );
 }

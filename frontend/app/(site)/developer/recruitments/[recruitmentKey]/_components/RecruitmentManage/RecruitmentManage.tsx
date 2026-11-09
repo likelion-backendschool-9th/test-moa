@@ -145,34 +145,21 @@ export function RecruitmentTabs({ basePath, current, feedbackCount }: { basePath
   );
 }
 
-/** 분석 탭. 구독 모집에서만 숫자를 보여 준다 */
-export function AnalyticsPanel({ isSubscription, analytics }: { isSubscription: boolean; analytics: RecruitmentAnalytics }) {
-  if (!isSubscription) {
-    return (
-      <Card as="div" className={styles.analyticsPanel}>
-        <p className={styles.analyticsPanelText}>구독 모집에서 분석을 볼 수 있어요</p>
-        <p className={styles.analyticsPanelText2}>구독하면 지원·제출·신고 흐름을 숫자로 확인할 수 있어요.</p>
-        <LinkButton href="/subscription" className={styles.analyticsPanelButton}>
-          구독 알아보기
-        </LinkButton>
-      </Card>
-    );
-  }
-  const tiles = [
-    ["지원 수", `${analytics.applicationCount}명`],
-    ["확정 수", `${analytics.confirmedCount}명`],
-    ["피드백 제출 수", `${analytics.feedbackCount}건`],
-    ["제출률", `${analytics.submitRate}%`],
-    ["신고 수", `${analytics.reportCount}건`],
-  ];
+/** 리뷰 분석 탭을 무료 모집에서 열었을 때. 리뷰 분석은 구독 모집에서만 한다 */
+export function AnalyticsLocked({
+  title = "구독 모집에서 리뷰 분석을 볼 수 있어요",
+  description = "구독하면 AI가 리뷰를 묶어 심각도 순으로 정리하고 이슈 초안까지 써 줘요.",
+}: {
+  title?: string;
+  description?: string;
+}) {
   return (
-    <dl className={styles.analyticsPanel2}>
-      {tiles.map(([term, value]) => (
-        <Card as="div" key={term} className={styles.analyticsPanel3}>
-          <dt className={styles.analyticsPanelTerm}>{term}</dt>
-          <dd className={styles.analyticsPanelValue}>{value}</dd>
-        </Card>
-      ))}
-    </dl>
+    <Card as="div" className={styles.analyticsPanel}>
+      <p className={styles.analyticsPanelText}>{title}</p>
+      <p className={styles.analyticsPanelText2}>{description}</p>
+      <LinkButton href="/subscription" className={styles.analyticsPanelButton}>
+        구독 알아보기
+      </LinkButton>
+    </Card>
   );
 }

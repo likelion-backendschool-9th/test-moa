@@ -1,121 +1,306 @@
-.frame {
+/* 기능 묶음(분석 요약, 그래프 두 개, 그룹 목록, 칭찬) 사이는 넉넉히 띄워 한 묶음씩 읽히게 한다 */
+.root {
+  --block-gap: var(--space-16);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-6);
+  gap: var(--block-gap);
 }
 
-.frameBox {
+@media (min-width: 64rem) {
+  .root {
+    --block-gap: var(--space-20);
+  }
+}
+
+/* 맨 위 분석 버튼 줄은 첫 섹션에 붙인다 */
+.root > :first-child {
+  margin-bottom: calc(var(--space-4) - var(--block-gap));
+}
+
+.section {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 시간대별 분석 현황과 내 리뷰 성향을 넓은 화면에서 반씩 나란히. 두 카드는 같은 높이로 늘어난다 */
+.split {
+  display: grid;
+  gap: var(--space-10);
+}
+
+@media (min-width: 64rem) {
+  .split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
+  }
+}
+
+.splitSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.splitSection > :last-child {
+  flex: 1;
+}
+
+/* 핵심 요약과 미반영 안내: 화면 맨 위에서 가장 먼저 읽는 두 줄 */
+
+.lead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.headline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  border: 1px solid var(--accent-selected);
+  border-radius: var(--radius-2xl);
+  background-color: var(--accent-tint);
+  padding: var(--space-5) var(--space-6);
+}
+
+.headlineIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-card);
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+
+.headlineText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.headlineLabel {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.headlineTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.02em;
+  text-wrap: pretty;
+}
+
+.headlineNote {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.pending {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
+  border: 1px solid var(--warning-soft);
+  border-radius: var(--radius-xl);
+  background-color: var(--warning-soft);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--warning);
 }
 
-.frameTitle {
+.pendingIcon {
+  flex-shrink: 0;
+  font-size: var(--text-base);
+}
+
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.sectionTitle {
   font-size: var(--text-xl);
   line-height: var(--text-xl-leading);
   font-weight: 800;
   letter-spacing: -.03em;
 }
 
-.groupTitle {
-  font-weight: 800;
-}
-
-.groupTitleCount {
-  color: var(--text-muted);
-}
-
-.text {
-  font-weight: 600;
-}
-
-.text2 {
+.sectionNote {
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);
   color: var(--text-muted);
 }
 
-.text3 {
-  font-weight: 600;
+/* 분석 요약 */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
 }
 
-.headline {
+@media (min-width: 48rem) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.statTerm {
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.statValue {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.statCritical {
+  composes: statValue;
+  color: var(--like);
+}
+
+/* 칭찬: 한 줄 요약 아래에 칭찬 리뷰를 채팅 말풍선으로 */
+
+.praise {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.praiseText {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.praiseList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.praiseItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.praiseMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding-left: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.praiseNickname {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.praiseRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+/* 상대 말풍선(DESIGN.md 채팅): 16px 모서리, 안쪽 10px 16px, 0.875rem, 넉넉한 행간, 최대 폭 80%. 회색 면에 왼쪽 아래 꼬리를 단다 */
+.praiseBubble {
+  position: relative;
+  max-width: 80%;
+  margin-left: var(--space-2);
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-strong);
+  padding: var(--space-2-5) var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* 꼬리: 말풍선 색 조각을 왼쪽 아래에 붙이고, 카드 바탕색(--surface-muted) 조각으로 안쪽을 둥글게 파낸다 */
+.praiseBubble::before,
+.praiseBubble::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  height: var(--space-4);
+}
+
+.praiseBubble::before {
+  left: calc(var(--space-2) * -1);
+  width: var(--space-5);
+  border-bottom-right-radius: var(--radius-2xl);
+  background-color: var(--surface-strong);
+}
+
+.praiseBubble::after {
+  left: calc(var(--space-2-5) * -1);
+  width: var(--space-2-5);
+  border-bottom-right-radius: var(--radius-lg);
+  background-color: var(--surface-muted);
+}
+
+.praiseTime {
+  flex-shrink: 0;
+  padding-bottom: var(--space-0-5);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 분석 전 상태 */
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-8);
+}
+
+.messageTitle {
   font-size: var(--text-lg);
   line-height: var(--text-lg-leading);
   font-weight: 600;
 }
 
-.box {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  border-radius: var(--radius-xl);
-  border-style: solid;
-  border-width: 1px;
-  border-color: var(--line);
-  background-color: var(--surface);
-  padding: var(--space-4);
-}
-
-.text4 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  font-weight: 600;
-}
-
-.text5 {
+.messageText {
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);
-  color: var(--text-muted);
-}
-
-.label {
-  font-weight: 700;
-  color: var(--text);
-}
-
-.box2 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.list2 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.root2 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.text6 {
-  border-top-style: solid;
-  border-top-width: 1px;
-  border-color: var(--line);
-  padding-top: var(--space-4);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs-leading);
   color: var(--text-muted);
 }
 

@@ -1,0 +1,170 @@
+/* 리뷰 분석 탭과 같은 간격: 기능 묶음(핵심 분석, 막대 그래프, 그룹 목록) 사이는 넉넉히 띄운다 */
+.root {
+  --block-gap: var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--block-gap);
+}
+
+@media (min-width: 64rem) {
+  .root {
+    --block-gap: var(--space-20);
+  }
+}
+
+/* 맨 위 비교 버튼 줄은 핵심 분석에 붙인다 */
+.root > :first-child {
+  margin-bottom: calc(var(--space-4) - var(--block-gap));
+}
+
+/* 핵심 분석과 미반영 안내 */
+
+.lead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* 진한 초록 재단 매트(히어로와 같은 면)에 흰 글씨. 테마와 관계없이 같다 */
+.headline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  border-radius: var(--radius-2xl);
+  background-color: var(--hero-mat);
+  padding: var(--space-6);
+  color: var(--hero-text);
+}
+
+@media (min-width: 48rem) {
+  .headline {
+    padding: var(--space-8);
+  }
+}
+
+.headlineText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.headlineLabel {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  opacity: .9;
+}
+
+.headlineTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.02em;
+  text-wrap: pretty;
+}
+
+@media (min-width: 48rem) {
+  .headlineTitle {
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl-leading);
+  }
+}
+
+.headlineNote {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  opacity: .9;
+  text-wrap: pretty;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .stats {
+    gap: var(--space-3);
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-2);
+  border-radius: var(--radius-xl);
+  background-color: var(--hero-chip);
+  padding: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .stat {
+    padding: var(--space-4) var(--space-5);
+  }
+}
+
+.statTerm {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  opacity: .9;
+}
+
+.statValue {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.statCritical {
+  composes: statValue;
+  color: var(--hero-like);
+}
+
+.pending {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-xl);
+  background-color: var(--warning-soft);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.pendingIcon {
+  flex-shrink: 0;
+  font-size: var(--text-base);
+}
+
+/* 비교 전 상태 */
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-8);
+}
+
+.messageTitle {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 600;
+}
+
+.messageText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.message > :last-child:not(.messageText) {
+  margin-top: var(--space-3);
+}

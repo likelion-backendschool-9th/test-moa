@@ -227,7 +227,7 @@ class ProjectControllerTest {
         em.persist(Register.builder().recruitment(first).user(me).build());
         em.persist(Feedback.builder().register(confirmed).content("검색이 느려요").submittedAt(LocalDateTime.now()).build());
         em.persist(Feedback.builder().register(confirmed).content("저장이 편해요").submittedAt(LocalDateTime.now()).build());
-        first.completeAnalysis("칭찬 요약", LocalDateTime.now());
+        first.completeAnalysis("전체 요약", "칭찬 요약", LocalDateTime.now());
 
         send(me, get(PROJECTS + "/" + project.getId() + "/recruitments"), null)
                 .andExpect(status().isOk())

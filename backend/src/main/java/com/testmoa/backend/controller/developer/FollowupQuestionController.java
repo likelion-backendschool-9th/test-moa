@@ -1,4 +1,4 @@
-package com.testmoa.backend.controller.analysis;
+package com.testmoa.backend.controller.developer;
 
 import com.testmoa.backend.dto.response.FollowupQuestionsResponse;
 import com.testmoa.backend.global.util.ApiResponse;

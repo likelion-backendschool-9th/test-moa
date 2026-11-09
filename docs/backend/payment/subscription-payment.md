@@ -21,7 +21,7 @@
 - **크레딧은 이벤트를 먼저 쓰고 모자란 만큼 적립에서 뺀다.** `CreditWallet.spendForSubscription`을 쓴다. 출금 처리 중(잠긴) 크레딧은 `payable()`에 들어가지 않아 쓰지 않는다. 내역에는 이벤트 한 줄, 적립 한 줄로 남고 0인 쪽은 행이 없다. 설명은 `구독 결제(이벤트 크레딧)`, `구독 결제(적립 크레딧)`다.
 - **산 플랜은 산 당시 행이다.** `Subscription.plan`은 결제할 때의 지금 파는 플랜 행을 가리킨다. 지금 파는 플랜(같은 `tier`의 가장 큰 `version`)이 아니면 404다(#70과 같음).
 - **운영자는 결제 대상이 아니라 403이다.** 결제 이력은 빈 배열이다.
-- **응답 시각에는 시간대 정보가 없다.** 서버 시간대의 값이다(다른 API와 같다). 프론트가 한국 시간으로 바꿔 써야 한다([subscription-checkout.md](subscription-checkout.md)).
+- **응답 시각에는 오프셋이 붙는다.** 서버 시간대(UTC로 고정)의 값에 오프셋을 붙여 `2026-11-08T08:21:43Z`처럼 내려간다([subscription-checkout.md](subscription-checkout.md), [server-time.md](../../server-time.md)) (고침 #193: 시간대 정보 없음 → 오프셋 포함)
 - **만료로 바꾸는 배치는 두지 않는다.** 구독 중인지는 날짜로 판단한다.
 
 ## API
@@ -207,7 +207,7 @@
 - 실제 PG 결제와 영수증
 - 프론트 목업 제거·API 연동(`/my/subscription/checkout`, 결제 뒤 `?notice=paid`)
 - 결제 이력의 페이지 나누기·기간 조건
-- 이용 끝을 한국 날짜의 끝(23:59:59)으로 맞추는 안: 팀과 확인한 뒤 정한다([subscription-checkout.md](subscription-checkout.md))
+- 이용 끝을 한국 날짜의 끝(23:59:59)으로 맞추는 안: 하지 않기로 정했다(11-09). 이용 끝은 `시작 + periodDays`일이다([subscription-checkout.md](subscription-checkout.md))
 - 가입할 때 지갑을 만드는 일(인증 담당 코드). 지금은 결제가 필요할 때 만든다
 
 ## 작업 순서
@@ -222,4 +222,4 @@
 - `CreditWallet.spendForSubscription`·`payable()`, `findLockedByUserId`, `Payment`·`Subscription`·`CreditLedger` 엔티티는 #45·#66에 있다.
 - 지갑은 회원마다 하나이고 `credit_wallets.user_id`에 유일 제약이 있다(`ON CONFLICT (user_id)`가 쓰는 제약).
 - `SecurityConfig`는 공개 경로(`PUBLIC_PATHS`) 밖의 모든 요청에 로그인을 요구한다(`anyRequest().authenticated()`). 그래서 결제와 이력 API는 따로 설정할 것이 없고, 토큰이 없으면 401이다.
-- 시각은 서버 시간대의 `LocalDateTime.now()`다(다른 코드와 같다).
+- 시각은 서버 시간대(UTC로 고정)의 `LocalDateTime.now()`다(다른 코드와 같다).

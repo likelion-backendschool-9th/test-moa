@@ -1,5 +1,10 @@
 package com.testmoa.backend.controller.developer;
 
+import com.testmoa.backend.dto.response.ImageUploadResponse;
+import java.util.List;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import com.testmoa.backend.dto.request.RecruitmentCancelRequest;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
 import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
@@ -33,6 +38,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class RecruitmentController {
     private final ProjectService projectService;
     private final RecruitmentCancelService recruitmentCancelService;
+
+    @Operation(summary = "모집글·테스트 항목 이미지 업로드")
+    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<ImageUploadResponse> uploadImage(
+            @RequestParam("file") List<MultipartFile> files) {
+        return ApiResponse.ok(new ImageUploadResponse(projectService.uploadImage(files)));
+    }
 
     @Operation(summary = "테스트 모집 작성", description = "모집글, 유형, 테스트 항목을 함께 저장한다")
     @PostMapping

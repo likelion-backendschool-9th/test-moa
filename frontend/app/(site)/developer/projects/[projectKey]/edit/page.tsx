@@ -1,3 +1,4 @@
+import { isBackendAuth } from "@/lib/backend";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { projectPath, projectEditPath } from "@/features/project/paths";
@@ -29,7 +30,7 @@ async function FormSlot({ params }: Pick<Props, "params">) {
   const { project } = await getMyProject(projectEditPath(projectKey), projectKey);
   const { name, description } = project;
   return (
-    <ProjectForm
+    <ProjectForm uploadEnabled={isBackendAuth}
       projectKey={project.key}
       initialValues={{ name, description }}
       initialImage={project.image}

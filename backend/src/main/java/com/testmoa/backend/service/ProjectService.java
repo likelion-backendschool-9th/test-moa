@@ -1,5 +1,6 @@
 package com.testmoa.backend.service;
 
+import org.springframework.web.multipart.MultipartFile;
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
 import com.testmoa.backend.dto.request.RepositoryConnectRequest;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
@@ -13,6 +14,8 @@ import com.testmoa.backend.dto.response.RecruitmentSummaryResponse;
 import java.util.List;
 
 public interface ProjectService {
+    String uploadImage(List<MultipartFile> files);
+
     ProjectResponse create(Long userId, ProjectSaveRequest request);
 
     List<ProjectResponse> findMine(Long userId);

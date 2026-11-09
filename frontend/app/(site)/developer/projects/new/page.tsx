@@ -1,3 +1,4 @@
+import { isBackendAuth } from "@/lib/backend";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PROJECTS_PATH, PROJECT_NEW_PATH } from "@/features/project/paths";
@@ -24,5 +25,5 @@ export default function NewProjectPage() {
 
 async function FormSlot() {
   await requireRole(PROJECT_NEW_PATH);
-  return <ProjectForm projectKey={null} cancelHref={PROJECTS_PATH} />;
+  return <ProjectForm uploadEnabled={isBackendAuth} projectKey={null} cancelHref={PROJECTS_PATH} />;
 }

@@ -16,10 +16,11 @@
 | [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [subscription-payment.md](subscription-payment.md) |
 | [#203](https://github.com/likelion-backendschool-9th/test-moa/issues/203) | 무료 플랜 조건 API(+ 구독 화면 프론트 연결) | [free-plan.md](free-plan.md) |
 | [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
+| [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204) | 운영자 구독 부여·해제 API(+ 구독 결제 화면 프론트 연결) | [admin-subscription.md](admin-subscription.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 
-프론트: [크레딧](../../frontend/payment/credits.md), [크레딧 구분·내역 시각](../../frontend/payment/credit-labels.md), [구독](../../frontend/payment/subscription.md), [출금 요청 관리](../../frontend/admin/withdrawals.md)
+프론트: [크레딧](../../frontend/payment/credits.md), [크레딧 구분·내역 시각](../../frontend/payment/credit-labels.md), [구독](../../frontend/payment/subscription.md), [출금 요청 관리](../../frontend/admin/withdrawals.md), [운영자 구독 관리](../../frontend/admin/subscriptions.md)
 
 ## 정한 것
 - 프론트 목업의 규칙을 백엔드가 갖게 한다. 크레딧 조회·출금은 토큰의 회원만 본다(`/api/v1/my/credits`). 구독 API는 만들 때 같은 방식으로 맞춘다.
@@ -40,6 +41,7 @@
 
 - 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
 - 구독 중인지는 날짜로 판단하고, 만료로 바꾸는 배치는 두지 않는다. 구독 상태는 `ACTIVE`·`CANCELLED` 둘만 있고 `EXPIRED`는 enum에서 뺐다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다. (2026-11-07)
+- 운영자가 시연·확인용으로 회원의 구독을 결제 없이 주고 뺄 수 있다. 회원은 이메일로 찾고, 부여는 `subscriptions` 행만 만들며 결제·크레딧은 건드리지 않는다. 해제는 끝나지 않은 기간을 `CANCELLED`로 바꾸는데 이 값은 환불 취소와 뜻이 겹친다. ([admin-subscription.md](admin-subscription.md), #204, 2026-11-09)
 - 무료 플랜은 `plans`가 아니라 별도 테이블 `free_plans`(행 하나, 고정 PK)에 두고, 조회 `GET /api/v1/plans/free`와 운영자 저장 `PUT /api/v1/admin/plans/free`를 둔다. `plans`에 넣으면 구독 상품 목록에 섞여 결제 대상이 되기 때문이다. 행이 없으면 빈 혜택을 200으로 준다. ([free-plan.md](free-plan.md), #203, 2026-11-09)
 - 모집 한도는 없다. `Plan.monthlyRecruitLimit`을 지웠고 구독 API에 한도·사용량이 없다. (#69, 2026-11-07)
 - `Plan.tier`는 `String`으로 두고, 유료 등급이 늘어 코드가 등급 이름으로 갈라질 때 `enum`을 더한다. (#69, 2026-11-07)

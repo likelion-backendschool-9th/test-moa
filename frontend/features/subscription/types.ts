@@ -10,9 +10,6 @@ export type Subscription =
   /* planName은 서버가 준 플랜 이름(tier)이다. 플랜 새 버전이 나오면 구독의 planId는 지금 파는 플랜 목록에 없어서, 백엔드 모드는 이름으로 찾는다 */
   | { status: "active"; planId: string; planName?: string; expiresAt: string };
 
-/** 백엔드 모드에서 결제를 막을 때 보여 주는 문구(결제 저장 API 연결은 #204) */
-export const PAYMENT_NOT_READY = "아직 결제할 수 없어요";
-
 /** 이 구독이 쓰는 상품인지. 이름을 아는 서버 값은 이름으로, 목업은 id로 비교한다 */
 export function usesPlan(subscription: Subscription | null, plan: SubscriptionPlan): boolean {
   if (subscription?.status !== "active") return false;
@@ -35,6 +32,32 @@ export type SubscriptionOverview = {
   /** 남은 날 계산 기준 시각 */
   now: string;
 };
+
+/** 운영자가 보는 회원의 구독 상태(#204). 운영자 계정은 구독 대상이 아니라 eligible이 false다 */
+export type MemberSubscription = {
+  nickname: string;
+  email: string;
+  eligible: boolean;
+  active: boolean;
+  /** 지금 구독 중인 상품 이름. 미구독이면 null */
+  plan: string | null;
+  endAt: string | null;
+  remainingDays: number | null;
+};
+
+/** 이메일로 회원을 찾은 결과 */
+export type MemberSubscriptionLookup = { status: "found"; member: MemberSubscription } | { status: "not-found" };
+
+/** 이메일 검색창의 길이 한도. 이메일 칸(백엔드)의 한도와 맞춘다 */
+export const MEMBER_EMAIL_MAX_LENGTH = 254;
+
+/** 주소의 email을 검색어로 다듬는다. 문자열이 아니거나 비면 빈 문자열이다 */
+export function parseMemberEmail(value: string | string[] | undefined): string {
+  return typeof value === "string" ? value.trim().slice(0, MEMBER_EMAIL_MAX_LENGTH) : "";
+}
+
+/** 이번 결제로 생기는 이용 기간. 시각은 서버가 준 오프셋 포함 문자열이다 */
+export type CheckoutPeriod = { startAt: string; endAt: string };
 
 /** 공개 구독 소개(`/subscription`). 비로그인도 읽을 수 있다 */
 export type SubscriptionIntro = {

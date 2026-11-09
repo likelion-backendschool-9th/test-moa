@@ -7,11 +7,14 @@ import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { formatDate, formatElapsed } from "@/lib/format";
 import { processReport } from "@/features/report/actions";
 import {
+  evidenceHref,
+  formatFileSize,
   isOverdue,
   REPORT_DECISION_LABEL,
   REPORT_TARGET_LABEL,
   REVIEW_MEMO_MAX_LENGTH,
   type Report,
+  type ReportEvidence,
 } from "@/features/report/types";
 import { reportsHref, type ReportListView } from "@/features/report/paths";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
@@ -76,12 +79,56 @@ export function ReportDetail({ report, now, view }: { report: Report; now: Date;
         </AdminPanel>
       )}
 
-      {report.targetType === "recruitment" && (
-        <LinkButton href={`/recruitments/${report.recruitmentSlug}`} variant="secondary" size="sm" className={styles.button}>
-          모집 글 보기
-        </LinkButton>
-      )}
+      {report.evidences && report.evidences.length > 0 && <Evidences reportId={report.id} evidences={report.evidences} />}
+
+      <div className={styles.actions}>
+        {/* 실제 로그인에서는 모집 글 신고만 모집 id를 안다(그 밖에는 빈 값) */}
+        {report.targetType === "recruitment" && report.recruitmentSlug && (
+          <LinkButton href={`/recruitments/${report.recruitmentSlug}`} variant="secondary" size="sm">
+            모집 글 보기
+          </LinkButton>
+        )}
+        {/* 인정한 뒤 회원 관리에서 다시 찾지 않고 바로 제재 양식으로 간다 */}
+        {report.targetUserKey && report.targetNickname && (
+          <LinkButton href={`/admin/users/${report.targetUserKey}#sanction-form-heading`} variant="secondary" size="sm">
+            {report.targetNickname} 제재하기
+          </LinkButton>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** 증거 파일. 이미지는 미리보기, PDF는 이름만 보이고 누르면 새 탭에서 연다 */
+function Evidences({ reportId, evidences }: { reportId: string; evidences: ReportEvidence[] }) {
+  return (
+    <AdminPanel as="section" aria-labelledby="evidence-heading">
+      <h3 id="evidence-heading" className={styles.title2}>
+        증거 파일 <span className={styles.count}>{evidences.length}</span>
+      </h3>
+      <ul className={styles.evidences}>
+        {evidences.map((evidence) => {
+          const href = evidenceHref(reportId, evidence.id);
+          return (
+            <li key={evidence.id}>
+              <a href={href} target="_blank" rel="noreferrer" className={styles.evidence}>
+                {evidence.contentType.startsWith("image/") ? (
+                  /* 로그인 토큰이 필요한 비공개 파일이라 next/image 최적화를 거치지 않는다 */
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={href} alt="" className={styles.thumb} />
+                ) : (
+                  <span aria-hidden className={styles.fileIcon}>
+                    PDF
+                  </span>
+                )}
+                <span className={styles.evidenceName}>{evidence.originalName}</span>
+                <span className={styles.evidenceSize}>{formatFileSize(evidence.size)}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </AdminPanel>
   );
 }
 

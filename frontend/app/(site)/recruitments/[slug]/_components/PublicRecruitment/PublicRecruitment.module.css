@@ -60,6 +60,12 @@
 .box2 {
   min-width: 0;
 }
+
+.applyBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
 
 .aside {
   display: flex;

@@ -23,6 +23,7 @@ export type BackendResult<T> = { ok: true; data: T } | BackendError;
 
 export type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  /** JSON으로 보낸다. FormData면 파일 업로드(multipart)로 그대로 보낸다 */
   body?: unknown;
   /** Bearer로 붙일 access 토큰 */
   token?: string;
@@ -33,7 +34,9 @@ export type RequestOptions = {
 /** 백엔드를 부르고 ApiResponse를 성공·실패로 나눠 돌려준다. 백엔드가 꺼져 있거나 응답이 늦어도 던지지 않는다 */
 export async function requestBackend<T>(path: string, { method = "GET", body, token, timeoutMs = BACKEND_TIMEOUT_MS }: RequestOptions = {}): Promise<BackendResult<T>> {
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const multipart = body instanceof FormData;
+  /* multipart는 fetch가 경계(boundary)를 붙여 Content-Type을 정한다 */
+  if (body !== undefined && !multipart) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let response: Response;
@@ -41,7 +44,7 @@ export async function requestBackend<T>(path: string, { method = "GET", body, to
     response = await fetch(`${BACKEND_URL}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     });

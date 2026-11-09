@@ -1,19 +1,11 @@
-import Link from "next/link";
-import { Badge } from "@/components/ui/Badge/Badge";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { formatElapsed } from "@/lib/format";
 import { LinkTabs } from "../../../_components/LinkTabs/LinkTabs";
-import {
-  isOverdue,
-  REPORT_DECISION_LABEL,
-  REPORT_TARGET_LABEL,
-  type Report,
-  type ReportDecision,
-} from "@/features/report/types";
-import { reportDetailHref, reportsHref, type ReportTargetFilter, type ListTab } from "@/features/report/paths";
+import { REPORT_TARGET_LABEL, type Report, type ReportDecision } from "@/features/report/types";
+import { reportsHref, type ReportTargetFilter, type ListTab } from "@/features/report/paths";
 import { Card } from "@/components/ui/Card/Card";
 import { AdminListRow } from "@/app/(site)/admin/_components/AdminListRow/AdminListRow";
+import { ReportListPanel } from "./ReportListPanel";
 import styles from "./ReportList.module.css";
 
 const TABS: { tab: ListTab; label: string }[] = [
@@ -55,7 +47,7 @@ export function ProcessedNotice({ decision, held }: { decision: ReportDecision; 
 }
 
 
-/** 신고 목록. 피드백 원문은 상세에서만 보여 준다 */
+/** 신고 목록. 탭·대상 필터 결과가 없으면 빈 상태, 있으면 검색·결과 필터와 안쪽 스크롤 상자. 피드백 원문은 상세에서만 보여 준다 */
 export function ReportList({
   reports,
   tab,
@@ -72,40 +64,7 @@ export function ReportList({
     /* 어떤 필터 때문인지 알 수 있게 대상 종류를 따옴표로 말한다 */
     return <EmptyState title={target === "all" ? base : `'${REPORT_TARGET_LABEL[target]}' 신고 중에는 ${base}`} />;
   }
-  return (
-    <ul aria-label={tab === "pending" ? "검토 대기 신고" : "처리 완료 신고"} className={styles.root}>
-      {reports.map((report) => (
-        <li key={report.id}>
-          <AdminListRow as={Link}
-            href={reportDetailHref(report.id, { tab, target })}
-            className={styles.link}
-          >
-            <div className={styles.box}>
-              <div className={styles.box2}>
-                <Badge tone="muted">{REPORT_TARGET_LABEL[report.targetType]}</Badge>
-                <span className={styles.recruitmentName}>{report.recruitmentName}</span>
-              </div>
-              <span className={styles.reason}>{report.reason}</span>
-            </div>
-            <div className={styles.box3}>
-              {report.review ? (
-                <>
-                  <Badge tone="neutral">{REPORT_DECISION_LABEL[report.review.decision]}</Badge>
-                  <span className={styles.label}>처리 {formatElapsed(report.review.processedAt, now)}</span>
-                </>
-              ) : (
-                <>
-                  {report.holdsReward && <Badge tone="muted">보상 보류</Badge>}
-                  {isOverdue(report, now) && <Badge tone="neutral">72시간 지남</Badge>}
-                  <span className={styles.label2}>접수 {formatElapsed(report.createdAt, now)}</span>
-                </>
-              )}
-            </div>
-          </AdminListRow>
-        </li>
-      ))}
-    </ul>
-  );
+  return <ReportListPanel reports={reports} tab={tab} target={target} now={now} />;
 }
 
 export function ReportListSkeleton() {

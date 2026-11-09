@@ -17,12 +17,11 @@
 | 용도 | 주소 | 위치 |
 | --- | --- | --- |
 | 프로젝트 대표 이미지 업로드 | `POST /api/v1/developer/projects/images` | `controller.ProjectController` |
-| 모집글 이미지 업로드 | `POST /api/v1/developer/recruitments/images` | `controller.developer.RecruitmentController` |
-| 테스트 항목 이미지 업로드 | `POST /api/v1/developer/recruitments/test-items/images` | `controller.developer.RecruitmentController` |
+| 모집글·테스트 항목 이미지 업로드 | `POST /api/v1/developer/recruitments/images` | `controller.developer.RecruitmentController` |
 | 공개 조회 | `GET /api/v1/recruitments/images/{파일}` | `controller.RecruitmentController` |
 
 - 업로드는 multipart `file` 하나를 받아 `{ "url": "/api/v1/recruitments/images/<uuid>.<확장자>" }`를 돌려준다. 파일은 한 번에 한 장이다. 모집글 이미지 10장이면 최대 50MB라 요청 한도 30MB를 넘기 때문이다.
-- 세 종류 모두 업로드 폴더의 `images/`에 저장한다. 신고 증거는 `reports/`에 있으므로 조회가 `images/`만 읽으면 증거 파일에 닿지 않는다.
+- 두 업로드 API 모두 업로드 폴더의 `images/`에 저장한다. 신고 증거는 `reports/`에 있으므로 조회가 `images/`만 읽으면 증거 파일에 닿지 않는다.
 - 공개 조회를 공개 모집 컨트롤러에 두는 이유는 세 이미지가 모두 공개 모집 화면에 나오고, 공개 프로젝트 컨트롤러가 없기 때문이다.
 - 브라우저는 백엔드에 직접 닿지 않는다(nginx가 Next로 보낸다). Next Route Handler를 백엔드와 같은 경로에 두어 전달한다. `standalone` 빌드의 `rewrites`는 빌드 때 값이 고정되어 백엔드 주소를 환경 변수로 바꿀 수 없으므로 쓰지 않는다.
 
@@ -58,8 +57,8 @@
 
 #191-S5 업로드 두 종류 [테스트]
 - Given 로그인한 회원
-- When  JPG를 `/api/v1/developer/recruitments/images`로, WEBP를 `/api/v1/developer/recruitments/test-items/images`로 보낸다
-- Then  둘 다 200이고 `url`의 확장자가 각각 `jpg`, `webp`다
+- When  JPG와 WEBP를 모두 `/api/v1/developer/recruitments/images`로 보낸다
+- Then  둘 다 200이고 `url`의 확장자가 각각 `jpg`, `webp`다 (고침 #191: 같은 규칙이라 업로드 주소를 합침, PR #224 리뷰)
 
 #191-S6 모집 작성과 상세 [직접]
 - Given 모집글 이미지 2장과 첫 번째 테스트 항목 이미지 1장을 고른 작성 폼
@@ -136,6 +135,11 @@
 - When  이미지를 고르고 저장한다
 - Then  지금처럼 목업으로 동작하고 파일을 보내지 않는다
 
+#191-S19 이미 올린 파일 재사용 [테스트]
+- Given 2개 중 두 번째 업로드가 실패한 뒤의 업로드 기록
+- When 같은 파일로 다시 업로드한다
+- Then 첫 번째 파일은 다시 보내지 않고 두 번째 파일만 보낸다
+
 ## 범위 밖
 - 안 쓰는 파일 자동 삭제(후속 이슈)
 - 피드백 이미지(#119). 다른 회원 접근을 막아야 하므로 공개 조회를 쓰지 않는다
@@ -161,7 +165,7 @@
 - 프로젝트 수정은 현재 저장된 값과 같으면 모양이 달라도 통과시킨다.
 - 파일 이름이 바뀌지 않으므로 조회 응답은 오래 캐시한다.
 - 업로드 전달은 서버 액션 대신 Route Handler로 한다. 서버 액션의 기본 본문 한도를 늘리지 않기 위해서다.
-- 업로드 메서드 세 개의 처리는 같으므로 서비스의 메서드 하나를 함께 쓴다.
+- 프로젝트·모집글 업로드 메서드의 처리는 같으므로 서비스의 메서드 하나를 함께 쓴다.
 
 ## 참고 (2026-11-09 확인)
 - `FileStorage`는 PNG·JPG·WEBP·PDF를 파일 앞부분으로 판별한다. 이미지 업로드는 PDF를 따로 막아야 한다.

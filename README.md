@@ -39,6 +39,7 @@
       <ul>
         <li><a href="#사전-준비">사전 준비</a></li>
         <li><a href="#설치-및-실행">설치 및 실행</a></li>
+        <li><a href="#ai-분석-서버-실행">AI 분석 서버 실행</a></li>
       </ul>
     </li>
     <li><a href="#로드맵">로드맵</a></li>
@@ -467,6 +468,17 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
 
 개발 모드, 로컬 HTTPS, 자주 쓰는 명령은 [실행 방법](docs/running.md)을 참고하세요.
 
+<br/>
+
+### AI 분석 서버 실행
+
+AI 피드백 분석은 Python 분석 서버를 따로 띄워야 동작합니다. 분석 서버가 없어도 AI 기능을 뺀 나머지는 그대로 동작합니다.
+
+1. [AI 분석 서버 README](ANALYSIS_SERVER_README_URL)를 따라 서버를 띄웁니다.
+2. `.env`의 `ANALYSIS_BASE_URL`에 백엔드 컨테이너에서 접속할 수 있는 분석 서버 주소를 넣습니다.
+3. `.env`의 `ANALYSIS_INTERNAL_TOKEN`에 분석 서버와 같은 토큰을 넣습니다.
+4. `docker compose up -d backend`로 백엔드를 다시 띄웁니다.
+
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
 <br/>
@@ -563,6 +575,7 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
 - [협업 규칙](CONTRIBUTING.md): 브랜치, 커밋 메시지, PR
 - [프론트엔드 안내](frontend/README.md): 폴더 구조, 테스트 명령, 기술적으로 고민한 점
 - [백엔드 안내](backend/README.md): 기술적으로 고민한 점
+- [AI 분석 서버](#ai-분석-서버-실행): 별도 실행 방법
 - [계획 문서](docs/README.md): 도메인별 요구사항과 결정 기록
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>

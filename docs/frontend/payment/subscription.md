@@ -197,11 +197,11 @@ S543 기록 보관 기간 (리뷰 반영) [직접]
 - 구조: `src/lib/demo-subscription.ts`(시연용 결제 기록), `src/features/my/subscription-actions.ts`(`payForSubscription`), `src/features/my/components/CheckoutForm.tsx`, `src/app/my/(account)/subscription/checkout/page.tsx`. 결제 기록은 `features/my/api.ts`(만료일), `features/credit/api.ts`(잔액·내역), `lib/session.ts`(헤더 크레딧)가 읽는다.
 
 ## 백엔드 연결 (#203)
-`AUTH_MODE=backend`에서 `getSubscriptionOverview`가 서버 값을 읽는다. 값이 없으면 목업이다. 구독 결제(저장)는 이번 범위가 아니라 결제 화면의 저장은 계속 목업이다.
+`AUTH_MODE=backend`에서 `getSubscriptionOverview`가 서버 값을 읽는다. 값이 없으면 목업이다. 구독 결제(저장)는 이번 범위가 아니다. 결제 저장 API가 연결되기 전(#204)에는 백엔드 모드에서 결제를 막고 "아직 결제할 수 없어요"를 보여 준다. 목업 쿠키에 저장하면 서버가 읽는 구독 상태와 어긋나기 때문이다.
 
 | 화면 값 | 서버 |
 | --- | --- |
-| 구독 상태·만료일 | `GET /api/v1/my/subscription/status` (`eligible=false`면 운영자라 구독 대상 아님, `active`면 `endAt`) |
+| 구독 상태·만료일 | `GET /api/v1/my/subscription/status` (`eligible=false`면 운영자라 구독 대상 아님, `active`면 `endAt`과 플랜 이름 `plan`) |
 | 상품 이름·가격·기간 | `GET /api/v1/plans` (`tier`, `cashPrice`, `creditPrice`, `periodDays`) |
 | 구독 결제에 쓸 수 있는 크레딧 | `GET /api/v1/my/subscription/payable-credits` (이벤트 + 적립, 출금 처리 중 제외) |
 
@@ -215,8 +215,22 @@ S543 기록 보관 기간 (리뷰 반영) [직접]
 - Given 적립 12,000, 이벤트 3,000, 출금 처리 중 2,000인 회원
 - Then  "구독 결제에 쓸 수 있는 크레딧"과 결제 화면의 "쓸 수 있는 크레딧"이 15,000 크레딧이다
 
-#203-S13 `AUTH_MODE=backend`가 아니면 목업으로 동작한다 [테스트: subscription-checkout.spec.ts, subscription-intro.spec.ts]
+#203-S13 `AUTH_MODE=backend`가 아니면 목업으로 동작한다 [테스트: subscription-checkout.spec.ts S537~S539, S542, subscription-intro.spec.ts #76-S4, #76-S7]
 - 기존 시나리오 E2E가 그대로 통과한다
+
+#203-S14 백엔드 모드에서는 결제 저장 연결 전까지 결제를 막는다 [직접]
+- Given `AUTH_MODE=backend`인 회원
+- When  `/my/subscription/checkout`을 연다
+- Then  "아직 결제할 수 없어요"가 보이고 결제 버튼을 누를 수 없다. 서버 Action으로 직접 보내도 같은 문구로 거절하고 쿠키에는 아무것도 남기지 않는다(#204가 이 막음을 걷어내고 서버 결제로 바꾼다)
+
+#203-S15 플랜 새 버전이 나와도 구독 중인 상품을 찾는다 [테스트: subscription.test.ts #203-S15]
+- Given 구독의 `planId`가 옛 버전 행이고 지금 파는 플랜 목록에는 같은 이름의 새 버전만 있다
+- Then  서버가 준 플랜 이름(`plan`)이 같으면 그 상품이 이용 중인 상품이다. 이름이 다르면 아니다. 서버 이름이 없는 목업 구독은 id로 비교한다
+
+#203-S16 구독 상태를 읽지 못해도 마이페이지와 공개 소개는 열린다 [직접]
+- Given 구독 상태 조회가 실패한다(예: 토큰이 만료·무효)
+- When  `/my`와 `/subscription`을 연다
+- Then  오류 화면 없이 열리고 구독 상태는 미구독으로 보인다. 구독 관리(`/my/subscription`)와 결제 화면은 상태를 읽지 못하면 오류로 멈춘다
 
 ## 범위 밖
 - 구독 해지, 실제 결제(현금 결제 수단 입력·결제 대행), 결제 영수증 (고침 11-02: 구독 시작·연장과 결제 수단 선택은 R196~R199로 옮김)

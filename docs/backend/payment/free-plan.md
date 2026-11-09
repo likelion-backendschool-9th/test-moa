@@ -12,7 +12,7 @@
 ## 정한 것 (#203, 2026-11-09)
 - **무료 플랜은 `plans`에 넣지 않고 `free_plans` 테이블에 둔다.** `plans`에 행으로 넣으면 `GET /api/v1/plans`(지금 파는 플랜)에 섞여 결제 대상이 되고, `Subscription`이 생기면 구독 중으로 계산된다. 그래서 구독·결제 코드는 이 테이블을 모른다. ([#69](subscription.md)의 "무료는 행으로 두지 않는다"는 `plans` 안이라는 뜻으로 그대로 맞다.)
 - **`plans`와 비슷한 모양으로 둔다.** 칼럼은 `tier`(이름), `description`(혜택 문구를 쉼표로 이은 TEXT), `created_at`, `updated_at`이고 가격·기간·`version`은 없다. 혜택은 `Plan`과 같이 쉼표로 잇고 서버가 잘라 `benefits` 배열로 내려준다(문구에 쉼표를 쓰지 않는다).
-- **행은 하나다.** PK를 고정값 `1`로 둬서 DB가 행 하나만 허용하게 한다. 수정은 그 행을 고친다(운영자 한 명이 값을 고치는 설정이라 이력은 남기지 않는다).
+- **행은 하나다.** PK를 고정값 `1`로 두고 코드가 항상 이 PK만 저장한다. 같은 PK로 두 번째 행을 넣는 것은 PK 제약이 막지만, 다른 PK의 행을 DB가 막지는 않는다(이 값을 코드로만 지킨다). 수정은 그 행을 고친다(운영자 한 명이 값을 고치는 설정이라 이력은 남기지 않는다).
 - **행이 없으면 빈 혜택을 준다.** 조회는 404가 아니라 `{ "tier": "FREE", "benefits": [] }`를 200으로 준다. 프론트는 "혜택이 없으면 혜택 영역을 그리지 않는다"로 이미 처리해서 실패 경로가 늘지 않는다. 로컬·배포 DB가 비어 있어도 화면이 깨지지 않는다.
 - **운영자 `PUT`이 만들기와 고치기를 겸한다.** 행이 없으면 만들고 있으면 고친다. 그래서 시드 없이 운영자 API로 초기 값을 넣는다(`plans`가 시드 없이 `POST`로 들어가는 것과 같은 방식). 로컬 시드(`backend/scripts/local_seed.sql`)에는 한 줄을 더한다.
 - **경로는 구독 플랜 옆에 둔다.** 조회 `GET /api/v1/plans/free`는 로그인 없이 읽고(`SecurityConfig`에서 GET만 `permitAll`. `PUBLIC_PATHS`의 `/api/v1/plans`는 그 경로만 맞아서 `plans/free`는 따로 연다), 수정 `PUT /api/v1/admin/plans/free`는 `/api/v1/admin/**`의 `ADMIN` 규칙을 그대로 받는다. 컨트롤러와 서비스는 기존 쌍을 늘린다: `PlanController`·`PlanService`에 조회, `AdminPlanController`·`AdminPlanService`에 수정.

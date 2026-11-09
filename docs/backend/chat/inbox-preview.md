@@ -3,9 +3,9 @@
 채팅함 조회(`GET /api/v1/chats`)의 `lastMessage`를 앞 100자로 줄인다. 채팅함은 내 방을 페이지 없이 모두 주므로, 메시지 최대 길이가 10,000자가 된 뒤(#111) 방 100개가 모두 긴 메시지로 끝나면 응답이 약 3MB가 된다. 카드는 최근 메시지를 한 줄만 보여 준다. 채팅함 전체 계획은 [inbox.md](inbox.md), 메시지 길이는 [message-length.md](message-length.md)에 있다.
 
 ## 한눈에
-- 끝나면: 채팅함의 `lastMessage`가 최대 100자가 되어, 방 100개가 모두 10,000자 한글로 끝나도 최근 메시지 합계가 약 3MB에서 약 30KB로 준다. 응답 모양과 프론트 코드는 그대로이고, 메시지 조회는 전체 내용을 그대로 준다
+- 끝나면: 채팅함의 `lastMessage`가 최대 100자가 되어, 방 100개가 모두 10,000자 한글로 끝나도 최근 메시지 합계가 약 3MB에서 약 30KB로 준다. 응답 모양은 그대로이고, 프론트는 카드 미리보기 CSS 한 줄만 바꾸며, 메시지 조회는 전체 내용을 그대로 준다
 - 결정 필요: 없음
-- 규모: 3단계(테스트 1, 구현 1, 문서 1), 약 30분
+- 규모: 4단계(테스트 1, 구현 1, CSS 1, 문서 1), 약 30분
 
 ## 1. 채팅함은 앞 100자만 준다 (#170-R1)
 채팅함의 `lastMessage`는 메시지의 앞 100자이고, 100자 이하면 그대로다. 글자 수는 PostgreSQL의 문자 단위(UTF-8 코드 포인트)로 세며, 이모지 같은 서로게이트 쌍이 반쪽만 남지 않는다.
@@ -43,13 +43,14 @@
 - Then  마지막 메시지의 `text`가 보낸 10,000자와 같다
 
 ## 3. 카드 표시 (#170-R3)
-서버가 잘랐는지 응답에 따로 알리지 않고, 말줄임표는 지금처럼 카드 CSS(`-webkit-line-clamp: 1`)가 그린다. 프론트 코드는 바꾸지 않는다.
+서버가 잘랐는지 응답에 따로 알리지 않고, 말줄임표는 지금처럼 카드 CSS(`-webkit-line-clamp: 1`)가 그린다. `body`의 `word-break: keep-all` 때문에 공백 없는 긴 글은 말줄임표가 나오지 않으므로, 카드 미리보기에 `overflow-wrap: anywhere`를 더한다.
 
 #170-S5 정상 [직접]
 - Given 방 R1의 마지막 메시지가 "가" 300자다
 - Given 방 R2의 마지막 메시지가 공백을 포함한 영문 문장 150자다
+- Given 방 R3의 마지막 메시지가 공백 없는 URL 150자다
 - When  채팅함 화면(`/my/chats`)을 가장 넓은 화면(내용 폭 48rem)으로 연다
-- Then  R1과 R2의 카드 미리보기가 한 줄이고 끝에 말줄임표가 있다
+- Then  R1, R2, R3의 카드 미리보기가 한 줄이고 끝에 말줄임표가 있다
 
 ## 범위 밖
 - 채팅함 페이지 나누기: [inbox.md](inbox.md)의 범위 밖 그대로, 필요해지면 프론트 기획과 함께 별도 이슈로 한다
@@ -64,7 +65,10 @@
 2. 쿼리에서 자르기 — #111-S3(고침), #170-S1, #170-S2, #170-S3, #170-S4
    - 파일: `backend/src/main/java/com/testmoa/backend/repository/ChatParticipantRepository.java`. `findInboxByUserId`의 `message.content`를 `substring(message.content, 1, 100)`으로 바꾼다. 위에 주석 한 줄을 단다: "채팅함 카드는 한 줄만 보여 주므로 최근 메시지는 앞 100자만 읽는다(#170). PostgreSQL은 코드 포인트로 세어 서로게이트 쌍이 갈리지 않는다"
    - 확인: `./gradlew test --tests '*ChatInboxControllerTest' --tests '*ChatControllerTest'`. 전체 테스트는 CI에 맡긴다
-3. 문서 — 끝에 `(고침 #170: 채팅함 응답 크기를 줄이려고 앞 100자만 준다)`를 붙인다
+3. 카드 말줄임표 — #170-S5
+   - 파일: `frontend/app/(site)/my/chats/_components/ChatCard/ChatCard.module.css`. `.preview`에 `overflow-wrap: anywhere;`를 더한다
+   - 확인: 카드 폭 768px에서 한글 300자, 공백 포함 영문 150자, 공백 없는 URL 150자가 모두 한 줄이고 말줄임표가 있는지 확인한다. 띄어쓰기가 있는 한글 문장의 미리보기도 그대로인지 확인한다
+4. 문서 — 끝에 `(고침 #170: 채팅함 응답 크기를 줄이려고 앞 100자만 준다)`를 붙인다
    - `message-length.md`: 한눈에의 "채팅함은 10,000자 메시지도 최근 메시지 전체로 돌려준다", #111-R3, #111-S3(이 문서의 #111-S3와 같게)
    - `inbox.md`: 가정의 "`lastMessage`는 메시지 전체 내용(최대 10,000자)이다. 한두 줄로 자르는 것은 프론트 카드가 한다"를 "앞 100자이고, 한 줄로 줄이는 것과 말줄임은 프론트 카드가 한다"로 고친다
    - `README.md`: 이슈 표에 #170과 이 문서를 더하고, 정한 것에 "채팅함 `lastMessage`는 앞 100자, 메시지 조회는 전체 내용 (#170, 날짜)"을 더한다
@@ -80,5 +84,5 @@
 ## 참고 (2026-11-09 확인)
 - PostgreSQL 17 문서: `substring`은 "starting at the start'th character … stopping after count characters", `varchar(n)`은 "n characters (not bytes)"다. UTF8에서 `ascii`는 "the Unicode code point of the character"를 돌려준다. 운영·로컬·CI 모두 `postgres:17`이다
 - Hibernate 7.4 `PostgreSQLDialect`는 JPQL `substring`을 `substr`로 내보낸다(7.4.5 jar 확인). PostgreSQL의 `substr`은 `substring`과 같다
-- 채팅 테스트는 `@AutoConfigureTestDatabase(replace = NONE)`이고 CI는 `postgres:17`에서 돌아서, H2가 아닌 실제 PostgreSQL 동작을 확인한다
+- CI의 백엔드 테스트는 `SPRING_DATASOURCE_URL`로 `postgres:17`에 연결되어, H2가 아닌 실제 PostgreSQL 동작을 확인한다
 - `lastMessage`를 읽는 곳은 프론트 `ChatCard` 미리보기뿐이다. 채팅함 실시간 갱신은 SSE 이벤트를 받아 `router.refresh()`로 다시 조회하므로 잘린 값과 SSE 내용이 섞이지 않는다

@@ -4,7 +4,7 @@
  * 실패를 비로그인으로 볼지 화면에 알릴지는 부르는 쪽이 정한다.
  */
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
+export const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
 /** 백엔드가 응답하지 않을 때 기다리는 시간. 넘으면 백엔드에 닿지 못한 것으로 본다 */
 const BACKEND_TIMEOUT_MS = 5000;

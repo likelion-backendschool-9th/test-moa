@@ -48,6 +48,7 @@ class ChatReadControllerTest {
         em.flush();
     }
     ChatRoom newRoom(User owner, User member, String title) {
+        fixtures.subscribe(owner);
         var recruitment = fixtures.recruitment(owner, title);
         var created = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, member)).build();
         em.persist(created);

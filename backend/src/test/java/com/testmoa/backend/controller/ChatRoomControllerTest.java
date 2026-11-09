@@ -46,6 +46,7 @@ class ChatRoomControllerTest {
         fixtures = new ChatFixtures(em);
         developer = fixtures.user("모아개발");
         tester = fixtures.user("모아테스터");
+        fixtures.subscribe(developer);
         var recruitment = fixtures.recruitment(developer, "북로그", "https://img.test/booklog.png");
         room = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, tester)).build();
         em.persist(room);

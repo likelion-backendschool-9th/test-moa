@@ -14,5 +14,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     @Query("select r from chat_rooms r where r.roomKey = :roomKey")
     Optional<ChatRoom> findLockedByRoomKey(@Param("roomKey") String roomKey);
 
+    Optional<ChatRoom> findByRegisterId(Long registerId);
+
     Optional<ChatRoom> findByRoomKey(String roomKey);
 }

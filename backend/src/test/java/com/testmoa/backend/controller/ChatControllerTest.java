@@ -47,7 +47,10 @@ class ChatControllerTest {
         fixtures = new ChatFixtures(em);
         developer = fixtures.user("모아개발");
         tester = fixtures.user("모아테스터");
+        fixtures.subscribe(developer);
         var recruitment = fixtures.recruitment(developer, "북로그", "https://img.test/booklog.png");
+        recruitment.edit(recruitment.getTitle(), null, null, null, recruitment.getSelectionMode(),
+                java.time.LocalDateTime.now().minusDays(1), java.time.LocalDateTime.now().plusDays(14));
         room = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, tester)).build();
         em.persist(room);
         developerSide = participantWithRole(room, ChatRole.DEVELOPER);
@@ -264,7 +267,7 @@ class ChatControllerTest {
         assertThat(em.find(ChatParticipant.class, testerSide.getId()).isHidden()).isTrue();
         assertThat(em.find(ChatRoom.class, room.getId()).getLastSeq()).isZero();
     }
-    @Test @DisplayName("#49-S1 방 상세 정보는 지연 로딩 없이 쿼리 한 번으로 조회")
+    @Test @DisplayName("#49-S1 방 정보와 읽기 전용을 지연 로딩 없이 세 쿼리로 조회 (고침 #53: 모집·구독 확인)")
     void roomSingleQuery() {
         em.flush();
         em.clear();
@@ -276,8 +279,8 @@ class ChatControllerTest {
             var result = chatService.getRoom(room.getRoomKey(), tester.getId());
             assertThat(result.projectName()).isEqualTo("북로그");
             assertThat(result.partner().nickname()).isEqualTo("모아개발");
-            assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
-            assertThat(statistics.getEntityLoadCount()).isZero();
+            assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
+            assertThat(statistics.getEntityFetchCount()).isZero();
         } finally {
             statistics.setStatisticsEnabled(enabled);
         }

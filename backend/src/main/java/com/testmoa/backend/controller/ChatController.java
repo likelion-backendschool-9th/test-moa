@@ -1,20 +1,23 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.dto.request.ChatMessageSendRequest;
-import com.testmoa.backend.dto.request.ChatRoomRenameRequest;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.dto.request.ChatMessageSendRequest;
 import com.testmoa.backend.dto.request.ChatReadRequest;
-import com.testmoa.backend.dto.response.ChatReadResponse;
-import com.testmoa.backend.dto.response.ChatUnreadResponse;
+import com.testmoa.backend.dto.request.ChatRoomRenameRequest;
+import com.testmoa.backend.dto.request.ChatStartRequest;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
+import com.testmoa.backend.dto.response.ChatReadResponse;
 import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.dto.response.ChatStartResponse;
+import com.testmoa.backend.dto.response.ChatUnreadResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.ChatService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +26,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/chats")
 public class ChatController {
     private final ChatService chatService;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<ChatStartResponse>> startChat(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ChatStartRequest request) {
+        var result = chatService.startChat(userId, request.registerId());
+        return ResponseEntity.status(result.created() ? 201 : 200)
+                .body(ApiResponse.ok(result.response()));
+    }
 
     @GetMapping
     public ApiResponse<ChatInboxResponse> getInbox(@AuthenticationPrincipal Long userId,

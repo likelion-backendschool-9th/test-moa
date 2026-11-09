@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { cookies } from "next/headers";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth-tokens";
 import { isBackendAuth } from "@/lib/backend";
+import { BACKEND_URL } from "@/lib/backend-http";
 
 export async function GET(request: Request) {
   await connection();
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
   const token = (await cookies()).get(ACCESS_TOKEN_COOKIE)?.value;
   let upstream: Response;
   try {
-    upstream = await fetch(`${process.env.BACKEND_URL ?? "http://localhost:8080"}/api/v1/chats/events`, {
+    upstream = await fetch(`${BACKEND_URL}/api/v1/chats/events`, {
       headers: { Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       cache: "no-store",
       signal: request.signal,

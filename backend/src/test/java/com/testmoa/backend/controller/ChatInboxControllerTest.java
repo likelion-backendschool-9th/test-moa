@@ -64,6 +64,7 @@ class ChatInboxControllerTest {
     }
 
     ChatRoom open(User owner, User member, String name, String image) {
+        fixtures.subscribe(owner);
         var recruitment = fixtures.recruitment(owner, name, image);
         var room = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, member)).build();
         em.persist(room);
@@ -287,7 +288,7 @@ class ChatInboxControllerTest {
         }
     }
 
-    @Test @DisplayName("#48-S1 방 수와 관계없이 목록을 쿼리 한 번으로 조회")
+    @Test @DisplayName("#48-S1 방 수와 관계없이 목록과 읽기 전용을 세 쿼리로 조회 (고침 #53: 모집·구독 일괄 확인)")
     void singleQuery() {
         open(developer, me, "추가 프로젝트", null);
         em.flush();
@@ -300,7 +301,7 @@ class ChatInboxControllerTest {
             var result = chatService.getInbox(me.getId(),
                     new ChatInboxQuery(null, null, null));
             assertThat(result.rooms()).hasSize(3);
-            assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+            assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
         } finally {
             statistics.setStatisticsEnabled(enabled);
         }

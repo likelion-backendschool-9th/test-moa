@@ -1,14 +1,18 @@
 package com.testmoa.backend.service;
 
-import com.testmoa.backend.dto.response.ChatRoomResponse;
-import com.testmoa.backend.dto.response.ChatReadResponse;
-import com.testmoa.backend.dto.response.ChatUnreadResponse;
-import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
+import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
+import com.testmoa.backend.dto.response.ChatReadResponse;
+import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.dto.response.ChatStartResponse;
+import com.testmoa.backend.dto.response.ChatUnreadResponse;
 
 public interface ChatService {
+    record StartResult(ChatStartResponse response, boolean created) {}
+    StartResult startChat(Long userId, Long registerId);
+
     ChatUnreadResponse getUnread(Long userId);
     ChatReadResponse markRead(String roomKey, Long userId, long seq);
     ChatInboxResponse getInbox(Long userId, ChatInboxQuery query);

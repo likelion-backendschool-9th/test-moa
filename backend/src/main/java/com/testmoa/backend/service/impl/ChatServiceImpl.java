@@ -4,30 +4,39 @@ import com.testmoa.backend.dto.request.ChatInboxQuery;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
-import com.testmoa.backend.dto.response.ChatRoomResponse;
 import com.testmoa.backend.dto.response.ChatReadResponse;
+import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.dto.response.ChatStartResponse;
 import com.testmoa.backend.dto.response.ChatUnreadResponse;
 import com.testmoa.backend.entity.ChatMessage;
 import com.testmoa.backend.entity.ChatParticipant;
+import com.testmoa.backend.entity.ChatRoom;
+import com.testmoa.backend.entity.Recruitment;
+import com.testmoa.backend.entity.enums.ChatInboxSort;
+import com.testmoa.backend.entity.enums.ChatRole;
+import com.testmoa.backend.entity.enums.RegisterStatus;
+import com.testmoa.backend.global.exception.BusinessException;
+import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.ChatMessageRepository;
 import com.testmoa.backend.repository.ChatParticipantRepository;
 import com.testmoa.backend.repository.ChatRoomRepository;
+import com.testmoa.backend.repository.RecruitmentRepository;
+import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.projection.ChatInboxEntry;
-import com.testmoa.backend.entity.enums.ChatInboxSort;
-import com.testmoa.backend.entity.enums.ChatRole;
-import com.testmoa.backend.global.exception.BusinessException;
-import com.testmoa.backend.global.exception.ErrorCode;
-import com.testmoa.backend.service.ChatService;
 import com.testmoa.backend.service.ChatMessageSaved;
 import com.testmoa.backend.service.ChatReadAdvanced;
-import org.springframework.context.ApplicationEventPublisher;
+import com.testmoa.backend.service.ChatReadOnlyPolicy;
+import com.testmoa.backend.service.ChatService;
+import com.testmoa.backend.service.SubscriptionChecker;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Comparator;
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +47,38 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
     private final ApplicationEventPublisher events;
+    private final RegisterRepository registerRepository;
+    private final RecruitmentRepository recruitmentRepository;
+    private final SubscriptionChecker subscriptionChecker;
+    private final ChatReadOnlyPolicy readOnlyPolicy;
+
+    @Override
+    @Transactional
+    public StartResult startChat(Long userId, Long registerId) {
+        // 참가 행을 잠근 뒤 방을 조회해야 동시 요청도 기존 방을 반환한다.
+        var register = registerRepository.findLockedById(registerId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        var recruitment = register.getRecruitment();
+        if (!recruitment.getProject().getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        var existing = roomRepository.findByRegisterId(registerId);
+        if (existing.isPresent()) {
+            var room = existing.get();
+            participantRepository.unhideMine(room.getId(), userId);
+            return new StartResult(new ChatStartResponse(room.getRoomKey()), false);
+        }
+        if (register.getStatus() != RegisterStatus.CONFIRMED) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        subscriptionChecker.require(userId);
+        if (readOnlyPolicy.isClosed(recruitment, LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.CHAT_READ_ONLY);
+        }
+        var room = roomRepository.save(ChatRoom.builder().register(register).build());
+        return new StartResult(new ChatStartResponse(room.getRoomKey()), true);
+    }
+
 
     @Override
     public ChatInboxResponse getInbox(Long userId, ChatInboxQuery query) {
@@ -49,9 +90,16 @@ public class ChatServiceImpl implements ChatService {
         if (query.sort() == ChatInboxSort.LATEST) order = order.reversed();
         // 일시가 같으면 정렬 방향과 무관하게 나중에 만든 방이 먼저 온다.
         order = order.thenComparing(ChatInboxEntry::roomId, Comparator.reverseOrder());
-        var rooms = matched.stream()
+        var visible = matched.stream()
                 .filter(entry -> query.role() == null || entry.myRole() == query.role())
-                .sorted(order).map(ChatInboxResponse.Room::of).toList();
+                .sorted(order).toList();
+        var recruitments = recruitmentRepository.findAllById(visible.stream().map(ChatInboxEntry::recruitmentId).distinct().toList())
+                .stream().collect(Collectors.toMap(Recruitment::getId, recruitment -> recruitment));
+        var activeDevelopers = subscriptionChecker.activeUserIds(visible.stream().map(ChatInboxEntry::developerId).distinct().toList());
+        var now = LocalDateTime.now();
+        var rooms = visible.stream().map(entry -> ChatInboxResponse.Room.of(entry,
+                        readOnlyPolicy.isReadOnly(recruitments.get(entry.recruitmentId()),
+                                activeDevelopers.contains(entry.developerId()), now))).toList();
         return new ChatInboxResponse(rooms, entries.size(),
                 new ChatInboxResponse.Counts(matched.size(), testers, matched.size() - testers));
     }
@@ -76,7 +124,10 @@ public class ChatServiceImpl implements ChatService {
     public ChatRoomResponse getRoom(String roomKey, Long userId) {
         var entry = participantRepository.findRoomByRoomKeyAndUserId(roomKey, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        return ChatRoomResponse.of(entry);
+        var recruitment = recruitmentRepository.findById(entry.recruitmentId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return ChatRoomResponse.of(entry, readOnlyPolicy.isReadOnly(recruitment,
+                subscriptionChecker.isActive(entry.developerId()), LocalDateTime.now()));
     }
 
     @Override
@@ -102,6 +153,11 @@ public class ChatServiceImpl implements ChatService {
         var room = roomRepository.findLockedByRoomKey(roomKey)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         var me = requireParticipant(roomKey, userId);
+        var recruitment = room.getRecruitment();
+        if (readOnlyPolicy.isReadOnly(recruitment,
+                subscriptionChecker.isActive(recruitment.getProject().getUser().getId()), LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.CHAT_READ_ONLY);
+        }
         var message = room.createMessage(me, text);
         messageRepository.save(message);
         participantRepository.unhidePartner(room.getId(), me.getId());

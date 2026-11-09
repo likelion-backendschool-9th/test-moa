@@ -1,14 +1,23 @@
 package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.Subscription;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
+    @Query("select distinct s.user.id from subscriptions s where s.user.id in :userIds "
+            + "and s.status = :status and s.startAt <= :now and s.endAt > :now")
+    Set<Long> findActiveUserIds(@Param("userIds") Collection<Long> userIds,
+            @Param("status") Subscription.Status status,
+            @Param("now") LocalDateTime now);
+
     /**
      * 지금 유효한 구독(상태가 맞고 start_at <= 지금 < end_at). 여러 개면 가장 늦게 끝나는 것.
      * 호출 예: (userId, ACTIVE, now, now)

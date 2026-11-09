@@ -13,6 +13,7 @@
 #49-S1 정상: 테스터가 본 방 [테스트]
 - Given 개발자 A("모아개발")의 프로젝트 "북로그"(이미지 `https://img.test/booklog.png`)에 모집 건 M이 있고, 테스터 B("모아테스터")가 선정되어 방이 열려 있다
 - When  B가 `GET /api/v1/chats/{roomKey}`를 부른다
+- Then  HTTP 200이고 `data.readOnly`는 false다. 개발자는 구독 중이고 모집은 종료 전이다 (고침 #53: 읽기 전용 표시)
 - Then  HTTP 200이고 `data`는 roomKey, `recruitmentId` M의 id, `projectName` "북로그", `roomName` null, `projectImage` `https://img.test/booklog.png`, `myRole` "TESTER", `partner` {nickname "모아개발", role "DEVELOPER"}다
 
 #49-S2 정상: 개발자가 본 방과 바꾼 이름 [테스트]
@@ -59,7 +60,7 @@
 참여자가 보낸 메시지는 그 방의 다음 순번으로 저장되고, 저장된 메시지가 돌아온다. 한 트랜잭션에서 방의 마지막 순번·최근 메시지 일시를 바꾸고, 상대가 방을 삭제했으면 상대의 삭제를 푼다.
 
 #49-S7 정상 [테스트]
-- Given 순번 2까지 메시지가 있는 #49-S1의 방
+- Given 순번 2까지 메시지가 있는 #49-S1의 방. 개발자는 구독 중이고 모집은 `TESTING`이며 피드백 마감은 미래다 (고침 #53: 열린 방의 보내기 조건)
 - When  B가 `POST /api/v1/chats/{roomKey}/messages`에 `{"text": "로그인 화면에서\n멈춰요"}`를 보낸다
 - Then  HTTP 200이고 `data`는 순번 3, `from` "me", `text` "로그인 화면에서\n멈춰요"(가운데 줄바꿈 그대로), 보낸 시각이다
 - Then  A가 메시지를 조회하면 마지막 메시지가 순번 3 "로그인 화면에서\n멈춰요"(`from` "partner")다
@@ -125,7 +126,7 @@
 - Then  B의 보내기로는 삭제가 풀리지 않는다(B의 `hidden` true 그대로)
 
 ## 범위 밖
-- 읽기 전용(모집·구독이 끝난 방)의 보내기 거절과 방 정보의 `readOnly`: #53(11-05 사용자 결정). README의 "모집이 끝나거나 구독이 끝난 방은 읽기 전용"에서 "모집이 끝났다"의 기준이 정해지지 않았다. `RecruitmentStatus.CLOSED`는 모집 마감이라 선정된 테스터가 테스트하며 개발자와 대화하는 기간과 겹쳐서, 그것으로 막으면 채팅이 필요한 때에 막힌다. #53에서 채팅을 거는 조건을 정할 때 끝나는 기준(`feedbackDeadline`, `CANCELLED` 등)과 구독 종료를 함께 정한다
+- 읽기 전용(모집·구독이 끝난 방)의 보내기 거절과 방 정보의 `readOnly`: [#53](start.md) (고침 #53: 끝난 기준 정함). `Recruitment.phaseAt(now)`가 `CLOSED`·`CANCELLED`이거나 개발자의 구독이 유효하지 않으면 읽기 전용이다. 모집 마감 뒤 `TESTING` 기간에는 대화할 수 있고, 피드백 마감·취소 뒤에는 보내기만 HTTP 403 `CHAT_READ_ONLY`로 거절한다.
 - 읽음 처리, 안 읽은 수, 상대의 읽음 표시(`partnerLastReadSeq`): #52. 방을 불러도 `last_read_seq`는 바꾸지 않는다
 - `after={seq}`로 새 메시지만 받기, 실시간 알림: #51
 - 채팅함 목록(최근 메시지 미리보기 포함): #48

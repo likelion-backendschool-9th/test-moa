@@ -26,7 +26,7 @@ class ChatSendConcurrencyTest {
     @Autowired PlatformTransactionManager transactionManager;
 
     record RoomData(Long roomId, String roomKey, Long developerId, Long testerId, Long recruitmentId,
-                    Long registerId, Long projectId) {}
+                    Long registerId, Long projectId, Long subscriptionId, Long planId) {}
 
     @Test
     @DisplayName("#49-S10 두 참여자가 동시에 10개씩 보내도 순번 1~20이 빠짐없이 저장된다")
@@ -35,13 +35,14 @@ class ChatSendConcurrencyTest {
         RoomData data = tx.execute(status -> {
             var fixtures = new ChatFixtures(em);
             var developer = fixtures.user("동시개발자");
+            var subscription = fixtures.subscribe(developer);
             var tester = fixtures.user("동시테스터");
             var recruitment = fixtures.recruitment(developer, "동시전송 프로젝트");
             var register = fixtures.confirmedRegister(recruitment, tester);
             var room = ChatRoom.builder().register(register).build();
             em.persist(room);
             return new RoomData(room.getId(), room.getRoomKey(), developer.getId(), tester.getId(),
-                    recruitment.getId(), register.getId(), recruitment.getProject().getId());
+                    recruitment.getId(), register.getId(), recruitment.getProject().getId(), subscription.getId(), subscription.getPlan().getId());
         });
         try {
             try (var executor = Executors.newFixedThreadPool(2)) {
@@ -71,6 +72,8 @@ class ChatSendConcurrencyTest {
                 em.createQuery("delete from registers r where r.id = :id").setParameter("id", data.registerId()).executeUpdate();
                 em.createQuery("delete from recruitments r where r.id = :id").setParameter("id", data.recruitmentId()).executeUpdate();
                 em.createQuery("delete from projects p where p.id = :id").setParameter("id", data.projectId()).executeUpdate();
+                em.createQuery("delete from subscriptions s where s.id = :id").setParameter("id", data.subscriptionId()).executeUpdate();
+                em.createQuery("delete from plans p where p.id = :id").setParameter("id", data.planId()).executeUpdate();
                 em.createQuery("delete from users u where u.id in :ids")
                         .setParameter("ids", java.util.List.of(data.developerId(), data.testerId())).executeUpdate();
             });

@@ -33,6 +33,9 @@ public enum ErrorCode {
     PROVIDER_ALREADY_LINKED(HttpStatus.CONFLICT, "이미 같은 서비스의 다른 계정이 연동돼 있어요"),
     LAST_LOGIN_METHOD(HttpStatus.CONFLICT, "마지막 로그인 방법은 해제할 수 없어요"),
 
+    // 채팅
+    CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),
+
     // 구독
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
     DUPLICATE_PAYMENT(HttpStatus.CONFLICT, "방금 결제했어요. 잠시 후 다시 시도해 주세요"),

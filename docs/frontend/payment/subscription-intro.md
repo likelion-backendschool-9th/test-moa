@@ -118,16 +118,11 @@ PRO 카드의 버튼은 역할과 구독 상태에 따라 갈 곳과 문구가 �
 - `/my/subscription`·결제 화면 자체의 변경
 
 ## 작업 순서
-0. 브랜치 — `feature/frontend-subscription-intro-page` (origin/develop에서, upstream 해제). 옛 브랜치 `feature/frontend-subscription-intro`는 프론트 폴더 구조(#197) 변경 전 코드라 합칠 수 없어, 새 구조(`app/`·CSS 모듈·`demo/`)로 옮겨 다시 만든다
 1. 월간 모집 인원 삭제와 비교표 삭제 — 비교표(백엔드 혜택 목록으로는 행을 맞출 수 없어 뺌), 내 구독의 "이번 달 모집 인원", 목업 한도(`monthlyLimit`·`RecruitQuota`)를 지운다(백엔드에서 한도 칼럼이 없어짐). 프로젝트 모집 폼의 "모집 인원"(최대 인원)은 다른 기능이라 그대로 둔다
-1. 페이지 — `/subscription` 공개 페이지, 두 카드, 역할별 버튼(S1~S7, S11). `pages.spec.ts`의 `PAGES`에 `["/subscription", "guest"]`를 더한다
-2. 헤더 — `nav.ts`에 "구독" 탭, `page-urls.md`, 헤더 시나리오 고침(S8~S10, S323·S324·S327·S329)
-3. 진입 링크 — "구독 알아보기"·"구독하면 쓸 수 있어요" 세 곳(프로젝트 분석·피드백·마이페이지)과 해당 시나리오 고침(R4)
-4. 확인 — `npx tsc --noEmit`, `npm run lint`, `npm test`, `npm run test:structure`, `npm run build`, 관련 E2E(`subscription-intro.spec.ts`, `nav.spec.ts`, `pages.spec.ts`). `[직접]` 시나리오는 PR에 본 조건과 결과를 적는다
-
-## 브랜치·커밋
-- 브랜치: `feature/frontend-subscription-intro-page`
-- 커밋은 기능·테스트·문서를 나눈다. 화면 모양을 바꾸면 Design 커밋으로 나누고 PR에 전후 스크린샷을 넣는다
+2. 페이지 — `/subscription` 공개 페이지, 두 카드, 역할별 버튼(S1~S7, S11). `pages.spec.ts`의 `PAGES`에 `["/subscription", "guest"]`를 더한다
+3. 헤더 — `nav.ts`에 "구독" 탭, `page-urls.md`, 헤더 시나리오 고침(S8~S10, S323·S324·S327·S329)
+4. 진입 링크 — "구독 알아보기"·"구독하면 쓸 수 있어요" 세 곳(프로젝트 분석·피드백·마이페이지)과 해당 시나리오 고침(R4)
+5. 확인 — `npx tsc --noEmit`, `npm run lint`, `npm test`, `npm run test:structure`, `npm run build`, 관련 E2E(`subscription-intro.spec.ts`, `pages.spec.ts`, 헤더·모바일 메뉴 E2E). `[직접]` 시나리오는 PR에 본 조건과 결과를 적는다
 
 ## 가정
 - h1은 "구독", 소개는 "모집을 더 넓게, 구독으로 시작해 보세요" 정도의 한 줄이다. 카드 이름은 "FREE"와 "PRO"이고, 카드 제목·한 줄 설명은 프론트 상수라 구현 때 다듬는다(`SubscriptionIntroCards.tsx`)

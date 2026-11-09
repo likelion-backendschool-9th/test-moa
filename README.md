@@ -14,6 +14,8 @@
 
 <p align="center"><a href="#기획-의도">기획 의도</a> · <a href="#이용-흐름">이용 흐름</a> · <a href="#주요-기능">주요 기능</a> · <a href="#기술-스택">기술 스택</a> · <a href="#시스템-구성">시스템 구성</a> · <a href="#데이터-모델">데이터 모델</a> · <a href="#기술적으로-고민한-점">고민한 점</a> · <a href="#팀">팀</a> · <a href="#실행하기">실행하기</a></p>
 
+<br/>
+
 ## 기획 의도
 
 서비스를 만든 개발자에게는 실제로 써 보고 의견을 줄 사람이 필요합니다. 하지만 **적합한 테스터를 모으는 일도, 유용한 피드백을 받는 일도** 쉽지 않습니다. Test Moa는 이 두 가지 어려움을 함께 풀기 위해 시작했습니다.
@@ -26,6 +28,8 @@
 | 모집 비용이 부담스럽다 | 무료로 모집할 수 있고, 개발자가 보상 예산을 따로 충전하지 않습니다. |
 
 첫 지원 대상은 링크로 접속하는 웹서비스이며, 모바일 앱·게임·API로 넓히는 것을 고려하고 있습니다.
+
+<br/>
 
 ## 이용 흐름
 
@@ -43,6 +47,8 @@
 
 테스트로 받은 크레딧은 구독 결제에 쓰거나 현금으로 출금을 요청할 수 있습니다.
 
+<br/>
+
 ## 주요 기능
 
 | 기능 | 내용 | 상태 |
@@ -59,6 +65,8 @@
 
 <sub>연결 완료는 화면과 백엔드 API가 이어진 기능, 화면 연결 중은 백엔드 API는 있고 화면을 연결하고 있는 기능입니다. 실제 결제 대행(PG)과 송금은 아직 연동하지 않았습니다.</sub>
 
+<br/>
+
 ## 기술 스택
 
 | 영역 | 기술 |
@@ -69,6 +77,8 @@
 | 인프라 | Docker Compose, nginx, GitHub Actions, GHCR |
 | 테스트 | JUnit, Playwright |
 
+<br/>
+
 ## 시스템 구성
 
 ```mermaid
@@ -76,6 +86,8 @@ flowchart LR
   B[브라우저] --> N[nginx] --> F["Next.js (BFF)"] --> S[Spring Boot] --> D[(PostgreSQL)]
   S --> A["AI 분석 서버 (Python)"]
 ```
+
+<br/>
 
 ## 데이터 모델
 
@@ -272,6 +284,8 @@ erDiagram
 
 <sub>주요 컬럼만 표시했으며, 이미지·인증 정보·모집 유형 테이블은 생략했습니다.</sub>
 
+<br/>
+
 ## 기술적으로 고민한 점
 
 - **실시간 채팅은 알림과 내용을 나눴습니다.** SSE로는 새 메시지가 있다는 알림만 보내고 내용은 REST로 받습니다. 연결이 끊겨도 마지막 순번 이후의 메시지를 다시 받아 빠짐없이 채웁니다.
@@ -280,15 +294,43 @@ erDiagram
 - **출금 계좌 정보는 암호화해 저장합니다.** 계좌번호와 예금주는 DB에 AES-GCM 암호문으로 들어갑니다.
 - **요구사항과 테스트를 같은 번호로 이었습니다.** 계획 문서의 시나리오 번호를 E2E 테스트 이름에 붙여, 어떤 요구사항을 어떤 테스트가 확인하는지 바로 찾을 수 있습니다.
 
+<br/>
+
 ## 팀
 
-| 이름 | GitHub |
-| --- | --- |
-| 양덕관 | [@isle-blu](https://github.com/isle-blu) |
-| 김재연 | [@jykim78982](https://github.com/jykim78982) |
-| 문지혜 | [@Dev-JihyeMoon](https://github.com/Dev-JihyeMoon) |
-| 이재용 | [@j0615671-arch](https://github.com/j0615671-arch) |
-| 최송민 | [@songmin04](https://github.com/songmin04) |
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="20%">
+        <a href="https://github.com/isle-blu"><img src="https://avatars.githubusercontent.com/isle-blu?size=200" width="100" alt="양덕관"></a>
+        <br/><br/><strong>양덕관</strong>
+        <br/><sub><a href="https://github.com/isle-blu">isle-blu</a></sub>
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/jykim78982"><img src="https://avatars.githubusercontent.com/jykim78982?size=200" width="100" alt="김재연"></a>
+        <br/><br/><strong>김재연</strong>
+        <br/><sub><a href="https://github.com/jykim78982">jykim78982</a></sub>
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/Dev-JihyeMoon"><img src="https://avatars.githubusercontent.com/Dev-JihyeMoon?size=200" width="100" alt="문지혜"></a>
+        <br/><br/><strong>문지혜</strong>
+        <br/><sub><a href="https://github.com/Dev-JihyeMoon">Dev-JihyeMoon</a></sub>
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/j0615671-arch"><img src="https://avatars.githubusercontent.com/j0615671-arch?size=200" width="100" alt="이재용"></a>
+        <br/><br/><strong>이재용</strong>
+        <br/><sub><a href="https://github.com/j0615671-arch">j0615671-arch</a></sub>
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/songmin04"><img src="https://avatars.githubusercontent.com/songmin04?size=200" width="100" alt="최송민"></a>
+        <br/><br/><strong>최송민</strong>
+        <br/><sub><a href="https://github.com/songmin04">songmin04</a></sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br/>
 
 ## 실행하기
 
@@ -300,6 +342,8 @@ docker compose up --build
 ```
 
 `http://localhost:<TEAM_PORT>`로 접속합니다. 자세한 내용은 [실행 방법](docs/running.md)을 참고하세요.
+
+<br/>
 
 ## 더 보기
 

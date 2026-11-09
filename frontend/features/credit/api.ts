@@ -89,9 +89,12 @@ async function readLedger(type: LedgerType, limit?: number): Promise<CreditEntry
 export async function creditDataFor(role: Exclude<Role, "guest">, now: Date, ledgerLimit?: number): Promise<CreditData> {
   const data = buildCreditData(role, now);
   if (isBackendAuth) {
-    /* 잔액·내역·출금 요청 모두 서버 값이다. 시연용 쿠키 기록은 쓰지 않는다 */
-    const [balance, ledger, withdrawals] = await Promise.all([readBalance(), readLedger("all", ledgerLimit), readWithdrawals()]);
-    return { ...data, balance, ledger, withdrawals };
+    /*
+     * 잔액과 내역만 서버에서 읽는다(마이페이지가 쓰는 값). 출금 요청은 출금 화면에서 getWithdrawals가 따로 읽으므로
+     * 여기서는 비워 둔다. 같이 읽으면 출금 API 하나만 실패해도 마이페이지까지 멈춘다
+     */
+    const [balance, ledger] = await Promise.all([readBalance(), readLedger("all", ledgerLimit)]);
+    return { ...data, balance, ledger, withdrawals: [] };
   }
   const [requested, payments] = await Promise.all([getDemoWithdrawals(role), getDemoSubscriptionPayments(role)]);
   const locked = requested.reduce((sum, item) => sum + item.amount, 0);
@@ -141,8 +144,13 @@ export async function getCreditLedger(next: string, type: LedgerType = "all", li
   return limit === undefined ? filtered : filtered.slice(0, limit);
 }
 
-/** 출금 요청, 최신순 */
+/** 출금 요청, 최신순. 백엔드 모드에서는 출금 내역 API 하나만 읽는다 */
 export async function getWithdrawals(next: string): Promise<Withdrawal[]> {
+  if (isBackendAuth) {
+    await requireMember(next);
+    await connection();
+    return readWithdrawals();
+  }
   return (await load(next)).withdrawals;
 }
 

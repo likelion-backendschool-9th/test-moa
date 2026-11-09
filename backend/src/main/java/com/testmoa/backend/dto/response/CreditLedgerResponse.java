@@ -1,7 +1,6 @@
 package com.testmoa.backend.dto.response;
 
 import com.testmoa.backend.entity.CreditLedger;
-import com.testmoa.backend.entity.enums.CreditType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,7 +16,7 @@ public class CreditLedgerResponse {
     private String description;
     /** 늘어나면 양수, 줄어들면 음수 */
     private Integer delta;
-    private CreditType type;
+    private CreditLedger.Type type;
     private LocalDateTime createdAt;
 
     public static CreditLedgerResponse of(CreditLedger ledger) {

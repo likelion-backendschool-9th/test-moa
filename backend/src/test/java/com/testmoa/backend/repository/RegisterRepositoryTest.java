@@ -52,7 +52,7 @@ class RegisterRepositoryTest {
         User tester = persistTester("pending-reported@example.com");
         Register register = persistConfirmedRegister(tester, 1000, 350);
         Feedback feedback = persistSubmittedFeedback(register, "신고될 내용");
-        feedback.report();
+        feedback.report("신고 사유");
         entityManager.flush();
         entityManager.clear();
 
@@ -66,7 +66,7 @@ class RegisterRepositoryTest {
         Register register = persistConfirmedRegister(tester, 1000, 350);
         persistSubmittedFeedback(register, "정상 항목");
         Feedback reported = persistSubmittedFeedback(register, "신고된 항목");
-        reported.report();
+        reported.report("신고 사유");
         entityManager.flush();
         entityManager.clear();
 

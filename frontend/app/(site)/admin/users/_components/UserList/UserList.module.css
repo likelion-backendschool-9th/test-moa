@@ -1,0 +1,104 @@
+.userSearch {
+  display: flex;
+  max-width: 28rem;
+  gap: var(--space-2);
+}
+
+.userSearchInput {
+  min-width: 0;
+  flex: 1;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-4);
+  padding-block: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text);
+}
+
+.userSearchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.userSearchInput:focus {
+  outline-style: solid;
+  outline-width: 2px;
+  outline-color: var(--accent);
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.link {
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .link:hover {
+    background-color: var(--surface-strong);
+  }
+}
+
+.box {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.nickname {
+  font-weight: 600;
+}
+
+.label {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.box2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .box2 {
+    justify-content: flex-end;
+  }
+}
+
+.userListSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.userListSkeletonBox {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.userListSkeletonSkeleton {
+  height: 1.5rem;
+  width: 7rem;
+}
+
+.userListSkeletonSkeleton2 {
+  height: 1.25rem;
+  width: 12rem;
+}
+
+.userListSkeletonSkeleton3 {
+  height: 1.5rem;
+  width: 6rem;
+}

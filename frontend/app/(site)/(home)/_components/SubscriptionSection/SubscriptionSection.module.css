@@ -1,0 +1,24 @@
+.subscriptionFrame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.subscriptionFrameBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.subscriptionFrameTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.subscriptionFrameText {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}

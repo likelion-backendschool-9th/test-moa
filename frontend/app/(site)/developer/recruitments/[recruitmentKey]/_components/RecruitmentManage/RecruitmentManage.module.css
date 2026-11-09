@@ -1,0 +1,343 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* 프로젝트 상세의 돌아가기 링크와 같은 모양. 왼쪽 여백을 당겨 화살표가 본문 왼쪽 선에 맞는다 */
+.backLink {
+  margin-left: calc(var(--space-1-5) * -1);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  border-radius: var(--radius-full);
+  padding-block: var(--space-1-5);
+  padding-right: var(--space-3);
+  padding-left: var(--space-1-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  transition-property: color, background-color;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .backLink:hover {
+    background-color: var(--surface-strong);
+    color: var(--text);
+  }
+}
+
+/* 왼쪽 배지·제목·숫자, 오른쪽 공개 페이지 버튼. 좁으면 버튼이 아래로 내려간다 */
+.headerMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headerText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.headerBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-variant-numeric: tabular-nums;
+}
+
+.headerTitle {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.headerMeta {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 흰 면에 재단선 테두리. 바탕 없는 ghost 버튼에 면과 선만 더한다 */
+.publicButton {
+  background-color: var(--surface-muted);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.infoPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.infoRequest {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  color: var(--text-muted);
+}
+
+.infoCancel {
+  align-self: flex-start;
+}
+
+.infoCancelNote {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.recruitmentSummaryList2 {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+@media (min-width: 40rem) {
+  .recruitmentSummaryList2 {
+    grid-template-columns: repeat(4,minmax(0,1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .recruitmentSummaryList2 {
+    grid-template-columns: repeat(8,minmax(0,1fr));
+  }
+}
+
+.recruitmentSummary2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.recruitmentSummaryTerm {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.recruitmentSummaryValue {
+  font-weight: 700;
+}
+
+.cancelStatus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--line);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.cancelStatusText {
+  font-weight: 600;
+}
+
+.cancelStatusText2 {
+  color: var(--text-muted);
+}
+
+.recruitmentDetailBox {
+  padding-inline: var(--space-5);
+  padding-block: var(--space-4);
+}
+
+.recruitmentDetailBoxSummary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.recruitmentDetailBoxBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.recruitmentDetailBoxBox2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.recruitmentDetailBoxText {
+  font-weight: 700;
+}
+
+.recruitmentDetailBoxText2 {
+  white-space: pre-line;
+  color: var(--text-muted);
+}
+
+.recruitmentDetailBoxBox3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.recruitmentDetailBoxText3 {
+  font-weight: 700;
+}
+
+.recruitmentDetailBoxList {
+  display: flex;
+  list-style-type: decimal;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-left: var(--space-5);
+}
+
+.recruitmentDetailBoxTitle {
+  font-weight: 600;
+}
+
+.recruitmentDetailBoxBadge {
+  margin-left: var(--space-2);
+}
+
+.recruitmentDetailBoxLabel {
+  overflow-wrap: break-word;
+  color: var(--text-muted);
+}
+
+.recruitmentDetailBoxBox4 {
+  padding-top: var(--space-3);
+}
+
+.recruitmentDetailBoxBox4:empty {
+  display: none;
+}
+
+/* 탭이 많아 좁은 화면에서는 가로로 넘겨 본다 */
+.recruitmentTabs {
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+
+.recruitmentTabsList {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.recruitmentTabsLabel {
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  padding-block: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  transition-property: color, border-color;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+/* 선택한 탭은 상호작용 상태라 강조색이다 (DESIGN.md The One Green Rule) */
+.recruitmentTabsLabelActive {
+  border-color: var(--accent);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.recruitmentTabsLabelNotActive {
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .recruitmentTabsLabelNotActive:hover {
+    color: var(--text);
+  }
+}
+
+.tabCount {
+  font-variant-numeric: tabular-nums;
+}
+
+.proMark {
+  border-radius: var(--radius-md);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-1-5);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.analyticsPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-8);
+}
+
+.analyticsPanelText {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 600;
+}
+
+.analyticsPanelText2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.analyticsPanelButton {
+  margin-top: var(--space-2);
+}
+
+.analyticsPanel2 {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .analyticsPanel2 {
+    grid-template-columns: repeat(5,minmax(0,1fr));
+  }
+}
+
+.analyticsPanel3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+
+.analyticsPanelTerm {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.analyticsPanelValue {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}

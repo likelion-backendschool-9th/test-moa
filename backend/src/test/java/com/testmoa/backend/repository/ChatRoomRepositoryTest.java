@@ -88,7 +88,7 @@ class ChatRoomRepositoryTest {
         assertThat(participantWithRole(saved, ChatRole.DEVELOPER).getUser().getId()).isEqualTo(developer.getId());
         assertThat(participantWithRole(saved, ChatRole.TESTER).getUser().getId()).isEqualTo(tester.getId());
         assertThat(participants).allSatisfy(p -> {
-            assertThat(p.getCustomName()).isNull();
+            assertThat(p.getCustomRoomName()).isNull();
             assertThat(p.isHidden()).isFalse();
             assertThat(p.getLastReadSeq()).isZero();
         });
@@ -106,10 +106,10 @@ class ChatRoomRepositoryTest {
         ChatRoom saved = reload(room);
 
         ChatParticipant savedDeveloper = participantWithRole(saved, ChatRole.DEVELOPER);
-        assertThat(savedDeveloper.getCustomName()).isEqualTo("결제 테스트");
+        assertThat(savedDeveloper.getCustomRoomName()).isEqualTo("결제 테스트");
         assertThat(savedDeveloper.isHidden()).isTrue();
         ChatParticipant savedTester = participantWithRole(saved, ChatRole.TESTER);
-        assertThat(savedTester.getCustomName()).isNull();
+        assertThat(savedTester.getCustomRoomName()).isNull();
         assertThat(savedTester.isHidden()).isFalse();
     }
 

@@ -1,7 +1,5 @@
 package com.testmoa.backend.entity;
 
-import com.testmoa.backend.entity.enums.PaymentMethod;
-import com.testmoa.backend.entity.enums.PaymentStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,11 +14,11 @@ class PaymentTest {
     void 만들_때_상태는_COMPLETED다() {
         Payment payment = Payment.builder()
                 .subscription(null)
-                .method(PaymentMethod.CREDIT)
+                .method(Payment.Method.CREDIT)
                 .amount(9000)
                 .paidAt(LocalDateTime.of(2026, 11, 1, 10, 0))
                 .build();
 
-        assertEquals(PaymentStatus.COMPLETED, payment.getStatus());
+        assertEquals(Payment.Status.COMPLETED, payment.getStatus());
     }
 }

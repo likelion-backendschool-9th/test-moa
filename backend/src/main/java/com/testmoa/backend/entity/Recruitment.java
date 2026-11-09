@@ -1,10 +1,12 @@
 package com.testmoa.backend.entity;
 
 import com.testmoa.backend.entity.enums.AnalysisStatus;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -59,7 +61,12 @@ public class Recruitment {
     @Column(nullable = false)
     private SelectionMode selectionMode;
 
-    // 모집글 버전. 1로 시작
+    // 구독 모집 여부. 작성할 때 작성자의 구독 여부를 저장한다(#113). 행이 있는 테이블에 컬럼을 더할 수 있게 기본값을 둔다
+    @ColumnDefault("false")
+    @Column(name = "is_subscription", nullable = false)
+    private boolean subscription;
+
+    // 모집글 버전. 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고 수정해도 그대로다(#177). 작성 서비스가 정한다
     @Column(nullable = false)
     private Integer version;
 
@@ -67,6 +74,16 @@ public class Recruitment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AnalysisStatus analysisStatus;
+
+    // 피드백 분석 완료 일시. 분석 전에는 null. 있으면 분석 결과가 있어 버전 비교에 쓸 수 있고, 비교가 이보다 이르면 오래된 비교다
+    private LocalDateTime analyzedAt;
+
+    // 마지막 분석 요청(접수) 일시. 분석 중이면 화면이 "n분째 분석 중"을 보여 준다. 요청한 적이 없으면 null
+    private LocalDateTime analysisRequestedAt;
+
+    // 칭찬 리뷰 한 줄 요약. 분석 전이거나 칭찬이 없으면 null
+    @Column(columnDefinition = "TEXT")
+    private String praiseSummary;
 
     // 취소 사유. 사유 없이 취소하면 null
     @Column(columnDefinition = "TEXT")
@@ -96,8 +113,10 @@ public class Recruitment {
      * @param recruitDeadline   모집 마감 일시
      * @param feedbackDeadline  피드백 제출 마감 일시
      * @param selectionMode     테스터 선택 방식
+     * @param subscription      구독 모집 여부
+     * @param version           프로젝트 안 모집글 버전. 비우면 1
      *
-     * 상태는 RECRUITING, 버전은 1, 분석 상태는 NONE으로 시작한다.
+     * 상태는 RECRUITING, 분석 상태는 NONE으로 시작한다.
      */
     @Builder
     public Recruitment(
@@ -108,7 +127,9 @@ public class Recruitment {
             String accessUrl,
             LocalDateTime recruitDeadline,
             LocalDateTime feedbackDeadline,
-            SelectionMode selectionMode
+            SelectionMode selectionMode,
+            boolean subscription,
+            Integer version
     ){
         this.project = project;
         this.title = title;
@@ -118,13 +139,15 @@ public class Recruitment {
         this.recruitDeadline = recruitDeadline;
         this.feedbackDeadline = feedbackDeadline;
         this.selectionMode = selectionMode;
+        this.subscription = subscription;
         this.status = RecruitmentStatus.RECRUITING;
-        this.version = 1;
+        this.version = version == null ? 1 : version;
         this.analysisStatus = AnalysisStatus.NONE;
     }
 
     /**
-     * 모집 취소. 모집 중일 때만 할 수 있다.
+     * 모집 취소. 저장 상태가 RECRUITING일 때만 할 수 있다. 상태는 취소 여부만 저장하므로(README 정한 것 11)
+     * 마감일로 계산한 모집 중·테스트 중이 모두 여기에 들고, 제출 마감이 지났는지는 서비스가 마감일로 판단한다(#116).
      * 사유가 꼭 필요한 경우인지는 확정 테스터와 일정을 함께 봐야 해서 서비스가 확인한다.
      *
      * @param reason 취소 사유. 비어 있으면 저장하지 않는다
@@ -138,5 +161,45 @@ public class Recruitment {
         this.status = RecruitmentStatus.CANCELLED;
         this.cancelReason = trimmed.isEmpty() ? null : trimmed;
         this.cancelledAt = now;
+    }
+
+    /**
+     * 피드백 분석 완료. 분석 상태를 DONE으로 바꾸고 칭찬 요약과 완료 일시를 남긴다.
+     * 분석 시작(PENDING)과 실패(FAILED)는 동시에 두 번 시작하지 않도록 조건부 UPDATE로 바꾼다(RecruitmentRepository).
+     *
+     * @param praiseSummary 칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null
+     * @param now           분석 완료 일시
+     */
+    public void completeAnalysis(String praiseSummary, LocalDateTime now) {
+        this.analysisStatus = AnalysisStatus.DONE;
+        this.praiseSummary = praiseSummary;
+        this.analyzedAt = now;
+    }
+
+    /**
+     * 모집 정보 수정. 바꿀 수 있는 상태인지와 마감일 규칙은 서비스가 확인한다
+     */
+    public void edit(String title, String description, String accessUrl, String conditions, SelectionMode selectionMode,
+                     LocalDateTime recruitDeadline, LocalDateTime feedbackDeadline) {
+        this.title = title;
+        this.description = description;
+        this.accessUrl = accessUrl;
+        this.conditions = conditions;
+        this.selectionMode = selectionMode;
+        this.recruitDeadline = recruitDeadline;
+        this.feedbackDeadline = feedbackDeadline;
+    }
+
+    /**
+     * 지금 진행 단계. 상태는 취소 여부만 저장하므로 모집 중·테스트 중·종료는 마감일로 계산한다(README 정한 것 11).
+     * 저장 상태가 RECRUITING이 아니면(취소 말고는 지금 저장하는 값이 없다) 마감일과 상관없이 종료다. cancel()의 조건과 같다
+     *
+     * @param now 서버 시간대의 지금(LocalDateTime.now())
+     */
+    public RecruitmentPhase phaseAt(LocalDateTime now) {
+        if (status == RecruitmentStatus.CANCELLED) return RecruitmentPhase.CANCELLED;
+        if (status != RecruitmentStatus.RECRUITING) return RecruitmentPhase.CLOSED;
+        if (now.isBefore(recruitDeadline)) return RecruitmentPhase.RECRUITING;
+        return now.isBefore(feedbackDeadline) ? RecruitmentPhase.TESTING : RecruitmentPhase.CLOSED;
     }
 }

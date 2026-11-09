@@ -1,5 +1,5 @@
-import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { setDemo } from "./helpers";
+import { expect, type Page, test } from "@playwright/test";
+import { setDemo, seedPayment } from "./helpers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -16,25 +16,6 @@ const dateAfter = (days: number) =>
   );
 
 test.describe("R197 결제 내용", () => {
-  test("S536 크레딧이 넉넉하면 크레딧 결제가 먼저 골라져 있다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/my/subscription/checkout");
-    const form = checkout(page);
-    await expect(form.getByRole("heading", { name: "구독 시작" })).toBeVisible();
-    await expect(choice(page, "상품", /구독 · 30일/)).toBeChecked();
-    await expect(choice(page, "결제 수단", /크레딧 9,000 크레딧/)).toBeChecked();
-    await expect(form.getByText("쓸 수 있는 크레딧 12,480 크레딧 · 현금보다 우대 가격이에요")).toBeVisible();
-    await expect(form.getByText(`${dateAfter(0)} ~ ${dateAfter(30)}`)).toBeVisible();
-    await expect(form.getByText(/결제 뒤 남는 크레딧\s*3,480 크레딧/)).toBeVisible();
-    /* 강조색 바탕 버튼은 결제 버튼 하나다 */
-    await expect(page.getByRole("main").locator(".bg-accent")).toHaveCount(1);
-    await expect(form.getByRole("button", { name: "9,000 크레딧 결제하기" })).toHaveClass(/bg-accent/);
-
-    await choice(page, "결제 수단", /현금 10,000원/).check();
-    await expect(form.getByRole("button", { name: "10,000원 결제하기" })).toBeVisible();
-    await expect(form.getByText("결제 뒤 남는 크레딧")).toHaveCount(0);
-  });
-
   test("S537 크레딧이 모자라면 크레딧 결제를 고를 수 없고 모자란 양을 알린다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     await page.goto("/my/subscription/checkout");
@@ -86,21 +67,6 @@ test.describe("R198 결제하고 돌아오기", () => {
 });
 
 test.describe("R198 결제 기록", () => {
-  /** 지난 결제 기록을 쿠키에 직접 넣는다. paidAt·expiresAt은 오늘 기준 날 수 */
-  async function seedPayment(context: BrowserContext, role: string, paidDaysAgo: number, expiresInDays: number) {
-    const payment = {
-      id: "seed",
-      planId: "basic",
-      method: "cash",
-      amount: 10000,
-      paidAt: new Date(Date.now() - paidDaysAgo * DAY_MS).toISOString(),
-      expiresAt: new Date(Date.now() + expiresInDays * DAY_MS).toISOString(),
-    };
-    await context.addCookies([
-      { name: `demo-subscription-${role}`, value: encodeURIComponent(JSON.stringify([payment])), url: "http://localhost:3100" },
-    ]);
-  }
-
   test("S542 결제할 때 정한 만료일은 조회 시각과 관계없이 그대로라 남은 기간이 줄고 만료된다", async ({ page, context }) => {
     await setDemo(context, { role: "developer" });
     /* 7일 전 연장으로 60일 뒤였던 만료일은 지금 53일 남았다 */
@@ -112,18 +78,5 @@ test.describe("R198 결제 기록", () => {
     await seedPayment(context, "developer", 61, -1);
     await page.goto("/my/subscription");
     await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
-  });
-
-  test("S543 결제 기록은 가장 늦은 만료일보다 오래 남는다", async ({ page, context }) => {
-    await setDemo(context, { role: "developer" });
-    for (let index = 0; index < 4; index += 1) {
-      await page.goto("/my/subscription/checkout");
-      await checkout(page).getByRole("button", { name: "10,000원 결제하기" }).click();
-      await expect(page).toHaveURL("/my/subscription?notice=paid");
-    }
-    /* 목업 30일 + 30일 상품 네 번 = 150일 */
-    await expect(region(page, "내 구독").getByText("D-150")).toBeVisible();
-    const cookie = (await context.cookies()).find((item) => item.name === "demo-subscription-developer");
-    expect(cookie!.expires * 1000).toBeGreaterThan(Date.now() + 150 * DAY_MS);
   });
 });

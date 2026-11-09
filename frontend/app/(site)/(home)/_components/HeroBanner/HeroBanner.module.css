@@ -1,0 +1,68 @@
+.frame {
+  height: 100%;
+  min-height: 30rem;
+  padding: var(--space-8);
+}
+
+@media (min-width: 48rem) {
+  .frame {
+    min-height: 20rem;
+    padding: var(--space-12);
+  }
+}
+
+@media (min-width: 64rem) {
+  .frame {
+    min-height: 22rem;
+  }
+}
+
+/* 배너 바탕. 라이트는 진한 초록 재단 매트에 CSS로 그린 격자(SVG 패턴 ID 충돌을 피한다), 다크는 패널 위 격자다 */
+.shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-2xl);
+}
+
+@media (prefers-color-scheme: light) {
+  .shell {
+    background-color: var(--hero-mat);
+    background-image:
+      linear-gradient(to right, var(--hero-grid-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--hero-grid-major) 1px, transparent 1px),
+      linear-gradient(to right, var(--hero-grid-minor) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--hero-grid-minor) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    color: var(--hero-text);
+    --text: var(--hero-text);
+    --text-muted: var(--hero-muted);
+    --accent: var(--hero-text);
+    --on-accent: var(--hero-button-text);
+    --surface-strong: var(--hero-chip);
+    --mark: var(--hero-text);
+  }
+
+  .shell > svg {
+    display: none;
+  }
+
+  /* 매트 위 교정지·썸네일은 다른 부품이라 클래스 대신 속성으로 가리킨다 */
+  .shell [data-thumb],
+  .shell [data-hero-paper] {
+    --text: var(--hero-paper-text);
+    --accent: var(--hero-mat);
+    --on-accent: var(--on-paper-accent);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .shell {
+    background-color: var(--surface-muted);
+  }
+
+  /* 배너 주 버튼은 교정지·썸네일과 같은 진한 초록에 흰 글씨. 제목의 초록 글자는 남회색 위에서 읽히게 밝은 초록을 둔다 */
+  .shell [data-hero-action] {
+    --accent: var(--paper-accent);
+    --on-accent: var(--on-paper-accent);
+  }
+}

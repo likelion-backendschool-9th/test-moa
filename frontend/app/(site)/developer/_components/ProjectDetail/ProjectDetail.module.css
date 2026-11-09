@@ -1,0 +1,326 @@
+.externalLink {
+  width: fit-content;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  text-decoration-line: underline;
+}
+
+.externalLinkSrOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.projectBody {
+  container-type: inline-size;
+}
+
+.projectBodyBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 37.5%;
+    grid-template-rows: auto auto 1fr;
+    column-gap: var(--space-6);
+  }
+}
+
+.projectBodyBox2 {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox2 {
+    grid-column-start: 1;
+    grid-row-start: 1;
+  }
+}
+
+.projectBodyTitleH1 {
+  font-size: var(--text-4xl);
+  line-height: var(--text-4xl-leading);
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.projectBodyTitleNotH1 {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.projectBodyBox3 {
+  min-width: 0;
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox3 {
+    grid-column-start: 1;
+    grid-row-start: 2;
+  }
+}
+
+.projectBodyBox4 {
+  width: 100%;
+  max-width: 28rem;
+}
+
+@container (min-width: 48rem) {
+  .projectBodyBox4 {
+    grid-column-start: 2;
+    grid-row: 1 / span 3;
+    max-width: none;
+  }
+}
+
+.projectBodyImage {
+  aspect-ratio: 4/3;
+  width: 100%;
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-muted);
+  object-fit: contain;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-offset: -1px;
+  outline-color: var(--line);
+}
+
+.projectBodyChildren {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@container (min-width: 48rem) {
+  .projectBodyChildren {
+    grid-column-start: 1;
+    grid-row-start: 3;
+  }
+}
+
+.projectInfoBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.recruitmentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* 넓은 화면은 [배지·제목 | 숫자·분석 기록 | 버튼] 세 칸. 줄마다 버튼 글자 폭이 달라도 칸이 맞도록 목록이 칸을 정하고 줄은 subgrid로 따른다 */
+@media (min-width: 48rem) {
+  .recruitmentList {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
+    column-gap: var(--space-6);
+  }
+}
+
+/* 좁은 화면은 위아래로 쌓는다 */
+.recruitmentRow {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .recruitmentRow {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    padding: var(--space-6);
+  }
+}
+
+/* 제목 링크의 ::after가 이 칸을 덮는 기준. 넓은 화면은 줄 높이를 다 채워야 덮개가 카드 위아래 끝까지 닿는다 */
+.recruitmentHead {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .recruitmentHead {
+    align-self: stretch;
+  }
+}
+
+.recruitmentBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-variant-numeric: tabular-nums;
+}
+
+.recruitmentTitle {
+  width: fit-content;
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+/* 누르는 범위를 글자 대신 칸 전체로 넓힌다. 카드 안쪽 여백까지, 오른쪽은 가운데 구분선까지 덮는다 */
+.recruitmentTitle::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--space-5) * -1) calc(var(--space-5) * -1) calc(var(--space-4) * -1);
+}
+
+@media (min-width: 48rem) {
+  .recruitmentTitle::after {
+    inset: calc(var(--space-6) * -1);
+  }
+}
+
+@media (hover: hover) {
+  .recruitmentTitle:hover {
+    text-decoration-line: underline;
+  }
+}
+
+/* 칸 사이는 재단선으로 나눈다. 좁은 화면은 위쪽, 넓은 화면은 왼쪽 선 */
+.recruitmentMeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 48rem) {
+  .recruitmentMeta {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    padding-top: 0;
+    padding-left: var(--space-6);
+  }
+}
+
+/* 시안대로 분석 기록 줄은 강조색이다 */
+.recruitmentAnalysis {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.recruitmentActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .recruitmentActions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+  }
+}
+
+/* 결과보기: 흰 면에 재단선 테두리. 바탕 없는 ghost 버튼에 면과 선만 더한다 */
+.resultButton {
+  background-color: var(--surface-muted);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* 버튼 안의 유료 기능 표시 */
+.proMark {
+  border-radius: var(--radius-md);
+  padding-inline: var(--space-1-5);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+}
+
+/* 초록 버튼 위: 버튼 글씨색을 옅게 깐다 */
+.proMarkOnAccent {
+  background-color: color-mix(in srgb, var(--on-accent) 20%, transparent);
+}
+
+.proMarkSoft {
+  background-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.recruitmentPublicLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .recruitmentPublicLink:hover {
+    color: var(--text);
+  }
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.detailSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.detailSkeletonSkeleton {
+  height: 2.5rem;
+  width: 16rem;
+}
+
+.detailSkeletonSkeleton2 {
+  height: 1.5rem;
+  width: 24rem;
+  max-width: 100%;
+}
+
+.detailSkeletonSkeleton3 {
+  height: 8rem;
+}
+
+.detailSkeletonSkeleton4 {
+  height: 8rem;
+}

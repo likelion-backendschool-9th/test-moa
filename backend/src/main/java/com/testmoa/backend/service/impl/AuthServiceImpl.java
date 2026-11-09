@@ -1,7 +1,6 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.LoginRequest;
-import com.testmoa.backend.dto.request.OAuthCodeRequest;
 import com.testmoa.backend.dto.request.OAuthSignupRequest;
 import com.testmoa.backend.dto.request.SignupRequest;
 import com.testmoa.backend.dto.response.OAuthLoginResponse;

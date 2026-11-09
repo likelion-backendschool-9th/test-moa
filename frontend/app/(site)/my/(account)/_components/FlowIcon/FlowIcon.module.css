@@ -1,0 +1,21 @@
+.root {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: var(--radius-full);
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  font-weight: 800;
+}
+
+.rootIncoming {
+  background-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.rootNotIncoming {
+  background-color: var(--surface-strong);
+  color: var(--text);
+}

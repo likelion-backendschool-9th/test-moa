@@ -2,6 +2,8 @@ package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
+import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
+import com.testmoa.backend.dto.request.TestItemsUpdateRequest;
 import com.testmoa.backend.dto.response.ProjectResponse;
 import com.testmoa.backend.dto.response.RecruitmentCreateResponse;
 import com.testmoa.backend.dto.response.RecruitmentSummaryResponse;
@@ -12,6 +14,7 @@ import com.testmoa.backend.entity.RecruitmentType;
 import com.testmoa.backend.entity.TestItem;
 import com.testmoa.backend.entity.TestItemImage;
 import com.testmoa.backend.entity.Type;
+import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.ProjectRepository;
 import com.testmoa.backend.repository.RecruitmentImageRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
@@ -21,6 +24,7 @@ import com.testmoa.backend.repository.TestItemImageRepository;
 import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.repository.TypeRepository;
 import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
@@ -28,6 +32,7 @@ import com.testmoa.backend.entity.enums.TypeCode;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.SubscriptionChecker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,6 +44,8 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,6 +63,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final RecruitmentImageRepository recruitmentImageRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
     private final RegisterRepository registerRepository;
+    private final FeedbackRepository feedbackRepository;
     private final TestItemRepository testItemRepository;
     private final TestItemImageRepository testItemImageRepository;
     private final TypeRepository typeRepository;
@@ -104,16 +112,21 @@ public class ProjectServiceImpl implements ProjectService {
 
         Map<Long, TypeCode> types = recruitmentTypeRepository.findByRecruitmentIdIn(recruitmentIds).stream()
                 .collect(Collectors.toMap(item -> item.getRecruitment().getId(), item -> item.getType().getCode(), (first, second) -> first));
-        Map<Long, Long> confirmed = registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED).stream()
-                .collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
+        Map<Long, Long> confirmed = countMap(registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.CONFIRMED));
+        Map<Long, Long> feedbacks = countMap(feedbackRepository.countByRecruitmentIds(recruitmentIds));
 
         LocalDateTime now = LocalDateTime.now();
         return recruitments.stream().map(item -> RecruitmentSummaryResponse.of(
                 item,
-                statusOf(item, now),
-                selectionModeName(item.getSelectionMode()),
-                softwareTypeName(types.get(item.getId())),
-                confirmed.getOrDefault(item.getId(), 0L))).toList();
+                RecruitmentNames.phase(item.phaseAt(now)),
+                RecruitmentNames.selectionMode(item.getSelectionMode()),
+                RecruitmentNames.softwareType(types.get(item.getId())),
+                confirmed.getOrDefault(item.getId(), 0L),
+                feedbacks.getOrDefault(item.getId(), 0L))).toList();
+    }
+
+    private static Map<Long, Long> countMap(List<RegisterRepository.RecruitmentCount> counts) {
+        return counts.stream().collect(Collectors.toMap(RegisterRepository.RecruitmentCount::getRecruitmentId, RegisterRepository.RecruitmentCount::getCount));
     }
 
     /**
@@ -136,9 +149,11 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = findOwned(userId, request.projectId());
         checkDeadlines(request.recruitDeadline(), request.submitDeadline());
         SelectionMode selectionMode = selectionModeOf(request.selectionMode());
-        if (selectionMode == SelectionMode.MANUAL && !subscriptionChecker.isActive(userId)) {
+        boolean subscribed = subscriptionChecker.isActive(userId);
+        if (selectionMode == SelectionMode.MANUAL && !subscribed) {
             throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
         }
+        int version = nextVersion(project);
 
         Recruitment recruitment = recruitmentRepository.save(Recruitment.builder()
                 .project(project)
@@ -149,11 +164,120 @@ public class ProjectServiceImpl implements ProjectService {
                 .recruitDeadline(endOf(request.recruitDeadline()))
                 .feedbackDeadline(endOf(request.submitDeadline()))
                 .selectionMode(selectionMode)
+                .subscription(subscribed)
+                .version(version)
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());
         recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());
-        request.testItems().forEach(item -> saveTestItem(recruitment, item));
+        for (int index = 0; index < request.testItems().size(); index++) {
+            saveTestItem(recruitment, request.testItems().get(index), index);
+        }
         return new RecruitmentCreateResponse(recruitment.getId());
+    }
+
+    /**
+     * 모집 정보 수정. 보낸 값만 바꾸고 종료·취소한 모집은 409.
+     * 지원이 있으면 선정 방식을, 모집 마감이 지나면 모집 마감일을 바꿀 수 없고 마감일은 미루기만 한다
+     */
+    @Override
+    @Transactional
+    public void updateRecruitment(Long userId, Long recruitmentId, RecruitmentUpdateRequest request) {
+        Recruitment recruitment = findEditable(userId, recruitmentId);
+
+        SelectionMode selectionMode = request.selectionMode() == null ? recruitment.getSelectionMode() : selectionModeOf(request.selectionMode());
+        if (selectionMode != recruitment.getSelectionMode()) {
+            if (registerRepository.existsByRecruitmentId(recruitmentId)) throw invalid("selectionMode", "지원자가 있어 선정 방식을 바꿀 수 없어요");
+            if (selectionMode == SelectionMode.MANUAL && !recruitment.isSubscription()) {
+                throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
+            }
+        }
+
+        LocalDateTime recruitDeadline = recruitment.getRecruitDeadline();
+        if (request.recruitDeadline() != null && !request.recruitDeadline().equals(seoulDate(recruitDeadline))) {
+            if (recruitment.phaseAt(LocalDateTime.now()) != RecruitmentPhase.RECRUITING) throw invalid("recruitDeadline", "모집이 마감돼 바꿀 수 없어요");
+            if (request.recruitDeadline().isBefore(seoulDate(recruitDeadline))) throw invalid("recruitDeadline", "모집 마감일은 미루기만 할 수 있어요");
+            recruitDeadline = endOf(request.recruitDeadline());
+        }
+        LocalDateTime feedbackDeadline = recruitment.getFeedbackDeadline();
+        if (request.submitDeadline() != null && !request.submitDeadline().equals(seoulDate(feedbackDeadline))) {
+            if (request.submitDeadline().isBefore(seoulDate(feedbackDeadline))) throw invalid("submitDeadline", "제출 마감일은 미루기만 할 수 있어요");
+            feedbackDeadline = endOf(request.submitDeadline());
+        }
+        if (!feedbackDeadline.isAfter(recruitDeadline)) throw invalid("submitDeadline", "제출 마감일은 모집 마감일보다 뒤여야 해요");
+
+        recruitment.edit(
+                request.title() == null ? recruitment.getTitle() : request.title().trim(),
+                request.description() == null ? recruitment.getDescription() : request.description().trim(),
+                request.accessUrl() == null ? recruitment.getAccessUrl() : request.accessUrl().trim(),
+                request.conditions() == null ? recruitment.getConditions() : blankToNull(request.conditions()),
+                selectionMode, recruitDeadline, feedbackDeadline);
+        if (request.softwareTypes() != null) replaceTypes(recruitment, request.softwareTypes());
+    }
+
+    /**
+     * 테스트 항목을 보낸 순서대로 맞춘다. 빠진 항목은 이미지와 함께 지우고, id가 없는 항목은 새로 만든다.
+     * 다른 모집글의 항목 id는 400, 피드백이 달린 항목을 빼면 400
+     */
+    @Override
+    @Transactional
+    public void updateTestItems(Long userId, Long recruitmentId, TestItemsUpdateRequest request) {
+        Recruitment recruitment = findEditable(userId, recruitmentId);
+        Map<Long, TestItem> current = testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(recruitmentId).stream()
+                .collect(Collectors.toMap(TestItem::getId, item -> item));
+        List<Long> keptIds = request.testItems().stream().map(TestItemsUpdateRequest.Item::id).filter(Objects::nonNull).toList();
+        if (!current.keySet().containsAll(keptIds) || keptIds.size() != keptIds.stream().distinct().count()) {
+            throw invalid("testItems", "테스트 항목을 확인해 주세요");
+        }
+        List<Long> removedIds = current.keySet().stream().filter(id -> !keptIds.contains(id)).toList();
+        if (feedbackRepository.findTestItemIdsWithFeedback(recruitmentId).stream().anyMatch(removedIds::contains)) {
+            throw invalid("testItems", "피드백이 달린 항목은 지울 수 없어요");
+        }
+        testItemImageRepository.deleteByTestItemIdIn(removedIds);
+        testItemRepository.deleteAllById(removedIds);
+
+        for (int index = 0; index < request.testItems().size(); index++) {
+            TestItemsUpdateRequest.Item item = request.testItems().get(index);
+            String description = blankToNull(item.description());
+            if (item.id() == null) {
+                testItemRepository.save(TestItem.builder().recruitment(recruitment).title(item.title().trim())
+                        .description(description).required(item.required()).sortOrder(index).build());
+            } else {
+                current.get(item.id()).edit(item.title().trim(), description, item.required(), index);
+            }
+        }
+    }
+
+    // 내 모집글을 잠가 읽는다. 종료·취소한 모집은 바꿀 수 없다
+    private Recruitment findEditable(Long userId, Long recruitmentId) {
+        Recruitment recruitment = recruitmentRepository.findMineForUpdate(recruitmentId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        RecruitmentPhase phase = recruitment.phaseAt(LocalDateTime.now());
+        if (phase == RecruitmentPhase.CLOSED || phase == RecruitmentPhase.CANCELLED) {
+            throw new BusinessException(ErrorCode.RECRUITMENT_NOT_EDITABLE);
+        }
+        return recruitment;
+    }
+
+    // 고른 유형만 남긴다. 그대로인 유형은 두고 빠진 것은 지우고 새로 고른 것은 더한다
+    private void replaceTypes(Recruitment recruitment, List<String> softwareTypes) {
+        Set<TypeCode> chosen = softwareTypes.stream().map(value -> TypeCode.valueOf(value.toUpperCase())).collect(Collectors.toSet());
+        List<RecruitmentType> current = recruitmentTypeRepository.findByRecruitmentIdIn(List.of(recruitment.getId()));
+        recruitmentTypeRepository.deleteAll(current.stream().filter(item -> !chosen.contains(item.getType().getCode())).toList());
+        Set<TypeCode> kept = current.stream().map(item -> item.getType().getCode()).collect(Collectors.toSet());
+        chosen.stream().filter(code -> !kept.contains(code)).forEach(code ->
+                recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(code)).build()));
+    }
+
+    // 서버 시간대의 시각을 한국 날짜로 바꾼다. endOf의 반대
+    private LocalDate seoulDate(LocalDateTime dateTime) {
+        return dateTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(SEOUL).toLocalDate();
+    }
+
+    // 다음 모집글 버전. 프로젝트의 가장 큰 버전 + 1이고 첫 모집은 1이다. 취소한 모집도 번호를 차지한다.
+    // 같은 프로젝트에 동시에 작성해도 번호가 겹치지 않게 프로젝트 행을 잠근 뒤 센다(#177)
+    private int nextVersion(Project project) {
+        projectRepository.findByIdForUpdate(project.getId());
+        return recruitmentRepository.findMaxVersionByProjectId(project.getId()).map(max -> max + 1).orElse(1);
     }
 
     private Project findOwned(Long userId, Long projectId) {
@@ -170,16 +294,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         return projects.stream().map(project -> {
             List<Recruitment> recruitments = byProject.getOrDefault(project.getId(), List.of());
-            long open = recruitments.stream().filter(item -> statusOf(item, now).equals("recruiting")).count();
+            long open = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.RECRUITING).count();
             return ProjectResponse.of(project, recruitments.size(), open);
         }).toList();
-    }
-
-    // 모집 상태. 취소만 저장된 값을 쓰고, 나머지는 프론트처럼 마감일로 계산한다
-    private String statusOf(Recruitment recruitment, LocalDateTime now) {
-        if (recruitment.getStatus() == RecruitmentStatus.CANCELLED) return "cancelled";
-        if (now.isBefore(recruitment.getRecruitDeadline())) return "recruiting";
-        return now.isBefore(recruitment.getFeedbackDeadline()) ? "testing" : "closed";
     }
 
     // 모집 마감은 오늘부터, 제출 마감은 모집 마감 뒤여야 한다
@@ -200,12 +317,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
-    private void saveTestItem(Recruitment recruitment, RecruitmentCreateRequest.TestItemRequest item) {
+    private void saveTestItem(Recruitment recruitment, RecruitmentCreateRequest.TestItemRequest item, int sortOrder) {
         TestItem testItem = testItemRepository.save(TestItem.builder()
                 .recruitment(recruitment)
                 .title(item.title().trim())
                 .description(blankToNull(item.description()))
                 .required(item.required())
+                .sortOrder(sortOrder)
                 .build());
         List<String> imageUrls = item.imageUrls() == null ? List.of() : item.imageUrls();
         for (int index = 0; index < imageUrls.size(); index++) {
@@ -229,14 +347,6 @@ public class ProjectServiceImpl implements ProjectService {
 
     private SelectionMode selectionModeOf(String value) {
         return "selection".equals(value) ? SelectionMode.MANUAL : SelectionMode.FIRST_COME;
-    }
-
-    private String selectionModeName(SelectionMode selectionMode) {
-        return selectionMode == SelectionMode.MANUAL ? "selection" : "firstCome";
-    }
-
-    private String softwareTypeName(TypeCode code) {
-        return code == null ? null : code.name().toLowerCase();
     }
 
     private String blankToNull(String value) {

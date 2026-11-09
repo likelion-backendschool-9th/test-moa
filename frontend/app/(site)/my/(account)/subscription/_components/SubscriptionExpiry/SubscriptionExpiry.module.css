@@ -1,0 +1,35 @@
+.box {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .box {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  padding: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 800;
+}
+
+.list {
+  display: flex;
+  list-style-type: disc;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}

@@ -1,0 +1,286 @@
+@media (prefers-color-scheme: dark) {
+  .cardAction {
+    font-weight: 400;
+  }
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .root {
+    padding: var(--space-6);
+  }
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.box2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nickname {
+  font-weight: 700;
+}
+
+.text2 {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+.content {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.list2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.link {
+  display: block;
+  width: 10rem;
+}
+
+.image {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--line);
+  background-color: var(--surface-strong);
+  object-fit: cover;
+}
+
+.srOnly2 {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.box3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.text3 {
+  margin-right: auto;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.iconOn {
+  animation: var(--animate-heart-pop);
+}
+
+.dialog {
+  margin: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--space-6);
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background-color: var(--text);
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .dialog::backdrop {
+    background-color: color-mix(in oklab, var(--text) 50%, transparent);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.text4 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.field {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.error {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.box4 {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 검색과 테스트 항목은 왼쪽에 붙이고 정렬은 오른쪽 끝. 좁은 화면에서는 검색이 한 줄을 차지하고 나머지가 아래로 내려간다 */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.search {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.searchField {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding-inline: var(--space-5);
+  padding-block: var(--space-2);
+  transition-property: background-color, box-shadow;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+.searchField:focus-within {
+  background-color: var(--surface-muted);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.searchIcon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.searchInput {
+  width: 100%;
+  min-width: 0;
+  background-color: transparent;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  outline-style: none;
+}
+
+.selectBox {
+  position: relative;
+  min-width: 0;
+}
+
+.select {
+  max-width: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding-block: var(--space-2);
+  padding-right: var(--space-10);
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.select:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+  outline-style: none;
+}
+
+.selectIcon {
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  translate: 0 -50%;
+  color: var(--text-muted);
+}
+
+.sort {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* 넓은 화면에서는 검색 칸 너비를 고정해 옆에 드롭다운이 붙게 한다 */
+@media (min-width: 48rem) {
+  .search {
+    flex: 0 1 26rem;
+  }
+}
+
+.sort {
+  margin-left: auto;
+}
+
+/* 유료 기능 표시. 모집 관리 탭 줄의 PRO와 같은 모양이다 */
+.proMark {
+  border-radius: var(--radius-md);
+  background-color: var(--accent-soft);
+  padding-inline: var(--space-1-5);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  color: var(--accent);
+}

@@ -1,11 +1,11 @@
 package com.testmoa.backend.controller;
 
-import com.testmoa.backend.domain.entity.User;
-import com.testmoa.backend.domain.repository.AccountRepository;
-import com.testmoa.backend.domain.repository.UserRepository;
-import com.testmoa.backend.global.common.Provider;
-import com.testmoa.backend.global.common.Role;
-import com.testmoa.backend.global.common.UserStatus;
+import com.testmoa.backend.entity.User;
+import com.testmoa.backend.repository.AccountRepository;
+import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.global.security.Provider;
+import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.OAuthClient;
 import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;

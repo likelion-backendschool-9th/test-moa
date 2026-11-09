@@ -115,8 +115,8 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 #81-S1 `GET /api/users/me`로 내 정보, 연동된 로그인 방식, 비밀번호 유무, 구독 상태를 받는다 [테스트]
 
-#81-S2 지금 시각이 기간 안에 들어가는 ACTIVE 구독이 있으면 `subscription.active`가 true이고 플랜·만료일이 온다 [테스트]
-- 판단 기준은 [결제·구독·크레딧](../payment/entities.md#6-내-구독-45-r6)과 같다(#69와 `SubscriptionChecker`를 같이 쓰자는 제안)
+#81-S2 지금 시각이 기간 안에 들어가는 ACTIVE 구독이 있으면 `subscription.active`가 true이고 플랜·만료일이 온다 [테스트] (고침 #69: 만료일은 `/api/v1/my/subscription/status`와 같은, 지금 기간에서 이어 붙은 기간의 끝이다)
+- 판단 기준은 [결제·구독·크레딧](../payment/entities.md#6-내-구독-45-r6)과 같다. `UserServiceImpl.getMe`가 `SubscriptionService.getStatus`를 불러 구독 화면과 같은 계산을 쓴다([subscription.md](../payment/subscription.md))
 
 #81-S3 기간이 끝났거나 해지(CANCELLED)한 구독은 구독이 아니다 [테스트]
 

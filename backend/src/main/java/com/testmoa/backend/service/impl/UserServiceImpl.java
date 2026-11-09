@@ -3,6 +3,7 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.AuthenticatedUser;
 import com.testmoa.backend.dto.response.MeResponse;
 import com.testmoa.backend.dto.response.MeResponse.SubscriptionStatusResponse;
+import com.testmoa.backend.dto.response.SubscriptionResponse;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.repository.AccountRepository;
 import com.testmoa.backend.repository.RefreshTokenRepository;
@@ -11,7 +12,7 @@ import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
-import com.testmoa.backend.service.SubscriptionChecker;
+import com.testmoa.backend.service.SubscriptionService;
 import com.testmoa.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,19 +29,20 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final SubscriptionChecker subscriptionChecker;
+    private final SubscriptionService subscriptionService;
 
     /**
-     * 내 정보와 지금 구독 상태
+     * 내 정보와 지금 구독 상태. 구독 상태는 구독 화면(/my/subscription/status)과 같은 계산을 쓴다.
+     * 운영자는 구독 대상이 아니라서 null이다.
      */
     @Override
     public MeResponse getMe(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        SubscriptionStatusResponse subscription = user.getRole() == Role.ADMIN ? null
-                : subscriptionChecker.findActive(userId)
-                        .map(found -> new SubscriptionStatusResponse(true, found.getPlan().getTier(), found.getEndAt()))
-                        .orElse(new SubscriptionStatusResponse(false, null, null));
+        SubscriptionResponse status = subscriptionService.getStatus(userId);
+        SubscriptionStatusResponse subscription = status.eligible()
+                ? new SubscriptionStatusResponse(Boolean.TRUE.equals(status.active()), status.plan(), status.endAt())
+                : null;
 
         return MeResponse.of(user, accountRepository.findByUserId(userId), subscription);
     }

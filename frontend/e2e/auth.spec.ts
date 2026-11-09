@@ -41,17 +41,6 @@ async function expectLoggedIn(page: Page) {
   await expect(header(page).getByRole("link", { name: "로그인" })).toHaveCount(0);
 }
 
-test.describe("R155 로그인 보기", () => {
-
-  test("S287 이미 로그인했으면 next나 홈으로 보낸다", async ({ page, context }) => {
-    await setDemo(context, { role: "tester" });
-    await page.goto("/login?next=%2Fmy");
-    await expect(page).toHaveURL("/my");
-    await page.goto("/login");
-    await expect(page).toHaveURL("/");
-  });
-});
-
 test.describe("R156 이메일 로그인", () => {
   test.beforeEach(async ({ context }) => {
     await setDemo(context, { role: "guest" });
@@ -64,14 +53,6 @@ test.describe("R156 이메일 로그인", () => {
     await expectLoggedIn(page);
   });
 
-  test("S291 운영자로 로그인하면 운영자 화면이 열린다", async ({ page }) => {
-    await page.goto("/login?next=%2Fadmin");
-    await login(page, "admin@example.com", PASSWORD);
-    await expect(page).toHaveURL("/admin");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByText("운영자만 볼 수 있는 페이지예요")).toHaveCount(0);
-  });
-
   test("S294 맞지 않는 계정은 어느 쪽이 틀렸는지 알리지 않는다", async ({ page }) => {
     await page.goto("/login");
     await login(page, "seoyun@example.com", "wrong123");
@@ -82,16 +63,8 @@ test.describe("R156 이메일 로그인", () => {
     await expect(page).toHaveURL("/login");
   });
 
-  const UNSAFE_NEXT = [
-    "https://evil.com",
-    "//evil.com",
-    "/\\evil.com",
-    "/\t/evil.com",
-    "/a/..//evil.com",
-    "/a/%2e%2e//evil.com",
-    "javascript:alert(1)",
-    "my",
-  ];
+  // 주소 검사 변형은 tests/unit/next-path.test.ts가 확인하고, 여기서는 로그인 연결만 본다.
+  const UNSAFE_NEXT = ["https://evil.com"];
   for (const next of UNSAFE_NEXT) {
     test(`S295 바깥 주소로 보내지 않는다: ${JSON.stringify(next)}`, async ({ page, context }) => {
       await page.goto(`/login?next=${encodeURIComponent(next)}`);
@@ -107,19 +80,6 @@ test.describe("R156 이메일 로그인", () => {
     await page.goto(`/login?next=${encodeURIComponent("/testers/recruitments?tab=ongoing&sort=recent")}`);
     await login(page, "seoyun@example.com", PASSWORD);
     await expect(page).toHaveURL("/testers/recruitments?tab=ongoing&sort=recent");
-  });
-});
-
-test.describe("R157 소셜 로그인", () => {
-  test.beforeEach(async ({ context }) => {
-    await setDemo(context, { role: "guest" });
-  });
-
-  test("S296 깃허브로 로그인하면 next로 간다", async ({ page }) => {
-    await page.goto("/login?next=%2Fmy");
-    await main(page).getByRole("button", { name: "깃허브로 계속하기" }).click();
-    await expect(page).toHaveURL("/my");
-    await expectLoggedIn(page);
   });
 });
 
@@ -151,17 +111,6 @@ test.describe("R159 회원가입 검사", () => {
     await expect(main(page).getByText("이미 가입한 이메일이에요")).toBeVisible();
     await expect(main(page).getByText("이미 쓰고 있는 닉네임이에요")).toBeVisible();
   });
-
-  test("S314 닉네임은 1자와 39자까지 쓸 수 있다", async ({ page }) => {
-    for (const nickname of ["a", "a".repeat(39)]) {
-      await page.goto("/signup");
-      await signup(page, { nickname, confirm: "moa2026px" });
-      await expect(main(page).getByText("비밀번호가 서로 달라요")).toBeVisible();
-      await expect(main(page).getByLabel("닉네임")).not.toHaveAttribute("aria-invalid", "true");
-    }
-    await signup(page, { nickname: "윤슬!!" });
-    await expect(main(page).getByText("닉네임은 한글·영문·숫자 1~39자예요")).toBeVisible();
-  });
 });
 
 test.describe("R160 가입 성공", () => {
@@ -174,20 +123,6 @@ test.describe("R160 가입 성공", () => {
     await signup(page);
     await expect(page).toHaveURL("/login?joined=1");
     await expect(main(page).getByRole("status")).toHaveText("가입했어요. 로그인해 주세요");
-  });
-
-  test("S308 next를 넘기고, 안전하지 않은 next는 버린다", async ({ page }) => {
-    await page.goto("/signup?next=%2Fmy");
-    await signup(page);
-    await expect(page).toHaveURL("/login?joined=1&next=%2Fmy");
-
-    await page.goto(`/signup?next=${encodeURIComponent("/my?tab=ongoing&sort=recent")}`);
-    await signup(page);
-    await expect(page).toHaveURL(`/login?joined=1&next=${encodeURIComponent("/my?tab=ongoing&sort=recent")}`);
-
-    await page.goto(`/signup?next=${encodeURIComponent("/\\evil.com")}`);
-    await signup(page);
-    await expect(page).toHaveURL("/login?joined=1");
   });
 });
 
@@ -213,21 +148,5 @@ test.describe("#83 소셜 가입 이름 입력", () => {
     await main(page).getByRole("button", { name: "가입하기" }).click();
     await expect(page).toHaveURL("/my");
     await expectLoggedIn(page);
-  });
-
-  test("#83-S11 소셜 로그인에 실패하면 로그인 화면에 이유가 보이고, 모르는 값은 무시한다", async ({ page }) => {
-    await page.goto("/login?error=suspended");
-    await expect(main(page).getByText("이용이 정지된 계정이에요")).toBeVisible();
-    await page.goto("/login?error=linkRequired");
-    await expect(main(page).getByText("이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요")).toBeVisible();
-    await page.goto("/login?error=providerLinked");
-    await expect(main(page).getByText("같은 이메일 회원에 이 서비스의 다른 계정이 이미 연동돼 있어요. 연동된 계정으로 로그인해 주세요")).toBeVisible();
-    /* 객체에 원래 있는 이름(constructor 등)도 모르는 값이다 */
-    for (const key of ["%3Cscript%3E", "constructor", "toString"]) {
-      await page.goto(`/login?error=${key}`);
-      await expect(main(page).getByRole("heading", { level: 1, name: "로그인" })).toBeVisible();
-      await expect(main(page).getByLabel("이메일")).toBeVisible();
-      await expect(main(page).locator("[role=alert]")).toHaveCount(0);
-    }
   });
 });

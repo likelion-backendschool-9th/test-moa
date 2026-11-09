@@ -35,10 +35,45 @@ public enum ErrorCode {
 
     // 구독
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
+    DUPLICATE_PAYMENT(HttpStatus.CONFLICT, "방금 결제했어요. 잠시 후 다시 시도해 주세요"),
+    INSUFFICIENT_CREDIT(HttpStatus.CONFLICT, "쓸 수 있는 크레딧이 부족해요"),
+
+    // 모집
+    RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),
+    RECRUITMENT_NOT_EDITABLE(HttpStatus.CONFLICT, "종료되거나 취소된 모집은 바꿀 수 없어요"),
+    FEEDBACK_NOT_REPORTABLE(HttpStatus.CONFLICT, "신고는 제출 후 72시간 안에만 할 수 있어요"),
+    APPLICANTS_NOT_SELECTABLE(HttpStatus.CONFLICT, "선발형 구독 모집의 모집 기간에만 지원자를 확정·거절할 수 있어요"),
+    RECRUITMENT_CLOSED(HttpStatus.CONFLICT, "모집이 마감됐어요"),
+    ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 지원한 테스트예요"),
+    OWN_RECRUITMENT(HttpStatus.CONFLICT, "내 모집에는 지원할 수 없어요"),
+    PARTICIPATION_NOT_CONFIRMED(HttpStatus.CONFLICT, "참여가 확정된 테스트만 피드백을 낼 수 있어요"),
+    FEEDBACK_DEADLINE_PASSED(HttpStatus.CONFLICT, "피드백 제출 기한이 지났어요"),
+    FEEDBACK_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 피드백을 제출했어요"),
+
+    // 출금
+    CASHOUT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리한 출금 요청이에요"),
 
     // AI 분석
     AI_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 분석을 잠시 쓸 수 없어요. 잠시 후 다시 시도해 주세요"),
-    FOLLOWUP_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 쓸 수 있는 질문 추천을 모두 썼어요. 내일 다시 써 주세요");
+    FOLLOWUP_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 쓸 수 있는 질문 추천을 모두 썼어요. 내일 다시 써 주세요"),
+
+    // AI 리뷰 묶기
+    NO_FEEDBACKS(HttpStatus.CONFLICT, "분석할 리뷰가 없어요"),
+    ANALYSIS_IN_PROGRESS(HttpStatus.CONFLICT, "리뷰 분석이 진행 중이에요. 끝나면 다시 시도해 주세요"),
+    ANALYSIS_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "이번 주에 쓸 수 있는 리뷰 분석을 모두 썼어요. 다음 주에 다시 써 주세요"),
+
+    // GitHub 이슈 등록
+    ISSUE_ALREADY_REGISTERED(HttpStatus.CONFLICT, "이미 등록했거나 등록 중인 이슈예요"),
+    GITHUB_REPO_NOT_LINKED(HttpStatus.CONFLICT, "프로젝트에 GitHub 레포가 연결되지 않았어요"),
+    GITHUB_AUTH_REQUIRED(HttpStatus.FAILED_DEPENDENCY, "GitHub 연결을 다시 해 주세요"),
+    GITHUB_REPO_UNAVAILABLE(HttpStatus.FAILED_DEPENDENCY, "GitHub 레포를 찾을 수 없거나 이슈를 만들 권한이 없어요. 레포 연결을 확인해 주세요"),
+    GITHUB_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "GitHub에 잠시 이슈를 등록할 수 없어요. 잠시 후 다시 시도해 주세요"),
+
+    // AI 버전 비교
+    NO_PREVIOUS_VERSION(HttpStatus.CONFLICT, "비교할 이전 버전이 없어요"),
+    ANALYSIS_NOT_DONE(HttpStatus.CONFLICT, "두 버전의 리뷰 분석을 먼저 해 주세요"),
+    COMPARISON_NOT_FOUND(HttpStatus.NOT_FOUND, "아직 버전 비교를 하지 않았어요"),
+    COMPARISON_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "이번 주에 쓸 수 있는 버전 비교를 모두 썼어요. 다음 주에 다시 써 주세요");
 
     private final HttpStatus status;
     private final String message;

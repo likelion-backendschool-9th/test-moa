@@ -1,0 +1,73 @@
+.checkoutPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.checkoutPageLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .checkoutPageLink:hover {
+    color: var(--text);
+  }
+}
+
+.checkoutPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.checkoutText {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.checkout {
+  max-width: 42rem;
+}
+
+.checkoutSkeleton {
+  max-width: 42rem;
+}
+
+.checkoutSkeletonSkeleton {
+  height: 1.5rem;
+  width: 6rem;
+}
+
+.checkoutSkeletonSkeleton2 {
+  height: 4rem;
+  width: 100%;
+}
+
+.checkoutSkeletonSkeleton3 {
+  height: 3rem;
+  width: 100%;
+}
+
+.checkoutSkeletonSkeleton4 {
+  height: 3rem;
+  width: 100%;
+}
+
+.checkoutSkeletonSkeleton5 {
+  height: 3rem;
+  width: 10rem;
+  align-self: flex-end;
+}

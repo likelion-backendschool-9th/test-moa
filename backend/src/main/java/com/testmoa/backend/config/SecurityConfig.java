@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -47,6 +48,7 @@ public class SecurityConfig {
     // 로그인 없이 부를 수 있는 주소. 다른 기능의 공개 조회 API가 생기면 여기에 더한다
     private static final String[] PUBLIC_PATHS = {
             "/api/auth/**",
+            "/api/v1/plans",
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
             "/error"
     };
@@ -70,7 +72,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // 공개 모집 목록(#112)과 상세(#113)는 GET만 연다. 같은 주소 아래 지원 같은 쓰기 요청은 로그인이 필요하다
+                        .requestMatchers(HttpMethod.GET, "/api/v1/recruitments", "/api/v1/recruitments/*").permitAll()
+                        .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resource -> resource
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(userAuthenticationConverter))

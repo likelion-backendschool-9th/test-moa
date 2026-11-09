@@ -2,6 +2,7 @@ package com.testmoa.backend.controller;
 
 
 import com.testmoa.backend.dto.request.OAuthCodeRequest;
+import com.testmoa.backend.global.security.OAuthClient;
 import com.testmoa.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;

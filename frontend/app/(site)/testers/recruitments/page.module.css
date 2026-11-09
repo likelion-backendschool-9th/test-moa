@@ -1,0 +1,49 @@
+.participationsPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-top: var(--space-8);
+}
+
+.participationsPageBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.participationsPageTitle {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.participationsPageSkeleton {
+  height: 1.25rem;
+  width: 16rem;
+  max-width: 100%;
+}
+
+.participationsPageBox2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.summarySlot {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.summarySlotLabel {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.summarySlotLabel2 {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}

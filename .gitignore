@@ -6,3 +6,6 @@ nginx/certs/
 
 ### VS Code ###
 .vscode/
+
+### IntelliJ ###
+.idea/

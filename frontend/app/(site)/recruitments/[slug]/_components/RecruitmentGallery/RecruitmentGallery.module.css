@@ -1,0 +1,50 @@
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+.list {
+  position: relative;
+  display: flex;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  gap: var(--space-3);
+  overflow-x: auto;
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .list {
+    scroll-behavior: smooth;
+  }
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.root2 {
+  position: relative;
+  width: min(100%,28rem);
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+.image {
+  aspect-ratio: 4/3;
+  width: 100%;
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface-muted);
+  object-fit: contain;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-offset: -1px;
+  outline-color: var(--line);
+}
+
+.badge {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+}
+
+

@@ -5,6 +5,8 @@ import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 import com.testmoa.backend.dto.response.ChatRoomResponse;
+import com.testmoa.backend.dto.response.ChatReadResponse;
+import com.testmoa.backend.dto.response.ChatUnreadResponse;
 import com.testmoa.backend.entity.ChatMessage;
 import com.testmoa.backend.entity.ChatParticipant;
 import com.testmoa.backend.repository.ChatMessageRepository;
@@ -16,6 +18,9 @@ import com.testmoa.backend.entity.enums.ChatRole;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ChatService;
+import com.testmoa.backend.service.ChatMessageSaved;
+import com.testmoa.backend.service.ChatReadAdvanced;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -32,6 +37,7 @@ public class ChatServiceImpl implements ChatService {
     private final ChatParticipantRepository participantRepository;
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
+    private final ApplicationEventPublisher events;
 
     @Override
     public ChatInboxResponse getInbox(Long userId, ChatInboxQuery query) {
@@ -48,6 +54,11 @@ public class ChatServiceImpl implements ChatService {
                 .sorted(order).map(ChatInboxResponse.Room::of).toList();
         return new ChatInboxResponse(rooms, entries.size(),
                 new ChatInboxResponse.Counts(matched.size(), testers, matched.size() - testers));
+    }
+
+    @Override
+    public ChatUnreadResponse getUnread(Long userId) {
+        return new ChatUnreadResponse(participantRepository.countUnreadByUserId(userId));
     }
 
     private boolean matches(ChatInboxEntry entry, String keyword) {
@@ -69,10 +80,13 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before) {
+    public ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after) {
+        if (before != null && after != null) throw new BusinessException(ErrorCode.INVALID_INPUT);
         var me = requireParticipant(roomKey, userId);
         var page = PageRequest.of(0, MESSAGE_SLICE_SIZE);
-        var slice = before == null
+        var slice = after != null
+                ? messageRepository.findByRoomAndSeqGreaterThanOrderBySeqAsc(me.getRoom(), after, page)
+                : before == null
                 ? messageRepository.findByRoomOrderBySeqDesc(me.getRoom(), page)
                 : messageRepository.findByRoomAndSeqLessThanOrderBySeqDesc(me.getRoom(), before, page);
         var messages = slice.getContent().stream().sorted(Comparator.comparingLong(ChatMessage::getSeq))
@@ -91,7 +105,46 @@ public class ChatServiceImpl implements ChatService {
         var message = room.createMessage(me, text);
         messageRepository.save(message);
         participantRepository.unhidePartner(room.getId(), me.getId());
+        events.publishEvent(new ChatMessageSaved(roomKey, message.getSeq(),
+                participantRepository.findUserIdsByRoomId(room.getId())));
         return ChatMessageResponse.of(message, me.getId());
+    }
+
+    @Override
+    @Transactional
+    public ChatRoomResponse renameRoom(String roomKey, Long userId, String name) {
+        var me = requireParticipant(roomKey, userId);
+        if (participantRepository.renameRoom(me.getId(), name) == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        return getRoom(roomKey, userId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteRoom(String roomKey, Long userId) {
+        var me = requireParticipant(roomKey, userId);
+        if (participantRepository.hideRoom(me.getId()) == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ChatReadResponse markRead(String roomKey, Long userId, long seq) {
+        var me = requireParticipant(roomKey, userId);
+        if (seq > me.getRoom().getLastSeq()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        if (participantRepository.markRead(me.getId(), seq) == 1) {
+            var userIds = participantRepository.findUserIdsByRoomId(me.getRoom().getId());
+            events.publishEvent(new ChatReadAdvanced(roomKey, userId, userIds, seq));
+            return new ChatReadResponse(seq);
+        }
+        // 0행: 이미 같거나 더 읽었거나, 그 사이 방이 삭제됐다
+        long lastReadSeq = participantRepository.findVisibleLastReadSeq(me.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return new ChatReadResponse(lastReadSeq);
     }
 
     private ChatParticipant requireParticipant(String roomKey, Long userId) {

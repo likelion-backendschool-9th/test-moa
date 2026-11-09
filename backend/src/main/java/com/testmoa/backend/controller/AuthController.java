@@ -4,6 +4,7 @@ package com.testmoa.backend.controller;
 import com.testmoa.backend.dto.request.OAuthCodeRequest;
 import com.testmoa.backend.dto.request.OAuthSignupRequest;
 import com.testmoa.backend.dto.response.OAuthLoginResponse;
+import com.testmoa.backend.global.security.OAuthClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;

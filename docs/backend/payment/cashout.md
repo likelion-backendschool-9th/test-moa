@@ -17,7 +17,7 @@
 | `GET` | `/api/v1/my/credits/withdrawals` | 내 출금 내역. 최신순. 로그인 필요 |
 | `POST` | `/api/v1/my/credits/withdrawals` | 출금 신청 |
 
-컨트롤러는 `#66`의 `CreditController`에 메서드를 더하거나, 같은 `/credits` 아래 `CashoutController`로 나눈다. 경로는 위와 같다.
+컨트롤러와 서비스는 크레딧(`CreditController`·`CreditService`)과 나눠 `CashoutController`·`CashoutService`로 둔다. 경로는 위와 같다. 운영자용 `admin/CashoutController`·`admin/CashoutService`와 클래스 이름이 같아서 운영자 쪽이 빈 이름(`adminCashoutController`, `adminCashoutService`)을 따로 가진다.
 
 ### 신청 요청 본문
 
@@ -76,10 +76,10 @@
 동시에 두 번 신청해도 `cashable`보다 많이 잠기지 않게 한다 (#67 이슈 시나리오 5).
 
 1. 사용자 확인 (`BusinessException` `NOT_FOUND`)
-2. 지갑 행을 `PESSIMISTIC_WRITE`로 잠근다 (`findByUserIdForUpdate` — #71 결제와 같은 방식. #66에 없으면 #67에서 추가)
+2. 지갑 행을 `PESSIMISTIC_WRITE`로 잠근다 (`findLockedByUserId` — #71 결제와 같은 방식. #66에 없으면 #67에서 추가)
 3. 요청 값 검증 (DTO + `cashable()` 부족·금액 1 미만)
 4. `wallet.lockForCashout(amount)` — 장부 행 없음
-5. `CashoutRequest` 생성 (`REQUESTED`)
+5. `Cashout` 생성 (`REQUESTED`)
 6. 커밋
 
 실패 시 전부 롤백. 장부에는 신청·반려가 안 남고, 지급(#68) 때만 `EARNED` −amount가 남는다 ([entities.md](entities.md)).
@@ -88,9 +88,9 @@
 flowchart LR
   POST[POST withdrawals] --> Lock[wallet FOR UPDATE]
   Lock --> LockBal[lockForCashout]
-  LockBal --> Row[CashoutRequest REQUESTED]
+  LockBal --> Row[Cashout REQUESTED]
   Row --> Enc[Converter encrypt]
-  Enc --> DB[(cashout_requests)]
+  Enc --> DB[(cashouts)]
 ```
 
 ---
@@ -109,7 +109,7 @@ flowchart LR
 #67-S2 출금 신청 성공 [테스트]
 - Given 적립 `cashable` 9,480
 - When  `POST` amount 5,000 · 은행·계좌·예금주 유효
-- Then  `CashoutRequest(REQUESTED)`, 적립 4,480 · 잠김 5,000, 장부 행 없음
+- Then  `Cashout(REQUESTED)`, 적립 4,480 · 잠김 5,000, 장부 행 없음
 - Then  DB의 `account_number`·`account_holder`는 평문이 아니다 (암호문)
 
 #67-S3 신청 검증 실패 [테스트]
@@ -138,7 +138,7 @@ flowchart LR
 ---
 
 ## 구현 메모
-- Repository: `CashoutRequestRepository` (userId 최신순), `CreditWalletRepository.findByUserIdForUpdate`
+- Repository: `CashoutRepository` (userId 최신순), `CreditWalletRepository.findLockedByUserId`
 - Service: 신청·목록. 예외는 `BusinessException` (#66과 동일)
 - Converter + 키 설정. `.env.example`·`application-local` 예시·CI 테스트 키
 - 은행 허용 목록은 프론트 `BANKS`와 맞춤
@@ -146,7 +146,6 @@ flowchart LR
 
 ## 범위 밖
 - 운영자 지급·반려·장부 (#68)
-- 운영자 화면의 반려 메모 안내 문구·"운영자 메모" 라벨을 "회원에게 보인다"는 규칙에 맞추기 (#68)
 - 실제 송금·실명 확인·PG
 - 프론트 목업 제거·API 연동
 - 키 로테이션·KMS
@@ -160,4 +159,4 @@ flowchart LR
 5. 문서·`.env.example` 정리
 
 ## 가정
-- `CashoutRequest`·`CashoutStatus`·`lockForCashout`는 #45에 있다
+- `Cashout`·`Cashout.Status`·`lockForCashout`는 #45에 있다

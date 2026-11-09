@@ -12,5 +12,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     Slice<ChatMessage> findByRoomOrderBySeqDesc(ChatRoom room, Pageable pageable);
     Slice<ChatMessage> findByRoomAndSeqLessThanOrderBySeqDesc(ChatRoom room, long before, Pageable pageable);
 
+    Slice<ChatMessage> findByRoomAndSeqGreaterThanOrderBySeqAsc(ChatRoom room, long after, Pageable pageable);
+
     List<ChatMessage> findByRoomOrderBySeqAsc(ChatRoom room);
 }

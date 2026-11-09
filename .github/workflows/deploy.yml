@@ -37,6 +37,9 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run test:structure
+      - run: node scripts/structure/usage.mjs . --check
       - run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3005
@@ -81,6 +84,8 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: testmoa
           # 빈 테스트 DB에 엔티티 테이블을 만들고 끝나면 지운다 (로컬은 application-local.yml의 update)
           SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          # 설정이 다른 테스트마다 연결 풀을 따로 유지한다. PostgreSQL 연결 한도(100) 안에 들도록 풀을 줄인다
+          SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
           # 테스트 전용 서명 키. 테스트 서버의 키는 서버 .env에 따로 있다
           JWT_SECRET: ci-test-secret-0123456789abcdef0123456789
           # 테스트 전용 출금 계좌 암호화 키(32바이트 Base64). 서버 .env 키와 다르다

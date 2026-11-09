@@ -11,12 +11,15 @@ import com.testmoa.backend.repository.projection.ChatInboxEntry;
 import com.testmoa.backend.repository.projection.ChatRoomEntry;
 
 public interface ChatParticipantRepository extends JpaRepository<ChatParticipant, Long> {
+    @Query("select p.user.id from chat_participants p where p.room.id = :roomId")
+    List<Long> findUserIdsByRoomId(@Param("roomId") Long roomId);
+
     Optional<ChatParticipant> findByRoomRoomKeyAndUserIdAndHiddenFalse(String roomKey, Long userId);
 
     @Query("""
             select new com.testmoa.backend.repository.projection.ChatRoomEntry(
-                room.roomKey, recruitment.id, project.title, me.customName, project.imageUrl,
-                me.role, partnerUser.nickname, partner.role)
+                room.roomKey, recruitment.id, project.title, me.customRoomName, project.imageUrl,
+                me.role, partnerUser.nickname, partner.role, partner.lastReadSeq)
             from chat_participants me
             join me.room room
             join room.recruitment recruitment
@@ -29,8 +32,10 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
 
     @Query("""
             select new com.testmoa.backend.repository.projection.ChatInboxEntry(
-                room.id, room.roomKey, recruitment.id, project.title, me.customName, project.imageUrl,
-                me.role, partnerUser.nickname, partner.role, message.content, room.lastMessageAt)
+                room.id, room.roomKey, recruitment.id, project.title, me.customRoomName, project.imageUrl,
+                me.role, partnerUser.nickname, partner.role, message.content, room.lastMessageAt,
+                (select count(unread.id) from chat_messages unread
+                 where unread.room = room and unread.seq > me.lastReadSeq and unread.sender.id <> me.id))
             from chat_participants me
             join me.room room
             join room.recruitment recruitment
@@ -42,7 +47,31 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
             """)
     List<ChatInboxEntry> findInboxByUserId(@Param("userId") Long userId);
 
+    @Query("""
+            select count(message.id)
+            from chat_participants me
+            join chat_messages message on message.room = me.room
+            where me.user.id = :userId and me.hidden = false
+                and message.seq > me.lastReadSeq and message.sender.id <> me.id
+            """)
+    long countUnreadByUserId(@Param("userId") Long userId);
+
+    @Query("select p.lastReadSeq from chat_participants p where p.id = :id and p.hidden = false")
+    Optional<Long> findVisibleLastReadSeq(@Param("id") Long id);
+
     @Modifying
-    @Query("update chat_participants p set p.hidden = false where p.room.id = :roomId and p.id <> :senderId and p.hidden = true")
+    @Query("update chat_participants p set p.lastReadSeq = :seq, p.updatedAt = local datetime where p.id = :id and p.hidden = false and p.lastReadSeq < :seq")
+    int markRead(@Param("id") Long id, @Param("seq") long seq);
+
+    @Modifying
+    @Query("update chat_participants p set p.hidden = false, p.updatedAt = local datetime where p.room.id = :roomId and p.id <> :senderId and p.hidden = true")
     int unhidePartner(@Param("roomId") Long roomId, @Param("senderId") Long senderId);
+
+    @Modifying
+    @Query("update chat_participants p set p.customRoomName = :name, p.updatedAt = local datetime where p.id = :id and p.hidden = false")
+    int renameRoom(@Param("id") Long id, @Param("name") String name);
+
+    @Modifying
+    @Query("update chat_participants p set p.hidden = true, p.updatedAt = local datetime where p.id = :id and p.hidden = false")
+    int hideRoom(@Param("id") Long id);
 }

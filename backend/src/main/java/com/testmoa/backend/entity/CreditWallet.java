@@ -19,7 +19,7 @@ public class CreditWallet {
     // 지갑 소유 사용자
     @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(nullable = false, unique = true)
     private User user;
 
     // 이벤트 크레딧. 구독 결제 가능, 현금화 불가

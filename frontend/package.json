@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test": "npm run test:unit",
+    "test:unit": "playwright test --config=playwright.unit.config.ts",
+    "test:e2e": "playwright test",
+    "test:structure": "node --test scripts/structure/*.test.mjs",
+    "test:visual": "node scripts/visual/compare.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -18,13 +22,11 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
-    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

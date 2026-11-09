@@ -1,0 +1,132 @@
+.layout {
+  display: grid;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.section2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.title2 {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.length {
+  margin-left: var(--space-1);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+:where(.list>:not(:last-child)) {
+  border-bottom-style: solid;
+  border-top-style: solid;
+  border-top-width: calc(1px * 0);
+  border-bottom-width: calc(1px * calc(1 - 0));
+  border-color: var(--line);
+}
+
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+}
+
+.root:first-child {
+  padding-top: 0;
+}
+
+.root:last-child {
+  padding-bottom: 0;
+}
+
+.box {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-basis: 12rem;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.text {
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  font-weight: 800;
+}
+
+.label {
+  margin-left: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.text2 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.label2 {
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+.deadlinePanelSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.deadlinePanelSkeletonSkeleton {
+  height: 1.5rem;
+  width: 8rem;
+}
+
+.deadlinePanelSkeletonSkeleton2 {
+  height: 18rem;
+  width: 100%;
+}

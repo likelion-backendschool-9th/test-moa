@@ -87,7 +87,7 @@ class ChatControllerTest {
         assertThat(testerSide.getLastReadSeq()).isZero();
     }
     @Test @DisplayName("#49-S2 개발자 이름 변경은 본인에게만 보인다")
-    void customName() throws Exception {
+    void customRoomName() throws Exception {
         developerSide.rename("결제 테스트");
         call(get(url()), developer).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.roomName").value("결제 테스트"))
@@ -174,7 +174,7 @@ class ChatControllerTest {
         reload();
         var saved = em.find(ChatParticipant.class, developerSide.getId());
         assertThat(saved.isHidden()).isFalse();
-        assertThat(saved.getCustomName()).isEqualTo("결제 테스트");
+        assertThat(saved.getCustomRoomName()).isEqualTo("결제 테스트");
         assertThat(saved.getLastReadSeq()).isEqualTo(2);
         call(get(url()), developer).andExpect(status().isOk());
         call(get(url() + "/messages"), developer).andExpect(status().isOk())
@@ -190,17 +190,40 @@ class ChatControllerTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.fields.text").value("메시지를 입력해 주세요"));
         assertThat(room.getLastSeq()).isZero();
     }
-    @Test @DisplayName("#49-S12 공백을 포함해 500자까지 허용")
+    @Test @DisplayName("#49-S12 공백을 포함해 10,000자까지 허용")
     void messageLength() throws Exception {
-        for (String text : new String[]{"가".repeat(500), " " + "가".repeat(498) + " "}) {
+        for (String text : new String[]{"가".repeat(10_000), " " + "가".repeat(9_998) + " "}) {
             send(text).andExpect(status().isOk()).andExpect(jsonPath("$.data.text").value(text));
         }
-        for (String text : new String[]{"가".repeat(501), " " + "가".repeat(499) + " "}) {
+        for (String text : new String[]{"가".repeat(10_001), " " + "가".repeat(9_999) + " "}) {
             send(text).andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.error.fields.text").value("메시지는 500자까지 보낼 수 있어요"));
+                    .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+                    .andExpect(jsonPath("$.error.fields.text").value("메시지는 10,000자까지 보낼 수 있어요"));
         }
         reload();
         assertThat(em.find(ChatRoom.class, room.getId()).getLastSeq()).isEqualTo(2);
+    }
+    @Test @DisplayName("#111-S1 줄바꿈이 섞인 10,000자 메시지를 그대로 다시 읽는다")
+    void longMessageWithNewlines() throws Exception {
+        String prefix = "재현 순서\n1. 로그인\n2. 결제";
+        String text = prefix + "가".repeat(10_000 - prefix.length());
+        send(text).andExpect(status().isOk()).andExpect(jsonPath("$.data.text").value(text));
+        reload();
+        call(get(url() + "/messages"), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages[0].text").value(text));
+    }
+    @Test @DisplayName("#111-S2 서로게이트 쌍도 UTF-16 10,000단위까지 허용")
+    void surrogatePairLength() throws Exception {
+        String text = "😀".repeat(5_000);
+        send(text).andExpect(status().isOk()).andExpect(jsonPath("$.data.text").value(text));
+        send(text + "가").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+                .andExpect(jsonPath("$.error.fields.text").value("메시지는 10,000자까지 보낼 수 있어요"));
+        reload();
+        assertThat(em.find(ChatRoom.class, room.getId()).getLastSeq()).isEqualTo(1);
+        call(get(url() + "/messages"), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages.length()").value(1))
+                .andExpect(jsonPath("$.data.messages[0].text").value(text));
     }
     MockHttpServletRequestBuilder[] requests(String base) {
         return new MockHttpServletRequestBuilder[]{get(base), get(base + "/messages"),
@@ -258,6 +281,45 @@ class ChatControllerTest {
         } finally {
             statistics.setStatisticsEnabled(enabled);
         }
+    }
+
+    @Test @DisplayName("#51-S12 after 이후 메시지와 마지막 순번 이상의 빈 목록")
+    void newerMessages() throws Exception {
+        messages(5);
+        call(get(url() + "/messages").param("after", "2"), tester)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.messages[*].seq", contains(3, 4, 5)))
+                .andExpect(jsonPath("$.data.hasMore").value(false));
+        for (String after : new String[]{"5", "9"}) {
+            call(get(url() + "/messages").param("after", after), tester)
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.messages").isEmpty())
+                    .andExpect(jsonPath("$.data.hasMore").value(false));
+        }
+    }
+
+    @Test @DisplayName("#51-S13 after는 오래된 순서로 30개씩 조회")
+    void newerSlices() throws Exception {
+        messages(65);
+        for (int after : new int[]{0, 30, 60}) {
+            call(get(url() + "/messages").param("after", String.valueOf(after)), tester)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.messages[*].seq",
+                            contains(IntStream.rangeClosed(after + 1, Math.min(after + 30, 65)).boxed().toArray())))
+                    .andExpect(jsonPath("$.data.hasMore").value(after < 60));
+        }
+    }
+
+    @Test @DisplayName("#51-S14 잘못된 after와 혼합 커서는 400, 비참여자는 404")
+    void invalidAfter() throws Exception {
+        for (String after : new String[]{"-1", "abc"}) {
+            call(get(url() + "/messages").param("after", after), tester)
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        }
+        call(get(url() + "/messages").param("after", "2").param("before", "5"), tester)
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        var outsider = fixtures.user("외부조회회원");
+        em.flush();
+        call(get(url() + "/messages").param("after", "0"), outsider)
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
     }
 
 }

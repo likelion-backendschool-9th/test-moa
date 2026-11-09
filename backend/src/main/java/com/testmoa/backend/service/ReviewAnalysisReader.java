@@ -1,5 +1,7 @@
 package com.testmoa.backend.service;
 
+import com.testmoa.backend.dto.response.GroupReviewResponse;
+import com.testmoa.backend.dto.response.PraiseReviewResponse;
 import com.testmoa.backend.dto.response.ReviewAnalysisResponse;
 import com.testmoa.backend.dto.response.ReviewAnalysisResponse.Group;
 import com.testmoa.backend.entity.ClusterGroup;
@@ -91,6 +93,23 @@ public class ReviewAnalysisReader {
                 .toList();
         return ReviewAnalysisResponse.of(recruitment, feedbackClusterRepository.findLastAnalyzedFeedbackAt(id),
                 feedbackRepository.countUnanalyzed(id, ANALYZED_STATUSES), groups);
+    }
+
+    /**
+     * AI가 칭찬으로 묶은 리뷰. 신고·보상 제외 리뷰는 빼고, 최근 제출 순. 분석 전이면 빈 목록
+     */
+    public List<PraiseReviewResponse> readPraises(Long userId, Long recruitmentId) {
+        Recruitment recruitment = findMine(userId, recruitmentId);
+        return feedbackClusterRepository.findPraiseReviews(recruitment.getId(), ANALYZED_STATUSES);
+    }
+
+    /**
+     * 내 모집글 그룹 하나의 리뷰. 리뷰 수(feedbackCount)와 같이 신고·보상 제외 리뷰는 뺌
+     */
+    public List<GroupReviewResponse> readGroupReviews(Long userId, Long recruitmentId, Long groupId) {
+        ClusterGroup group = clusterGroupRepository.findMine(groupId, recruitmentId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return feedbackClusterRepository.findGroupReviews(group.getId(), ANALYZED_STATUSES);
     }
 
     /**

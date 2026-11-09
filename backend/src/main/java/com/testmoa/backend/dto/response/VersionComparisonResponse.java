@@ -11,6 +11,8 @@ import java.util.List;
 /**
  * AI 버전 비교 결과. 화면에는 "해결됨"이라고 쓰지 않고 notReportedGroups를 "이번 버전에서 보고되지 않음"으로 보여 준다
  *
+ * @param currentTitle      현재 버전 모집글 제목
+ * @param previousTitle     직전 버전 모집글 제목
  * @param comparedAt        비교한 시각
  * @param stale             비교한 뒤 두 버전 중 하나를 다시 분석했으면 true(오래된 비교)
  * @param groups            현재 버전 그룹
@@ -19,8 +21,10 @@ import java.util.List;
 public record VersionComparisonResponse(
         Long currentRecruitmentId,
         int currentVersion,
+        String currentTitle,
         Long previousRecruitmentId,
         int previousVersion,
+        String previousTitle,
         String summary,
         LocalDateTime comparedAt,
         boolean stale,
@@ -29,7 +33,8 @@ public record VersionComparisonResponse(
 ) {
     public static VersionComparisonResponse of(VersionComparison comparison, Recruitment current, Recruitment previous, boolean stale,
                                                List<CurrentGroup> groups, List<NotReportedGroup> notReportedGroups) {
-        return new VersionComparisonResponse(current.getId(), current.getVersion(), previous.getId(), previous.getVersion(),
+        return new VersionComparisonResponse(current.getId(), current.getVersion(), current.getTitle(),
+                previous.getId(), previous.getVersion(), previous.getTitle(),
                 comparison.getSummary(), comparison.getUpdatedAt(), stale, groups, notReportedGroups);
     }
 

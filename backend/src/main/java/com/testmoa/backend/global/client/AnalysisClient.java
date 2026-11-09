@@ -199,9 +199,10 @@ public class AnalysisClient {
     /**
      * 리뷰 묶기 결과
      *
+     * @param analyticsSummary 리뷰 전체를 한 문장으로 요약한 분석. 없으면 null
      * @param praiseSummary 칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null
      */
-    public record AnalysisResponse(List<AnalysisGroup> groups, String praiseSummary) {}
+    public record AnalysisResponse(List<AnalysisGroup> groups, String analyticsSummary, String praiseSummary) {}
 
     /**
      * 묶은 그룹 하나. 응답 안에서만 쓰는 임시 key는 저장하지 않아 읽지 않음.

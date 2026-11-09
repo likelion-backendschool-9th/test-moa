@@ -81,6 +81,10 @@ public class Recruitment {
     // 마지막 분석 요청(접수) 일시. 분석 중이면 화면이 "n분째 분석 중"을 보여 준다. 요청한 적이 없으면 null
     private LocalDateTime analysisRequestedAt;
 
+    // 리뷰 전체를 한 문장으로 요약한 분석(analytics_summary). 분석 전이면 null
+    @Column(columnDefinition = "TEXT")
+    private String analyticsSummary;
+
     // 칭찬 리뷰 한 줄 요약. 분석 전이거나 칭찬이 없으면 null
     @Column(columnDefinition = "TEXT")
     private String praiseSummary;
@@ -164,14 +168,16 @@ public class Recruitment {
     }
 
     /**
-     * 피드백 분석 완료. 분석 상태를 DONE으로 바꾸고 칭찬 요약과 완료 일시를 남긴다.
+     * 피드백 분석 완료. 분석 상태를 DONE으로 바꾸고 전체 요약·칭찬 요약과 완료 일시를 남긴다.
      * 분석 시작(PENDING)과 실패(FAILED)는 동시에 두 번 시작하지 않도록 조건부 UPDATE로 바꾼다(RecruitmentRepository).
      *
+     * @param analyticsSummary 리뷰 전체를 한 문장으로 요약한 분석. 분석 서버가 주지 않으면 null
      * @param praiseSummary 칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null
      * @param now           분석 완료 일시
      */
-    public void completeAnalysis(String praiseSummary, LocalDateTime now) {
+    public void completeAnalysis(String analyticsSummary, String praiseSummary, LocalDateTime now) {
         this.analysisStatus = AnalysisStatus.DONE;
+        this.analyticsSummary = analyticsSummary;
         this.praiseSummary = praiseSummary;
         this.analyzedAt = now;
     }

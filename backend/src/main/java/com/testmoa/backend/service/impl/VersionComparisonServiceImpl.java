@@ -1,5 +1,6 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.dto.request.VersionLinksUpdateRequest;
 import com.testmoa.backend.dto.response.VersionComparisonResponse;
 import com.testmoa.backend.global.client.AnalysisClient;
 import com.testmoa.backend.global.client.AnalysisClient.ComparisonResponse;
@@ -51,6 +52,13 @@ public class VersionComparisonServiceImpl implements VersionComparisonService {
     @Override
     public VersionComparisonResponse find(Long userId, Long recruitmentId) {
         subscriptionChecker.require(userId);
+        return versionComparisonReader.readResult(userId, recruitmentId);
+    }
+
+    @Override
+    public VersionComparisonResponse relink(Long userId, Long recruitmentId, VersionLinksUpdateRequest request) {
+        subscriptionChecker.require(userId);
+        versionComparisonWriter.relink(userId, recruitmentId, request.links());
         return versionComparisonReader.readResult(userId, recruitmentId);
     }
 }

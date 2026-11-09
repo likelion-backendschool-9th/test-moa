@@ -4,6 +4,8 @@ import com.testmoa.backend.dto.request.SanctionCreateRequest;
 import com.testmoa.backend.dto.response.AdminUserResponse;
 import com.testmoa.backend.dto.response.ReportResponse;
 import com.testmoa.backend.dto.response.SanctionResponse;
+import com.testmoa.backend.entity.Report;
+import com.testmoa.backend.entity.ReportEvidence;
 import com.testmoa.backend.entity.Sanction;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.entity.enums.ReportStatus;
@@ -29,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -74,12 +77,19 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     public AdminUserResponse get(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        // 목록과 같이 일반 회원만 연다. 운영자 id를 넣으면 404
+        User user = userRepository.findById(userId).filter(found -> found.getRole() == Role.USER)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         LocalDateTime now = LocalDateTime.now();
         List<SanctionResponse> sanctions = sanctionRepository.findByUserIdOrderByStartedAtDescIdDesc(userId).stream()
                 .map(sanction -> SanctionResponse.of(sanction, now)).toList();
-        List<ReportResponse> reports = reportRepository.findByReportedUserIdOrderByCreatedAtDescIdDesc(userId).stream()
-                .map(report -> ReportResponse.of(report, evidenceRepository.findByReportIdOrderBySortOrderAsc(report.getId())))
+        List<Report> received = reportRepository.findByReportedUserIdOrderByCreatedAtDescIdDesc(userId);
+        // 증거는 신고 id로 모아 한 번에 읽는다
+        Map<Long, List<ReportEvidence>> evidence = received.isEmpty() ? Map.of()
+                : evidenceRepository.findByReportIdInOrderBySortOrderAsc(received.stream().map(Report::getId).toList()).stream()
+                        .collect(Collectors.groupingBy(item -> item.getReport().getId()));
+        List<ReportResponse> reports = received.stream()
+                .map(report -> ReportResponse.of(report, evidence.getOrDefault(report.getId(), List.of())))
                 .toList();
         long pending = reports.stream().filter(report -> report.status() == ReportStatus.PENDING).count();
         return AdminUserResponse.detail(user, pending, sanctionChecker.activeRestrictions(userId).stream().sorted().toList(),
@@ -89,7 +99,8 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     @Transactional
     public SanctionResponse sanction(Long adminId, Long userId, SanctionCreateRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        // 회원 행을 잠가, 같은 제재를 두 번 눌러도 두 번째는 첫 제재를 본다
+        User user = userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         if (user.getRole() == Role.ADMIN) throw fieldError("userId", "운영자는 제재할 수 없어요");
         if (user.getId().equals(adminId)) throw fieldError("userId", "자기 자신은 제재할 수 없어요");
 
@@ -112,6 +123,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                 if (restrictions.isEmpty()) throw fieldError("restrictions", "막을 기능을 하나 이상 골라 주세요");
                 if (request.days() != null) throw fieldError("days", "영구 정지는 기간이 없어요");
             }
+        }
+
+        // 같은 종류·같은 기능의 정지가 이미 걸려 있으면 409. 하나만 해제하고 남은 쪽에 계속 막히는 일을 막는다
+        if (request.type() != SanctionType.WARNING && sanctionRepository.findActive(List.of(userId), now, SanctionType.WARNING).stream()
+                .anyMatch(active -> active.getType() == request.type() && active.getRestrictions().equals(restrictions))) {
+            throw new BusinessException(ErrorCode.SANCTION_DUPLICATE);
         }
 
         Sanction sanction = sanctionRepository.save(Sanction.builder()

@@ -17,7 +17,7 @@ public record SanctionCreateRequest(
 
         Integer days,
 
-        Set<Restriction> restrictions,
+        Set<@NotNull(message = "막을 기능을 다시 골라 주세요") Restriction> restrictions,
 
         @NotBlank(message = "제재 사유를 적어 주세요")
         @Size(max = 1000, message = "제재 사유는 1,000자까지 적을 수 있어요")

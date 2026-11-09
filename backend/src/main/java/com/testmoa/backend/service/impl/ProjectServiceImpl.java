@@ -40,6 +40,8 @@ import com.testmoa.backend.entity.enums.TypeCode;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.SubscriptionChecker;
 import lombok.RequiredArgsConstructor;
@@ -76,6 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final FileStorage fileStorage;
     private final ProjectRepository projectRepository;
+    private final SanctionChecker sanctionChecker;
     private final RecruitmentRepository recruitmentRepository;
     private final RecruitmentImageRepository recruitmentImageRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
@@ -249,6 +252,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public RecruitmentCreateResponse createRecruitment(Long userId, RecruitmentCreateRequest request) {
+        sanctionChecker.require(userId, Restriction.RECRUIT);
         Project project = findOwned(userId, request.projectId());
         checkImageUrls("imageUrls", request.imageUrls());
         for (int index = 0; index < request.testItems().size(); index++) {

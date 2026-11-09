@@ -41,6 +41,7 @@ public enum ErrorCode {
     // 운영자 제재
     RESTRICTED(HttpStatus.FORBIDDEN, "운영자 제재로 이용이 제한됐어요"),
     SANCTION_NOT_ACTIVE(HttpStatus.CONFLICT, "이미 해제했거나 끝난 제재예요"),
+    SANCTION_DUPLICATE(HttpStatus.CONFLICT, "같은 제재가 이미 걸려 있어요"),
 
     // 채팅
     CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),

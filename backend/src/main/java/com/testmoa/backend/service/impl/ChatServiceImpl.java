@@ -27,6 +27,8 @@ import com.testmoa.backend.service.ChatMessageSaved;
 import com.testmoa.backend.service.ChatReadAdvanced;
 import com.testmoa.backend.service.ChatReadOnlyPolicy;
 import com.testmoa.backend.service.ChatService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import com.testmoa.backend.service.SubscriptionChecker;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -44,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatServiceImpl implements ChatService {
     private static final int MESSAGE_SLICE_SIZE = 30;
     private final ChatParticipantRepository participantRepository;
+    private final SanctionChecker sanctionChecker;
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
     private final ApplicationEventPublisher events;
@@ -55,6 +58,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional
     public StartResult startChat(Long userId, Long registerId) {
+        sanctionChecker.require(userId, Restriction.CHAT);
         // 참가 행을 잠근 뒤 방을 조회해야 동시 요청도 기존 방을 반환한다.
         var register = registerRepository.findLockedById(registerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
@@ -148,6 +152,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional
     public ChatMessageResponse sendMessage(String roomKey, Long userId, String text) {
+        sanctionChecker.require(userId, Restriction.CHAT);
         // 참여자 조회가 방을 먼저 로딩하면 잠금 획득 뒤에도 예전 lastSeq를 볼 수 있다.
         // 방을 먼저 잠가 같은 방의 전송이 최신 순번을 읽게 한다.
         var room = roomRepository.findLockedByRoomKey(roomKey)

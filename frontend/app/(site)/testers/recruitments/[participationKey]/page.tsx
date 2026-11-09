@@ -35,16 +35,21 @@ async function DetailSlot({ params, searchParams }: Props) {
   await requireMember(participationPath(participationKey));
   const item = await getParticipation(participationKey);
   if (!item) notFound();
-  /* 모집 조건과 선정 방식은 참여 API에 없어 공개 모집글에서 읽는다. 취소됐거나 읽지 못하면 그 칸을 숨긴다 */
+  /*
+   * 프로젝트 소개·모집 설명·선정 방식은 공개 모집글에서 읽는다. 참여 API의 모집 정보는 모드마다 소개와 설명이 뒤바뀌어 있다(백엔드: 설명이 summary).
+   * 취소돼서 읽지 못하면 프로젝트 소개는 없고 모집 설명은 참여 API의 값을 쓴다
+   */
   const post = item.recruitmentCancelled ? null : await findPublicRecruitment(item.recruitment.slug);
-  const conditions = post?.detail ? post.detail.conditions.split("\n").map((line) => line.trim()).filter(Boolean) : null;
+  const projectDescription = post ? post.project?.description || post.recruitment.summary : "";
+  const recruitmentDescription = post ? post.recruitment.request : item.recruitment.summary;
   await connection();
   return (
     <ParticipationDetail
       item={item}
       now={new Date()}
       justSubmitted={notice === "submitted"}
-      conditions={conditions}
+      projectDescription={projectDescription}
+      recruitmentDescription={recruitmentDescription}
       selectionMode={post?.detail?.selectionMode}
     />
   );

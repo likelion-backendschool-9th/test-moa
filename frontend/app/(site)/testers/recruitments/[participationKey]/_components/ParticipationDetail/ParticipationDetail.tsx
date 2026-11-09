@@ -1,5 +1,5 @@
 import { isBackendAuth } from "@/lib/backend";
-import { ArrowSquareOutIcon, CaretLeftIcon, CheckIcon, ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowSquareOutIcon, CaretLeftIcon, ImageIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { participationsPath } from "@/features/participation/paths";
@@ -19,15 +19,16 @@ import {
   type FeedbackEntry,
   type ParticipationItem,
 } from "@/features/participation/types";
+import { CollapsibleText } from "../CollapsibleText/CollapsibleText";
 import { FeedbackForm } from "../FeedbackForm/FeedbackForm";
 import { FeedbackMarker } from "../FeedbackMarker/FeedbackMarker";
 import styles from "./ParticipationDetail.module.css";
 
 /*
  * 내 참여 상세. 위에서 아래로: 제목 줄(프로젝트 이름·상태·마감, 모집 글·테스트 열기 버튼) → 프로젝트 소개 한 줄 →
- * 썸네일 | 접속 링크와 항목 표 → 진행 상황 → 모집 조건 → 테스트 항목(제출 전에는 피드백을 쓰는 칸, 뒤에는 제출한 피드백).
+ * 썸네일 | 접속 링크와 항목 표 → 진행 상황(제출 전에는 위 제목 줄이 같은 말을 해서 뺀다) → 모집 설명 → 테스트 항목(제출 전에는 피드백을 쓰는 칸, 뒤에는 제출한 피드백).
  * 테스트 열기는 제출 전에 가장 먼저 하는 일이라 강조색 주 버튼이고, 제출 뒤에는 보조 버튼으로 내린다.
- * 모집 조건과 선정 방식은 참여 API에 없어 공개 모집글 API에서 읽어 넘겨 받는다(없으면 그 칸을 숨긴다).
+ * 프로젝트 소개, 모집 설명, 선정 방식은 참여 API에 믿을 값이 없어 공개 모집글 API에서 읽어 넘겨 받는다.
  */
 
 type ParticipationDetailProps = {
@@ -35,8 +36,10 @@ type ParticipationDetailProps = {
   now: Date;
   /** 피드백을 막 제출하고 돌아왔다 */
   justSubmitted: boolean;
-  /** 모집 조건 한 줄씩. 공개 모집글을 읽지 못했으면(취소된 모집 등) null이라 칸을 그리지 않는다 */
-  conditions: string[] | null;
+  /** 프로젝트 소개. 제목 줄 아래에 한 줄로 보인다. 없으면 그 줄을 그리지 않는다 */
+  projectDescription: string;
+  /** 모집 설명. 3줄이 넘으면 접어 둔다. 없으면 칸을 그리지 않는다 */
+  recruitmentDescription: string;
   /** 선정 방식. 공개 모집글을 읽지 못했으면 없다 */
   selectionMode?: SelectionMode;
 };
@@ -189,7 +192,7 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
 }
 
 /** 내 참여 상세. 지금 단계와 다음 일, 모집 조건, 피드백 작성 또는 제출한 내용을 한 화면에 둔다 */
-export function ParticipationDetail({ item, now, justSubmitted, conditions, selectionMode }: ParticipationDetailProps) {
+export function ParticipationDetail({ item, now, justSubmitted, projectDescription, recruitmentDescription, selectionMode }: ParticipationDetailProps) {
   const { recruitment, status } = item;
   const tab = tabOf(status);
   const message = statusMessage(item, now);
@@ -223,8 +226,7 @@ export function ParticipationDetail({ item, now, justSubmitted, conditions, sele
                 {dday && <span className={cn(styles.deadline, urgent && styles.deadlineUrgent)}>마감 {dday}</span>}
               </div>
             </div>
-            <p className={styles.request}>{recruitment.request}</p>
-            {recruitment.summary && <p className={styles.summary}>{recruitment.summary}</p>}
+            {projectDescription && <p className={styles.summary}>{projectDescription}</p>}
           </div>
           <div className={styles.actions}>
             {/* 취소된 모집은 공개 상세가 없다 */}
@@ -272,37 +274,29 @@ export function ParticipationDetail({ item, now, justSubmitted, conditions, sele
         </div>
       </header>
 
-      <section aria-labelledby="status-heading" className={styles.section}>
-        <h2 id="status-heading" className={styles.sectionTitle}>
-          진행 상황
-        </h2>
-        <p className={styles.title2}>{message.title}</p>
-        <p className={styles.body}>{message.body}</p>
-        {status === "notSelected" && (
-          <LinkButton href="/recruitments" variant="secondary" size="sm" className={styles.button2}>
-            테스트 둘러보기
-          </LinkButton>
-        )}
-      </section>
+      {/* 제출 전에는 제목 줄의 "마감 D-n"과 아래 테스트 항목 안내가 같은 말이라 진행 상황을 빼고, 다른 단계에서만 보인다 */}
+      {!beforeSubmit && (
+        <section aria-labelledby="status-heading" className={styles.section}>
+          <h2 id="status-heading" className={styles.sectionTitle}>
+            진행 상황
+          </h2>
+          <p className={styles.title2}>{message.title}</p>
+          <p className={styles.body}>{message.body}</p>
+          {status === "notSelected" && (
+            <LinkButton href="/recruitments" variant="secondary" size="sm" className={styles.button2}>
+              테스트 둘러보기
+            </LinkButton>
+          )}
+        </section>
+      )}
 
-      {conditions !== null && (
-        <section aria-labelledby="conditions-heading" className={styles.section}>
-          <h2 id="conditions-heading" className={styles.sectionTitle}>
-            모집 조건
+      {recruitmentDescription && (
+        <section aria-labelledby="description-heading" className={styles.section}>
+          <h2 id="description-heading" className={styles.sectionTitle}>
+            모집 설명
           </h2>
           <Card className={styles.card}>
-            {conditions.length > 0 ? (
-              <ul className={styles.conditions}>
-                {conditions.map((condition) => (
-                  <li key={condition} className={styles.condition}>
-                    <CheckIcon aria-hidden size={20} weight="bold" className={styles.check} />
-                    <span>{condition}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.body}>따로 정한 조건이 없어요</p>
-            )}
+            <CollapsibleText text={recruitmentDescription} />
           </Card>
         </section>
       )}

@@ -109,10 +109,8 @@
 }
 
 .root {
-  margin-inline: auto;
   display: flex;
   width: 100%;
-  max-width: 56rem;
   flex-direction: column;
   gap: var(--space-8);
 }
@@ -154,10 +152,6 @@
   line-height: var(--text-3xl-leading);
   font-weight: 800;
   letter-spacing: -.03em;
-}
-
-.request {
-  font-weight: 600;
 }
 
 .srOnly {
@@ -237,10 +231,8 @@
 }
 
 .participationDetailSkeleton {
-  margin-inline: auto;
   display: flex;
   width: 100%;
-  max-width: 56rem;
   flex-direction: column;
   gap: var(--space-8);
 }
@@ -405,13 +397,19 @@
 }
 
 .thumb {
-  width: 10rem;
+  width: 100%;
   flex-shrink: 0;
 }
 
+/* 나란히 놓이면 정보 카드와 같은 높이로 늘린다. 이름 글자는 폭 기준(cqw)이라 그대로 맞는다 */
 @media (min-width: 48rem) {
   .thumb {
-    width: 14rem;
+    width: 16rem;
+  }
+
+  .thumb > * {
+    height: 100%;
+    aspect-ratio: auto;
   }
 }
 
@@ -491,24 +489,4 @@
   line-height: var(--text-xl-leading);
   font-weight: 800;
   letter-spacing: -.03em;
-}
-
-.conditions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.condition {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm-leading);
-  overflow-wrap: anywhere;
-}
-
-.check {
-  flex-shrink: 0;
-  color: var(--accent);
 }

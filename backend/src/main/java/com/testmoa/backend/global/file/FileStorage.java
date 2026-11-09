@@ -81,6 +81,12 @@ public class FileStorage {
             }
             return new Stored(relative, kind, Files.size(target));
         } catch (IOException e) {
+            // 복사 도중 실패하면 반쯤 쓴 파일이 남는다. 지우되 원래 오류를 그대로 던진다
+            try {
+                Files.deleteIfExists(target);
+            } catch (IOException cleanup) {
+                e.addSuppressed(cleanup);
+            }
             throw new UncheckedIOException("파일을 저장하지 못했습니다", e);
         }
     }

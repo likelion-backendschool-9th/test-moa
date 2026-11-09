@@ -21,6 +21,8 @@ import com.testmoa.backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -52,7 +54,8 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional
     public ReportResponse create(Long userId, ReportCreateRequest request, List<MultipartFile> files) {
-        User reporter = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        // 신고자 행을 잠가 같은 회원의 신고를 한 번에 하나씩 처리한다. 동시에 같은 대상을 신고해도 중복 확인과 저장 사이에 끼어들지 못한다
+        User reporter = userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         Target target = findTarget(userId, request);
         if (target.reportedUser().getId().equals(userId)) throw new BusinessException(ErrorCode.REPORT_SELF);
         if (reportRepository.existsByReporterIdAndTargetTypeAndTargetIdAndStatus(
@@ -70,28 +73,36 @@ public class ReportServiceImpl implements ReportService {
                 .reason(request.reason().trim())
                 .build());
 
-        List<String> saved = new ArrayList<>();
-        try {
-            List<ReportEvidence> evidences = new ArrayList<>();
-            for (int i = 0; i < uploads.size(); i++) {
-                Upload upload = uploads.get(i);
-                FileStorage.Stored stored = fileStorage.save(FOLDER, upload.file(), upload.kind());
-                saved.add(stored.path());
-                evidences.add(evidenceRepository.save(ReportEvidence.builder()
-                        .report(report)
-                        .storedPath(stored.path())
-                        .originalName(originalName(upload.file(), i))
-                        .contentType(stored.kind().contentType())
-                        .size(stored.size())
-                        .sortOrder(i)
-                        .build()));
-            }
-            return ReportResponse.of(report, evidences);
-        } catch (RuntimeException e) {
-            // 신고가 되돌려지면 파일만 남지 않게 지운다
-            saved.forEach(fileStorage::delete);
-            throw e;
+        List<String> saved = deleteOnRollback();
+        List<ReportEvidence> evidences = new ArrayList<>();
+        for (int i = 0; i < uploads.size(); i++) {
+            Upload upload = uploads.get(i);
+            FileStorage.Stored stored = fileStorage.save(FOLDER, upload.file(), upload.kind());
+            saved.add(stored.path());
+            evidences.add(evidenceRepository.save(ReportEvidence.builder()
+                    .report(report)
+                    .storedPath(stored.path())
+                    .originalName(originalName(upload.file(), i))
+                    .contentType(stored.kind().contentType())
+                    .size(stored.size())
+                    .sortOrder(i)
+                    .build()));
         }
+        return ReportResponse.of(report, evidences);
+    }
+
+    /**
+     * 저장한 파일 목록. 트랜잭션이 최종적으로 커밋되지 않으면(메서드 안의 예외, 커밋 실패, 바깥 트랜잭션의 롤백) 목록의 파일을 지운다
+     */
+    private List<String> deleteOnRollback() {
+        List<String> saved = new ArrayList<>();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) saved.forEach(fileStorage::delete);
+            }
+        });
+        return saved;
     }
 
     @Override

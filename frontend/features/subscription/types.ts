@@ -18,7 +18,6 @@ export function renewedExpiry(subscription: Subscription, periodDays: number, no
 export type SubscriptionOverview = {
   /** 운영자처럼 구독 대상이 아니면 null */
   subscription: Subscription | null;
-  freePlan: PlanTerms;
   plans: SubscriptionPlan[];
   payableCredits: number;
   /** 남은 날 계산 기준 시각 */
@@ -37,14 +36,8 @@ export type SubscriptionIntro = {
 /** 켜고 끄는 혜택. 문구로 비교한다 (spec.md 2장) */
 export type BenefitKey = "selection" | "reward" | "chat" | "exposure" | "analytics";
 
-/** 카드에 보여 줄 혜택의 순서와 이름 */
-export const BENEFIT_ROWS: { key: BenefitKey; label: string }[] = [
-  { key: "selection", label: "참여 확정 방식" },
-  { key: "reward", label: "테스터 보상" },
-  { key: "chat", label: "1대1 채팅" },
-  { key: "exposure", label: "모집 목록 노출" },
-  { key: "analytics", label: "AI 분석" },
-];
+/** 카드에 보여 줄 혜택의 순서 */
+export const BENEFIT_KEYS: BenefitKey[] = ["selection", "reward", "chat", "exposure", "analytics"];
 
 /** 무료와 구독 상품이 함께 갖는 혜택 조건 */
 export type PlanTerms = {

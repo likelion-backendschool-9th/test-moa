@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatCredits, formatWon } from "@/lib/format";
-import { BENEFIT_ROWS, type PlanTerms, type Subscription, type SubscriptionPlan } from "@/features/subscription/types";
+import { BENEFIT_KEYS, type PlanTerms, type Subscription, type SubscriptionPlan } from "@/features/subscription/types";
 import styles from "./SubscriptionIntroCards.module.css";
 
 const CHECKOUT = "/my/subscription/checkout";
@@ -23,8 +23,8 @@ type SubscriptionIntroCardsProps = {
 
 /** 카드에 적을 혜택 한 줄. 무료 카드에서는 "없음"·"일반 목록"을 뺀다 */
 function benefitLines(terms: PlanTerms, { omitAbsent = false }: { omitAbsent?: boolean } = {}) {
-  return BENEFIT_ROWS.flatMap((row) => {
-    const value = terms.benefits[row.key];
+  return BENEFIT_KEYS.flatMap((key) => {
+    const value = terms.benefits[key];
     if (omitAbsent && (value === "없음" || value === "일반 목록")) return [];
     return [value];
   });

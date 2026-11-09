@@ -24,7 +24,6 @@ export async function getSubscriptionOverview(next = "/my/subscription"): Promis
   const [subscription, { balance }] = await Promise.all([subscriptionFor(session.role, now), creditDataFor(session.role, now)]);
   return {
     subscription,
-    freePlan: FREE_PLAN,
     plans: SUBSCRIPTION_PLANS,
     payableCredits: payableCredits(balance),
     now: now.toISOString(),

@@ -53,8 +53,9 @@ async function getBackendSession(): Promise<Session> {
   const me = await backendFetch<Me>("/api/users/me");
   if (!me.ok) return { role: "guest", user: null };
   const { nickname, role } = me.data;
+  /* 운영자는 크레딧 대상이 아니라 잔액을 읽지 않고 0으로 둔다(회원 확인 뒤 요청을 하나 더 기다리지 않게) */
+  if (role === "ADMIN") return { role: "admin", user: { nickname, credits: 0 } };
   const user = { nickname, credits: await readHeaderCredits() };
-  if (role === "ADMIN") return { role: "admin", user };
   const persona = (await cookies()).get(DEMO_ROLE_COOKIE)?.value;
   return { role: persona === "developer" ? "developer" : "tester", user };
 }

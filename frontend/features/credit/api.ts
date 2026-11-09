@@ -94,7 +94,13 @@ const toLedgerEntry = (payment: DemoSubscriptionPayment): CreditEntry => ({
   occurredAt: payment.paidAt,
 });
 
+/** 크레딧 잔액. 백엔드 모드에서는 잔액 API 하나만 읽는다(내역은 getCreditLedger가 따로 읽는다) */
 export async function getCreditBalance(next: string): Promise<CreditBalance> {
+  if (isBackendAuth) {
+    await requireMember(next);
+    await connection();
+    return readBalance();
+  }
   return (await load(next)).balance;
 }
 

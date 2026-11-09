@@ -35,6 +35,8 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `title` | `title` | String | 불가 | 소프트웨어 이름 |
 | `description` | `description` | TEXT | 가능 | 설명 |
 | `imageUrl` | `image_url` | TEXT | 가능 | 대표 이미지 |
+| `githubRepository` | `github_repository` | String(140) | 가능 | 이슈를 등록할 GitHub 레포 `owner/repo`. 연결 전에는 null (#227) |
+| `githubToken` | `github_token` | String(512) | 가능 | 그 레포에 이슈를 만드는 GitHub 토큰. AES-GCM 암호문으로 저장하고 응답에 내보내지 않는다 (#227) |
 
 ### `recruitments`
 
@@ -60,7 +62,7 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 - 취소할 수 있는 시기와 사유가 필수인 경우는 확정 테스터와 일정을 함께 봐야 해서 서비스가 확인한다(`docs/frontend/project/projects.md` 모집 취소 표)
 
 #89-S1 프로젝트에는 프로젝트 정보만 있다 [직접]
-- `Project`에 `user`, `title`, `description`, `imageUrl`이 있고 모집 조건·일정은 없다
+- `Project`에 `user`, `title`, `description`, `imageUrl`이 있고 모집 조건·일정은 없다 (고침 #227: GitHub 레포 연결용 `githubRepository`, `githubToken`이 더해졌다)
 
 #89-S2 프로젝트 하나에 모집글 여러 개 [직접]
 - DDL의 `recruitments.project_id`에 unique가 없고, 모집 조건·일정은 `recruitments`에 있다

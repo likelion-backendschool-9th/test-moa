@@ -95,18 +95,20 @@ class ProjectControllerTest {
     @Test
     @DisplayName("#191-S2 비로그인 업로드는 저장하지 않는다")
     void anonymousImageUpload() throws Exception {
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(PROJECTS + "/images")
-                .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", PNG)))
-                .andExpect(status().isUnauthorized());
+        for (String endpoint : List.of(PROJECTS + "/images", RECRUITMENTS + "/images")) {
+            mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
+                    .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", PNG)))
+                    .andExpect(status().isUnauthorized());
+        }
     }
 
     @Test
     @DisplayName("#191-S5 모집글 JPG·항목 WEBP 업로드")
     void uploadRecruitmentImages() throws Exception {
-        for (var entry : Map.of(RECRUITMENTS + "/images", new byte[]{(byte) 255, (byte) 216, (byte) 255},
-                RECRUITMENTS + "/test-items/images", "RIFF0000WEBP".getBytes(java.nio.charset.StandardCharsets.US_ASCII)).entrySet()) {
-            String extension = entry.getKey().contains("test-items") ? "webp" : "jpg";
-            String url = upload(entry.getKey(), entry.getValue(), extension);
+        for (var entry : Map.of("jpg", new byte[]{(byte) 255, (byte) 216, (byte) 255},
+                "webp", "RIFF0000WEBP".getBytes(java.nio.charset.StandardCharsets.US_ASCII)).entrySet()) {
+            String extension = entry.getKey();
+            String url = upload(RECRUITMENTS + "/images", entry.getValue(), extension);
             try {
                 assertThat(url).endsWith("." + extension);
             } finally {
@@ -128,7 +130,7 @@ class ProjectControllerTest {
     }
 
     private void rejectImage(byte[] bytes) throws Exception {
-        for (String endpoint : List.of(PROJECTS + "/images", RECRUITMENTS + "/images", RECRUITMENTS + "/test-items/images")) {
+        for (String endpoint : List.of(PROJECTS + "/images", RECRUITMENTS + "/images")) {
             mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
                     .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", bytes))
                     .header("Authorization", "Bearer " + jwtProvider.createAccessToken(me.getId())))

@@ -3,9 +3,9 @@
 구독 개발자가 모집 관리 화면에서 확정된 테스터와의 채팅방으로 바로 간다. 채팅을 거는 API는 [#53](../../backend/chat/start.md), 채팅 화면 연결은 [api-connection.md](api-connection.md), 지금 버튼의 동작은 [projects.md](../project/projects.md)의 #62-S23, #62-S24, #134-S3, #134-S7에 있다. PR을 둘로 나눈다. ①은 피드백 응답의 참가 id이고 다른 이슈를 기다리지 않는다. ②는 화면 연결이고 #190(모집 관리 화면의 실제 API 연결) 병합 뒤에 한다.
 
 ## 한눈에
-- 끝나면: `AUTH_MODE=backend`에서 지원자 목록의 "채팅", 피드백 카드의 "채팅하기", AI 질문 대화상자의 "채팅으로 물어보러 가기"가 그 테스터와의 채팅방을 열고 그 방으로 이동한다. 방이 있으면 그 방으로 가고, 지운 방은 다시 열린다. 방을 만들 수 없으면 이유를 안내하고 그 화면에 머문다. 목업 모드의 동작은 그대로다
+- 끝나면: `AUTH_MODE=backend`에서 지원자 목록의 "채팅", 피드백 카드의 "채팅하기", AI 질문 대화상자(피드백 카드와 AI 버전 비교 화면)의 "채팅으로 물어보러 가기"가 그 테스터와의 채팅방을 열고 그 방으로 이동한다. 방이 있으면 그 방으로 가고, 지운 방은 다시 열린다. 방을 만들 수 없으면 이유를 안내하고 그 화면에 머문다. 목업 모드의 동작은 그대로다
 - 결정 필요: 없음
-- 규모: 5단계
+- 규모: 6단계
 
 ## 1. 피드백 응답의 참가 id (#195-R1)
 개발자용 피드백 목록의 건마다 그 피드백을 낸 참가의 `registerId`를 준다.
@@ -90,7 +90,31 @@
 - When  "채팅하기"와 "채팅으로 물어보러 가기"를 누른다
 - Then  "채팅방 연결은 준비 중이에요"가 보인다
 
+## 5. AI 버전 비교 화면의 대화상자 (#195-R5)
+AI 버전 비교 화면의 대표 리뷰에서 연 AI 질문 대화상자도 "채팅으로 물어보러 가기"로 그 리뷰를 쓴 테스터의 채팅방을 연다. 이전 버전의 대표 리뷰는 그 버전의 참가로 방을 연다.
+
+#195-S14 정상: 그룹 리뷰의 참가 id [테스트]
+- Given #168-S3의 그룹에 서로 다른 참가의 리뷰가 있다
+- When  개발자가 그룹 리뷰 목록을 조회한다
+- Then  건마다 그 리뷰를 쓴 참가의 `registerId`가 있다
+
+#195-S15 정상: 현재 버전의 대표 리뷰 [직접]
+- Given `AUTH_MODE=backend`, 구독 중인 개발자 A, 진행 중인 현재 버전의 대표 리뷰를 쓴 확정 테스터 "윤슬"
+- When  A가 버전 비교 화면에서 그 리뷰의 AI 질문 대화상자를 열고 "채팅으로 물어보러 가기"를 누른다
+- Then  "윤슬"과의 채팅방으로 이동한다
+
+#195-S16 실패: 끝난 이전 버전에 방이 없다 [직접]
+- Given 이전 버전의 모집이 끝났고 그 대표 리뷰를 쓴 테스터와의 방이 없다
+- When  A가 그 리뷰의 대화상자에서 "채팅으로 물어보러 가기"를 누른다
+- Then  주소가 그대로이고 대화상자 안에 "모집이 끝나 새 채팅을 시작할 수 없어요"가 보인다
+
+#195-S17 정상: 끝난 이전 버전에 방이 있다 [직접]
+- Given 이전 버전의 모집이 끝났고 그 대표 리뷰를 쓴 테스터와의 방이 있다
+- When  A가 그 리뷰의 대화상자에서 "채팅으로 물어보러 가기"를 누른다
+- Then  그 방으로 이동한다
+
 ## 범위 밖
+- 칭찬 리뷰(`PraiseReviewResponse`): AI 질문 대화상자를 열지 않아 참가 id가 필요 없다
 - 모집 관리 화면의 실제 데이터 연결: #190
 - 목업과 `demo-chat*` 쿠키 삭제: [api-connection.md](api-connection.md)의 범위 밖 그대로, 이 이슈 완료 뒤 별도로 한다
 - 무료 모집의 구독 안내(`PaidAction`), 확정되지 않은 테스터에게 버튼을 숨기는 조건: 지금 그대로다
@@ -114,7 +138,7 @@
    - 파일: `backend/src/main/java/com/testmoa/backend/dto/response/FeedbackResponse.java`(`Long feedbackId` 다음에 `Long registerId`), `service/impl/FeedbackServiceImpl.java`(`feedback.getRegister().getId()`), 테스트 `controller/developer/FeedbackControllerTest.java`(`@DisplayName("#195-S1 피드백마다 참가 id를 준다")`), `docs/backend/project/feedback-management.md`(목록 응답 필드에 `registerId`, 끝에 `(고침 #195: 채팅 걸기에 참가 id가 필요하다)`)
    - 확인: `./gradlew test --tests '*FeedbackControllerTest'`
 
-2~4단계는 #190의 `features/recruitment/backend-map.ts` 변환 함수 위에서 작업한다.
+2~5단계는 #190의 `features/recruitment/backend-map.ts` 변환 함수 위에서 작업한다.
 
 2. 채팅 시작 API와 문구 — #195-S8, #195-S12
    - `features/chat/backend-map.ts`: `toChatStartFailureMessage(code: string): string`
@@ -131,8 +155,15 @@
    - `FeedbackList.tsx`: `registerId`가 있으면 `start`, 실패는 `showNotice(item, message)`. 없으면 `CHAT_NOT_READY`. `FollowupQuestionsDialog`에 `asking.registerId`와 `recruitmentKey`를 넘긴다. 머리 주석의 "채팅방 생성은 API가 없어 준비 중"을 지금 동작에 맞게 고친다
    - `FollowupQuestionsDialog.tsx`: `registerId` prop이 있으면 `goChat`이 `start`를 부르고, 실패는 `setChatNotice`와 `setAnnouncement`. 없으면 지금 안내
    - 확인: `npx tsc --noEmit`, `npm run lint`, `npm test`, 모집 관리 관련 E2E
-4. 문서 — `projects.md`의 #62-S23, #62-S24, #134-S3, #134-S7 끝에 `(고침 #195: 목업 모드의 동작이다. 백엔드 모드는 채팅방으로 바로 간다)`를 붙이고, `docs/backend/chat/README.md`의 이슈 표에 #195와 이 문서를 더한다
-5. 직접 확인 — #195-S2~#195-S7, #195-S9, #195-S10, #195-S12, #195-S13. 로컬 `AUTH_MODE=backend`에서 하고, 원격 도커의 Postgres를 쓴다
+4. AI 버전 비교 화면 — #195-S14~#195-S17
+   - `backend/.../dto/response/GroupReviewResponse.java`: `Long feedbackId` 다음에 `Long registerId`. `repository/FeedbackClusterRepository.java`의 `findGroupReviews` 생성자 식에 `f.id` 다음 `r.id`를 넣는다
+   - `controller/analysis/ReviewAnalysisControllerTest.java`: `@DisplayName("#195-S14 그룹 리뷰마다 참가 id를 준다")`. 확인: `./gradlew test --tests '*ReviewAnalysisControllerTest'`
+   - `features/recruitment/types.ts`: `BackendGroupReview`에 `registerId: number`, `GroupReview`에 `registerId?: string`, `fromBackendGroups`는 `registerId: String(review.registerId)`를 돌려준다
+   - `features/recruitment/api.ts`: `BackendPraise`는 `Omit<BackendGroupReview, "representative" | "registerId">`로 둔다
+   - `ComparisonReport.tsx`: 대화상자에 `asking.review.registerId`와 `recruitmentKey={currentKey}`를 넘긴다. 이전 버전의 리뷰여도 돌아올 주소는 지금 보고 있는 모집 관리 화면이다. `getFollowupQuestions`에 쓰는 `asking.recruitmentKey`는 그대로 둔다
+   - 확인: `npx tsc --noEmit`, `npm run lint`, `npm test`
+5. 문서 — `projects.md`의 #62-S23, #62-S24, #134-S3, #134-S7 끝에 `(고침 #195: 목업 모드의 동작이다. 백엔드 모드는 채팅방으로 바로 간다)`를 붙이고, `docs/backend/chat/README.md`의 이슈 표에 #195와 이 문서를 더한다. AI 분석 백엔드 문서의 그룹 리뷰 응답 필드에 `registerId`를 더한다
+6. 직접 확인 — #195-S2~#195-S7, #195-S9, #195-S10, #195-S12, #195-S13, #195-S15~#195-S17. 로컬 `AUTH_MODE=backend`에서 하고, 원격 도커의 Postgres를 쓴다
 
 ## 가정
 - 버튼을 누를 때 방을 만든다. 미리 만들거나 방 유무를 먼저 조회하지 않는다. `POST /api/v1/chats`가 있으면 돌려주고 지운 방도 되살리므로 한 번으로 끝난다
@@ -142,6 +173,8 @@
 - `registerId`를 선택 필드로 두어 목업 데이터를 고치지 않는다. 목업 삭제 때 필수로 바꾼다
 - `nextPath`를 액션에서 다시 확인하는 것은 브라우저가 액션 인자를 바꿔 보낼 수 있어서다
 - 성공 안내 문구는 두지 않는다. 채팅방으로 이동하는 것이 결과다
+- 이전 버전 리뷰에도 #53의 규칙을 그대로 적용한다. 끝난 모집은 새 방을 열 수 없어서 방이 없으면 안내만 보인다
+- 그룹 리뷰 쿼리는 이미 `join f.register r`라 `r.id`를 더해도 쿼리가 늘지 않는다
 
 ## 참고 (2026-11-09 확인)
 - 지금 `findApplications`, `findFeedbacks`는 목업 저장소만 읽어서 `AUTH_MODE=backend`의 테스터 관리·피드백 탭은 비어 있다. 백엔드의 조회 API는 있다(`GET /api/v1/developer/recruitments/{id}/applications`, `/feedbacks`)

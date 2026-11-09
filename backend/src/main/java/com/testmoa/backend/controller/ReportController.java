@@ -41,6 +41,12 @@ public class ReportController {
         return ApiResponse.ok(reportService.create(userId, request, files));
     }
 
+    @Operation(summary = "내 신고 목록", description = "최신순. 신고당한 회원·판정한 운영자·제재는 보이지 않는다")
+    @GetMapping("/me")
+    public ApiResponse<List<ReportResponse>> mine(@Parameter(hidden = true) @AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(reportService.getMine(userId));
+    }
+
     @Operation(summary = "신고 증거 파일", description = "신고한 본인과 운영자만 연다. 그 밖에는 404")
     @GetMapping("/{reportId}/evidences/{evidenceId}")
     public ResponseEntity<Resource> evidence(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,

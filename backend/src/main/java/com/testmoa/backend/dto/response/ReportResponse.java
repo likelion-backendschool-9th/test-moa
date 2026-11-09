@@ -11,6 +11,8 @@ import java.util.List;
 /**
  * 신고 한 건. 신고당한 회원과 판정한 운영자는 신고자에게 보이지 않는다
  *
+ * @param reviewedAt 운영자가 기각·인정한 일시. 검토 대기면 null
+ *
  * @param evidences 증거 파일. 파일은 GET /api/v1/reports/{id}/evidences/{evidenceId}로 연다
  */
 public record ReportResponse(
@@ -19,16 +21,17 @@ public record ReportResponse(
         ReportStatus status,
         String reason,
         LocalDateTime createdAt,
+        LocalDateTime reviewedAt,
         List<Evidence> evidences
 ) {
     public record Evidence(Long id, String originalName, String contentType, long size) {
-        static Evidence of(ReportEvidence evidence) {
+        public static Evidence of(ReportEvidence evidence) {
             return new Evidence(evidence.getId(), evidence.getOriginalName(), evidence.getContentType(), evidence.getSize());
         }
     }
 
     public static ReportResponse of(Report report, List<ReportEvidence> evidences) {
         return new ReportResponse(report.getId(), report.getTargetType(), report.getStatus(), report.getReason(),
-                report.getCreatedAt(), evidences.stream().map(Evidence::of).toList());
+                report.getCreatedAt(), report.getReviewedAt(), evidences.stream().map(Evidence::of).toList());
     }
 }

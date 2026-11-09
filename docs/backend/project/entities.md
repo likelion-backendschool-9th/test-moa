@@ -169,12 +169,14 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 
 피드백에는 제목과 보상액이 없다. 보상액은 `feedback.getRegister()`에서 읽는다.
 
-| 지금 상태 | `report` | `reward` | `exclude` |
-| --- | --- | --- | --- |
-| `SUBMITTED` | `REPORTED` | `REWARDED` | 불가 |
-| `REPORTED` | 불가 | `REWARDED` | `EXCLUDED` |
-| `REWARDED` | 불가 | 불가 | 불가 |
-| `EXCLUDED` | 불가 | 불가 | 불가 |
+| 지금 상태 | `report` | `dismissReport` | `reward` | `exclude` |
+| --- | --- | --- | --- | --- |
+| `SUBMITTED` | `REPORTED` | 불가 | `REWARDED` | 불가 |
+| `REPORTED` | 불가 | `SUBMITTED` | `REWARDED` | `EXCLUDED` |
+| `REWARDED` | 불가 | 불가 | 불가 | 불가 |
+| `EXCLUDED` | 불가 | 불가 | 불가 | 불가 |
+
+`dismissReport`는 운영자가 신고를 기각할 때 부른다(#85). 지급 기록 없이 `REWARDED`가 되면 보상이 사라지므로, 제출로 되돌려 72시간 자동 지급에 맡긴다.
 
 프론트의 "운영자 검토 중"은 `REPORTED`로, "기한 내 미제출"은 저장하지 않고 마감일과 피드백 유무로 계산한다. 신고 데이터는 신고 담당의 테이블에 있고, 여기에는 상태만 둔다.
 

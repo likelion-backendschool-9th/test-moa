@@ -2,9 +2,12 @@ package com.testmoa.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.testmoa.backend.entity.ChatRoom;
+import com.testmoa.backend.entity.Feedback;
+import com.testmoa.backend.entity.Register;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Report;
 import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.ReportTargetType;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.JwtProvider;
@@ -17,20 +20,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Arrays;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,6 +63,7 @@ class ReportControllerTest {
     ChatFixtures fixtures;
     User developer, tester, stranger;
     Recruitment recruitment;
+    Register register;
     ChatRoom room;
 
     @BeforeEach
@@ -65,7 +74,8 @@ class ReportControllerTest {
         tester = fixtures.user("신고테스터" + s);
         stranger = fixtures.user("신고남" + s);
         recruitment = fixtures.recruitment(developer, "북로그");
-        room = ChatRoom.builder().register(fixtures.confirmedRegister(recruitment, tester)).build();
+        register = fixtures.confirmedRegister(recruitment, tester);
+        room = ChatRoom.builder().register(register).build();
         em.persist(room);
         em.flush();
     }
@@ -204,5 +214,239 @@ class ReportControllerTest {
         // 신고 id와 증거 id가 맞지 않으면 404
         mvc.perform(get("/api/v1/reports/" + (reportId + 1) + "/evidences/" + evidenceId)
                 .header("Authorization", "Bearer " + jwt.createAccessToken(admin.getId()))).andExpect(status().isNotFound());
+    }
+
+    // ---- 2차: 운영자 판정, 피드백 신고 연결, 내 신고 목록 ----
+
+    User admin() {
+        String s = UUID.randomUUID().toString().substring(0, 6);
+        User admin = User.builder().name("한운영").nickname("신고운영" + s).email("admin" + s + "@test.com")
+                .role(Role.ADMIN).status(UserStatus.ACTIVE).build();
+        em.persist(admin);
+        return admin;
+    }
+
+    ResultActions asUser(User user, MockHttpServletRequestBuilder request) throws Exception {
+        return mvc.perform(request.header("Authorization", "Bearer " + jwt.createAccessToken(user.getId())));
+    }
+
+    ResultActions review(User admin, long reportId, String result) throws Exception {
+        return asUser(admin, post("/api/v1/admin/reports/" + reportId + "/review")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"result\":\"" + result + "\"}"));
+    }
+
+    long id(ResultActions result) throws Exception {
+        return ((Integer) JsonPath.read(result.andReturn().getResponse().getContentAsString(), "$.data.id")).longValue();
+    }
+
+    Feedback feedback() {
+        Feedback feedback = Feedback.builder().register(register).content("앱이 자꾸 꺼져요").submittedAt(LocalDateTime.now()).build();
+        em.persist(feedback);
+        em.flush();
+        return feedback;
+    }
+
+    // 피드백 신고는 개발자가 피드백 신고 API로 한다
+    long reportFeedback(Feedback feedback) throws Exception {
+        asUser(developer, post("/api/v1/developer/feedbacks/" + feedback.getId() + "/report")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"써 보지 않고 냈어요\"}")).andExpect(status().isOk());
+        em.flush();
+        return em.createQuery("select r.id from reports r where r.targetType = :type and r.targetId = :id", Long.class)
+                .setParameter("type", ReportTargetType.FEEDBACK).setParameter("id", feedback.getId()).getSingleResult();
+    }
+
+    // 오래된 순을 확인하려고 신고 일시를 minutes분 앞당긴다
+    void ageReport(long reportId, int minutes) {
+        em.flush();
+        em.createNativeQuery("update reports set created_at = created_at - make_interval(mins => :m) where id = :id")
+                .setParameter("m", minutes).setParameter("id", reportId).executeUpdate();
+        em.clear();
+    }
+
+    @Test
+    @DisplayName("#85-S9 운영자가 검토 대기·처리 완료 신고 목록을 대상 종류로 걸러 본다")
+    void 운영자_신고_목록() throws Exception {
+        User admin = admin();
+        long first = id(report(tester, "USER", developer.getId().toString(), "첫 신고"));
+        long second = id(report(tester, "RECRUITMENT", recruitment.getId().toString(), "둘째 신고"));
+        long third = id(report(stranger, "USER", developer.getId().toString(), "셋째 신고"));
+        ageReport(first, 10);
+        ageReport(third, 5);
+        review(admin, second, "REJECTED").andExpect(status().isOk());
+
+        String all = asUser(admin, get("/api/v1/admin/reports")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<Integer> pendingIds = JsonPath.read(all, "$.data[*].id");
+        assertThat(pendingIds).contains((int) first, (int) third).doesNotContain((int) second);
+        assertThat(pendingIds).containsSubsequence((int) first, (int) third);
+
+        asUser(admin, get("/api/v1/admin/reports?targetType=USER")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.id == " + first + ")].reporter.nickname").value(tester.getNickname()))
+                .andExpect(jsonPath("$.data[?(@.id == " + first + ")].reportedUser.id").value(developer.getId().intValue()))
+                .andExpect(jsonPath("$.data[?(@.id == " + first + ")].target.nickname").value(developer.getNickname()))
+                .andExpect(jsonPath("$.data[?(@.id == " + second + ")]").doesNotExist());
+
+        asUser(admin, get("/api/v1/admin/reports?status=DONE&targetType=RECRUITMENT")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].id").value((int) second))
+                .andExpect(jsonPath("$.data[0].status").value("REJECTED"))
+                .andExpect(jsonPath("$.data[0].target.recruitmentTitle").value(recruitment.getTitle()))
+                .andExpect(jsonPath("$.data[0].reviewer.nickname").value(admin.getNickname()))
+                .andExpect(jsonPath("$.data[0].reviewer.maskedName").value("한*영"))
+                .andExpect(jsonPath("$.data[0].reviewedAt").exists());
+        asUser(admin, get("/api/v1/admin/reports?status=ALL")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("#85-S10 운영자가 신고 상세에서 대상 내용과 증거를 본다")
+    void 운영자_신고_상세() throws Exception {
+        User admin = admin();
+        long chat = id(report(developer, "CHAT", room.getRoomKey(), "위협", file("chat.png", PNG)));
+        asUser(admin, get("/api/v1/admin/reports/" + chat)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.target.roomKey").value(room.getRoomKey()))
+                .andExpect(jsonPath("$.data.target.recruitmentTitle").value(recruitment.getTitle()))
+                .andExpect(jsonPath("$.data.evidences[0].originalName").value("chat.png"))
+                .andExpect(jsonPath("$.data.status").value("PENDING"));
+
+        long feedbackReport = reportFeedback(feedback());
+        asUser(admin, get("/api/v1/admin/reports/" + feedbackReport))
+                .andExpect(jsonPath("$.data.target.feedbackContent").value("앱이 자꾸 꺼져요"))
+                .andExpect(jsonPath("$.data.target.recruitmentTitle").value(recruitment.getTitle()))
+                .andExpect(jsonPath("$.data.reportedUser.id").value(tester.getId().intValue()));
+        // 목록에는 피드백 원문과 증거를 넣지 않는다
+        asUser(admin, get("/api/v1/admin/reports?targetType=FEEDBACK"))
+                .andExpect(jsonPath("$.data[0].id").value((int) feedbackReport))
+                .andExpect(jsonPath("$.data[0].target.feedbackContent").doesNotExist())
+                .andExpect(jsonPath("$.data[0].evidences").doesNotExist());
+        asUser(admin, get("/api/v1/admin/reports/999999999")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("#85-S11 운영자가 신고를 기각하거나 인정하고, 판정은 한 번만 할 수 있다")
+    void 운영자_판정은_한_번만() throws Exception {
+        User admin = admin();
+        long reportId = id(report(tester, "USER", developer.getId().toString(), "욕설"));
+        review(admin, reportId, "PENDING").andExpect(status().isBadRequest());
+        review(admin, reportId, "ACCEPTED").andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACCEPTED"))
+                .andExpect(jsonPath("$.data.reviewer.id").value(admin.getId().intValue()))
+                .andExpect(jsonPath("$.data.reviewedAt").exists());
+        review(admin, reportId, "REJECTED").andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("REPORT_ALREADY_REVIEWED"));
+        review(admin, 999999999, "REJECTED").andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("#85-S12 피드백 신고 API로 신고하면 FEEDBACK 신고가 생기고, 기각하면 SUBMITTED, 인정하면 EXCLUDED")
+    void 피드백_신고_판정() throws Exception {
+        User admin = admin();
+        Feedback rejected = feedback();
+        Feedback accepted = feedback();
+        long rejectedReport = reportFeedback(rejected);
+        long acceptedReport = reportFeedback(accepted);
+
+        review(admin, rejectedReport, "REJECTED").andExpect(status().isOk());
+        review(admin, acceptedReport, "ACCEPTED").andExpect(status().isOk());
+        em.flush();
+        em.clear();
+        assertThat(em.find(Feedback.class, rejected.getId()).getStatus()).isEqualTo(FeedbackStatus.SUBMITTED);
+        assertThat(em.find(Feedback.class, accepted.getId()).getStatus()).isEqualTo(FeedbackStatus.EXCLUDED);
+        Report saved = em.find(Report.class, rejectedReport);
+        assertThat(saved.getReporter().getId()).isEqualTo(developer.getId());
+        assertThat(saved.getReportedUser().getId()).isEqualTo(tester.getId());
+        assertThat(saved.getReason()).isEqualTo("써 보지 않고 냈어요");
+    }
+
+    // 보상 1,000이 걸린 다른 테스터(stranger)의 참가와 피드백. 승인 대기 크레딧을 확인할 때 쓴다
+    Register rewardedRegister() {
+        Register paid = Register.builder().recruitment(recruitment).user(stranger).build();
+        paid.confirm(1000, 0, LocalDateTime.now());
+        em.persist(paid);
+        return paid;
+    }
+
+    Feedback feedbackOf(Register owner) {
+        Feedback feedback = Feedback.builder().register(owner).content("버튼이 안 눌려요").submittedAt(LocalDateTime.now()).build();
+        em.persist(feedback);
+        em.flush();
+        return feedback;
+    }
+
+    ResultActions pendingReward(User user, int expected) throws Exception {
+        em.flush();
+        em.clear();
+        return asUser(user, get("/api/v1/my/credits")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pendingReward").value(expected));
+    }
+
+    @Test
+    @DisplayName("#85-S17 피드백 신고를 기각하면 그 참가의 보상이 승인 대기에 다시 잡힌다")
+    void 기각하면_승인_대기로_돌아온다() throws Exception {
+        Feedback feedback = feedbackOf(rewardedRegister());
+        long reportId = reportFeedback(feedback);
+        pendingReward(stranger, 0);
+        review(admin(), reportId, "REJECTED").andExpect(status().isOk());
+        pendingReward(stranger, 1000);
+    }
+
+    @Test
+    @DisplayName("#85-S18 기각된 피드백은 다시 신고할 수 없다")
+    void 기각된_피드백은_다시_신고_못_한다() throws Exception {
+        Feedback feedback = feedback();
+        review(admin(), reportFeedback(feedback), "REJECTED").andExpect(status().isOk());
+        em.flush();
+        asUser(developer, post("/api/v1/developer/feedbacks/" + feedback.getId() + "/report")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"또 신고\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("FEEDBACK_REPORT_DISMISSED"));
+    }
+
+    @Test
+    @DisplayName("#85-S19 한 번에 낸 칸 중 하나를 인정하면 그 참가는 승인 대기에서 빠진다")
+    void 인정하면_참가_전체가_승인_대기에서_빠진다() throws Exception {
+        Register paid = rewardedRegister();
+        Feedback reported = feedbackOf(paid);
+        feedbackOf(paid);
+        pendingReward(stranger, 1000);
+        review(admin(), reportFeedback(reported), "ACCEPTED").andExpect(status().isOk());
+        pendingReward(stranger, 0);
+    }
+
+    @Test
+    @DisplayName("#85-S13 판정이 끝난 대상은 같은 회원이 다시 신고할 수 있다")
+    void 판정_뒤에는_다시_신고할_수_있다() throws Exception {
+        long reportId = id(report(tester, "USER", developer.getId().toString(), "첫 신고"));
+        review(admin(), reportId, "REJECTED").andExpect(status().isOk());
+        report(tester, "USER", developer.getId().toString(), "다시 신고").andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("#85-S14 회원이 내 신고 목록에서 내가 한 신고와 처리 상태를 본다")
+    void 내_신고_목록() throws Exception {
+        long older = id(report(tester, "USER", developer.getId().toString(), "먼저", file("a.png", PNG)));
+        long newer = id(report(tester, "RECRUITMENT", recruitment.getId().toString(), "나중"));
+        report(stranger, "USER", developer.getId().toString(), "남의 신고").andExpect(status().isCreated());
+        ageReport(older, 1);
+        review(admin(), older, "ACCEPTED").andExpect(status().isOk());
+
+        asUser(tester, get("/api/v1/reports/me")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].id").value((int) newer))
+                .andExpect(jsonPath("$.data[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.data[1].id").value((int) older))
+                .andExpect(jsonPath("$.data[1].status").value("ACCEPTED"))
+                .andExpect(jsonPath("$.data[1].reviewedAt").exists())
+                .andExpect(jsonPath("$.data[1].evidences[0].originalName").value("a.png"))
+                .andExpect(jsonPath("$.data[1].reportedUser").doesNotExist())
+                .andExpect(jsonPath("$.data[1].reviewer").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("#85-S15 운영자 신고 API는 운영자만 쓸 수 있다")
+    void 운영자_API는_운영자만() throws Exception {
+        long reportId = id(report(tester, "USER", developer.getId().toString(), "권한"));
+        asUser(tester, get("/api/v1/admin/reports")).andExpect(status().isForbidden());
+        asUser(tester, get("/api/v1/admin/reports/" + reportId)).andExpect(status().isForbidden());
+        review(tester, reportId, "REJECTED").andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/reports")).andExpect(status().isUnauthorized());
     }
 }

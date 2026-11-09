@@ -77,7 +77,7 @@ Feedback 상태와 화면에 쓰는 말:
 
 1. 해당 유저의 Register 중 **`status = CONFIRMED`** 이고  
 2. `Feedback.status = SUBMITTED`인 행이 **하나라도** 있고  
-3. `Feedback.status = REPORTED`인 행이 **없고**  
+3. `Feedback.status = REPORTED`·`EXCLUDED`인 행이 **없고**  
 4. 스냅샷이 있는 참가만  
 5. `SUM(baseRewardSnapshot + extraRewardSnapshot)` (참가당 1회)
 
@@ -117,6 +117,8 @@ flowchart LR
 - Then  합은 0이다 (검토 중은 승인 대기에 넣지 않는다)
 - Given 같은 참가에 `SUBMITTED` 1줄과 `REPORTED` 1줄이 섞여 있을 때
 - Then  합은 0이다 (한 건이라도 신고면 참가 전체 지급 보류)
+- Given 같은 참가에 `SUBMITTED` 1줄과 `EXCLUDED` 1줄이 섞여 있을 때
+- Then  합은 0이다 (고침 #85: 신고를 인정해 보상 제외된 칸이 있어도 참가 전체 지급 보류)
 
 #66-S4 취소된 참가는 승인 대기에서 제외 [테스트]
 - Given `Register`를 확정·피드백 제출 뒤 `cancel()`한 참가

@@ -36,6 +36,7 @@ public enum ErrorCode {
     // 회원 신고
     REPORT_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 신고할 수 없어요"),
     REPORT_DUPLICATED(HttpStatus.CONFLICT, "이미 신고해서 검토를 기다리고 있어요"),
+    REPORT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 처리한 신고예요"),
 
     // 채팅
     CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),
@@ -49,6 +50,7 @@ public enum ErrorCode {
     RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),
     RECRUITMENT_NOT_EDITABLE(HttpStatus.CONFLICT, "종료되거나 취소된 모집은 바꿀 수 없어요"),
     FEEDBACK_NOT_REPORTABLE(HttpStatus.CONFLICT, "신고는 제출 후 72시간 안에만 할 수 있어요"),
+    FEEDBACK_REPORT_DISMISSED(HttpStatus.CONFLICT, "운영자가 문제없다고 판정한 피드백은 다시 신고할 수 없어요"),
     APPLICANTS_NOT_SELECTABLE(HttpStatus.CONFLICT, "선발형 구독 모집의 모집 기간에만 지원자를 확정·거절할 수 있어요"),
     RECRUITMENT_CLOSED(HttpStatus.CONFLICT, "모집이 마감됐어요"),
     ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 지원한 테스트예요"),

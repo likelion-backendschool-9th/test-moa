@@ -4,12 +4,16 @@ import com.testmoa.backend.dto.response.FeedbackResponse;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.FeedbackImage;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
+import com.testmoa.backend.entity.enums.ReportStatus;
+import com.testmoa.backend.entity.enums.ReportTargetType;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.FeedbackImageRepository;
 import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
+import com.testmoa.backend.repository.ReportRepository;
 import com.testmoa.backend.service.FeedbackService;
+import com.testmoa.backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +34,8 @@ public class FeedbackServiceImpl implements FeedbackService {
     private final RecruitmentRepository recruitmentRepository;
     private final FeedbackRepository feedbackRepository;
     private final FeedbackImageRepository feedbackImageRepository;
+    private final ReportService reportService;
+    private final ReportRepository reportRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -64,7 +70,13 @@ public class FeedbackServiceImpl implements FeedbackService {
                 || !LocalDateTime.now().isBefore(feedback.getSubmittedAt().plus(REPORT_WINDOW))) {
             throw new BusinessException(ErrorCode.FEEDBACK_NOT_REPORTABLE);
         }
+        // 기각되면 제출 상태로 돌아오므로, 같은 피드백을 다시 신고해 지급을 또 멈추지 못하게 한다
+        if (reportRepository.existsByReporterIdAndTargetTypeAndTargetIdAndStatus(userId, ReportTargetType.FEEDBACK, feedbackId, ReportStatus.REJECTED)) {
+            throw new BusinessException(ErrorCode.FEEDBACK_REPORT_DISMISSED);
+        }
         feedback.report(reason.trim());
+        // 운영자 신고 화면(#85)에서 판정할 수 있게 신고 행도 남긴다. 판정하면 reward()·exclude()를 부른다
+        reportService.recordFeedbackReport(userId, feedback, reason.trim());
     }
 
     // 내 프로젝트의 피드백. 다른 회원의 피드백은 없는 것과 같다

@@ -74,6 +74,21 @@ class RegisterRepositoryTest {
     }
 
     @Test
+    @DisplayName("#66-S3 SUBMITTED와 EXCLUDED가 섞여도 참가 전체를 승인 대기에서 제외 (고침 #85)")
+    void excludesWhenSubmittedAndExcludedMixed() {
+        User tester = persistTester("pending-excluded@example.com");
+        Register register = persistConfirmedRegister(tester, 1000, 350);
+        persistSubmittedFeedback(register, "정상 항목");
+        Feedback excluded = persistSubmittedFeedback(register, "보상 제외된 항목");
+        excluded.report("신고 사유");
+        excluded.exclude();
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(0, sumPending(tester));
+    }
+
+    @Test
     @DisplayName("#66-S4 취소된 참가는 승인 대기에서 제외")
     void excludesCancelledRegister() {
         User tester = persistTester("pending-cancelled@example.com");

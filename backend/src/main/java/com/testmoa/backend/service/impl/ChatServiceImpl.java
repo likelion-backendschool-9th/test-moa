@@ -90,13 +90,14 @@ public class ChatServiceImpl implements ChatService {
         if (query.sort() == ChatInboxSort.LATEST) order = order.reversed();
         // 일시가 같으면 정렬 방향과 무관하게 나중에 만든 방이 먼저 온다.
         order = order.thenComparing(ChatInboxEntry::roomId, Comparator.reverseOrder());
-        var recruitments = recruitmentRepository.findAllById(entries.stream().map(ChatInboxEntry::recruitmentId).distinct().toList())
-                .stream().collect(Collectors.toMap(Recruitment::getId, recruitment -> recruitment));
-        var activeDevelopers = subscriptionChecker.activeUserIds(entries.stream().map(ChatInboxEntry::developerId).distinct().toList());
-        var now = LocalDateTime.now();
-        var rooms = matched.stream()
+        var visible = matched.stream()
                 .filter(entry -> query.role() == null || entry.myRole() == query.role())
-                .sorted(order).map(entry -> ChatInboxResponse.Room.of(entry,
+                .sorted(order).toList();
+        var recruitments = recruitmentRepository.findAllById(visible.stream().map(ChatInboxEntry::recruitmentId).distinct().toList())
+                .stream().collect(Collectors.toMap(Recruitment::getId, recruitment -> recruitment));
+        var activeDevelopers = subscriptionChecker.activeUserIds(visible.stream().map(ChatInboxEntry::developerId).distinct().toList());
+        var now = LocalDateTime.now();
+        var rooms = visible.stream().map(entry -> ChatInboxResponse.Room.of(entry,
                         readOnlyPolicy.isReadOnly(recruitments.get(entry.recruitmentId()),
                                 activeDevelopers.contains(entry.developerId()), now))).toList();
         return new ChatInboxResponse(rooms, entries.size(),

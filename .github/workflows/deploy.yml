@@ -1,7 +1,7 @@
 name: CI/CD
 
 # PR(→ develop, main): 검사만 한다
-# develop에 push(머지): 검사를 다시 돌리고, 통과하면 이미지를 GHCR에 올린 뒤 테스트 서버(3005)에 배포한다
+# develop에 push(머지): 검사를 다시 돌리고, 통과하면 이미지(backend, frontend, analysis)를 GHCR에 올린 뒤 테스트 서버(3005)에 배포한다
 # main은 지금 배포하지 않는다 (운영 단계에서 추가)
 on:
   pull_request:
@@ -91,6 +91,26 @@ jobs:
           # 테스트 전용 출금 계좌 암호화 키(32바이트 Base64). 서버 .env 키와 다르다
           CASHOUT_ACCOUNT_CRYPTO_KEY: dGVzdC1jYXNob3V0LWtleS0zMi1ieXRlcy1sb25nISE=
 
+  analysis:
+    name: Analysis lint·test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analysis-server
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: analysis-server/uv.lock
+
+      - run: uv sync --locked
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy
+      - run: uv run pytest
+
   # PR에서만: 운영 이미지가 빌드되는지 확인하고 올리지 않는다
   docker:
     name: Docker build (${{ matrix.service }})
@@ -99,7 +119,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [backend, frontend]
+        include:
+          - service: backend
+            context: backend
+          - service: frontend
+            context: frontend
+          - service: analysis
+            context: analysis-server
     steps:
       - uses: actions/checkout@v7
 
@@ -107,7 +133,7 @@ jobs:
 
       - uses: docker/build-push-action@v7
         with:
-          context: ${{ matrix.service }}
+          context: ${{ matrix.context }}
           push: false
           build-args: |
             NEXT_PUBLIC_SITE_URL=http://localhost:3005
@@ -119,7 +145,7 @@ jobs:
   # develop에 push됐고 검사를 통과했을 때만
   build-push:
     name: Build·push image (${{ matrix.service }})
-    needs: [frontend, backend]
+    needs: [frontend, backend, analysis]
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     permissions:
@@ -128,7 +154,13 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [backend, frontend]
+        include:
+          - service: backend
+            context: backend
+          - service: frontend
+            context: frontend
+          - service: analysis
+            context: analysis-server
     steps:
       - uses: actions/checkout@v7
 
@@ -163,7 +195,7 @@ jobs:
 
       - uses: docker/build-push-action@v7
         with:
-          context: ${{ matrix.service }}
+          context: ${{ matrix.context }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -174,9 +206,11 @@ jobs:
 
   # ---- CD: 배포 ----
 
-  # 두 이미지가 모두 올라간 뒤 서버에 SSH로 들어가 새 이미지로 다시 띄운다
+  # 세 이미지(backend, frontend, analysis)가 모두 올라간 뒤 서버에 SSH로 들어가 새 이미지로 다시 띄운다
   # Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (포트가 22가 아니면 DEPLOY_PORT)
   # 서버에는 ~/test-moa에 저장소를 develop 브랜치로 clone하고 .env를 둔다
+  # Anthropic API 키(ANALYSIS_ANTHROPIC_API_KEY)는 Actions Secrets에 두지 않고 서버 .env에만 둔다
+  # 워크플로·이미지를 거치지 않으므로 로그와 이미지 레이어에 남지 않는다
   deploy:
     name: Deploy to test server
     needs: build-push

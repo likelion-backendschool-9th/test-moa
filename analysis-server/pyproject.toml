@@ -1,0 +1,90 @@
+[project]
+name = "review-analysis"
+version = "0.1.0"
+description = "테스터 리뷰 분석 서버 (리뷰 묶기 · 우선순위 · 버전 비교 · 후속 질문)"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=2.4.0",
+    "fastapi>=0.162.0",
+    "pydantic-settings>=2.16.2",
+    "structlog>=26.1.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.32,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "httpx2>=2.16.0",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]
+
+# ─────────────────────────── Ruff ───────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",   # pycodestyle, pyflakes
+    "I",             # import 정렬
+    "N",             # 네이밍
+    "UP",            # 최신 문법으로 업그레이드 (list[int], X | None 등)
+    "B",             # 흔한 버그 패턴
+    "SIM",           # 단순화
+    "RUF",           # ruff 고유 규칙
+    "ASYNC",         # async 함수 안의 블로킹 호출 탐지
+    "S",             # 보안 (bandit)
+    "PT",            # pytest 스타일
+    "TC",            # 타입 전용 import 정리
+    "ANN",           # 타입 힌트 누락
+    "FAST",          # FastAPI 권장 패턴 (Annotated 등)
+    "PL",            # pylint
+    "RET", "PIE", "C4", "PERF",
+]
+ignore = [
+    "RUF001", "RUF002", "RUF003",  # 한글 주석/문자열의 유사 문자 경고
+]
+
+[tool.ruff.lint.flake8-type-checking]
+# Pydantic 모델의 필드 타입은 런타임에 실제로 필요하다 (검증·직렬화에 사용).
+# 이걸 알려주지 않으면 TC 규칙이 import를 TYPE_CHECKING 블록으로 옮기라고 해서 앱이 깨진다.
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "review_analysis.api.schemas.common.ApiModel",
+    "review_analysis.adapters.llm.anthropic_llm._LLMOut",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ANN", "PLR2004"]
+# FastAPI는 라우터 함수의 타입 힌트(Annotated[..., Depends])를 런타임에 읽어 의존성을 주입한다.
+"src/review_analysis/api/routers/**" = ["TC001"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ─────────────────────────── mypy ───────────────────────────
+[tool.mypy]
+strict = true
+python_version = "3.13"
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+packages = ["review_analysis"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# ─────────────────────────── pytest ─────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+filterwarnings = ["error"]

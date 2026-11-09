@@ -1,0 +1,17 @@
+# Caddy: HTTPS 인증서(Let's Encrypt) 자동 발급·갱신 + 리버스 프록시
+{$DOMAIN} {
+	encode zstd gzip
+
+	request_body {
+		max_size 5MB # 리뷰 1000개 × 4000자 수준. 그 이상은 거부
+	}
+
+	reverse_proxy analysis:8000 {
+		# 분석은 오래 걸릴 수 있으므로 응답 대기 시간을 넉넉하게
+		transport http {
+			read_timeout 5m
+		}
+	}
+
+	header -Server
+}

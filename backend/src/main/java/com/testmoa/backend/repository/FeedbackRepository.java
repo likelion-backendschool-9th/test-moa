@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -72,6 +73,25 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     // 참가에 피드백이 있는지(#118). 피드백은 제출할 때만 저장되므로 있으면 낸 것이다
     boolean existsByRegisterId(Long registerId);
+
+    /** 모집 건별 신고 대기 피드백 수와 가장 먼저 낸 시각. after보다 뒤에 낸 피드백만 센다 */
+    @Query("""
+            select f.register.recruitment.id as recruitmentId, count(f) as count, min(f.submittedAt) as firstSubmittedAt
+            from feedbacks f
+            where f.register.recruitment.id in :recruitmentIds and f.status = :status and f.submittedAt > :after
+            group by f.register.recruitment.id
+            """)
+    List<WaitingCount> countWaitingByRecruitmentIds(@Param("recruitmentIds") Collection<Long> recruitmentIds,
+                                                    @Param("status") FeedbackStatus status,
+                                                    @Param("after") LocalDateTime after);
+
+    interface WaitingCount {
+        Long getRecruitmentId();
+
+        long getCount();
+
+        LocalDateTime getFirstSubmittedAt();
+    }
 
     // 여러 참가의 피드백(#117). 참가 id로 묶는다
     List<Feedback> findByRegisterIdIn(Collection<Long> registerIds);

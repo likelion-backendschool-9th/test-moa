@@ -1,0 +1,19 @@
+.venv
+.git
+.github
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.models
+tests
+.env
+.env.*
+compose.yaml
+Caddyfile
+
+# 에디터·인증서·키 파일이 이미지에 섞이지 않게 한다
+.idea
+.vscode
+*.pem
+*.key

@@ -30,10 +30,11 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
             """)
     Optional<ChatRoomEntry> findRoomByRoomKeyAndUserId(@Param("roomKey") String roomKey, @Param("userId") Long userId);
 
+    // 채팅함 카드는 한 줄만 보여 주므로 최근 메시지는 앞 100자만 읽는다(#170). PostgreSQL은 코드 포인트로 세어 서로게이트 쌍이 갈리지 않는다
     @Query("""
             select new com.testmoa.backend.repository.projection.ChatInboxEntry(
                 room.id, room.roomKey, recruitment.id, project.user.id, project.title, me.customRoomName, project.imageUrl,
-                me.role, partnerUser.nickname, partner.role, message.content, room.lastMessageAt,
+                me.role, partnerUser.nickname, partner.role, substring(message.content, 1, 100), room.lastMessageAt,
                 (select count(unread.id) from chat_messages unread
                  where unread.room = room and unread.seq > me.lastReadSeq and unread.sender.id <> me.id))
             from chat_participants me

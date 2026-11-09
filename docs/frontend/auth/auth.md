@@ -299,7 +299,7 @@ S315 의존 방향 (고침 11-01: 구조 리뷰 — 파일 수만으로는 기�
 
 - 콜백에서 백엔드를 부를 때는 20초까지 기다린다. 백엔드가 제공자에게 2~3번 물어서 기본 5초면 백엔드는 로그인했는데 화면은 실패가 될 수 있다
 - 돌아올 주소는 `NEXT_PUBLIC_SITE_URL` + `/auth/callback/{provider}`(없으면 `http://localhost:3000`). 제공자 앱에 등록한 주소와 글자까지 같아야 한다
-- 실패하면 `/login?error=<키>`로 보내고 로그인 화면이 키에 맞는 문구를 보인다(`oauth`, `suspended`, `email`, `expired`, `linkRequired`). 주소에 문구를 넣지 않아 남이 만든 문구가 보이지 않는다
+- 실패하면 `/login?error=<키>`로 보내고 로그인 화면이 키에 맞는 문구를 보인다(`oauth`, `suspended`, `email`, `expired`, `linkRequired`, `providerLinked`). 주소에 문구를 넣지 않아 남이 만든 문구가 보이지 않는다
 
 #83-S9 `/signup/social`에서 이름과 약관 동의가 없으면 칸 아래에 알린다 [테스트]
 - 목업에서는 시연 이메일·닉네임으로 화면이 보인다

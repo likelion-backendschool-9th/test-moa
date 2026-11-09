@@ -75,6 +75,7 @@ export const OAUTH_ERRORS = {
   email: "확인된 이메일이 없는 계정이에요. 소셜 계정에서 이메일을 확인한 뒤 다시 시도해 주세요",
   expired: "가입 시간이 지났어요. 소셜 로그인을 다시 해 주세요",
   linkRequired: "이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요",
+  providerLinked: "같은 이메일 회원에 이 서비스의 다른 계정이 이미 연동돼 있어요. 연동된 계정으로 로그인해 주세요",
 } as const;
 
 export type OAuthErrorKey = keyof typeof OAUTH_ERRORS;
@@ -85,5 +86,6 @@ export function oauthErrorKey(code: string): OAuthErrorKey {
   if (code === "OAUTH_EMAIL_REQUIRED") return "email";
   if (code === "INVALID_SIGNUP_TOKEN") return "expired";
   if (code === "EMAIL_ACCOUNT_EXISTS") return "linkRequired";
+  if (code === "PROVIDER_ALREADY_LINKED") return "providerLinked";
   return "oauth";
 }

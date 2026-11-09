@@ -114,7 +114,7 @@
    - 파일: `backend/src/main/java/com/testmoa/backend/dto/response/FeedbackResponse.java`(`Long feedbackId` 다음에 `Long registerId`), `service/impl/FeedbackServiceImpl.java`(`feedback.getRegister().getId()`), 테스트 `controller/developer/FeedbackControllerTest.java`(`@DisplayName("#195-S1 피드백마다 참가 id를 준다")`), `docs/backend/project/feedback-management.md`(목록 응답 필드에 `registerId`, 끝에 `(고침 #195: 채팅 걸기에 참가 id가 필요하다)`)
    - 확인: `./gradlew test --tests '*FeedbackControllerTest'`
 
-2~4단계는 #190 병합 뒤 그 브랜치의 변환 함수를 보고 시작한다.
+2~4단계는 #190의 `features/recruitment/backend-map.ts` 변환 함수 위에서 작업한다.
 
 2. 채팅 시작 API와 문구 — #195-S8, #195-S12
    - `features/chat/backend-map.ts`: `toChatStartFailureMessage(code: string): string`
@@ -124,10 +124,11 @@
    - 확인: `npx tsc --noEmit`, `npm run lint`, `npm test`
 3. 버튼 연결 — #195-S2~#195-S7, #195-S9, #195-S10, #195-S13
    - `features/recruitment/types.ts`: `Application`과 `Feedback`에 `registerId?: string`. 목업은 넣지 않는다
-   - #190의 지원자·피드백 변환 함수: `registerId: String(response.registerId)`
+   - `features/recruitment/backend-map.ts`: `DeveloperFeedbackResponse`에 `registerId: number`를 더한다. `ApplicantResponse`에는 이미 있다. `toApplication`과 `toFeedback`은 `registerId: String(item.registerId)`를 돌려준다
+   - `tests/unit/recruitment-manage-map.test.ts`: `feedback` 테스트 데이터에 `registerId`를 더하고, 두 변환 결과의 `registerId`를 확인한다
    - `_lib/use-start-chat.ts`: `useStartChat(recruitmentKey)`는 `{ start(registerId, onFailure), isPending }`을 돌려준다. `useTransition` 안에서 액션을 부르고, 잡은 오류는 `unstable_rethrow` 뒤 연결 실패 문구를 `onFailure`로 넘긴다
    - `ApplicantList.tsx`: `registerId`가 있으면 `Link` 대신 같은 `aria-label`의 `<button type="button" className={styles.link} disabled={isPending}>`, 실패는 `setError`. 없으면 지금 링크. `ApplicantList.module.css`의 `.link`에 버튼 기본 모양을 지우는 값을 더한다
-   - `FeedbackList.tsx`: `registerId`가 있으면 `start`, 실패는 `showNotice(item, message)`. 없으면 `CHAT_NOT_READY`. `FollowupQuestionsDialog`에 `asking.registerId`와 `recruitmentKey`를 넘긴다
+   - `FeedbackList.tsx`: `registerId`가 있으면 `start`, 실패는 `showNotice(item, message)`. 없으면 `CHAT_NOT_READY`. `FollowupQuestionsDialog`에 `asking.registerId`와 `recruitmentKey`를 넘긴다. 머리 주석의 "채팅방 생성은 API가 없어 준비 중"을 지금 동작에 맞게 고친다
    - `FollowupQuestionsDialog.tsx`: `registerId` prop이 있으면 `goChat`이 `start`를 부르고, 실패는 `setChatNotice`와 `setAnnouncement`. 없으면 지금 안내
    - 확인: `npx tsc --noEmit`, `npm run lint`, `npm test`, 모집 관리 관련 E2E
 4. 문서 — `projects.md`의 #62-S23, #62-S24, #134-S3, #134-S7 끝에 `(고침 #195: 목업 모드의 동작이다. 백엔드 모드는 채팅방으로 바로 간다)`를 붙이고, `docs/backend/chat/README.md`의 이슈 표에 #195와 이 문서를 더한다

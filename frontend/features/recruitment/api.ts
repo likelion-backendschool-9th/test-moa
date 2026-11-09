@@ -54,6 +54,7 @@ import {
   getHoursUntilPaid,
   getRecruitmentStatus,
   getSubmissionStatus,
+  pickBannerRecruitments,
   type FollowupResult,
   type RecruitmentStatus,
 } from "@/features/recruitment/types";
@@ -153,14 +154,19 @@ export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
   return [...subscription].sort(byLatest);
 }
 
-/** 모집 마감 전인 모집 건을 최신순으로. 홈 배너의 교정지 더미에 쓴다 */
+/** 홈 배너의 교정지 더미에 쓴다. 모집 마감 전인 구독 모집을 최신순으로 먼저 놓고, 남는 자리는 전체 최신순으로 채운다 */
 export async function getLatestOpenRecruitments(limit = 3): Promise<Recruitment[]> {
-  if (isBackendAuth) return (await readRecruitmentPage(new URLSearchParams({ open: "true", size: String(limit) }))).items;
+  if (isBackendAuth) {
+    const size = String(limit);
+    const [subscription, latest] = await Promise.all([
+      readRecruitmentPage(new URLSearchParams({ subscription: "true", open: "true", size })),
+      readRecruitmentPage(new URLSearchParams({ open: "true", size })),
+    ]);
+    return pickBannerRecruitments(subscription.items, latest.items, limit);
+  }
   const { now, subscription, general } = await loadAll();
-  return [...subscription, ...general]
-    .filter((item) => new Date(item.recruitDeadline) > now)
-    .sort(byLatest)
-    .slice(0, limit);
+  const open = [...subscription, ...general].filter((item) => new Date(item.recruitDeadline) > now).sort(byLatest);
+  return pickBannerRecruitments(open.filter((item) => item.isSubscription), open, limit);
 }
 
 export const RECRUITMENT_PAGE_SIZE = 20;

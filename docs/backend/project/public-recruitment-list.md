@@ -38,7 +38,7 @@
 - 응답: `items`, `total`(조건에 맞는 전체 개수), `page`(실제로 준 페이지), `pageCount`(결과가 없어도 1)
 - 항목 하나: `id`, `title`(모집글 제목, 카드의 "할 일" 줄), `projectName`, `projectDescription`, `projectImageUrl`, `softwareType`, `subscription`, `status`, `createdAt`, `recruitDeadline`, `submitDeadline`. 상태와 유형 이름은 #113 상세와 같다(`recruiting`, `testing`, `closed` / `web` …)
 - 홈의 세 영역은 이렇게 부른다
-  - 배너의 최신 모집 3건: `open=true&size=3`
+  - 배너의 모집 3건: 구독 모집 `subscription=true&open=true&size=3`을 먼저 놓고, 남는 자리를 `open=true&size=3`으로 채운다. 합치는 일은 프론트가 한다 (고침 #212: 구독 모집 우선)
   - "이런 테스트도 있어요": `subscription=true&open=true`. 모집이 끝난 구독 모집은 지원할 수 없어 뺀다
   - 전체 테스트: 화면 URL의 조건을 그대로 넘긴다(`open=1`도 그대로 받는다)
 - 코드: `controller.RecruitmentController.search`, `RecruitmentService.search`, 조건은 요청 DTO `RecruitmentSearchRequest`(`@ModelAttribute`로 받고 기본값과 검증을 DTO에 모음, 리뷰 반영), 응답은 `RecruitmentPageResponse`, 조건 쿼리는 `RecruitmentSearchRepository`(+`Impl`)다. 상태는 `Recruitment.phaseAt(now)`로 계산한다([README 정한 것 11·15](README.md#정한-것))

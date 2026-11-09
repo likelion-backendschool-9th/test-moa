@@ -5,6 +5,7 @@ import com.testmoa.backend.dto.response.CashoutResponse;
 import com.testmoa.backend.entity.Cashout;
 import com.testmoa.backend.entity.CreditWallet;
 import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.util.Masking;
@@ -51,12 +52,14 @@ public class CashoutServiceImpl implements CashoutService {
 
     /**
      * 출금 신청. 지갑을 FOR UPDATE로 잠근 뒤 적립→잠김만 옮기고 장부는 남기지 않는다.
+     * 회원 행을 먼저 잠가 탈퇴 신청(#84)과 차례로 처리한다. 탈퇴가 먼저 끝났으면 출금하지 않는다
      */
     @Override
     @Transactional
     public CashoutResponse requestCashout(Long userId, CashoutCreateRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (user.getStatus() != UserStatus.ACTIVE) throw new BusinessException(ErrorCode.UNAUTHORIZED);
         if (request.amount() == null || request.amount() < 1) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "1 크레딧 이상 입력해 주세요");
         }

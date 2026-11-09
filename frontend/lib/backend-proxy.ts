@@ -25,7 +25,7 @@ export async function proxyBackendFile(request: Request, path: string, withToken
     }
     const result = await fetch(`${BACKEND_URL}${path}`, options);
     const responseHeaders = new Headers();
-    for (const name of ["content-type", "cache-control", "x-content-type-options"]) {
+    for (const name of ["content-type", "cache-control", "x-content-type-options", "content-disposition"]) {
       const value = result.headers.get(name);
       if (value) responseHeaders.set(name, value);
     }

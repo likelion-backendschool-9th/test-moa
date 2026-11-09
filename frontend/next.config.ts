@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root,
   },
+  experimental: {
+    /* 신고 증거 파일(한 장 5MB, 5장)을 서버 액션으로 받는다. 백엔드·nginx 한도(30MB)와 맞춘다 */
+    serverActions: { bodySizeLimit: "30mb" },
+    proxyClientMaxBodySize: "30mb",
+  },
 };
 
 export default nextConfig;

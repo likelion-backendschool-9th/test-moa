@@ -97,6 +97,42 @@ export type Withdrawal = {
   rejectReason?: string;
 };
 
+/** 서버 `GET /api/v1/my/credits/withdrawals` 응답의 한 줄. 처리 중인 요청의 계좌번호는 그대로, 끝난 요청은 가려져 온다 */
+export type ServerWithdrawal = {
+  id: number;
+  amount: number;
+  status: "REQUESTED" | "PAID" | "REJECTED";
+  bank: string;
+  accountNumber: string;
+  rejectReason: "HOLDER" | "ACCOUNT" | "OTHER" | null;
+  rejectMemo: string | null;
+  requestedAt: string;
+};
+
+const SERVER_WITHDRAWAL_STATUS: Record<ServerWithdrawal["status"], WithdrawalStatus> = {
+  REQUESTED: "requested",
+  PAID: "paid",
+  REJECTED: "rejected",
+};
+
+/**
+ * 서버 출금 한 줄을 화면 값으로 바꾼다. 계좌는 처리 중이어도 끝 4자리만 보이게 가린다(이미 가려진 값도 같은 결과다).
+ * 반려는 사유 문구에 운영자가 적은 메모가 있으면 괄호로 붙인다
+ */
+export function withdrawalFromServer(item: ServerWithdrawal): Withdrawal {
+  const reason = item.rejectReason ? REJECT_REASONS[item.rejectReason.toLowerCase() as RejectReason] : undefined;
+  const memo = item.rejectMemo?.trim();
+  return {
+    id: String(item.id),
+    amount: item.amount,
+    status: SERVER_WITHDRAWAL_STATUS[item.status],
+    bank: item.bank,
+    accountMasked: maskAccount(item.accountNumber),
+    requestedAt: item.requestedAt,
+    ...(reason ? { rejectReason: memo ? `${reason} (${memo})` : reason } : memo ? { rejectReason: memo } : {}),
+  };
+}
+
 export const BANKS = ["국민은행", "신한은행", "우리은행", "하나은행", "농협은행", "카카오뱅크", "토스뱅크"] as const;
 
 /**

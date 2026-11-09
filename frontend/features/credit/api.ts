@@ -20,8 +20,10 @@ import {
   type LedgerType,
   type ServerCreditBalance,
   type ServerCreditLedger,
+  type ServerWithdrawal,
   type Withdrawal,
   type WithdrawalReview,
+  withdrawalFromServer,
 } from "@/features/credit/types";
 import { type WithdrawalRequest } from "@/features/credit/types";
 import { assertAdmin, requireMember } from "@/features/session/guard";
@@ -31,7 +33,7 @@ import "server-only";
 
 /*
  * 크레딧 데이터 접근. `AUTH_MODE=backend`에서는 잔액과 내역을 서버에서 읽고(#205), 아니면 목업을 돌려준다.
- * 출금 요청은 아직 목업이다(출금 연결은 #206).
+ * 출금 요청도 서버 값이다(#206). 운영자 출금 처리는 아직 목업이다(#207).
  * 모든 함수는 비로그인이면 next 경로를 붙여 로그인으로 보낸다.
  */
 
@@ -50,6 +52,27 @@ async function readBalance(): Promise<CreditBalance> {
   return balanceFromServer(result.data);
 }
 
+/** 서버의 내 출금 내역, 최신순 */
+async function readWithdrawals(): Promise<Withdrawal[]> {
+  const result = await backendFetch<ServerWithdrawal[]>("/api/v1/my/credits/withdrawals");
+  if (!result.ok) throw new Error(result.message);
+  return result.data.map(withdrawalFromServer);
+}
+
+/** 출금 신청의 결과. 서버가 거절하면 문구와, 입력 형식 오류면 칸별 문구를 돌려준다 */
+export type WithdrawalSubmitResult = { ok: true } | { ok: false; message: string; fields?: Record<string, string> };
+
+/** 서버에 출금을 신청한다. 신청한 금액은 서버가 적립에서 처리 중으로 옮긴다 */
+export async function submitServerWithdrawal(request: {
+  amount: number;
+  bank: string;
+  accountNumber: string;
+  accountHolder: string;
+}): Promise<WithdrawalSubmitResult> {
+  const result = await backendFetch<unknown>("/api/v1/my/credits/withdrawals", { method: "POST", body: request });
+  return result.ok ? { ok: true } : { ok: false, message: result.message, fields: result.fields };
+}
+
 /** 서버의 내 크레딧 내역, 최신순. limit을 주면 서버가 앞에서부터 그 개수만 준다(1~100) */
 async function readLedger(type: LedgerType, limit?: number): Promise<CreditEntry[]> {
   const query = limit === undefined ? `type=${type}` : `type=${type}&limit=${limit}`;
@@ -66,12 +89,9 @@ async function readLedger(type: LedgerType, limit?: number): Promise<CreditEntry
 export async function creditDataFor(role: Exclude<Role, "guest">, now: Date, ledgerLimit?: number): Promise<CreditData> {
   const data = buildCreditData(role, now);
   if (isBackendAuth) {
-    /*
-     * 잔액과 내역은 서버 값이다. 마이페이지처럼 앞의 몇 건만 쓰면 ledgerLimit만큼만 받는다.
-     * 출금 요청은 연결 전(#206)이라 목업을 그대로 두고, 서버의 출금 처리 중 금액에는 더하지 않는다
-     */
-    const [balance, ledger] = await Promise.all([readBalance(), readLedger("all", ledgerLimit)]);
-    return { ...data, balance, ledger };
+    /* 잔액·내역·출금 요청 모두 서버 값이다. 시연용 쿠키 기록은 쓰지 않는다 */
+    const [balance, ledger, withdrawals] = await Promise.all([readBalance(), readLedger("all", ledgerLimit), readWithdrawals()]);
+    return { ...data, balance, ledger, withdrawals };
   }
   const [requested, payments] = await Promise.all([getDemoWithdrawals(role), getDemoSubscriptionPayments(role)]);
   const locked = requested.reduce((sum, item) => sum + item.amount, 0);

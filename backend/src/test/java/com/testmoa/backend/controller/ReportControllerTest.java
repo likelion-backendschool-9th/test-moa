@@ -336,7 +336,7 @@ class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("#85-S12 피드백 신고 API로 신고하면 FEEDBACK 신고가 생기고, 기각하면 REWARDED, 인정하면 EXCLUDED")
+    @DisplayName("#85-S12 피드백 신고 API로 신고하면 FEEDBACK 신고가 생기고, 기각하면 SUBMITTED, 인정하면 EXCLUDED")
     void 피드백_신고_판정() throws Exception {
         User admin = admin();
         Feedback rejected = feedback();
@@ -348,12 +348,67 @@ class ReportControllerTest {
         review(admin, acceptedReport, "ACCEPTED").andExpect(status().isOk());
         em.flush();
         em.clear();
-        assertThat(em.find(Feedback.class, rejected.getId()).getStatus()).isEqualTo(FeedbackStatus.REWARDED);
+        assertThat(em.find(Feedback.class, rejected.getId()).getStatus()).isEqualTo(FeedbackStatus.SUBMITTED);
         assertThat(em.find(Feedback.class, accepted.getId()).getStatus()).isEqualTo(FeedbackStatus.EXCLUDED);
         Report saved = em.find(Report.class, rejectedReport);
         assertThat(saved.getReporter().getId()).isEqualTo(developer.getId());
         assertThat(saved.getReportedUser().getId()).isEqualTo(tester.getId());
         assertThat(saved.getReason()).isEqualTo("써 보지 않고 냈어요");
+    }
+
+    // 보상 1,000이 걸린 다른 테스터(stranger)의 참가와 피드백. 승인 대기 크레딧을 확인할 때 쓴다
+    Register rewardedRegister() {
+        Register paid = Register.builder().recruitment(recruitment).user(stranger).build();
+        paid.confirm(1000, 0, LocalDateTime.now());
+        em.persist(paid);
+        return paid;
+    }
+
+    Feedback feedbackOf(Register owner) {
+        Feedback feedback = Feedback.builder().register(owner).content("버튼이 안 눌려요").submittedAt(LocalDateTime.now()).build();
+        em.persist(feedback);
+        em.flush();
+        return feedback;
+    }
+
+    ResultActions pendingReward(User user, int expected) throws Exception {
+        em.flush();
+        em.clear();
+        return asUser(user, get("/api/v1/my/credits")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pendingReward").value(expected));
+    }
+
+    @Test
+    @DisplayName("#85-S17 피드백 신고를 기각하면 그 참가의 보상이 승인 대기에 다시 잡힌다")
+    void 기각하면_승인_대기로_돌아온다() throws Exception {
+        Feedback feedback = feedbackOf(rewardedRegister());
+        long reportId = reportFeedback(feedback);
+        pendingReward(stranger, 0);
+        review(admin(), reportId, "REJECTED").andExpect(status().isOk());
+        pendingReward(stranger, 1000);
+    }
+
+    @Test
+    @DisplayName("#85-S18 기각된 피드백은 다시 신고할 수 없다")
+    void 기각된_피드백은_다시_신고_못_한다() throws Exception {
+        Feedback feedback = feedback();
+        review(admin(), reportFeedback(feedback), "REJECTED").andExpect(status().isOk());
+        em.flush();
+        asUser(developer, post("/api/v1/developer/feedbacks/" + feedback.getId() + "/report")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"또 신고\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("FEEDBACK_REPORT_DISMISSED"));
+    }
+
+    @Test
+    @DisplayName("#85-S19 한 번에 낸 칸 중 하나를 인정하면 그 참가는 승인 대기에서 빠진다")
+    void 인정하면_참가_전체가_승인_대기에서_빠진다() throws Exception {
+        Register paid = rewardedRegister();
+        Feedback reported = feedbackOf(paid);
+        feedbackOf(paid);
+        pendingReward(stranger, 1000);
+        review(admin(), reportFeedback(reported), "ACCEPTED").andExpect(status().isOk());
+        pendingReward(stranger, 0);
     }
 
     @Test

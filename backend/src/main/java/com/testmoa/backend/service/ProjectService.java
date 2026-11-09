@@ -1,6 +1,7 @@
 package com.testmoa.backend.service;
 
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
+import com.testmoa.backend.dto.request.RepositoryConnectRequest;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
 import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
 import com.testmoa.backend.dto.request.TestItemsUpdateRequest;
@@ -23,6 +24,10 @@ public interface ProjectService {
     List<RecruitmentSummaryResponse> findRecruitments(Long userId, Long projectId);
 
     ProjectResponse update(Long userId, Long projectId, ProjectSaveRequest request);
+
+    ProjectResponse connectRepository(Long userId, Long projectId, RepositoryConnectRequest request);
+
+    ProjectResponse disconnectRepository(Long userId, Long projectId);
 
     RecruitmentCreateResponse createRecruitment(Long userId, RecruitmentCreateRequest request);
 

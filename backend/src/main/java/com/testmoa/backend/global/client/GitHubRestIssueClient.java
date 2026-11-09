@@ -63,6 +63,26 @@ public class GitHubRestIssueClient implements GitHubIssueClient {
         }
     }
 
+    @Override
+    public void verify(RepositoryLink repository) {
+        try {
+            Found found = http.get()
+                    .uri("/repos/{owner}/{repo}", repository.owner(), repository.repo())
+                    .header("Authorization", "Bearer " + repository.token())
+                    .retrieve()
+                    .body(Found.class);
+            if (found == null || !found.hasIssues()) throw new BusinessException(ErrorCode.GITHUB_ISSUES_DISABLED);
+        } catch (RestClientResponseException e) {
+            throw translate(e, repository);
+        } catch (ResourceAccessException e) {
+            log.warn("GitHub에 연결하지 못했거나 응답 대기 시간을 넘김 repo={}", repository, e);
+            throw new BusinessException(ErrorCode.GITHUB_UNAVAILABLE);
+        } catch (RestClientException e) {
+            log.error("GitHub 응답을 읽지 못함 repo={}", repository, e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+        }
+    }
+
     // 401 토큰 만료·해제, 403 권한 부족, 404 레포 없음·접근 불가, 403 한도 초과·429·5xx는 잠시 후 다시
     private BusinessException translate(RestClientResponseException e, RepositoryLink repository) {
         int status = e.getStatusCode().value();
@@ -81,6 +101,8 @@ public class GitHubRestIssueClient implements GitHubIssueClient {
     }
 
     private record NewIssue(String title, String body, List<String> labels) {}
+
+    private record Found(@JsonProperty("has_issues") boolean hasIssues) {}
 
     private record Created(@JsonProperty("html_url") String htmlUrl, int number) {}
 }

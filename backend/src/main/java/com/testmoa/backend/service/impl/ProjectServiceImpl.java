@@ -1,6 +1,10 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
+import com.testmoa.backend.dto.request.RepositoryConnectRequest;
+import com.testmoa.backend.global.client.GitHubIssueClient;
+import com.testmoa.backend.service.GitHubRepositoryNames;
+import com.testmoa.backend.service.ProjectRepositoryLinkProvider.RepositoryLink;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
 import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
 import com.testmoa.backend.dto.request.TestItemsUpdateRequest;
@@ -77,6 +81,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final TypeRepository typeRepository;
     private final UserRepository userRepository;
     private final SubscriptionChecker subscriptionChecker;
+    private final GitHubIssueClient gitHubIssueClient;
 
     /**
      * 프로젝트 등록
@@ -182,6 +187,33 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectResponse update(Long userId, Long projectId, ProjectSaveRequest request) {
         Project project = findOwned(userId, projectId);
         project.update(request.name().trim(), blankToNull(request.description()), blankToNull(request.imageUrl()));
+        return withCounts(List.of(project)).getFirst();
+    }
+
+    /**
+     * GitHub 레포 연결(#227). 입력한 레포를 토큰으로 GitHub에서 읽어 이슈를 만들 수 있는지 확인한 뒤 저장한다.
+     * shortcut: GitHub 확인 동안(최대 15초) 트랜잭션을 연 채로 기다린다. 개발자가 레포를 바꿀 때만 불러서 드물다. 잦아지면 확인을 트랜잭션 밖으로 뺀다
+     */
+    @Override
+    @Transactional
+    public ProjectResponse connectRepository(Long userId, Long projectId, RepositoryConnectRequest request) {
+        Project project = findOwned(userId, projectId);
+        var name = GitHubRepositoryNames.parse(request.repository())
+                .orElseThrow(() -> invalid("repository", "owner/repo 형식이나 GitHub 주소를 적어 주세요"));
+        String token = request.token().trim();
+        gitHubIssueClient.verify(new RepositoryLink(name.owner(), name.repo(), token));
+        project.connectRepository(name.full(), token);
+        return withCounts(List.of(project)).getFirst();
+    }
+
+    /**
+     * GitHub 레포 연결 해제. 레포와 토큰을 함께 지운다. 연결하지 않았어도 성공이다
+     */
+    @Override
+    @Transactional
+    public ProjectResponse disconnectRepository(Long userId, Long projectId) {
+        Project project = findOwned(userId, projectId);
+        project.disconnectRepository();
         return withCounts(List.of(project)).getFirst();
     }
 

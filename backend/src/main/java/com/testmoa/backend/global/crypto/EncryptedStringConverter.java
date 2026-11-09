@@ -15,7 +15,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * 출금 계좌·예금주 컬럼용 AES-GCM 암·복호화.
+ * 출금 계좌·예금주, 프로젝트의 GitHub 토큰 컬럼용 AES-GCM 암·복호화. 키 하나를 함께 쓴다.
  * 저장 형식: Base64(IV 12바이트 + ciphertext+tag). 키는 CASHOUT_ACCOUNT_CRYPTO_KEY(Base64 32바이트).
  */
 @Component
@@ -61,7 +61,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
             buffer.put(cipherText);
             return Base64.getEncoder().encodeToString(buffer.array());
         } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("출금 계좌 정보를 암호화하지 못했습니다", e);
+            throw new IllegalStateException("컬럼 값을 암호화하지 못했습니다", e);
         }
     }
 
@@ -73,7 +73,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
         try {
             byte[] decoded = Base64.getDecoder().decode(dbData);
             if (decoded.length <= IV_LENGTH) {
-                throw new IllegalStateException("출금 계좌 암호문이 올바르지 않습니다");
+                throw new IllegalStateException("암호문이 올바르지 않습니다");
             }
             ByteBuffer buffer = ByteBuffer.wrap(decoded);
             byte[] iv = new byte[IV_LENGTH];
@@ -85,7 +85,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
             byte[] plain = cipher.doFinal(cipherText);
             return new String(plain, java.nio.charset.StandardCharsets.UTF_8);
         } catch (GeneralSecurityException | IllegalArgumentException e) {
-            throw new IllegalStateException("출금 계좌 정보를 복호화하지 못했습니다", e);
+            throw new IllegalStateException("컬럼 값을 복호화하지 못했습니다", e);
         }
     }
 }

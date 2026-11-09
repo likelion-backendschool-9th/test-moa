@@ -1,6 +1,7 @@
 package com.testmoa.backend.controller;
 
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
+import com.testmoa.backend.dto.request.RepositoryConnectRequest;
 import com.testmoa.backend.dto.response.ProjectDashboardResponse;
 import com.testmoa.backend.dto.response.ProjectResponse;
 import com.testmoa.backend.dto.response.RecruitmentSummaryResponse;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,5 +74,21 @@ public class ProjectController {
                                                @PathVariable Long projectId,
                                                @Valid @RequestBody ProjectSaveRequest request) {
         return ApiResponse.ok(projectService.update(userId, projectId, request));
+    }
+
+    @Operation(summary = "GitHub 레포 연결", description = "owner/repo나 GitHub 주소와 그 레포에 이슈를 만들 수 있는 토큰을 받아, GitHub에서 확인한 뒤 저장한다. "
+            + "토큰은 암호화해 저장하고 응답에 나오지 않는다. 레포를 찾을 수 없거나 토큰이 틀리거나 이슈가 꺼져 있으면 424")
+    @PutMapping("/{projectId}/repository")
+    public ApiResponse<ProjectResponse> connectRepository(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                                          @PathVariable Long projectId,
+                                                          @Valid @RequestBody RepositoryConnectRequest request) {
+        return ApiResponse.ok(projectService.connectRepository(userId, projectId, request));
+    }
+
+    @Operation(summary = "GitHub 레포 연결 해제", description = "레포와 토큰을 지운다. 연결하지 않았어도 성공이다")
+    @DeleteMapping("/{projectId}/repository")
+    public ApiResponse<ProjectResponse> disconnectRepository(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                                             @PathVariable Long projectId) {
+        return ApiResponse.ok(projectService.disconnectRepository(userId, projectId));
     }
 }

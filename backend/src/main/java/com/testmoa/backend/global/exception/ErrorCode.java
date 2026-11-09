@@ -76,6 +76,7 @@ public enum ErrorCode {
     GITHUB_REPO_NOT_LINKED(HttpStatus.CONFLICT, "프로젝트에 GitHub 레포가 연결되지 않았어요"),
     GITHUB_AUTH_REQUIRED(HttpStatus.FAILED_DEPENDENCY, "GitHub 연결을 다시 해 주세요"),
     GITHUB_REPO_UNAVAILABLE(HttpStatus.FAILED_DEPENDENCY, "GitHub 레포를 찾을 수 없거나 이슈를 만들 권한이 없어요. 레포 연결을 확인해 주세요"),
+    GITHUB_ISSUES_DISABLED(HttpStatus.FAILED_DEPENDENCY, "이 레포는 이슈 기능이 꺼져 있어요. GitHub 레포 설정에서 Issues를 켜 주세요"),
     GITHUB_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "GitHub에 잠시 이슈를 등록할 수 없어요. 잠시 후 다시 시도해 주세요"),
 
     // AI 버전 비교

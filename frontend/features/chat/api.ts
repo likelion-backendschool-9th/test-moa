@@ -32,22 +32,21 @@ type MessageSlice = { messages: ChatMessage[]; hasMore: boolean };
 const chatRoomPath = (roomKey: string) => `/api/v1/chats/${encodeURIComponent(roomKey)}`;
 const roomPagePath = (roomKey: string) => `${CHATS_PATH}/${encodeURIComponent(roomKey)}`;
 
+function navigateChatFailure(status: number, nextPath: string) {
+  if (status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (status === 404) notFound();
+}
+
 /** 페이지에서는 인증·404를 화면으로, Route Handler에서는 HTTP 오류로 넘긴다 */
 function chatResult<T>(result: BackendResult<T>, nextPath?: string): T {
   if (result.ok) return result.data;
-  if (nextPath) {
-    if (result.status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
-    if (result.status === 404) notFound();
-  }
+  if (nextPath) navigateChatFailure(result.status, nextPath);
   throw Object.assign(new Error(result.message), { status: result.status });
 }
 
-/** 이름 변경·삭제의 예상 가능한 실패는 대화상자가 처리하도록 반환한다 */
+/** 401은 로그인으로, 404는 없는 방으로 보내고 그 밖의 이름 변경·삭제 결과는 반환한다 */
 function chatMutationResult(result: BackendResult<unknown>, nextPath: string): { ok: boolean } {
-  if (!result.ok) {
-    if (result.status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
-    if (result.status === 404) notFound();
-  }
+  if (!result.ok) navigateChatFailure(result.status, nextPath);
   return { ok: result.ok };
 }
 
@@ -151,12 +150,11 @@ export async function getChatRoomTitle(roomKey: string): Promise<string | null> 
 
 /** 대화방 이름을 바꾼다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며, 빈 이름은 무시한다 */
 export async function renameChatRoom(roomKey: string, name: string): Promise<{ ok: boolean }> {
+  const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
   if (isBackendAuth) {
-    const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
     if (!trimmed) return { ok: false };
     return chatMutationResult(await backendFetch(chatRoomPath(roomKey), { method: "PATCH", body: { name: trimmed } }), roomPagePath(roomKey));
   }
-  const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
   const member = trimmed ? await roomMember(roomKey) : null;
   if (!member) return { ok: false };
   const overrides = await readOverrides(member);
@@ -178,21 +176,18 @@ export async function deleteChatRoom(roomKey: string): Promise<{ ok: boolean }> 
 
 /** 메시지를 보낸다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며(가운데 줄바꿈은 둔다), 빈 메시지는 무시한다 */
 export async function sendChatMessage(roomKey: string, text: string): Promise<ChatMessage | { readOnly: true } | undefined> {
+  const trimmed = text.trim().slice(0, isBackendAuth ? CHAT_MESSAGE_MAX : 500);
+  if (!trimmed) return;
   if (isBackendAuth) {
-    const trimmed = text.trim().slice(0, CHAT_MESSAGE_MAX);
-    if (!trimmed) return;
     const result = await backendFetch<ChatMessageResponse>(`${chatRoomPath(roomKey)}/messages`, { method: "POST", body: { text: trimmed } });
     if (!result.ok && result.status === 403 && result.code === "CHAT_READ_ONLY") return { readOnly: true };
     return toChatMessage(chatResult(result, roomPagePath(roomKey)));
   }
-  const trimmed = text.trim().slice(0, 500);
-  const member = trimmed ? await roomMember(roomKey) : null;
+  const member = await roomMember(roomKey);
   const sender = member && chatMemberNickname(member);
   if (!sender) return;
   const sent = await readSent();
   await writeSent([...sent, { roomKey, sender, text: trimmed, sentAt: new Date().toISOString() }]);
-  const data = await getChatRoom(roomKey);
-  return data.messages[data.messages.length - 1];
 }
 
 /** 이전·이후 메시지 조회. 브라우저에서는 Route Handler를 거친다 */

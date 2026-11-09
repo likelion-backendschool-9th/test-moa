@@ -35,6 +35,6 @@ export async function deleteChatRoomAction(roomKey: string, leave = false) {
 export async function sendChatMessageAction(roomKey: string, text: string) {
   if (typeof roomKey !== "string" || typeof text !== "string") return;
   const result = await sendChatMessage(roomKey, text);
-  if (isBackendAuth && result && !("readOnly" in result)) revalidatePath(CHATS_PATH);
+  if (isBackendAuth && result) revalidatePath(CHATS_PATH);
   return result;
 }

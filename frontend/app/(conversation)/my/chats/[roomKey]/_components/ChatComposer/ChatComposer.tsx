@@ -80,7 +80,7 @@ export function ChatComposer({ roomKey, lastMessage, now, readOnly, onSent }: Ch
       addPending(message);
       try {
         const result = await sendChatMessageAction(roomKey, message);
-        if (result) onSent(result);
+        if (result) startTransition(() => onSent(result));
       } catch {
         setText((current) => current || message);
         setFailed(true);

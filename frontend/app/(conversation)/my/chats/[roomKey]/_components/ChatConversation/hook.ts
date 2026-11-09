@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { shouldReplaceChatMessages } from "@/features/chat/message-window";
 import type { ChatMessage, ChatRoomData } from "@/features/chat/types";
 
 function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
@@ -8,7 +10,8 @@ function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
 }
 
 export function useChatConversation(data: ChatRoomData) {
-  const [source, setSource] = useState(data.messages);
+  const router = useRouter();
+  const [source, setSource] = useState(data);
   const [stored, setStored] = useState(data.messages);
   const [hasMore, setHasMore] = useState(data.hasMore);
   const [readOnly, setReadOnly] = useState(data.room.readOnly);
@@ -18,10 +21,16 @@ export function useChatConversation(data: ChatRoomData) {
   const listRef = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
   const anchor = useRef<{ element: Element; top: number } | null>(null);
-  // 서버 갱신이 와도 이미 받은 이전 메시지는 남긴다. 목업은 쿠키로 다시 그린 값을 쓴다.
-  if (source !== data.messages) {
-    setSource(data.messages);
-    setStored(current => mergeMessages(current, data.messages));
+  // 서버 목록과 이어질 때만 이전 대화를 남긴다. 목업은 쿠키로 다시 그린 값을 쓴다.
+  if (source !== data) {
+    setSource(data);
+    setReadOnly(data.room.readOnly);
+    if (shouldReplaceChatMessages(stored, data.messages)) {
+      setStored(data.messages);
+      setHasMore(data.hasMore);
+    } else {
+      setStored(current => mergeMessages(current, data.messages));
+    }
   }
   const messages = data.live ? stored : data.messages;
   const before = messages[0]?.seq;
@@ -33,6 +42,10 @@ export function useChatConversation(data: ChatRoomData) {
     setFailed(false);
     try {
       const response = await fetch(`/api/chats/${encodeURIComponent(data.room.roomKey)}/messages?before=${before}`, { cache: "no-store" });
+      if (response.status === 401 || response.status === 404) {
+        router.refresh();
+        return;
+      }
       if (!response.ok) throw new Error("이전 메시지 조회 실패");
       const slice: { messages: ChatMessage[]; hasMore: boolean } = await response.json();
       const element = listRef.current?.querySelector("[data-message]");
@@ -45,7 +58,7 @@ export function useChatConversation(data: ChatRoomData) {
       busy.current = false;
       setLoading(false);
     }
-  }, [before, data.room.roomKey, hasMore]);
+  }, [before, data.room.roomKey, hasMore, router]);
 
   useLayoutEffect(() => {
     const previous = anchor.current;

@@ -15,6 +15,9 @@ import java.util.Optional;
 public interface CashoutRepository extends JpaRepository<Cashout, Long> {
     List<Cashout> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    // 탈퇴 전 출금 처리 중인 요청이 있는지(#84)
+    boolean existsByUserIdAndStatus(Long userId, Cashout.Status status);
+
     /** 운영자 처리 대기 목록. 신청이 오래된 순. 요청자를 함께 읽는다 */
     @EntityGraph(attributePaths = "user")
     List<Cashout> findByStatusOrderByCreatedAtAsc(Cashout.Status status);

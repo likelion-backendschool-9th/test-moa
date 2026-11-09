@@ -13,7 +13,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 | [#81](https://github.com/likelion-backendschool-9th/test-moa/issues/81) | 내 정보·구독 여부 확인 API | [아래 3](#3-내-정보구독-여부-확인-81) |
 | [#82](https://github.com/likelion-backendschool-9th/test-moa/issues/82) | 프론트 로그인·가입·로그아웃 백엔드 연결 | [로그인·회원가입](../../frontend/auth/auth.md) 9장 |
 | [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | [아래 4](#4-googlegithub-로그인과-계정-연동-83) |
-| [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | [아래 5](#5-내-정보-수정과-비밀번호-84) (탈퇴는 DB 변경 뒤) |
+| [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | [아래 5](#5-내-정보-수정과-비밀번호-84), [아래 6](#6-회원-탈퇴-84) |
 | [#85](https://github.com/likelion-backendschool-9th/test-moa/issues/85) | 회원 신고·증거 첨부 API | [reports.md](reports.md) |
 | [#86](https://github.com/likelion-backendschool-9th/test-moa/issues/86) | 운영자 제재·해제 API (#34와 역할 나누기 확정 후) | |
 | [#87](https://github.com/likelion-backendschool-9th/test-moa/issues/87) | 테스트 서버 `JWT_SECRET`과 스키마 생성 방식 | |
@@ -75,7 +75,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 #80-S4 이메일이 없거나 비밀번호가 틀리면 같은 401 `INVALID_CREDENTIALS` [테스트]
 
-#80-S5 정지 회원은 403 `SUSPENDED`, 탈퇴 회원은 없는 계정과 같다 [테스트]
+#80-S5 정지 회원은 403 `SUSPENDED`, 탈퇴 회원은 없는 계정과 같다 [테스트] (고침 #84: 탈퇴 유예 회원은 403 `WITHDRAWAL_PENDING`과 되돌리기 토큰을 받는다. 파기된 회원은 로그인 계정이 없어 401 `INVALID_CREDENTIALS`)
 
 #80-S6 refresh 토큰으로 새 토큰 쌍을 받고, 쓴 refresh 토큰은 다시 쓸 수 없다 [테스트]
 
@@ -166,7 +166,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 - 위조·만료는 401 `INVALID_SIGNUP_TOKEN`, 가입 토큰을 Bearer로 쓰면 401, 이미 가입한 가입 토큰을 다시 쓰면 409
 
 #83-S7 정지된 회원은 소셜 로그인도 403 `SUSPENDED` [테스트]
-- 탈퇴 유예 회원은 401 `OAUTH_FAILED`로 막기만 한다. 되돌리기는 #84
+- 탈퇴 유예 회원은 401 `OAUTH_FAILED`로 막기만 한다. 되돌리기는 #84 (고침 #84: 이메일 로그인과 같이 403 `WITHDRAWAL_PENDING`과 되돌리기 토큰)
 
 #83-S8 동의 화면 주소에는 앱 id·돌아올 주소·state·scope가 들어가고 비밀번호는 없다 [테스트]
 - scope: Google `openid email profile`, GitHub `read:user user:email`
@@ -183,7 +183,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 ## 5. 내 정보 수정과 비밀번호 (#84)
 
-개인정보 수정 화면(`/my/profile/edit`)이 쓰는 API다. DB 변경은 없다. 탈퇴(`withdrawn_at`, `DELETED`)는 ERD를 정한 뒤 이 장에 더한다. #84-S1~S8은 프론트 탈퇴 화면이 쓴다.
+개인정보 수정 화면(`/my/profile/edit`)이 쓰는 API다. DB 변경은 없다. 탈퇴는 [아래 6](#6-회원-탈퇴-84)에 있다. #84-S1~S8은 프론트 탈퇴 화면이 쓴다.
 
 - API
   - `PATCH /api/users/me` `{name, nickname}`: 이름·닉네임 수정. 바뀐 내 정보(`GET /api/users/me`와 같은 모양)를 돌려준다
@@ -213,6 +213,70 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 - Then  200이고 `GET /api/users/me`의 `hasPassword`가 true, `providers`에 LOCAL이 더해지고, 가입 이메일과 새 비밀번호로 로그인된다
 
 #84-S13 로그인하지 않으면 두 API 모두 401 [테스트]
+
+## 6. 회원 탈퇴 (#84)
+
+탈퇴는 바로 지우지 않고 30일 유예(`WITHDRAWN`) 뒤 개인정보를 파기한다(`DELETED`).
+
+- API
+  - `DELETE /api/users/me` `{password}` 또는 `{confirmText: "탈퇴합니다"}`: 탈퇴 신청. 비밀번호가 있으면 비밀번호, 소셜로만 가입했으면 확인 문구를 확인한다. 모든 기기의 로그인(refresh 토큰)을 지운다
+  - `POST /api/auth/restore` `{restoreToken}`: 탈퇴 되돌리기. 로그인 토큰을 준다
+- 되돌리기 흐름: 유예 회원이 이메일·소셜 로그인에 성공하면 403 `WITHDRAWAL_PENDING`과 `error.fields.restoreToken`(10분), `error.fields.purgeAt`(파기 예정 일시)을 받는다. 프론트가 "되돌릴까요?"를 묻고 `restoreToken`으로 되돌린다
+  - 이슈의 `POST /api/users/me/restore` 대신 이 주소로 했다. 유예 회원은 로그인 전이라 access 토큰이 없다
+  - 되돌리기 토큰은 회원 id를 `sub`가 아닌 `uid`에 넣어 access 토큰으로 쓸 수 없다
+  - 토큰에 탈퇴 신청 일시(`wat`)를 넣어 그 탈퇴에만 쓴다. 되돌린 뒤 다시 탈퇴하면 예전 토큰은 401 `INVALID_RESTORE_TOKEN`
+  - 30일이 지나면 파기 작업(04:00) 전이라도 되돌릴 수 없다. 로그인은 파기된 회원과 같이 401 `INVALID_CREDENTIALS`, 되돌리기는 401 `INVALID_RESTORE_TOKEN`
+- 출금 처리 중(`cashouts.status = REQUESTED`)이면 409 `CASHOUT_IN_PROGRESS`
+  - 출금 신청도 회원 행을 먼저 잠가서(`findByIdForUpdate`), 탈퇴와 출금이 동시에 와도 둘 중 하나만 된다. 탈퇴가 먼저 끝났으면 출금 신청은 401
+- 파기: 매일 04:00(`withdrawal.purge-cron`) 탈퇴 신청 뒤 30일이 지난 회원의
+  - 회원마다 되돌리기와 같은 행 잠금(`findByIdForUpdate`)을 잡고 상태와 기한을 다시 확인한다. 목록을 읽은 뒤 되돌린 회원은 건너뛴다
+  - 로그인 계정(`accounts`)과 로그인 세션(`refresh_tokens`)을 지운다
+  - 이름·프로필 이미지는 비우고, 이메일은 `deleted-{id}@withdrawn`, 닉네임은 `탈퇴한 회원#{id}`로 바꾼다. 이메일이 바뀌어 같은 이메일로 다시 가입할 수 있다. 바꾼 이메일은 도메인에 점이 없어 가입 형식 검사를 통과하지 못하므로, 누가 먼저 그 주소로 가입해 파기가 막히는 일이 없다
+  - 피드백·결제·크레딧·출금 기록은 회원 행(id)을 그대로 가리켜 남는다
+- 남은 크레딧은 로그인할 수 없어 쓸 수 없게 된다. 지갑과 원장은 기록으로 남는다
+- DB 변경: `users.withdrawn_at` 컬럼(자동 추가), `users.status`에 `DELETED`. `ddl-auto: update`는 기존 check 제약을 고치지 않으므로 테스트 서버에서 한 번 실행한다
+
+```sql
+alter table users drop constraint if exists users_status_check;
+alter table users add constraint users_status_check
+  check (status in ('ACTIVE', 'SUSPENDED', 'WITHDRAWN', 'DELETED'));
+```
+
+#84-S14 비밀번호를 확인하고 탈퇴하면 탈퇴 유예가 되고 모든 기기의 로그인이 끊긴다 [테스트]
+- 틀린 비밀번호는 400(칸 `password`). 탈퇴하면 `withdrawn_at`이 남고, 그 access 토큰과 다른 기기의 refresh 토큰은 401
+
+#84-S15 소셜로만 가입한 회원은 확인 문구 "탈퇴합니다"로 탈퇴한다 [테스트]
+- 다른 문구는 400(칸 `confirmText`). 앞뒤 공백은 무시한다
+
+#84-S16 출금 처리 중인 요청이 있으면 탈퇴할 수 없다 [테스트]
+- 409 `CASHOUT_IN_PROGRESS`, 상태는 그대로
+
+#84-S17 유예 기간에 로그인하면 되돌리기 안내를 받고, 되돌리면 그대로 다시 쓴다 [테스트]
+- 로그인은 403 `WITHDRAWAL_PENDING`과 `restoreToken`·`purgeAt`. 되돌리면 `ACTIVE`, `withdrawn_at`은 비고 로그인 토큰을 받는다
+- 되돌리기 토큰을 Bearer로 쓰면 401, 틀린 토큰과 이미 되돌린 토큰은 401 `INVALID_RESTORE_TOKEN`
+
+#84-S18 유예 회원은 소셜 로그인에서도 되돌리기 안내를 받는다 [테스트]
+
+#84-S19 유예 기간에는 같은 이메일로 가입할 수 없다 [테스트]
+- 409 `EMAIL_TAKEN`
+
+#84-S20 30일이 지나면 개인정보와 로그인 계정을 파기하고, 같은 이메일로 다시 가입할 수 있다 [테스트]
+- 30일이 안 됐으면 파기하지 않는다. 파기 뒤 로그인은 401, 같은 이메일 가입은 201
+
+#84-S21 탈퇴 신청과 출금 신청이 동시에 와도 둘 중 하나만 된다 [테스트]
+- 탈퇴 유예이면서 처리 중인 출금 요청이 있는 회원이 생기지 않는다
+
+#84-S26 파기 작업과 되돌리기가 동시에 와도 되돌린 회원은 파기하지 않는다 [테스트]
+- 되돌리기가 성공했으면 `ACTIVE`, 아니면 `DELETED`. 되돌리기 성공 응답 뒤 파기되는 일이 없다
+
+#84-S27 30일이 지나면 파기 작업 전이라도 로그인·되돌리기를 할 수 없다 [테스트]
+- 로그인은 401 `INVALID_CREDENTIALS`, 받아 둔 되돌리기 토큰은 401 `INVALID_RESTORE_TOKEN`. 상태는 `WITHDRAWN` 그대로이고 파기 작업이 지운다
+
+#84-S28 되돌린 뒤 다시 탈퇴하면 예전 되돌리기 토큰은 쓸 수 없다 [테스트]
+- 예전 토큰은 401 `INVALID_RESTORE_TOKEN`. 새로 로그인해 받은 토큰으로는 되돌린다
+
+#84-S29 파기한 회원의 이메일 주소로는 가입할 수 없어, 파기가 가입 이메일과 겹치지 않는다 [테스트]
+- `deleted-1@withdrawn`으로 가입하면 400(칸 `email`)
 
 ## 범위 밖
 - 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

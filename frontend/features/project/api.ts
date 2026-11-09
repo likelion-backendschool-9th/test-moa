@@ -49,9 +49,12 @@ export async function findBackendProjects() {
   }));
 }
 
-/** 프로젝트 하나. 주소의 키는 프로젝트 id라 숫자가 아니면 없는 프로젝트다 */
+/** 백엔드 id(Java Long)의 최댓값. 넘으면 백엔드가 400으로 거절한다 */
+const MAX_PROJECT_ID = BigInt("9223372036854775807");
+
+/** 프로젝트 하나. 주소의 키는 프로젝트 id라 숫자가 아니거나 id 범위를 넘으면 없는 프로젝트다 */
 export async function findBackendProject(projectKey: string): Promise<Project> {
-  if (!/^\d+$/.test(projectKey)) notFound();
+  if (!/^\d+$/.test(projectKey) || BigInt(projectKey) > MAX_PROJECT_ID) notFound();
   return toProject(await readProjectApi<ProjectResponse>(`/${projectKey}`));
 }
 

@@ -1,4 +1,4 @@
-package com.testmoa.backend.controller;
+package com.testmoa.backend.controller.my;
 
 import com.testmoa.backend.entity.CreditLedger;
 import com.testmoa.backend.entity.CreditWallet;

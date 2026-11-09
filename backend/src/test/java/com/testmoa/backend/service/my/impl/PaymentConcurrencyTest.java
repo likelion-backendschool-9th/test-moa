@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.impl;
+package com.testmoa.backend.service.my.impl;
 
 import com.testmoa.backend.dto.request.PaymentRequest;
 import com.testmoa.backend.entity.CreditLedger;
@@ -17,7 +17,7 @@ import com.testmoa.backend.repository.PaymentRepository;
 import com.testmoa.backend.repository.PlanRepository;
 import com.testmoa.backend.repository.SubscriptionRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.service.PaymentService;
+import com.testmoa.backend.service.my.PaymentService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

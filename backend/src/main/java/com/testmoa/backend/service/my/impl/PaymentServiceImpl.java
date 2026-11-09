@@ -1,4 +1,4 @@
-package com.testmoa.backend.service.impl;
+package com.testmoa.backend.service.my.impl;
 
 import com.testmoa.backend.dto.request.PaymentRequest;
 import com.testmoa.backend.dto.response.PaymentHistoryResponse;
@@ -18,7 +18,7 @@ import com.testmoa.backend.repository.PaymentRepository;
 import com.testmoa.backend.repository.PlanRepository;
 import com.testmoa.backend.repository.SubscriptionRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.service.PaymentService;
+import com.testmoa.backend.service.my.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,10 +1,10 @@
-package com.testmoa.backend.controller;
+package com.testmoa.backend.controller.my;
 
 import com.testmoa.backend.dto.request.PaymentRequest;
 import com.testmoa.backend.dto.response.PaymentHistoryResponse;
 import com.testmoa.backend.dto.response.PaymentResponse;
 import com.testmoa.backend.global.util.ApiResponse;
-import com.testmoa.backend.service.PaymentService;
+import com.testmoa.backend.service.my.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * 구독 결제 실행과 내 결제 이력. 회원 id는 토큰에서 꺼낸다.
- * 결제 화면 값을 계산하는 조회는 {@link SubscriptionController}가 맡는다.
+ * 결제 화면 값을 계산하는 조회는 {@link com.testmoa.backend.controller.SubscriptionController}가 맡는다.
  */
 @RestController
 @RequestMapping("/api/v1/my/subscription")

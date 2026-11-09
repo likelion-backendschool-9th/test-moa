@@ -1,4 +1,4 @@
-package com.testmoa.backend.service;
+package com.testmoa.backend.service.my;
 
 import com.testmoa.backend.dto.request.PaymentRequest;
 import com.testmoa.backend.dto.response.PaymentHistoryResponse;

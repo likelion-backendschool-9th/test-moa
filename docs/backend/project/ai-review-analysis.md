@@ -25,6 +25,7 @@
 | 11 | `recruitments.praise_summary`(칭찬 한 줄 요약, null 허용)를 더하고, `completeAnalysis(praiseSummary, now)`가 `DONE`·`analyzed_at`과 함께 기록한다 | 엔티티에 없었다. ERD에는 있다 |
 | 12 | 실행은 개발자 한 명당 일주일에 3번이고 버전 비교와 따로 센다. 서울 시간 월요일 0시에 다시 세고, 분석이 실패하면 되돌린다 (11-07 결정) 지금은 `analysis.weekly-limit-enabled: false`(환경 변수 `ANALYSIS_WEEKLY_LIMIT_ENABLED`)로 꺼 두었고, `true`로 바꾸면 다시 센다 (고침 #107: 로컬 테스트 동안 횟수 제한을 끔, 11-07) | 이슈 #107의 "일주일에 3번". 세는 방식은 버전 비교(#108 결정 10)와 같다 |
 | 13 | 그룹 수정은 보낸 값만 바꾼다(null은 그대로). 이름은 비울 수 없고, 칭찬·미분류 그룹은 심각도와 이슈 초안을 받으면 400 `INVALID_INPUT`이다 | 결정 8과 맞춘다. 엔티티에는 setter 대신 `rename`, `changeImprovementRank`, `editIssueDraft`를 둔다 |
+| 14 | `recruitments.analytics_summary`(리뷰 전체를 한 문장으로 요약한 분석, null 허용)를 더하고, `completeAnalysis(analyticsSummary, praiseSummary, now)`가 함께 기록한다. 분석 서버가 주지 않으면 null이고, 분석이 실패하면 지난 요약이 남는다 | 리뷰 분석 화면 맨 위 "핵심 요약"에 보여 준다. 칭찬 요약처럼 모집글에 하나만 있다 |
 
 ## API
 
@@ -46,6 +47,7 @@
     "analysisStatus": "DONE",
     "analysisRequestedAt": "2026-11-07T09:59:30",
     "analyzedAt": "2026-11-07T10:00:00",
+    "analyticsSummary": "로그인 시 앱이 꺼지는 문제를 먼저 확인하세요",
     "praiseSummary": "기록 화면이 깔끔하다는 의견이 많아요",
     "lastAnalyzedFeedbackAt": "2026-11-07T09:40:00",
     "unanalyzedFeedbackCount": 2,
@@ -63,6 +65,15 @@
 - `feedbackCount`는 그룹에 매핑된 리뷰 수, `testerCount`는 그 리뷰를 쓴 테스터 수(`register.user_id` 중복 제외)다. 저장하지 않고 `feedback_clusters`로 계산한다
 - `lastAnalyzedFeedbackAt`은 매핑된 리뷰 중 가장 늦은 `submitted_at`, `unanalyzedFeedbackCount`는 이 모집글의 제출·지급 리뷰 중 어느 그룹에도 없는 수다(신고·보상 제외 리뷰는 세지 않는다)
 
+### 칭찬 리뷰 목록 `GET /api/v1/developer/recruitments/{recruitmentId}/analysis/praises`
+```json
+[{ "feedbackId": 41, "nickname": "하늘", "testItemTitle": null, "content": "기록 화면이 편해요", "submittedAt": "2026-11-07T09:40:00" }]
+```
+- AI가 칭찬(`PRAISE`)으로 묶은 그룹에 든 리뷰를 최근 제출 순으로 준다. 리뷰 분석 화면의 "칭찬 받았어요" 목록이다
+- 신고·보상 제외 리뷰는 빼고(제출·지급만), 여러 칭찬 그룹에 든 리뷰는 한 번만 준다. 분석 전이면 빈 목록이다
+- 테스터는 닉네임만 준다. `testItemTitle`은 기타 의견이면 null이다
+- 오류: 401, 403 `SUBSCRIPTION_REQUIRED`, 404 `NOT_FOUND`(없거나 남의 모집글)
+
 ### 그룹 수정 `PATCH /api/v1/developer/recruitments/{recruitmentId}/analysis/groups/{groupId}`
 ```json
 { "name": "로그인 직후 종료", "improvementRank": 2, "gitIssueTitle": "로그인 직후 앱 종료", "gitIssueContent": "…" }
@@ -72,7 +83,7 @@
 
 ### 분석 서버 `POST {analysis.base-url}/v1/analyses`
 - 요청: `context`(프로젝트 제목·설명, 모집글 제목·설명·버전, 후속 질문과 같은 글자 수 자르기)와 `feedbacks`(`feedbackId`, `userId` = 참가한 테스터, `content`, `testItemTitle`, 기타 의견은 null)
-- 응답: `groups`(`key`, `name`, `category`, `improvementRank`, `representativeFeedbackId`, `feedbackIds`, `gitIssueTitle`, `gitIssueContent`), `praiseSummary`. `groups`가 없으면 계약 어긋남이다
+- 응답: `groups`(`key`, `name`, `category`, `improvementRank`, `representativeFeedbackId`, `feedbackIds`, `gitIssueTitle`, `gitIssueContent`), `analyticsSummary`(리뷰 전체 한 문장 분석), `praiseSummary`. `groups`가 없으면 계약 어긋남이다
 
 ## 화면과 맞출 규칙
 분석은 비동기라 화면이 상태를 다시 조회한다. 분석은 보통 수십 초, 길면 5분이고, 대기열에서 기다리면 최악 약 20분까지 `PENDING`일 수 있다.
@@ -154,6 +165,11 @@
 #107-S12 그룹 수정 [직접]
 - When  그룹 이름·심각도·이슈 제목·내용을 보낸다
 - Then  보낸 값만 바뀐다. 이름을 비우거나, 심각도가 1~4가 아니거나, 칭찬·미분류 그룹에 심각도·이슈 초안을 보내면 400 `INVALID_INPUT`이다
+
+#107-S22 칭찬 리뷰 목록 [테스트]
+- Given 칭찬 그룹 두 개에 같은 리뷰가 함께 들어 있고, 칭찬 그룹의 리뷰 하나는 신고됐다
+- When  칭찬 리뷰 목록을 본다
+- Then  칭찬 그룹에 든 리뷰만 최근 제출 순으로 오고, 두 그룹에 든 리뷰는 한 번, 신고된 리뷰는 빠진다. 구독하지 않으면 403 `SUBSCRIPTION_REQUIRED`다
 
 ## 범위 밖
 - GitHub 이슈 등록(`git_issue_url` 저장)

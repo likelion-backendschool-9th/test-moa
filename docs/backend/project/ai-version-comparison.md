@@ -33,7 +33,7 @@
 - 오류: 401 `UNAUTHORIZED`, 403 `SUBSCRIPTION_REQUIRED`, 404 `NOT_FOUND`(없거나 남의 모집글), 409 `NO_PREVIOUS_VERSION`, 409 `ANALYSIS_NOT_DONE`, 409 `ANALYSIS_IN_PROGRESS`, 429 `COMPARISON_LIMIT_EXCEEDED`, 503 `AI_UNAVAILABLE`, 500 `INTERNAL_ERROR`(분석 서버 계약 어긋남)
 
 ### 비교 조회 `GET /api/v1/developer/recruitments/{recruitmentId}/version-comparison`
-- 오류: 401, 403, 404 `NOT_FOUND`, 404 `COMPARISON_NOT_FOUND`(아직 비교 전)
+- 오류: 401, 403, 404 `NOT_FOUND`, 409 `NO_PREVIOUS_VERSION`·`ANALYSIS_NOT_DONE`(비교 전에만), 404 `COMPARISON_NOT_FOUND`(아직 비교 전) (고침 #168: 화면 상태를 가름)
 
 ```json
 {
@@ -123,9 +123,9 @@
 - Given 비교한 뒤 두 버전 중 하나를 다시 분석했다(`analyzed_at`이 비교 시각보다 늦다)
 - Then  `stale`이 true다
 
-#108-S12 비교 전 [직접]
+#108-S12 비교 전 [직접] (고침 #168: 직전 버전이 없거나 분석 전이면 실행과 같은 409로 먼저 알려 화면이 상태를 가름)
 - When  아직 비교하지 않은 모집글을 조회한다
-- Then  404 `COMPARISON_NOT_FOUND` "아직 버전 비교를 하지 않았어요"
+- Then  직전 버전이 없으면 409 `NO_PREVIOUS_VERSION`, 두 버전 중 분석 전이 있으면 409 `ANALYSIS_NOT_DONE`, 아니면 404 `COMPARISON_NOT_FOUND` "아직 버전 비교를 하지 않았어요"
 
 ## 범위 밖
 - 리뷰 묶기와 분석 저장. 그룹과 `DONE` 상태는 [리뷰 묶기(#107)](ai-review-analysis.md)가 만든다

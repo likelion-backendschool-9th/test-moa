@@ -11,6 +11,9 @@ import com.testmoa.backend.repository.projection.ChatInboxEntry;
 import com.testmoa.backend.repository.projection.ChatRoomEntry;
 
 public interface ChatParticipantRepository extends JpaRepository<ChatParticipant, Long> {
+    @Query("select p.user.id from chat_participants p where p.room.id = :roomId")
+    List<Long> findUserIdsByRoomId(@Param("roomId") Long roomId);
+
     Optional<ChatParticipant> findByRoomRoomKeyAndUserIdAndHiddenFalse(String roomKey, Long userId);
 
     @Query("""

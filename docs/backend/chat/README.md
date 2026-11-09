@@ -12,7 +12,7 @@
 | [#111](https://github.com/likelion-backendschool-9th/test-moa/issues/111) | 메시지 최대 길이 10,000자로 확대 | [message-length.md](message-length.md) |
 | [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | [rooms.md](rooms.md) |
 | [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | [read.md](read.md) |
-| [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | realtime.md |
+| [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | [realtime.md](realtime.md) |
 | [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |
 | [#54](https://github.com/likelion-backendschool-9th/test-moa/issues/54) | 화면을 실제 API로 연결 | [채팅함](../../frontend/chat/chats.md), [채팅방](../../frontend/chat/chat-room.md) |
 | [#105](https://github.com/likelion-backendschool-9th/test-moa/issues/105) | 채팅방 메시지 검색 | search.md |
@@ -34,6 +34,9 @@
 - 상대가 내 메시지를 읽었는지 보여 주는 읽음 표시를 범위에 넣는다. 상대의 `last_read_seq`가 내 메시지의 `seq` 이상이면 읽음이다. (11-05)
 - 참여자의 바꾼 대화방 이름 컬럼 `custom_name`을 `custom_room_name`으로 바꾼다(엔티티 필드는 `customRoomName`). `custom_name`만으로는 무엇의 이름인지 알기 어렵다. 이 컬럼을 실제로 쓰는 #50에서 바꾸고, 배포 DB에 채팅 테이블이 생기기 전이라 옮길 데이터는 없다. ERD에는 먼저 `custom_room_name`으로 넣는다(#50) (11-06)
 
+- SSE 이벤트는 `ready`(`{}`), `message`(`roomKey`, `seq`), `read`(`roomKey`, `reader: me|partner`, `lastReadSeq`) 세 가지다. 메시지 저장·읽음 순번 증가가 커밋된 뒤 방의 두 참여자 모든 연결에 알린다. 삭제한 방도 대상이고, 읽은 순번이 그대로면 알리지 않는다. 이름 변경·삭제는 다른 탭에 알리지 않고 채팅함으로 돌아갈 때 맞춘다 ([#51](realtime.md), 11-08)
+- SSE 연결은 30분 뒤 정상 종료하며, 25초마다 주석 하트비트를 보내고 재연결 간격은 3초다. 회원당 최대 5개 연결을 두고 넘으면 가장 오래된 연결을 닫는다. Next는 쿠키 토큰을 붙여 스트림을 중계하며 nginx는 버퍼링하지 않는다. 다시 받은 `ready`를 계기로 `after` 조회로 빠진 메시지를 채운다 ([#51](realtime.md), 11-08)
+
 ## 데이터 구조
 #47에서 만든 테이블. 자세한 시나리오와 가정은 [entities.md](entities.md)에 있다.
 
@@ -44,6 +47,7 @@
 | `chat_messages` | 메시지 하나 | `room_id`, `seq`, `sender_id`(참여자), `content`, `sent_at` | `(room_id, seq)` unique |
 
 ## 아직 정하지 않은 것
+- 백엔드를 여러 대로 늘릴 때 SSE 알림을 서버 사이에 전달하는 방식(Redis pub/sub, PostgreSQL LISTEN/NOTIFY 등). 지금 연결 목록은 백엔드 한 대의 메모리에 있다 ([#51](realtime.md), 11-08)
 - 스키마 관리 방식(Flyway 등) 도입: 팀 결정. 테스트 서버는 `ddl-auto: update`(11-05). `update`는 없는 테이블·컬럼을 더하고 있는 컬럼의 타입·길이를 엔티티에 맞추지만, 컬럼을 지우거나 이름을 바꾸지는 않는다. (#111, 11-07)
 - ERD(ERDCloud)에 세 테이블을 더하는 일
 - 메시지 전송 횟수 제한: 서버에는 없다. 지금은 프론트가 500자로 잘라 보내 영향이 적지만, #54에서 프론트 한도를 10,000자로 올리면 긴 메시지를 반복해 보낼 수 있다. 전송은 방 행을 잠근 트랜잭션 안에서 저장하므로 같은 방 상대의 전송도 그만큼 기다린다. 서비스 전체의 남용 방지 정책과 함께 정한다(#155 리뷰, 11-08)

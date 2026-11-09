@@ -15,6 +15,6 @@ public interface ChatService {
     ChatRoomResponse renameRoom(String roomKey, Long userId, String name);
     void deleteRoom(String roomKey, Long userId);
     ChatRoomResponse getRoom(String roomKey, Long userId);
-    ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before);
+    ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after);
     ChatMessageResponse sendMessage(String roomKey, Long userId, String text);
 }

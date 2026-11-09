@@ -283,4 +283,43 @@ class ChatControllerTest {
         }
     }
 
+    @Test @DisplayName("#51-S12 after 이후 메시지와 마지막 순번 이상의 빈 목록")
+    void newerMessages() throws Exception {
+        messages(5);
+        call(get(url() + "/messages").param("after", "2"), tester)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.messages[*].seq", contains(3, 4, 5)))
+                .andExpect(jsonPath("$.data.hasMore").value(false));
+        for (String after : new String[]{"5", "9"}) {
+            call(get(url() + "/messages").param("after", after), tester)
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.messages").isEmpty())
+                    .andExpect(jsonPath("$.data.hasMore").value(false));
+        }
+    }
+
+    @Test @DisplayName("#51-S13 after는 오래된 순서로 30개씩 조회")
+    void newerSlices() throws Exception {
+        messages(65);
+        for (int after : new int[]{0, 30, 60}) {
+            call(get(url() + "/messages").param("after", String.valueOf(after)), tester)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.messages[*].seq",
+                            contains(IntStream.rangeClosed(after + 1, Math.min(after + 30, 65)).boxed().toArray())))
+                    .andExpect(jsonPath("$.data.hasMore").value(after < 60));
+        }
+    }
+
+    @Test @DisplayName("#51-S14 잘못된 after와 혼합 커서는 400, 비참여자는 404")
+    void invalidAfter() throws Exception {
+        for (String after : new String[]{"-1", "abc"}) {
+            call(get(url() + "/messages").param("after", after), tester)
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        }
+        call(get(url() + "/messages").param("after", "2").param("before", "5"), tester)
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        var outsider = fixtures.user("외부조회회원");
+        em.flush();
+        call(get(url() + "/messages").param("after", "0"), outsider)
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
+    }
+
 }

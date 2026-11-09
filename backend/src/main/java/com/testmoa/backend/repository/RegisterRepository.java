@@ -33,8 +33,9 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
     }
 
     /**
-     * 승인 대기 보상. Feedback(SUBMITTED)가 있고 Feedback(REPORTED)가 없는 CONFIRMED 참가의
-     * 스냅샷을 참가당 1회만 합산한다. 한 건이라도 신고되면 참가 전체 지급을 보류한다.
+     * 승인 대기 보상. Feedback(SUBMITTED)가 있고 Feedback(REPORTED·EXCLUDED)가 없는 CONFIRMED 참가의
+     * 스냅샷을 참가당 1회만 합산한다. 한 건이라도 신고되거나 보상 제외되면 참가 전체 지급을 보류한다(고침 #85).
+     * 보상 제외는 신고 판정(인정)으로만 생겨서 인자로 받지 않고 쿼리에 둔다.
      * CANCELLED·REJECTED 참가는 제외한다.
      */
     @Query("""
@@ -52,7 +53,7 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
               and not exists (
                   select 1 from feedbacks blocked
                   where blocked.register = r
-                    and blocked.status = :reportedStatus
+                    and blocked.status in (:reportedStatus, com.testmoa.backend.entity.enums.FeedbackStatus.EXCLUDED)
               )
             """)
     Integer sumPendingRewardByUserId(

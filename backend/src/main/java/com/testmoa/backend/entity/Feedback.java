@@ -108,6 +108,17 @@ public class Feedback {
     /**
      * 보상 지급 처리. 제출이나 신고됨 상태일 때만 할 수 있다.
      */
+    /**
+     * 신고 기각. 운영자가 문제없다고 판정하면 제출 상태로 되돌려 승인 대기에 다시 잡히게 한다(#85).
+     * 실제 지급(reward)은 지급 담당의 72시간 자동 지급이 한다
+     */
+    public void dismissReport() {
+        if (status != FeedbackStatus.REPORTED) {
+            throw new IllegalStateException("신고됨 상태일 때만 신고를 기각할 수 있습니다.");
+        }
+        this.status = FeedbackStatus.SUBMITTED;
+    }
+
     public void reward() {
         if (status != FeedbackStatus.SUBMITTED && status != FeedbackStatus.REPORTED) {
             throw new IllegalStateException("제출이나 신고됨 상태일 때만 보상을 지급할 수 있습니다.");

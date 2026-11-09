@@ -45,14 +45,7 @@ public class AdminReportServiceImpl implements AdminReportService {
      */
     @Override
     public List<AdminReportResponse> list(boolean done, ReportTargetType targetType) {
-        List<Report> reports;
-        if (done) {
-            reports = targetType == null ? reportRepository.findByStatusInOrderByReviewedAtDescIdDesc(DONE)
-                    : reportRepository.findByStatusInAndTargetTypeOrderByReviewedAtDescIdDesc(DONE, targetType);
-        } else {
-            reports = targetType == null ? reportRepository.findByStatusInOrderByCreatedAtAscIdAsc(PENDING)
-                    : reportRepository.findByStatusInAndTargetTypeOrderByCreatedAtAscIdAsc(PENDING, targetType);
-        }
+        List<Report> reports = done ? reportRepository.findDone(DONE, targetType) : reportRepository.findPending(PENDING, targetType);
         return reports.stream().map(report -> AdminReportResponse.of(report, target(report, false), null)).toList();
     }
 
@@ -75,13 +68,13 @@ public class AdminReportServiceImpl implements AdminReportService {
 
         report.review(userRepository.getReferenceById(adminId), result, LocalDateTime.now());
         if (report.getTargetType() == ReportTargetType.FEEDBACK) {
-            // 프로젝트 문서의 약속: 기각하면 reward(), 인정하면 exclude(). 피드백 신고 API가 REPORTED로 바꿔 둔 피드백만 바꾼다.
-            // 여기서는 피드백 상태만 바꾼다. 실제 크레딧 지급은 운영자 쪽 담당이 맡는다
+            // 기각하면 제출(SUBMITTED)로 되돌려 승인 대기에 다시 잡히게 하고, 인정하면 보상 제외(EXCLUDED).
+            // 지급 기록(크레딧 원장)은 여기서 남기지 않는다. 실제 지급은 지급 담당의 72시간 자동 지급이 한다
             feedbackRepository.findById(report.getTargetId())
                     .filter(feedback -> feedback.getStatus() == FeedbackStatus.REPORTED)
                     .ifPresent(feedback -> {
                         if (result == ReportStatus.ACCEPTED) feedback.exclude();
-                        else feedback.reward();
+                        else feedback.dismissReport();
                     });
         }
         return detail(report);

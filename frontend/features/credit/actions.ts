@@ -5,6 +5,7 @@ import {
   getAdminWithdrawal as getWithdrawal,
   isWithdrawalKey,
   saveAdminWithdrawalReview,
+  saveServerWithdrawalReview,
   saveWithdrawalRequest,
   submitServerWithdrawal,
 } from "@/features/credit/api";
@@ -125,6 +126,15 @@ export async function processWithdrawal(_prev: RequestFormState, formData: FormD
   const { withdrawal } = await getWithdrawal(withdrawalKey);
   if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
 
-  if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
+  if (isBackendAuth) {
+    /* 서버가 처리 전인지 다시 확인한다. 그 사이 다른 운영자가 처리했으면(409) 결과를 새로 불러와 모달로 보여 준다 */
+    const result = await saveServerWithdrawalReview(withdrawalKey, review);
+    if (result === "failed") return { error: "server" };
+    if (result === "already") redirect(withdrawalsHref({ tab, open: withdrawalKey }));
+    /* 지급하면 회원의 잠긴 금액이 줄고 반려하면 적립으로 돌아가므로, 회원 화면도 새 값을 읽게 한다 */
+    revalidatePath("/my", "layout");
+  } else if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) {
+    return { error: "memo" };
+  }
   redirect(withdrawalsHref({ tab, processed: withdrawalKey }));
 }

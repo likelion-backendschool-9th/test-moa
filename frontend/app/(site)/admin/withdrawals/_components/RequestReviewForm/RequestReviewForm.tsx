@@ -54,6 +54,7 @@ export function RequestReviewForm({
     reason: "반려 사유를 골라 주세요.",
     note: `${audience}에게 보여 줄 사유를 적어 주세요.`,
     memo: `시연용 저장 공간이 모자라 처리하지 못했어요. 메모를 줄이거나 ${cookieName} 쿠키를 지운 뒤 다시 시도해 주세요.`,
+    server: "서버가 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
   };
 
   /* React가 폼 액션 뒤 칸을 자동으로 비우지 않게 직접 제출한다 (크레딧 출금 신청 폼과 같다) */

@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { adminWithdrawalFromServer, balanceFromServer, cashableCredits, entryFromServer, payableCredits, totalCredits, withdrawalFromServer } from "@/features/credit/types";
+import {
+  adminWithdrawalFromServer,
+  balanceFromServer,
+  cashableCredits,
+  entryFromServer,
+  isServerWithdrawalId,
+  payableCredits,
+  totalCredits,
+  withdrawalFromServer,
+} from "@/features/credit/types";
 
 test("S350 S391 잔액·결제 가능액·출금 가능액은 잠금과 이벤트·대기 보상을 구분한다", () => {
   const cases = [
@@ -66,4 +75,11 @@ test("#207-S7 서버 운영자 출금 응답을 운영자 화면 값으로 바�
   /* 사유가 없는 반려도 오류 없이 변환된다 */
   expect(adminWithdrawalFromServer({ ...base, status: "REJECTED", processedAt: "2026-11-09T06:00:00Z" }).review)
     .toEqual({ decision: "rejected", memo: "", processedAt: "2026-11-09T06:00:00Z" });
+});
+
+test("#207-S10 서버 id가 될 수 없는 출금 키는 서버에 묻지 않는다", () => {
+  for (const key of ["1", "9001", "999999999999999999"]) expect(isServerWithdrawalId(key), key).toBe(true);
+  for (const key of ["", "abc", "0", "007", "-1", "1.5", "9223372036854775808", "99999999999999999999"]) {
+    expect(isServerWithdrawalId(key), key).toBe(false);
+  }
 });

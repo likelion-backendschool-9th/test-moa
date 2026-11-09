@@ -85,7 +85,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentResponse pay(Long userId, PaymentRequest request) {
-        User user = requireUser(userId);
+        // 구독 기간을 읽고 쓰는 일은 회원 행을 먼저 잠근 뒤에 한다. 운영자의 구독 부여·해제(AdminSubscriptionService)도
+        // 같은 회원 행을 잠그므로, 결제와 운영자 작업이 같은 "가장 늦은 end_at"을 읽고 서로의 기간을 덮어쓰지 않는다
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         if (user.getRole() == Role.ADMIN) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "운영자 계정은 구독 대상이 아니에요");
         }
@@ -94,7 +97,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        // 지갑을 없으면 만들고 잠근다. 이후의 읽기는 모두 잠금 안에서 한다
+        // 지갑을 없으면 만들고 잠근다(회원 → 지갑 순서). 이후의 읽기는 모두 잠금 안에서 한다
         creditWalletRepository.insertIfAbsent(userId, LocalDateTime.now(clock));
         CreditWallet wallet = creditWalletRepository.findLockedByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR));

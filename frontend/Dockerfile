@@ -35,6 +35,9 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# 빌드 단계의 ENV는 여기로 넘어오지 않으므로, 이미지만 띄워도 빌드와 같은 모드가 되게 다시 받는다
+ARG AUTH_MODE=backend
+ENV AUTH_MODE=$AUTH_MODE
 
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static

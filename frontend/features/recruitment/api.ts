@@ -116,7 +116,8 @@ type RecruitmentPageResponse = {
 
 /** 공개 모집 목록을 읽어 화면의 모집 건으로 바꾼다. 카드 문구는 모집글 제목이다 */
 async function readRecruitmentPage(params: URLSearchParams): Promise<RecruitmentPage> {
-  const result = await backendFetch<RecruitmentPageResponse>(`${RECRUITMENTS_API}?${params}`);
+  /* 로그인이 필요 없는 목록이다. 토큰을 붙이면 로그아웃·정지로 막힌 회원은 401을 받아 홈이 열리지 않는다 */
+  const result = await backendFetch<RecruitmentPageResponse>(`${RECRUITMENTS_API}?${params}`, { withToken: false });
   if (!result.ok) throw new Error(result.message);
   const { items, total, page, pageCount } = result.data;
   return {
@@ -144,7 +145,8 @@ async function readRecruitmentPage(params: URLSearchParams): Promise<Recruitment
 /** 구독 개발자의 모집 건 (상단 노출 혜택) */
 export async function getSubscriptionRecruitments(): Promise<Recruitment[]> {
   if (isBackendAuth) {
-    const params = new URLSearchParams({ subscription: "true", open: "true", size: String(RECRUITMENT_PAGE_SIZE) });
+    /* 더 보기가 없는 영역이라 백엔드 한도(50)까지 읽는다 */
+    const params = new URLSearchParams({ subscription: "true", open: "true", size: "50" });
     return (await readRecruitmentPage(params)).items;
   }
   const { subscription } = await loadAll();
@@ -307,7 +309,10 @@ type PublicRecruitmentResponse = {
 /** 공개 모집글을 읽어 화면 모양으로 바꾼다. 없거나 취소됐거나 id로 쓸 수 없는 주소면 null */
 async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentData | null> {
   if (!isBackendId(slug)) return null;
-  const result = await backendFetch<PublicRecruitmentResponse>(`${RECRUITMENTS_API}/${slug}`);
+  const path = `${RECRUITMENTS_API}/${slug}`;
+  /* 내 지원 상태를 받으려고 토큰을 붙인다. 토큰이 막혔으면 비로그인으로 다시 읽어 공개 글은 보여 준다 */
+  let result = await backendFetch<PublicRecruitmentResponse>(path);
+  if (!result.ok && result.status === 401) result = await backendFetch<PublicRecruitmentResponse>(path, { withToken: false });
   if (!result.ok) {
     if (result.status === 404) return null;
     throw new Error(result.message);

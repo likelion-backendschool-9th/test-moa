@@ -15,6 +15,7 @@ import { FileField, revoke } from "@/app/(site)/developer/_components/FileField/
 import { useFocusFirstError } from "@/app/(site)/developer/_lib/focus-first-error";
 import { TextField } from "@/components/ui/TextField/TextField";
 import { Card } from "@/components/ui/Card/Card";
+import { FormMessage } from "@/components/ui/FormField/FormField";
 import styles from "./RecruitmentForm.module.css";
 
 /*
@@ -356,6 +357,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
           </p>
         )}
       </Card>
+      {errors.form && <FormMessage status="error" message={errors.form} />}
       <div className={styles.box6}>
         <Button type="submit" disabled={pending}>
           모집 등록

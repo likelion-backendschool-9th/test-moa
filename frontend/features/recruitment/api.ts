@@ -506,6 +506,21 @@ export async function getMyProjects(path: string): Promise<ProjectSummary[]> {
   );
 }
 
+/** 백엔드 ProjectDashboardResponse */
+type ProjectDashboardResponse = {
+  todos: Array<{ kind: TodoItem["kind"]; recruitmentId: number; projectName: string; count: number; payoutAt: string | null }>;
+  overview: ProjectOverview;
+};
+
+function toTodoItem(todo: ProjectDashboardResponse["todos"][number], now: Date): TodoItem {
+  const base = recruitmentManagePath(String(todo.recruitmentId));
+  if (todo.kind === "applicants") {
+    return { kind: todo.kind, projectName: todo.projectName, href: `${base}?tab=testers`, text: `지원자 ${todo.count}명이 확정을 기다려요` };
+  }
+  const hours = Math.max(0, Math.ceil((new Date(todo.payoutAt ?? now).getTime() - now.getTime()) / (60 * 60 * 1000)));
+  return { kind: todo.kind, projectName: todo.projectName, href: `${base}?tab=feedback`, text: `신고 대기 피드백 ${todo.count}건 · ${hours}시간 뒤 자동 지급` };
+}
+
 /**
  * 내 프로젝트 화면 전체: 할 일, 전체 현황, 프로젝트 카드.
  * 할 일은 지원자 확정 대기(구독·모집 마감 전)가 먼저, 신고 대기 피드백은 자동 지급이 가까운 순서다.
@@ -514,12 +529,15 @@ export async function getMyDashboard(path: string) {
   const projects = await getMyProjects(path);
   const role = await requireRole(path);
   const now = new Date();
+  if (isBackendAuth) {
+    const { todos, overview } = await readProjectApi<ProjectDashboardResponse>("/dashboard");
+    return { projects, overview, todos: todos.map((todo) => toTodoItem(todo, now)) };
+  }
 
   const applicantTodos: TodoItem[] = [];
   const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
   const overview: ProjectOverview = { recruiting: 0, testing: 0, waitingReports: 0 };
 
-  /* shortcut: 할 일·전체 현황 API(#122)가 없어 백엔드 모드에서는 비워 둔다. project.recruitments도 비어 있어 아래 반복은 돌지 않는다 */
   for (const project of projects) {
     for (const recruitment of project.recruitments) {
       const [applications, feedbacks] = await Promise.all([

@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { findRoleByCredentials, isEmailTaken, isNicknameTaken } from "@/features/member/api";
+import { restrictionNotice } from "@/features/auth/restriction";
 import { backendFetch, clearTokens, getRefreshToken, isBackendAuth, saveTokens, type Tokens } from "@/lib/backend";
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
@@ -68,6 +69,8 @@ export async function login(_prev: FormState<LoginField>, formData: FormData): P
     const result = await backendFetch<Tokens>("/api/auth/login", { method: "POST", body: { email, password }, withToken: false });
     /* 탈퇴 유예 계정은 되돌릴지 묻는다(#84). 틀린 계정·정지 계정·서버 오류는 백엔드 문구를 그대로 보여 준다 */
     if (!result.ok && (await holdRestore(result, safeNextPath(formData.get("next"))))) redirect("/login?restore=1");
+    /* 운영자가 로그인을 막았으면 해제일과 사유를 함께 알린다(#86) */
+    if (!result.ok && result.code === "RESTRICTED") return { status: "error", errors: { form: restrictionNotice(result.fields) } };
     if (!result.ok) return { status: "error", errors: { form: result.message } };
     await saveTokens(result.data);
     redirect(safeNextPath(formData.get("next")));

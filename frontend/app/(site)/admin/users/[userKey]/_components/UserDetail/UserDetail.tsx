@@ -7,20 +7,22 @@ import { formatDate } from "@/lib/format";
 import { REPORT_DECISION_LABEL, type Report } from "@/features/report/types";
 import { maskEmail, maskName, type UserActivity, type UserDetail } from "@/features/member/admin";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
+import { SanctionPanel } from "@/app/(site)/admin/users/[userKey]/_components/SanctionPanel/SanctionPanel";
 import styles from "./UserDetail.module.css";
 
 
 /** 회원 상세. 실명·이메일은 가려서 보여 준다. 제재는 이번에는 이력만 보여 준다(docs/frontend/admin/users.md) */
-export function UserDetailView({ user }: { user: UserDetail }) {
+export function UserDetailView({ user, notice }: { user: UserDetail; notice?: string }) {
+  const backend = user.adminSanctions;
   return (
     <div className={styles.userDetailView}>
       <Link href="/admin/users" className={styles.userDetailViewLink}>
         목록으로
       </Link>
       <div className={styles.userDetailViewBox}>
-        {user.sanctions.length > 0 && (
+        {(backend ?? user.sanctions).length > 0 && (
           <div className={styles.userDetailViewBox2}>
-            <Badge tone="neutral">제재 이력 {user.sanctions.length}건</Badge>
+            <Badge tone="neutral">제재 이력 {(backend ?? user.sanctions).length}건</Badge>
           </div>
         )}
         <h2 className={styles.userDetailViewNickname}>{user.nickname}</h2>
@@ -35,17 +37,24 @@ export function UserDetailView({ user }: { user: UserDetail }) {
         </dl>
       </Panel>
 
-      <Panel id="user-activity-heading" title="활동">
-        <ActivitySummary activity={user.activity} />
-      </Panel>
+      {/* 실제 로그인: 백엔드에 활동 집계가 아직 없어서 활동은 숨기고, 제재는 제재·해제 양식과 함께 보여 준다 */}
+      {backend ? (
+        <SanctionPanel userKey={user.id} sanctions={backend} notice={notice} />
+      ) : (
+        <>
+          <Panel id="user-activity-heading" title="활동">
+            <ActivitySummary activity={user.activity} />
+          </Panel>
 
-      <Panel id="user-sanctions-heading" title="제재 이력">
-        {user.sanctions.length === 0 ? (
-          <p className={styles.userDetailViewText}>제재 이력이 없어요</p>
-        ) : (
-          <ReportRows reports={user.sanctions} dateOf={(report) => report.review!.processedAt} dateLabel="처리" />
-        )}
-      </Panel>
+          <Panel id="user-sanctions-heading" title="제재 이력">
+            {user.sanctions.length === 0 ? (
+              <p className={styles.userDetailViewText}>제재 이력이 없어요</p>
+            ) : (
+              <ReportRows reports={user.sanctions} dateOf={(report) => report.review!.processedAt} dateLabel="처리" />
+            )}
+          </Panel>
+        </>
+      )}
 
       <Panel id="user-reports-heading" title="받은 신고">
         {user.receivedReports.length === 0 ? (

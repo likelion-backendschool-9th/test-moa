@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
-import { callbackUrl, holdRestore, type OAuthLogin, oauthErrorKey, saveSignup, takeState } from "@/features/auth/oauth";
+import { callbackUrl, holdRestore, holdRestriction, type OAuthLogin, oauthErrorKey, saveSignup, takeState } from "@/features/auth/oauth";
 import { withNext } from "@/features/auth/types";
 import { backendFetch, isBackendAuth, saveTokens } from "@/lib/backend";
 
@@ -43,6 +43,8 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/auth/
   });
   // 탈퇴 유예 계정은 이메일 로그인과 같이 되돌릴지 묻는다(#84)
   if (!result.ok && (await holdRestore(result, next))) redirect("/login?restore=1");
+  // 운영자가 로그인을 막았으면 사유·해제일을 쿠키에 두고 로그인 화면이 알린다(#86)
+  if (!result.ok && (await holdRestriction(result))) redirect(withNext("/login", next, { error: "restricted" }));
   if (!result.ok) redirect(withNext("/login", next, { error: oauthErrorKey(result.code) }));
 
   if (result.data.signupRequired) {

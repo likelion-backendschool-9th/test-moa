@@ -56,6 +56,38 @@ export type MyPageSummary = {
   recentCredits: CreditEntry[];
 };
 
+/* ---- 실제 로그인(AUTH_MODE=backend): 운영자 제재(#86) ---- */
+
+export type SanctionType = "WARNING" | "SUSPENSION" | "PERMANENT";
+
+export const SANCTION_TYPE_LABEL: Record<SanctionType, string> = {
+  WARNING: "경고",
+  SUSPENSION: "기간 정지",
+  PERMANENT: "영구 정지",
+};
+
+export type Restriction = "LOGIN" | "APPLY" | "RECRUIT" | "FEEDBACK" | "CHAT";
+
+export const RESTRICTION_LABEL: Record<Restriction, string> = {
+  LOGIN: "로그인",
+  APPLY: "테스트 지원",
+  RECRUIT: "모집 글 작성",
+  FEEDBACK: "피드백 작성",
+  CHAT: "채팅",
+};
+
+/** 내가 받은 경고·정지(GET /api/v1/sanctions/me) */
+export type MySanction = {
+  id: number;
+  type: SanctionType;
+  restrictions: Restriction[];
+  reason: string;
+  startedAt: string;
+  endsAt: string | null;
+  releasedAt: string | null;
+  active: boolean;
+};
+
 /* ---- 회원 탈퇴(#84) ---- */
 
 /** 탈퇴 확인 창의 안내. 남은 크레딧은 탈퇴하면 사라지고, 출금 처리 중인 크레딧이 있으면 탈퇴할 수 없다 */

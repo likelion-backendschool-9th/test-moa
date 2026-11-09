@@ -1,4 +1,5 @@
 import "server-only";
+import type { RestrictionFields } from "@/features/auth/restriction";
 import { cookies } from "next/headers";
 import type { Tokens } from "@/lib/backend";
 import type { SocialProviderId } from "@/features/auth/types";
@@ -13,6 +14,8 @@ const OAUTH_STATE_COOKIE = "oauth_state";
 const OAUTH_SIGNUP_COOKIE = "oauth_signup";
 /* 탈퇴 유예 회원이 로그인하면 백엔드가 준 되돌리기 토큰(10분)을 담는다(#84). 주소에 토큰을 남기지 않으려고 쿠키에 둔다 */
 const RESTORE_COOKIE = "withdrawal_restore";
+/* 운영자 제재로 소셜 로그인이 막히면 사유·해제일을 담는다(#86). 주소에는 키(error=restricted)만 둔다 */
+const RESTRICTION_COOKIE = "login_restricted";
 const TEN_MINUTES = 60 * 10;
 
 /** 백엔드 소셜 로그인 응답 (OAuthLoginResponse) */
@@ -84,6 +87,18 @@ export async function holdRestore(error: { code: string; fields?: Record<string,
   return true;
 }
 
+/** 소셜 로그인이 403 RESTRICTED면 사유·해제일을 쿠키에 두고 true. 로그인 화면이 error=restricted로 읽는다 */
+export async function holdRestriction(error: { code: string; fields?: Record<string, string> }): Promise<boolean> {
+  if (error.code !== "RESTRICTED") return false;
+  const restriction: RestrictionFields = { reason: error.fields?.reason, endsAt: error.fields?.endsAt };
+  (await cookies()).set(RESTRICTION_COOKIE, JSON.stringify(restriction), cookieOptions);
+  return true;
+}
+
+export async function readRestriction(): Promise<RestrictionFields | undefined> {
+  return parse<RestrictionFields>((await cookies()).get(RESTRICTION_COOKIE)?.value);
+}
+
 function parse<T>(value: string | undefined): T | undefined {
   if (!value) return undefined;
   try {
@@ -102,6 +117,8 @@ export const OAUTH_ERRORS = {
   linkRequired: "이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요",
   providerLinked: "같은 이메일 회원에 이 서비스의 다른 계정이 이미 연동돼 있어요. 연동된 계정으로 로그인해 주세요",
   restore: "되돌리기 시간이 지났어요. 다시 로그인해 주세요",
+  /* 사유·해제일은 쿠키에서 읽어 붙인다. 쿠키가 없을 때(10분 지남) 이 문구만 보인다 */
+  restricted: "운영자 제재로 로그인할 수 없어요.",
 } as const;
 
 export type OAuthErrorKey = keyof typeof OAUTH_ERRORS;

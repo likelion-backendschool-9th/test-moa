@@ -33,10 +33,11 @@
 </div>
 
 <br/>
+<br/>
 
-<details>
-  <summary>목차</summary>
-  <ol>
+## 목차
+
+<ol>
     <li>
       <a href="#프로젝트-소개">프로젝트 소개</a>
       <ul>
@@ -63,8 +64,7 @@
     <li><a href="#협업">협업</a></li>
     <li><a href="#팀">팀</a></li>
     <li><a href="#참고-문서">참고 문서</a></li>
-  </ol>
-</details>
+</ol>
 
 <br/>
 <br/>

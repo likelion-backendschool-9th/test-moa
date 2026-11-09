@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Container } from "@/components/ui/Container/Container";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getNavItems } from "@/app/_lib/nav";
+import { getChatUnreadCount } from "@/features/chat/api";
 import { getSession } from "@/features/session/session";
 import { MainNav } from "../MainNav/MainNav";
 import { MobileMenu } from "../MobileMenu/MobileMenu";
@@ -43,10 +44,13 @@ async function UserMenuSlot() {
 }
 
 async function MainNavSlot() {
-  return <MainNav items={getNavItems(await getSession())} />;
+  const session = await getSession();
+  const count = session.role === "guest" || session.role === "admin" ? 0 : await getChatUnreadCount();
+  return <MainNav items={getNavItems(session, count)} />;
 }
 
 async function MobileMenuSlot() {
   const session = await getSession();
-  return <MobileMenu items={getNavItems(session)} isMember={session.user !== null} />;
+  const count = session.role === "guest" || session.role === "admin" ? 0 : await getChatUnreadCount();
+  return <MobileMenu items={getNavItems(session, count)} isMember={session.user !== null} />;
 }

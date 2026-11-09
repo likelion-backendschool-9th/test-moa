@@ -18,8 +18,8 @@ test("#54-S3 역할과 선택 필드를 화면 자료로 바꾸고 시각은 그
     projectImage: undefined, myRole: "developer", partner: { nickname: "윤슬", role: "tester" },
     readOnly: false, lastMessage: "안녕하세요", lastMessageAt: room.lastMessageAt,
   });
-  expect(toChatRoom({ ...room, myRole: "TESTER", partner: { nickname: "서재지기", role: "DEVELOPER" }, roomName: "1차", projectImage: "/project.png", readOnly: true })).toMatchObject({
-    myRole: "tester", partner: { role: "developer" }, roomName: "1차", projectImage: "/project.png", readOnly: true,
+  expect(toChatRoom({ ...room, myRole: "TESTER", partner: { nickname: "서재지기", role: "DEVELOPER" }, roomName: "1차", projectImage: "/project.png", readOnly: true, unreadCount: 3, partnerLastReadSeq: 7 })).toMatchObject({
+    myRole: "tester", partner: { role: "developer" }, roomName: "1차", projectImage: "/project.png", readOnly: true, unreadCount: 3, partnerLastReadSeq: 7,
   });
   for (const sentAt of ["2026-11-09T01:00:00Z", "2026-11-09T10:00:00+09:00", "2026-11-09T10:00:00"]) {
     expect(toChatMessage({ seq: 7, from: "partner", text: "안녕하세요", sentAt })).toEqual({ id: "7", seq: 7, from: "partner", text: "안녕하세요", sentAt });

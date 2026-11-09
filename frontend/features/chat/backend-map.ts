@@ -13,6 +13,8 @@ export type ChatRoomResponse = {
   myRole: BackendRole;
   partner: { nickname: string; role: BackendRole };
   readOnly: boolean;
+  unreadCount?: number;
+  partnerLastReadSeq?: number;
   lastMessage?: string | null;
   lastMessageAt?: string;
 };
@@ -44,6 +46,8 @@ export function toChatRoom(room: ChatRoomResponse): ChatRoom {
     myRole: roles[room.myRole],
     partner: { nickname: room.partner.nickname, role: roles[room.partner.role] },
     readOnly: room.readOnly,
+    ...(room.unreadCount !== undefined && { unreadCount: room.unreadCount }),
+    ...(room.partnerLastReadSeq !== undefined && { partnerLastReadSeq: room.partnerLastReadSeq }),
     lastMessage: room.lastMessage ?? null,
     lastMessageAt: room.lastMessageAt ?? "",
   };

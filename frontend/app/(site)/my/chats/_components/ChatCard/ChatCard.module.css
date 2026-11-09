@@ -84,29 +84,12 @@
   overflow: hidden;
 }
 
-.today {
-  display: flex;
+.time {
   flex-shrink: 0;
-  align-items: center;
-  gap: var(--space-1-5);
+  color: var(--text-muted);
   font-size: var(--text-xs);
   line-height: var(--text-xs-leading);
   font-variant-numeric: tabular-nums;
-}
-
-.todayToday {
-  color: var(--accent);
-}
-
-.todayNotToday {
-  color: var(--text-muted);
-}
-
-.label {
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: var(--radius-full);
-  background-color: var(--accent);
 }
 
 .text {
@@ -149,4 +132,36 @@
 .chatCardMenu {
   margin-top: calc(var(--space-1-5) * -1);
   margin-right: calc(var(--space-1-5) * -1);
+}
+
+.previewRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.previewRow .preview {
+  min-width: 0;
+  flex: 1;
+}
+
+.unreadPreview {
+  color: var(--text);
+}
+
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-full);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

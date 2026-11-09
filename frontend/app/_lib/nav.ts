@@ -27,14 +27,16 @@ export type NavItem = {
   activePaths?: string[];
   /** 실제 이동 주소. 비로그인이면 보호 탭은 로그인으로 보낸다 */
   href: string;
+  badge?: number;
 };
 
-export function getNavItems(session: Session | null): NavItem[] {
+export function getNavItems(session: Session | null, unreadCount = 0): NavItem[] {
   const role = session?.role ?? "tester";
   return NAV.filter((item) => !item.adminOnly || role === "admin").map((item) => ({
     label: item.label,
     path: item.path,
     activePaths: item.activePaths,
+    badge: session !== null && item.path === "/my/chats" && role !== "guest" && role !== "admin" ? unreadCount : undefined,
     href: item.requiresAuth && role === "guest" ? `/login?next=${encodeURIComponent(item.path)}` : item.path,
   }));
 }

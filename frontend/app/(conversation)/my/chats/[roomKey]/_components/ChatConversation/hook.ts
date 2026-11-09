@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { shouldReplaceChatMessages } from "@/features/chat/message-window";
+import { nextChatRetryDelay, shouldRetryChatRead } from "@/features/chat/realtime";
+import { markChatReadAction } from "@/features/chat/actions";
+import { subscribeChatEvents, refreshChatUnreadCount } from "@/app/_components/ChatEvents/hook";
+import { shouldReplaceChatMessages, mergeChatMessages } from "@/features/chat/message-window";
 import type { ChatMessage, ChatRoomData } from "@/features/chat/types";
-
-function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
-  const bySeq = new Map(current.map(message => [message.seq, message]));
-  for (const message of incoming) bySeq.set(message.seq, message);
-  return [...bySeq.values()].sort((a, b) => a.seq - b.seq);
-}
 
 export function useChatConversation(data: ChatRoomData) {
   const router = useRouter();
   const [source, setSource] = useState(data);
   const [stored, setStored] = useState(data.messages);
   const [hasMore, setHasMore] = useState(data.hasMore);
+  const [partnerLastReadSeq, setPartnerLastReadSeq] = useState(data.room.partnerLastReadSeq ?? 0);
+  const afterCursor = useRef(data.messages.at(-1)?.seq ?? 0);
+  const readCursor = useRef(0);
   const [readOnly, setReadOnly] = useState(data.room.readOnly);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -25,15 +25,19 @@ export function useChatConversation(data: ChatRoomData) {
   if (source !== data) {
     setSource(data);
     setReadOnly(data.room.readOnly);
+    setPartnerLastReadSeq(current => Math.max(current, data.room.partnerLastReadSeq ?? 0));
     if (shouldReplaceChatMessages(stored, data.messages)) {
       setStored(data.messages);
       setHasMore(data.hasMore);
     } else {
-      setStored(current => mergeMessages(current, data.messages));
+      setStored(current => mergeChatMessages(current, data.messages));
     }
   }
   const messages = data.live ? stored : data.messages;
   const before = messages[0]?.seq;
+  const lastSeq = messages.at(-1)?.seq ?? 0;
+  const roomKey = data.room.roomKey;
+  const live = data.live;
 
   const loadPrevious = useCallback(async () => {
     if (busy.current || !hasMore || before === undefined) return;
@@ -50,7 +54,7 @@ export function useChatConversation(data: ChatRoomData) {
       const slice: { messages: ChatMessage[]; hasMore: boolean } = await response.json();
       const element = listRef.current?.querySelector("[data-message]");
       if (element) anchor.current = { element, top: element.getBoundingClientRect().top };
-      setStored(current => mergeMessages(current, slice.messages));
+      setStored(current => mergeChatMessages(current, slice.messages));
       setHasMore(slice.hasMore);
     } catch {
       setFailed(true);
@@ -77,10 +81,116 @@ export function useChatConversation(data: ChatRoomData) {
     return () => observer.disconnect();
   }, [hasMore, failed, loadPrevious]);
 
+  // after의 커서는 전송 응답으로 건너뛰지 않는다. 재연결 때 모든 페이지를 받아 빈 구간을 채운다.
+  useEffect(() => {
+    if (!live) return;
+    let active = true;
+    let running = false;
+    let wanted = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let retryDelay = 1000;
+    const controller = new AbortController();
+    async function catchUp() {
+      wanted = true;
+      if (running) return;
+      running = true;
+      clearTimeout(retry);
+      try {
+        while (active && wanted) {
+          wanted = false;
+          let more = true;
+          while (active && more) {
+            const response = await fetch(`/api/chats/${encodeURIComponent(roomKey)}/messages?after=${afterCursor.current}`, { cache: "no-store", signal: controller.signal });
+            if (response.status === 401 || response.status === 404) {
+              router.refresh();
+              return;
+            }
+            if (!response.ok) throw new Error("새 메시지 조회 실패");
+            const slice: { messages: ChatMessage[]; hasMore: boolean } = await response.json();
+            if (!active) return;
+            const next = slice.messages.at(-1)?.seq ?? afterCursor.current;
+            if (slice.hasMore && next <= afterCursor.current) throw new Error("메시지 순번이 이어지지 않아요");
+            setStored(current => mergeChatMessages(current, slice.messages));
+            afterCursor.current = Math.max(afterCursor.current, next);
+            more = slice.hasMore;
+            retryDelay = 1000;
+          }
+        }
+      } catch {
+        if (active) {
+          retry = setTimeout(() => { void catchUp(); }, retryDelay);
+          retryDelay = nextChatRetryDelay(retryDelay);
+        }
+      } finally {
+        running = false;
+      }
+    }
+    const unsubscribe = subscribeChatEvents(event => {
+      if (event.type === "ready" || (event.type === "message" && event.roomKey === roomKey)) void catchUp();
+      if (event.type === "read" && event.roomKey === roomKey && event.reader === "partner") {
+        setPartnerLastReadSeq(current => Math.max(current, event.lastReadSeq));
+      }
+    });
+    const onVisible = () => { if (document.visibilityState === "visible") void catchUp(); };
+    document.addEventListener("visibilitychange", onVisible);
+    // 구독 이전에 메시지가 왔거나 ready를 놓친 경우도 같은 커서부터 확인한다.
+    void catchUp();
+    return () => {
+      active = false;
+      controller.abort();
+      clearTimeout(retry);
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [live, roomKey, router]);
+
+  useEffect(() => {
+    if (!live || lastSeq === 0) return;
+    let active = true;
+    let running = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let retryDelay = 1000;
+    function scheduleRetry() {
+      retry = setTimeout(() => { void readVisible(); }, retryDelay);
+      retryDelay = nextChatRetryDelay(retryDelay);
+    }
+    async function readVisible() {
+      if (!active || running || document.visibilityState !== "visible" || lastSeq <= readCursor.current) return;
+      running = true;
+      clearTimeout(retry);
+      try {
+        // 요청하는 순간 보이는 대화의 마지막 순번이다. 내 메시지만 있어도 이 순번을 보낸다.
+        const result = await markChatReadAction(roomKey, lastSeq);
+        if (!active) return;
+        if (result.ok) {
+          retryDelay = 1000;
+          readCursor.current = Math.max(readCursor.current, lastSeq);
+          refreshChatUnreadCount();
+        } else if (!shouldRetryChatRead(result.status)) {
+          router.refresh();
+        } else {
+          scheduleRetry();
+        }
+      } catch {
+        if (active) scheduleRetry();
+      } finally {
+        running = false;
+      }
+    }
+    const onVisible = () => { if (document.visibilityState === "visible") void readVisible(); };
+    document.addEventListener("visibilitychange", onVisible);
+    void readVisible();
+    return () => {
+      active = false;
+      clearTimeout(retry);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [live, lastSeq, roomKey, router]);
+
   function onSent(result: ChatMessage | { readOnly: true }) {
     if ("readOnly" in result) setReadOnly(true);
-    else setStored(current => mergeMessages(current, [result]));
+    else setStored(current => mergeChatMessages(current, [result]));
   }
 
-  return { messages, readOnly: data.room.readOnly || readOnly, loading, failed, hasMore, sentinelRef, listRef, loadPrevious, onSent };
+  return { messages, partnerLastReadSeq: live ? partnerLastReadSeq : undefined, readOnly: data.room.readOnly || readOnly, loading, failed, hasMore, sentinelRef, listRef, loadPrevious, onSent };
 }

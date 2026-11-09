@@ -14,6 +14,7 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import { isTodayInSeoul } from "@/lib/format";
+import { shouldScrollChatToEnd } from "@/features/chat/scroll";
 import { sendChatMessageAction } from "@/features/chat/actions";
 import { CHAT_MESSAGE_MAX, type ChatMessage } from "@/features/chat/types";
 import { ChatBubble, ChatBubbleNote, ChatBubbleRow } from "../ChatBubble/ChatBubble";
@@ -37,7 +38,7 @@ type ChatComposerProps = {
  * 휴대폰 같은 터치 기기에서는 Enter가 줄바꿈이고 보내기 버튼으로만 보낸다. 한글 조합 중의 Enter는 글자 확정으로 보고 보내지 않는다.
  * 보내기를 누르면 서버 응답 전에 보내는 중 말풍선을 먼저 보여 주고(useOptimistic), 저장되면 서버가 다시 그린 대화 내용으로 바뀐다.
  * 보내지 못하면 글을 입력창에 되돌리고 알린다.
- * 열 때와 메시지를 보낸 뒤에는 이 입력창의 끝이 화면 아래에 오도록 스크롤해, 가장 최근 메시지가 입력창 바로 위에 보인다.
+ * 처음 열 때와 내가 보낼 때는 최근 메시지로 스크롤한다. 상대 메시지는 입력창 끝이 화면 아래에서 200px 안에 있을 때만 따라간다.
  * 보내는 중 말풍선은 저장된 뒤 놓일 자리에 미리 둔다. 마지막 대화가 오늘이 아니면 "오늘" 구분 아래에 두어 저장될 때 튀지 않는다.
  */
 export function ChatComposer({ roomKey, lastMessage, now, readOnly, onSent }: ChatComposerProps) {
@@ -48,6 +49,7 @@ export function ChatComposer({ roomKey, lastMessage, now, readOnly, onSent }: Ch
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrolledOnce = useRef(false);
+  const distanceFromBottom = useRef(0);
   const inputId = useId();
   const hintId = useId();
   const touch = useTouchInput();
@@ -56,10 +58,28 @@ export function ChatComposer({ roomKey, lastMessage, now, readOnly, onSent }: Ch
   const startsToday = !lastMessage || !isTodayInSeoul(lastMessage.sentAt, new Date(now));
 
   useEffect(() => {
-    /* 처음에는 바로, 보낸 뒤에는 부드럽게 움직인다 */
-    endRef.current?.scrollIntoView({ block: "end", behavior: scrolledOnce.current ? "smooth" : "instant" });
+    // 새 메시지의 높이가 반영되기 전, 사용자가 있던 위치를 보관한다.
+    function updateDistance() {
+      const end = endRef.current;
+      if (end) distanceFromBottom.current = end.getBoundingClientRect().bottom - window.innerHeight;
+    }
+    window.addEventListener("scroll", updateDistance, { passive: true });
+    window.addEventListener("resize", updateDistance, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", updateDistance);
+      window.removeEventListener("resize", updateDistance);
+    };
+  }, []);
+
+  useEffect(() => {
+    const end = endRef.current;
+    if (!end) return;
+    const lastFrom = pending.length > 0 ? "me" : lastMessage?.from;
+    if (shouldScrollChatToEnd(!scrolledOnce.current, lastFrom, distanceFromBottom.current)) {
+      end.scrollIntoView({ block: "end", behavior: scrolledOnce.current ? "smooth" : "instant" });
+    }
     scrolledOnce.current = true;
-  }, [lastMessageId, pending.length]);
+  }, [lastMessageId, lastMessage?.from, pending.length]);
 
   /* 다른 화면에 갔다가 돌아오면(숨겨졌다 다시 보이면) 처음 열 때처럼 최근 메시지로 바로 가고, 지난 실패 알림은 지운다 */
   useLayoutEffect(() => {

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.testmoa.backend.dto.request.LoginRequest;
 import com.testmoa.backend.dto.request.RefreshTokenRequest;
+import com.testmoa.backend.dto.request.RestoreRequest;
 import com.testmoa.backend.dto.request.SignupRequest;
 import com.testmoa.backend.dto.response.TokenResponse;
 import com.testmoa.backend.global.util.ApiResponse;
@@ -52,6 +53,12 @@ public class AuthController {
     @PostMapping("/refresh")
     public ApiResponse<TokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ApiResponse.ok(authService.refresh(request.refreshToken()));
+    }
+
+    @Operation(summary = "탈퇴 되돌리기", description = "탈퇴 유예 회원이 로그인하면 403 WITHDRAWAL_PENDING과 error.fields.restoreToken(10분)을 받는다. 그 토큰으로 되돌리고 로그인 토큰을 받는다")
+    @PostMapping("/restore")
+    public ApiResponse<TokenResponse> restore(@Valid @RequestBody RestoreRequest request) {
+        return ApiResponse.ok(authService.restore(request.restoreToken()));
     }
 
     @Operation(summary = "로그아웃", description = "refresh 토큰을 버린다. access 토큰은 만료(30분)까지 남으므로 Next가 쿠키를 지운다")

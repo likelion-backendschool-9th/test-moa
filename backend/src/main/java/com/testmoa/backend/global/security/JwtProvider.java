@@ -36,6 +36,7 @@ public class JwtProvider {
     private static final String PURPOSE_CLAIM = "purpose";
     private static final String SIGNUP_PURPOSE = "oauth-signup";
     private static final Duration SIGNUP_TOKEN_TTL = Duration.ofMinutes(10);
+    private static final String RESTORE_PURPOSE = "withdrawal-restore";
 
     public static final String SESSION_CLAIM = "sid";
 
@@ -91,6 +92,32 @@ public class JwtProvider {
                     jwt.getClaimAsString("email"),
                     true,
                     jwt.getClaimAsString("nickname")));
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * 탈퇴 되돌리기 토큰(#84). 탈퇴 유예 회원이 로그인에 성공하면 준다. 회원 id를 sub가 아닌 uid에 넣어 access 토큰으로 쓸 수 없다
+     */
+    public String createRestoreToken(Long userId) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .claim(PURPOSE_CLAIM, RESTORE_PURPOSE)
+                .claim("uid", userId.toString())
+                .issuedAt(now)
+                .expiresAt(now.plus(SIGNUP_TOKEN_TTL))
+                .build();
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    /** 되돌리기 토큰의 회원 id. 서명이 틀렸거나 만료됐거나 되돌리기 토큰이 아니면 빈 값 */
+    public Optional<Long> readRestoreToken(String token) {
+        try {
+            Jwt jwt = jwtDecoder.decode(token);
+            if (!RESTORE_PURPOSE.equals(jwt.getClaimAsString(PURPOSE_CLAIM))) return Optional.empty();
+            return Optional.of(Long.valueOf(jwt.getClaimAsString("uid")));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

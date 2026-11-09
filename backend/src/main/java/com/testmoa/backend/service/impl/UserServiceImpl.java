@@ -18,6 +18,12 @@ import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.SubscriptionService;
 import com.testmoa.backend.service.UserService;
+import com.testmoa.backend.dto.request.WithdrawRequest;
+import com.testmoa.backend.entity.Cashout;
+import com.testmoa.backend.repository.CashoutRepository;
+import org.springframework.scheduling.annotation.Scheduled;
+import java.time.Duration;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,10 +37,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
+    /** 탈퇴 유예 기간(#84, 팀 확정) */
+    public static final Duration WITHDRAWAL_GRACE = Duration.ofDays(30);
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CashoutRepository cashoutRepository;
     private final SubscriptionService subscriptionService;
     private final PasswordEncoder passwordEncoder;
 
@@ -103,6 +112,53 @@ public class UserServiceImpl implements UserService {
 
         if (sessionId == null) refreshTokenRepository.deleteByUser(user);
         else refreshTokenRepository.deleteOtherSessions(user, sessionId);
+    }
+
+    /**
+     * 탈퇴 신청. 비밀번호(소셜로만 가입했으면 확인 문구)를 확인하고 탈퇴 유예로 바꾼 뒤 모든 기기의 로그인을 끊는다.
+     * 출금 처리 중인 요청이 있으면 처리될 때까지 막는다. 남은 크레딧은 파기 때 함께 쓸 수 없게 된다(지갑은 기록으로 남는다).
+     * ponytail: 출금 요청과 탈퇴가 동시에 오면 둘 다 될 수 있다. 출금 요청이 회원 행을 잠그게 되면 막힌다
+     */
+    @Override
+    @Transactional
+    public void withdraw(Long userId, WithdrawRequest request) {
+        User user = userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        Optional<Account> local = accountRepository.findByUserId(userId).stream()
+                .filter(account -> account.getProvider() == Provider.LOCAL)
+                .findFirst();
+        if (local.isPresent()) {
+            String password = request.password();
+            if (password == null || password.isEmpty() || !passwordEncoder.matches(password, local.get().getPassword())) {
+                throw fieldError("password", "비밀번호가 맞지 않아요");
+            }
+        } else if (!WithdrawRequest.CONFIRM_TEXT.equals(request.confirmText() == null ? null : request.confirmText().trim())) {
+            throw fieldError("confirmText", "'" + WithdrawRequest.CONFIRM_TEXT + "'를 그대로 입력해 주세요");
+        }
+        if (cashoutRepository.existsByUserIdAndStatus(userId, Cashout.Status.REQUESTED)) {
+            throw new BusinessException(ErrorCode.CASHOUT_IN_PROGRESS);
+        }
+        user.withdraw(LocalDateTime.now());
+        refreshTokenRepository.deleteByUser(user);
+    }
+
+    /** 매일 새벽 4시, 탈퇴 신청 뒤 30일이 지난 회원을 파기한다 */
+    @Scheduled(cron = "${withdrawal.purge-cron:0 0 4 * * *}")
+    @Transactional
+    public void purgeExpiredWithdrawals() {
+        purgeWithdrawnBefore(LocalDateTime.now().minus(WITHDRAWAL_GRACE));
+    }
+
+    /** 로그인 계정(이메일·소셜)과 로그인 세션을 지우고 회원의 개인정보를 파기한다. 이름·이메일로 다시 찾을 수 없다 */
+    @Override
+    @Transactional
+    public int purgeWithdrawnBefore(LocalDateTime cutoff) {
+        List<User> expired = userRepository.findByStatusAndWithdrawnAtBefore(UserStatus.WITHDRAWN, cutoff);
+        for (User user : expired) {
+            accountRepository.deleteAll(accountRepository.findByUserId(user.getId()));
+            refreshTokenRepository.deleteByUser(user);
+            user.purge();
+        }
+        return expired.size();
     }
 
     private static BusinessException fieldError(String field, String message) {

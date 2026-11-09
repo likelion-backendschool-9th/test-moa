@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -97,7 +98,7 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 이메일 로그인. 이메일이 없거나 비밀번호가 틀리면 어느 쪽인지 알리지 않는다.
-     * 탈퇴한 회원은 없는 계정처럼, 정지된 회원은 정지 안내로 막는다
+     * 탈퇴 유예 회원은 되돌리기 안내(403 WITHDRAWAL_PENDING), 정지된 회원은 정지 안내로 막는다. 파기된 회원은 로그인 계정이 없다
      */
     @Override
     public TokenResponse login(LoginRequest request) {
@@ -105,13 +106,32 @@ public class AuthServiceImpl implements AuthService {
                 .filter(found -> passwordEncoder.matches(request.password(), found.getPassword()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
-        User user = account.getUser();
-        if (user.getStatus() == UserStatus.WITHDRAWN) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        return startSession(account.getUser());
+    }
+
+    /**
+     * 탈퇴 되돌리기(#84). 로그인에서 받은 되돌리기 토큰으로 탈퇴 유예를 풀고 로그인시킨다.
+     * 로그인 전이라 access 토큰 대신 되돌리기 토큰을 쓴다(이슈의 POST /api/users/me/restore 대신)
+     */
+    @Override
+    public TokenResponse restore(String restoreToken) {
+        Long userId = jwtProvider.readRestoreToken(restoreToken)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_RESTORE_TOKEN));
+        User user = userRepository.findByIdForUpdate(userId)
+                .filter(found -> found.getStatus() == UserStatus.WITHDRAWN)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_RESTORE_TOKEN));
+        user.restore();
         return startSession(user);
     }
 
     // 이메일·소셜 로그인과 소셜 가입의 새 로그인 세션. 정지 회원은 막고, 만료된 refresh 토큰을 지운다
     private TokenResponse startSession(User user) {
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            Map<String, String> fields = Map.of(
+                    "restoreToken", jwtProvider.createRestoreToken(user.getId()),
+                    "purgeAt", user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).toString());
+            throw new BusinessException(ErrorCode.WITHDRAWAL_PENDING, ErrorCode.WITHDRAWAL_PENDING.getMessage(), fields);
+        }
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
         refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
         return issueTokens(user, UUID.randomUUID().toString());
@@ -196,9 +216,8 @@ public class AuthServiceImpl implements AuthService {
         accountRepository.delete(account.get());
     }
 
-    // ponytail: 탈퇴 유예 회원의 소셜 로그인은 이메일 로그인처럼 막기만 한다. 되돌리기는 #84에서 바꾼다
+    // 탈퇴 유예 회원은 이메일 로그인과 같이 되돌리기 안내를 받는다(startSession)
     private TokenResponse startSocialSession(User user) {
-        if (user.getStatus() == UserStatus.WITHDRAWN) throw new BusinessException(ErrorCode.OAUTH_FAILED);
         return startSession(user);
     }
 

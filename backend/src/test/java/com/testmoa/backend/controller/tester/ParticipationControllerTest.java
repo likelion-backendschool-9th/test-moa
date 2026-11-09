@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller.tester;
 
+import com.testmoa.backend.support.ResponseTimes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.Feedback;
@@ -195,8 +196,8 @@ class ParticipationControllerTest {
         assertThat(data.at("/feedbacks/0/content").asText()).isEqualTo("밑줄이 잘 저장돼요");
         assertThat(data.at("/feedbacks/1/testItemId").isNull()).isTrue();
         assertThat(data.at("/feedbacks/1/content").asText()).isEqualTo("앱이 가벼워요");
-        LocalDateTime submittedAt = LocalDateTime.parse(data.get("submittedAt").asText());
-        assertThat(LocalDateTime.parse(data.get("payoutAt").asText())).isEqualTo(submittedAt.plusHours(72));
+        LocalDateTime submittedAt = ResponseTimes.parse(data.get("submittedAt").asText());
+        assertThat(ResponseTimes.parse(data.get("payoutAt").asText())).isEqualTo(submittedAt.plusHours(72));
 
         /* 모든 행의 제출 시각이 같고, 비운 선택 항목은 저장하지 않는다 */
         List<Feedback> saved = em.createQuery("select f from feedbacks f where f.register.id = :id", Feedback.class)

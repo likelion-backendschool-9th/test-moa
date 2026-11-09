@@ -73,7 +73,7 @@ async function ManageSlot({ params, searchParams }: Props) {
           applications={applications}
           canSelect={canSelectApplicants(recruitment, detail.selectionMode)}
           recruitmentKey={recruitmentKey}
-          isSubscription={recruitment.isSubscription}
+          isSubscribed={isSubscribed}
           selectionMode={detail.selectionMode}
           recruitDeadline={recruitment.recruitDeadline}
         />
@@ -90,20 +90,20 @@ async function ManageSlot({ params, searchParams }: Props) {
           selectionMode={detail.selectionMode}
         />
       )}
-      {current === "analytics" && !recruitment.isSubscription && <AnalyticsLocked />}
-      {/* AI 분석은 느릴 수 있어서 머리·탭과 따로 기다린다. 구독 모집에서만 보인다 */}
-      {current === "analytics" && recruitment.isSubscription && (
+      {current === "analytics" && !isSubscribed && <AnalyticsLocked />}
+      {/* AI 분석은 느릴 수 있어서 머리·탭과 따로 기다린다. 구독 중인 계정에서만 보인다 */}
+      {current === "analytics" && isSubscribed && (
         <Suspense fallback={<AiAnalysisSkeleton />}>
           <AiSlot basePath={basePath} recruitmentKey={recruitmentKey} repository={project.repository} />
         </Suspense>
       )}
-      {current === "versions" && !recruitment.isSubscription && (
+      {current === "versions" && !isSubscribed && (
         <AnalyticsLocked
-          title="구독 모집에서 버전 별 분석을 볼 수 있어요"
+          title="구독하면 버전 별 분석을 볼 수 있어요"
           description="구독하면 AI가 직전 버전과 리뷰 그룹을 견줘 어떤 문제가 이어지고 새로 생겼는지 알려 줘요."
         />
       )}
-      {current === "versions" && recruitment.isSubscription && (
+      {current === "versions" && isSubscribed && (
         <Suspense fallback={<AiAnalysisSkeleton />}>
           <VersionSlot basePath={basePath} recruitmentKey={recruitmentKey} />
         </Suspense>

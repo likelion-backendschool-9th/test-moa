@@ -24,7 +24,7 @@ import styles from "./ApplicantList.module.css";
  * 테스터 관리 탭. 선발형 모집은 지원자를 직접 확정·거절하고, 선착순 모집은 보기만 한다.
  * 구독 모집은 체크박스로 여러 명을 골라 한 번에 확정할 수도 있다.
  * 테스트가 시작되면 확정된 테스터마다 피드백 제출 현황(제출함·미제출·미완료)을 보여 준다.
- * 구독 모집은 확정된 테스터와 채팅할 수 있어 채팅함으로 가는 바로가기를 둔다.
+ * 구독 중인 계정은 확정된 테스터와 채팅할 수 있어 채팅함으로 가는 바로가기를 둔다.
  * 확정·거절은 화면에 바로 반영하고 서버에 저장한다. 저장하면 요약·분석·내 프로젝트 화면도 같이 바뀐다.
  */
 
@@ -32,7 +32,8 @@ type ApplicantListProps = {
   applications: ApplicationView[];
   /** 구독 모집이고 모집 마감 전이면 true */
   canSelect: boolean;
-  isSubscription: boolean;
+  /** 내 계정이 구독 중이면 확정된 테스터와 채팅하는 바로가기를 둔다 */
+  isSubscribed: boolean;
   selectionMode: SelectionMode;
   recruitmentKey: string;
   recruitDeadline: string;
@@ -68,7 +69,7 @@ async function canReachServer() {
 }
 
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
-export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, recruitmentKey, recruitDeadline }: ApplicantListProps) {
+export function ApplicantList({ applications, canSelect, isSubscribed, selectionMode, recruitmentKey, recruitDeadline }: ApplicantListProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
@@ -258,7 +259,7 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
               <Badge tone={TONE[item.status]}>{APPLICATION_STATUS_LABEL[item.status]}</Badge>
               <span className={styles.label}>{formatDate(item.appliedAt)} 지원</span>
               {item.submission && <Badge tone="muted">{SUBMISSION_STATUS_LABEL[item.submission]}</Badge>}
-              {isSubscription && item.status === "confirmed" && (
+              {isSubscribed && item.status === "confirmed" && (
                 <Link
                   href={`/my/chats?q=${encodeURIComponent(item.testerNickname)}`}
                   aria-label={`${item.testerNickname}님과 채팅`}

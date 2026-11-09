@@ -33,6 +33,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
@@ -143,7 +145,11 @@ public class AuthServiceImpl implements AuthService {
             if (graceOver(user)) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
             Map<String, String> fields = Map.of(
                     "restoreToken", jwtProvider.createRestoreToken(user.getId(), user.getWithdrawnAt()),
-                    "purgeAt", user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).toString());
+                    // 서버 시간대(UTC)를 붙여 보낸다. 시간대 없는 값은 브라우저가 자기 시간대로 읽어 날짜가 하루 어긋난다
+                    "purgeAt", DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
+                            user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).atZone(ZoneId.systemDefault())),
+                    // 되돌리기 창에 "닉네임 님의 계정" (로그인에 성공한 본인에게만 간다)
+                    "nickname", user.getNickname());
             throw new BusinessException(ErrorCode.WITHDRAWAL_PENDING, ErrorCode.WITHDRAWAL_PENDING.getMessage(), fields);
         }
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);

@@ -451,9 +451,12 @@ export async function requestFollowupQuestions(
   return { ok: true, data: { questions: buildFollowupQuestions(testItem?.title ?? null) } };
 }
 
-/** 모집 건의 모집 조건과 테스트 항목 */
+const EMPTY_DETAIL: RecruitmentDetail = { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", images: [], testItems: [] };
+
+/** 모집 건의 모집 조건과 테스트 항목. 백엔드 모드에서는 공개 모집글 API로 읽는다 */
 export async function findRecruitmentDetail(role: Role, recruitmentKey: string): Promise<RecruitmentDetail> {
-  return (await load(role)).details[recruitmentKey] ?? { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", testItems: [] };
+  if (isBackendAuth) return (await readPublicRecruitment(recruitmentKey))?.detail ?? EMPTY_DETAIL;
+  return (await load(role)).details[recruitmentKey] ?? EMPTY_DETAIL;
 }
 
 /** 모집 건의 취소 기록. 취소하지 않았으면 null */
@@ -649,8 +652,22 @@ export async function getPublicRecruitment(slug: string) {
 }
 
 /** 내 모집의 소유권과 현재 상태. 화면 목록이나 통계는 읽지 않는다 */
-async function getMyRecruitment(path: string, recruitmentKey: string) {
+async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
+  role: Role;
+  project: Project;
+  recruitment: Recruitment & { status: RecruitmentStatus; version?: number };
+  cancellation: RecruitmentCancellation | null;
+}> {
   const role = await requireRole(path);
+  /* 백엔드 응답은 상태·버전을 이미 계산해 준다. 내 프로젝트의 모집 목록에서 id로 찾아 소유권도 함께 확인한다 */
+  if (isBackendAuth) {
+    for (const { key } of await findBackendProjects()) {
+      const { project, recruitments } = await findBackendProjectDetail(key);
+      const recruitment = recruitments.find((item) => item.slug === recruitmentKey);
+      if (recruitment) return { role, project, recruitment, cancellation: null };
+    }
+    notFound();
+  }
   const owned = await findOwnedRecruitment(role, recruitmentKey);
   if (!owned) notFound();
   const cancellation = await findCancellation(role, recruitmentKey);
@@ -670,7 +687,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
   ]);
-  const recruitment = { ...currentRecruitment, title: detail.title, version: versionOf(project.recruitments, currentRecruitment) };
+  const recruitment = { ...currentRecruitment, title: detail.title, version: currentRecruitment.version ?? versionOf(project.recruitments, currentRecruitment) };
   const now = new Date();
   return {
     project,

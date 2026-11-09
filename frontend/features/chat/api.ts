@@ -23,14 +23,22 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
 import type { BackendResult } from "@/lib/backend-http";
-import { toChatInboxPath, toChatRoom, toChatMessage, type ChatRoomResponse, type ChatMessageResponse } from "@/features/chat/backend-map";
+import { toChatInboxPath, toChatRoom, toChatMessage, toChatStartFailureMessage, type ChatRoomResponse, type ChatMessageResponse } from "@/features/chat/backend-map";
 import { cache } from "react";
 import "server-only";
 
 type MessageSliceResponse = { messages: ChatMessageResponse[]; hasMore: boolean };
 type MessageSlice = { messages: ChatMessage[]; hasMore: boolean };
 const chatRoomPath = (roomKey: string) => `/api/v1/chats/${encodeURIComponent(roomKey)}`;
-const roomPagePath = (roomKey: string) => `${CHATS_PATH}/${encodeURIComponent(roomKey)}`;
+export const roomPagePath = (roomKey: string) => `${CHATS_PATH}/${encodeURIComponent(roomKey)}`;
+
+/** 참가의 채팅방을 열고, 실패는 현재 화면에서 안내한다. 인증이 끝났으면 로그인으로 보낸다 */
+export async function startChat(registerId: string, nextPath: string): Promise<{ ok: true; roomKey: string } | { ok: false; message: string }> {
+  const result = await backendFetch<{ roomKey: string }>("/api/v1/chats", { method: "POST", body: { registerId: Number(registerId) } });
+  if (result.ok) return { ok: true, roomKey: result.data.roomKey };
+  if (result.status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  return { ok: false, message: toChatStartFailureMessage(result.code) };
+}
 
 function navigateChatFailure(status: number, nextPath: string) {
   if (status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { isBackendAuth } from "@/lib/backend";
 import { redirect } from "next/navigation";
-import { deleteChatRoom, renameChatRoom, sendChatMessage, markChatRead } from "@/features/chat/api";
+import { deleteChatRoom, renameChatRoom, sendChatMessage, markChatRead, startChat, roomPagePath } from "@/features/chat/api";
+import { isStartChatInput, toChatStartFailureMessage } from "@/features/chat/backend-map";
 import { CHATS_PATH } from "@/features/chat/query";
 
 /*
@@ -42,4 +43,15 @@ export async function sendChatMessageAction(roomKey: string, text: string) {
 export async function markChatReadAction(roomKey: string, seq: number) {
   if (typeof roomKey !== "string" || !Number.isSafeInteger(seq) || seq < 0) return { ok: false as const, status: 400 };
   return markChatRead(roomKey, seq);
+}
+
+/** 개발자가 참가의 채팅방을 열고 그 방으로 이동한다 */
+export async function startChatAction(registerId: string, nextPath: string) {
+  if (!isStartChatInput(registerId, nextPath)) {
+    return { ok: false as const, message: toChatStartFailureMessage("BACKEND_UNAVAILABLE") };
+  }
+  const result = await startChat(registerId, nextPath);
+  if (!result.ok) return result;
+  revalidatePath(CHATS_PATH);
+  redirect(roomPagePath(result.roomKey));
 }

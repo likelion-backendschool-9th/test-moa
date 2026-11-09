@@ -14,6 +14,7 @@ import { type FeedbackStatus, SELECTION_MODE_LABEL, type SelectionMode, type Tes
 import { SelectField } from "@/components/ui/SelectField/SelectField";
 import { CHAT_NOT_READY, FollowupQuestionsDialog, type FollowupState } from "../FollowupQuestionsDialog/FollowupQuestionsDialog";
 import { ManageDashboard } from "../ManageDashboard/ManageDashboard";
+import { useStartChat } from "../../_lib/use-start-chat";
 import { TextArea } from "@/components/ui/TextField/TextField";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./FeedbackList.module.css";
@@ -25,7 +26,7 @@ import styles from "./FeedbackList.module.css";
  *   신고하기는 제출 후 72시간 안에만 대화상자를 열고, 지난 피드백은 신고 기간이 지났다고 안내한다.
  * - 구독하지 않은 계정에서는 채팅하기·AI 질문 받기가 구독 안내로 이어진다.
  * - 유용해요와 신고는 백엔드에 저장한다(#190). 저장에 실패하면 유용해요는 되돌리고 카드에, 신고는 대화상자에 이유를 보여 준다.
- *   채팅방 생성과 신고 정보 조회는 백엔드 API가 아직 없어 채팅하기와 신고 정보는 준비 중 안내만 보여 준다.
+ *   참가 id가 있으면 채팅방을 열고 이동한다. 목업의 채팅하기와 신고 정보 조회는 준비 중 안내를 보여 준다.
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
 
@@ -67,6 +68,7 @@ export function FeedbackList({
   submitDeadline,
   selectionMode,
 }: FeedbackListProps) {
+  const { start, isPending } = useStartChat(recruitmentKey);
   /* 검색어는 검색 버튼(엔터)을 눌러야 적용한다 */
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
@@ -74,7 +76,7 @@ export function FeedbackList({
   const [order, setOrder] = useState<keyof typeof ORDER_LABEL>("latest");
   const [statuses, setStatuses] = useState<Record<string, FeedbackStatus>>({});
   const [recommended, setRecommended] = useState<Record<string, boolean>>({});
-  /** 버튼을 눌렀지만 API가 없을 때 카드에 보여 줄 안내 */
+  /** 요청 실패나 아직 준비되지 않은 기능을 카드에 보여 줄 안내 */
   const [notices, setNotices] = useState<Record<string, string>>({});
   const [followups, setFollowups] = useState<Record<string, FollowupState>>({});
   const [asking, setAsking] = useState<FeedbackView | null>(null);
@@ -302,7 +304,12 @@ export function FeedbackList({
               )}
               <div className={styles.box3}>
                 {notices[item.id] && <p className={styles.text3}>{notices[item.id]}</p>}
-                <PaidAction subscribed={isSubscribed} label={`${nickname}님과 채팅하기`} onClick={() => showNotice(item, CHAT_NOT_READY)}>
+                <PaidAction subscribed={isSubscribed} label={`${nickname}님과 채팅하기`} disabled={isPending} onClick={() => {
+                  if (item.registerId) {
+                    setNotices((prev) => ({ ...prev, [item.id]: "" }));
+                    start(item.registerId, (message) => showNotice(item, message));
+                  } else showNotice(item, CHAT_NOT_READY);
+                }}>
                   채팅하기
                 </PaidAction>
                 <PaidAction subscribed={isSubscribed} label={`${nickname}님 피드백으로 AI 질문 받기`} onClick={() => askFollowup(item)}>
@@ -354,6 +361,8 @@ export function FeedbackList({
         <FollowupQuestionsDialog
           key={asking.id}
           nickname={asking.testerNickname}
+          registerId={asking.registerId}
+          recruitmentKey={recruitmentKey}
           content={asking.content}
           followup={followups[asking.id] ?? { state: "loading" }}
           onRetry={() => askFollowup(asking)}
@@ -408,7 +417,7 @@ export function FeedbackList({
 }
 
 /** 유료 기능 버튼. 보통 버튼에 PRO 표시를 붙인다. 구독 모집이면 바로 쓰고, 무료 모집이면 구독 안내로 간다 */
-function PaidAction({ subscribed, label, onClick, children }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode }) {
+function PaidAction({ subscribed, label, onClick, children, disabled }: { subscribed: boolean; label: string; onClick: () => void; children: ReactNode; disabled?: boolean }) {
   const content = (
     <>
       {children}
@@ -425,7 +434,7 @@ function PaidAction({ subscribed, label, onClick, children }: { subscribed: bool
     );
   }
   return (
-    <Button size="sm" variant="secondary" className={styles.cardAction} aria-label={label} onClick={onClick}>
+    <Button size="sm" variant="secondary" className={styles.cardAction} aria-label={label} onClick={onClick} disabled={disabled}>
       {content}
     </Button>
   );

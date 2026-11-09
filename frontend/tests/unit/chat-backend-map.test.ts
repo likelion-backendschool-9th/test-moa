@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { toChatInboxPath, toChatMessage, toChatRoom, type ChatRoomResponse } from "@/features/chat/backend-map";
+import { isStartChatInput, toChatInboxPath, toChatMessage, toChatRoom, toChatStartFailureMessage, type ChatRoomResponse } from "@/features/chat/backend-map";
 
 const room: ChatRoomResponse = {
   roomKey: "room-54", recruitmentId: 54, projectName: "북로그", roomName: null,
@@ -28,4 +28,24 @@ test("#54-S3 역할과 선택 필드를 화면 자료로 바꾸고 시각은 그
 
 test("#54-S4 메시지가 없는 방은 null을 유지한다", () => {
   expect(toChatRoom({ ...room, lastMessage: null }).lastMessage).toBeNull();
+});
+
+test("#195-S8 채팅 시작 실패를 상황에 맞는 안내로 바꾼다", () => {
+  expect(toChatStartFailureMessage("SUBSCRIPTION_REQUIRED")).toBe("구독 중일 때만 새 채팅을 시작할 수 있어요");
+  expect(toChatStartFailureMessage("CHAT_READ_ONLY")).toBe("모집이 끝나 새 채팅을 시작할 수 없어요");
+  expect(toChatStartFailureMessage("INVALID_INPUT")).toBe("확정된 테스터와만 채팅할 수 있어요");
+  expect(toChatStartFailureMessage("NOT_FOUND")).toBe("테스터 정보를 찾지 못했어요. 새로고침해 주세요");
+  for (const code of ["BACKEND_UNAVAILABLE", "INTERNAL_ERROR", "UNKNOWN", ""]) {
+    expect(toChatStartFailureMessage(code)).toBe("채팅을 시작하지 못했어요. 잠시 후 다시 시도해 주세요");
+  }
+});
+
+test("#195-S18 참가 id가 숫자 문자열이고 돌아올 주소가 모집 관리 경로일 때만 통과한다", () => {
+  expect(isStartChatInput("12", "/developer/recruitments/2")).toBe(true);
+  for (const registerId of ["1a", "", 12, undefined]) {
+    expect(isStartChatInput(registerId, "/developer/recruitments/2")).toBe(false);
+  }
+  for (const nextPath of ["/login", "//evil", "/developer/recruitments", undefined]) {
+    expect(isStartChatInput("12", nextPath)).toBe(false);
+  }
 });

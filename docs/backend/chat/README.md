@@ -16,6 +16,7 @@
 | [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | [realtime.md](realtime.md) |
 | [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |
 | [#54](https://github.com/likelion-backendschool-9th/test-moa/issues/54) | 화면을 실제 API로 연결 | [채팅함](../../frontend/chat/chats.md), [채팅방](../../frontend/chat/chat-room.md) |
+| [#195](https://github.com/likelion-backendschool-9th/test-moa/issues/195) | 모집 관리 화면에서 채팅 걸기 | [start-chat.md](../../frontend/chat/start-chat.md) |
 | [#105](https://github.com/likelion-backendschool-9th/test-moa/issues/105) | 채팅방 메시지 검색 | search.md |
 
 진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다. 진행 상태는 이슈와 PR에서 본다.

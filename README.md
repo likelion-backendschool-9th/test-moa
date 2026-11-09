@@ -165,13 +165,14 @@ PR을 열면 [PR meta 워크플로](.github/workflows/pr-meta.yml)가 연 사람
 
 ## 실행 방법
 
-Docker만 있으면 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄울 수 있습니다.
+Docker만 있으면 프론트엔드, 백엔드, AI 분석 서버, PostgreSQL을 한 번에 띄울 수 있습니다.
 
 ```text
 브라우저 → nginx (localhost:TEAM_PORT) → frontend:3000 → backend:8080 → db:5432
+                                                               └→ analysis:8000 → Claude API
 ```
 
-브라우저는 nginx만 거쳐 프론트엔드에 접속합니다. 백엔드는 프론트엔드가 서버 안에서 부르므로(BFF) 호스트에 포트를 열지 않습니다.
+브라우저는 nginx만 거쳐 프론트엔드에 접속합니다. 백엔드는 프론트엔드가 서버 안에서 부르므로(BFF) 호스트에 포트를 열지 않고, 분석 서버(`analysis-server/`)도 백엔드만 부르므로 포트를 열지 않습니다.
 
 ### 처음 한 번
 
@@ -179,7 +180,7 @@ Docker만 있으면 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄울 
 cp .env.example .env
 ```
 
-`.env`에서 `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`를 채웁니다. 로컬에서는 아무 값이나 써도 됩니다. `TEAM_PORT`는 브라우저로 접속할 포트입니다. `.env`는 커밋하지 않습니다.
+`.env`에서 `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`를 채웁니다. 로컬에서는 아무 값이나 써도 됩니다. `TEAM_PORT`는 브라우저로 접속할 포트입니다. AI 분석을 쓰려면 `ANALYSIS_INTERNAL_TOKEN`(32자 이상)과 `ANALYSIS_ANTHROPIC_API_KEY`도 채웁니다. 비워 두면 AI 기능만 503이고 나머지는 그대로 뜹니다. `.env`는 커밋하지 않습니다.
 
 ### 개발 모드
 
@@ -225,4 +226,6 @@ docker compose --profile https up --build
 
 ### 테스트 서버 배포
 
-`develop`에 머지하면 [GitHub Actions](.github/workflows/deploy.yml)가 이미지를 빌드해 GHCR에 올리고, 테스트 서버에 접속해 [compose.prod.yaml](compose.prod.yaml)로 다시 띄웁니다. 직접 할 일은 없고, Actions 탭에서 `CI/CD` 워크플로의 결과를 확인합니다.
+`develop`에 머지하면 [GitHub Actions](.github/workflows/deploy.yml)가 이미지를 빌드해 GHCR에 올리고, 테스트 서버에 접속해 [compose.prod.yaml](compose.prod.yaml)로 다시 띄웁니다. 백엔드, 프론트엔드, 분석 서버 이미지를 함께 올리고 함께 띄웁니다. 직접 할 일은 없고, Actions 탭에서 `CI/CD` 워크플로의 결과를 확인합니다.
+
+서버의 `.env`에는 `ANALYSIS_INTERNAL_TOKEN`과 `ANALYSIS_ANTHROPIC_API_KEY`가 있어야 합니다. 둘 중 하나라도 없으면 `compose.prod.yaml`이 기동하지 않고 빠진 값을 알려 줍니다. Anthropic API 키는 GitHub Secrets에 넣지 않고 서버 `.env`에만 둡니다.

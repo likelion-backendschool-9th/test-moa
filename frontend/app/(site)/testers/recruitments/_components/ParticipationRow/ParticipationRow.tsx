@@ -19,7 +19,7 @@ import styles from "./ParticipationRow.module.css";
 const URGENT_DAYS = 3;
 
 /** 끝난 상태는 흐린 배지로 둔다 */
-const ENDED: ParticipationStatus[] = ["notSelected", "incomplete", "excluded"];
+const ENDED: ParticipationStatus[] = ["notSelected", "incomplete", "excluded", "cancelled"];
 
 /** 참여 중 상태의 동작 이름. 나머지는 상세 보기다 */
 const ONGOING_ACTION: Partial<Record<ParticipationStatus, string>> = {
@@ -29,7 +29,7 @@ const ONGOING_ACTION: Partial<Record<ParticipationStatus, string>> = {
 };
 
 function actionOf(item: ParticipationItem) {
-  if (tabOf(item.status) === "applied") return { label: "모집 글 보기", href: `/recruitments/${item.recruitment.slug}` };
+  if (tabOf(item.status) === "applied" && !item.recruitmentCancelled) return { label: "모집 글 보기", href: `/recruitments/${item.recruitment.slug}` };
   return { label: ONGOING_ACTION[item.status] ?? "상세 보기", href: participationPath(item.key) };
 }
 

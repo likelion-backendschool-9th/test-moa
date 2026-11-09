@@ -1,3 +1,4 @@
+import { isBackendAuth } from "@/lib/backend";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -108,7 +109,8 @@ type ListWithDataProps = { tab: ParticipationTab; urlTab?: ParticipationTab; vie
 
 async function ListWithData({ tab, urlTab, view }: ListWithDataProps) {
   const [session, items] = await Promise.all([getSession(), getParticipations(tab)]);
-  if (session.role !== "tester") return <NoParticipations />;
+  /* 개발자와 테스터는 한 계정이라 실제 로그인에서는 역할로 막지 않는다 */
+  if (!isBackendAuth && session.role !== "tester") return <NoParticipations />;
   await connection();
   return <ParticipationList tab={tab} view={view} urlTab={urlTab} items={items} now={new Date()} />;
 }

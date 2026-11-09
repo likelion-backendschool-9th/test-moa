@@ -1,3 +1,4 @@
+import { isBackendAuth } from "@/lib/backend";
 import { ImageIcon } from "@phosphor-icons/react/ssr";
 import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
@@ -66,6 +67,8 @@ function statusMessage(item: ParticipationItem, now: Date): { title: string; bod
         title: "이번 참여는 보상에서 제외됐어요",
         body: `운영자 검토 결과예요. 검토는 ${formatDate(item.reviewedAt ?? item.appliedAt)}에 끝났어요.`,
       };
+    case "cancelled":
+      return { title: "참여가 취소됐어요", body: `${formatDate(item.cancelledAt ?? item.appliedAt)}에 취소됐어요. 다른 테스트에 지원해 보세요.` };
   }
 }
 
@@ -79,6 +82,14 @@ function infoRows(item: ParticipationItem): Array<[string, ReactNode]> {
   ];
   if (recruitment.extraReward !== undefined) {
     rows.push(["추가 보상", <span key="extra" className={styles.infoRows}>+{formatCredits(recruitment.extraReward)}</span>]);
+  }
+  if (item.accessUrl) {
+    rows.push([
+      "테스트 접속",
+      <a key="access" href={item.accessUrl} target="_blank" rel="noopener noreferrer" className={styles.accessLink}>
+        바로 가기<span className={styles.srOnly}> (새 탭)</span>
+      </a>,
+    ]);
   }
   rows.push(["지원일", formatDate(item.appliedAt)]);
   if (item.submittedAt) rows.push(["제출일", formatDateTime(item.submittedAt)]);
@@ -147,7 +158,7 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
 
       {justSubmitted && status === "payoutPending" && (
         <p role="status" className={styles.text}>
-          피드백을 제출했어요. 시연용이라 이 브라우저에만 남아요.
+          {isBackendAuth ? "피드백을 제출했어요." : "피드백을 제출했어요. 시연용이라 이 브라우저에만 남아요."}
         </p>
       )}
 
@@ -193,9 +204,14 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
           {/* 이 참여가 가리키는 모집 글은 설명 문장과 같은 줄 오른쪽에 둔다. 좁은 화면에서는 문장 아래로 내려간다 */}
           <div className={styles.box6}>
             <p className={styles.body}>{message.body}</p>
-            <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className={styles.button}>
-              모집 글 보기
-            </LinkButton>
+            {/* 취소된 모집은 공개 상세가 없다 */}
+            {item.recruitmentCancelled ? (
+              <p className={styles.body}>취소된 모집이라 모집 글을 볼 수 없어요.</p>
+            ) : (
+              <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className={styles.button}>
+                모집 글 보기
+              </LinkButton>
+            )}
           </div>
           {status === "notSelected" && (
             <LinkButton href="/recruitments" variant="secondary" size="sm" className={styles.button2}>

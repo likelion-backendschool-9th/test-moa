@@ -431,3 +431,8 @@
   height: 12rem;
   width: 100%;
 }
+
+.accessLink {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

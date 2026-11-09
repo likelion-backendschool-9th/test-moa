@@ -225,6 +225,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
   - 이슈의 `POST /api/users/me/restore` 대신 이 주소로 했다. 유예 회원은 로그인 전이라 access 토큰이 없다
   - 되돌리기 토큰은 회원 id를 `sub`가 아닌 `uid`에 넣어 access 토큰으로 쓸 수 없다
 - 출금 처리 중(`cashouts.status = REQUESTED`)이면 409 `CASHOUT_IN_PROGRESS`
+  - 출금 신청도 회원 행을 먼저 잠가서(`findByIdForUpdate`), 탈퇴와 출금이 동시에 와도 둘 중 하나만 된다. 탈퇴가 먼저 끝났으면 출금 신청은 401
 - 파기: 매일 04:00(`withdrawal.purge-cron`) 탈퇴 신청 뒤 30일이 지난 회원의
   - 로그인 계정(`accounts`)과 로그인 세션(`refresh_tokens`)을 지운다
   - 이름·프로필 이미지는 비우고, 이메일은 `deleted-{id}@withdrawn.invalid`, 닉네임은 `탈퇴한 회원#{id}`로 바꾼다. 이메일이 바뀌어 같은 이메일로 다시 가입할 수 있다
@@ -258,6 +259,9 @@ alter table users add constraint users_status_check
 
 #84-S20 30일이 지나면 개인정보와 로그인 계정을 파기하고, 같은 이메일로 다시 가입할 수 있다 [테스트]
 - 30일이 안 됐으면 파기하지 않는다. 파기 뒤 로그인은 401, 같은 이메일 가입은 201
+
+#84-S21 탈퇴 신청과 출금 신청이 동시에 와도 둘 중 하나만 된다 [테스트]
+- 탈퇴 유예이면서 처리 중인 출금 요청이 있는 회원이 생기지 않는다
 
 ## 범위 밖
 - 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

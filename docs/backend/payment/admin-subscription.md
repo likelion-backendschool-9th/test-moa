@@ -2,7 +2,7 @@
 
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 이 문서 시나리오와 백엔드 테스트가 1:1이고, `[직접]`은 사람이 API·화면·코드로 확인한다.
 
-이슈: [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204). 요구·시나리오는 `#204-R…`, `#204-S…`부터 센다. 이 이슈는 구독 결제 화면의 프론트 연결도 같이 하며, 프론트 시나리오는 [subscription.md](../../frontend/payment/subscription.md)(결제 연결)와 [subscriptions.md](../../frontend/admin/subscriptions.md)(운영자 화면)에 둔다. 구독 상태·플랜은 [subscription.md](subscription.md), 결제 실행은 [subscription-payment.md](subscription-payment.md), 엔티티는 [entities.md](entities.md).
+이슈: [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204). 요구·시나리오는 `#204-R…`, `#204-S…`부터 센다. 이 문서의 시나리오는 `#204-S1`~`S10`과 리뷰 반영으로 더한 `#204-S24`다(`S11`~`S23`은 프론트 문서). 이 이슈는 구독 결제 화면의 프론트 연결도 같이 하며, 프론트 시나리오는 [subscription.md](../../frontend/payment/subscription.md)(결제 연결)와 [subscriptions.md](../../frontend/admin/subscriptions.md)(운영자 화면)에 둔다. 구독 상태·플랜은 [subscription.md](subscription.md), 결제 실행은 [subscription-payment.md](subscription-payment.md), 엔티티는 [entities.md](entities.md).
 
 ## 한눈에
 - 끝나면: 운영자가 **회원의 이메일**로 그 회원의 구독 상태를 보고, **결제 없이** 구독을 주거나 빼서 시연·확인용 계정을 만든다. 주면 그 회원의 `/my/subscription`에 구독 중으로 나온다.
@@ -19,7 +19,7 @@
   - **`CANCELLED`는 원래 "환불로 취소됨"이라는 뜻이다**([entities.md](entities.md)). 이 해제는 환불이 아니라서 값의 뜻이 겹친다. 시연용 기능이라 값을 새로 만들지 않고 재사용하며, 이 겹침을 알고 쓴다.
   - **실제로 결제한 기간도 같이 취소된다.** 결제 기록(`payments`)은 그대로 남고 구독만 사라지므로, 결제와 구독 상태가 어긋난다. 실제 회원에게 쓰는 기능이 아니다.
 - **운영자 계정은 구독 대상이 아니다.** 조회는 `eligible=false`로 답하고, 부여는 403(메시지 "운영자 계정은 구독 대상이 아니에요")이다. 해제는 할 것이 없어 `eligible=false`로 답한다(조회와 같다).
-- **없는 이메일은 404다.** 같은 회원에 대한 동시 부여·해제는 회원 행을 `PESSIMISTIC_WRITE`로 잠가 한 줄로 처리한다(`findByIdForUpdate`).
+- **없는 이메일은 404다.** 같은 회원에 대한 동시 부여·해제는 회원 행을 `PESSIMISTIC_WRITE`로 잠가 한 줄로 처리한다(`findByIdForUpdate`). 구독 결제([subscription-payment.md](subscription-payment.md))도 같은 회원 행을 먼저 잠그고 이용 시작을 계산하므로, 결제와 운영자 작업이 겹쳐도 차례로 처리된다.
 - **응답 시각에는 오프셋이 붙는다.** UTC로 고정한 서버 값이 `…Z`로 내려간다([server-time.md](../../server-time.md)).
 
 ## API
@@ -104,6 +104,13 @@
 #204-S10 운영자만 쓴다 [테스트]
 - When  일반 회원 토큰, 비로그인으로 세 API를 부른다
 - Then  일반 회원은 403, 비로그인은 401이다
+
+#204-S24 결제와 운영자 부여·해제가 겹쳐도 차례로 처리된다 [테스트] (리뷰 반영)
+- Given 지갑이 있고 10일 뒤에 끝나는 구독이 있는 회원. 결제가 구독 기간을 읽은 뒤 멈춘다
+- When  그 사이 운영자가 30일 구독을 준다
+- Then  운영자 작업은 결제가 끝날 때까지 기다리고, 결제 30일과 부여 30일이 서로의 끝에서 시작해 남은 기간이 70일이다(기존 10일 + 30일 + 30일). 기간이 겹치지 않는다
+- When  그 사이 운영자가 구독을 뺀다
+- Then  결제가 먼저 끝난 뒤 해제가 그 기간까지 취소해서 끝나지 않은 ACTIVE 기간이 남지 않는다. 결제 기록은 한 건이다
 
 ---
 

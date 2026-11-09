@@ -40,6 +40,32 @@ export type CreditEntry = {
   occurredAt: string;
 };
 
+/** 서버 `GET /api/v1/my/credits` 응답 중 화면이 쓰는 값. `earnedBalance`는 출금 처리 중인 금액을 뺀 값이다 */
+export type ServerCreditBalance = {
+  earnedBalance: number;
+  eventCredit: number;
+  lockedBalance: number;
+  pendingReward: number;
+};
+
+/** 서버 잔액을 화면 모양으로 바꾼다. 화면의 `earned`는 출금 처리 중인 금액을 포함해서 잠긴 금액을 더한다 */
+export function balanceFromServer({ earnedBalance, eventCredit, lockedBalance, pendingReward }: ServerCreditBalance): CreditBalance {
+  return { earned: earnedBalance + lockedBalance, signup: eventCredit, pendingWithdrawal: lockedBalance, pendingReward };
+}
+
+/** 서버 `GET /api/v1/my/credits/ledger` 응답의 한 줄. 시각은 오프셋이 붙은 값이다 */
+export type ServerCreditLedger = {
+  id: number;
+  description: string;
+  delta: number;
+  createdAt: string;
+};
+
+/** 서버 내역 한 줄을 화면 모양으로 바꾼다. 이름은 서버의 설명을 그대로 쓴다 */
+export function entryFromServer({ id, description, delta, createdAt }: ServerCreditLedger): CreditEntry {
+  return { id: String(id), label: description, amount: delta, occurredAt: createdAt };
+}
+
 /** 크레딧 내역 필터. URL의 type 값 */
 export const LEDGER_TYPES = ["all", "in", "out"] as const;
 export type LedgerType = (typeof LEDGER_TYPES)[number];

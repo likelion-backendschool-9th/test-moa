@@ -11,7 +11,18 @@ import {
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
 import { type DemoSubscriptionPayment, getDemoSubscriptionPayments } from "@/demo/subscription";
 import { type ListTab } from "@/features/credit/paths";
-import type { CreditBalance, CreditEntry, LedgerType, Withdrawal, WithdrawalReview } from "@/features/credit/types";
+import { backendFetch, isBackendAuth } from "@/lib/backend";
+import {
+  balanceFromServer,
+  type CreditBalance,
+  type CreditEntry,
+  entryFromServer,
+  type LedgerType,
+  type ServerCreditBalance,
+  type ServerCreditLedger,
+  type Withdrawal,
+  type WithdrawalReview,
+} from "@/features/credit/types";
 import { type WithdrawalRequest } from "@/features/credit/types";
 import { assertAdmin, requireMember } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
@@ -19,8 +30,8 @@ import { connection } from "next/server";
 import "server-only";
 
 /*
- * 크레딧 데이터 접근. 지금은 목업을 돌려준다.
- * 실제 API를 붙일 때는 이 파일의 함수 본문만 바꾸고 시그니처는 유지한다.
+ * 크레딧 데이터 접근. `AUTH_MODE=backend`에서는 잔액과 내역을 서버에서 읽고(#205), 아니면 목업을 돌려준다.
+ * 출금 요청은 아직 목업이다(출금 연결은 #206).
  * 모든 함수는 비로그인이면 next 경로를 붙여 로그인으로 보낸다.
  */
 
@@ -32,12 +43,31 @@ async function load(next: string): Promise<CreditData> {
   return creditDataFor(session.role, new Date());
 }
 
+/** 서버의 내 크레딧 잔액. 읽지 못하면 오류로 멈춘다 */
+async function readBalance(): Promise<CreditBalance> {
+  const result = await backendFetch<ServerCreditBalance>("/api/v1/my/credits");
+  if (!result.ok) throw new Error(result.message);
+  return balanceFromServer(result.data);
+}
+
+/** 서버의 내 크레딧 내역, 최신순 */
+async function readLedger(type: LedgerType): Promise<CreditEntry[]> {
+  const result = await backendFetch<ServerCreditLedger[]>(`/api/v1/my/credits/ledger?type=${type}`);
+  if (!result.ok) throw new Error(result.message);
+  return result.data.map(entryFromServer);
+}
+
 /**
  * 목업에 이 브라우저의 시연용 출금 신청과 크레딧 구독 결제를 더한 값. 신청 금액은 처리 중이라 잠긴다.
  * 마이페이지 대시보드도 같은 값을 보여 주려고 이 함수를 쓴다 (세션 확인은 부르는 쪽에서)
  */
 export async function creditDataFor(role: Exclude<Role, "guest">, now: Date): Promise<CreditData> {
   const data = buildCreditData(role, now);
+  if (isBackendAuth) {
+    /* 잔액과 내역은 서버 값이다. 출금 요청은 연결 전(#206)이라 목업을 그대로 두고, 서버의 출금 처리 중 금액에는 더하지 않는다 */
+    const [balance, ledger] = await Promise.all([readBalance(), readLedger("all")]);
+    return { ...data, balance, ledger };
+  }
   const [requested, payments] = await Promise.all([getDemoWithdrawals(role), getDemoSubscriptionPayments(role)]);
   const locked = requested.reduce((sum, item) => sum + item.amount, 0);
   const paidWithCredits = payments.filter((payment) => payment.method === "credit");
@@ -70,6 +100,12 @@ export async function getCreditBalance(next: string): Promise<CreditBalance> {
 
 /** 크레딧 내역, 최신순. in은 늘어난 기록, out은 줄어든 기록만 */
 export async function getCreditLedger(next: string, type: LedgerType = "all", limit?: number): Promise<CreditEntry[]> {
+  if (isBackendAuth) {
+    await requireMember(next);
+    await connection();
+    const entries = await readLedger(type);
+    return limit === undefined ? entries : entries.slice(0, limit);
+  }
   const { ledger } = await load(next);
   const filtered = ledger.filter((entry) => type === "all" || (type === "in" ? entry.amount > 0 : entry.amount < 0));
   return limit === undefined ? filtered : filtered.slice(0, limit);

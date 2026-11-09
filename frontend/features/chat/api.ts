@@ -207,7 +207,8 @@ export const getChatUnreadCount = cache(async (): Promise<number> => {
 });
 
 /** 화면에 그린 마지막 순번까지 읽음 처리한다 */
-export async function markChatRead(roomKey: string, seq: number): Promise<{ ok: boolean }> {
+export async function markChatRead(roomKey: string, seq: number): Promise<{ ok: true } | { ok: false; status: number }> {
   if (!isBackendAuth) return { ok: true };
-  return chatMutationResult(await backendFetch(`${chatRoomPath(roomKey)}/read`, { method: "POST", body: { seq } }), roomPagePath(roomKey));
+  const result = await backendFetch(`${chatRoomPath(roomKey)}/read`, { method: "POST", body: { seq } });
+  return result.ok ? { ok: true } : { ok: false, status: result.status };
 }

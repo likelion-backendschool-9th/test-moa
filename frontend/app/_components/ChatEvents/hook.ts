@@ -1,5 +1,6 @@
 "use client";
 
+import { nextChatRetryDelay } from "@/features/chat/realtime";
 import { useEffect, useSyncExternalStore } from "react";
 
 export type ChatEvent =
@@ -100,7 +101,7 @@ export function connectChatEvents(onEvent: (event: ChatEvent) => void) {
         connection.close();
         openConnection();
       }, retryDelay);
-      retryDelay = Math.min(retryDelay * 2, 30_000);
+      retryDelay = nextChatRetryDelay(retryDelay);
     });
     connection.addEventListener("message", (event: MessageEvent<string>) => {
       try {

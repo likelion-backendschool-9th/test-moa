@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { nextChatRetryDelay, shouldRetryChatRead } from "@/features/chat/realtime";
 import { markChatReadAction } from "@/features/chat/actions";
 import { subscribeChatEvents, refreshChatUnreadCount } from "@/app/_components/ChatEvents/hook";
 import { shouldReplaceChatMessages, mergeChatMessages } from "@/features/chat/message-window";
@@ -87,6 +88,7 @@ export function useChatConversation(data: ChatRoomData) {
     let running = false;
     let wanted = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
+    let retryDelay = 1000;
     const controller = new AbortController();
     async function catchUp() {
       wanted = true;
@@ -111,10 +113,14 @@ export function useChatConversation(data: ChatRoomData) {
             setStored(current => mergeChatMessages(current, slice.messages));
             afterCursor.current = Math.max(afterCursor.current, next);
             more = slice.hasMore;
+            retryDelay = 1000;
           }
         }
       } catch {
-        if (active) retry = setTimeout(() => { void catchUp(); }, 1000);
+        if (active) {
+          retry = setTimeout(() => { void catchUp(); }, retryDelay);
+          retryDelay = nextChatRetryDelay(retryDelay);
+        }
       } finally {
         running = false;
       }
@@ -143,21 +149,30 @@ export function useChatConversation(data: ChatRoomData) {
     let active = true;
     let running = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
+    let retryDelay = 1000;
+    function scheduleRetry() {
+      retry = setTimeout(() => { void readVisible(); }, retryDelay);
+      retryDelay = nextChatRetryDelay(retryDelay);
+    }
     async function readVisible() {
-      if (running || document.visibilityState !== "visible" || lastSeq <= readCursor.current) return;
+      if (!active || running || document.visibilityState !== "visible" || lastSeq <= readCursor.current) return;
       running = true;
+      clearTimeout(retry);
       try {
         // 요청하는 순간 보이는 대화의 마지막 순번이다. 내 메시지만 있어도 이 순번을 보낸다.
         const result = await markChatReadAction(roomKey, lastSeq);
         if (!active) return;
         if (result.ok) {
+          retryDelay = 1000;
           readCursor.current = Math.max(readCursor.current, lastSeq);
           refreshChatUnreadCount();
+        } else if (!shouldRetryChatRead(result.status)) {
+          router.refresh();
         } else {
-          retry = setTimeout(() => { void readVisible(); }, 1000);
+          scheduleRetry();
         }
       } catch {
-        if (active) retry = setTimeout(() => { void readVisible(); }, 1000);
+        if (active) scheduleRetry();
       } finally {
         running = false;
       }

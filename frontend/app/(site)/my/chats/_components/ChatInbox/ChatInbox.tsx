@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { shouldRefreshChatInbox } from "@/features/chat/realtime";
 import { useChatEvents, requestChatRefresh } from "@/app/_components/ChatEvents/hook";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
@@ -22,7 +23,10 @@ const ROLE_EMPTY_DESCRIPTION: Record<ChatRole, string> = {
 /** 채팅함 본문. 채팅방이 없으면 빈 상태, 있으면 검색 영역과 카드 목록을 그린다 */
 export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInboxData }) {
   const router = useRouter();
-  useChatEvents(useCallback(() => requestChatRefresh(() => router.refresh()), [router]));
+  // 돌아온 화면은 이전 목록이 보존될 수 있어 구독 직후의 ready로도 맞춘다
+  useChatEvents(useCallback(event => {
+    if (shouldRefreshChatInbox(event)) requestChatRefresh(() => router.refresh());
+  }, [router]));
   if (inbox.total === 0) {
     return (
       <EmptyState

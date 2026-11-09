@@ -40,6 +40,6 @@ export async function sendChatMessageAction(roomKey: string, text: string) {
 }
 
 export async function markChatReadAction(roomKey: string, seq: number) {
-  if (typeof roomKey !== "string" || !Number.isSafeInteger(seq) || seq < 0) return { ok: false };
+  if (typeof roomKey !== "string" || !Number.isSafeInteger(seq) || seq < 0) return { ok: false as const, status: 400 };
   return markChatRead(roomKey, seq);
 }

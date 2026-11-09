@@ -1,36 +1,17 @@
 <a id="readme-top"></a>
 
-<div align="center">
-  <a href="https://github.com/likelion-backendschool-9th/test-moa/graphs/contributors"><img src="https://img.shields.io/github/contributors/likelion-backendschool-9th/test-moa.svg?style=for-the-badge" alt="Contributors"></a>
-  <a href="https://github.com/likelion-backendschool-9th/test-moa/issues"><img src="https://img.shields.io/github/issues/likelion-backendschool-9th/test-moa.svg?style=for-the-badge" alt="Issues"></a>
-  <a href="https://github.com/likelion-backendschool-9th/test-moa/pulls"><img src="https://img.shields.io/github/issues-pr/likelion-backendschool-9th/test-moa.svg?style=for-the-badge" alt="Pull Requests"></a>
-</div>
+<a href="https://test-moa.newlecture.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
+    <img src="docs/images/logo-light.png" width="240" alt="test moa">
+  </picture>
+</a>
 
-<br/>
+**써 보고, 남기고, 받고**
 
-<div align="center">
-  <a href="https://test-moa.newlecture.com">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
-      <img src="docs/images/logo-light.png" width="240" alt="test moa">
-    </picture>
-  </a>
+개발자와 테스터를 연결하는 소프트웨어 테스터 모집 플랫폼
 
-  <h3 align="center">써 보고, 남기고, 받고</h3>
-
-  <p align="center">
-    개발자와 테스터를 연결하는 소프트웨어 테스터 모집 플랫폼
-    <br/>
-    <a href="docs/README.md"><strong>문서 살펴보기 »</strong></a>
-    <br/>
-    <br/>
-    <a href="https://test-moa.newlecture.com">테스트 서버</a>
-    &middot;
-    <a href="https://github.com/likelion-backendschool-9th/test-moa/issues/new?template=2-bug.yml">버그 제보</a>
-    &middot;
-    <a href="https://github.com/likelion-backendschool-9th/test-moa/issues/new?template=1-feature.yml">기능 제안</a>
-  </p>
-</div>
+[문서 살펴보기](docs/README.md) · [테스트 서버](https://test-moa.newlecture.com) · [버그 제보](https://github.com/likelion-backendschool-9th/test-moa/issues/new?template=2-bug.yml) · [기능 제안](https://github.com/likelion-backendschool-9th/test-moa/issues/new?template=1-feature.yml)
 
 <br/>
 <br/>

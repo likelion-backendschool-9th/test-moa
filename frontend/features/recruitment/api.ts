@@ -13,6 +13,7 @@ import {
 import { findBackendProject, findBackendProjects, isBackendId, readProjectApi } from "@/features/project/api";
 import { parseImageUrls } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
+import { type ApplicantResponse, type DeveloperFeedbackResponse, toApplication, toFeedback } from "@/features/recruitment/backend-map";
 import { type FormState } from "@/features/project/types";
 import type { RecruitmentQuery } from "@/features/recruitment/query";
 import type {
@@ -404,11 +405,13 @@ export async function findOwnedRecruitment(role: Role, recruitmentKey: string) {
 
 /** 모집 건 하나의 지원 목록 */
 export async function findApplications(role: Role, recruitmentKey: string): Promise<Application[]> {
+  if (isBackendAuth) return (await backendGet<ApplicantResponse[]>(`${encodeURIComponent(recruitmentKey)}/applications`)).map(toApplication);
   return (await load(role)).applications[recruitmentKey] ?? [];
 }
 
 /** 모집 건 하나의 피드백 목록 */
 export async function findFeedbacks(role: Role, recruitmentKey: string): Promise<Feedback[]> {
+  if (isBackendAuth) return (await backendGet<DeveloperFeedbackResponse[]>(`${encodeURIComponent(recruitmentKey)}/feedbacks`)).map(toFeedback);
   return (await load(role)).feedbacks[recruitmentKey] ?? [];
 }
 
@@ -863,7 +866,26 @@ export async function decideApplicants(
   const pendingIds = new Set(applications.filter((item) => item.status === "applied").map((item) => item.id));
   const unique = [...new Set(ids)];
   if (!canSelectApplicants(recruitment, detail.selectionMode) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
+  if (isBackendAuth) {
+    const result = await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/applications`, {
+      method: "PATCH",
+      body: { registerIds: unique.map(Number), status },
+    });
+    return { ok: result.ok };
+  }
   return { ok: await saveApplicationDecisions(unique, status) };
+}
+
+/** 피드백 하나에 유용해요를 표시하거나 뺀다. 내 모집의 피드백인지는 백엔드가 확인한다. 목업은 화면에서만 바뀐다 */
+export async function recommendFeedback(feedbackId: string, recommended: boolean): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  return toActionResult(await backendFetch(`/api/v1/developer/feedbacks/${encodeURIComponent(feedbackId)}/recommendation`, { method: "PUT", body: { recommended } }));
+}
+
+/** 피드백을 신고한다. 제출 후 72시간 안의 제출 상태 피드백만 되고, 아니면 백엔드가 409로 이유를 준다 */
+export async function reportFeedback(feedbackId: string, reason: string): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  return toActionResult(await backendFetch(`/api/v1/developer/feedbacks/${encodeURIComponent(feedbackId)}/report`, { method: "POST", body: { reason } }));
 }
 
 /** AI 분석 결과. 신고된 피드백을 뺀 피드백이 최소 수보다 적으면 분석하지 않는다 */

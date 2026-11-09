@@ -582,6 +582,8 @@ export const RECRUITMENT_LIMIT = {
   imageCount: 10,
   testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300, imageCount: 5 },
   cancelReasonLength: 300,
+  /** 피드백 신고 사유. 백엔드 FeedbackReportRequest와 같다 */
+  reportReasonLength: 500,
 } as const;
 
 export type ProjectWithRecruitments = Project & { recruitments: Recruitment[] };

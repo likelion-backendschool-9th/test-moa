@@ -11,6 +11,7 @@ import {
   type Decision,
 } from "@/demo/recruitment";
 import { findBackendProject, findBackendProjects, readProjectApi } from "@/features/project/api";
+import { parseFileMeta } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
 import { type FormState } from "@/features/project/types";
 import type { RecruitmentQuery } from "@/features/recruitment/query";
@@ -296,7 +297,10 @@ export async function saveRecruitmentCancellation(recruitmentKey: string, reason
 
 /** 회원이 지금 구독 중인지. 시연에서는 개발자 역할만 구독 중이다 */
 export async function findIsSubscribed(role: Role): Promise<boolean> {
-  return role === "developer";
+  if (!isBackendAuth) return role === "developer";
+  const result = await backendFetch<{ active: boolean | null }>("/api/v1/my/subscription/status");
+  if (!result.ok) throw new Error(result.message);
+  return result.data.active === true;
 }
 
 const byCreatedLatest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
@@ -672,8 +676,63 @@ export async function getRecruitmentFormInfo(path: string, projectKey: string) {
     project,
     isSubscription,
     baseReward: BASE_REWARD,
-    extraReward: isSubscription ? EXTRA_REWARD : 0,
+    /* 실제 지급액은 백엔드 RewardPolicy가 정하고 추가 보상은 0이라, 백엔드 모드에서는 추가 보상을 약속하지 않는다 */
+    extraReward: isSubscription && !isBackendAuth ? EXTRA_REWARD : 0,
   };
+}
+
+/* 작성 폼의 테스트 항목 줄. 제목과 설명이 둘 다 빈 줄은 없는 것으로 보고, 오류를 화면의 원래 줄에 달도록 줄 번호를 남긴다 */
+function createItemRows(formData: FormData) {
+  const clean = (name: string) => formData.getAll(name).map((item) => String(item).replace(/\r\n/g, "\n").trim());
+  const descriptions = clean("testItemDescription");
+  const required = new Set(formData.getAll("testItemRequired").map(String));
+  return clean("testItemTitle")
+    .map((title, index) => ({ index, title, description: descriptions[index] ?? "", required: required.has(String(index)) }))
+    .filter((row) => row.title || row.description);
+}
+
+/* shortcut: 파일 저장소가 없어(#191) 고른 이미지는 저장하지 못한다. 조용히 버리지 않고 그 칸에 알린다 */
+function pickedImageErrors(formData: FormData) {
+  const message = "이미지 업로드는 아직 준비 중이에요. 이미지를 빼고 등록해 주세요";
+  const errors: Record<string, string> = {};
+  if (parseFileMeta(formData.get("recruitmentImagesMeta"))?.length) errors.recruitmentImages = message;
+  formData.getAll("testItemImagesMeta").forEach((meta, index) => {
+    if (parseFileMeta(meta)?.length) errors[`testItemImages-${index}`] = message;
+  });
+  return errors;
+}
+
+/**
+ * 검증을 마친 모집을 백엔드에 저장한다. 성공하면 null, 실패하면 폼에 보여 줄 상태를 돌려준다.
+ * 보낸 항목 순서는 빈 줄을 뺀 순서라, 서버의 항목 오류를 화면의 줄 번호로 되돌린다
+ */
+export async function saveBackendRecruitment(projectKey: string, state: FormState, formData: FormData): Promise<FormState | null> {
+  const { values } = state;
+  const imageErrors = pickedImageErrors(formData);
+  if (Object.keys(imageErrors).length > 0) return { values, errors: imageErrors };
+  const rows = createItemRows(formData);
+  const result = await backendFetch<{ id: number }>("/api/v1/developer/recruitments", {
+    method: "POST",
+    body: {
+      projectId: Number(projectKey),
+      title: values.title,
+      description: values.request,
+      softwareType: values.softwareType,
+      selectionMode: values.selectionMode,
+      accessUrl: values.accessUrl,
+      conditions: values.conditions,
+      recruitDeadline: values.recruitDeadline,
+      submitDeadline: values.submitDeadline,
+      testItems: rows.map(({ title, description, required }) => ({ title, description, required })),
+    },
+  });
+  if (result.ok) return null;
+  if (!result.fields || Object.keys(result.fields).length === 0) return { values, errors: { form: result.message } };
+  const fields = Object.entries(result.fields).map(([key, error]) => [
+    key.replace(/^testItems\[(\d+)]/, (_, row) => `testItems[${rows[Number(row)]?.index ?? row}]`),
+    error,
+  ]);
+  return { values, errors: toFormFields(Object.fromEntries(fields)) };
 }
 
 /* ---------- 폼 검증 ---------- */

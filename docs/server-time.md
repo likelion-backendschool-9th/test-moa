@@ -17,9 +17,9 @@
 프론트는 시각을 `Asia/Seoul`로 표시한다(`lib/format.ts`). 오프셋이 없는 문자열을 `new Date(iso)`에 넣으면 실행 위치의 시간대로 해석되므로, 컨테이너(UTC)의 서버 렌더링은 맞게 읽고 한국 브라우저는 9시간 이르게 읽는다. 서버 쪽 로직(마감 판단 등)은 서버 시간대로 저장하고 비교해서 맞다.
 
 ## 정한 것 (#193)
-- **서버 기본 시간대는 UTC로 고정한다.** 설정 클래스(`config/TimeConfig`)의 `@PostConstruct`에서 `TimeZone.setDefault(UTC)`를 한다. 스프링 컨텍스트를 쓰는 테스트에도 같이 적용되어 컴퓨터 시간대와 관계없이 같은 결과가 나온다. 스프링 없이 도는 단위 테스트는 컴퓨터 시간대를 그대로 따른다.
+- **서버 기본 시간대는 UTC로 고정한다.** `BackendApplication`의 static 블록에서 `TimeZone.setDefault(UTC)`를 한다. 컨텍스트와 로깅이 시작되기 전에 실행되고, `main`과 모든 스프링 테스트(`@SpringBootTest`와 `@DataJpaTest` 같은 슬라이스 모두 이 클래스를 읽는다)에 적용되어 컴퓨터 시간대와 관계없이 같은 결과가 나온다. 스프링 없이 도는 단위 테스트는 컴퓨터 시간대를 그대로 따른다.
 - **응답의 `LocalDateTime`은 오프셋을 붙여 내려보낸다.** 서버 시간대(`ZoneId.systemDefault()`)의 값으로 보고 `ISO_OFFSET_DATE_TIME`으로 쓴다. UTC면 `Z`가 붙는다. 소수초는 지금처럼 값이 있을 때만 나온다. 시간대를 UTC로 고정하므로 항상 `Z`지만, 직렬화기는 서버 시간대가 다른 환경에서도 올바른 오프셋을 붙이게 `systemDefault()`를 쓴다.
-- **직렬화기 하나를 전역으로 등록한다.** 응답 DTO 22개의 `LocalDateTime` 타입과 코드는 바꾸지 않는다. 프로젝트는 Jackson 3(`tools.jackson`, Spring Boot 4.1)을 쓰고, Spring Boot의 `@JacksonComponent` 또는 `JsonMapperBuilderCustomizer`로 등록한다. 어느 쪽을 쓸지는 구현할 때 동작을 보고 정한다.
+- **직렬화기 하나를 전역으로 등록한다.** 응답 DTO 22개의 `LocalDateTime` 타입과 코드는 바꾸지 않는다. 프로젝트는 Jackson 3(`tools.jackson`, Spring Boot 4.1)을 쓰고, Spring Boot의 `@JacksonComponent`로 등록한다.
 - **`LocalDate`와 요청은 바꾸지 않는다.** 시각을 받는 요청이 없고, 마감일은 날짜(`LocalDate`)만 받는다. 한국 날짜 기준 규칙(마감은 한국 시간 그날 23:59:59까지)은 그대로 동작한다.
 - **서버를 한국 시간으로 고정하는 안은 쓰지 않는다.** 환경 차이는 없애지만 저장 값이 "한국 시각"이라는 약속에 기대고, 응답에 시간대가 없어 약속이 깨지면 조용히 어긋난다.
 - **채팅 실시간(SSE)은 바꿀 것이 없다.** `message`·`read` 이벤트의 데이터는 `roomKey`, `seq`, `reader`, `lastReadSeq`뿐이고 시각이 없다. (확인: `ChatEventListener`)
@@ -42,7 +42,7 @@
 
 #193-S1 서버 기본 시간대는 UTC다 [테스트]
 - Given 스프링 컨텍스트가 뜬 테스트
-- Then  `TimeZone.getDefault()`가 UTC다. 컴퓨터 시간대가 한국이어도 같다
+- Then  `TimeZone.getDefault()`가 UTC다. 컴퓨터 시간대가 한국이어도 같다(`@SpringBootTest`에서 단언한다. 슬라이스 테스트도 같은 `BackendApplication`을 읽어 같은 결과다)
 
 #193-S2 시각 필드에 오프셋이 붙는다 [테스트]
 - Given 서버 시간대가 UTC이고 응답에 `LocalDateTime` 11:00이 들어 있다
@@ -50,7 +50,7 @@
 - Given 소수초가 있는 값(`08:21:43.432294`)
 - Then  `2026-11-08T08:21:43.432294Z`로 소수초가 유지된다
 - Given 서버 시간대가 UTC가 아닌 환경(`Asia/Seoul`)에서 직렬화기를 호출한다
-- Then  `+09:00` 오프셋이 붙고 같은 순간을 가리킨다
+- Then  그 서버 시간대에서의 그 시각으로 보고 `+09:00` 오프셋이 붙는다(`11:00` → `11:00+09:00`, UTC `11:00Z`와 같은 순간이 아니다)
 
 #193-S3 응답 형식이 바뀐 것을 대표 API로 확인한다 [테스트]
 - Given 시각이 들어 있는 응답(예: 채팅함의 `lastMessageAt`)
@@ -84,7 +84,7 @@
 - 프론트 코드 수정(서버 시각을 직접 자르거나 가공하는 코드는 `features`, `lib`, `app`, `components`에서 찾지 못했다. 나오면 프론트 이슈로 나눈다)
 
 ## 작업 순서
-1. `config/TimeConfig`: 서버 시간대를 UTC로 고정(S1)
+1. `BackendApplication` static 블록: 서버 시간대를 UTC로 고정(S1)
 2. `LocalDateTime` 직렬화기와 전역 등록(S2)
 3. 시각 문자열을 단언하던 테스트(`ChatInboxControllerTest`)를 새 형식으로 수정, 전체 테스트로 깨지는 곳 확인(S3, S5)
 4. 문서 정리: [project/README.md](backend/project/README.md) 9번 규칙, [chat/messages.md](backend/chat/messages.md) 160행, [payment/subscription-checkout.md](backend/payment/subscription-checkout.md)·[subscription-payment.md](backend/payment/subscription-payment.md)의 "응답 시각에는 시간대 정보가 없다" 문장, 이용 끝 규칙의 "팀 확인 전" 보류 문구
@@ -92,7 +92,7 @@
 
 ## 가정
 - 배포 서버의 백엔드 컨테이너는 지금 UTC로 돈다고 본다(`compose.prod.yaml`과 `Dockerfile`에 시간대 설정이 없고 로컬 컨테이너 로그가 UTC였다). 이 변경으로 환경과 관계없이 UTC로 고정되므로 현재 값은 중요하지 않다.
-- **서버 로그의 시각 표기로는 앱의 시간대를 알 수 없다.** 로깅이 시작될 때의 시간대를 쓰기 때문에, 앱이 UTC로 고정된 뒤에도 한국 시간 컴퓨터의 로그는 `+09:00`으로 찍힌다. 앱이 쓰는 시간대는 API 응답의 시각(`…Z`)으로 확인한다.
+- 서버를 `main`으로 실행하면 로그의 시각도 `…Z`(UTC)로 찍힌다(한국 시간 컴퓨터에서 확인). 시간대 고정이 로깅보다 먼저 실행되기 때문이다. 테스트 JVM은 로깅이 먼저 시작될 수 있어 로그가 컴퓨터 시간대로 찍힐 수 있고, 테스트 결과에는 영향이 없다.
 - 한국에는 서머타임이 없어 UTC와 한국 시간의 차이는 항상 9시간이다.
 - 프론트는 시각을 `Asia/Seoul`로 표시하고(`lib/format.ts`), 서버 시각 문자열을 `slice`·`split("T")`로 자르는 코드가 없어 오프셋이 붙어도 깨지지 않는다.
 - 로컬 DB에 한국 시각으로 저장된 데이터는 9시간 밀려 보이므로 새로 만든다. 배포 DB는 초기화한다.

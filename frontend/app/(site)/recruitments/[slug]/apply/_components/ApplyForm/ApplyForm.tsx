@@ -17,7 +17,7 @@ import styles from "./ApplyForm.module.css";
 const INITIAL: ApplyState = { status: "idle" };
 
 export function ApplyForm({ slug, hint, blockedMessage }: { slug: string; hint: string; blockedMessage: string | null }) {
-  const [state, formAction, pending] = useActionState<ApplyState, FormData>(() => applyToRecruitment(slug), INITIAL);
+  const [state, formAction, pending] = useActionState<ApplyState, FormData>(applyToRecruitment.bind(null, slug), INITIAL);
   if (state.status === "done") {
     return (
       <div className={styles.root}>

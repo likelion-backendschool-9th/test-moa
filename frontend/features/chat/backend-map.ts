@@ -49,7 +49,7 @@ export function toChatRoom(room: ChatRoomResponse): ChatRoom {
   };
 }
 
-/** 응답 시각 문자열에는 시간대를 덧붙이지 않는다（#193） */
+/** 응답 시각 문자열에는 시간대를 덧붙이지 않는다(#193) */
 export function toChatMessage(message: ChatMessageResponse): ChatMessage {
   return { ...message, id: String(message.seq) };
 }

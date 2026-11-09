@@ -52,6 +52,7 @@ function focusAfterRemoval(item: Element, target: HTMLElement, frames = 120) {
 export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className }: ChatCardMenuProps) {
   const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<DialogKind | null>(null);
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -100,6 +101,7 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
 
   function openDialog(kind: DialogKind) {
     setOpen(false);
+    setFailed(false);
     setDialog(kind);
   }
 
@@ -113,8 +115,13 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
     event.preventDefault();
     const name = String(new FormData(event.currentTarget).get("name") ?? "").trim();
     if (!name) return;
+    setFailed(false);
     startTransition(async () => {
-      await renameChatRoomAction(roomKey, name);
+      const result = await renameChatRoomAction(roomKey, name);
+      if (!result.ok) {
+        setFailed(true);
+        return;
+      }
       closeDialog();
     });
   }
@@ -123,8 +130,13 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
     /* 채팅함에서는 카드가 사라지며 포커스가 문서 처음으로 가므로, 다음(없으면 이전) 카드 링크로 옮긴다 */
     const item = rootRef.current?.closest("li");
     const neighbor = (item?.nextElementSibling ?? item?.previousElementSibling)?.querySelector<HTMLElement>("a[href]");
+    setFailed(false);
     startTransition(async () => {
-      await deleteChatRoomAction(roomKey, leaveOnDelete);
+      const result = await deleteChatRoomAction(roomKey, leaveOnDelete);
+      if (!result.ok) {
+        setFailed(true);
+        return;
+      }
       setDialog(null);
       if (item && neighbor) focusAfterRemoval(item, neighbor);
     });
@@ -180,6 +192,7 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
                 className={styles.input}
               />
             </div>
+            {failed && <p role="alert" className={styles.field}>저장하지 못했어요. 다시 시도해 주세요.</p>}
             <div className={styles.box2}>
               <Button variant="ghost" size="sm" onClick={closeDialog}>
                 취소
@@ -197,6 +210,7 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
           description={`"${title}" 대화방이 채팅함 목록에서 사라져요.`}
           onClose={closeDialog}
         >
+          {failed && <p role="alert" className={styles.field}>저장하지 못했어요. 다시 시도해 주세요.</p>}
           <div className={styles.box3}>
             <Button variant="ghost" size="sm" onClick={closeDialog}>
               취소

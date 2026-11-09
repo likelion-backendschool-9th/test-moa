@@ -23,7 +23,7 @@ export function useChatConversation(data: ChatRoomData) {
     setSource(data.messages);
     setStored(current => mergeMessages(current, data.messages));
   }
-  const messages = data.room.recruitmentSlug === null ? stored : data.messages;
+  const messages = data.live ? stored : data.messages;
   const before = messages[0]?.seq;
 
   const loadPrevious = useCallback(async () => {

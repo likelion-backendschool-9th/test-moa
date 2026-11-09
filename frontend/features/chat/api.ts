@@ -21,12 +21,11 @@ import {
 import { getSession, type Role } from "@/features/session/session";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
-import "server-only";
-
 import { backendFetch, isBackendAuth } from "@/lib/backend";
 import type { BackendResult } from "@/lib/backend-http";
-import { toChatInboxPath, toChatRoom, toChatMessage, type ChatRoomResponse, type ChatMessageResponse } from "./backend-map";
+import { toChatInboxPath, toChatRoom, toChatMessage, type ChatRoomResponse, type ChatMessageResponse } from "@/features/chat/backend-map";
 import { cache } from "react";
+import "server-only";
 
 type MessageSliceResponse = { messages: ChatMessageResponse[]; hasMore: boolean };
 type MessageSlice = { messages: ChatMessage[]; hasMore: boolean };
@@ -41,6 +40,15 @@ function chatResult<T>(result: BackendResult<T>, nextPath?: string): T {
     if (result.status === 404) notFound();
   }
   throw Object.assign(new Error(result.message), { status: result.status });
+}
+
+/** 이름 변경·삭제의 예상 가능한 실패는 대화상자가 처리하도록 반환한다 */
+function chatMutationResult(result: BackendResult<unknown>, nextPath: string): { ok: boolean } {
+  if (!result.ok) {
+    if (result.status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+    if (result.status === 404) notFound();
+  }
+  return { ok: result.ok };
 }
 
 const readBackendRoom = cache(async (roomKey: string) =>
@@ -115,15 +123,18 @@ export async function getChatRoom(roomKey: string): Promise<ChatRoomData> {
       readBackendRoom(roomKey),
       backendFetch<MessageSliceResponse>(`${chatRoomPath(roomKey)}/messages`).then(result => chatResult(result, roomPagePath(roomKey))),
     ]);
-    return { room: toChatRoom(room), messages: slice.messages.map(toChatMessage), hasMore: slice.hasMore, now: new Date().toISOString() };
+    return { room: toChatRoom(room), messages: slice.messages.map(toChatMessage), hasMore: slice.hasMore, live: true, now: new Date().toISOString() };
   }
   const { threads, now } = await loadMemberThreads(`${CHATS_PATH}/${roomKey}`);
   const thread = threads.find(({ room }) => room.roomKey === roomKey);
   if (!thread) notFound();
-  return { ...thread, hasMore: false, now: now.toISOString() };
+  return { ...thread, hasMore: false, live: false, now: now.toISOString() };
 }
 
-/** 문서 제목에 쓸 대화방 이름. 열 수 없는 방이면 null */
+/**
+ * 문서 제목에 쓸 대화방 이름. 목업에서 열 수 없는 방이면 null이다.
+ * 백엔드는 401이면 로그인으로, 404면 없는 방으로 보내고 그 밖의 조회 실패는 던진다.
+ */
 export async function getChatRoomTitle(roomKey: string): Promise<string | null> {
   if (isBackendAuth) {
     const room = await readBackendRoom(roomKey);
@@ -139,30 +150,30 @@ export async function getChatRoomTitle(roomKey: string): Promise<string | null> 
 }
 
 /** 대화방 이름을 바꾼다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며, 빈 이름은 무시한다 */
-export async function renameChatRoom(roomKey: string, name: string) {
+export async function renameChatRoom(roomKey: string, name: string): Promise<{ ok: boolean }> {
   if (isBackendAuth) {
     const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
-    if (!trimmed) return;
-    chatResult(await backendFetch(chatRoomPath(roomKey), { method: "PATCH", body: { name: trimmed } }), roomPagePath(roomKey));
-    return;
+    if (!trimmed) return { ok: false };
+    return chatMutationResult(await backendFetch(chatRoomPath(roomKey), { method: "PATCH", body: { name: trimmed } }), roomPagePath(roomKey));
   }
   const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
   const member = trimmed ? await roomMember(roomKey) : null;
-  if (!member) return;
+  if (!member) return { ok: false };
   const overrides = await readOverrides(member);
   await writeOverrides(member, { ...overrides, names: { ...overrides.names, [roomKey]: trimmed } });
+  return { ok: true };
 }
 
 /** 대화방을 내 채팅함에서 지운다. 상대의 채팅함에는 그대로 있다 */
-export async function deleteChatRoom(roomKey: string) {
+export async function deleteChatRoom(roomKey: string): Promise<{ ok: boolean }> {
   if (isBackendAuth) {
-    chatResult(await backendFetch(chatRoomPath(roomKey), { method: "DELETE" }), CHATS_PATH);
-    return;
+    return chatMutationResult(await backendFetch(chatRoomPath(roomKey), { method: "DELETE" }), CHATS_PATH);
   }
   const member = await roomMember(roomKey);
-  if (!member) return;
+  if (!member) return { ok: false };
   const overrides = await readOverrides(member);
   await writeOverrides(member, { ...overrides, hidden: [...new Set([...overrides.hidden, roomKey])] });
+  return { ok: true };
 }
 
 /** 메시지를 보낸다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며(가운데 줄바꿈은 둔다), 빈 메시지는 무시한다 */
@@ -186,14 +197,9 @@ export async function sendChatMessage(roomKey: string, text: string): Promise<Ch
 
 /** 이전·이후 메시지 조회. 브라우저에서는 Route Handler를 거친다 */
 export async function getChatMessages(roomKey: string, query: { before?: number; after?: number } = {}): Promise<MessageSlice> {
-  if (isBackendAuth) {
-    const params = new URLSearchParams();
-    if (query.before !== undefined) params.set("before", String(query.before));
-    if (query.after !== undefined) params.set("after", String(query.after));
-    const data = chatResult(await backendFetch<MessageSliceResponse>(`${chatRoomPath(roomKey)}/messages${params.size ? `?${params}` : ""}`));
-    return { ...data, messages: data.messages.map(toChatMessage) };
-  }
-  const data = await getChatRoom(roomKey);
-  return { messages: data.messages.filter(message =>
-    (query.before === undefined || message.seq < query.before) && (query.after === undefined || message.seq > query.after)), hasMore: false };
+  const params = new URLSearchParams();
+  if (query.before !== undefined) params.set("before", String(query.before));
+  if (query.after !== undefined) params.set("after", String(query.after));
+  const data = chatResult(await backendFetch<MessageSliceResponse>(`${chatRoomPath(roomKey)}/messages${params.size ? `?${params}` : ""}`));
+  return { ...data, messages: data.messages.map(toChatMessage) };
 }

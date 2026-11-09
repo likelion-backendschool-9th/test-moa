@@ -50,6 +50,8 @@ export type ChatRoomData = {
   room: ChatRoom;
   messages: ChatMessage[];
   hasMore: boolean;
+  /** 백엔드 메시지를 클라이언트 상태로 유지하는 모드 */
+  live: boolean;
   /** 날짜 구분("오늘", "어제")의 기준 시각 */
   now: string;
 };

@@ -21,13 +21,15 @@ type CheckoutFormProps = {
   /** 구독 중이면 지금 만료일. 결제하면 이 날부터 이어진다 */
   activeUntil: string | null;
   now: string;
+  /** 지금은 결제할 수 없는 이유. 있으면 결제 버튼을 막고 이 문구를 보여 준다 */
+  blockedReason?: string;
 };
 
 /*
  * 구독 결제 폼. 금액을 다루는 폼이라 고르는 칸과 버튼 모두 12px 모서리를 쓴다 (DESIGN.md The Money Field Rule).
  * 고른 상품·결제 수단에 따라 금액과 이용 기간을 버튼 바로 위에서 한 번 더 보여 준다
  */
-export function CheckoutForm({ plans, payableCredits, activeUntil, now }: CheckoutFormProps) {
+export function CheckoutForm({ plans, payableCredits, activeUntil, now, blockedReason }: CheckoutFormProps) {
   const [state, formAction, pending] = useActionState(payForSubscription, initialState);
   const [planId, setPlanId] = useState(plans[0]?.id);
   const plan = plans.find(({ id }) => id === planId) ?? plans[0];
@@ -40,7 +42,7 @@ export function CheckoutForm({ plans, payableCredits, activeUntil, now }: Checko
   const startsAt = activeUntil ?? now;
   const endsAt = new Date(new Date(startsAt).getTime() + plan.periodDays * DAY_MS).toISOString();
   const price = method === "credit" ? formatCredits(plan.creditPrice) : formatWon(plan.cashPrice);
-  const error = state.status === "error" ? state.error : undefined;
+  const error = blockedReason ?? (state.status === "error" ? state.error : undefined);
 
   return (
     <AccountCard as="form" action={formAction} aria-labelledby="checkout-heading">
@@ -117,7 +119,7 @@ export function CheckoutForm({ plans, payableCredits, activeUntil, now }: Checko
       )}
       <div className={styles.box4}>
         <p className={styles.text3}>자동으로 갱신되지 않아요. 만료일이 지나면 무료로 돌아가요.</p>
-        <Button type="submit" shape="field" disabled={pending} className={styles.button}>
+        <Button type="submit" shape="field" disabled={pending || Boolean(blockedReason)} className={styles.button}>
           {pending ? "결제하는 중…" : `${price} 결제하기`}
         </Button>
       </div>

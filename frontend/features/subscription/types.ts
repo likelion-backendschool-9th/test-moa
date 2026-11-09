@@ -5,7 +5,19 @@
  * 화면 분기는 데이터(구독 여부, 출금 가능 금액, 활동 유무)로만 한다.
  */
 
-export type Subscription = { status: "none" } | { status: "active"; planId: string; expiresAt: string };
+export type Subscription =
+  | { status: "none" }
+  /* planName은 서버가 준 플랜 이름(tier)이다. 플랜 새 버전이 나오면 구독의 planId는 지금 파는 플랜 목록에 없어서, 백엔드 모드는 이름으로 찾는다 */
+  | { status: "active"; planId: string; planName?: string; expiresAt: string };
+
+/** 백엔드 모드에서 결제를 막을 때 보여 주는 문구(결제 저장 API 연결은 #204) */
+export const PAYMENT_NOT_READY = "아직 결제할 수 없어요";
+
+/** 이 구독이 쓰는 상품인지. 이름을 아는 서버 값은 이름으로, 목업은 id로 비교한다 */
+export function usesPlan(subscription: Subscription | null, plan: SubscriptionPlan): boolean {
+  if (subscription?.status !== "active") return false;
+  return subscription.planName !== undefined ? subscription.planName === plan.name : subscription.planId === plan.id;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -26,22 +38,21 @@ export type SubscriptionOverview = {
 
 /** 공개 구독 소개(`/subscription`). 비로그인도 읽을 수 있다 */
 export type SubscriptionIntro = {
-  freePlan: PlanTerms;
+  freePlan: FreePlan;
   plans: SubscriptionPlan[];
   /** 비로그인은 미구독으로 본다. 운영자는 null */
   subscription: Subscription | null;
   isGuest: boolean;
 };
 
-/** 켜고 끄는 혜택. 문구로 비교한다 (spec.md 2장) */
-export type BenefitKey = "selection" | "reward" | "chat" | "exposure" | "analytics";
-
-/** 카드에 보여 줄 혜택의 순서 */
-export const BENEFIT_KEYS: BenefitKey[] = ["selection", "reward", "chat", "exposure", "analytics"];
-
-/** 무료와 구독 상품이 함께 갖는 혜택 조건 */
+/** 무료와 구독 상품이 함께 갖는 혜택. 서버가 준 문구 목록이고, 비어 있으면 카드에 혜택 영역을 그리지 않는다 */
 export type PlanTerms = {
-  benefits: Record<BenefitKey, string>;
+  benefits: string[];
+};
+
+/** 무료 플랜. 이름과 혜택은 서버 값이다. 가격 표기("무료")와 카드 소개 문구는 화면이 정한다 */
+export type FreePlan = PlanTerms & {
+  name: string;
 };
 
 /** 구독 상품. 지금은 하나지만 늘어날 수 있어 화면은 목록을 그린다 */

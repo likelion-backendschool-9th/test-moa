@@ -1,6 +1,9 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.dto.response.FreePlanResponse;
 import com.testmoa.backend.dto.response.PlanResponse;
+import com.testmoa.backend.entity.FreePlan;
+import com.testmoa.backend.repository.FreePlanRepository;
 import com.testmoa.backend.repository.PlanRepository;
 import com.testmoa.backend.service.PlanService;
 import org.springframework.stereotype.Service;
@@ -16,9 +19,11 @@ import java.util.List;
 public class PlanServiceImpl implements PlanService {
 
     private final PlanRepository planRepository;
+    private final FreePlanRepository freePlanRepository;
 
-    public PlanServiceImpl(PlanRepository planRepository) {
+    public PlanServiceImpl(PlanRepository planRepository, FreePlanRepository freePlanRepository) {
         this.planRepository = planRepository;
+        this.freePlanRepository = freePlanRepository;
     }
 
     /**
@@ -29,5 +34,15 @@ public class PlanServiceImpl implements PlanService {
         return planRepository.findCurrentPlans().stream()
                 .map(PlanResponse::of)
                 .toList();
+    }
+
+    /**
+     * 무료 플랜의 이름과 혜택. 행이 없으면 404가 아니라 이름 FREE와 빈 혜택을 돌려준다.
+     */
+    @Override
+    public FreePlanResponse getFreePlan() {
+        return freePlanRepository.findById(FreePlan.SINGLE_ID)
+                .map(FreePlanResponse::of)
+                .orElseGet(FreePlanResponse::empty);
     }
 }

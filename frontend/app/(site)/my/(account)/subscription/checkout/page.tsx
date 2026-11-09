@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getSubscriptionOverview } from "@/features/subscription/api";
+import { PAYMENT_NOT_READY } from "@/features/subscription/types";
+import { isBackendAuth } from "@/lib/backend";
 import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm/CheckoutForm";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
@@ -53,6 +55,7 @@ async function Checkout() {
         payableCredits={payableCredits}
         activeUntil={subscription.status === "active" ? subscription.expiresAt : null}
         now={now}
+        blockedReason={isBackendAuth ? PAYMENT_NOT_READY : undefined}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatCredits, formatWon } from "@/lib/format";
-import { BENEFIT_KEYS, type PlanTerms, type Subscription, type SubscriptionPlan } from "@/features/subscription/types";
+import { type FreePlan, type Subscription, type SubscriptionPlan, usesPlan } from "@/features/subscription/types";
 import styles from "./SubscriptionIntroCards.module.css";
 
 const CHECKOUT = "/my/subscription/checkout";
@@ -15,37 +15,27 @@ const FREE_BLURB = "모집을 올려 테스터를 모아 보세요";
 const PLAN_BLURB = "추가 보상·채팅·상단 노출·AI 분석까지 구독으로 열어요";
 
 type SubscriptionIntroCardsProps = {
-  freePlan: PlanTerms;
+  freePlan: FreePlan;
   plans: SubscriptionPlan[];
   subscription: Subscription | null;
   isGuest: boolean;
 };
 
-/** 카드에 적을 혜택 한 줄. 무료 카드에서는 "없음"·"일반 목록"을 뺀다 */
-function benefitLines(terms: PlanTerms, { omitAbsent = false }: { omitAbsent?: boolean } = {}) {
-  return BENEFIT_KEYS.flatMap((key) => {
-    const value = terms.benefits[key];
-    if (omitAbsent && (value === "없음" || value === "일반 목록")) return [];
-    return [value];
-  });
-}
-
 /** 공개 구독 소개의 무료·구독 카드. 상품 목록을 그대로 그려 상품이 늘면 카드도 는다 */
 export function SubscriptionIntroCards({ freePlan, plans, subscription, isGuest }: SubscriptionIntroCardsProps) {
-  const activePlanId = subscription?.status === "active" ? subscription.planId : null;
   const isAdmin = subscription === null;
 
   return (
     <div className={styles.grid}>
       <PlanCard
-        name="FREE"
+        name={freePlan.name}
         blurb={FREE_BLURB}
         price="무료"
-        features={benefitLines(freePlan, { omitAbsent: true })}
+        features={freePlan.benefits}
         className={styles.freeOrder}
       />
       {plans.map((plan) => {
-        const using = activePlanId === plan.id;
+        const using = usesPlan(subscription, plan);
         return (
           <PlanCard
             key={plan.id}
@@ -53,7 +43,7 @@ export function SubscriptionIntroCards({ freePlan, plans, subscription, isGuest 
             blurb={PLAN_BLURB}
             price={`${plan.periodDays}일 ${formatWon(plan.cashPrice)}`}
             creditPrice={formatCredits(plan.creditPrice)}
-            features={benefitLines(plan)}
+            features={plan.benefits}
             emphasized
             using={using}
             className={styles.planOrder}
@@ -108,14 +98,18 @@ function PlanCard({
         <p className={cn(styles.price, emphasized && styles.priceEmphasized)}>{price}</p>
         {creditPrice && <p className={styles.creditPrice}>{creditPrice}</p>}
       </div>
-      <ul className={styles.features}>
-        {features.map((feature) => (
-          <li key={feature} className={styles.feature}>
-            <CheckIcon aria-hidden size={20} weight="bold" className={styles.check} />
-            <span className={cn(emphasized && styles.featureEmphasized)}>{feature}</span>
-          </li>
-        ))}
-      </ul>
+      {/* 혜택이 없으면 빈 목록을 그리지 않는다(빈 간격과 스크린리더의 빈 목록을 막는다) */}
+      {features.length > 0 && (
+        <ul className={styles.features}>
+          {features.map((feature, index) => (
+            /* 서버가 같은 문구를 두 번 저장하는 것을 막지 않아 순서를 키에 더한다 */
+            <li key={`${index}-${feature}`} className={styles.feature}>
+              <CheckIcon aria-hidden size={20} weight="bold" className={styles.check} />
+              <span className={cn(emphasized && styles.featureEmphasized)}>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {/* 카드 높이가 달라도 버튼 줄이 맞게 맨 아래에 붙인다 */}
       {action && <div className={styles.actionBox}>{action}</div>}
     </Card>

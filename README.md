@@ -91,198 +91,323 @@ flowchart LR
 
 ## 데이터 모델
 
-모집부터 피드백까지 이어지는 핵심 구조입니다. 나머지 영역은 펼쳐서 볼 수 있습니다.
+서비스의 전체 테이블 27개와 관계입니다.
 
 ```mermaid
 erDiagram
-  User ||--o{ Project : "등록한다"
-  Project ||--o{ Recruitment : "모집한다"
-  Recruitment ||--o{ TestItem : "요청한다"
-  Recruitment ||--o{ Register : "지원받는다"
-  User ||--o{ Register : "지원한다"
-  Register ||--o{ Feedback : "제출한다"
-  TestItem ||--o{ Feedback : "받는다"
+  users ||--o{ accounts : "user_id"
+  users ||--o{ cashouts : "user_id"
+  chat_rooms ||--o{ chat_messages : "room_id"
+  chat_participants ||--o{ chat_messages : "sender_id"
+  chat_rooms ||--o{ chat_participants : "room_id"
+  users ||--o{ chat_participants : "user_id"
+  recruitments ||--o{ chat_rooms : "recruitment_id"
+  registers ||--o| chat_rooms : "register_id"
+  recruitments ||--o{ cluster_groups : "recruitment_id"
+  credit_wallets ||--o{ credit_ledgers : "credit_wallet_id"
+  users ||--o| credit_wallets : "user_id"
+  registers ||--o{ feedbacks : "register_id"
+  test_items |o--o{ feedbacks : "test_item_id"
+  cluster_groups ||--o{ feedback_clusters : "cluster_group_id"
+  feedbacks ||--o{ feedback_clusters : "feedback_id"
+  feedbacks ||--o{ feedback_images : "feedback_id"
+  subscriptions ||--o| payments : "subscription_id"
+  users ||--o{ projects : "user_id"
+  projects ||--o{ recruitments : "project_id"
+  recruitments ||--o{ recruitment_images : "recruitment_id"
+  types ||--o{ recruitment_types : "type_id"
+  recruitments ||--o{ recruitment_types : "recruitment_id"
+  users ||--o{ refresh_tokens : "user_id"
+  recruitments ||--o{ registers : "recruitment_id"
+  users ||--o{ registers : "user_id"
+  users ||--o{ reports : "user_id"
+  users ||--o{ reports : "reported_user_id"
+  users |o--o{ reports : "reviewer_id"
+  reports ||--o{ report_evidences : "report_id"
+  users ||--o{ subscriptions : "user_id"
+  plans ||--o{ subscriptions : "plan_id"
+  recruitments ||--o{ test_items : "recruitment_id"
+  test_items ||--o{ test_item_images : "test_item_id"
+  recruitments ||--o| version_comparisons : "recruitment_id"
+  recruitments ||--o{ version_comparisons : "previous_recruitment_id"
 
-  User {
-    Long id PK
-    String nickname
-    String email
-    Role role
+  accounts {
+    bigint id PK
+    bigint user_id FK
+    varchar password
+    varchar provider
+    text provider_code
+    timestamp created_at
+    timestamp updated_at
   }
-  Project {
-    Long id PK
-    Long userId FK
-    String title
+  cashouts {
+    bigint id PK
+    bigint user_id FK
+    integer amount
+    varchar bank
+    varchar account_number
+    varchar account_holder
+    varchar status
+    varchar reject_reason
+    varchar reject_memo
+    timestamp processed_at
+    timestamp created_at
+    timestamp updated_at
   }
-  Recruitment {
-    Long id PK
-    Long projectId FK
-    String title
-    SelectionMode selectionMode
-    Integer version
-    RecruitmentStatus status
+  chat_messages {
+    bigint id PK
+    bigint room_id FK
+    bigint seq
+    bigint sender_id FK
+    varchar content
+    timestamp sent_at
   }
-  TestItem {
-    Long id PK
-    Long recruitmentId FK
-    String title
-    boolean required
+  chat_participants {
+    bigint id PK
+    bigint room_id FK
+    bigint user_id FK
+    varchar role
+    varchar custom_room_name
+    boolean hidden
+    bigint last_read_seq
+    timestamp created_at
+    timestamp updated_at
   }
-  Register {
-    Long id PK
-    Long recruitmentId FK
-    Long userId FK
-    RegisterStatus status
-    Integer baseRewardSnapshot
-    Integer extraRewardSnapshot
+  chat_rooms {
+    bigint id PK
+    varchar room_key
+    bigint recruitment_id FK
+    bigint register_id FK
+    bigint last_seq
+    timestamp last_message_at
+    timestamp created_at
+    timestamp updated_at
   }
-  Feedback {
-    Long id PK
-    Long registerId FK
-    Long testItemId FK
-    String content
-    FeedbackStatus status
+  cluster_groups {
+    bigint id PK
+    bigint recruitment_id FK
+    varchar group_code
+    varchar name
+    integer improvement_rank
+    varchar category
+    varchar git_issue_title
+    text git_issue_content
+    text git_issue_url
+    integer git_issue_number
+    timestamp git_issue_registering_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  credit_ledgers {
+    bigint id PK
+    bigint credit_wallet_id FK
+    integer delta
+    varchar description
+    varchar type
+    timestamp created_at
+    timestamp updated_at
+  }
+  credit_wallets {
+    bigint id PK
+    bigint user_id FK
+    integer event_credit
+    integer earned_balance
+    integer locked_balance
+    timestamp created_at
+    timestamp updated_at
+  }
+  feedbacks {
+    bigint id PK
+    bigint register_id FK
+    bigint test_item_id FK
+    text content
+    timestamp submitted_at
+    varchar status
+    boolean is_recommended
+    text report_reason
+    timestamp created_at
+    timestamp updated_at
+  }
+  feedback_clusters {
+    bigint id PK
+    bigint cluster_group_id FK
+    bigint feedback_id FK
+    boolean is_representative
+    timestamp created_at
+    timestamp updated_at
+  }
+  feedback_images {
+    bigint id PK
+    bigint feedback_id FK
+    text url
+    timestamp created_at
+    timestamp updated_at
+  }
+  payments {
+    bigint id PK
+    bigint subscription_id FK
+    varchar method
+    integer amount
+    timestamp paid_at
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+  }
+  plans {
+    bigint id PK
+    varchar tier
+    integer cash_price
+    integer credit_price
+    integer version
+    text description
+    text image_url
+    integer period_days
+    timestamp created_at
+    timestamp updated_at
+  }
+  projects {
+    bigint id PK
+    bigint user_id FK
+    varchar title
+    text description
+    text image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  recruitments {
+    bigint id PK
+    bigint project_id FK
+    varchar title
+    text description
+    text conditions
+    text access_url
+    timestamp recruit_deadline
+    timestamp feedback_deadline
+    varchar status
+    varchar selection_mode
+    boolean is_subscription
+    integer version
+    varchar analysis_status
+    timestamp analyzed_at
+    timestamp analysis_requested_at
+    text praise_summary
+    text cancel_reason
+    timestamp cancelled_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  recruitment_images {
+    bigint id PK
+    bigint recruitment_id FK
+    text url
+    integer sort_order
+    timestamp created_at
+    timestamp updated_at
+  }
+  recruitment_types {
+    bigint id PK
+    bigint type_id FK
+    bigint recruitment_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  refresh_tokens {
+    bigint id PK
+    bigint user_id FK
+    varchar token_hash
+    varchar session_id
+    timestamp used_at
+    timestamp expires_at
+    timestamp created_at
+  }
+  registers {
+    bigint id PK
+    bigint recruitment_id FK
+    bigint user_id FK
+    varchar status
+    timestamp applied_at
+    timestamp confirmed_at
+    integer base_reward_snapshot
+    integer extra_reward_snapshot
+    timestamp created_at
+    timestamp updated_at
+  }
+  reports {
+    bigint id PK
+    bigint user_id FK
+    bigint reported_user_id FK
+    bigint reviewer_id FK
+    varchar target_type
+    bigint target_id
+    text reason
+    varchar status
+    timestamp reviewed_at
+    timestamp created_at
+  }
+  report_evidences {
+    bigint id PK
+    bigint report_id FK
+    text stored_path
+    varchar original_name
+    varchar content_type
+    bigint size
+    integer sort_order
+  }
+  subscriptions {
+    bigint id PK
+    bigint user_id FK
+    bigint plan_id FK
+    timestamp start_at
+    timestamp end_at
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+  }
+  test_items {
+    bigint id PK
+    bigint recruitment_id FK
+    varchar title
+    text description
+    boolean is_required
+    integer sort_order
+    timestamp created_at
+    timestamp updated_at
+  }
+  test_item_images {
+    bigint id PK
+    bigint test_item_id FK
+    text url
+    integer sort_order
+    timestamp created_at
+    timestamp updated_at
+  }
+  types {
+    bigint id PK
+    varchar code
+    text image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  users {
+    bigint id PK
+    varchar name
+    varchar nickname
+    varchar email
+    varchar role
+    varchar status
+    text image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  version_comparisons {
+    bigint id PK
+    bigint recruitment_id FK
+    bigint previous_recruitment_id FK
+    text summary
+    timestamp created_at
+    timestamp updated_at
   }
 ```
-
-<details>
-<summary><strong>채팅</strong></summary>
-
-```mermaid
-erDiagram
-  Recruitment ||--o{ ChatRoom : "소속된다"
-  Register ||--o| ChatRoom : "연결된다"
-  ChatRoom ||--o{ ChatParticipant : "참여한다"
-  User ||--o{ ChatParticipant : "참여한다"
-  ChatRoom ||--o{ ChatMessage : "담는다"
-  ChatParticipant ||--o{ ChatMessage : "보낸다"
-
-  ChatRoom {
-    Long id PK
-    String roomKey
-    Long recruitmentId FK
-    Long registerId FK
-    long lastSeq
-  }
-  ChatParticipant {
-    Long id PK
-    Long roomId FK
-    Long userId FK
-    ChatRole role
-    long lastReadSeq
-  }
-  ChatMessage {
-    Long id PK
-    Long roomId FK
-    Long senderId FK
-    long seq
-    String content
-  }
-```
-
-</details>
-
-<details>
-<summary><strong>크레딧·구독·출금</strong></summary>
-
-```mermaid
-erDiagram
-  User ||--|| CreditWallet : "가진다"
-  CreditWallet ||--o{ CreditLedger : "기록한다"
-  User ||--o{ Cashout : "신청한다"
-  User ||--o{ Subscription : "구독한다"
-  Plan ||--o{ Subscription : "적용된다"
-  Subscription ||--o| Payment : "결제한다"
-
-  CreditWallet {
-    Long id PK
-    Long userId FK
-    Integer eventCredit
-    Integer earnedBalance
-    Integer lockedBalance
-  }
-  CreditLedger {
-    Long id PK
-    Long creditWalletId FK
-    Integer delta
-    Type type
-  }
-  Cashout {
-    Long id PK
-    Long userId FK
-    Integer amount
-    Status status
-  }
-  Plan {
-    Long id PK
-    String tier
-    Integer cashPrice
-    Integer creditPrice
-  }
-  Subscription {
-    Long id PK
-    Long userId FK
-    Long planId FK
-    Status status
-  }
-  Payment {
-    Long id PK
-    Long subscriptionId FK
-    Method method
-    Integer amount
-  }
-```
-
-</details>
-
-<details>
-<summary><strong>신고·AI 분석</strong></summary>
-
-```mermaid
-erDiagram
-  User ||--o{ Report : "신고한다"
-  Report ||--o{ ReportEvidence : "첨부한다"
-  Recruitment ||--o{ ClusterGroup : "묶는다"
-  ClusterGroup ||--o{ FeedbackCluster : "포함한다"
-  Feedback ||--o{ FeedbackCluster : "속한다"
-  Recruitment ||--o| VersionComparison : "비교한다"
-
-  Report {
-    Long id PK
-    Long reporterId FK
-    Long reportedUserId FK
-    Long reviewerId FK
-    ReportTargetType targetType
-    ReportStatus status
-  }
-  ReportEvidence {
-    Long id PK
-    Long reportId FK
-    String storedPath
-  }
-  ClusterGroup {
-    Long id PK
-    Long recruitmentId FK
-    String name
-    Integer improvementRank
-  }
-  FeedbackCluster {
-    Long id PK
-    Long clusterGroupId FK
-    Long feedbackId FK
-    boolean representative
-  }
-  VersionComparison {
-    Long id PK
-    Long recruitmentId FK
-    Long previousRecruitmentId FK
-    String summary
-  }
-```
-
-</details>
-
-<sub>주요 컬럼만 표시했으며, 이미지·인증 정보·모집 유형 테이블은 생략했습니다.</sub>
 
 <br/>
 

@@ -54,7 +54,7 @@ class CashoutServiceImplTest {
     @DisplayName("#67-S2 출금 신청 성공·장부 없음·FOR UPDATE")
     void requestCashoutLocksEarnedWithoutLedger() {
         User user = user();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(9480);
         when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
@@ -84,7 +84,7 @@ class CashoutServiceImplTest {
     @DisplayName("#67-S3 출금 가능액 초과는 거절·행 변화 없음")
     void requestCashoutRejectsOverCashable() {
         User user = user();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(4480);
         when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
@@ -104,7 +104,7 @@ class CashoutServiceImplTest {
     @DisplayName("#67-S3 금액 1 미만은 BusinessException·잠금 없음")
     void requestCashoutRejectsNonPositiveAmount() {
         User user = user();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
 
         BusinessException ex = assertThrows(
                 BusinessException.class,
@@ -120,7 +120,7 @@ class CashoutServiceImplTest {
     @DisplayName("#67-S4 이벤트 크레딧만 있으면 출금 불가")
     void requestCashoutRejectsEventOnly() {
         User user = user();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEvent(3000);
         when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
@@ -139,7 +139,7 @@ class CashoutServiceImplTest {
     @DisplayName("신청은 지갑 FOR UPDATE를 쓴다")
     void requestCashoutUsesPessimisticWalletLock() {
         User user = user();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(5000);
         when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));

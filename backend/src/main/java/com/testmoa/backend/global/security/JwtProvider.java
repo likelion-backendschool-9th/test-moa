@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -36,6 +37,7 @@ public class JwtProvider {
     private static final String PURPOSE_CLAIM = "purpose";
     private static final String SIGNUP_PURPOSE = "oauth-signup";
     private static final Duration SIGNUP_TOKEN_TTL = Duration.ofMinutes(10);
+    private static final String RESTORE_PURPOSE = "withdrawal-restore";
 
     public static final String SESSION_CLAIM = "sid";
 
@@ -91,6 +93,36 @@ public class JwtProvider {
                     jwt.getClaimAsString("email"),
                     true,
                     jwt.getClaimAsString("nickname")));
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * 탈퇴 되돌리기 토큰(#84). 탈퇴 유예 회원이 로그인에 성공하면 준다. 회원 id를 sub가 아닌 uid에 넣어 access 토큰으로 쓸 수 없다.
+     * 탈퇴 신청 일시(wat)를 넣어 그 탈퇴에만 쓴다. 되돌린 뒤 다시 탈퇴하면 일시가 달라져 예전 토큰은 못 쓴다
+     */
+    public String createRestoreToken(Long userId, LocalDateTime withdrawnAt) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .claim(PURPOSE_CLAIM, RESTORE_PURPOSE)
+                .claim("uid", userId.toString())
+                .claim("wat", withdrawnAt.toString())
+                .issuedAt(now)
+                .expiresAt(now.plus(SIGNUP_TOKEN_TTL))
+                .build();
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    public record RestoreToken(Long userId, String withdrawnAt) {}
+
+    /** 되돌리기 토큰의 회원 id와 탈퇴 신청 일시. 서명이 틀렸거나 만료됐거나 되돌리기 토큰이 아니면 빈 값 */
+    public Optional<RestoreToken> readRestoreToken(String token) {
+        try {
+            Jwt jwt = jwtDecoder.decode(token);
+            if (!RESTORE_PURPOSE.equals(jwt.getClaimAsString(PURPOSE_CLAIM))) return Optional.empty();
+            return Optional.of(new RestoreToken(Long.valueOf(jwt.getClaimAsString("uid")), jwt.getClaimAsString("wat")));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

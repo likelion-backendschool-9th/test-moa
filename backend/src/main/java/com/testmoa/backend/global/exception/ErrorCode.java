@@ -32,6 +32,9 @@ public enum ErrorCode {
     EMAIL_ACCOUNT_EXISTS(HttpStatus.CONFLICT, "이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요"),
     PROVIDER_ALREADY_LINKED(HttpStatus.CONFLICT, "이미 같은 서비스의 다른 계정이 연동돼 있어요"),
     LAST_LOGIN_METHOD(HttpStatus.CONFLICT, "마지막 로그인 방법은 해제할 수 없어요"),
+    WITHDRAWAL_PENDING(HttpStatus.FORBIDDEN, "탈퇴 예정 계정이에요. 되돌릴까요?"),
+    INVALID_RESTORE_TOKEN(HttpStatus.UNAUTHORIZED, "되돌리기 시간이 지났어요. 다시 로그인해 주세요"),
+    CASHOUT_IN_PROGRESS(HttpStatus.CONFLICT, "출금 처리 중인 크레딧이 있어요. 처리된 뒤 탈퇴할 수 있어요"),
 
     // 회원 신고
     REPORT_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 신고할 수 없어요"),

@@ -52,3 +52,41 @@ test.describe("R27 처리", () => {
     await expect(card).toContainText("보상 보류 1건");
   });
 });
+
+test.describe("#85-R9 신고에서 제재로", () => {
+  test("#85-S27 신고 상세의 \"대상 회원 제재하기\"로 그 회원의 제재 양식으로 간다", async ({ page }) => {
+    await page.goto("/admin/reports/report-1");
+    const link = page.getByRole("link", { name: "오태민 제재하기" });
+    await expect(link).toHaveAttribute("href", "/admin/users/user-6#sanction-form-heading");
+    await link.click();
+    await expect(page).toHaveURL("/admin/users/user-6#sanction-form-heading");
+    await expect(page.getByRole("heading", { level: 2, name: /오태민/ })).toBeVisible();
+  });
+});
+
+test.describe("#85-R12 신고 목록 상자", () => {
+  test("#85-S30 검색과 처리 결과로 좁히고, 목록은 상자 안에서 스크롤한다", async ({ page, context }) => {
+    await seedReportReviews(context, {});
+    await page.goto("/admin/reports");
+    const search = page.getByRole("searchbox", { name: "신고 검색" });
+    await expect(rows(page)).toHaveCount(4);
+    await search.fill("오태민");
+    await expect(rows(page)).toHaveCount(1);
+    await expect(page.getByText("1건", { exact: true })).toBeVisible();
+    await search.fill("없는 이름");
+    await expect(page.getByText("조건에 맞는 신고가 없어요")).toBeVisible();
+    /* 검색·결과 필터는 주소에 남기지 않는다 */
+    await expect(page).toHaveURL("/admin/reports");
+
+    await statusTabs(page).getByRole("link", { name: "처리 완료" }).click();
+    await expect(page).toHaveURL("/admin/reports?tab=done");
+    const results = page.getByRole("group", { name: "처리 결과" });
+    await expect(rows(page)).toHaveCount(2);
+    await results.getByRole("button", { name: "인정" }).click();
+    await expect(results.getByRole("button", { name: "인정" })).toHaveAttribute("aria-pressed", "true");
+    for (const row of await rows(page).all()) await expect(row).toContainText("인정");
+
+    const box = page.getByRole("region", { name: "신고 목록" });
+    await expect(box).toHaveCSS("overflow-y", "auto");
+  });
+});

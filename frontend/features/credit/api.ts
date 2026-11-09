@@ -18,6 +18,7 @@ import {
   type CreditBalance,
   type CreditEntry,
   entryFromServer,
+  isServerWithdrawalId,
   type LedgerType,
   type ServerCreditBalance,
   type ServerAdminWithdrawal,
@@ -206,9 +207,9 @@ async function loadAdminWithdrawals() {
 
 const byOldest = (a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt);
 
-/** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
+/** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다. 백엔드 모드는 서버 id가 될 수 있는 숫자인지만 본다 */
 export function isWithdrawalKey(withdrawalKey: string) {
-  return isBackendAuth ? /^\d+$/.test(withdrawalKey) : WITHDRAWAL_KEYS.includes(withdrawalKey);
+  return isBackendAuth ? isServerWithdrawalId(withdrawalKey) : WITHDRAWAL_KEYS.includes(withdrawalKey);
 }
 
 /** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */

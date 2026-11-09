@@ -220,6 +220,14 @@ export type ServerAdminWithdrawal = {
   processedAt: string | null;
 };
 
+/**
+ * 주소의 키가 서버 출금 id(Long)가 될 수 있는지. 0으로 시작하지 않는 18자리 이하 숫자만 받는다.
+ * 더 긴 숫자는 Long을 넘을 수 있고, 그러면 서버가 404가 아니라 400으로 답해 오류 화면이 된다
+ */
+export function isServerWithdrawalId(key: string) {
+  return /^[1-9]\d{0,17}$/.test(key);
+}
+
 /** 서버 출금 요청 한 줄을 운영자 화면 값으로 바꾼다. 처리 대기는 `review`가 없다 */
 export function adminWithdrawalFromServer(item: ServerAdminWithdrawal): WithdrawalRequest {
   const request: WithdrawalRequest = {

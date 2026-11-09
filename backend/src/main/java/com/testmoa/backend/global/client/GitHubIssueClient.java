@@ -10,5 +10,8 @@ import java.util.List;
 public interface GitHubIssueClient {
     IssueRef create(RepositoryLink repository, String title, String body, List<String> labels);
 
+    /** 레포 연결 때 토큰으로 레포를 읽고 이슈를 만들 수 있는지 확인한다. 안 되면 BusinessException(GITHUB_*) */
+    void verify(RepositoryLink repository);
+
     record IssueRef(String url, int number) {}
 }

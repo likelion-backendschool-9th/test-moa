@@ -921,6 +921,13 @@ export function validateRepository(formData: FormData): EditState {
   return { values: { repository: `${match[1]}/${match[2]}` }, errors: {} };
 }
 
+/** 레포 연결 요청 검증. 백엔드 연결은 이슈를 만들 토큰이 있어야 해서 tokenRequired일 때 토큰도 비울 수 없다 */
+export function validateRepositoryConnect(formData: FormData, tokenRequired: boolean): EditState {
+  const state = validateRepository(formData);
+  if (tokenRequired && !text(formData, "token")) state.errors.token = "GitHub 토큰을 적어 주세요";
+  return state;
+}
+
 export type PublicRecruitmentData = {
   recruitment: Recruitment;
   /** 모집글 제목, 모집 조건, 테스트 항목. 샘플이 없는 모집 건은 null */

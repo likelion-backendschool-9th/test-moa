@@ -3,6 +3,10 @@ package com.testmoa.backend.service.impl;
 import org.springframework.web.multipart.MultipartFile;
 import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
+import com.testmoa.backend.dto.request.RepositoryConnectRequest;
+import com.testmoa.backend.global.client.GitHubIssueClient;
+import com.testmoa.backend.service.GitHubRepositoryNames;
+import com.testmoa.backend.service.ProjectRepositoryLinkProvider.RepositoryLink;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
 import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
 import com.testmoa.backend.dto.request.TestItemsUpdateRequest;
@@ -40,7 +44,9 @@ import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.SubscriptionChecker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -80,6 +86,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final TypeRepository typeRepository;
     private final UserRepository userRepository;
     private final SubscriptionChecker subscriptionChecker;
+    private final GitHubIssueClient gitHubIssueClient;
+    private final TransactionTemplate transactionTemplate;
 
     // 업로드 횟수 제한과 안 쓰는 파일 삭제는 #225에서 다룬다.
     @Override
@@ -201,6 +209,37 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = findOwned(userId, projectId);
         if (!Objects.equals(project.getImageUrl(), request.imageUrl())) checkImageUrl("imageUrl", request.imageUrl());
         project.update(request.name().trim(), blankToNull(request.description()), blankToNull(request.imageUrl()));
+        return withCounts(List.of(project)).getFirst();
+    }
+
+    /**
+     * GitHub 레포 연결(#227). 입력한 레포를 토큰으로 GitHub에서 읽어 이슈를 만들 수 있는지 확인한 뒤 저장한다.
+     * 확인(최대 15초)은 트랜잭션 밖에서 하고, 확인 뒤 짧은 트랜잭션에서 프로젝트를 다시 읽어 연결 필드만 바꾼다.
+     * 확인을 기다리는 사이 다른 요청이 고친 이름·설명·이미지를 이전 값으로 덮어쓰지 않기 위해서다
+     */
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public ProjectResponse connectRepository(Long userId, Long projectId, RepositoryConnectRequest request) {
+        findOwned(userId, projectId);
+        var name = GitHubRepositoryNames.parse(request.repository())
+                .orElseThrow(() -> invalid("repository", "owner/repo 형식이나 GitHub 주소를 적어 주세요"));
+        String token = request.token().trim();
+        gitHubIssueClient.verify(new RepositoryLink(name.owner(), name.repo(), token));
+        return transactionTemplate.execute(status -> {
+            Project project = findOwned(userId, projectId);
+            project.connectRepository(name.full(), token);
+            return withCounts(List.of(project)).getFirst();
+        });
+    }
+
+    /**
+     * GitHub 레포 연결 해제. 레포와 토큰을 함께 지운다. 연결하지 않았어도 성공이다
+     */
+    @Override
+    @Transactional
+    public ProjectResponse disconnectRepository(Long userId, Long projectId) {
+        Project project = findOwned(userId, projectId);
+        project.disconnectRepository();
         return withCounts(List.of(project)).getFirst();
     }
 

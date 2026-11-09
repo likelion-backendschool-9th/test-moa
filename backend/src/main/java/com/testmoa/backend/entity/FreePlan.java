@@ -23,7 +23,7 @@ import java.util.List;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FreePlan {
-    /** 행이 하나뿐이라 PK를 고정한다. DB가 두 번째 행을 허용하지 않는다 */
+    /** 행이 하나뿐이라 PK를 고정한다. 같은 PK로 두 번 넣을 수는 없지만, 다른 id의 행은 DB가 막지 않아서 코드가 항상 이 id만 저장해 한 행을 지킨다 */
     public static final Long SINGLE_ID = 1L;
 
     /** 행이 없을 때 조회가 돌려주는 이름 */

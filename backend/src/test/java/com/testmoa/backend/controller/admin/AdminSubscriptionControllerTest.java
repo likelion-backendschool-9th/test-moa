@@ -146,7 +146,8 @@ class AdminSubscriptionControllerTest {
                 .andExpect(jsonPath("$.data.plan").doesNotExist());
         mvc.perform(post(API).header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON)
                         .content(grantBody(otherAdmin.getEmail(), plan.getId())))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.message").value("운영자 계정은 구독 대상이 아니에요"));
         mvc.perform(delete(API).param("email", otherAdmin.getEmail()).header("Authorization", bearer(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.eligible").value(false));

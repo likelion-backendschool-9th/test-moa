@@ -1,0 +1,47 @@
+# EC2 배포용. 외부에는 Caddy(80/443)만 열리고, 분석 서버 컨테이너는 포트를 노출하지 않는다.
+#   실행: docker compose up -d --build
+services:
+  analysis:
+    build: .
+    image: review-analysis:latest
+    env_file: .env
+    restart: unless-stopped
+    # ports 없음 → 인터넷·호스트에서 직접 접근 불가, Caddy만 내부 네트워크로 접근
+    expose: ["8000"]
+    read_only: true            # 컨테이너 파일시스템 쓰기 금지 (침입 시 피해 축소)
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits:
+          memory: 512m         # 로컬 모델이 없어 가볍다. 넘으면 이 컨테이너만 재시작
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"                # Let's Encrypt 인증서 발급(HTTP-01)용
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN 환경변수가 필요합니다}
+    # 80/443 바인딩에 필요한 권한만 남기고 모두 뺀다
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # 발급받은 인증서 보관 (지우면 재발급 → 발급 횟수 제한 주의)
+      - caddy_config:/config
+    depends_on:
+      analysis:
+        condition: service_healthy
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  caddy_data:
+  caddy_config:

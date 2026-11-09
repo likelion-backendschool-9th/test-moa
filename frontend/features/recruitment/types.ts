@@ -202,6 +202,7 @@ export type ReviewGroup = {
 /** 그룹에 든 리뷰 하나. 대표 리뷰가 맨 앞이다 */
 export type GroupReview = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   content: string;
   submittedAt: string;
@@ -412,6 +413,7 @@ export type BackendAnalysisGroup = {
 /** 백엔드 GroupReviewResponse (GET .../analysis/groups/{groupId}/reviews) */
 export type BackendGroupReview = {
   feedbackId: number;
+  registerId: number;
   nickname: string;
   testItemTitle: string | null;
   content: string;
@@ -443,6 +445,7 @@ export function fromBackendGroups(groups: BackendAnalysisGroup[], reviews: Recor
         testerCount: group.testerCount,
         reviews: (reviews[group.groupId] ?? []).map((review) => ({
           id: String(review.feedbackId),
+          registerId: String(review.registerId),
           testerNickname: review.nickname,
           content: review.content,
           submittedAt: review.submittedAt,

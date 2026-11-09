@@ -33,7 +33,7 @@ pyftsubset node_modules/wanted-sans/fonts/ttf/WantedSans-Bold.ttf \
 
 ## 시연용 상태 전환
 
-`AUTH_MODE=backend`에서는 백엔드 인증을 쓰고, 기본 시연 모드에서는 목업을 쓴다. 개발 서버 푸터의 "시연용" 선택 상자나 쿠키로 상태를 바꾼다.
+`AUTH_MODE=backend`에서는 백엔드 인증을 쓰고, 값이 없으면(`npm run dev`) 목업을 쓴다. 개발 서버 푸터의 "시연용" 선택 상자나 쿠키로 상태를 바꾼다.
 
 `npm run dev`는 설정 없이 목업으로 뜬다. 백엔드로 보려면 커밋되지 않는 `frontend/.env.local`에 `AUTH_MODE=backend`와 `BACKEND_URL=http://localhost:8080`을 적는다. E2E는 목업 기준이고 `.env.local`을 읽으므로, E2E를 돌릴 때는 이 값을 뺀다. Docker로 띄울 때는 [루트 README의 개발 모드](../README.md#개발-모드)를 따른다.
 

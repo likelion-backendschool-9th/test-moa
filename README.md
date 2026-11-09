@@ -333,6 +333,7 @@ erDiagram
     varchar analysis_status
     timestamp analyzed_at
     timestamp analysis_requested_at
+    text analytics_summary
     text praise_summary
     text cancel_reason
     timestamp cancelled_at

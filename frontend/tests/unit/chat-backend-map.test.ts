@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { toChatInboxPath, toChatMessage, toChatRoom, toChatStartFailureMessage, type ChatRoomResponse } from "@/features/chat/backend-map";
+import { isStartChatInput, toChatInboxPath, toChatMessage, toChatRoom, toChatStartFailureMessage, type ChatRoomResponse } from "@/features/chat/backend-map";
 
 const room: ChatRoomResponse = {
   roomKey: "room-54", recruitmentId: 54, projectName: "북로그", roomName: null,
@@ -37,5 +37,15 @@ test("#195-S8 채팅 시작 실패를 상황에 맞는 안내로 바꾼다", () 
   expect(toChatStartFailureMessage("NOT_FOUND")).toBe("테스터 정보를 찾지 못했어요. 새로고침해 주세요");
   for (const code of ["BACKEND_UNAVAILABLE", "INTERNAL_ERROR", "UNKNOWN", ""]) {
     expect(toChatStartFailureMessage(code)).toBe("채팅을 시작하지 못했어요. 잠시 후 다시 시도해 주세요");
+  }
+});
+
+test("#195-S18 참가 id가 숫자 문자열이고 돌아올 주소가 모집 관리 경로일 때만 통과한다", () => {
+  expect(isStartChatInput("12", "/developer/recruitments/2")).toBe(true);
+  for (const registerId of ["1a", "", 12, undefined]) {
+    expect(isStartChatInput(registerId, "/developer/recruitments/2")).toBe(false);
+  }
+  for (const nextPath of ["/login", "//evil", "/developer/recruitments", undefined]) {
+    expect(isStartChatInput("12", nextPath)).toBe(false);
   }
 });

@@ -205,6 +205,7 @@ export function buildChatThreads(
       const messages = seeds.map(
         (seed, index): ChatMessage => ({
           id: `${room.roomKey}-${index + 1}`,
+          seq: index + 1,
           from: seed.from === mine ? "me" : "partner",
           text: seed.text,
           sentAt: new Date(base - seed.minutesAgo * MINUTE_MS).toISOString(),
@@ -214,6 +215,7 @@ export function buildChatThreads(
       return {
         room: {
           ...room,
+          readOnly: false,
           projectImage: PROJECT_IMAGES[room.recruitmentSlug],
           myRole: isDeveloper ? "developer" : "tester",
           partner: isDeveloper ? { nickname: responder, role: "tester" } : { nickname: requester, role: "developer" },
@@ -347,6 +349,7 @@ export function applyMemberState(
         .map(
           ({ sender, text, sentAt }, index): ChatMessage => ({
             id: `${room.roomKey}-sent-${index + 1}`,
+            seq: messages.length + index + 1,
             from: sender === me ? "me" : "partner",
             text,
             sentAt,

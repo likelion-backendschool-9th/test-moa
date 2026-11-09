@@ -1,25 +1,15 @@
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import type { ChatRoomData } from "@/features/chat/types";
-import { ChatComposer } from "../ChatComposer/ChatComposer";
-import { ChatMessageList } from "../ChatMessageList/ChatMessageList";
+import { ChatConversation } from "../ChatConversation/ChatConversation";
 import { ChatRoomHeader } from "../ChatRoomHeader/ChatRoomHeader";
 import styles from "./ChatRoomView.module.css";
 
 /** 채팅방 본문. 머리 → 대화 내용 → 아래에 붙는 입력창 */
 export function ChatRoomView({ data }: { data: ChatRoomData }) {
-  const { room, messages } = data;
-  const last = messages[messages.length - 1];
   return (
     <>
-      <ChatRoomHeader room={room} />
-      <div className={styles.box}>
-        <ChatMessageList room={room} messages={messages} now={new Date(data.now)} />
-      </div>
-      <ChatComposer
-        roomKey={room.roomKey}
-        lastMessage={last ? { id: last.id, from: last.from, sentAt: last.sentAt } : null}
-        now={data.now}
-      />
+      <ChatRoomHeader room={data.room} />
+      <ChatConversation key={data.room.roomKey} data={data} className={styles.box} />
     </>
   );
 }

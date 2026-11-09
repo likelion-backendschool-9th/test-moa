@@ -28,6 +28,8 @@ type ChatComposerProps = {
   lastMessage: Pick<ChatMessage, "id" | "from" | "sentAt"> | null;
   /** 대화 내용의 날짜 기준 시각 */
   now: string;
+  readOnly: boolean;
+  onSent: (result: ChatMessage | { readOnly: true }) => void;
 };
 
 /**
@@ -38,7 +40,7 @@ type ChatComposerProps = {
  * 열 때와 메시지를 보낸 뒤에는 이 입력창의 끝이 화면 아래에 오도록 스크롤해, 가장 최근 메시지가 입력창 바로 위에 보인다.
  * 보내는 중 말풍선은 저장된 뒤 놓일 자리에 미리 둔다. 마지막 대화가 오늘이 아니면 "오늘" 구분 아래에 두어 저장될 때 튀지 않는다.
  */
-export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
+export function ChatComposer({ roomKey, lastMessage, now, readOnly, onSent }: ChatComposerProps) {
   const [text, setText] = useState("");
   const [failed, setFailed] = useState(false);
   const [pending, addPending] = useOptimistic<string[], string>([], (list, message) => [...list, message]);
@@ -69,7 +71,7 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
 
   function send() {
     const message = text.trim();
-    if (!message) return;
+    if (!message || readOnly) return;
     setText("");
     setFailed(false);
     /* 보내기 버튼을 키보드로 눌렀을 때도 바로 이어 쓸 수 있게 입력창으로 돌아간다 */
@@ -77,7 +79,8 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
     startTransition(async () => {
       addPending(message);
       try {
-        await sendChatMessageAction(roomKey, message);
+        const result = await sendChatMessageAction(roomKey, message);
+        if (result) onSent(result);
       } catch {
         setText((current) => current || message);
         setFailed(true);
@@ -98,7 +101,7 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
 
   return (
     <>
-      {pending.length > 0 && (
+      {!readOnly && pending.length > 0 && (
         /* 대화 내용과 같은 간격: 날짜 묶음 사이 32px, 보낸 사람이 바뀌면 12px, 같은 사람이면 4px */
         <div className={cn(styles.box, startsToday ? styles.boxStartsToday : lastMessage?.from === "me" ? styles.afterMe : styles.afterPartner)}>
           {startsToday && (
@@ -120,6 +123,7 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
       )}
       {/* 대화가 짧으면 mt-auto로 화면 아래까지 내려가고, 길면 화면 아래에 붙는다 */}
       <div className={styles.box2}>
+        {readOnly ? <p role="status" className={styles.text}>대화가 끝난 방이에요. 지난 대화는 계속 볼 수 있어요.</p> : <>
         {failed && (
           <p role="alert" className={styles.text}>
             보내지 못했어요. 다시 보내 주세요.
@@ -161,6 +165,7 @@ export function ChatComposer({ roomKey, lastMessage, now }: ChatComposerProps) {
         <p id={hintId} className={styles.text2}>
           {touch ? "Enter로 줄을 바꾸고, 보내기 버튼으로 보내요." : "Enter로 보내고, Shift+Enter로 줄을 바꿔요."}
         </p>
+        </>}
       </div>
       <div ref={endRef} />
     </>

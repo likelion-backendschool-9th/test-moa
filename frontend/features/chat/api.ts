@@ -12,6 +12,7 @@ import { getDemoDataMode } from "@/demo/mode";
 import { CHATS_PATH, type ChatQuery } from "@/features/chat/query";
 import {
   CHAT_MESSAGE_MAX,
+  type ChatMessage,
   CHAT_ROOM_NAME_MAX,
   type ChatInboxData,
   type ChatRoom,
@@ -22,10 +23,29 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import "server-only";
 
-/*
- * 채팅 데이터 접근. 지금은 목업을 돌려준다.
- * 실제 API를 붙일 때는 이 파일의 함수 본문만 바꾸고 시그니처는 유지한다.
- */
+import { backendFetch, isBackendAuth } from "@/lib/backend";
+import type { BackendResult } from "@/lib/backend-http";
+import { toChatInboxPath, toChatRoom, toChatMessage, type ChatRoomResponse, type ChatMessageResponse } from "./backend-map";
+import { cache } from "react";
+
+type MessageSliceResponse = { messages: ChatMessageResponse[]; hasMore: boolean };
+type MessageSlice = { messages: ChatMessage[]; hasMore: boolean };
+const chatRoomPath = (roomKey: string) => `/api/v1/chats/${encodeURIComponent(roomKey)}`;
+const roomPagePath = (roomKey: string) => `${CHATS_PATH}/${encodeURIComponent(roomKey)}`;
+
+/** 페이지에서는 인증·404를 화면으로, Route Handler에서는 HTTP 오류로 넘긴다 */
+function chatResult<T>(result: BackendResult<T>, nextPath?: string): T {
+  if (result.ok) return result.data;
+  if (nextPath) {
+    if (result.status === 401) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+    if (result.status === 404) notFound();
+  }
+  throw Object.assign(new Error(result.message), { status: result.status });
+}
+
+const readBackendRoom = cache(async (roomKey: string) =>
+  chatResult(await backendFetch<ChatRoomResponse>(chatRoomPath(roomKey)), roomPagePath(roomKey)),
+);
 
 const SLOW_DELAY_MS = 1500;
 
@@ -63,6 +83,10 @@ async function roomMember(roomKey: string): Promise<Member | null> {
 
 /** 로그인한 회원이 들어가 있는 채팅방을 검색 조건으로 거른다. 비로그인이면 로그인으로 보낸다 */
 export async function getChatInbox(query: ChatQuery): Promise<ChatInboxData> {
+  if (isBackendAuth) {
+    const data = chatResult(await backendFetch<{ rooms: ChatRoomResponse[]; total: number; counts: ChatInboxData["counts"] }>(toChatInboxPath(query)), CHATS_PATH);
+    return { ...data, rooms: data.rooms.map(toChatRoom), now: new Date().toISOString() };
+  }
   const { threads, now } = await loadMemberThreads(CHATS_PATH);
   const all = threads.map(({ room }) => room);
   const keyword = query.q.toLowerCase();
@@ -86,14 +110,25 @@ export async function getChatInbox(query: ChatQuery): Promise<ChatInboxData> {
 
 /** 채팅방 하나와 대화 기록. 비로그인이면 로그인으로, 없거나 삭제했거나 내가 없는 방이면 404로 보낸다 */
 export async function getChatRoom(roomKey: string): Promise<ChatRoomData> {
+  if (isBackendAuth) {
+    const [room, slice] = await Promise.all([
+      readBackendRoom(roomKey),
+      backendFetch<MessageSliceResponse>(`${chatRoomPath(roomKey)}/messages`).then(result => chatResult(result, roomPagePath(roomKey))),
+    ]);
+    return { room: toChatRoom(room), messages: slice.messages.map(toChatMessage), hasMore: slice.hasMore, now: new Date().toISOString() };
+  }
   const { threads, now } = await loadMemberThreads(`${CHATS_PATH}/${roomKey}`);
   const thread = threads.find(({ room }) => room.roomKey === roomKey);
   if (!thread) notFound();
-  return { ...thread, now: now.toISOString() };
+  return { ...thread, hasMore: false, now: now.toISOString() };
 }
 
 /** 문서 제목에 쓸 대화방 이름. 열 수 없는 방이면 null */
 export async function getChatRoomTitle(roomKey: string): Promise<string | null> {
+  if (isBackendAuth) {
+    const room = await readBackendRoom(roomKey);
+    return room.roomName ?? room.projectName;
+  }
   const session = await getSession();
   if (session.role === "guest" || (await getDemoDataMode()) === "empty") return null;
   const { hidden, names } = await readOverrides(session.role);
@@ -105,6 +140,12 @@ export async function getChatRoomTitle(roomKey: string): Promise<string | null> 
 
 /** 대화방 이름을 바꾼다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며, 빈 이름은 무시한다 */
 export async function renameChatRoom(roomKey: string, name: string) {
+  if (isBackendAuth) {
+    const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
+    if (!trimmed) return;
+    chatResult(await backendFetch(chatRoomPath(roomKey), { method: "PATCH", body: { name: trimmed } }), roomPagePath(roomKey));
+    return;
+  }
   const trimmed = name.trim().slice(0, CHAT_ROOM_NAME_MAX);
   const member = trimmed ? await roomMember(roomKey) : null;
   if (!member) return;
@@ -114,6 +155,10 @@ export async function renameChatRoom(roomKey: string, name: string) {
 
 /** 대화방을 내 채팅함에서 지운다. 상대의 채팅함에는 그대로 있다 */
 export async function deleteChatRoom(roomKey: string) {
+  if (isBackendAuth) {
+    chatResult(await backendFetch(chatRoomPath(roomKey), { method: "DELETE" }), CHATS_PATH);
+    return;
+  }
   const member = await roomMember(roomKey);
   if (!member) return;
   const overrides = await readOverrides(member);
@@ -121,11 +166,34 @@ export async function deleteChatRoom(roomKey: string) {
 }
 
 /** 메시지를 보낸다. 앞뒤 공백을 빼고 최대 글자 수까지 자르며(가운데 줄바꿈은 둔다), 빈 메시지는 무시한다 */
-export async function sendChatMessage(roomKey: string, text: string) {
-  const trimmed = text.trim().slice(0, CHAT_MESSAGE_MAX);
+export async function sendChatMessage(roomKey: string, text: string): Promise<ChatMessage | { readOnly: true } | undefined> {
+  if (isBackendAuth) {
+    const trimmed = text.trim().slice(0, CHAT_MESSAGE_MAX);
+    if (!trimmed) return;
+    const result = await backendFetch<ChatMessageResponse>(`${chatRoomPath(roomKey)}/messages`, { method: "POST", body: { text: trimmed } });
+    if (!result.ok && result.status === 403 && result.code === "CHAT_READ_ONLY") return { readOnly: true };
+    return toChatMessage(chatResult(result, roomPagePath(roomKey)));
+  }
+  const trimmed = text.trim().slice(0, 500);
   const member = trimmed ? await roomMember(roomKey) : null;
   const sender = member && chatMemberNickname(member);
   if (!sender) return;
   const sent = await readSent();
   await writeSent([...sent, { roomKey, sender, text: trimmed, sentAt: new Date().toISOString() }]);
+  const data = await getChatRoom(roomKey);
+  return data.messages[data.messages.length - 1];
+}
+
+/** 이전·이후 메시지 조회. 브라우저에서는 Route Handler를 거친다 */
+export async function getChatMessages(roomKey: string, query: { before?: number; after?: number } = {}): Promise<MessageSlice> {
+  if (isBackendAuth) {
+    const params = new URLSearchParams();
+    if (query.before !== undefined) params.set("before", String(query.before));
+    if (query.after !== undefined) params.set("after", String(query.after));
+    const data = chatResult(await backendFetch<MessageSliceResponse>(`${chatRoomPath(roomKey)}/messages${params.size ? `?${params}` : ""}`));
+    return { ...data, messages: data.messages.map(toChatMessage) };
+  }
+  const data = await getChatRoom(roomKey);
+  return { messages: data.messages.filter(message =>
+    (query.before === undefined || message.seq < query.before) && (query.after === undefined || message.seq > query.after)), hasMore: false };
 }

@@ -11,6 +11,8 @@ import type { SocialProviderId } from "@/features/auth/types";
 
 const OAUTH_STATE_COOKIE = "oauth_state";
 const OAUTH_SIGNUP_COOKIE = "oauth_signup";
+/* 탈퇴 유예 회원이 로그인하면 백엔드가 준 되돌리기 토큰(10분)을 담는다(#84). 주소에 토큰을 남기지 않으려고 쿠키에 둔다 */
+const RESTORE_COOKIE = "withdrawal_restore";
 const TEN_MINUTES = 60 * 10;
 
 /** 백엔드 소셜 로그인 응답 (OAuthLoginResponse) */
@@ -18,8 +20,11 @@ export type OAuthLogin =
   | { signupRequired: false; tokens: Tokens }
   | { signupRequired: true; signupToken: string; email: string; nickname: string };
 
-type PendingState = { state: string; provider: SocialProviderId; next: string };
+/** link: 로그인이 아니라 로그인한 회원의 계정 연동(개인정보 수정 화면에서 시작) */
+type PendingState = { state: string; provider: SocialProviderId; next: string; link?: boolean };
 export type PendingSignup = { signupToken: string; email: string; nickname: string; next: string };
+/** purgeAt: 계정 삭제(개인정보 파기) 예정 일시. nickname: 되돌리기 창에서 부를 이름 */
+export type PendingRestore = { restoreToken: string; purgeAt: string; nickname: string; next: string };
 
 /* sameSite lax: 제공자에서 돌아오는 이동(최상위 GET)에도 쿠키가 실린다 */
 const cookieOptions = {
@@ -59,6 +64,26 @@ export async function clearSignup() {
   (await cookies()).delete(OAUTH_SIGNUP_COOKIE);
 }
 
+export async function saveRestore(pending: PendingRestore) {
+  (await cookies()).set(RESTORE_COOKIE, JSON.stringify(pending), cookieOptions);
+}
+
+export async function readRestore(): Promise<PendingRestore | undefined> {
+  return parse<PendingRestore>((await cookies()).get(RESTORE_COOKIE)?.value);
+}
+
+export async function clearRestore() {
+  (await cookies()).delete(RESTORE_COOKIE);
+}
+
+/** 로그인이 403 WITHDRAWAL_PENDING이면 되돌리기 토큰을 쿠키에 두고 true. 로그인 화면이 탈퇴를 취소할지 창으로 묻는다 */
+export async function holdRestore(error: { code: string; fields?: Record<string, string> }, next: string): Promise<boolean> {
+  const restoreToken = error.fields?.restoreToken;
+  if (error.code !== "WITHDRAWAL_PENDING" || !restoreToken) return false;
+  await saveRestore({ restoreToken, purgeAt: error.fields?.purgeAt ?? "", nickname: error.fields?.nickname ?? "", next });
+  return true;
+}
+
 function parse<T>(value: string | undefined): T | undefined {
   if (!value) return undefined;
   try {
@@ -76,6 +101,7 @@ export const OAUTH_ERRORS = {
   expired: "가입 시간이 지났어요. 소셜 로그인을 다시 해 주세요",
   linkRequired: "이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요",
   providerLinked: "같은 이메일 회원에 이 서비스의 다른 계정이 이미 연동돼 있어요. 연동된 계정으로 로그인해 주세요",
+  restore: "되돌리기 시간이 지났어요. 다시 로그인해 주세요",
 } as const;
 
 export type OAuthErrorKey = keyof typeof OAUTH_ERRORS;

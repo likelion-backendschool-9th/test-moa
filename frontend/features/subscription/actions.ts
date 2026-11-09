@@ -26,21 +26,25 @@ export type CheckoutFormState = { status: "idle" } | { status: "error"; error: s
 export async function payForSubscription(_prev: CheckoutFormState, formData: FormData): Promise<CheckoutFormState> {
   const { subscription, plans, payableCredits } = await getSubscriptionOverview(PATH);
   const session = await getSession();
-  if (!subscription || session.role === "guest") return { status: "error", error: "운영자 계정은 구독할 수 없어요" };
 
   const plan = plans.find(({ id }) => id === formData.get("plan"));
   if (!plan) return { status: "error", error: "상품을 골라 주세요" };
   const method = formData.get("method");
   if (method !== "credit" && method !== "cash") return { status: "error", error: "결제 수단을 골라 주세요" };
-  if (method === "credit" && payableCredits < plan.creditPrice) {
-    return { status: "error", error: "구독 결제에 쓸 수 있는 크레딧이 모자라요. 현금 결제를 골라 주세요" };
-  }
+
   if (isBackendAuth) {
+    /* 운영자 계정, 크레딧 부족, 5초 안의 재결제는 서버가 거절하고 그 이유를 보여 준다. 화면이 미리 막지 않는다 */
     const paid = await requestSubscriptionPayment(plan.id, method);
     if (!paid.ok) return { status: "error", error: paid.message };
     /* 헤더·마이페이지·구독 화면이 서버의 새 구독 상태를 읽게 한다 */
     revalidatePath("/", "layout");
     redirect("/my/subscription?notice=paid");
+  }
+
+  /* 목업은 서버가 없어서 여기서 검사한다 */
+  if (!subscription || session.role === "guest") return { status: "error", error: "운영자 계정은 구독할 수 없어요" };
+  if (method === "credit" && payableCredits < plan.creditPrice) {
+    return { status: "error", error: "구독 결제에 쓸 수 있는 크레딧이 모자라요. 현금 결제를 골라 주세요" };
   }
   if (!(await canPayForSubscription(session.role))) {
     return { status: "error", error: "시연용 결제 기록이 가득 차서 더 결제할 수 없어요" };

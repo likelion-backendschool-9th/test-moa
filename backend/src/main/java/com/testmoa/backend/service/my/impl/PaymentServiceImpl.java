@@ -87,7 +87,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponse pay(Long userId, PaymentRequest request) {
         User user = requireUser(userId);
         if (user.getRole() == Role.ADMIN) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.FORBIDDEN, "운영자 계정은 구독 대상이 아니에요");
         }
         Plan plan = planRepository.findCurrentPlans().stream()
                 .filter(current -> current.getId().equals(request.planId()))

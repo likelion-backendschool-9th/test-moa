@@ -578,6 +578,8 @@ type RecruitmentSummaryResponse = {
   submitDeadline: string;
   confirmedCount: number;
   createdAt: string;
+  cancelReason: string | null;
+  cancelledAt: string | null;
   subscription: boolean;
   version: number;
   feedbackCount: number;
@@ -602,6 +604,7 @@ function toRecruitmentRow(projectName: string, item: RecruitmentSummaryResponse)
     version: item.version,
     feedbackCount: item.feedbackCount,
     analyzedAt: item.analyzedAt,
+    cancellation: item.status === "cancelled" && item.cancelledAt ? { reason: item.cancelReason ?? "", cancelledAt: item.cancelledAt } : null,
   };
 }
 
@@ -655,7 +658,7 @@ export async function getPublicRecruitment(slug: string) {
 async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
   role: Role;
   project: Project;
-  recruitment: Recruitment & { status: RecruitmentStatus; version?: number };
+  recruitment: Recruitment & { status: RecruitmentStatus; title?: string; version?: number };
   cancellation: RecruitmentCancellation | null;
 }> {
   const role = await requireRole(path);
@@ -664,7 +667,7 @@ async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
     for (const { key } of await findBackendProjects()) {
       const { project, recruitments } = await findBackendProjectDetail(key);
       const recruitment = recruitments.find((item) => item.slug === recruitmentKey);
-      if (recruitment) return { role, project, recruitment, cancellation: null };
+      if (recruitment) return { role, project, recruitment, cancellation: recruitment.cancellation ?? null };
     }
     notFound();
   }
@@ -687,7 +690,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
   ]);
-  const recruitment = { ...currentRecruitment, title: detail.title, version: currentRecruitment.version ?? versionOf(project.recruitments, currentRecruitment) };
+  const recruitment = { ...currentRecruitment, title: detail.title || currentRecruitment.title || "", version: currentRecruitment.version ?? versionOf(project.recruitments, currentRecruitment) };
   const now = new Date();
   return {
     project,
@@ -752,7 +755,7 @@ async function saveEdit(recruitmentKey: string, section: RecruitmentEditSection,
           method: "PATCH",
           body:
             section === "post"
-              ? { title: values.title, description: values.request, accessUrl: values.accessUrl, softwareTypes: formData.getAll("categories").map(String) }
+              ? { title: values.title, description: values.request, ...(values.accessUrl ? { accessUrl: values.accessUrl } : {}), softwareTypes: formData.getAll("categories").map(String) }
               : { conditions: values.conditions, selectionMode: values.selectionMode, recruitDeadline: values.recruitDeadline, submitDeadline: values.submitDeadline },
         });
   if (result.ok) return state;
@@ -804,6 +807,14 @@ export async function cancelRecruitment(
     errors.reason = `취소 사유는 ${RECRUITMENT_LIMIT.cancelReasonLength}자까지 적을 수 있어요`;
   }
   if (Object.keys(errors).length > 0) return { values, errors };
+  if (isBackendAuth) {
+    const reason = testing ? values.reason : undefined;
+    const result = await backendFetch<unknown>(`/api/v1/developer/recruitments/${encodeURIComponent(recruitmentKey)}/cancel`, {
+      method: "POST",
+      body: reason ? { reason } : {},
+    });
+    return result.ok ? { values: {}, errors: {}, ok: true } : { values, errors: { reason: result.message } };
+  }
   const ok = await saveRecruitmentCancellation(recruitmentKey, testing ? values.reason : "");
   return ok ? { values: {}, errors: {}, ok } : { values, errors: { reason: "취소를 저장하지 못했어요. 다시 시도해 주세요" } };
 }

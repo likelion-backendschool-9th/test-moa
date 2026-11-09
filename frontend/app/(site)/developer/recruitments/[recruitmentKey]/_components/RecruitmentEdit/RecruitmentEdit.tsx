@@ -193,7 +193,9 @@ function PostSection({ recruitment, detail, readOnly }: { recruitment: Props["re
         <fieldset disabled={readOnly} className={styles.fields}>
           <Field name="title" label="제목" required defaultValue={detail.title} max={RECRUITMENT_LIMIT.titleLength} error={errors.title} />
           <Field name="request" label="설명" required multiline defaultValue={recruitment.request} max={200} error={errors.request} />
-          <Field name="accessUrl" label="접속 링크" required type="url" inputMode="url" placeholder="https://" defaultValue={detail.accessUrl} error={errors.accessUrl} />
+          {/* 공개 API에는 접속 링크가 없어 비어 올 수 있다. 이때는 비워 두면 기존 링크를 유지한다 */}
+          {!detail.accessUrl && <input type="hidden" name="accessUrlKept" value="1" />}
+          <Field name="accessUrl" label="접속 링크" required={Boolean(detail.accessUrl)} type="url" inputMode="url" placeholder={detail.accessUrl ? "https://" : "비워 두면 기존 링크를 유지해요"} defaultValue={detail.accessUrl} error={errors.accessUrl} />
           <Field name="version" label="현재 버전" value={`v${recruitment.version}`} locked readOnly />
           <fieldset className={styles.group} aria-describedby={errors.categories ? "field-categories-error" : undefined}>
             <legend className={styles.label}>

@@ -1,16 +1,19 @@
 "use server";
 
-import { projectPath, recruitmentCreatePath } from "@/features/project/paths";
+import { PROJECTS_PATH, projectPath, recruitmentCreatePath } from "@/features/project/paths";
 import type { FormState } from "@/features/project/types";
 import {
   cancelRecruitment as cancel,
   decideApplicants as decide,
   getRecruitmentFormInfo,
   recommendFollowupQuestions,
+  saveBackendRecruitment,
   updateRecruitment as update,
 } from "@/features/recruitment/api";
 import type { EditState, FollowupResult, RecruitmentEditSection } from "@/features/recruitment/types";
 import { validateRecruitmentForm } from "@/features/recruitment/types";
+import { isBackendAuth } from "@/lib/backend";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 /** 테스트 모집 작성 */
@@ -19,6 +22,12 @@ export async function createRecruitment(projectKey: string, _prev: FormState, fo
 
   const result = validateRecruitmentForm(formData, isSubscription, new Date());
   if (Object.keys(result.errors).length > 0) return result;
+  if (isBackendAuth) {
+    const failed = await saveBackendRecruitment(projectKey, result, formData);
+    if (failed) return failed;
+    /* 뒤로 가기로 돌아간 프로젝트 화면에 새 모집글이 빠지지 않게 한다 */
+    revalidatePath(PROJECTS_PATH, "layout");
+  }
   redirect(`${projectPath(projectKey)}?notice=saved`);
 }
 

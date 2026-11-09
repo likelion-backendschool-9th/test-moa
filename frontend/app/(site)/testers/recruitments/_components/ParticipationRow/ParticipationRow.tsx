@@ -29,7 +29,7 @@ const ONGOING_ACTION: Partial<Record<ParticipationStatus, string>> = {
 };
 
 function actionOf(item: ParticipationItem) {
-  if (tabOf(item.status) === "applied") return { label: "모집 글 보기", href: `/recruitments/${item.recruitment.slug}` };
+  if (tabOf(item.status) === "applied" && !item.recruitmentCancelled) return { label: "모집 글 보기", href: `/recruitments/${item.recruitment.slug}` };
   return { label: ONGOING_ACTION[item.status] ?? "상세 보기", href: participationPath(item.key) };
 }
 

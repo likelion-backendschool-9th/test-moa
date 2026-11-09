@@ -39,6 +39,7 @@ type RecruitmentInfo = {
   description: string | null;
   projectName: string;
   projectImageUrl: string | null;
+  status: string;
   selectionMode: SelectionMode;
   softwareType: SoftwareType | null;
   subscription: boolean;
@@ -95,6 +96,7 @@ function toParticipation(row: ParticipationResponse): ParticipationItem {
     ...(row.status === "paid" ? { paidAt: row.keyDate } : {}),
     ...(row.status === "excluded" ? { reviewedAt: row.keyDate } : {}),
     ...(row.status === "cancelled" ? { cancelledAt: row.keyDate } : {}),
+    ...(row.recruitment.status === "cancelled" ? { recruitmentCancelled: true } : {}),
     earnedCredits: row.earnedCredits,
     testItems: [],
     feedbacks: [],

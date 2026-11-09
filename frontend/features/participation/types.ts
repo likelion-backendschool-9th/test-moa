@@ -85,6 +85,8 @@ export type Participation = {
   cancelledAt?: string;
   /** 테스트할 서비스 주소. 참여가 확정되면 있다 */
   accessUrl?: string;
+  /** 모집 자체가 취소됐다. 참가 상태와 따로 본다. 피드백을 낸 참가는 모집이 취소돼도 상태가 그대로다 */
+  recruitmentCancelled?: boolean;
   /** 받은 크레딧. 지급 완료가 아니면 0 */
   earnedCredits: number;
   /** 테스터가 해 볼 작업. 항목마다 피드백을 쓴다 */

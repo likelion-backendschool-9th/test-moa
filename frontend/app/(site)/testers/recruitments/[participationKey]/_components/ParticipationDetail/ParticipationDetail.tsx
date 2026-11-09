@@ -204,9 +204,14 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
           {/* 이 참여가 가리키는 모집 글은 설명 문장과 같은 줄 오른쪽에 둔다. 좁은 화면에서는 문장 아래로 내려간다 */}
           <div className={styles.box6}>
             <p className={styles.body}>{message.body}</p>
-            <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className={styles.button}>
-              모집 글 보기
-            </LinkButton>
+            {/* 취소된 모집은 공개 상세가 없다 */}
+            {item.recruitmentCancelled ? (
+              <p className={styles.body}>취소된 모집이라 모집 글을 볼 수 없어요.</p>
+            ) : (
+              <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className={styles.button}>
+                모집 글 보기
+              </LinkButton>
+            )}
           </div>
           {status === "notSelected" && (
             <LinkButton href="/recruitments" variant="secondary" size="sm" className={styles.button2}>

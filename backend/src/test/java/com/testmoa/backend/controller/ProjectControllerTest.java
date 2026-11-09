@@ -67,6 +67,96 @@ class ProjectControllerTest {
     @Autowired EntityManager em;
     @Autowired JwtProvider jwtProvider;
 
+    @Autowired com.testmoa.backend.global.file.FileStorage fileStorage;
+
+    private static final byte[] PNG = new byte[]{(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10};
+
+    private String upload(String endpoint, byte[] bytes, String extension) throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "image." + extension, "application/octet-stream", bytes);
+        var result = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
+                .file(file).header("Authorization", "Bearer " + jwtProvider.createAccessToken(me.getId())))
+                .andExpect(status().isOk()).andReturn();
+        return JSON.readTree(result.getResponse().getContentAsString()).path("data").path("url").asText();
+    }
+
+    @Test
+    @DisplayName("#191-S1 프로젝트 이미지 업로드")
+    void uploadProjectImage() throws Exception {
+        byte[] bytes = java.util.Arrays.copyOf(PNG, 1024 * 1024);
+        String url = upload(PROJECTS + "/images", bytes, "png");
+        try {
+            assertThat(url).matches("/api/v1/recruitments/images/[0-9a-f-]{36}[.]png");
+            assertThat(fileStorage.load("images/" + url.substring(url.lastIndexOf('/') + 1))).isPresent();
+        } finally {
+            fileStorage.delete("images/" + url.substring(url.lastIndexOf('/') + 1));
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S2 비로그인 업로드는 저장하지 않는다")
+    void anonymousImageUpload() throws Exception {
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(PROJECTS + "/images")
+                .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", PNG)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("#191-S5 모집글 JPG·항목 WEBP 업로드")
+    void uploadRecruitmentImages() throws Exception {
+        for (var entry : Map.of(RECRUITMENTS + "/images", new byte[]{(byte) 255, (byte) 216, (byte) 255},
+                RECRUITMENTS + "/test-items/images", "RIFF0000WEBP".getBytes(java.nio.charset.StandardCharsets.US_ASCII)).entrySet()) {
+            String extension = entry.getKey().contains("test-items") ? "webp" : "jpg";
+            String url = upload(entry.getKey(), entry.getValue(), extension);
+            try {
+                assertThat(url).endsWith("." + extension);
+            } finally {
+                fileStorage.delete("images/" + url.substring(url.lastIndexOf('/') + 1));
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S7 내용이 이미지가 아닌 파일 거절")
+    void rejectFakeImage() throws Exception {
+        rejectImage("text".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("#191-S8 정상 PDF도 이미지 업로드에서 거절")
+    void rejectPdfImage() throws Exception {
+        rejectImage("%PDF-1.7".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+    }
+
+    private void rejectImage(byte[] bytes) throws Exception {
+        for (String endpoint : List.of(PROJECTS + "/images", RECRUITMENTS + "/images", RECRUITMENTS + "/test-items/images")) {
+            mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
+                    .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", bytes))
+                    .header("Authorization", "Bearer " + jwtProvider.createAccessToken(me.getId())))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.fields.file").value("PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S13 공개 이미지 조회와 경로 차단")
+    void publicImage() throws Exception {
+        String url = upload(PROJECTS + "/images", PNG, "png");
+        var report = fileStorage.save("reports", new org.springframework.mock.web.MockMultipartFile("file", PNG),
+                com.testmoa.backend.global.file.FileStorage.Kind.PNG);
+        try {
+            mvc.perform(get(url)).andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("image/png"))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes(PNG));
+            for (String name : List.of(UUID.randomUUID() + ".png", "..png", "a.png",
+                    UUID.randomUUID() + ".pdf", report.path().substring("reports/".length()))) {
+                mvc.perform(get("/api/v1/recruitments/images/" + name)).andExpect(status().isNotFound());
+            }
+        } finally {
+            fileStorage.delete("images/" + url.substring(url.lastIndexOf('/') + 1));
+            fileStorage.delete(report.path());
+        }
+    }
+
     private User me;
     private User other;
 

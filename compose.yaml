@@ -3,6 +3,7 @@
 
 # 필요한 값: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, JWT_SECRET, CASHOUT_ACCOUNT_CRYPTO_KEY, NEXT_PUBLIC_SITE_URL, TEAM_PORT
 # 선택 값: ANALYSIS_BASE_URL, ANALYSIS_INTERNAL_TOKEN (AI 분석 서버. 없으면 AI 기능만 503)
+# 선택 값: AUTH_MODE (없으면 backend. 목업으로 띄우려면 mock)
 
 # 로컬 HTTPS(--profile https)를 쓸 때: HTTP_PORT, HTTPS_PORT
 services:
@@ -65,6 +66,10 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        AUTH_MODE: ${AUTH_MODE:-backend}
+    environment:
+      AUTH_MODE: ${AUTH_MODE:-backend}
+      BACKEND_URL: http://backend:8080
     depends_on:
       - backend
 

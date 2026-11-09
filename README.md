@@ -132,7 +132,41 @@ flowchart LR
 
 ### 데이터 모델
 
-서비스의 주요 테이블 23개와 관계입니다. 이미지·첨부 파일 테이블은 생략했습니다.
+서비스의 핵심 테이블 19개와 관계입니다. 컬럼까지 보려면 아래 항목을 펼쳐 주세요.
+
+```mermaid
+erDiagram
+  users ||--o{ projects : "등록한다"
+  projects ||--o{ recruitments : "모집한다"
+  recruitments ||--o{ test_items : "요청한다"
+  recruitments ||--o{ registers : "지원받는다"
+  users ||--o{ registers : "지원한다"
+  registers ||--o{ feedbacks : "제출한다"
+  test_items |o--o{ feedbacks : "받는다"
+  recruitments ||--o{ cluster_groups : "묶는다"
+  cluster_groups ||--o{ feedback_clusters : "포함한다"
+  feedbacks ||--o{ feedback_clusters : "속한다"
+  recruitments ||--o| version_comparisons : "비교한다"
+  recruitments ||--o{ version_comparisons : "이전 버전"
+  recruitments ||--o{ chat_rooms : "연결된다"
+  registers ||--o| chat_rooms : "연결된다"
+  chat_rooms ||--o{ chat_participants : "포함한다"
+  users ||--o{ chat_participants : "참여한다"
+  chat_rooms ||--o{ chat_messages : "담는다"
+  chat_participants ||--o{ chat_messages : "보낸다"
+  users ||--o| credit_wallets : "가진다"
+  credit_wallets ||--o{ credit_ledgers : "기록한다"
+  users ||--o{ cashouts : "출금 신청한다"
+  users ||--o{ subscriptions : "구독한다"
+  plans ||--o{ subscriptions : "적용된다"
+  subscriptions ||--o| payments : "결제한다"
+  users ||--o{ reports : "신고한다"
+  users ||--o{ reports : "신고당한다"
+  users |o--o{ reports : "검토한다"
+```
+
+<details>
+<summary><strong>전체 컬럼 보기</strong> (테이블 23개, 이미지·첨부 파일 테이블 생략)</summary>
 
 ```mermaid
 erDiagram
@@ -413,6 +447,8 @@ erDiagram
     timestamp updated_at
   }
 ```
+
+</details>
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 

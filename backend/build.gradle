@@ -49,4 +49,8 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // 실패 원인을 CI 로그에서 바로 보도록 예외 메시지와 원인까지 출력한다
+    testLogging {
+        exceptionFormat = 'full'
+    }
 }

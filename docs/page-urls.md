@@ -70,7 +70,7 @@
 
 | 페이지 | URL | 상태 |
 | --- | --- | --- |
-| 구독 소개 | `/subscription` | 확정 (`docs/frontend/subscription-intro.md`) |
+| 구독 소개 | `/subscription` | 확정 (`docs/frontend/payment/subscription-intro.md`) |
 
 ## 관리자
 

@@ -5,7 +5,9 @@ import com.testmoa.backend.entity.User;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +30,15 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     // 로그인할 때 그 회원의 만료된 토큰 행을 지운다. 로그아웃하지 않고 끝난 세션의 행이 쌓이지 않게 한다
     void deleteByUserAndExpiresAtBefore(User user, LocalDateTime now);
+
+    // 비밀번호를 바꿨을 때: 지금 세션을 뺀 그 회원의 토큰을 모두 버린다(다른 기기 로그아웃)
+    // 영속성 컨텍스트를 거치지 않는 일괄 삭제다. 같은 트랜잭션에서 토큰을 먼저 읽거나 뒤에 다시 읽게 되면 flushAutomatically·clearAutomatically를 더한다
+    @Modifying
+    @Query("delete from refresh_tokens r where r.user = :user and (r.sessionId is null or r.sessionId <> :sessionId)")
+    void deleteOtherSessions(@Param("user") User user, @Param("sessionId") String sessionId);
+
+    // 세션 없는 토큰으로 비밀번호를 바꿨을 때: 그 회원의 토큰을 모두 버린다
+    void deleteByUser(User user);
 
     // access 토큰의 세션이 아직 살아 있는지(로그아웃하지 않았고 만료되지 않은 토큰이 있는지)
     boolean existsBySessionIdAndExpiresAtAfter(String sessionId, LocalDateTime now);

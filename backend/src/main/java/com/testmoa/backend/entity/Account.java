@@ -72,4 +72,9 @@ public class Account {
         this.provider = provider;
         this.providerCode = providerCode;
     }
+
+    // 비밀번호 변경. 이미 암호화한 값을 받는다
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

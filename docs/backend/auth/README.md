@@ -13,7 +13,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 | [#81](https://github.com/likelion-backendschool-9th/test-moa/issues/81) | 내 정보·구독 여부 확인 API | [아래 3](#3-내-정보구독-여부-확인-81) |
 | [#82](https://github.com/likelion-backendschool-9th/test-moa/issues/82) | 프론트 로그인·가입·로그아웃 백엔드 연결 | [로그인·회원가입](../../frontend/auth/auth.md) 9장 |
 | [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | [아래 4](#4-googlegithub-로그인과-계정-연동-83) |
-| [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | |
+| [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | [아래 5](#5-내-정보-수정과-비밀번호-84) (탈퇴는 DB 변경 뒤) |
 | [#85](https://github.com/likelion-backendschool-9th/test-moa/issues/85) | 회원 신고·증거 첨부 API | |
 | [#86](https://github.com/likelion-backendschool-9th/test-moa/issues/86) | 운영자 제재·해제 API (#34와 역할 나누기 확정 후) | |
 | [#87](https://github.com/likelion-backendschool-9th/test-moa/issues/87) | 테스트 서버 `JWT_SECRET`과 스키마 생성 방식 | |
@@ -180,6 +180,39 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 #83-S14 소셜 로그인과 계정 연동은 제공자와 통신하는 동안 DB 트랜잭션을 잡지 않는다 [테스트]
 - 제공자를 2~3번(한 번에 5초까지) 부르는 동안 연결 풀을 잡고 기다리지 않게, 컨트롤러가 트랜잭션 밖에서 회원 정보를 받고 서비스는 받은 정보로 조회·저장만 한다
+
+## 5. 내 정보 수정과 비밀번호 (#84)
+
+개인정보 수정 화면(`/my/profile/edit`)이 쓰는 API다. DB 변경은 없다. 탈퇴(`withdrawn_at`, `DELETED`)는 ERD를 정한 뒤 이 장에 더한다. #84-S1~S8은 프론트 탈퇴 화면이 쓴다.
+
+- API
+  - `PATCH /api/users/me` `{name, nickname}`: 이름·닉네임 수정. 바뀐 내 정보(`GET /api/users/me`와 같은 모양)를 돌려준다
+  - `PATCH /api/users/me/password` `{currentPassword, newPassword}`: 비밀번호 변경. 이메일 로그인 계정이 없는 소셜 회원은 `currentPassword` 없이 비밀번호를 만든다(이메일 로그인이 더해진다)
+- 입력 규칙과 문구는 이메일 가입(#80)과 같다. 이름 20자까지, 닉네임 한글·영문·숫자 1~39자, 비밀번호 영문·숫자를 섞은 8~64자
+- 이메일은 바꿀 수 없다(이번 범위 밖)
+- 프로필 이미지 변경(이슈 시나리오 1)은 파일 저장 공용 코드가 생기면 붙인다. 신고 증거 첨부(#85)와 같은 저장 코드를 쓴다
+
+#84-S9 이름·닉네임을 바꾼다 [테스트]
+- Given 로그인한 회원
+- When  `PATCH /api/users/me`로 새 이름·닉네임을 보낸다
+- Then  200이고 응답과 `GET /api/users/me`에 바뀐 이름·닉네임이 보인다
+- 닉네임을 그대로 두면 바꾸지 않은 것으로 보고 통과한다. 다른 회원의 닉네임이면 409 `NICKNAME_TAKEN`(칸 `nickname`), 규칙에 맞지 않으면 400 `INVALID_INPUT`(칸별 문구)
+
+#84-S10 비밀번호를 바꾸면 새 비밀번호로만 로그인되고, 지금 기기 말고 다른 기기의 로그인은 끊긴다 [테스트]
+- Given 이메일로 가입한 회원이 두 기기(로그인 세션 둘)에서 로그인했다
+- When  한 기기에서 현재 비밀번호와 새 비밀번호로 바꾼다
+- Then  200이고, 옛 비밀번호로는 로그인되지 않고 새 비밀번호로 로그인된다
+- Then  바꾼 기기의 refresh 토큰은 그대로 쓰이고, 다른 기기의 refresh 토큰과 access 토큰은 401이다
+
+#84-S11 현재 비밀번호가 틀리거나 새 비밀번호가 지금과 같으면 바꾸지 않는다 [테스트]
+- 현재 비밀번호가 비거나 틀리면 400 `INVALID_INPUT`(칸 `currentPassword`: "현재 비밀번호가 맞지 않아요"), 새 비밀번호가 지금과 같으면 400(칸 `newPassword`: "지금 쓰는 비밀번호와 달라야 해요"), 새 비밀번호 규칙 위반은 400(칸별 문구)
+
+#84-S12 소셜로만 가입한 회원은 현재 비밀번호 없이 비밀번호를 만들고, 그 뒤 이메일로도 로그인한다 [테스트]
+- Given 깃허브로만 가입해 `hasPassword`가 false인 회원
+- When  `currentPassword` 없이 새 비밀번호를 보낸다
+- Then  200이고 `GET /api/users/me`의 `hasPassword`가 true, `providers`에 LOCAL이 더해지고, 가입 이메일과 새 비밀번호로 로그인된다
+
+#84-S13 로그인하지 않으면 두 API 모두 401 [테스트]
 
 ## 범위 밖
 - 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

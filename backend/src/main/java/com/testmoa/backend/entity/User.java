@@ -88,4 +88,10 @@ public class User {
     }
 
     public void updateImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    // 내 정보 수정. 검사(닉네임 중복 등)는 서비스가 한다
+    public void updateProfile(String name, String nickname) {
+        this.name = name;
+        this.nickname = nickname;
+    }
 }

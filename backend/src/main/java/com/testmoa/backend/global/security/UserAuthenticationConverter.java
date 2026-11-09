@@ -31,8 +31,11 @@ public class UserAuthenticationConverter implements Converter<Jwt, AbstractAuthe
         AuthenticatedUser user = userService.findAuthenticatable(userId, jwt.getClaimAsString(JwtProvider.SESSION_CLAIM))
                 .orElseThrow(() -> new InvalidBearerTokenException("사용할 수 없는 계정"));
 
-        return new UsernamePasswordAuthenticationToken(
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                 user.userId(), jwt, List.of(new SimpleGrantedAuthority("ROLE_" + user.role().name())));
+        // credentials는 인증이 끝나면 Spring Security가 지운다. 로그인 세션 id(sid)가 필요한 곳은 details의 JWT를 읽는다
+        token.setDetails(jwt);
+        return token;
     }
 
     private Long parseUserId(String subject) {

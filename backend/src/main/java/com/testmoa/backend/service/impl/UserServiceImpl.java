@@ -93,6 +93,7 @@ public class UserServiceImpl implements UserService {
             }
             local.get().changePassword(passwordEncoder.encode(request.newPassword()));
         } else {
+            // ponytail: 비밀번호 만들기를 동시에 두 번 보내면 두 번째가 (user_id, provider) unique 제약으로 500. 닉네임 경쟁과 같이 드물어서 그대로 둔다
             accountRepository.save(Account.builder()
                     .user(user)
                     .provider(Provider.LOCAL)

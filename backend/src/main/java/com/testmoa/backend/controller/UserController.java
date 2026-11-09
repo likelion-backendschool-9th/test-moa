@@ -60,7 +60,8 @@ public class UserController {
                                             @Parameter(hidden = true) Authentication authentication,
                                             @Valid @RequestBody PasswordChangeRequest request) {
         // 지금 로그인 세션은 남기고 다른 세션만 끊는다. 세션 id는 access 토큰의 sid에 있다
-        String sessionId = ((Jwt) authentication.getDetails()).getClaimAsString(JwtProvider.SESSION_CLAIM);
+        // details에 JWT가 없으면 세션 없는 토큰과 같이 그 회원의 토큰을 모두 지운다
+        String sessionId = authentication.getDetails() instanceof Jwt jwt ? jwt.getClaimAsString(JwtProvider.SESSION_CLAIM) : null;
         userService.changePassword(userId, sessionId, request);
         return ApiResponse.ok();
     }

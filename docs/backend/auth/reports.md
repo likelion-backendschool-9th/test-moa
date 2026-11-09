@@ -12,7 +12,7 @@
 - 증거 파일은 서버 디스크(`UPLOAD_DIR`, 컨테이너 `/app/uploads`, 볼륨 `upload-data`)에 무작위 이름으로 저장하고, `report_evidences`에는 경로·원래 이름·종류·크기만 둔다. 공개 주소가 없고 API로만 연다
 - 파일 종류는 확장자가 아니라 파일 앞부분(시그니처)으로 PNG·JPG·WEBP·PDF인지 본다
 - 파일 저장 코드(`global/file/FileStorage`)는 공용이다. 프로필 이미지(#84) 등도 같은 코드를 쓴다
-- 개발 모드(`compose.override.yaml`, root로 실행)는 업로드 볼륨을 `upload-data-dev`로 따로 쓴다. 운영 이미지(app 사용자)와 같은 볼륨을 나눠 쓰면 먼저 만든 쪽의 소유자 때문에 다른 쪽이 쓰지 못한다
+- 개발 모드(root로 실행)와 운영 이미지는 DB(`db-data`)와 업로드 볼륨(`upload-data`)을 함께 쓴다. 운영 이미지는 켜질 때만 root로 업로드 폴더의 주인을 app으로 맞추고, 앱은 `setpriv`로 권한을 내려 app 사용자로 실행한다. 그래서 어느 모드에서 만든 신고든 다른 모드에서 증거를 열 수 있다
 - 업로드 한도: 한 장 5MB, 한 번에 최대 5장(요청 30MB). Spring `max-file-size 5MB`·`max-request-size 30MB`, nginx `client_max_body_size 30m`. 프론트(Next) 연결 때 `serverActions.bodySizeLimit`도 맞춘다
 
 ## API

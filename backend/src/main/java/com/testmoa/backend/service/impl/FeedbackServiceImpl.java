@@ -47,6 +47,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                         Collectors.mapping(FeedbackImage::getUrl, Collectors.toList())));
         return feedbacks.stream().map(feedback -> new FeedbackResponse(
                 feedback.getId(),
+                feedback.getRegister().getId(),
                 feedback.getRegister().getUser().getNickname(),
                 feedback.getTestItem() == null ? null : feedback.getTestItem().getId(),
                 feedback.getContent(),

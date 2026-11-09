@@ -123,7 +123,14 @@
 #54-S17 상대 메시지 [직접]
 - Given A와 B가 같은 방을 열어 두었다
 - When  B가 메시지를 보낸다
-- Then  A 화면에 새로고침 없이 말풍선이 붙고 최근 메시지로 스크롤된다
+- Then  A가 맨 아래 근처에 있으면 말풍선이 붙고 최근 메시지로 스크롤된다. 높이가 200px를 넘는 긴 메시지도 같다. (고침 11-09: 지난 대화를 읽는 중에는 스크롤하지 않음)
+
+#54-S29 지난 대화를 읽는 중 [테스트: unit]
+- Given 새 메시지가 붙기 전 입력창 끝이 화면 아래에서 200px보다 멀다
+- When  상대가 메시지를 보낸다
+- Then  말풍선은 붙지만 스크롤 위치는 그대로다
+- When  내가 메시지를 보낸다
+- Then  최근 메시지로 스크롤된다
 
 #54-S18 중복 없음 [테스트: unit]
 - Given 순번 1~3이 있고 보내기 응답으로 4가 붙었다
@@ -135,6 +142,8 @@
 - Then  이 탭에도 붙는다
 - When  서버를 재시작해 연결이 끊긴 사이 상대가 보내고 다시 연결된다
 - Then  `ready`를 받아 빠진 메시지가 채워진다
+- When  서버가 내려가 `/api/chats/events`가 503을 돌려주는 사이 상대가 보내고 서버가 복구된다
+- Then  최대 30초 안에 다시 연결되어 빠진 메시지가 채워진다
 
 #54-S20 채팅함 [직접]
 - Given A가 채팅함을 열어 두었다
@@ -146,20 +155,29 @@
 
 #54-S21 카드 [직접]
 - Given 안 읽은 상대 메시지가 3개인 방이다
-- Then  카드에 3이 보이고, 스크린리더에는 "안 읽은 메시지 3개"로 읽힌다
+- Then  미리보기 줄 끝에 초록 알약 3이 보이고 미리보기는 먹색이다
+- Then  스크린리더에는 "안 읽은 메시지 3개"로 읽힌다
+- Then  일시는 오늘 온 대화여도 흐린 먹색이고 점이 없다 (S136 고침 #54)
 - Given 0개다
 - Then  표시가 없다
 
 #54-S22 헤더 [직접]
 - Given 지우지 않은 방의 안 읽은 메시지가 합해서 120개다
-- Then  헤더와 모바일 메뉴의 "채팅"에 "99+"가 보인다
+- Then  헤더와 모바일 메뉴의 "채팅"에 초록 알약 "99+"가 보인다
+
+#54-S30 안 읽은 수 조회 실패 [직접]
+- Given 로그인 회원이고 `GET /api/v1/chats/unread`가 실패한다
+- When  아무 페이지나 연다
+- Then  페이지는 정상이고 "채팅"에 수가 없다
+- When  페이지를 열어 둔 사이 조회가 실패한다
+- Then  표시 중인 수가 그대로다
 
 #54-S23 실시간 갱신 [직접]
 - When  다른 페이지를 보는 동안 상대가 보낸다
 - Then  헤더 수가 1 오른다
 
 ## 8. 읽음 처리와 읽음 표시 (#54-R8) — PR ②
-보이는 방의 마지막 상대 메시지까지 읽음 처리하고, 상대가 읽은 내 메시지를 표시한다.
+보이는 방의 마지막 상대 메시지까지 읽음 처리하고, 상대가 아직 안 읽은 내 메시지를 표시한다.
 
 #54-S24 읽음 처리 [직접]
 - Given 안 읽은 메시지가 3개이고 마지막 순번이 7이다
@@ -173,11 +191,12 @@
 - When  그 탭으로 돌아온다
 - Then  마지막 순번까지 읽음 처리한다
 
-#54-S26 말풍선 읽음 표시 [직접]
+#54-S26 안 읽음 표시 [직접] (고침 11-09: 읽음 대신 안 읽음을 표시하기로 함)
 - Given 내 메시지 순번 5, 6이 있고 `partnerLastReadSeq`가 5다
-- Then  순번 5까지 "읽음"이 붙고, 6에는 없다
+- Then  순번 6에만 시각 위에 초록 "1"이 붙고, 5에는 없다
+- Then  스크린리더에는 "안 읽음"으로 읽힌다
 - When  상대가 6까지 읽는다
-- Then  새로고침 없이 6에도 "읽음"이 붙는다
+- Then  새로고침 없이 6의 "1"이 사라진다
 
 ## 9. 목업 유지 (#54-R9) — PR ①
 `AUTH_MODE`가 없으면 지금 동작이 그대로다.
@@ -185,7 +204,7 @@
 #54-S27 [테스트: chats.spec.ts, chat-room.spec.ts, pages.spec.ts]
 - Given `AUTH_MODE`가 없다
 - Then  기존 E2E가 통과한다
-- Then  `/api/chats/events`가 204라 연결하지 않고, 안 읽은 표시와 읽음 표시는 없다
+- Then  `/api/chats/events`에 연결하지 않고, 안 읽은 표시와 읽음 표시는 없다 (고침 11-09: 재연결이 생겨 목업은 연결 자체를 하지 않음)
 
 ## 범위 밖
 - 채팅 걸기 버튼: #195 (이슈 시나리오 6)
@@ -209,17 +228,18 @@
 4. 보내기·이름 변경·삭제·읽기 전용 — #54-S10~S15
    - 파일: `features/chat/api.ts`(`sendChatMessage`는 저장된 메시지를 돌려준다. 실패는 throw, `CHAT_READ_ONLY`는 `{readOnly: true}`), `features/chat/actions.ts`(백엔드 성공 뒤 채팅함에 `revalidatePath`), `ChatComposer.tsx`(`readOnly`면 안내, 저장된 메시지를 상위로 넘긴다), `ChatCard.tsx`("종료" 배지), [chat-room.md](chat-room.md) S150에 `(고침 #54: 10,000자)`
    - 확인: `npm run lint`, `npm run build`, `npm run test:e2e -- e2e/chats.spec.ts e2e/chat-room.spec.ts e2e/pages.spec.ts`
-5. 백엔드 모드 직접 확인 — #54-S1, S5~S10, S12~S15, S27
+5. 백엔드 모드 직접 확인 — #54-S1, S6~S10, S12~S15, S27
    - 프론트를 `AUTH_MODE=backend`로, 같은 시점의 백엔드와 PostgreSQL을 띄워 브라우저로 확인한다
 
 ### PR ② (PR ① 병합 뒤)
-6. 시안 확인과 안 읽은 표시 — #54-S21, S22
+6. 안 읽은 표시 — #54-S21, S22, S30
    - 파일: `features/chat/api.ts`(`getChatUnreadCount`), `features/chat/types.ts`(`unreadCount`, `partnerLastReadSeq`), `ChatCard.tsx`, `app/_components/NavList`·`MobileMenu`(`badge`), `app/_lib/nav.ts`
-   - 확인: 미리보기 주소로 시안을 승인받는다, `npm run lint`
-7. SSE 연결과 실시간 — #54-S16~S20, S23
+   - 문서·테스트: [chats.md](chats.md) S136과 강조색 설명, `DESIGN.md`의 채팅 카드와 The One Green Rule(오늘 온 대화 삭제, 내 메시지의 안 읽음 표시 예외 추가), `e2e/chat-room.spec.ts`의 `data-today` 검사
+   - 확인: `npm run lint`, `npm run test:e2e -- e2e/chats.spec.ts e2e/chat-room.spec.ts`
+7. SSE 연결과 실시간 — #54-S16~S20, S23, S29
    - 파일: `app/_components/ChatEvents/ChatEvents.tsx`·`hook.ts`(새로, "use client", `EventSource` 하나와 구독 함수. 루트 레이아웃에서 일반 회원에게만 그린다), `ChatConversation/hook.ts`(`message`·`ready`에 `after` 조회), `ChatInbox` 쪽에 이벤트 시 `router.refresh()`(300ms 안의 이벤트는 한 번으로 묶는다), `tests/unit/chat-merge.test.ts`(새로)
    - 확인: `npm run test:unit -- tests/unit/chat-merge.test.ts`, `npm run build`
-8. 읽음 처리와 표시 — #54-S24~S26, 직접 확인
+8. 읽음 처리와 안 읽음 표시 — #54-S24~S26, S5, 직접 확인
    - 파일: `features/chat/api.ts`·`actions.ts`(`markChatRead`), `ChatConversation/hook.ts`, `ChatMessageList.tsx`, [chats.md](chats.md)·[chat-room.md](chat-room.md) 범위 밖의 안 읽은 수·읽음 표시 줄에 `(고침 #54: 범위에 넣음)`
    - 확인: `npm run build`, 백엔드 모드에서 두 브라우저로 #54-S16~S26
 
@@ -229,6 +249,7 @@
 - 이전·이후 메시지 조회는 Route Handler로 한다. Server Function은 변경용이고 클라이언트가 한 번에 하나씩 보내므로(`01-getting-started/07-mutating-data.md:207`), 조회에 쓰면 보내기와 서로 기다린다
 - 채팅함은 이벤트가 오면 `router.refresh()`로 서버 데이터를 다시 그린다. 채팅방은 이전 메시지를 들고 있어야 하므로 클라이언트 상태로 둔다
 - "모집 글" 링크는 공개 모집 화면이 아직 목업이라 `recruitmentId`로 이어도 404다. 백엔드 모드에서는 그리지 않는다
+- 말풍선의 안 읽음 표시는 초록 숫자 1이고, 메시지마다 반복되는 정보에 강조색을 쓰는 예외다(11-09 사용자 결정). 1대1이라 숫자는 늘 1이다
 - 첫 메시지가 없는 새 방은 카드 정렬에 방을 연 일시를 쓴다(백엔드 그대로)
 - 내가 보낸 메시지는 안 읽은 수에 들어가지 않는다(#52). 헤더 수는 프론트에서 계산하지 않고 `GET /api/v1/chats/unread`와 이벤트로 맞춘다
 - 읽음 처리는 화면에 그린 마지막 순번을 보낸다(#52). 내 메시지만 있는 방도 마지막 순번을 보낸다

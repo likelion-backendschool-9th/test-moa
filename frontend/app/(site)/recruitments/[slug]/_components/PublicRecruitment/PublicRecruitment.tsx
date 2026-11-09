@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/Badge/Badge";
 import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
+import { getApplyBlockedMessage, SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
 import { cn } from "@/lib/cn";
 import { formatCredits, formatDate, formatDday } from "@/lib/format";
 import type { PublicRecruitmentView } from "@/features/recruitment/types";
@@ -15,12 +15,6 @@ import { RecruitmentStatusBadge } from "@/features/recruitment/components/Recrui
 import { TestItemImages } from "@/features/recruitment/components/TestItemImages/TestItemImages";
 import styles from "./PublicRecruitment.module.css";
 
-/** 지원할 수 없을 때의 안내. 모집 중이면 지원 버튼을 보여 준다 */
-const CLOSED_MESSAGE = {
-  testing: "모집이 마감됐어요",
-  closed: "모집이 마감됐어요",
-};
-
 /**
  * 공개 모집글. 테스터가 지원 전에 일정, 보상을 확인하는 화면이다 (PRODUCT: 보상과 일정은 숨기지 않는다).
  * 요약은 보상을 크게, 일정과 선정 방식을 작게 두어 먼저 볼 숫자가 드러나게 한다.
@@ -28,6 +22,7 @@ const CLOSED_MESSAGE = {
  */
 export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
   const { recruitment, detail, project, status, now } = post;
+  const blockedMessage = getApplyBlockedMessage(status, post.myRegisterStatus);
   const keyFacts: Array<{ term: string; value: string; accent?: boolean }> = [
     { term: "기본 보상", value: formatCredits(recruitment.baseReward) },
     ...(recruitment.extraReward !== undefined ? [{ term: "추가 보상", value: `+${formatCredits(recruitment.extraReward)}`, accent: true }] : []),
@@ -92,13 +87,13 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
               </div>
             ))}
           </dl>
-          {status === "recruiting" ? (
+          {blockedMessage === null ? (
             <LinkButton href={`/recruitments/${recruitment.slug}/apply`} className={styles.button}>
               지원하기
             </LinkButton>
           ) : (
             <p role="status" className={styles.text}>
-              {CLOSED_MESSAGE[status]}
+              {blockedMessage}
             </p>
           )}
         </Card>

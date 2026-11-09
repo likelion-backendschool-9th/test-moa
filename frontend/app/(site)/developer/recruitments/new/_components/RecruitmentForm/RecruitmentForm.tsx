@@ -351,7 +351,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
       <Card as="div" className={styles.box5}>
         <p className={styles.text2}>기본 보상 {formatCredits(baseReward)}</p>
         <p className={styles.text3}>보상은 서비스가 정해요. 테스터가 피드백을 내면 지급돼요.</p>
-        {isSubscription && (
+        {extraReward > 0 && (
           <p className={styles.text4}>
             구독 모집이라 추가 보상 {formatCredits(extraReward)}이 붙어요.
           </p>

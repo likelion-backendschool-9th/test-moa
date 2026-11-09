@@ -676,7 +676,8 @@ export async function getRecruitmentFormInfo(path: string, projectKey: string) {
     project,
     isSubscription,
     baseReward: BASE_REWARD,
-    extraReward: isSubscription ? EXTRA_REWARD : 0,
+    /* 실제 지급액은 백엔드 RewardPolicy가 정하고 추가 보상은 0이라, 백엔드 모드에서는 추가 보상을 약속하지 않는다 */
+    extraReward: isSubscription && !isBackendAuth ? EXTRA_REWARD : 0,
   };
 }
 

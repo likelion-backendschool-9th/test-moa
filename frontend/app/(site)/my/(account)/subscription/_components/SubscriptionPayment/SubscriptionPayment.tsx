@@ -11,7 +11,7 @@ type SubscriptionPaymentProps = {
   active: boolean;
 };
 
-/** 결제 안내. 구독 상품별 기간과 가격(현금·크레딧), 구독 결제에 쓸 수 있는 크레딧, 구독 결제로 가는 이 화면의 주 버튼을 둔다 */
+/** 결제 안내. 구독 상품별 기간과 가격(현금·크레딧), 구독 결제에 쓸 수 있는 크레딧, 구독 결제로 가는 이 화면의 주 버튼과 혜택을 보는 공개 소개 링크를 둔다 */
 export function SubscriptionPayment({ plans, payableCredits, active }: SubscriptionPaymentProps) {
   return (
     <AccountCard as="section" aria-labelledby="subscription-payment-heading">
@@ -51,9 +51,14 @@ export function SubscriptionPayment({ plans, payableCredits, active }: Subscript
         <li>이벤트 크레딧도 구독 결제에 쓸 수 있어요.</li>
         <li>크레딧으로 결제하면 현금보다 우대 가격이 적용돼요.</li>
       </ul>
-      <LinkButton href="/my/subscription/checkout" className={styles.button}>
-        {active ? "구독 연장하기" : "구독하기"}
-      </LinkButton>
+      <div className={styles.actions}>
+        <LinkButton href="/my/subscription/checkout">
+          {active ? "구독 연장하기" : "구독하기"}
+        </LinkButton>
+        <LinkButton href="/subscription" variant="secondary">
+          혜택 보기
+        </LinkButton>
+      </div>
     </AccountCard>
   );
 }

@@ -59,10 +59,4 @@
   .shell {
     background-color: var(--surface-muted);
   }
-
-  /* 배너 주 버튼은 교정지·썸네일과 같은 진한 초록에 흰 글씨. 제목의 초록 글자는 남회색 위에서 읽히게 밝은 초록을 둔다 */
-  .shell [data-hero-action] {
-    --accent: var(--paper-accent);
-    --on-accent: var(--on-paper-accent);
-  }
 }

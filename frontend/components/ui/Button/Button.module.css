@@ -23,6 +23,15 @@
   color: var(--on-accent);
 }
 
+/* 다크의 강조색(--accent) 위에서는 흰 글씨 대비가 3.93:1이다. 홈 배너·썸네일과 같은 진한 초록 바탕에 흰 글씨(5.25:1)로 맞춘다.
+   색을 직접 쓰지 않고 강조색 변수를 바꿔, 버튼 안에서 --accent·--on-accent를 읽는 곳(PRO 표시 등)도 같은 색을 따르게 한다 */
+@media (prefers-color-scheme: dark) {
+  .primary {
+    --accent: var(--paper-accent);
+    --on-accent: var(--on-paper-accent);
+  }
+}
+
 @media (hover: hover) {
   .primary:hover {
     opacity: .9;

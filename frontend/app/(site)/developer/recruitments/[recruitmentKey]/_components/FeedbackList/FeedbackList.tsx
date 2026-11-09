@@ -29,7 +29,7 @@ import styles from "./FeedbackList.module.css";
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
 
-const SUBSCRIPTION_PATH = "/my/subscription";
+const SUBSCRIPTION_PATH = "/subscription";
 const REPORT_INFO_NOT_READY = "신고 정보는 준비 중이에요";
 /* README: 제출 후 72시간 동안 신고가 없으면 자동 지급되고, 그 뒤에는 신고할 수 없다 */
 const REPORT_CLOSED = "신고는 제출 후 72시간 안에만 할 수 있어요";

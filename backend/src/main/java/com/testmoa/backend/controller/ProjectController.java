@@ -1,6 +1,7 @@
 package com.testmoa.backend.controller;
 
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
+import com.testmoa.backend.dto.response.ProjectDashboardResponse;
 import com.testmoa.backend.dto.response.ProjectResponse;
 import com.testmoa.backend.dto.response.RecruitmentSummaryResponse;
 import com.testmoa.backend.global.util.ApiResponse;
@@ -35,6 +36,12 @@ public class ProjectController {
     @GetMapping
     public ApiResponse<List<ProjectResponse>> findMine(@Parameter(hidden = true) @AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(projectService.findMine(userId));
+    }
+
+    @Operation(summary = "할 일·전체 현황", description = "확정을 기다리는 지원자와 72시간 안의 신고 대기 피드백을 모집 건별로, 진행 중인 모집과 신고 대기 수를 합쳐서 준다")
+    @GetMapping("/dashboard")
+    public ApiResponse<ProjectDashboardResponse> findDashboard(@Parameter(hidden = true) @AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(projectService.findDashboard(userId));
     }
 
     @Operation(summary = "프로젝트 등록")

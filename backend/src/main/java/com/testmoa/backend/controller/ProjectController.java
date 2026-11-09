@@ -1,5 +1,9 @@
 package com.testmoa.backend.controller;
 
+import java.util.Map;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
 import com.testmoa.backend.dto.response.ProjectDashboardResponse;
 import com.testmoa.backend.dto.response.ProjectResponse;
@@ -31,6 +35,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectController {
     private final ProjectService projectService;
+
+    @Operation(summary = "프로젝트 대표 이미지 업로드")
+    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, String>> uploadImage(
+            @RequestParam("file") java.util.List<MultipartFile> files) {
+        return ApiResponse.ok(Map.of("url", projectService.uploadImage(files)));
+    }
 
     @Operation(summary = "내 프로젝트 목록", description = "최신순. 프로젝트마다 모집 수와 모집 중인 수를 준다")
     @GetMapping

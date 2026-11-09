@@ -1,5 +1,7 @@
 package com.testmoa.backend.service.impl;
 
+import org.springframework.web.multipart.MultipartFile;
+import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.dto.request.ProjectSaveRequest;
 import com.testmoa.backend.dto.request.RecruitmentCreateRequest;
 import com.testmoa.backend.dto.request.RecruitmentUpdateRequest;
@@ -65,6 +67,21 @@ public class ProjectServiceImpl implements ProjectService {
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
     // 제출 뒤 이 시간 동안 신고가 없으면 자동 지급한다
     private static final Duration PAYOUT_WAIT = Duration.ofHours(72);
+
+    private final FileStorage fileStorage;
+
+    @Override
+    public String uploadImage(java.util.List<MultipartFile> files) {
+        if (files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");
+        MultipartFile file = files.getFirst();
+        var kind = FileStorage.detect(file)
+                .filter(value -> value != FileStorage.Kind.PDF)
+                .filter(value -> !file.isEmpty())
+                .orElseThrow(() -> invalid("file", "PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
+        var stored = fileStorage.save("images", file, kind);
+        return FileStorage.IMAGE_URL_PREFIX
+                + stored.path().substring("images/".length());
+    }
 
     private final ProjectRepository projectRepository;
     private final RecruitmentRepository recruitmentRepository;

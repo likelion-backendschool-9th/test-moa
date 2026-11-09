@@ -1,5 +1,10 @@
 package com.testmoa.backend.controller;
 
+import java.time.Duration;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import com.testmoa.backend.dto.request.RecruitmentSearchRequest;
 import com.testmoa.backend.dto.response.RecruitmentPageResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse;
@@ -25,6 +30,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RecruitmentController {
     private final RecruitmentService recruitmentService;
+
+    @Operation(summary = "공개 프로젝트·모집 이미지 조회")
+    @GetMapping("/images/{name}")
+    public ResponseEntity<Resource> image(@PathVariable String name) {
+        var image = recruitmentService.findImage(name);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.contentType()))
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(image.resource());
+    }
 
     @Operation(summary = "공개 모집 목록·검색", description = "로그인 없이 부를 수 있다. 취소된 모집은 빼고, 요청한 페이지가 마지막보다 크면 마지막 페이지를 준다. "
             + "홈 배너 최신 3건은 open=true&size=3, 구독 모집 영역은 subscription=true&open=true")

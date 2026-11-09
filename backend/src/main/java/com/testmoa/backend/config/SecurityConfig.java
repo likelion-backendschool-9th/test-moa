@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         // 공개 모집 목록(#112)과 상세(#113)는 GET만 연다. 같은 주소 아래 지원 같은 쓰기 요청은 로그인이 필요하다
-                        .requestMatchers(HttpMethod.GET, "/api/v1/recruitments", "/api/v1/recruitments/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/recruitments", "/api/v1/recruitments/*", "/api/v1/recruitments/images/*").permitAll()
                         // 무료 플랜 조건(#203)은 구독 소개에서 로그인 없이 읽는다. 수정(PUT)은 admin 경로라 ADMIN만 한다
                         .requestMatchers(HttpMethod.GET, "/api/v1/plans/free").permitAll()
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")

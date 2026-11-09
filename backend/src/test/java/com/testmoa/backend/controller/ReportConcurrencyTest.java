@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
  * 신고 접수의 동시 요청과 롤백(#85). 테스트 전체를 트랜잭션으로 감싸면 확인할 수 없어서 ReportControllerTest와 나누고,
@@ -54,6 +56,7 @@ class ReportConcurrencyTest {
 
     private final String suffix = UUID.randomUUID().toString().substring(0, 8);
     private User reporter, target;
+    private final List<Long> admins = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -66,6 +69,7 @@ class ReportConcurrencyTest {
         jdbc.update("delete from report_evidences where report_id in (select id from reports where user_id = ?)", reporter.getId());
         jdbc.update("delete from reports where user_id = ?", reporter.getId());
         jdbc.update("delete from users where id in (?, ?)", reporter.getId(), target.getId());
+        admins.forEach(id -> jdbc.update("delete from users where id = ?", id));
     }
 
     private static User user(String nickname) {
@@ -128,5 +132,41 @@ class ReportConcurrencyTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Test
+    @DisplayName("#85-S16 두 운영자가 같은 신고를 동시에 판정해도 하나만 된다")
+    void 동시_판정은_하나만() throws Exception {
+        Long reportId = reportService.create(reporter.getId(),
+                new ReportCreateRequest(ReportTargetType.USER, target.getId(), null, "동시 판정"), List.of()).id();
+        List<User> reviewers = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            User admin = userRepository.save(User.builder().nickname("동시운영" + i + suffix).email("op" + i + suffix + "@example.com")
+                    .role(Role.ADMIN).status(UserStatus.ACTIVE).build());
+            admins.add(admin.getId());
+            reviewers.add(admin);
+        }
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<Integer>> results = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            User admin = reviewers.get(i);
+            String result = i == 0 ? "REJECTED" : "ACCEPTED";
+            results.add(pool.submit(() -> {
+                start.await();
+                return mvc.perform(post("/api/v1/admin/reports/" + reportId + "/review")
+                                .contentType(MediaType.APPLICATION_JSON).content("{\"result\":\"" + result + "\"}")
+                                .header("Authorization", "Bearer " + jwt.createAccessToken(admin.getId())))
+                        .andReturn().getResponse().getStatus();
+            }));
+        }
+        start.countDown();
+        List<Integer> statuses = new ArrayList<>();
+        for (Future<Integer> result : results) statuses.add(result.get());
+        pool.shutdown();
+
+        assertThat(statuses).containsExactlyInAnyOrder(200, 409);
+        assertThat(jdbc.queryForObject("select count(*) from reports where id = ? and status <> 'PENDING' and reviewer_id is not null",
+                Integer.class, reportId)).isEqualTo(1);
     }
 }

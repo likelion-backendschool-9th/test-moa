@@ -100,9 +100,7 @@ class FeedbackControllerTest {
         return send(user, post("/api/v1/developer/feedbacks/" + feedback.getId() + "/report"), Map.of("reason", reason));
     }
 
-    @Test
-    @DisplayName("#175-S10 피드백 목록")
-    void 최근_제출_순으로_닉네임_항목_스크린샷을_준다() throws Exception {
+    private TestItem saveFeedbackList() {
         TestItem item = TestItem.builder().recruitment(recruitment).title("책 등록").required(true).build();
         em.persist(item);
         Feedback older = saveFeedback(item, "검색이 느려요", LocalDateTime.now().minusHours(5));
@@ -110,6 +108,13 @@ class FeedbackControllerTest {
         em.persist(FeedbackImage.builder().feedback(older).url("https://img.example.com/2.png").build());
         Feedback newer = saveFeedback(null, "전체적으로 좋아요", LocalDateTime.now().minusHours(1));
         newer.updateRecommended(true);
+        return item;
+    }
+
+    @Test
+    @DisplayName("#175-S10 피드백 목록")
+    void 최근_제출_순으로_닉네임_항목_스크린샷을_준다() throws Exception {
+        TestItem item = saveFeedbackList();
         String path = "/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks";
 
         send(developer, get(path), null)
@@ -123,6 +128,19 @@ class FeedbackControllerTest {
                 .andExpect(jsonPath("$.data[1].nickname").value(register.getUser().getNickname()));
 
         send(other, get(path), null).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("#195-S1 피드백마다 참가 id를 준다")
+    void 피드백마다_참가_id를_준다() throws Exception {
+        saveFeedbackList();
+        String path = "/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks";
+
+        send(developer, get(path), null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].registerId").value(register.getId()))
+                .andExpect(jsonPath("$.data[1].registerId").value(register.getId()));
     }
 
     @Test

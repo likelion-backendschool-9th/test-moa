@@ -36,6 +36,7 @@ public enum ErrorCode {
     // 회원 신고
     REPORT_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 신고할 수 없어요"),
     REPORT_DUPLICATED(HttpStatus.CONFLICT, "이미 신고해서 검토를 기다리고 있어요"),
+    REPORT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 처리한 신고예요"),
 
     // 채팅
     CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),

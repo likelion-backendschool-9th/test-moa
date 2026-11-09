@@ -82,4 +82,19 @@ public class Report {
         this.reason = reason;
         this.status = ReportStatus.PENDING;
     }
+
+    /**
+     * 운영자 판정. 검토 대기일 때 한 번만 할 수 있다. 이미 판정했는지는 서비스가 먼저 확인해 409로 알린다
+     *
+     * @param reviewer 판정한 운영자
+     * @param result   기각(REJECTED) 또는 인정(ACCEPTED)
+     * @param now      판정 일시
+     */
+    public void review(User reviewer, ReportStatus result, LocalDateTime now) {
+        if (status != ReportStatus.PENDING) throw new IllegalStateException("이미 판정한 신고입니다.");
+        if (result == ReportStatus.PENDING) throw new IllegalArgumentException("판정은 기각이나 인정이어야 합니다.");
+        this.reviewer = reviewer;
+        this.status = result;
+        this.reviewedAt = now;
+    }
 }

@@ -3,6 +3,7 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.request.ReportCreateRequest;
 import com.testmoa.backend.dto.response.ReportResponse;
 import com.testmoa.backend.entity.ChatParticipant;
+import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Report;
 import com.testmoa.backend.entity.ReportEvidence;
 import com.testmoa.backend.entity.User;
@@ -103,6 +104,25 @@ public class ReportServiceImpl implements ReportService {
             }
         });
         return saved;
+    }
+
+    @Override
+    public List<ReportResponse> getMine(Long userId) {
+        return reportRepository.findByReporterIdOrderByCreatedAtDescIdDesc(userId).stream()
+                .map(report -> ReportResponse.of(report, evidenceRepository.findByReportIdOrderBySortOrderAsc(report.getId())))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void recordFeedbackReport(Long reporterId, Feedback feedback, String reason) {
+        reportRepository.save(Report.builder()
+                .reporter(userRepository.getReferenceById(reporterId))
+                .reportedUser(feedback.getRegister().getUser())
+                .targetType(ReportTargetType.FEEDBACK)
+                .targetId(feedback.getId())
+                .reason(reason)
+                .build());
     }
 
     @Override

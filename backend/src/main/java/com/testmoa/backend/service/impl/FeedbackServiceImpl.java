@@ -10,6 +10,7 @@ import com.testmoa.backend.repository.FeedbackImageRepository;
 import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.service.FeedbackService;
+import com.testmoa.backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     private final RecruitmentRepository recruitmentRepository;
     private final FeedbackRepository feedbackRepository;
     private final FeedbackImageRepository feedbackImageRepository;
+    private final ReportService reportService;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,6 +67,8 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new BusinessException(ErrorCode.FEEDBACK_NOT_REPORTABLE);
         }
         feedback.report(reason.trim());
+        // 운영자 신고 화면(#85)에서 판정할 수 있게 신고 행도 남긴다. 판정하면 reward()·exclude()를 부른다
+        reportService.recordFeedbackReport(userId, feedback, reason.trim());
     }
 
     // 내 프로젝트의 피드백. 다른 회원의 피드백은 없는 것과 같다

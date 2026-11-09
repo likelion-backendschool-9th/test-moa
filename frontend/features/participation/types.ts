@@ -13,6 +13,7 @@ export const PARTICIPATION_STATUSES = [
   "paid",
   "incomplete",
   "excluded",
+  "cancelled",
 ] as const;
 export type ParticipationStatus = (typeof PARTICIPATION_STATUSES)[number];
 
@@ -26,6 +27,7 @@ export const STATUS_LABEL: Record<ParticipationStatus, string> = {
   paid: "지급 완료",
   incomplete: "기한 내 미제출",
   excluded: "보상 제외",
+  cancelled: "참여 취소",
 };
 
 /** 참여 테스트 화면의 탭. URL ?tab= 값과 같다 */
@@ -44,7 +46,7 @@ export const TAB_LABEL: Record<ParticipationTab, string> = {
 export const TAB_STATUSES: Record<ParticipationTab, ParticipationStatus[]> = {
   applied: ["selectionPending", "notSelected"],
   ongoing: ["beforeSubmit", "payoutPending", "underReview"],
-  history: ["paid", "incomplete", "excluded"],
+  history: ["paid", "incomplete", "excluded", "cancelled"],
 };
 
 export function parseParticipationTab(value: string | string[] | undefined): ParticipationTab {
@@ -79,6 +81,10 @@ export type Participation = {
   paidAt?: string;
   /** 운영자 검토가 끝난 시각 (보상 제외) */
   reviewedAt?: string;
+  /** 참여가 취소된 시각 */
+  cancelledAt?: string;
+  /** 테스트할 서비스 주소. 참여가 확정되면 있다 */
+  accessUrl?: string;
   /** 받은 크레딧. 지급 완료가 아니면 0 */
   earnedCredits: number;
   /** 테스터가 해 볼 작업. 항목마다 피드백을 쓴다 */
@@ -143,5 +149,7 @@ export function keyDateOf(item: ParticipationItem): { label: string; at: string 
       return { label: "지급일", at: item.paidAt ?? item.appliedAt };
     case "excluded":
       return { label: "검토 완료", at: item.reviewedAt ?? item.appliedAt };
+    case "cancelled":
+      return { label: "취소일", at: item.cancelledAt ?? item.appliedAt };
   }
 }

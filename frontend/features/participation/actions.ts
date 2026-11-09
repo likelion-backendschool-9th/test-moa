@@ -2,16 +2,16 @@
 
 import { requireMember } from "@/features/session/guard";
 import { participationPath, PARTICIPATIONS_PATH, participationsPath } from "@/features/participation/paths";
+import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
-import { getParticipation, saveFeedback } from "@/features/participation/api";
+import { getParticipation, saveBackendFeedback, saveFeedback } from "@/features/participation/api";
 import { parseFeedbackForm, type FeedbackFieldErrors } from "@/features/participation/feedback-fields";
 import { parseParticipationTab, parseParticipationView } from "@/features/participation/types";
 import { saveParticipationView } from "@/features/participation/view-preference";
 
 /*
- * 피드백 제출. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo/participation.ts)에 남긴다.
- * 실제 API를 붙일 때는 saveDemoFeedback 대신 제출을 저장한다.
+ * 피드백 제출. 입력을 검사한 뒤 AUTH_MODE=backend이면 백엔드에 저장하고, 목업이면 시연용 쿠키(demo/participation.ts)에 남긴다.
  */
 
 /** errors는 칸별 오류, error는 칸에 속하지 않는 오류다 */
@@ -31,7 +31,10 @@ export async function submitFeedback(
   const { errors, entries } = parseFeedbackForm(item.testItems, formData);
   if (Object.keys(errors).length > 0) return { status: "error", errors };
 
-  if (!(await saveFeedback(participationKey, entries))) {
+  if (isBackendAuth) {
+    const failed = await saveBackendFeedback(participationKey, entries);
+    if (failed) return { status: "error", ...failed };
+  } else if (!(await saveFeedback(participationKey, entries))) {
     return { status: "error", errors: {}, error: "시연용 저장 한도를 넘어 제출하지 못했어요. 내용이나 이미지를 줄여 다시 제출해 주세요" };
   }
   /* 목록의 탭 개수·마감 일정·요약 줄도 제출을 반영하게 한다 */

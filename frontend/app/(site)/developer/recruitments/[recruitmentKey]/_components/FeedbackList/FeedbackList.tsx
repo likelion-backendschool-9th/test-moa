@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button/Button";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { formatDate } from "@/lib/format";
-import { getFollowupQuestions } from "@/features/recruitment/actions";
+import { getFollowupQuestions, recommendFeedbackAction, reportFeedbackAction } from "@/features/recruitment/actions";
 import type { FeedbackView } from "@/features/recruitment/types";
 import { type FeedbackStatus, SELECTION_MODE_LABEL, type SelectionMode, type TestItem } from "@/features/recruitment/types";
 import { SelectField } from "@/components/ui/SelectField/SelectField";
@@ -24,8 +24,8 @@ import styles from "./FeedbackList.module.css";
  * - 상태 배지 대신 신고 버튼이 상태를 보여 준다. 신고했으면 "신고 정보", 아니면 "신고하기"다.
  *   신고하기는 제출 후 72시간 안에만 대화상자를 열고, 지난 피드백은 신고 기간이 지났다고 안내한다.
  * - 무료 모집에서는 채팅하기·AI 질문 받기가 구독 안내로 이어진다.
- * - 채팅방 생성, 추천 저장, 신고, 신고 정보 조회는 백엔드 API가 아직 없다. 추천과 신고는 화면에서만 바뀌고 새로고침하면 돌아오며,
- *   채팅하기와 신고 정보는 준비 중 안내만 보여 준다.
+ * - 유용해요와 신고는 백엔드에 저장한다(#190). 저장에 실패하면 유용해요는 되돌리고 카드에, 신고는 대화상자에 이유를 보여 준다.
+ *   채팅방 생성과 신고 정보 조회는 백엔드 API가 아직 없어 채팅하기와 신고 정보는 준비 중 안내만 보여 준다.
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
  */
 
@@ -33,7 +33,8 @@ const SUBSCRIPTION_PATH = "/subscription";
 const REPORT_INFO_NOT_READY = "신고 정보는 준비 중이에요";
 /* README: 제출 후 72시간 동안 신고가 없으면 자동 지급되고, 그 뒤에는 신고할 수 없다 */
 const REPORT_CLOSED = "신고는 제출 후 72시간 안에만 할 수 있어요";
-const FOLLOWUP_NETWORK_ERROR = "연결이 불안정해 질문을 받지 못했어요. 잠시 후 다시 시도해 주세요";
+const SAVE_NETWORK_ERROR = "연결이 불안정해 저장하지 못했어요. 잠시 후 다시 시도해 주세요";
+const FOLLOWUP_NETWORK_ERROR ="연결이 불안정해 질문을 받지 못했어요. 잠시 후 다시 시도해 주세요";
 
 const icon = { "aria-hidden": true, size: 16, weight: "bold" } as const;
 
@@ -79,12 +80,29 @@ export function FeedbackList({
   const [asking, setAsking] = useState<FeedbackView | null>(null);
   const [target, setTarget] = useState<FeedbackView | null>(null);
   const [error, setError] = useState("");
+  const [reporting, setReporting] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  function toggleRecommend(feedback: FeedbackView, next: boolean) {
+  /** 먼저 화면에 반영하고 저장한다. 저장하지 못하면 이전 값으로 되돌리고 이유를 카드에 보여 준다 */
+  async function toggleRecommend(feedback: FeedbackView, next: boolean) {
+    const previous = recommended[feedback.id] ?? feedback.recommended;
     setRecommended((prev) => ({ ...prev, [feedback.id]: next }));
-    setAnnouncement(`${feedback.testerNickname}님의 피드백${next ? "을 유용해요로 표시했어요" : "에서 유용해요를 뺐어요"}`);
+    setNotices((prev) => ({ ...prev, [feedback.id]: "" }));
+    let message: string | null = null;
+    try {
+      const result = await recommendFeedbackAction(feedback.id, next);
+      if (!result.ok) message = result.message;
+    } catch (caught) {
+      unstable_rethrow(caught);
+      message = SAVE_NETWORK_ERROR;
+    }
+    if (message === null) {
+      setAnnouncement(`${feedback.testerNickname}님의 피드백${next ? "을 유용해요로 표시했어요" : "에서 유용해요를 뺐어요"}`);
+      return;
+    }
+    setRecommended((prev) => ({ ...prev, [feedback.id]: previous }));
+    showNotice(feedback, message);
   }
 
   function showNotice(feedback: FeedbackView, text: string) {
@@ -115,17 +133,33 @@ export function FeedbackList({
     dialogRef.current?.showModal();
   }
 
-  function submitReport(event: React.FormEvent<HTMLFormElement>) {
+  async function submitReport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const reason = String(new FormData(event.currentTarget).get("reason") ?? "").trim();
+    const form = event.currentTarget;
+    const reason = String(new FormData(form).get("reason") ?? "").trim();
     if (!reason) {
       setError("신고 사유를 적어 주세요");
       return;
     }
-    if (!target) return;
+    if (!target || reporting) return;
+    setReporting(true);
+    setError("");
+    let message: string | null = null;
+    try {
+      const result = await reportFeedbackAction(target.id, reason);
+      if (!result.ok) message = result.message;
+    } catch (caught) {
+      unstable_rethrow(caught);
+      message = SAVE_NETWORK_ERROR;
+    }
+    setReporting(false);
+    if (message !== null) {
+      setError(message);
+      return;
+    }
     setStatuses((prev) => ({ ...prev, [target.id]: "reported" }));
     setAnnouncement(`${target.testerNickname}님의 피드백을 신고했어요`);
-    event.currentTarget.reset();
+    form.reset();
     dialogRef.current?.close();
   }
 
@@ -347,7 +381,9 @@ export function FeedbackList({
             <Button variant="secondary" onClick={() => dialogRef.current?.close()}>
               취소
             </Button>
-            <Button type="submit">신고하기</Button>
+            <Button type="submit" disabled={reporting}>
+              {reporting ? "신고 중…" : "신고하기"}
+            </Button>
           </div>
         </form>
       </Card>

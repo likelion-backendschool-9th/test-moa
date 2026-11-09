@@ -214,6 +214,30 @@ S369 구조 (기존 S78) [명령]
 - **출금 신청·내역과 운영자 출금 처리는 이 이슈에서 연결하지 않는다.** #206, #207에서 한다. 그 전까지 백엔드 모드의 출금 화면은 목업 쿠키를 쓰므로, 시연용 신청은 서버 잔액의 "출금 처리 중"에 더하지 않는다(서버 값만 보인다). 이 어긋남은 #206에서 없어진다.
 - 새 화면은 없다. 목업 모드의 동작과 화면은 바꾸지 않는다.
 
+확인 데이터 (#205)
+[직접] 시나리오는 실제 백엔드에 회원과 크레딧이 있어야 한다. 크레딧을 주는 API가 아직 없어서(테스트 보상 지급, 운영자 시연용 크레딧 지급은 다른 이슈) 지금은 아래처럼 만든다. 운영자 화면에서 크레딧을 줄 수 있게 되면 그 방법으로 바꾼다.
+1. 회원: `/signup`으로 가입한다. 크레딧을 넣을 회원 하나와 지갑이 없는 회원 하나(#205-S7)를 만든다.
+2. 운영자: 가입한 회원 하나를 SQL로 운영자로 바꾼다. `UPDATE users SET role = 'ADMIN' WHERE email = '<이메일>';`
+3. 크레딧: 지갑과 내역을 SQL로 넣는다. 지갑의 적립·이벤트 금액은 내역의 합과 같아야 한다. 아래는 적립 12,000, 이벤트 3,000이다. 셋째 내역은 어제 UTC 15:30(서울 오늘 00:30)이라 #205-S5의 날짜 묶음을 확인할 수 있다.
+   ```sql
+   INSERT INTO credit_wallets (user_id, earned_balance, event_credit, locked_balance, created_at, updated_at)
+   SELECT id, 12000, 3000, 0, timezone('UTC', now()), timezone('UTC', now()) FROM users WHERE email = '<이메일>';
+
+   INSERT INTO credit_ledgers (credit_wallet_id, delta, description, type, created_at, updated_at)
+   SELECT w.id, v.delta, v.description, v.type, v.at, v.at
+   FROM credit_wallets w
+   JOIN users u ON u.id = w.user_id
+   CROSS JOIN (VALUES
+       (3000, '가입 크레딧', 'EVENT', timezone('UTC', now()) - interval '7 days'),
+       (5000, '테스트 보상', 'EARNED', timezone('UTC', now()) - interval '3 days'),
+       (7000, '경계 확인용 테스트 보상', 'EARNED', date_trunc('day', timezone('UTC', now())) - interval '8 hours 30 minutes')
+   ) AS v(delta, description, type, at)
+   WHERE u.email = '<이메일>';
+   ```
+   compose 환경에서는 `docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'`에 넣어 실행한다.
+4. 나머지 값은 화면으로 만든다. 출금 처리 중(#205-S1)은 출금 신청(#206)으로, 구독 결제 두 줄(#205-S4)은 크레딧 구독 결제(#204)로 만든다. 승인 대기 보상은 참여가 확정되고 피드백을 제출한 참가에서 생긴다.
+5. 크레딧 API만 실패하는 경우(#205-S8)는 백엔드를 멈추면 회원 확인부터 실패한다. Next와 백엔드 사이에서 그 경로만 500으로 답하게 해서(확인용 프록시 등) 본다.
+
 #205-S1 잔액 구성을 서버 값으로 본다 [직접]
 - Given 서버 지갑이 적립 12,000, 이벤트 3,000, 출금 처리 중 2,000이고 승인 대기 보상이 1,350인 회원, `/my/credits`
 - Then  "적립 크레딧 12,000 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 2,000 크레딧", "승인 대기 1,350 크레딧"이 보이고 총 잔액은 "17,000 크레딧"이다

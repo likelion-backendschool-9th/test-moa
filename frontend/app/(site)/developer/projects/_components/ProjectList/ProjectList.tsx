@@ -1,15 +1,16 @@
-import Link from "next/link";
 import { PROJECT_NEW_PATH, projectPath } from "@/features/project/paths";
+import { Badge } from "@/components/ui/Badge/Badge";
 import { Card } from "@/components/ui/Card/Card";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
+import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentThumb/RecruitmentThumb";
 import type { ProjectSummary } from "@/features/recruitment/types";
 import styles from "./ProjectList.module.css";
 
-/* 내 프로젝트 목록 화면의 카드 그리드 */
+/* 내 프로젝트 목록 화면의 행 리스트. 참여 테스트 목록의 행(ParticipationRow)과 같은 모양이다 */
 
-/** 내 프로젝트 카드 목록. 비어 있으면 등록 안내를 보여 준다 */
+/** 내 프로젝트 행 목록. 비어 있으면 등록 안내를 보여 준다 */
 export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
   if (projects.length === 0) {
     return (
@@ -24,17 +25,33 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
     <ul className={styles.root}>
       {projects.map((project) => (
         <li key={project.key}>
-          <Link
-            href={projectPath(project.key)}
-            className={styles.link}
-          >
-            <Card className={styles.card}>
+          <Card className={styles.card}>
+            <div className={styles.thumb}>
+              <RecruitmentThumb recruitment={{ projectName: project.name, projectImage: project.image?.url }} />
+            </div>
+            <div className={styles.box}>
               <h3 className={styles.name}>{project.name}</h3>
-              <p className={styles.text}>
-                모집 {project.recruitmentCount}건 · 모집 중 {project.openRecruitmentCount}건
+              <p className={styles.badges}>
+                <Badge tone={project.openRecruitmentCount > 0 ? "neutral" : "muted"}>
+                  {project.openRecruitmentCount > 0 ? "모집 중" : "모집 없음"}
+                </Badge>
               </p>
-            </Card>
-          </Link>
+              <dl className={styles.list}>
+                <div>
+                  <dt className={styles.term}>전체 모집</dt>
+                  <dd className={styles.value}>{project.recruitmentCount}건</dd>
+                </div>
+                <div>
+                  <dt className={styles.term}>모집 중</dt>
+                  <dd className={styles.value}>{project.openRecruitmentCount}건</dd>
+                </div>
+              </dl>
+            </div>
+            <LinkButton href={projectPath(project.key)} variant="secondary" size="sm" className={styles.button}>
+              <span className={styles.srOnly}>{project.name} </span>
+              상세 보기
+            </LinkButton>
+          </Card>
         </li>
       ))}
     </ul>

@@ -158,7 +158,7 @@
 - 주소는 `/api/v1/chats/{roomKey}`(방 정보 GET), `/api/v1/chats/{roomKey}/messages`(메시지 GET, 보내기 POST)다. 채팅방 화면을 열면 Next 서버가 두 GET을 동시에 부른다. 방 조회는 프론트 `getChatRoomTitle`(문서 제목)에도 그대로 쓴다. #51의 `after={seq}`는 메시지 조회에 붙인다. 채팅함(#48)은 `GET /api/v1/chats`, 이름 변경·삭제(#50)는 `PATCH`·`DELETE /api/v1/chats/{roomKey}`로 이어 쓴다. 지금 있는 `/api/auth`, `/api/users`에는 `v1`이 없지만, 원래 붙어야 하는 것이라 나중에 따로 고친다(11-05 사용자 확인)
 - 응답은 `ApiResponse`로 감싼다. 메시지 조회는 `{messages: [{seq, from: "me"|"partner", text, sentAt}], hasMore}`, 보내기는 메시지 하나, 방은 `{roomKey, recruitmentId, projectName, roomName, projectImage, myRole, partner: {nickname, role}}`이다. 이름은 프론트 `types.ts`에 맞췄고, `recruitmentSlug` 자리는 entities.md의 결정대로 `recruitmentId`다. 역할 값은 `ChatRole` 그대로 대문자이고, 프론트 소문자로 바꾸는 일은 #54에서 한다
 - 한 번에 주는 메시지 수는 30개로 고정하고 서비스의 상수 하나(`MESSAGE_SLICE_SIZE`)로 둔다. 조회는 Spring Data `Slice`로 한다. `Slice`는 31개를 읽어 다음이 있는지(`hasNext`)만 판단하고 전체 개수는 세지 않는다. 응답 이름은 `ChatMessageSliceResponse`이고, 필드는 오래된 쪽이 더 있다는 뜻이 바로 보이게 `hasNext` 대신 `hasMore`로 둔다(11-05 사용자 결정)
-- 일시는 기존 응답처럼 `LocalDateTime`(시간대 없음, 서버 시각)으로 내려간다
+- 일시는 기존 응답처럼 `LocalDateTime`이고, 서버 시간대(UTC로 고정)의 값에 오프셋을 붙여 `2026-11-05T11:00:00Z`처럼 내려간다 (고침 #193: 오프셋 추가)
 - 내가 삭제한 방은 프론트(`getChatRoom`: 삭제했으면 404)와 같이 열 수도 보낼 수도 없다. 다시 보이는 것은 상대가 보냈을 때뿐이다(README의 11-04 결정)
 - 서버는 내용을 고치지 않고 받은 그대로 저장한다. 앞뒤 공백 제거는 프론트가 보내기 전에 이미 한다(11-05 사용자 확인). 빈 메시지 판단만 `@NotBlank`(공백·줄바꿈만 있으면 빈 것)로 한다. 글자 수는 공백을 포함해 프론트 `slice`와 같은 UTF-16 길이로 센다. 저장 컬럼도 10,000자라 받은 그대로의 길이로 막아야 한다. (고침 #111: 서버 최대 길이 10,000자로 확대)
 - 프론트는 #54 전까지 500자(`CHAT_MESSAGE_MAX`)를 넘으면 잘라서 보내고, 서버는 10,000자를 넘으면 자르지 않고 400으로 거절한다. #54에서 프론트도 10,000으로 맞춘다. 서버를 직접 부르는 잘못된 요청을 조용히 바꾸지 않기 위해서다. (고침 #111: 서버 최대 길이 10,000자로 확대)

@@ -95,7 +95,7 @@ class ChatInboxControllerTest {
         return call(get("/api/v1/chats"), user);
     }
 
-    @Test @DisplayName("#48-S1 테스터와 개발자로 참여한 방을 최근 순서로 함께 조회")
+    @Test @DisplayName("#48-S1 테스터와 개발자로 참여한 방을 최근 순서로 함께 조회 (고침 #193: 시각에 오프셋 Z)")
     void mixedRoles() throws Exception {
         inbox(me).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.rooms[*].roomKey", contains(second.getRoomKey(), first.getRoomKey())))
@@ -110,7 +110,7 @@ class ChatInboxControllerTest {
                 .andExpect(jsonPath("$.data.rooms[0].partner.nickname").value("새싹"))
                 .andExpect(jsonPath("$.data.rooms[0].partner.role").value("TESTER"))
                 .andExpect(jsonPath("$.data.rooms[0].lastMessage").value("로그인이 안 돼요"))
-                .andExpect(jsonPath("$.data.rooms[0].lastMessageAt").value("2026-11-05T11:00:00"))
+                .andExpect(jsonPath("$.data.rooms[0].lastMessageAt").value("2026-11-05T11:00:00Z"))
                 .andExpect(jsonPath("$.data.rooms[1].recruitmentId").value(first.getRecruitment().getId()))
                 .andExpect(jsonPath("$.data.rooms[1].projectName").value("북로그"))
                 .andExpect(jsonPath("$.data.rooms[1].projectImage").value("https://img.test/booklog.png"))
@@ -118,7 +118,7 @@ class ChatInboxControllerTest {
                 .andExpect(jsonPath("$.data.rooms[1].partner.nickname").value("모아개발"))
                 .andExpect(jsonPath("$.data.rooms[1].partner.role").value("DEVELOPER"))
                 .andExpect(jsonPath("$.data.rooms[1].lastMessage").value("안녕하세요"))
-                .andExpect(jsonPath("$.data.rooms[1].lastMessageAt").value("2026-11-05T10:00:00"));
+                .andExpect(jsonPath("$.data.rooms[1].lastMessageAt").value("2026-11-05T10:00:00Z"));
     }
 
     @Test @DisplayName("#48-S2 새 메시지를 받으면 맨 위로 이동")

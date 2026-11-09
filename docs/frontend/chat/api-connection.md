@@ -150,6 +150,12 @@
 - When  B가 보낸다
 - Then  카드의 미리보기·일시·순서가 새로고침 없이 바뀐다
 
+#54-S33 채팅함 갱신 범위 [테스트: unit]
+- When  상대가 읽었다는 read 이벤트가 온다
+- Then  새로고침하지 않는다
+- When  message, 내가 읽은 read, ready 이벤트가 온다
+- Then  새로고침한다
+
 ## 7. 안 읽은 표시 (#54-R7) — PR ②
 채팅함 카드와 헤더 "채팅"에 안 읽은 수가 보인다.
 
@@ -190,6 +196,16 @@
 - Then  읽음 처리하지 않는다
 - When  그 탭으로 돌아온다
 - Then  마지막 순번까지 읽음 처리한다
+
+#54-S31 재시도 간격 [테스트: unit]
+- Given 새 메시지 조회나 읽음 처리가 503으로 이어서 실패한다
+- Then  다시 시도하는 간격은 1, 2, 4, 8, 16, 30, 30초다
+
+#54-S32 읽음 처리의 인증·404 실패 [테스트: unit]
+- Given 읽음 처리가 401 또는 404로 실패한다
+- Then  다시 시도하지 않는다
+- Given 503으로 실패한다
+- Then  다시 시도한다
 
 #54-S26 안 읽음 표시 [직접] (고침 11-09: 읽음 대신 안 읽음을 표시하기로 함)
 - Given 내 메시지 순번 5, 6이 있고 `partnerLastReadSeq`가 5다
@@ -236,10 +252,10 @@
    - 파일: `features/chat/api.ts`(`getChatUnreadCount`), `features/chat/types.ts`(`unreadCount`, `partnerLastReadSeq`), `ChatCard.tsx`, `app/_components/NavList`·`MobileMenu`(`badge`), `app/_lib/nav.ts`
    - 문서·테스트: [chats.md](chats.md) S136과 강조색 설명, `DESIGN.md`의 채팅 카드와 The One Green Rule(오늘 온 대화 삭제, 내 메시지의 안 읽음 표시 예외 추가), `e2e/chat-room.spec.ts`의 `data-today` 검사
    - 확인: `npm run lint`, `npm run test:e2e -- e2e/chats.spec.ts e2e/chat-room.spec.ts`
-7. SSE 연결과 실시간 — #54-S16~S20, S23, S29
+7. SSE 연결과 실시간 — #54-S16~S20, S23, S29, S33
    - 파일: `app/_components/ChatEvents/ChatEvents.tsx`·`hook.ts`(새로, "use client", `EventSource` 하나와 구독 함수. 루트 레이아웃에서 일반 회원에게만 그린다), `ChatConversation/hook.ts`(`message`·`ready`에 `after` 조회), `ChatInbox` 쪽에 이벤트 시 `router.refresh()`(300ms 안의 이벤트는 한 번으로 묶는다), `tests/unit/chat-merge.test.ts`(새로)
    - 확인: `npm run test:unit -- tests/unit/chat-merge.test.ts`, `npm run build`
-8. 읽음 처리와 안 읽음 표시 — #54-S24~S26, S5, 직접 확인
+8. 읽음 처리와 안 읽음 표시 — #54-S24~S26, S5, S31, S32, 직접 확인
    - 파일: `features/chat/api.ts`·`actions.ts`(`markChatRead`), `ChatConversation/hook.ts`, `ChatMessageList.tsx`, [chats.md](chats.md)·[chat-room.md](chat-room.md) 범위 밖의 안 읽은 수·읽음 표시 줄에 `(고침 #54: 범위에 넣음)`
    - 확인: `npm run build`, 백엔드 모드에서 두 브라우저로 #54-S16~S26
 

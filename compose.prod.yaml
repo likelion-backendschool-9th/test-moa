@@ -58,6 +58,9 @@ services:
   frontend:
     image: ghcr.io/${GITHUB_OWNER:?GITHUB_OWNER를 .env에 설정하세요}/test-moa-frontend:${IMAGE_TAG:?IMAGE_TAG를 .env에 설정하세요}
     restart: unless-stopped
+    environment:
+      AUTH_MODE: backend
+      BACKEND_URL: http://backend:8080
     depends_on:
       - backend
 

@@ -75,7 +75,8 @@ public class AdminReportServiceImpl implements AdminReportService {
 
         report.review(userRepository.getReferenceById(adminId), result, LocalDateTime.now());
         if (report.getTargetType() == ReportTargetType.FEEDBACK) {
-            // 프로젝트 문서의 약속: 기각하면 reward(), 인정하면 exclude(). 피드백 신고 API가 REPORTED로 바꿔 둔 피드백만 바꾼다
+            // 프로젝트 문서의 약속: 기각하면 reward(), 인정하면 exclude(). 피드백 신고 API가 REPORTED로 바꿔 둔 피드백만 바꾼다.
+            // 여기서는 피드백 상태만 바꾼다. 실제 크레딧 지급은 운영자 쪽 담당이 맡는다
             feedbackRepository.findById(report.getTargetId())
                     .filter(feedback -> feedback.getStatus() == FeedbackStatus.REPORTED)
                     .ifPresent(feedback -> {

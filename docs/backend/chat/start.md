@@ -5,7 +5,7 @@
 ## 한눈에
 - 끝나면: 구독 중인 개발자가 `POST /api/v1/chats`에 `{"registerId": 12}`를 보내면 그 참가의 채팅방이 생기고 HTTP 201 `{"roomKey"}`를 받는다. 이미 방이 있으면 HTTP 200으로 그 방의 `roomKey`를 받는다. 방 정보와 채팅함의 방마다 `readOnly`가 오고, 읽기 전용 방에서는 개발자·테스터 모두 보내기가 HTTP 403 `CHAT_READ_ONLY`로 거절된다. 읽기 전용은 모집이 끝났거나(`Recruitment.phaseAt(now)`가 `CLOSED`·`CANCELLED`: 피드백 마감이 지났거나 모집 취소) 개발자의 구독이 끝난 방이다
 - 결정 필요: 없음 (Q1~Q3 11-08 답변: 개발자 구독 상태로 판단, 보내기 막기까지 #53, 끝난 기준은 `phaseAt`의 `CLOSED`·`CANCELLED`)
-- 규모: 6단계(준비 1, 구현 4, 문서 1)
+- 규모: 5단계(구현 4, 문서 1)
 
 ## 1. 채팅 걸기 (#53-R1)
 구독 중인 개발자가 자기 모집 건의 `CONFIRMED` 참가로 채팅을 걸면 방이 생긴다. 이미 방이 있으면 새로 만들지 않고 그 방을 돌려준다.
@@ -137,27 +137,26 @@
 - 정지·탈퇴 회원의 제한: 운영자 제재(#86)
 
 ## 작업 순서
-1. 준비: 바탕 브랜치에 `Recruitment.phaseAt`(#113)이 있게 한다
-   - #174 병합 뒤 `feature/chat-realtime`(#51)을 develop 위로 rebase하고, 이 브랜치를 그 위로 rebase한다
-   - 확인: `git grep -n "phaseAt" backend/src/main`에 `Recruitment.java`가 나온다
-2. 채팅 걸기 — #53-S1, S2, S5~S10
+`Recruitment.phaseAt`(#113)에 의존한다.
+
+1. 채팅 걸기 — #53-S1, S2, S5~S10
    - 파일: `controller/ChatController.java`(`POST /api/v1/chats`, 새로 만들면 `ResponseEntity` 201, 있으면 200), `dto/request/ChatStartRequest.java`(`@NotNull @Positive Long registerId`), `dto/response/ChatStartResponse.java`(`String roomKey`), `service/ChatService.java`, `service/impl/ChatServiceImpl.java`(`startChat`), `repository/RegisterRepository.java`(`findLockedById`: `PESSIMISTIC_WRITE`, 모집 건·프로젝트 fetch join), `repository/ChatRoomRepository.java`(`findByRegisterId`), `global/exception/ErrorCode.java`(`CHAT_READ_ONLY`)
    - 순서: 참가를 잠가 읽음 → 주인이 아니거나 없으면 404 → 방이 있으면 200 → `CONFIRMED`가 아니면 400 → `subscriptionChecker.require` 403 → `ChatReadOnlyPolicy`의 모집 끝남 403 → `ChatRoom.builder().register(...)` 저장 후 201
    - 확인: `./gradlew test --tests '*ChatStartControllerTest*'`
-3. 지운 방과 동시 요청 — #53-S3, S4
+2. 지운 방과 동시 요청 — #53-S3, S4
    - 파일: `repository/ChatParticipantRepository.java`(`unhideMine(roomId, userId)`: 방 ID와 회원 ID로 내 행의 `hidden`·`updated_at`만 바꾸는 update), `ChatServiceImpl.startChat`
    - 참여자 목록을 로딩해 내 ID를 찾는 대신 방 ID와 회원 ID로 바로 갱신한다(사용자 승인). 이름·읽은 순번과 상대의 숨김은 보존한다
-   - 동시 요청은 2단계의 참가 행 잠금으로 막는다. 두 번째 요청은 잠금을 기다린 뒤 이미 있는 방을 찾아 200이다
+   - 동시 요청은 1단계의 참가 행 잠금으로 막는다. 두 번째 요청은 잠금을 기다린 뒤 이미 있는 방을 찾아 200이다
    - 확인: 같은 명령
-4. 읽기 전용 계산과 표시 — #53-S11, S12
+3. 읽기 전용 계산과 표시 — #53-S11, S12
    - 파일: `service/ChatReadOnlyPolicy.java`(새로 만듦, 읽기 전용 판단은 여기에만 둔다), `service/SubscriptionChecker.java`(`activeUserIds(Collection<Long>)`: `findActive`와 같은 조건으로 구독 중인 회원 id만), `repository/projection/ChatRoomEntry.java`·`ChatInboxEntry.java`(`developerId` 추가), `ChatParticipantRepository`의 두 조회(`project.user.id`), `dto/response/ChatRoomResponse.java`·`ChatInboxResponse.java`(`readOnly`)
    - `ChatReadOnlyPolicy`: `isClosed(Recruitment, now)`는 `phaseAt(now)`가 `CLOSED` 또는 `CANCELLED`인지 본다(취소 단계가 별도인 현재 도메인에 맞춤, 11-08 승인), `isReadOnly(Recruitment, developerActive, now)`는 `isClosed || !developerActive`
    - 채팅함은 쿼리를 방마다 더 하지 않는다. 모집 건은 `recruitmentRepository.findAllById`로, 구독은 `activeUserIds`로 한 번씩 읽는다
    - 확인: `./gradlew test --tests '*ChatStartControllerTest*' --tests '*ChatInboxControllerTest*' --tests '*ChatControllerTest*'`
-5. 읽기 전용 방의 보내기 — #53-S13, S14, S15
+4. 읽기 전용 방의 보내기 — #53-S13, S14, S15
    - 파일: `ChatServiceImpl.sendMessage`(방을 잠근 뒤, 메시지를 만들기 전에 `ChatReadOnlyPolicy`로 확인), 기존 채팅 테스트의 준비 데이터(개발자 구독, 모집 건 마감일이 미래)
    - 확인: `./gradlew test --tests '*Chat*'`
-6. 문서
+5. 문서
    - 파일: `docs/backend/chat/README.md` 정한 것에 "끝난 기준은 `phaseAt`의 `CLOSED`·`CANCELLED`, 읽기 전용은 보내기만 막고 `CHAT_READ_ONLY` 403" 한 줄을 더한다. `messages.md:128`과 `inbox.md:115`의 "#53"에 `(고침 #53: 끝난 기준 정함)`을 붙인다
    - 확인: 문서 링크가 열린다
 

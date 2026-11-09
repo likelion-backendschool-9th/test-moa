@@ -8,6 +8,7 @@ import com.testmoa.backend.entity.User;
 import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
+import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.Provider;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.repository.AccountRepository;
@@ -24,6 +25,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -52,6 +54,7 @@ class UserWithdrawControllerTest {
     @Autowired UserService userService;
     @Autowired AuthService authService;
     @Autowired EntityManager em;
+    @Autowired JwtProvider jwtProvider;
 
     private final String suffix = UUID.randomUUID().toString().substring(0, 8);
     private final String email = "bye" + suffix + "@example.com";
@@ -214,11 +217,63 @@ class UserWithdrawControllerTest {
         User purged = userRepository.findById(id).orElseThrow();
         assertThat(purged.getStatus()).isEqualTo(UserStatus.DELETED);
         assertThat(purged.getName()).isNull();
-        assertThat(purged.getEmail()).isEqualTo("deleted-" + id + "@withdrawn.invalid");
+        assertThat(purged.getEmail()).isEqualTo("deleted-" + id + "@withdrawn");
         assertThat(purged.getNickname()).isEqualTo("탈퇴한 회원#" + id);
         assertThat(accountRepository.findByUserId(id)).isEmpty();
 
         login().andExpect(status().isUnauthorized());
         signup().andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("#84-S27 30일이 지나면 파기 작업 전이라도 로그인·되돌리기를 할 수 없다")
+    void 삼십일이_지나면_되돌릴_수_없다() throws Exception {
+        signupAndWithdraw();
+        String restoreToken = field(login().andExpect(status().isForbidden()), "$.error.fields.restoreToken");
+
+        User user = me();
+        ReflectionTestUtils.setField(user, "withdrawnAt", user.getWithdrawnAt().minusDays(31));
+        userRepository.saveAndFlush(user);
+        // 토큰의 탈퇴 일시도 옮긴 일시와 같게 해서, 기한 검사만 남긴다
+        String expiredToken = jwtProvider.createRestoreToken(user.getId(), user.getWithdrawnAt());
+
+        login().andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("INVALID_CREDENTIALS"));
+        postJson("/api/auth/restore", """
+                {"restoreToken":"%s"}""".formatted(expiredToken)).andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("INVALID_RESTORE_TOKEN"));
+        postJson("/api/auth/restore", """
+                {"restoreToken":"%s"}""".formatted(restoreToken)).andExpect(status().isUnauthorized());
+        assertThat(me().getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+    }
+
+    @Test
+    @DisplayName("#84-S28 되돌린 뒤 다시 탈퇴하면 예전 되돌리기 토큰은 쓸 수 없다")
+    void 다시_탈퇴하면_예전_토큰은_못_쓴다() throws Exception {
+        signupAndWithdraw();
+        String oldToken = field(login(), "$.error.fields.restoreToken");
+        String access = field(postJson("/api/auth/restore", """
+                {"restoreToken":"%s"}""".formatted(oldToken)).andExpect(status().isOk()), "$.data.accessToken");
+
+        withdraw(access, """
+                {"password":"%s"}""".formatted(PASSWORD)).andExpect(status().isOk());
+        postJson("/api/auth/restore", """
+                {"restoreToken":"%s"}""".formatted(oldToken)).andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("INVALID_RESTORE_TOKEN"));
+        assertThat(me().getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+
+        // 새로 로그인해 받은 토큰으로는 되돌린다
+        String newToken = field(login(), "$.error.fields.restoreToken");
+        postJson("/api/auth/restore", """
+                {"restoreToken":"%s"}""".formatted(newToken)).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("#84-S29 파기한 회원의 이메일 주소로는 가입할 수 없어, 파기가 가입 이메일과 겹치지 않는다")
+    void 파기_이메일로는_가입_못_한다() throws Exception {
+        postJson("/api/auth/signup", """
+                {"name":"흉내","nickname":"흉내%s","email":"deleted-1@withdrawn","password":"%s"}""".formatted(suffix, PASSWORD))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.email").exists());
     }
 }

@@ -8,6 +8,8 @@ import com.testmoa.backend.entity.enums.UserStatus;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.repository.CreditWalletRepository;
 import com.testmoa.backend.repository.UserRepository;
+import com.testmoa.backend.global.security.JwtProvider;
+import com.testmoa.backend.service.AuthService;
 import com.testmoa.backend.service.CashoutService;
 import com.testmoa.backend.service.UserService;
 import org.junit.jupiter.api.AfterEach;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +39,8 @@ class WithdrawConcurrencyTest {
     @Autowired CreditWalletRepository creditWalletRepository;
     @Autowired UserService userService;
     @Autowired CashoutService cashoutService;
+    @Autowired AuthService authService;
+    @Autowired JwtProvider jwtProvider;
     @Autowired JdbcTemplate jdbc;
 
     private final List<Long> userIds = new ArrayList<>();
@@ -94,6 +99,33 @@ class WithdrawConcurrencyTest {
             Integer requested = jdbc.queryForObject(
                     "select count(*) from cashouts where user_id = ? and status = 'REQUESTED'", Integer.class, userId);
             assertThat(status.equals("WITHDRAWN") && requested > 0).as("round %d", round).isFalse();
+        }
+        pool.shutdown();
+    }
+
+    @Test
+    @DisplayName("#84-S26 파기 작업과 되돌리기가 동시에 와도 되돌린 회원은 파기하지 않는다")
+    void 되돌린_회원은_파기하지_않는다() throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        for (int round = 0; round < 10; round++) {
+            Long userId = member(round).getId();
+            userService.withdraw(userId, new WithdrawRequest(null, WithdrawRequest.CONFIRM_TEXT));
+            String token = jwtProvider.createRestoreToken(userId, userRepository.findById(userId).orElseThrow().getWithdrawnAt());
+            CountDownLatch start = new CountDownLatch(1);
+            Future<Boolean> restored = pool.submit(() -> {
+                start.await();
+                return succeeded(() -> authService.restore(token));
+            });
+            Future<Integer> purge = pool.submit(() -> {
+                start.await();
+                return userService.purgeWithdrawnBefore(LocalDateTime.now().plusMinutes(1));
+            });
+            start.countDown();
+
+            boolean wasRestored = restored.get();
+            purge.get();
+            String status = jdbc.queryForObject("select status from users where id = ?", String.class, userId);
+            assertThat(status).as("round %d", round).isEqualTo(wasRestored ? "ACTIVE" : "DELETED");
         }
         pool.shutdown();
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDownIcon, ArrowUpIcon, DotsSixVerticalIcon } from "@phosphor-icons/react";
-import { type ComponentProps, type FormEvent, type ReactNode, startTransition, useActionState, useRef, useState } from "react";
+import { type ComponentProps, type FormEvent, type ReactNode, startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { Button } from "@/components/ui/Button/Button";
 import { FormMessage } from "@/components/ui/FormField/FormField";
@@ -10,7 +10,7 @@ import { SettingsBody, SettingsCard, SettingsSection } from "@/components/ui/Set
 import { TextArea, TextInput } from "@/components/ui/TextField/TextField";
 import { projectEditPath } from "@/features/project/paths";
 import { DEFAULT_PROJECT_IMAGE_URL, EMPTY_FORM_STATE, type Project } from "@/features/project/types";
-import { updateRecruitment } from "@/features/recruitment/actions";
+import { disconnectRepository, updateRecruitment } from "@/features/recruitment/actions";
 import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge/RecruitmentStatusBadge";
 import { TestItemImages } from "@/features/recruitment/components/TestItemImages/TestItemImages";
 import {
@@ -463,6 +463,15 @@ function TestItemsSection({ recruitmentKey, items, locks }: { recruitmentKey: st
 
 function ProjectSection({ recruitmentKey, project }: { recruitmentKey: string; project: Project }) {
   const { state, formAction, pending, handleSubmit } = useSectionForm(recruitmentKey, "repository");
+  const [unlinked, unlinkAction, unlinking] = useActionState<EditState, FormData>(
+    disconnectRepository.bind(null, recruitmentKey),
+    EMPTY_FORM_STATE,
+  );
+  /* 토큰은 저장하고 나면 입력란에 남기지 않는다 */
+  const tokenRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (state.ok && tokenRef.current) tokenRef.current.value = "";
+  }, [state]);
   return (
     <Section id="edit-project-heading" title="기타 프로젝트 정보">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -475,10 +484,30 @@ function ProjectSection({ recruitmentKey, project }: { recruitmentKey: string; p
         </LinkButton>
       </div>
       <Result state={state} success={`${state.values.repository}에 연결했어요`} />
-      <form action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
-        <Field name="repository" label="GitHub 저장소" defaultValue={project.repository ?? ""} placeholder="owner/repo" error={state.errors.repository} />
-        <SaveButton pending={pending} label="연결" />
+      <Result state={unlinked} success="연결을 해제했어요" />
+      {/* 연결한 저장소가 바뀌면 입력란이 새 값(owner/repo)으로 다시 그려진다 */}
+      <form key={project.repository ?? ""} action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
+        <Field name="repository" label="GitHub 저장소" defaultValue={project.repository ?? ""} placeholder="owner/repo 또는 GitHub 주소" error={state.errors.repository} />
+        <Field
+          ref={tokenRef}
+          name="token"
+          label="GitHub 토큰"
+          type="password"
+          autoComplete="off"
+          placeholder={project.repository ? "바꾸려면 토큰을 다시 입력해 주세요" : "이슈를 만들 수 있는 토큰"}
+          error={state.errors.token}
+        />
+        <SaveButton pending={pending} label={project.repository ? "다시 연결" : "연결"} />
       </form>
+      {project.repository && (
+        <form action={unlinkAction} className={styles.form}>
+          <div className={styles.actions}>
+            <Button type="submit" variant="secondary" disabled={unlinking}>
+              {unlinking ? "해제하는 중…" : "연결 해제"}
+            </Button>
+          </div>
+        </form>
+      )}
     </Section>
   );
 }

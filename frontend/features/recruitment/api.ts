@@ -58,7 +58,7 @@ import {
   getAnalytics,
   getEditLocks,
   validatePostEdit,
-  validateRepository,
+  validateRepositoryConnect,
   validateTermsEdit,
   validateTestItemsEdit,
   getHoursUntilPaid,
@@ -742,9 +742,12 @@ const NOT_EDITABLE: EditState = { values: {}, errors: { form: "종료되거나 �
  */
 export async function updateRecruitment(recruitmentKey: string, section: RecruitmentEditSection, formData: FormData): Promise<EditState> {
   const path = recruitmentManagePath(recruitmentKey);
-  const { role, recruitment } = await getMyRecruitment(path, recruitmentKey);
-  /* 저장소는 프로젝트 정보라 모집이 끝나도 연결할 수 있다. shortcut: 레포 연결 API가 없어 검증만 한다(#168의 다음 작업) */
-  if (section === "repository") return withOk(validateRepository(formData));
+  const { role, project, recruitment } = await getMyRecruitment(path, recruitmentKey);
+  /* 저장소는 프로젝트 정보라 모집이 끝나도 연결할 수 있다. 목업은 검증만 하고 저장하지 않는다 */
+  if (section === "repository") {
+    const checked = withOk(validateRepositoryConnect(formData, isBackendAuth));
+    return checked.ok && isBackendAuth ? connectRepository(project.key, checked, text(formData, "token")) : checked;
+  }
   const [applications, feedbacks, detail] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
@@ -760,6 +763,33 @@ export async function updateRecruitment(recruitmentKey: string, section: Recruit
         : validateTestItemsEdit(formData, locks.lockedItemIds);
   if (Object.keys(state.errors).length > 0) return withOk(state);
   return withOk(await saveEdit(recruitmentKey, section, formData, state));
+}
+
+/**
+ * 프로젝트에 GitHub 레포를 연결한다. 백엔드가 토큰으로 GitHub에서 레포를 읽어 확인한 뒤 저장한다.
+ * 토큰은 화면 상태에 되돌려 주지 않는다(values에는 저장소만 넣는다)
+ */
+async function connectRepository(projectKey: string, state: EditState, token: string): Promise<EditState> {
+  const result = await backendFetch<unknown>(`/api/v1/developer/projects/${encodeURIComponent(projectKey)}/repository`, {
+    method: "PUT",
+    body: { repository: state.values.repository, token },
+    timeoutMs: REPOSITORY_TIMEOUT_MS,
+  });
+  if (result.ok) return state;
+  return { values: state.values, errors: result.fields ? toFormFields(result.fields) : { form: result.message } };
+}
+
+/* 백엔드가 GitHub 확인을 최대 15초 기다린다 */
+const REPOSITORY_TIMEOUT_MS = 20_000;
+
+/** 프로젝트의 GitHub 레포 연결을 해제한다. 레포와 토큰이 함께 지워진다. 목업은 저장하지 않는다 */
+export async function disconnectRepository(recruitmentKey: string): Promise<EditState> {
+  const { project } = await getMyRecruitment(recruitmentManagePath(recruitmentKey), recruitmentKey);
+  if (isBackendAuth) {
+    const result = await backendFetch<unknown>(`/api/v1/developer/projects/${encodeURIComponent(project.key)}/repository`, { method: "DELETE" });
+    if (!result.ok) return { values: {}, errors: { form: result.message } };
+  }
+  return { values: {}, errors: {}, ok: true };
 }
 
 const withOk = (state: EditState): EditState => ({ ...state, ok: Object.keys(state.errors).length === 0 });

@@ -1,10 +1,11 @@
 "use server";
 
-import { PROJECTS_PATH, projectPath, recruitmentCreatePath } from "@/features/project/paths";
+import { PROJECTS_PATH, projectPath, recruitmentCreatePath, recruitmentManagePath } from "@/features/project/paths";
 import type { FormState } from "@/features/project/types";
 import {
   cancelRecruitment as cancel,
   decideApplicants as decide,
+  disconnectRepository as disconnect,
   getRecruitmentFormInfo,
   recommendFollowupQuestions,
   saveBackendRecruitment,
@@ -76,7 +77,17 @@ export async function updateRecruitment(
   formData: FormData,
 ): Promise<EditState> {
   if (!EDIT_SECTIONS.includes(section)) return { values: {}, errors: { form: "잘못된 요청이에요" } };
-  return update(recruitmentKey, section, formData);
+  const result = await update(recruitmentKey, section, formData);
+  /* 연결한 저장소가 화면에 바로 반영되게 한다 */
+  if (section === "repository" && result.ok && isBackendAuth) revalidatePath(recruitmentManagePath(recruitmentKey));
+  return result;
+}
+
+/** 프로젝트의 GitHub 레포 연결 해제. 레포와 토큰이 함께 지워진다 */
+export async function disconnectRepository(recruitmentKey: string): Promise<EditState> {
+  const result = await disconnect(recruitmentKey);
+  if (result.ok && isBackendAuth) revalidatePath(recruitmentManagePath(recruitmentKey));
+  return result;
 }
 
 const EDIT_SECTIONS: RecruitmentEditSection[] = ["post", "terms", "testItems", "repository"];

@@ -16,17 +16,20 @@ type ProjectResponse = {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  /** 연결한 GitHub 레포 "owner/repo". 토큰은 응답에 없다 */
+  repository: string | null;
   createdAt: string;
   recruitmentCount: number;
   openRecruitmentCount: number;
 };
 
-function toProject({ id, name, description, imageUrl, createdAt }: ProjectResponse): Project {
+function toProject({ id, name, description, imageUrl, repository, createdAt }: ProjectResponse): Project {
   return {
     key: String(id),
     name,
     description: description ?? "",
     image: imageUrl ? { url: imageUrl, name: `${name} 대표 이미지` } : null,
+    ...(repository ? { repository } : {}),
     createdAt,
   };
 }

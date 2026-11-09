@@ -20,6 +20,8 @@ import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.OAuthClient;
 import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
 import com.testmoa.backend.service.AuthService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final OAuthClient oauthClient;
+    private final SanctionChecker sanctionChecker;
     private final Duration refreshTokenTtl;
 
     public AuthServiceImpl(UserRepository userRepository,
@@ -58,6 +61,7 @@ public class AuthServiceImpl implements AuthService {
                            PasswordEncoder passwordEncoder,
                            JwtProvider jwtProvider,
                            OAuthClient oauthClient,
+                           SanctionChecker sanctionChecker,
                            @Value("${jwt.refresh-token-ttl}") Duration refreshTokenTtl) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
@@ -65,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
         this.oauthClient = oauthClient;
+        this.sanctionChecker = sanctionChecker;
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
@@ -113,6 +118,8 @@ public class AuthServiceImpl implements AuthService {
     // 이메일·소셜 로그인과 소셜 가입의 새 로그인 세션. 정지 회원은 막고, 만료된 refresh 토큰을 지운다
     private TokenResponse startSession(User user) {
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
+        // 운영자가 로그인을 막았으면 403 RESTRICTED와 사유·해제 일시(#86)
+        sanctionChecker.require(user.getId(), Restriction.LOGIN);
         refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
         return issueTokens(user, UUID.randomUUID().toString());
     }

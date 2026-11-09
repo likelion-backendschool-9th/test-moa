@@ -1,12 +1,14 @@
 package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.User;
+import com.testmoa.backend.global.security.Role;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -23,4 +25,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from users u where u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);
+
+    // 운영자 회원 목록: 닉네임 일부로 찾고 최근 가입 순
+    List<User> findByRoleAndNicknameContainingIgnoreCaseOrderByCreatedAtDescIdDesc(Role role, String nickname);
 }

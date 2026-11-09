@@ -38,6 +38,10 @@ public enum ErrorCode {
     REPORT_DUPLICATED(HttpStatus.CONFLICT, "이미 신고해서 검토를 기다리고 있어요"),
     REPORT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 처리한 신고예요"),
 
+    // 운영자 제재
+    RESTRICTED(HttpStatus.FORBIDDEN, "운영자 제재로 이용이 제한됐어요"),
+    SANCTION_NOT_ACTIVE(HttpStatus.CONFLICT, "이미 해제했거나 끝난 제재예요"),
+
     // 채팅
     CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),
 

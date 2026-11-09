@@ -1,5 +1,5 @@
 import type { Role } from "@/features/session/session";
-import type { PlanTerms, SubscriptionPlan } from "@/features/subscription/types";
+import type { FreePlan, SubscriptionPlan } from "@/features/subscription/types";
 import { cookies } from "next/headers";
 import "server-only";
 
@@ -87,15 +87,10 @@ export async function addDemoSubscriptionPayment(role: MemberRole, payment: Omit
 
 const SUBSCRIPTION_DAYS_LEFT = 30;
 
-/** 무료 조건 */
-export const FREE_PLAN: PlanTerms = {
-  benefits: {
-    selection: "선착순 자동 확정",
-    reward: "기본 보상",
-    chat: "없음",
-    exposure: "일반 목록",
-    analytics: "없음",
-  },
+/** 무료 플랜 */
+export const FREE_PLAN: FreePlan = {
+  name: "FREE",
+  benefits: ["선착순 자동 확정", "기본 보상"],
 };
 
 /** 구독 상품. 가격·기간은 기획에서 미정이라 임시값이다 (가격은 spec.md 3장의 예시 값) */
@@ -106,12 +101,6 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     periodDays: SUBSCRIPTION_DAYS_LEFT,
     cashPrice: 10000,
     creditPrice: 9000,
-    benefits: {
-      selection: "지원자 중 직접 선정",
-      reward: "기본 + 추가 보상",
-      chat: "선정한 테스터와 가능",
-      exposure: "상단 구독 영역",
-      analytics: "피드백 AI 정리 및 분석",
-    },
+    benefits: ["지원자 중 직접 선정", "기본 + 추가 보상", "선정한 테스터와 가능", "상단 구독 영역", "피드백 AI 정리 및 분석"],
   },
 ];

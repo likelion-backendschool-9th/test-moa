@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getSubscriptionOverview } from "@/features/subscription/api";
+import { usesPlan } from "@/features/subscription/types";
 import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry/SubscriptionExpiry";
 import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment/SubscriptionPayment";
 import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus/SubscriptionStatus";
@@ -44,7 +45,6 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
     );
   }
   const active = subscription.status === "active";
-  const currentPlanId = active ? subscription.planId : null;
   return (
     <div className={styles.overview}>
       {/* 구독 결제에서 돌아왔다 */}
@@ -56,7 +56,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
       <div className={styles.overviewBox}>
         <SubscriptionStatus
           subscription={subscription}
-          plan={plans.find((plan) => plan.id === currentPlanId)}
+          plan={plans.find((plan) => usesPlan(subscription, plan))}
           now={new Date(now)}
         />
         <SubscriptionPayment plans={plans} payableCredits={payableCredits} active={active} />

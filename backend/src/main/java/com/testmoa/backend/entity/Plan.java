@@ -97,6 +97,17 @@ public class Plan {
      * @return 혜택 문구 목록
      */
     public List<String> benefits() {
+        return splitBenefits(description);
+    }
+
+    /**
+     * 쉼표로 이은 혜택 문자열을 목록으로 자른다. 앞뒤 공백을 지우고 빈 항목은 뺀다. 비어 있으면 빈 목록이다.
+     * 무료 플랜 조건({@link FreePlan})도 같은 규칙을 쓴다.
+     *
+     * @param description 쉼표로 이은 혜택 문구
+     * @return 혜택 문구 목록
+     */
+    public static List<String> splitBenefits(String description) {
         if (description == null || description.isBlank()) {
             return List.of();
         }

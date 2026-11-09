@@ -14,11 +14,11 @@
 - **모집 한도는 없다.** 팀에서 모집 인원을 없애기로 해서([프로젝트 #78-R1](../../frontend/project/projects.md)) `Plan.monthlyRecruitLimit`을 지웠고, 무료 한도·이번 달 사용량도 이 API에 없다. 이슈 본문의 해당 시나리오는 뺐다.
 - **구독 상태에 `EXPIRED`는 없다.** 상태는 `ACTIVE`·`CANCELLED`뿐이고, 기간이 끝났는지는 날짜로 판단한다. 만료로 바꾸는 배치는 두지 않는다.
 - **`Plan.tier`는 `String`으로 둔다.** 무료는 `Plan` 행이 아니고 유료 등급이 하나라서 `enum`이 필요 없다. 등급이 늘어 코드가 등급 이름으로 갈라져야 할 때 `enum`을 더한다.
-- 무료는 행으로 두지 않는다. 구독이 아니면 무료다.
+- 무료는 행으로 두지 않는다. 구독이 아니면 무료다. (무료 조건의 이름·혜택은 `plans`가 아닌 `free_plans`에 둔다. #203)
 - **경로는 팀 API 표를 따른다.** 내 구독 상태와 결제 가능 크레딧은 `/api/v1/my/subscription/…`이고 로그인이 필요하다. 토큰의 회원을 쓰고 경로에 회원 id를 받지 않는다.
 - **플랜 목록은 `GET /api/v1/plans`이고 로그인 없이 읽는다.** 구독 설명 페이지(#76)와 구독 화면이 같이 쓰는 목록이라, 팀 API 표의 `GET /api/v1/my/subscription`(구독 플랜 조회) 대신 이 경로로 둔다. 이슈 본문의 `/api/plans`, `/api/users/{userId}/…`, 구독 화면을 한 번에 주는 `/page`는 쓰지 않는다.
 - **플랜은 시드 없이 운영자 등록 API로 넣는다.** `POST /api/v1/admin/plans`로 만들고, 같은 등급을 다시 등록하면 `version`을 올린 새 행이 된다. 팀 API 표에는 없는 API라서 이 이슈에서 더한다. DB가 비어 있으면 플랜 목록은 빈 배열이다.
-- **혜택은 `plans.description` 한 칼럼에 쉼표로 이어 넣는다.** 서버가 잘라 `benefits` 배열로 내려준다. 혜택 문구에는 쉼표를 쓰지 않는다(쓰면 등록할 때 400). 무료 열의 문구는 `Plan` 행이 없어서 프론트가 계속 가진다.
+- **혜택은 `plans.description` 한 칼럼에 쉼표로 이어 넣는다.** 서버가 잘라 `benefits` 배열로 내려준다. 혜택 문구에는 쉼표를 쓰지 않는다(쓰면 등록할 때 400). 무료 열의 문구는 `Plan` 행이 없어서 프론트가 가졌는데, 이제 별도 테이블 `free_plans`가 준다([free-plan.md](free-plan.md)). (고침 #203)
 - **응답 필드 이름은 서버 이름을 쓴다.** 프론트의 `status`·`expiresAt`·`name`과 다른 이름(`active`·`endAt`·`tier`)은 프론트 `features/subscription/api.ts`가 변환한다. 구독 상태 응답에는 이용 중인 플랜 행의 `planId`를 넣는다.
 - **마이페이지 대시보드의 구독 상태(`GET /api/v1/my/profile/subscription`)도 이 이슈에서 만든다.** 구독 화면의 `/status`와 같은 값이라 같은 서비스 메서드를 부른다.
 - **`GET /api/users/me`의 `subscription`도 같은 계산을 쓴다.** `UserServiceImpl.getMe`가 `SubscriptionService.getStatus`를 불러서, 이어 붙은 기간에서도 `/me`와 `/status`의 만료일이 갈라지지 않는다. 운영자는 `subscription`이 `null`이다.

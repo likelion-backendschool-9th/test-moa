@@ -14,6 +14,7 @@
 | [#69](https://github.com/likelion-backendschool-9th/test-moa/issues/69) | 구독 플랜·내 구독 상태 API | [subscription.md](subscription.md) |
 | [#70](https://github.com/likelion-backendschool-9th/test-moa/issues/70) | 구독 결제 화면 조회 API | [subscription-checkout.md](subscription-checkout.md) |
 | [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71) | 구독 결제 실행 API | [subscription-payment.md](subscription-payment.md) |
+| [#203](https://github.com/likelion-backendschool-9th/test-moa/issues/203) | 무료 플랜 조건 API(+ 구독 화면 프론트 연결) | [free-plan.md](free-plan.md) |
 | [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
@@ -39,6 +40,7 @@
 
 - 승인 대기 보상은 wallet 컬럼이 아니다. `Feedback(SUBMITTED)`가 있고 `Feedback(REPORTED)`가 없는 `Register` 스냅샷을 참가당 1회 합산한다. 상세는 [credit-balance-ledger.md](credit-balance-ledger.md).
 - 구독 중인지는 날짜로 판단하고, 만료로 바꾸는 배치는 두지 않는다. 구독 상태는 `ACTIVE`·`CANCELLED` 둘만 있고 `EXPIRED`는 enum에서 뺐다. 규칙과 예는 [entities.md](entities.md#6-내-구독-45-r6)에 있다. (2026-11-07)
+- 무료 플랜은 `plans`가 아니라 별도 테이블 `free_plans`(행 하나, 고정 PK)에 두고, 조회 `GET /api/v1/plans/free`와 운영자 저장 `PUT /api/v1/admin/plans/free`를 둔다. `plans`에 넣으면 구독 상품 목록에 섞여 결제 대상이 되기 때문이다. 행이 없으면 빈 혜택을 200으로 준다. ([free-plan.md](free-plan.md), #203, 2026-11-09)
 - 모집 한도는 없다. `Plan.monthlyRecruitLimit`을 지웠고 구독 API에 한도·사용량이 없다. (#69, 2026-11-07)
 - `Plan.tier`는 `String`으로 두고, 유료 등급이 늘어 코드가 등급 이름으로 갈라질 때 `enum`을 더한다. (#69, 2026-11-07)
 - 지갑은 결제할 때 없으면 만든다. 회원가입 코드가 지갑을 만들지 않아서, 구독 결제(#71)가 "없을 때만 넣는" SQL로 지갑을 만든 뒤 그 행을 잠근다. 가입할 때 만드는 일은 인증 담당 코드라 이 이슈에서 하지 않는다. ([subscription-payment.md](subscription-payment.md), #71, 2026-11-08)
@@ -55,7 +57,7 @@
 | 4 | `Payment` ↔ `Subscription` | 구독 1 : 결제 1 |
 | 5 | `CreditLedger` | 결제 ID 없이 변동량만 |
 | 6 | `CreditWallet` | 적립에 잠긴 금액 미포함. setter 없이 메서드만 |
-| 7 | `Plan` | 조건 변경 시 새 행·version↑. 무료는 행으로 두지 않음. `(tier, version)` unique |
+| 7 | `Plan` | 조건 변경 시 새 행·version↑. 무료는 `plans`의 행으로 두지 않음(`free_plans`는 #203). `(tier, version)` unique |
 
 ## 데이터 구조
 
@@ -101,6 +103,7 @@ erDiagram
 | `credit_ledgers` | 총잔액이 실제로 바뀐 일 하나 | [entities.md 2](entities.md#2-크레딧-내역-45-r2) |
 | `cashouts` | 출금 신청 하나 | [entities.md 3](entities.md#3-출금-신청내역-45-r3) |
 | `plans` | 한 등급의 한 버전 조건 | [entities.md 5](entities.md#5-플랜-45-r5) |
+| `free_plans` | 무료 플랜의 이름·혜택(행 하나) | [free-plan.md](free-plan.md) |
 | `subscriptions` | 결제 한 번으로 산 이용 기간 하나 | [entities.md 6](entities.md#6-내-구독-45-r6) |
 | `payments` | 구독 결제 한 번 | [entities.md 7](entities.md#7-구독-결제-45-r7) |
 
@@ -160,6 +163,10 @@ erDiagram
 ### #71 구독 결제 실행
 
 시나리오·API·규칙·지갑 행 잠금은 [subscription-payment.md](subscription-payment.md)에 있다. 화면: `/my/subscription/checkout` ([subscription.md](../../frontend/payment/subscription.md))
+
+### #203 무료 플랜 조건
+
+시나리오·API·규칙은 [free-plan.md](free-plan.md)에 있다. 화면: `/subscription`의 FREE 카드 ([subscription-intro.md](../../frontend/payment/subscription-intro.md))
 
 ## 범위 밖
 - 실제 PG·송금·실명 확인

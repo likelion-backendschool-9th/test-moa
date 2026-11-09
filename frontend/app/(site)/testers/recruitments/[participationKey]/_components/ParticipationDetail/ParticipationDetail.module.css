@@ -149,65 +149,11 @@
   color: var(--accent);
 }
 
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-@media (min-width: 48rem) {
-  .header {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: var(--space-8);
-  }
-}
-
-.box {
-  width: 10rem;
-  flex-shrink: 0;
-}
-
-@media (min-width: 48rem) {
-  .box {
-    width: 14rem;
-  }
-}
-
-.box2 {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.box3 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.box4 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: var(--space-3);
-  row-gap: var(--space-2);
-}
-
 .projectName {
   font-size: var(--text-3xl);
   line-height: var(--text-3xl-leading);
   font-weight: 800;
   letter-spacing: -.03em;
-}
-
-.text2 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .request {
@@ -226,42 +172,10 @@
   overflow: hidden;
 }
 
-.list {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--space-8);
-  row-gap: var(--space-3);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm-leading);
-}
-
-.label {
-  font-size: var(--text-xs);
-  line-height: var(--text-xs-leading);
-  color: var(--text-muted);
-}
-
-.value {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.box5 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
 .section {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.title {
-  font-size: var(--text-lg);
-  line-height: var(--text-lg-leading);
-  font-weight: 800;
 }
 
 .title2 {
@@ -272,36 +186,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-.box6 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-@media (min-width: 48rem) {
-  .box6 {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-8);
-  }
-}
-
 .body {
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);
   color: var(--text-muted);
-}
-
-.button {
-  flex-shrink: 0;
-  align-self: flex-start;
-}
-
-@media (min-width: 48rem) {
-  .button {
-    align-self: auto;
-  }
 }
 
 .button2 {
@@ -322,12 +210,6 @@
   }
 }
 
-.title3 {
-  font-size: var(--text-lg);
-  line-height: var(--text-lg-leading);
-  font-weight: 800;
-}
-
 .card2 {
   display: flex;
   flex-direction: column;
@@ -339,12 +221,6 @@
   .card2 {
     padding: var(--space-8);
   }
-}
-
-.title4 {
-  font-size: var(--text-lg);
-  line-height: var(--text-lg-leading);
-  font-weight: 800;
 }
 
 .list2 {
@@ -429,102 +305,210 @@
   width: 100%;
 }
 
-/* 테스트 접속 패널: 연한 강조 바탕 면에 도메인과 큰 버튼. 좁은 화면에서는 버튼이 한 줄 전체를 쓴다 */
-.access {
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* 제목 줄: 왼쪽 이름·상태·소개, 오른쪽 모집 글·테스트 열기. 좁은 화면에서는 버튼이 아래로 내려와 나란히 폭을 나눈다 */
+.titleRow {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  border-radius: var(--radius-2xl);
-  background-color: var(--accent-soft);
-  padding: var(--space-5);
 }
 
-@media (min-width: 40rem) {
-  .access {
+@media (min-width: 48rem) {
+  .titleRow {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-6);
   }
 }
 
-.accessText {
+.titleBox {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-3);
 }
 
-.accessTitle {
-  font-size: var(--text-sm);
-  line-height: var(--text-sm-leading);
-  font-weight: 700;
-  color: var(--accent);
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
 }
 
-.accessHost {
-  font-size: var(--text-xl);
-  line-height: var(--text-xl-leading);
-  font-weight: 800;
-  letter-spacing: -.03em;
-  overflow-wrap: anywhere;
-}
-
-.accessHint {
-  font-size: var(--text-sm);
-  line-height: var(--text-sm-leading);
-  color: var(--text-muted);
-}
-
-.accessButton {
-  flex-shrink: 0;
-  justify-content: center;
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
 }
 
+.deadline {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 마감 사흘 이하는 색 대신 굵기로 알린다(Weight-Not-Paint) */
+.deadlineUrgent {
+  font-weight: 800;
+  color: var(--text);
+}
+
+.summary {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.action {
+  flex: 1;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+@media (min-width: 48rem) {
+  .action {
+    flex: none;
+  }
+}
+
+/* 썸네일 | 정보 표. 썸네일은 목록과 같은 16:10 활자 썸네일이다 */
 .info {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-/* 핵심 칸: 마감과 보상. 큰 글씨로 먼저 읽히게 하고, 좁은 화면에서도 두 칸을 나란히 둔다 */
+@media (min-width: 48rem) {
+  .info {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--space-6);
+  }
+}
+
+.thumb {
+  width: 10rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 48rem) {
+  .thumb {
+    width: 14rem;
+  }
+}
+
+.infoCard {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.accessLink {
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+/* 표는 두 줄로 나눈다: 왼쪽은 모집 글의 성격, 오른쪽은 일정과 보상 */
 .facts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-8);
+  }
+}
+
+.factList {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
 
 .fact {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  border-radius: var(--radius-xl);
-  background-color: var(--surface-strong);
-  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.term {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
 }
 
 .factValue {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: var(--space-2);
-  font-size: var(--text-lg);
-  line-height: var(--text-lg-leading);
-  font-weight: 800;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.factExtra {
-  width: 100%;
-  font-size: var(--text-sm);
-  line-height: var(--text-sm-leading);
+.dday {
+  margin-left: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  color: var(--text-muted);
+}
+
+/* 추가 보상은 One Green Rule이 허용한 강조 자리다 */
+.extra {
   font-weight: 700;
   color: var(--accent);
 }
 
-.factNote {
+.sectionTitle {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.conditions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.condition {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);
-  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.check {
+  flex-shrink: 0;
+  color: var(--accent);
 }

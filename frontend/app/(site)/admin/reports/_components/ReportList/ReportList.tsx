@@ -5,7 +5,7 @@ import { REPORT_TARGET_LABEL, type Report, type ReportDecision } from "@/feature
 import { reportsHref, type ReportTargetFilter, type ListTab } from "@/features/report/paths";
 import { Card } from "@/components/ui/Card/Card";
 import { AdminListRow } from "@/app/(site)/admin/_components/AdminListRow/AdminListRow";
-import { ReportListPanel } from "./ReportListPanel";
+import { ReportListPanel } from "@/app/(site)/admin/reports/_components/ReportListPanel/ReportListPanel";
 import styles from "./ReportList.module.css";
 
 const TABS: { tab: ListTab; label: string }[] = [

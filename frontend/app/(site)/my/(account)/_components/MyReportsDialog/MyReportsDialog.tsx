@@ -13,7 +13,7 @@ import {
   formatFileSize,
   type MyReport,
 } from "@/features/report/types";
-import styles from "./MyReports.module.css";
+import styles from "./MyReportsDialog.module.css";
 
 type StatusFilter = "all" | BackendReportStatus;
 

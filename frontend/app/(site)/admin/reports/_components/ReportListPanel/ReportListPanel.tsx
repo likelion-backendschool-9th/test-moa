@@ -9,7 +9,7 @@ import { formatElapsed } from "@/lib/format";
 import { isOverdue, REPORT_DECISION_LABEL, REPORT_TARGET_LABEL, type Report, type ReportDecision } from "@/features/report/types";
 import { reportDetailHref, type ListTab, type ReportTargetFilter } from "@/features/report/paths";
 import { AdminListRow } from "@/app/(site)/admin/_components/AdminListRow/AdminListRow";
-import styles from "./ReportList.module.css";
+import styles from "./ReportListPanel.module.css";
 
 type ResultFilter = "all" | ReportDecision;
 

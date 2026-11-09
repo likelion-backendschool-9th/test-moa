@@ -7,7 +7,7 @@ import { loadReports as loadAll } from "@/features/report/api";
 import type { Report } from "@/features/report/types";
 import { requireMember } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
-import { subscriptionFor } from "@/features/subscription/api";
+import { subscriptionForGlance } from "@/features/subscription/api";
 import { formatDday } from "@/lib/format";
 import { connection } from "next/server";
 import "server-only";
@@ -119,7 +119,7 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
   await connection();
   const now = new Date();
   const summary = buildMyPageSummary(session.role, now);
-  const [credit, subscription] = await Promise.all([creditDataFor(session.role, now), subscriptionFor(session.role, now)]);
+  const [credit, subscription] = await Promise.all([creditDataFor(session.role, now), subscriptionForGlance(session.role, now)]);
   return {
     ...summary,
     subscription,

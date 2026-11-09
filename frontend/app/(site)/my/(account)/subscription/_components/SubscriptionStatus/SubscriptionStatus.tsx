@@ -30,7 +30,7 @@ export function SubscriptionStatus({
           <dl className={styles.list}>
             <div className={styles.box}>
               <dt className={styles.term}>이용 중인 상품</dt>
-              <dd className={styles.value}>{plan?.name ?? "구독"}</dd>
+              <dd className={styles.value}>{plan?.name ?? (subscription.status === "active" ? subscription.planName : undefined) ?? "구독"}</dd>
             </div>
             <div className={styles.box2}>
               <dt className={styles.term2}>남은 기간</dt>

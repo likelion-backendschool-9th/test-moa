@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { cn } from "@/lib/cn";
 import { formatCredits, formatWon } from "@/lib/format";
-import type { FreePlan, Subscription, SubscriptionPlan } from "@/features/subscription/types";
+import { type FreePlan, type Subscription, type SubscriptionPlan, usesPlan } from "@/features/subscription/types";
 import styles from "./SubscriptionIntroCards.module.css";
 
 const CHECKOUT = "/my/subscription/checkout";
@@ -23,7 +23,6 @@ type SubscriptionIntroCardsProps = {
 
 /** 공개 구독 소개의 무료·구독 카드. 상품 목록을 그대로 그려 상품이 늘면 카드도 는다 */
 export function SubscriptionIntroCards({ freePlan, plans, subscription, isGuest }: SubscriptionIntroCardsProps) {
-  const activePlanId = subscription?.status === "active" ? subscription.planId : null;
   const isAdmin = subscription === null;
 
   return (
@@ -36,7 +35,7 @@ export function SubscriptionIntroCards({ freePlan, plans, subscription, isGuest 
         className={styles.freeOrder}
       />
       {plans.map((plan) => {
-        const using = activePlanId === plan.id;
+        const using = usesPlan(subscription, plan);
         return (
           <PlanCard
             key={plan.id}

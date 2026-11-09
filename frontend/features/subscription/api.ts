@@ -40,9 +40,14 @@ export async function getSubscriptionIntro(): Promise<SubscriptionIntro> {
   const session = await getSession();
   await waitIfSlow();
   await connection();
-  const [freePlan, plans] = isBackendAuth ? await Promise.all([readFreePlan(), readPlans()]) : [FREE_PLAN, SUBSCRIPTION_PLANS];
-  if (session.role === "guest") return { freePlan, plans, subscription: { status: "none" }, isGuest: true };
-  return { freePlan, plans, subscription: await subscriptionFor(session.role, new Date()), isGuest: false };
+  const catalog = isBackendAuth ? Promise.all([readFreePlan(), readPlans()]) : Promise.resolve([FREE_PLAN, SUBSCRIPTION_PLANS] as const);
+  if (session.role === "guest") {
+    const [freePlan, plans] = await catalog;
+    return { freePlan, plans, subscription: { status: "none" }, isGuest: true };
+  }
+  /* 상품과 내 구독 상태는 서로 독립이라 함께 기다린다 */
+  const [[freePlan, plans], subscription] = await Promise.all([catalog, subscriptionForGlance(session.role, new Date())]);
+  return { freePlan, plans, subscription, isGuest: false };
 }
 
 type PlanResponse = {
@@ -84,13 +89,15 @@ async function readPayableCredits(): Promise<number> {
 
 /** 내 구독 상태. 운영자는 구독 대상이 아니라 null */
 async function readSubscription(): Promise<Subscription | null> {
-  const result = await backendFetch<{ eligible: boolean; active: boolean | null; planId: number | null; endAt: string | null }>(
+  const result = await backendFetch<{ eligible: boolean; active: boolean | null; planId: number | null; plan: string | null; endAt: string | null }>(
     "/api/v1/my/subscription/status",
   );
   if (!result.ok) throw new Error(result.message);
-  const { eligible, active, planId, endAt } = result.data;
+  const { eligible, active, planId, plan, endAt } = result.data;
   if (!eligible) return null;
-  return active && planId !== null && endAt !== null ? { status: "active", planId: String(planId), expiresAt: endAt } : { status: "none" };
+  return active && planId !== null && plan !== null && endAt !== null
+    ? { status: "active", planId: String(planId), planName: plan, expiresAt: endAt }
+    : { status: "none" };
 }
 
 /**
@@ -105,6 +112,18 @@ export async function subscriptionFor(role: Exclude<Role, "guest">, now: Date): 
   const last = (await getDemoSubscriptionPayments(role)).at(-1);
   if (!last) return subscription;
   return new Date(last.expiresAt) > now ? { status: "active", planId: last.planId, expiresAt: last.expiresAt } : { status: "none" };
+}
+
+/**
+ * 구독 관리가 아닌 화면(마이페이지 요약, 공개 구독 소개)이 쓰는 구독 상태.
+ * 서버 조회가 실패해도(토큰 만료 등) 화면 전체를 오류로 만들지 않고 미구독으로 본다. 구독 관리·결제 화면은 subscriptionFor로 오류를 그대로 낸다
+ */
+export async function subscriptionForGlance(role: Exclude<Role, "guest">, now: Date): Promise<Subscription | null> {
+  try {
+    return await subscriptionFor(role, now);
+  } catch {
+    return { status: "none" };
+  }
 }
 
 export async function canPayForSubscription(role: Parameters<typeof getDemoSubscriptionPayments>[0]) {

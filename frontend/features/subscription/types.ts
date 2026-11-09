@@ -5,7 +5,19 @@
  * 화면 분기는 데이터(구독 여부, 출금 가능 금액, 활동 유무)로만 한다.
  */
 
-export type Subscription = { status: "none" } | { status: "active"; planId: string; expiresAt: string };
+export type Subscription =
+  | { status: "none" }
+  /* planName은 서버가 준 플랜 이름(tier)이다. 플랜 새 버전이 나오면 구독의 planId는 지금 파는 플랜 목록에 없어서, 백엔드 모드는 이름으로 찾는다 */
+  | { status: "active"; planId: string; planName?: string; expiresAt: string };
+
+/** 백엔드 모드에서 결제를 막을 때 보여 주는 문구(결제 저장 API 연결은 #204) */
+export const PAYMENT_NOT_READY = "아직 결제할 수 없어요";
+
+/** 이 구독이 쓰는 상품인지. 이름을 아는 서버 값은 이름으로, 목업은 id로 비교한다 */
+export function usesPlan(subscription: Subscription | null, plan: SubscriptionPlan): boolean {
+  if (subscription?.status !== "active") return false;
+  return subscription.planName !== undefined ? subscription.planName === plan.name : subscription.planId === plan.id;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

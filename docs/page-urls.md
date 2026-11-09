@@ -84,6 +84,8 @@
 | 처리 완료 신고 탭 | `/admin/reports?tab=done` | 후보 |
 | 신고 대상 종류 필터 | `/admin/reports?tab=…&target=feedback\|recruitment\|user` | 후보 |
 | 신고 상세 | `/admin/reports/:reportKey` | 후보 |
+| 구독 관리 | `/admin/subscriptions` | 후보 |
+| 구독 관리 회원 검색 | `/admin/subscriptions?email=:email` | 후보 |
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
 | 처리 완료 출금 탭 | `/admin/withdrawals?tab=done` | 후보 |
 | 출금 요청 모달 | `/admin/withdrawals?open=:withdrawalKey` | 후보 |

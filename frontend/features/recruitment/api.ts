@@ -10,6 +10,7 @@ import {
   saveDecisions,
   type Decision,
 } from "@/demo/recruitment";
+import { findBackendProject, findBackendProjects, readProjectApi } from "@/features/project/api";
 import { recruitmentManagePath } from "@/features/project/paths";
 import { type FormState } from "@/features/project/types";
 import type { RecruitmentQuery } from "@/features/recruitment/query";
@@ -34,6 +35,7 @@ import {
   type ProjectSummary,
   RECRUITMENT_LIMIT,
   type RecruitmentView,
+  type SoftwareType,
   type TodoItem,
   canCancelRecruitment,
   canSelectApplicants,
@@ -313,6 +315,7 @@ async function withStatus(role: Role, recruitments: Recruitment[], now: Date): P
 /** 내 프로젝트 목록. 최신 등록순이고 모집 건 수와 모집 중인 건 수를 붙인다 */
 export async function getMyProjects(path: string): Promise<ProjectSummary[]> {
   const role = await requireRole(path);
+  if (isBackendAuth) return (await findBackendProjects()).map((project) => ({ ...project, recruitments: [] }));
   const projects = await findProjects(role);
   const now = new Date();
   return Promise.all(
@@ -341,6 +344,7 @@ export async function getMyDashboard(path: string) {
   const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
   const overview: ProjectOverview = { recruiting: 0, testing: 0, waitingReports: 0 };
 
+  /* shortcut: 할 일·전체 현황 API(#122)가 없어 백엔드 모드에서는 비워 둔다. project.recruitments도 비어 있어 아래 반복은 돌지 않는다 */
   for (const project of projects) {
     for (const recruitment of project.recruitments) {
       const [applications, feedbacks] = await Promise.all([
@@ -385,9 +389,56 @@ export async function getMyDashboard(path: string) {
   return { projects, todos, overview };
 }
 
+/** 백엔드 RecruitmentSummaryResponse */
+type RecruitmentSummaryResponse = {
+  id: number;
+  title: string;
+  description: string;
+  status: RecruitmentStatus;
+  softwareType: SoftwareType | null;
+  recruitDeadline: string;
+  submitDeadline: string;
+  confirmedCount: number;
+  createdAt: string;
+  subscription: boolean;
+  version: number;
+  feedbackCount: number;
+  analyzedAt: string | null;
+};
+
+function toRecruitmentRow(projectName: string, item: RecruitmentSummaryResponse): ProjectRecruitmentRow {
+  return {
+    slug: String(item.id),
+    projectName,
+    summary: "",
+    request: item.description,
+    softwareTypes: item.softwareType ? [item.softwareType] : [],
+    isSubscription: item.subscription,
+    createdAt: item.createdAt,
+    recruitDeadline: item.recruitDeadline,
+    submitDeadline: item.submitDeadline,
+    confirmedCount: item.confirmedCount,
+    baseReward: BASE_REWARD,
+    status: item.status,
+    title: item.title,
+    version: item.version,
+    feedbackCount: item.feedbackCount,
+    analyzedAt: item.analyzedAt,
+  };
+}
+
+/** 백엔드의 프로젝트 하나와 모집글(최신순). 상태·버전·수는 응답 값을 그대로 쓴다 */
+async function findBackendProjectDetail(projectKey: string) {
+  const project = await findBackendProject(projectKey);
+  const items = await readProjectApi<RecruitmentSummaryResponse[]>(`/${projectKey}/recruitments`);
+  const recruitments = items.map((item) => toRecruitmentRow(project.name, item));
+  return { project: { ...project, recruitments }, recruitments };
+}
+
 /** 내 프로젝트 하나와 모집 건(최신순). 없거나 남의 프로젝트면 404 */
 export async function getMyProject(path: string, projectKey: string) {
   const role = await requireRole(path);
+  if (isBackendAuth) return findBackendProjectDetail(projectKey);
   const project = (await findProjects(role)).find((item) => item.key === projectKey);
   if (!project) notFound();
   return { project, recruitments: await withStatus(role, [...project.recruitments].sort(byCreatedLatest), new Date()) };
@@ -395,6 +446,10 @@ export async function getMyProject(path: string, projectKey: string) {
 
 /** 프로젝트 상세 화면: 프로젝트와 최신순 모집글. 모집글마다 버전, 피드백 수, AI 분석 시각을 붙인다 */
 export async function getProjectDetail(path: string, projectKey: string) {
+  if (isBackendAuth) {
+    await requireRole(path);
+    return findBackendProjectDetail(projectKey);
+  }
   const [{ project, recruitments }, role] = await Promise.all([getMyProject(path, projectKey), requireRole(path)]);
   const rows: ProjectRecruitmentRow[] = await Promise.all(
     recruitments.map(async (item) => {
@@ -405,7 +460,7 @@ export async function getProjectDetail(path: string, projectKey: string) {
   return { project, recruitments: rows };
 }
 
-/* shortcut: 백엔드 모집글 버전은 아직 늘지 않아서(항상 1) 프로젝트 안에서 만든 순서로 센다(첫 모집이 v1). 백엔드가 버전을 내려 주면 그 값을 쓴다 */
+/* 목업에는 버전 값이 없어서 프로젝트 안에서 만든 순서로 센다(첫 모집이 v1). 백엔드 모드는 응답의 버전을 쓴다 */
 function versionOf(projectRecruitments: Pick<Recruitment, "createdAt">[], recruitment: Pick<Recruitment, "createdAt">) {
   return projectRecruitments.filter((item) => item.createdAt <= recruitment.createdAt).length;
 }

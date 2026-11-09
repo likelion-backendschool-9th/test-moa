@@ -11,7 +11,7 @@ import {
   type Decision,
 } from "@/demo/recruitment";
 import { findBackendProject, findBackendProjects, isBackendId, readProjectApi } from "@/features/project/api";
-import { parseFileMeta } from "@/features/project/media";
+import { parseImageUrls } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
 import { type FormState } from "@/features/project/types";
 import type { RecruitmentQuery } from "@/features/recruitment/query";
@@ -775,9 +775,11 @@ function testItemRows(formData: FormData) {
 
 /* 백엔드 칸 이름(요청 필드)을 화면 칸 이름으로 바꾼다. testItems[0].title → testItemTitle-0 */
 function toFormFields(fields: Record<string, string>) {
-  const names: Record<string, string> = { description: "request", softwareTypes: "categories" };
+  const names: Record<string, string> = { description: "request", softwareTypes: "categories", imageUrls: "recruitmentImages" };
   return Object.fromEntries(
     Object.entries(fields).map(([key, message]) => {
+      const imageRow = /^testItems\[(\d+)]\.imageUrls(?:\[\d+])?$/.exec(key);
+      if (imageRow) return [`testItemImages-${imageRow[1]}`, message];
       const row = /^testItems\[(\d+)]\.(title|description)$/.exec(key);
       if (row) return [`testItem${row[2] === "title" ? "Title" : "Description"}-${row[1]}`, message];
       const base = key.replace(/\[\d+]$/, "");
@@ -1148,25 +1150,15 @@ function createItemRows(formData: FormData) {
     .filter((row) => row.title || row.description);
 }
 
-/* shortcut: 파일 저장소가 없어(#191) 고른 이미지는 저장하지 못한다. 조용히 버리지 않고 그 칸에 알린다 */
-function pickedImageErrors(formData: FormData) {
-  const message = "이미지 업로드는 아직 준비 중이에요. 이미지를 빼고 등록해 주세요";
-  const errors: Record<string, string> = {};
-  if (parseFileMeta(formData.get("recruitmentImagesMeta"))?.length) errors.recruitmentImages = message;
-  formData.getAll("testItemImagesMeta").forEach((meta, index) => {
-    if (parseFileMeta(meta)?.length) errors[`testItemImages-${index}`] = message;
-  });
-  return errors;
-}
-
 /**
  * 검증을 마친 모집을 백엔드에 저장한다. 성공하면 null, 실패하면 폼에 보여 줄 상태를 돌려준다.
  * 보낸 항목 순서는 빈 줄을 뺀 순서라, 서버의 항목 오류를 화면의 줄 번호로 되돌린다
  */
 export async function saveBackendRecruitment(projectKey: string, state: FormState, formData: FormData): Promise<FormState | null> {
   const { values } = state;
-  const imageErrors = pickedImageErrors(formData);
-  if (Object.keys(imageErrors).length > 0) return { values, errors: imageErrors };
+  const imageUrls = parseImageUrls(formData.get("imageUrls"));
+  const itemImageUrls = formData.getAll("testItemImageUrls").map(parseImageUrls);
+  if (!imageUrls || itemImageUrls.some((urls) => !urls)) return { values, errors: { form: "이미지 주소를 확인해 주세요" } };
   const rows = createItemRows(formData);
   const result = await backendFetch<{ id: number }>("/api/v1/developer/recruitments", {
     method: "POST",
@@ -1180,7 +1172,8 @@ export async function saveBackendRecruitment(projectKey: string, state: FormStat
       conditions: values.conditions,
       recruitDeadline: values.recruitDeadline,
       submitDeadline: values.submitDeadline,
-      testItems: rows.map(({ title, description, required }) => ({ title, description, required })),
+      imageUrls,
+      testItems: rows.map(({ index, title, description, required }) => ({ title, description, required, imageUrls: itemImageUrls[index] ?? [] })),
     },
   });
   if (result.ok) return null;

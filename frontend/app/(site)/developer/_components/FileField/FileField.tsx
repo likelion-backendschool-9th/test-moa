@@ -19,7 +19,7 @@ type FileFieldProps = {
 };
 
 /**
- * 파일 고르기 칸. 브라우저 기본 버튼은 언어를 바꿀 수 없어 입력란을 숨기고 라벨을 버튼처럼 그린다. 시연용이라 파일은 폼으로 보내지 않아서 input에 name을 달지 않는다.
+ * 파일 고르기 칸. 브라우저 기본 버튼은 언어를 바꿀 수 없어 입력란을 숨기고 라벨을 버튼처럼 그린다. 파일은 제출 시 따로 업로드하므로 input에 name을 달지 않는다.
  * 고른 이미지(children)는 입력란 아래에 그린다.
  */
 export function FileField({ name, label, accept, hint, error, onChange, buttonLabel, multiple = false, children }: FileFieldProps) {

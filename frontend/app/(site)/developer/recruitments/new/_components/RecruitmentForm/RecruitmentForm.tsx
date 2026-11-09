@@ -7,9 +7,9 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
 import { formatCredits } from "@/lib/format";
 import { createRecruitment } from "@/features/recruitment/actions";
-import { checkImages, formatBytes, type FileMeta } from "@/features/project/media";
+import { checkImages, formatBytes, uploadImages, type FileMeta } from "@/features/project/media";
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState } from "@/features/project/types";
-import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, type SelectionMode } from "@/features/recruitment/types";
+import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, validateRecruitmentForm, type SelectionMode } from "@/features/recruitment/types";
 import { FormSection } from "../../../../_components/FormSection/FormSection";
 import { FileField, revoke } from "@/app/(site)/developer/_components/FileField/FileField";
 import { useFocusFirstError } from "@/app/(site)/developer/_lib/focus-first-error";
@@ -31,32 +31,52 @@ const SELECTION_MODE_HINT: Record<SelectionMode, string> = {
 
 type RecruitmentFormProps = {
   projectKey: string;
+  uploadEnabled: boolean;
   isSubscription: boolean;
   baseReward: number;
   extraReward: number;
 };
 
 /** 항목에 고른 이미지. 브라우저 임시 주소(blob:)로 미리 보여 준다 */
-type ItemImage = FileMeta & { url: string };
+type ItemImage = FileMeta & { url: string; file?: File };
 
 type ItemRow = { title: string; description: string; required: boolean; images: ItemImage[] };
 
 const emptyRow = (): ItemRow => ({ title: "", description: "", required: true, images: [] });
 
-const toItemImage = (file: File): ItemImage => ({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) });
+const toItemImage = (file: File): ItemImage => ({ name: file.name, size: file.size, type: file.type, file, url: URL.createObjectURL(file) });
 
 /** 테스트 모집 작성 폼 */
-export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraReward }: RecruitmentFormProps) {
+export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, baseReward, extraReward }: RecruitmentFormProps) {
+  const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  const [images, setImages] = useState<ItemImage[]>([]);
+  const uploaded = useRef(new WeakMap<File, string>());
   const [state, formAction, pending] = useActionState<FormState, FormData>(
-    createRecruitment.bind(null, projectKey),
+    async (previous, data) => {
+      if (uploadEnabled) {
+        const checked = validateRecruitmentForm(data, isSubscription, new Date());
+        if (Object.keys(checked.errors).length) return checked;
+        let field = "recruitmentImages";
+        try {
+          data.set("imageUrls", JSON.stringify(await uploadImages(images, "/api/v1/developer/recruitments/images", uploaded.current)));
+          data.delete("testItemImageUrls");
+          for (let index = 0; index < items.length; index++) {
+            field = `testItemImages-${index}`;
+            const urls = await uploadImages(items[index].images, "/api/v1/developer/recruitments/test-items/images", uploaded.current);
+            data.append("testItemImageUrls", JSON.stringify(urls));
+          }
+        } catch (error) {
+          return { values: checked.values, errors: { [field]: error instanceof Error ? error.message : "이미지를 다시 올려 주세요" } };
+        }
+      }
+      return createRecruitment(projectKey, previous, data);
+    },
     EMPTY_FORM_STATE,
   );
   const formRef = useFocusFirstError(state);
   const { values, errors } = state;
   /* 항목 줄은 화면 상태로 들고 있어서 제출 뒤 오류가 와도 적은 값이 남는다 */
-  const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
   /* 모집글 이미지. 항목 이미지와 따로 들고 있고, 고른 순서가 모집글 상세 이미지 띠의 순서다 (#124) */
-  const [images, setImages] = useState<ItemImage[]>([]);
   const [imagesPickError, setImagesPickError] = useState<string | undefined>();
   /* 고를 때 나온 이미지 오류는 줄 번호로 들고 있다가 줄을 지우면 함께 지운다 */
   const [pickErrors, setPickErrors] = useState<Record<number, string | undefined>>({});
@@ -118,7 +138,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
   }
 
   return (
-    <form ref={formRef} action={formAction} noValidate className={styles.root}>
+    <form aria-busy={pending} inert={pending} ref={formRef} action={formAction} noValidate className={styles.root}>
       <FormSection title="모집글">
         <TextField name="title" label="모집글 제목" defaultValue={values.title} error={errors.title} hint={`${RECRUITMENT_LIMIT.titleLength}자까지`} />
         <TextField name="request" label="모집 설명" multiline defaultValue={values.request} error={errors.request} hint="테스터에게 해 달라고 할 일을 200자까지 적어 주세요" />
@@ -360,7 +380,7 @@ export function RecruitmentForm({ projectKey, isSubscription, baseReward, extraR
       {errors.form && <FormMessage status="error" message={errors.form} />}
       <div className={styles.box6}>
         <Button type="submit" disabled={pending}>
-          모집 등록
+          {pending ? "등록 중…" : "모집 등록"}
         </Button>
         <LinkButton href={projectPath(projectKey)} variant="secondary">
           취소

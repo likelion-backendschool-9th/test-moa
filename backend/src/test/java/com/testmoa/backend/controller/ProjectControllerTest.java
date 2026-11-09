@@ -157,6 +157,34 @@ class ProjectControllerTest {
         }
     }
 
+    @Test
+    @DisplayName("#191-S11 프로젝트·모집·항목의 외부 이미지 주소 거절")
+    void rejectExternalImageUrl() throws Exception {
+        send(me, post(PROJECTS), Map.of("name", "프로젝트", "imageUrl", "https://evil.example/a.png"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.imageUrl").value("이미지 주소를 확인해 주세요"));
+        Project project = saveProject(me, "프로젝트");
+        send(me, put(PROJECTS + "/" + project.getId()), Map.of("name", "프로젝트", "imageUrl", "https://evil.example/a.png"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.imageUrl").value("이미지 주소를 확인해 주세요"));
+        var body = recruitment();
+        body.put("imageUrls", List.of("https://evil.example/a.png"));
+        expectInvalid(project, body, "imageUrls[0]", "이미지 주소를 확인해 주세요");
+        body.put("imageUrls", List.of());
+        body.put("testItems", List.of(item("항목", true, "https://evil.example/a.png")));
+        expectInvalid(project, body, "testItems[0].imageUrls[0]", "이미지 주소를 확인해 주세요");
+    }
+
+    @Test
+    @DisplayName("#191-S12 프로젝트 수정에서 예전 이미지 주소 유지")
+    void preserveLegacyImageUrl() throws Exception {
+        Project project = Project.builder().user(me).title("프로젝트").imageUrl("https://img.example.com/a.png").build();
+        em.persist(project);
+        send(me, put(PROJECTS + "/" + project.getId()), Map.of("name", "프로젝트", "imageUrl", project.getImageUrl()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.imageUrl").value("https://img.example.com/a.png"));
+    }
+
     private User me;
     private User other;
 
@@ -224,7 +252,7 @@ class ProjectControllerTest {
         body.put("conditions", "책을 읽는 분");
         body.put("recruitDeadline", today.plusDays(3).toString());
         body.put("submitDeadline", today.plusDays(9).toString());
-        body.put("testItems", List.of(item("책 등록하기", true, "https://img.example.com/1.png", "https://img.example.com/2.png"), item("기록 쓰기", false)));
+        body.put("testItems", List.of(item("책 등록하기", true, "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000001.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000002.png"), item("기록 쓰기", false)));
         return body;
     }
 
@@ -410,7 +438,7 @@ class ProjectControllerTest {
 
         List<TestItemImage> images = em.createQuery("select i from test_item_images i where i.testItem.id = :id order by i.sortOrder", TestItemImage.class)
                 .setParameter("id", items.getFirst().getId()).getResultList();
-        assertThat(images).extracting(TestItemImage::getUrl).containsExactly("https://img.example.com/1.png", "https://img.example.com/2.png");
+        assertThat(images).extracting(TestItemImage::getUrl).containsExactly("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000001.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000002.png");
         assertThat(images).extracting(TestItemImage::getSortOrder).containsExactly(0, 1);
     }
 
@@ -541,12 +569,12 @@ class ProjectControllerTest {
         Project project = saveProject(me, "북로그");
 
         Map<String, Object> withImages = recruitment();
-        withImages.put("imageUrls", List.of("https://img.example.com/main.png", "https://img.example.com/flow.png"));
+        withImages.put("imageUrls", List.of("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000003.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000004.png"));
         String body = create(project, withImages).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         Long id = JSON.readTree(body).at("/data/id").asLong();
         List<RecruitmentImage> images = em.createQuery("select i from recruitment_images i where i.recruitment.id = :id order by i.sortOrder", RecruitmentImage.class)
                 .setParameter("id", id).getResultList();
-        assertThat(images).extracting(RecruitmentImage::getUrl).containsExactly("https://img.example.com/main.png", "https://img.example.com/flow.png");
+        assertThat(images).extracting(RecruitmentImage::getUrl).containsExactly("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000003.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000004.png");
         assertThat(images).extracting(RecruitmentImage::getSortOrder).containsExactly(0, 1);
 
         String noImages = create(project, recruitment()).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
@@ -556,7 +584,7 @@ class ProjectControllerTest {
 
         Project other = saveProject(me, "모아플랜");
         List<String> eleven = new ArrayList<>();
-        for (int index = 0; index < 11; index++) eleven.add("https://img.example.com/" + index + ".png");
+        for (int index = 0; index < 11; index++) eleven.add("/api/v1/recruitments/images/" + UUID.randomUUID() + ".png");
         Map<String, Object> tooMany = recruitment();
         tooMany.put("imageUrls", eleven);
         expectInvalid(other, tooMany, "imageUrls", "모집글 이미지는 10장까지 올릴 수 있어요");

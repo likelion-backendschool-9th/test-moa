@@ -455,7 +455,7 @@ const EMPTY_DETAIL: RecruitmentDetail = { title: "", selectionMode: "firstCome",
 
 /** 모집 건의 모집 조건과 테스트 항목. 백엔드 모드에서는 공개 모집글 API로 읽는다 */
 export async function findRecruitmentDetail(role: Role, recruitmentKey: string): Promise<RecruitmentDetail> {
-  if (isBackendAuth) return (await readPublicRecruitment(recruitmentKey))?.detail ?? EMPTY_DETAIL;
+  if (isBackendAuth) return (await readPublicRecruitment(recruitmentKey))?.detail ?? { ...EMPTY_DETAIL, unavailable: true };
   return (await load(role)).details[recruitmentKey] ?? EMPTY_DETAIL;
 }
 
@@ -578,6 +578,7 @@ type RecruitmentSummaryResponse = {
   submitDeadline: string;
   confirmedCount: number;
   createdAt: string;
+  selectionMode: SelectionMode;
   cancelReason: string | null;
   cancelledAt: string | null;
   subscription: boolean;
@@ -604,6 +605,7 @@ function toRecruitmentRow(projectName: string, item: RecruitmentSummaryResponse)
     version: item.version,
     feedbackCount: item.feedbackCount,
     analyzedAt: item.analyzedAt,
+    selectionMode: item.selectionMode,
     cancellation: item.status === "cancelled" && item.cancelledAt ? { reason: item.cancelReason ?? "", cancelledAt: item.cancelledAt } : null,
   };
 }
@@ -658,7 +660,7 @@ export async function getPublicRecruitment(slug: string) {
 async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
   role: Role;
   project: Project;
-  recruitment: Recruitment & { status: RecruitmentStatus; title?: string; version?: number };
+  recruitment: Recruitment & { status: RecruitmentStatus; title?: string; selectionMode?: SelectionMode; version?: number };
   cancellation: RecruitmentCancellation | null;
 }> {
   const role = await requireRole(path);
@@ -685,11 +687,15 @@ async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
 /** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
 export async function getRecruitmentDetail(path: string, recruitmentKey: string) {
   const { role, project, recruitment: currentRecruitment, cancellation } = await getMyRecruitment(path, recruitmentKey);
-  const [applications, feedbacks, detail] = await Promise.all([
+  const [applications, feedbacks, found] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
   ]);
+  /* 조회할 수 없는 상세는 목록에서 알고 있는 제목과 선정 방식만 채운다. 나머지는 unavailable로 알린다 */
+  const detail = found.unavailable
+    ? { ...found, title: currentRecruitment.title ?? "", selectionMode: currentRecruitment.selectionMode ?? found.selectionMode }
+    : found;
   const recruitment = { ...currentRecruitment, title: detail.title || currentRecruitment.title || "", version: currentRecruitment.version ?? versionOf(project.recruitments, currentRecruitment) };
   const now = new Date();
   return {

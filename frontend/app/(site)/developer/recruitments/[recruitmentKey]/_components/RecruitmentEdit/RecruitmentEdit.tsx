@@ -47,9 +47,10 @@ type Props = {
 export function RecruitmentEdit({ recruitment, detail, project, locks, canCancel }: Props) {
   return (
     <SettingsCard>
+      {detail.unavailable && <FormMessage status="error" message="취소된 모집이라 모집 조건, 테스트 항목, 접속 링크를 불러올 수 없어요" />}
       <PostSection recruitment={recruitment} detail={detail} readOnly={locks.readOnly} />
       <TermsSection recruitment={recruitment} detail={detail} locks={locks} canCancel={canCancel} />
-      <TestItemsSection recruitmentKey={recruitment.slug} items={detail.testItems} locks={locks} />
+      {!detail.unavailable && <TestItemsSection recruitmentKey={recruitment.slug} items={detail.testItems} locks={locks} />}
       <ProjectSection recruitmentKey={recruitment.slug} project={project} />
     </SettingsCard>
   );
@@ -251,7 +252,9 @@ function TermsSection({ recruitment, detail, locks, canCancel }: { recruitment: 
       </div>
       <form action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
         <fieldset disabled={locks.readOnly} className={styles.fields}>
-          <Field name="conditions" label="모집 조건" multiline defaultValue={detail.conditions} max={RECRUITMENT_LIMIT.conditionsLength} error={errors.conditions} />
+          {!detail.unavailable && (
+            <Field name="conditions" label="모집 조건" multiline defaultValue={detail.conditions} max={RECRUITMENT_LIMIT.conditionsLength} error={errors.conditions} />
+          )}
           <fieldset className={styles.group} aria-describedby={errors.selectionMode ? "field-selectionMode-error" : undefined}>
             <legend className={styles.label}>
               선정 조건

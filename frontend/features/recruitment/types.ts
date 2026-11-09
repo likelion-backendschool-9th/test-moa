@@ -134,6 +134,8 @@ export type RecruitmentDetail = {
   /** 모집글 이미지 (백엔드 recruitment_images). 배열 순서가 sort_order이고, 모집글 상세 이미지 띠에서 대표 이미지 다음에 놓인다 */
   images: ProjectImage[];
   testItems: TestItem[];
+  /** 모집 조건·테스트 항목·접속 링크를 조회할 수 없다. 취소된 모집은 공개 API가 404라서 비어 있는 값이 실제 값이 아니다 */
+  unavailable?: boolean;
 };
 
 /** 확정된 테스터의 피드백 제출 현황. 제출 마감까지 안 내면 미완료 (README: 보상 없이 미완료 처리) */
@@ -667,6 +669,7 @@ export type ProjectRecruitmentRow = RecruitmentView & {
   version: number;
   feedbackCount: number;
   analyzedAt: string | null;
+  selectionMode?: SelectionMode;
   /** 취소된 모집의 사유와 일시. 백엔드 응답에만 있다 */
   cancellation?: RecruitmentCancellation | null;
 };

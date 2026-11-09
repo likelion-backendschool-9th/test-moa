@@ -39,16 +39,9 @@ public class RecruitmentController {
     private final ProjectService projectService;
     private final RecruitmentCancelService recruitmentCancelService;
 
-    @Operation(summary = "모집글 이미지 업로드")
+    @Operation(summary = "모집글·테스트 항목 이미지 업로드")
     @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<ImageUploadResponse> uploadImage(
-            @RequestParam("file") List<MultipartFile> files) {
-        return ApiResponse.ok(new ImageUploadResponse(projectService.uploadImage(files)));
-    }
-
-    @Operation(summary = "테스트 항목 이미지 업로드")
-    @PostMapping(value = "/test-items/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<ImageUploadResponse> uploadTestItemImage(
             @RequestParam("file") List<MultipartFile> files) {
         return ApiResponse.ok(new ImageUploadResponse(projectService.uploadImage(files)));
     }

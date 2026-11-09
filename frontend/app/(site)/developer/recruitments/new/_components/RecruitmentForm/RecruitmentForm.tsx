@@ -62,7 +62,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
           data.delete("testItemImageUrls");
           for (let index = 0; index < items.length; index++) {
             field = `testItemImages-${index}`;
-            const urls = await uploadImages(items[index].images, "/api/v1/developer/recruitments/test-items/images", uploaded.current);
+            const urls = await uploadImages(items[index].images, "/api/v1/developer/recruitments/images", uploaded.current);
             data.append("testItemImageUrls", JSON.stringify(urls));
           }
         } catch (error) {

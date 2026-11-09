@@ -81,6 +81,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
     private final SubscriptionChecker subscriptionChecker;
 
+    // 업로드 횟수 제한과 안 쓰는 파일 삭제는 #225에서 다룬다.
     @Override
     public String uploadImage(List<MultipartFile> files) {
         if (files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");

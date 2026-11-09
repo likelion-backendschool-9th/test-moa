@@ -69,12 +69,15 @@
 </details>
 
 <br/>
+<br/>
 
 ## 프로젝트 소개
 
 ![Test Moa 홈 화면](docs/images/home-mockup.png)
 
 <p align="center"><sub>목업 데이터로 띄운 홈 화면입니다. 실제 시연 화면은 추가할 예정입니다.</sub></p>
+
+<br/>
 
 ### 기획 의도
 
@@ -86,6 +89,8 @@
 | 유용한 피드백을 받기 어렵다 | 요청한 항목별 수행 결과와 사용 경험, 버그 재현 방법을 정해진 양식으로 받습니다. |
 | 테스터가 참여할 이유가 필요하다 | 피드백을 제출하면 크레딧으로 보상합니다. 버그를 찾지 못해도 요청한 테스트를 수행했다면 보상 대상입니다. |
 | 모집 비용이 부담스럽다 | 무료로 모집할 수 있고, 개발자가 보상 예산을 따로 충전하지 않습니다. |
+
+<br/>
 
 ### 이용 흐름
 
@@ -103,6 +108,8 @@
 
 테스트로 받은 크레딧은 구독 결제에 쓰거나 현금으로 출금을 요청할 수 있습니다.
 
+<br/>
+
 ### 주요 기능
 
 | 기능 | 내용 |
@@ -119,6 +126,8 @@
 
 기능별 진행 상태는 [로드맵](#로드맵)에 있습니다.
 
+<br/>
+
 ### 기술 스택
 
 | 영역 | 기술 |
@@ -132,6 +141,7 @@
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
 <br/>
+<br/>
 
 ## 시스템 설계
 
@@ -142,6 +152,8 @@ flowchart LR
   B[브라우저] --> N[nginx] --> F["Next.js (BFF)"] --> S[Spring Boot] --> D[(PostgreSQL)]
   S --> A["AI 분석 서버 (Python)"]
 ```
+
+<br/>
 
 ### 데이터 모델
 
@@ -427,6 +439,8 @@ erDiagram
   }
 ```
 
+<br/>
+
 ### 기술적으로 고민한 점
 
 - **실시간 채팅은 알림과 내용을 나눴습니다.** SSE로는 새 메시지가 있다는 알림만 보내고 내용은 REST로 받습니다. 연결이 끊겨도 마지막 순번 이후의 메시지를 다시 받아 빠짐없이 채웁니다.
@@ -438,14 +452,19 @@ erDiagram
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
 <br/>
+<br/>
 
 ## 시작하기
 
 Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니다.
 
+<br/>
+
 ### 사전 준비
 
 - [Docker](https://www.docker.com/) (Docker Compose 포함)
+
+<br/>
 
 ### 설치 및 실행
 
@@ -469,6 +488,7 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
 <br/>
+<br/>
 
 ## 로드맵
 
@@ -489,6 +509,7 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
 <br/>
+<br/>
 
 ## 협업
 
@@ -502,6 +523,7 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
+<br/>
 <br/>
 
 ## 팀
@@ -540,6 +562,7 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
+<br/>
 <br/>
 
 ## 참고 문서

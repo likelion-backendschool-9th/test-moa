@@ -8,16 +8,17 @@
 - 종류: 경고 `WARNING`(아무것도 막지 않는 기록), 기간 정지 `SUSPENSION`(일수를 받아 종료 일시를 정함), 영구 정지 `PERMANENT`(종료 없음)
 - 막을 기능: 로그인 `LOGIN`, 테스트 지원 `APPLY`, 모집 글 작성 `RECRUIT`, 피드백 작성 `FEEDBACK`, 채팅 `CHAT`. 정지(기간·영구)는 하나 이상 골라야 하고, 경고는 고르지 않는다. `restriction` 칸에 쉼표로 이어 저장한다(예: `LOGIN,CHAT`)
 - 지금 걸린 제재: 해제하지 않았고, 시작했고, 종료 일시가 없거나 아직 오지 않은 정지. 기간이 끝나면 따로 처리하지 않아도 풀린다
-- 기능 확인: 각 기능 담당은 자기 서비스에 `sanctionChecker.require(userId, Restriction.X)` 한 줄을 넣는다. 막혀 있으면 403 `RESTRICTED`이고, `error.fields`에 막힌 기능(`restriction`), 사유(`reason`), 해제 일시(`endsAt`, 영구 정지는 없음)를 준다
+- 기능 확인: 각 기능 서비스의 맨 앞에서 `sanctionChecker.require(userId, Restriction.X)`를 부른다. 지원(`ApplicationServiceImpl.apply`), 모집 글 작성(`ProjectServiceImpl.createRecruitment`), 피드백 작성(`ParticipationServiceImpl.submitFeedback`), 채팅 시작·보내기(`ChatServiceImpl.startChat`·`sendMessage`). 막혀 있으면 403 `RESTRICTED`이고, `error.fields`에 막힌 기능(`restriction`), 사유(`reason`), 해제 일시(`endsAt`, 영구 정지는 없음)를 준다
 - 로그인 막기: 이메일·소셜 로그인과 소셜 가입이 `LOGIN` 제재를 확인한다. `LOGIN`을 막는 제재를 주면 그 회원의 refresh 토큰을 모두 지워, 이미 로그인한 기기도 바로 끊긴다(access 토큰은 요청마다 세션을 확인한다)
 - `users.status`의 `SUSPENDED`는 제재가 대신한다(#86 이슈). 이번에는 기존 `SUSPENDED` 처리를 그대로 두고 새 제재는 `sanctions`로만 한다
 - 운영자 화면의 이름·이메일은 가린다: 이름 `Masking.name`(서준호 → 서*호), 이메일 `Masking.email`(member04@example.com → me***@example.com)
 - 운영자는 제재할 수 없고, 자기 자신도 제재할 수 없다
+- 같은 종류·같은 기능의 정지가 이미 걸려 있으면 409 `SANCTION_DUPLICATE`. 회원 행을 잠가 두 번 눌러도 두 번째는 첫 제재를 본다. 경고는 막지 않아서 여러 번 줄 수 있다
 
 ## API
 
 - `GET /api/v1/admin/users?q=&filter=all|sanctioned|reported`: 운영자 회원 목록. 닉네임 검색, 제재 이력 있음·검토 대기 신고 있음 필터, 최근 가입 순. 실명·이메일은 넣지 않는다
-- `GET /api/v1/admin/users/{userId}`: 운영자 회원 상세. 가린 실명·이메일, 지금 막힌 기능, 제재 이력, 받은 신고(사유·증거)
+- `GET /api/v1/admin/users/{userId}`: 운영자 회원 상세. 가린 실명·이메일, 지금 막힌 기능, 제재 이력, 받은 신고(사유·증거). 목록과 같이 일반 회원만 열고, 운영자 id는 404
 - `POST /api/v1/admin/users/{userId}/sanctions` `{type, days, restrictions, reason}`: 제재. 201
 - `POST /api/v1/admin/sanctions/{sanctionId}/release` `{reason}`: 해제
 - `GET /api/v1/sanctions/me`: 내가 받은 경고·정지. 신고자와 증거는 없다
@@ -61,8 +62,18 @@
 #86-S10 운영자와 자기 자신은 제재할 수 없다 [테스트]
 - 400 `INVALID_INPUT`
 
+#86-S14 막힌 기능(지원·모집 글 작성·피드백 작성·채팅)은 실제 서비스에서 403 `RESTRICTED`다 [테스트]
+- 대상을 찾기 전에 막는다. 다른 회원은 막히지 않는다
+
+#86-S15 막을 기능에 빈 값(null)이 있으면 400이다 [테스트]
+
+#86-S16 같은 종류·같은 기능의 정지가 이미 걸려 있으면 다시 줄 수 없다 [테스트]
+- 409 `SANCTION_DUPLICATE`. 기능이 다르거나 해제한 뒤면 준다. 경고는 여러 번 준다
+
+#86-S17 운영자 회원 상세는 목록과 같이 일반 회원만 연다 [테스트]
+- 운영자 id는 404
+
 ## 범위 밖
 
-- 각 기능(테스트 지원·모집 글 작성·피드백 작성·채팅)에 `sanctionChecker.require` 넣기: 각 기능 담당이 넣는다
 - 기존 `users.status`의 `SUSPENDED` 정리, 제재 알림(메일·푸시), 신고 판정과 제재를 한 번에 하는 화면 흐름
 - 회원 상세의 활동 요약(테스터·개발자 활동): 각 도메인 API

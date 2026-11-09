@@ -27,11 +27,14 @@ FROM eclipse-temurin:21-jre AS runner
 WORKDIR /app
 
 RUN groupadd --system app && useradd --system --gid app app
+# 올린 파일 폴더(볼륨 upload-data)
+RUN mkdir -p /app/uploads && chown app:app /app/uploads
 # bootJar만 실행했으므로 build/libs에는 jar가 하나만 있다
 COPY --from=build /app/build/libs/*.jar app.jar
-USER app
 
 # DB 접속 정보는 실행할 때 환경 변수로 넘긴다
 # 예) SPRING_PROFILES_ACTIVE, SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 업로드 볼륨은 개발 모드(root로 실행)와 같이 쓰고 DB(db-data)도 같이 쓴다. 개발 모드가 root로 만든 파일·폴더가 있어도 쓸 수 있게
+# 시작할 때만 root로 업로드 폴더의 주인을 app으로 맞추고, 앱은 app 사용자로 실행한다(setpriv로 권한을 내린다)
+ENTRYPOINT ["sh", "-c", "chown -R app:app /app/uploads && exec setpriv --reuid=app --regid=app --init-groups java -jar app.jar"]

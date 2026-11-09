@@ -13,6 +13,12 @@ spring:
     # 실행 환경. local이면 application-local.yml 설정을 함께 읽음
     active: local
 
+  servlet:
+    multipart:
+      # 신고 증거 등 업로드 한도: 한 장 5MB, 한 번에 5장(요청 30MB). nginx client_max_body_size도 30m이다
+      max-file-size: 5MB
+      max-request-size: 30MB
+
   jpa:
     # 요청이 끝날 때까지 DB 연결을 잡고 있지 않음. 켜 두면 분석 서버를 기다리는 동안에도 연결이 묶임
     open-in-view: false
@@ -20,6 +26,10 @@ spring:
       naming:
         # 필드명(camelCase)을 컬럼명(snake_case)으로 자동 변환. 예) imageUrl -> image_url
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+
+upload:
+  # 올린 파일을 두는 폴더. 컨테이너는 볼륨(upload-data)을 붙인 /app/uploads, 로컬은 backend/uploads
+  dir: ${UPLOAD_DIR:./uploads}
 
 jwt:
   # 서명 키(HS256). 32바이트 이상. 값은 환경 변수 JWT_SECRET으로만 넘기고 커밋하지 않는다

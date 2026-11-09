@@ -31,6 +31,8 @@ import static org.mockito.Mockito.doAnswer;
  */
 @SpringBootTest
 class ProjectRepositoryConcurrencyTest {
+    /* 프로젝트 저장은 업로드한 이미지 주소(#191)만 받는다 */
+    private static final String NEW_IMAGE = "/api/v1/recruitments/images/11111111-1111-1111-1111-111111111111.png";
 
     @Autowired ProjectService projectService;
     @Autowired ProjectRepository projectRepository;
@@ -67,7 +69,7 @@ class ProjectRepositoryConcurrencyTest {
                 projectService.connectRepository(userId, projectId, new RepositoryConnectRequest("octo/booklog", "ghp_token")));
         assertThat(verifying.await(10, TimeUnit.SECONDS)).isTrue();
 
-        projectService.update(userId, projectId, new ProjectSaveRequest("새 이름", "새 설명", "https://example.com/new.png"));
+        projectService.update(userId, projectId, new ProjectSaveRequest("새 이름", "새 설명", NEW_IMAGE));
         release.countDown();
         connecting.get(10, TimeUnit.SECONDS);
 
@@ -75,6 +77,6 @@ class ProjectRepositoryConcurrencyTest {
         assertThat(saved.getGithubRepository()).isEqualTo("octo/booklog");
         assertThat(saved.getTitle()).isEqualTo("새 이름");
         assertThat(saved.getDescription()).isEqualTo("새 설명");
-        assertThat(saved.getImageUrl()).isEqualTo("https://example.com/new.png");
+        assertThat(saved.getImageUrl()).isEqualTo(NEW_IMAGE);
     }
 }

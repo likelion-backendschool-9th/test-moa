@@ -1,7 +1,9 @@
 <div align="center">
-  <img src="frontend/app/icon.svg" width="72" alt="Test Moa 로고">
-  <h1>Test Moa</h1>
-  <p><strong>써 보고, 남기고, 받고</strong></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
+    <img src="docs/images/logo-light.png" width="240" alt="test moa">
+  </picture>
+  <h3>써 보고, 남기고, 받고</h3>
   <p>개발자와 테스터를 연결하는 소프트웨어 테스터 모집 플랫폼</p>
   <p><a href="https://test-moa.newlecture.com">테스트 서버</a> · <a href="docs/running.md">실행 방법</a> · <a href="CONTRIBUTING.md">협업 규칙</a></p>
 </div>
@@ -9,6 +11,8 @@
 ![Test Moa 홈 화면](docs/images/home-mockup.png)
 
 <p align="center"><sub>목업 데이터로 띄운 홈 화면입니다. 실제 시연 화면은 추가할 예정입니다.</sub></p>
+
+<p align="center"><a href="#기획-의도">기획 의도</a> · <a href="#이용-흐름">이용 흐름</a> · <a href="#주요-기능">주요 기능</a> · <a href="#기술-스택">기술 스택</a> · <a href="#시스템-구성">시스템 구성</a> · <a href="#데이터-모델">데이터 모델</a> · <a href="#기술적으로-고민한-점">고민한 점</a> · <a href="#팀">팀</a> · <a href="#실행하기">실행하기</a></p>
 
 ## 기획 의도
 
@@ -72,6 +76,201 @@ flowchart LR
   B[브라우저] --> N[nginx] --> F["Next.js (BFF)"] --> S[Spring Boot] --> D[(PostgreSQL)]
   S --> A["AI 분석 서버 (Python)"]
 ```
+
+## 데이터 모델
+
+모집부터 피드백까지 이어지는 핵심 구조입니다. 나머지 영역은 펼쳐서 볼 수 있습니다.
+
+```mermaid
+erDiagram
+  User ||--o{ Project : "등록한다"
+  Project ||--o{ Recruitment : "모집한다"
+  Recruitment ||--o{ TestItem : "요청한다"
+  Recruitment ||--o{ Register : "지원받는다"
+  User ||--o{ Register : "지원한다"
+  Register ||--o{ Feedback : "제출한다"
+  TestItem ||--o{ Feedback : "받는다"
+
+  User {
+    Long id PK
+    String nickname
+    String email
+    Role role
+  }
+  Project {
+    Long id PK
+    Long userId FK
+    String title
+  }
+  Recruitment {
+    Long id PK
+    Long projectId FK
+    String title
+    SelectionMode selectionMode
+    Integer version
+    RecruitmentStatus status
+  }
+  TestItem {
+    Long id PK
+    Long recruitmentId FK
+    String title
+    boolean required
+  }
+  Register {
+    Long id PK
+    Long recruitmentId FK
+    Long userId FK
+    RegisterStatus status
+    Integer baseRewardSnapshot
+    Integer extraRewardSnapshot
+  }
+  Feedback {
+    Long id PK
+    Long registerId FK
+    Long testItemId FK
+    String content
+    FeedbackStatus status
+  }
+```
+
+<details>
+<summary><strong>채팅</strong></summary>
+
+```mermaid
+erDiagram
+  Recruitment ||--o{ ChatRoom : "소속된다"
+  Register ||--o| ChatRoom : "연결된다"
+  ChatRoom ||--o{ ChatParticipant : "참여한다"
+  User ||--o{ ChatParticipant : "참여한다"
+  ChatRoom ||--o{ ChatMessage : "담는다"
+  ChatParticipant ||--o{ ChatMessage : "보낸다"
+
+  ChatRoom {
+    Long id PK
+    String roomKey
+    Long recruitmentId FK
+    Long registerId FK
+    long lastSeq
+  }
+  ChatParticipant {
+    Long id PK
+    Long roomId FK
+    Long userId FK
+    ChatRole role
+    long lastReadSeq
+  }
+  ChatMessage {
+    Long id PK
+    Long roomId FK
+    Long senderId FK
+    long seq
+    String content
+  }
+```
+
+</details>
+
+<details>
+<summary><strong>크레딧·구독·출금</strong></summary>
+
+```mermaid
+erDiagram
+  User ||--|| CreditWallet : "가진다"
+  CreditWallet ||--o{ CreditLedger : "기록한다"
+  User ||--o{ Cashout : "신청한다"
+  User ||--o{ Subscription : "구독한다"
+  Plan ||--o{ Subscription : "적용된다"
+  Subscription ||--o| Payment : "결제한다"
+
+  CreditWallet {
+    Long id PK
+    Long userId FK
+    Integer eventCredit
+    Integer earnedBalance
+    Integer lockedBalance
+  }
+  CreditLedger {
+    Long id PK
+    Long creditWalletId FK
+    Integer delta
+    Type type
+  }
+  Cashout {
+    Long id PK
+    Long userId FK
+    Integer amount
+    Status status
+  }
+  Plan {
+    Long id PK
+    String tier
+    Integer cashPrice
+    Integer creditPrice
+  }
+  Subscription {
+    Long id PK
+    Long userId FK
+    Long planId FK
+    Status status
+  }
+  Payment {
+    Long id PK
+    Long subscriptionId FK
+    Method method
+    Integer amount
+  }
+```
+
+</details>
+
+<details>
+<summary><strong>신고·AI 분석</strong></summary>
+
+```mermaid
+erDiagram
+  User ||--o{ Report : "신고한다"
+  Report ||--o{ ReportEvidence : "첨부한다"
+  Recruitment ||--o{ ClusterGroup : "묶는다"
+  ClusterGroup ||--o{ FeedbackCluster : "포함한다"
+  Feedback ||--o{ FeedbackCluster : "속한다"
+  Recruitment ||--o| VersionComparison : "비교한다"
+
+  Report {
+    Long id PK
+    Long reporterId FK
+    Long reportedUserId FK
+    Long reviewerId FK
+    ReportTargetType targetType
+    ReportStatus status
+  }
+  ReportEvidence {
+    Long id PK
+    Long reportId FK
+    String storedPath
+  }
+  ClusterGroup {
+    Long id PK
+    Long recruitmentId FK
+    String name
+    Integer improvementRank
+  }
+  FeedbackCluster {
+    Long id PK
+    Long clusterGroupId FK
+    Long feedbackId FK
+    boolean representative
+  }
+  VersionComparison {
+    Long id PK
+    Long recruitmentId FK
+    Long previousRecruitmentId FK
+    String summary
+  }
+```
+
+</details>
+
+<sub>주요 컬럼만 표시했으며, 이미지·인증 정보·모집 유형 테이블은 생략했습니다.</sub>
 
 ## 기술적으로 고민한 점
 

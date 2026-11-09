@@ -511,26 +511,36 @@ Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니
         <a href="https://github.com/isle-blu"><img src="https://avatars.githubusercontent.com/isle-blu?size=200" width="100" alt="양덕관"></a>
         <br/><br/><strong>양덕관</strong>
         <br/><sub><a href="https://github.com/isle-blu">isle-blu</a></sub>
+        <br/><br/>실시간 채팅
+        <br/>프론트 공통·배포
       </td>
       <td align="center" width="20%">
         <a href="https://github.com/jykim78982"><img src="https://avatars.githubusercontent.com/jykim78982?size=200" width="100" alt="김재연"></a>
         <br/><br/><strong>김재연</strong>
         <br/><sub><a href="https://github.com/jykim78982">jykim78982</a></sub>
+        <br/><br/>결제·크레딧·출금
+        <br/>운영자 화면
       </td>
       <td align="center" width="20%">
         <a href="https://github.com/Dev-JihyeMoon"><img src="https://avatars.githubusercontent.com/Dev-JihyeMoon?size=200" width="100" alt="문지혜"></a>
         <br/><br/><strong>문지혜</strong>
         <br/><sub><a href="https://github.com/Dev-JihyeMoon">Dev-JihyeMoon</a></sub>
+        <br/><br/>AI 피드백 분석
+        <br/>백엔드 초기 구성
       </td>
       <td align="center" width="20%">
         <a href="https://github.com/j0615671-arch"><img src="https://avatars.githubusercontent.com/j0615671-arch?size=200" width="100" alt="이재용"></a>
         <br/><br/><strong>이재용</strong>
         <br/><sub><a href="https://github.com/j0615671-arch">j0615671-arch</a></sub>
+        <br/><br/>회원·인증
+        <br/>신고
       </td>
       <td align="center" width="20%">
         <a href="https://github.com/songmin04"><img src="https://avatars.githubusercontent.com/songmin04?size=200" width="100" alt="최송민"></a>
         <br/><br/><strong>최송민</strong>
         <br/><sub><a href="https://github.com/songmin04">songmin04</a></sub>
+        <br/><br/>프로젝트·모집
+        <br/>피드백
       </td>
     </tr>
   </table>

@@ -12,7 +12,13 @@ import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.Role;
+import com.testmoa.backend.service.ApplicationService;
+import com.testmoa.backend.service.ChatService;
+import com.testmoa.backend.service.ParticipationService;
+import com.testmoa.backend.service.ProjectService;
 import com.testmoa.backend.service.SanctionChecker;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,6 +59,10 @@ class SanctionControllerTest {
     @Autowired EntityManager em;
     @Autowired JwtProvider jwt;
     @Autowired SanctionChecker sanctionChecker;
+    @Autowired ApplicationService applicationService;
+    @Autowired ChatService chatService;
+    @Autowired ParticipationService participationService;
+    @Autowired ProjectService projectService;
 
     String suffix;
     User admin, member, other;
@@ -303,5 +313,70 @@ class SanctionControllerTest {
                 .andExpect(jsonPath("$.error.fields.userId").value("운영자는 제재할 수 없어요"));
         sanction(admin, """
                 {"type":"WARNING","reason":"나"}""").andExpect(status().isBadRequest());
+    }
+
+    // 막혔으면 대상(모집 글·참가·방)을 찾기 전에 403 RESTRICTED. 없는 id라 막히지 않았으면 404·다른 오류가 난다
+    static void restricted(ThrowingCallable call, Restriction restriction) {
+        assertThatThrownBy(call).isInstanceOfSatisfying(BusinessException.class, e -> {
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RESTRICTED);
+            assertThat(e.getFields()).containsEntry("restriction", restriction.name());
+        });
+    }
+
+    static void notRestricted(ThrowingCallable call) {
+        Throwable thrown = catchThrowable(call);
+        assertThat(thrown instanceof BusinessException e && e.getErrorCode() == ErrorCode.RESTRICTED).isFalse();
+    }
+
+    @Test
+    @DisplayName("#86-S14 막힌 기능(지원·모집 글 작성·피드백 작성·채팅)은 실제 서비스에서 403 RESTRICTED다")
+    void 기능별로_실제로_막는다() throws Exception {
+        Long id = member.getId();
+        notRestricted(() -> applicationService.apply(id, -1L));
+        sanction(member, """
+                {"type":"SUSPENSION","days":7,"restrictions":["APPLY","RECRUIT","FEEDBACK","CHAT"],"reason":"여러 기능 제한"}""")
+                .andExpect(status().isCreated());
+
+        restricted(() -> applicationService.apply(id, -1L), Restriction.APPLY);
+        restricted(() -> projectService.createRecruitment(id, null), Restriction.RECRUIT);
+        restricted(() -> participationService.submitFeedback(id, -1L, null), Restriction.FEEDBACK);
+        restricted(() -> chatService.startChat(id, -1L), Restriction.CHAT);
+        restricted(() -> chatService.sendMessage("none", id, "안녕"), Restriction.CHAT);
+        // 다른 회원은 막히지 않는다
+        notRestricted(() -> applicationService.apply(other.getId(), -1L));
+    }
+
+    @Test
+    @DisplayName("#86-S15 막을 기능에 빈 값(null)이 있으면 400이다")
+    void 막을_기능의_빈_값은_400() throws Exception {
+        sanction(member, """
+                {"type":"SUSPENSION","days":7,"restrictions":[null],"reason":"빈 값"}""").andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("#86-S16 같은 종류·같은 기능의 정지가 이미 걸려 있으면 다시 줄 수 없다")
+    void 같은_정지는_다시_못_준다() throws Exception {
+        String json = """
+                {"type":"SUSPENSION","days":7,"restrictions":["CHAT"],"reason":"채팅 욕설"}""";
+        long first = id(sanction(member, json).andExpect(status().isCreated()));
+        sanction(member, json).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("SANCTION_DUPLICATE"));
+        // 기능이 다르면 준다. 해제한 뒤에는 같은 정지를 다시 준다
+        sanction(member, """
+                {"type":"SUSPENSION","days":7,"restrictions":["CHAT","APPLY"],"reason":"지원도"}""").andExpect(status().isCreated());
+        release(first, "확인 결과 해제").andExpect(status().isOk());
+        sanction(member, json).andExpect(status().isCreated());
+        // 경고는 막지 않아서 여러 번 준다
+        sanction(member, """
+                {"type":"WARNING","reason":"경고"}""").andExpect(status().isCreated());
+        sanction(member, """
+                {"type":"WARNING","reason":"경고"}""").andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("#86-S17 운영자 회원 상세는 목록과 같이 일반 회원만 연다")
+    void 운영자_계정의_상세는_404() throws Exception {
+        as(admin, get("/api/v1/admin/users/" + member.getId())).andExpect(status().isOk());
+        as(admin, get("/api/v1/admin/users/" + admin.getId())).andExpect(status().isNotFound());
     }
 }

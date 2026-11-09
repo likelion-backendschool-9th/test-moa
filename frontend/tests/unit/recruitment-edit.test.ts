@@ -3,6 +3,7 @@ import {
   getEditLocks,
   validatePostEdit,
   validateRepository,
+  validateRepositoryConnect,
   validateTermsEdit,
   validateTestItemsEdit,
 } from "@/features/recruitment/types";
@@ -79,4 +80,14 @@ test("GitHub 저장소: owner/repo와 GitHub 주소를 받아 owner/repo로 맞�
   for (const input of ["", "booklog", "https://gitlab.com/moa/booklog", "moa/booklog/issues"]) {
     expect(validateRepository(form([["repository", input]])).errors).toEqual({ repository: "owner/repo 형식이나 GitHub 주소를 적어 주세요" });
   }
+});
+
+test("#227-S9 백엔드 연결은 토큰이 있어야 하고, 목업은 토큰 없이 저장소만 확인한다", () => {
+  const repoOnly = form([["repository", "moa/booklog"]]);
+  expect(validateRepositoryConnect(repoOnly, true).errors).toEqual({ token: "GitHub 토큰을 적어 주세요" });
+  expect(validateRepositoryConnect(form([["repository", "moa/booklog"], ["token", "   "]]), true).errors).toEqual({ token: "GitHub 토큰을 적어 주세요" });
+  expect(validateRepositoryConnect(form([["repository", "https://github.com/moa/booklog.git"], ["token", "ghp_x"]]), true)).toEqual({ values: { repository: "moa/booklog" }, errors: {} });
+  expect(validateRepositoryConnect(repoOnly, false)).toEqual({ values: { repository: "moa/booklog" }, errors: {} });
+  // 저장소가 틀리면 토큰이 있어도 저장소 오류만 알린다
+  expect(validateRepositoryConnect(form([["repository", "booklog"], ["token", "ghp_x"]]), true).errors).toEqual({ repository: "owner/repo 형식이나 GitHub 주소를 적어 주세요" });
 });

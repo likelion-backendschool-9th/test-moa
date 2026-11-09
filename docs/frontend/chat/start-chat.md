@@ -5,17 +5,17 @@
 ## 한눈에
 - 끝나면: `AUTH_MODE=backend`에서 지원자 목록의 "채팅", 피드백 카드의 "채팅하기", AI 질문 대화상자의 "채팅으로 물어보러 가기"가 그 테스터와의 채팅방을 열고 그 방으로 이동한다. 방이 있으면 그 방으로 가고, 지운 방은 다시 열린다. 방을 만들 수 없으면 이유를 안내하고 그 화면에 머문다. 목업 모드의 동작은 그대로다
 - 결정 필요: 없음
-- 규모: 5단계(PR ① 1단계, PR ② 4단계)
+- 규모: 5단계
 
-## 1. 피드백 응답의 참가 id (#195-R1) — PR ①
+## 1. 피드백 응답의 참가 id (#195-R1)
 개발자용 피드백 목록의 건마다 그 피드백을 낸 참가의 `registerId`를 준다.
 
 #195-S1 정상 [테스트]
-- Given #175-S10의 모집 건과 참가, 그 참가의 피드백 2건
+- Given #175-S10의 모집 건과 참가, 그 참가의 피드백 2건과 다른 테스터의 참가·피드백 1건
 - When  개발자가 `GET /api/v1/developer/recruitments/{id}/feedbacks`를 부른다
-- Then  두 건의 `registerId`가 그 참가의 id다
+- Then  응답 순서와 무관하게 피드백 내용으로 각 건을 찾으면 `registerId`가 그 피드백을 낸 참가의 id다
 
-## 2. 채팅방으로 이동 (#195-R2) — PR ②
+## 2. 채팅방으로 이동 (#195-R2)
 세 버튼은 `POST /api/v1/chats`로 그 참가의 방을 열고 `/my/chats/{roomKey}`로 이동한다.
 
 #195-S2 정상: 지원자 목록 [직접]
@@ -49,7 +49,7 @@
 - When  A가 "윤슬님과 채팅"을 빠르게 두 번 누른다
 - Then  처리 중에는 버튼이 비활성이고 방은 하나만 생긴다
 
-## 3. 방을 만들 수 없을 때 (#195-R3) — PR ②
+## 3. 방을 만들 수 없을 때 (#195-R3)
 방을 만들 수 없으면 이유를 안내하고 그 화면에 머문다. 지원자 목록은 목록 위 오류 줄에, 피드백 카드는 그 카드의 안내 줄에, 대화상자는 대화상자 안의 안내 줄에 보이고 스크린 리더로 읽힌다.
 
 #195-S8 문구 변환 [테스트: unit]
@@ -80,7 +80,7 @@
 - When  A가 버튼을 누른다
 - Then  `/login?next=<모집 관리 주소>`로 이동한다
 
-## 4. 목업 모드는 그대로 (#195-R4) — PR ②
+## 4. 목업 모드는 그대로 (#195-R4)
 `AUTH_MODE`가 없으면 `registerId`가 없어서 지금 동작을 유지한다.
 
 #195-S13 정상 [직접]
@@ -109,12 +109,12 @@
 의존 방향은 `app` → `features/chat`이다. `features/chat`은 `features/recruitment`를 import하지 않고, `features/recruitment`도 `features/chat`을 import하지 않는다. 모집 관리 주소는 화면 쪽 훅이 `recruitmentManagePath`로 만들어 넘긴다.
 
 ## 작업 순서
-PR ①
+
 1. 피드백 응답 — #195-S1
    - 파일: `backend/src/main/java/com/testmoa/backend/dto/response/FeedbackResponse.java`(`Long feedbackId` 다음에 `Long registerId`), `service/impl/FeedbackServiceImpl.java`(`feedback.getRegister().getId()`), 테스트 `controller/developer/FeedbackControllerTest.java`(`@DisplayName("#195-S1 피드백마다 참가 id를 준다")`), `docs/backend/project/feedback-management.md`(목록 응답 필드에 `registerId`, 끝에 `(고침 #195: 채팅 걸기에 참가 id가 필요하다)`)
    - 확인: `./gradlew test --tests '*FeedbackControllerTest'`
 
-PR ② (#190 병합 뒤 그 브랜치의 변환 함수를 보고 시작한다)
+2~4단계는 #190 병합 뒤 그 브랜치의 변환 함수를 보고 시작한다.
 
 2. 채팅 시작 API와 문구 — #195-S8, #195-S12
    - `features/chat/backend-map.ts`: `toChatStartFailureMessage(code: string): string`
@@ -132,9 +132,6 @@ PR ② (#190 병합 뒤 그 브랜치의 변환 함수를 보고 시작한다)
    - 확인: `npx tsc --noEmit`, `npm run lint`, `npm test`, 모집 관리 관련 E2E
 4. 문서 — `projects.md`의 #62-S23, #62-S24, #134-S3, #134-S7 끝에 `(고침 #195: 목업 모드의 동작이다. 백엔드 모드는 채팅방으로 바로 간다)`를 붙이고, `docs/backend/chat/README.md`의 이슈 표에 #195와 이 문서를 더한다
 5. 직접 확인 — #195-S2~#195-S7, #195-S9, #195-S10, #195-S12, #195-S13. 로컬 `AUTH_MODE=backend`에서 하고, 원격 도커의 Postgres를 쓴다
-
-## 브랜치·커밋
-- PR ②: `feature/chat-start-button`(#190 병합 뒤 `origin/develop`에서), `Feat: 채팅 시작 API와 실패 안내 연결 (#195)`(2단계), `Feat: 모집 관리 화면의 채팅 걸기 버튼 연결 (#195)`(3단계), `Docs: 채팅 걸기 시나리오 갱신 (#195)`(4단계). PR ①은 이슈를 닫지 않게 본문에 `closes`를 쓰지 않고, PR ②에 `closes #195`를 쓴다
 
 ## 가정
 - 버튼을 누를 때 방을 만든다. 미리 만들거나 방 유무를 먼저 조회하지 않는다. `POST /api/v1/chats`가 있으면 돌려주고 지운 방도 되살리므로 한 번으로 끝난다

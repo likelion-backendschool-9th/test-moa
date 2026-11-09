@@ -1,0 +1,537 @@
+/* 이번 버전 막대 색: 이어진 그룹은 주황(아직 남은 문제), 새로 생긴 그룹은 파랑 */
+.layout [data-status="continued"] {
+  --status: var(--warning);
+}
+
+.layout [data-status="new"] {
+  --status: var(--info);
+}
+
+/* 레포트 소제목 아래에 목록과 보고서를 함께 둔다 */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 넓은 화면: 리뷰 분석 탭의 그룹 목록과 같은 폭. 목록은 오른쪽 보고서를 읽는 동안 따라 내려온다 */
+.layout {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: calc(var(--space-24) * 4 + var(--space-16)) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .list {
+    position: sticky;
+    top: var(--space-20);
+    max-height: calc(100dvh - var(--space-24));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* 소제목: 리뷰 분석 탭과 같은 크기로 상자 밖에 둔다 */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.note {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.empty {
+  padding: var(--space-6);
+  color: var(--text-muted);
+}
+
+/* 이번 버전 그룹 목록: 순위, 심각도, 이름, 오른쪽에 이어짐 딱지 */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.item {
+  transition: background-color var(--duration-150) var(--ease);
+}
+
+.item:not(:last-child) {
+  border-bottom: 1px solid var(--line);
+}
+
+/* 고른 줄은 리뷰 분석 탭과 같은 선택 초록(--accent-tint) */
+.item[data-selected="true"] {
+  background-color: var(--accent-tint);
+}
+
+@media (hover: hover) {
+  .item[data-selected="false"]:hover {
+    background-color: var(--surface-muted);
+  }
+}
+
+.itemSelect {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-4);
+  text-align: left;
+  cursor: pointer;
+}
+
+.itemSelect:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+}
+
+.rank {
+  flex-shrink: 0;
+  min-width: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.itemName {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.item[data-selected="true"] .itemName {
+  font-weight: 700;
+}
+
+/* 이어짐 딱지: 이어진 그룹은 회색, 새로 생긴 그룹은 초록(새로 생긴 것) */
+.badge {
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-strong);
+  padding: var(--space-0-5) var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.badge[data-status="new"] {
+  background-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 레포트: 제목 → 리뷰 수 변화 → 대표 리뷰 → 리뷰 목록. 소제목 사이 간격은 같다 */
+
+.report {
+  min-width: 0;
+  scroll-margin-top: var(--space-20);
+}
+
+/* 보고서 한 장: 넓은 여백의 문서. 절 사이는 가는 선으로 나눈다 */
+.paper {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .paper {
+    padding: var(--space-8) var(--space-10) var(--space-10);
+  }
+}
+
+.paperHead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-bottom: var(--space-8);
+}
+
+/* 문서 이름표: 아래 굵은 선으로 문서 머리를 연다 */
+.docLabel {
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  border-bottom: 2px solid var(--text);
+  padding-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+.paperSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  border-top: 1px solid var(--line);
+  padding-block: var(--space-8);
+}
+
+.paperSection:last-child {
+  padding-bottom: 0;
+}
+
+/* 문서 머리가 항목 줄의 선으로 끝나서 첫 절은 선 없이 잇는다 */
+.paperHead + .paperSection {
+  border-top-style: none;
+  padding-top: 0;
+}
+
+.paperSectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.paperSectionTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+/* 절 번호: 01, 02, 03. 초록은 상호작용에만 쓰는 규칙이라 회색 */
+.paperIndex {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.reportRank {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.reportTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  text-wrap: pretty;
+}
+
+/* 이어진 직전 그룹: 문서의 항목 줄처럼 이름과 값을 나란히 */
+.link {
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-3);
+  border-block: 1px solid var(--line);
+  padding-block: var(--space-2-5);
+}
+
+.linkLabel {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.linkValue {
+  font-weight: 700;
+}
+
+.linkNone {
+  color: var(--text-muted);
+}
+
+/* 리뷰 수 변화: 같은 눈금의 막대 두 개. 직전 버전은 연한 회색 */
+
+.delta,
+.deltaUp,
+.deltaDown {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 문제 리뷰라 늘면 나빠진 것이다 */
+.deltaUp {
+  color: var(--like);
+}
+
+.deltaDown {
+  color: var(--accent);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: var(--space-16) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.barLabel {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.barValue {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.track {
+  flex: 1;
+  height: var(--space-2-5);
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--chart-previous);
+}
+
+.bar[data-side="current"] .fill {
+  background-color: var(--status);
+}
+
+.barCount {
+  flex-shrink: 0;
+  min-width: calc(var(--space-24) + var(--space-4));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.barTesters {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* 대표 리뷰 타임라인: v1 → v2 */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--space-4) minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-bottom: var(--space-5);
+}
+
+.step:last-child {
+  padding-bottom: 0;
+}
+
+/* 두 칸을 잇는 세로선 */
+.step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: var(--space-5);
+  bottom: 0;
+  left: calc(var(--space-2) - 1px);
+  border-left: 2px solid var(--line);
+}
+
+.stepMarker {
+  margin-top: var(--space-0-5);
+  width: var(--space-4);
+  height: var(--space-4);
+  border: 2px solid var(--text-muted);
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
+}
+
+.step[data-current="true"] .stepMarker {
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
+.stepBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stepVersion {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.step[data-current="true"] .stepVersion {
+  color: var(--accent);
+}
+
+/* 상자 안: 리뷰 정보 → 리뷰 내용 → AI 질문 버튼 */
+.quote {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding: var(--space-4) var(--space-5);
+}
+
+.step[data-current="true"] .quote {
+  background-color: var(--accent-tint);
+}
+
+.quoteText {
+  line-height: var(--leading-relaxed);
+  font-weight: 600;
+}
+
+/* 회색·초록 상자 위에서도 버튼이 보이게 흰 면으로 띄운다 */
+.quote .askButton {
+  gap: var(--space-1-5);
+  background-color: var(--surface-card);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+@media (hover: hover) {
+  .quote .askButton:hover:not(:disabled) {
+    background-color: var(--surface-strong);
+  }
+}
+
+.stepEmpty {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+/* 리뷰 목록: 버전 이름과 오른쪽 건수, 아래 목록 */
+
+.versionReviews {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.versionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.versionLabel {
+  font-weight: 700;
+}
+
+.versionCount {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.reviews {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-5);
+}
+
+.review:not(:last-child) {
+  border-bottom: 1px solid var(--line);
+}
+
+.reviewMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.nickname {
+  color: var(--text);
+}
+
+.reviewContent {
+  line-height: var(--leading-relaxed);
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}

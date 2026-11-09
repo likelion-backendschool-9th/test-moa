@@ -9,6 +9,7 @@ import type {
   Recruitment,
   RecruitmentCancellation,
   RecruitmentDetail,
+  VersionComparisonSample,
 } from "@/features/recruitment/types";
 import "server-only";
 
@@ -29,6 +30,15 @@ const NICKNAMES = [
 ];
 
 const hoursAgo = (now: Date, hours: number) => new Date(now.getTime() - hours * HOUR_MS).toISOString();
+
+/** 한국 시각으로 오늘 0시부터 지난 시간 */
+function hoursSinceSeoulMidnight(now: Date) {
+  const [hour, minute] = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .format(now)
+    .split(":")
+    .map(Number);
+  return hour + minute / 60;
+}
 
 const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
 
@@ -88,6 +98,8 @@ export type ProjectSeedData = {
   feedbacks: Record<string, Feedback[]>;
   /** recruitmentKey별 AI 분석 결과 */
   aiSummaries: Record<string, AiSummary>;
+  /** 현재 버전 recruitmentKey별 AI 버전 비교 결과 */
+  versionComparisons: Record<string, VersionComparisonSample>;
   /** recruitmentKey별 모집 조건과 테스트 항목 */
   details: Record<string, RecruitmentDetail>;
   /** recruitmentKey별 모집 취소 기록 */
@@ -118,6 +130,17 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     confirmedCount: 5,
   };
 
+  /* 북로그의 첫 클로즈드 베타(v1). 테스트까지 끝난 구독 모집이고, 1차 테스트(v2)의 버전 별 분석에서 직전 버전으로 견준다 */
+  const booklogBeta: Recruitment = {
+    ...booklog,
+    slug: "booklog-beta",
+    request: "클로즈드 베타 책 등록과 밑줄 긋기 써 보기",
+    createdAt: daysAgo(now, 30),
+    recruitDeadline: daysAgo(now, 24),
+    submitDeadline: daysAgo(now, 17),
+    confirmedCount: 4,
+  };
+
   /* 개발자가 취소한 지난 무료 모집. 확정됐던 테스터의 참여도 함께 취소됐다 */
   const folioOld: Recruitment = {
     ...folio,
@@ -145,10 +168,17 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     booklog: buildApplications(booklog, now, { confirmed: booklog.confirmedCount, rejected: 1, cancelled: 0, applied: 8 }),
     /* 확정 5명 중 1명은 아직 피드백을 내지 않았고, 1명은 참여를 취소했다. 모집이 끝나 남은 대기 지원자 1명은 더 확정할 수 없다(일괄 확정이 없는 것을 보여 준다) */
     "booklog-first": buildApplications(booklogFirst, now, { confirmed: 5, rejected: 1, cancelled: 1, applied: 1 }),
+    /* 확정된 4명(김하늘·이도윤·박서아·최지호)이 모두 피드백을 냈다 */
+    "booklog-beta": buildApplications(booklogBeta, now, { confirmed: 4, rejected: 0, cancelled: 0, applied: 0 }),
     /* 무료 모집은 선착순 자동 확정이라 대기·거절이 없다 */
     "folio-builder": buildApplications(folio, now, { confirmed: folio.confirmedCount, rejected: 0, cancelled: 0, applied: 0 }),
     "folio-builder-old": buildApplications(folioOld, now, { confirmed: 0, rejected: 0, cancelled: 3, applied: 0 }),
   };
+
+  /* 시간대 별 리뷰 수가 어제·오늘(한국 날짜)에 맞게 보이도록 한국 자정을 기준으로 시각을 정한다 */
+  const sinceMidnight = hoursSinceSeoulMidnight(now);
+  const yesterdayAt = (hour: number) => sinceMidnight + 24 - hour;
+  const todayAt = (part: number) => sinceMidnight * part;
 
   const feedbacks: Record<string, Feedback[]> = {
     booklog: [],
@@ -178,30 +208,184 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
         status: "paid",
         testItemId: "booklog-first-t1",
       },
+      /*
+       * 리뷰 분석 시연용. 어제 하루 3시간 칸마다 고르지 않게 들어오고 오늘도 2건 들어온다.
+       * 김하늘은 피드백 탭의 AI 질문 버튼 이름이 겹치지 않게 1건만 둔다
+       */
+      ...([
+        ["이도윤", "booklog-first-t2", yesterdayAt(1.3), "밑줄 문장을 저장하는 중에 앱이 꺼져서 같이 쓴 메모가 다 사라졌어요."],
+        ["박서아", "booklog-first-t2", yesterdayAt(6.7), "메모를 길게 쓰고 저장을 누르면 앱이 닫히고, 다시 열면 메모가 없어요."],
+        ["최지호", null, yesterdayAt(8.2), "다크 모드에서 밑줄 색이 배경이랑 비슷해서 어디에 밑줄을 그었는지 잘 안 보여요."],
+        ["이도윤", "booklog-first-t1", yesterdayAt(9.5), "검색 결과에서 책을 누르면 화면이 멈추고 뒤로 가기도 안 돼요."],
+        ["박서아", "booklog-first-t2", yesterdayAt(10.3), "모아 보기에서 저장한 문장이 날짜순으로만 나와서 책별로 보기 어려워요."],
+        ["최지호", "booklog-first-t2", yesterdayAt(11), "저장하다 앱이 꺼진 뒤로 그 책의 밑줄 목록이 비어 있어요."],
+        ["이도윤", null, yesterdayAt(11.7), "책별로 밑줄을 묶어서 볼 수 있으면 좋겠어요."],
+        ["박서아", "booklog-first-t1", yesterdayAt(12.5), "같은 책이 판본마다 여러 개 떠서 헷갈리는데, 표지까지 늦게 떠서 더 고르기 어려워요."],
+        ["최지호", "booklog-first-t1", yesterdayAt(13.8), "검색 결과에서 두 번째 책을 누르니 앱이 멈췄어요."],
+        ["이도윤", "booklog-first-t2", yesterdayAt(14.3), "모아 보기 메뉴가 설정 안쪽에 있어서 처음엔 못 찾았어요."],
+        ["박서아", null, yesterdayAt(16.2), "밑줄 긋는 방식이 직관적이고 문장 저장이 빨라서 좋았어요."],
+        ["최지호", null, yesterdayAt(19.5), "어두운 화면에서 밑줄 문장을 읽기가 힘들어요."],
+        ["이도윤", "booklog-first-t2", yesterdayAt(20.7), "저장한 문장을 찾으려고 메뉴를 한참 뒤졌어요."],
+        ["박서아", "booklog-first-t2", yesterdayAt(22.3), "긴 메모를 저장하면 앱이 종료되고 메모가 날아가요."],
+        ["최지호", "booklog-first-t1", todayAt(0.7), "책 등록 흐름이 간단해서 처음 써도 어렵지 않았어요."],
+        ["이도윤", "booklog-first-t2", todayAt(0.3), "메모를 쓰다가 저장 중에 앱이 또 꺼졌어요. 벌써 두 번째예요."],
+      ] as const).map(([nickname, testItemId, submittedHoursAgo, content]) => ({
+        nickname,
+        testItemId,
+        submittedHoursAgo,
+        content,
+        status: "waiting" as const,
+      })),
     ]),
+    /* 클로즈드 베타(v1) 피드백. 테스트가 끝나 모두 지급됐다. 버전 별 분석에서 1차 테스트(v2)와 견준다 */
+    "booklog-beta": buildFeedbacks(
+      "booklog-beta",
+      now,
+      (
+        [
+          ["이도윤", "booklog-beta-t2", 21, "메모를 쓰고 저장하면 앱이 꺼져요."],
+          ["박서아", "booklog-beta-t2", 20.5, "저장 버튼을 누르면 가끔 앱이 닫혀요. 다시 열면 메모는 남아 있긴 해요."],
+          ["김하늘", "booklog-beta-t1", 22, "검색하면 표지가 안 보이고 회색 칸만 보여요."],
+          ["최지호", "booklog-beta-t1", 21.5, "표지가 늦게 떠서 내가 가진 책인지 고르기 어려워요."],
+          ["이도윤", "booklog-beta-t1", 20, "표지가 뜨기 전에 눌러서 엉뚱한 책을 등록했어요."],
+          ["박서아", "booklog-beta-t1", 22.5, "바코드를 찍어도 책을 못 찾아요."],
+          ["김하늘", "booklog-beta-t1", 19.5, "바코드 스캔 화면이 계속 초점을 못 잡아요."],
+          ["최지호", "booklog-beta-t2", 19, "본문 글자가 작아서 밑줄 긋기가 어려워요."],
+          ["이도윤", "booklog-beta-t2", 18.5, "밑줄 친 문장을 어디서 다시 보는지 모르겠어요."],
+          ["박서아", null, 18, "책 등록이 빨라서 좋아요."],
+        ] as const
+      ).map(([nickname, testItemId, days, content]) => ({ nickname, testItemId, content, submittedHoursAgo: days * 24, status: "paid" as const })),
+    ),
     "folio-builder": [],
     "folio-builder-old": [],
   };
 
-  /* 북로그 1차 모집 피드백 중 신고된 1건을 뺀 3건을 정리한 샘플. 항목과 근거 수는 위 피드백 내용과 맞춘다 */
+  /*
+   * 북로그 1차 모집 피드백을 AI가 묶은 샘플. 신고된 리뷰는 넣지 않는다.
+   * 심각도 1~4, 버그·UX·요청, 등록한 이슈와 아직 등록하지 않은 초안이 모두 보이게 둔다. 칭찬 리뷰(f15, f19)는 그룹에 넣지 않는다
+   */
+  const f = (...numbers: number[]) => numbers.map((number) => `booklog-first-f${number}`);
   const aiSummaries: Record<string, AiSummary> = {
     "booklog-first": {
-      headline: "기록 기능은 편하다는 반응이지만, 책을 찾고 저장한 문장을 다시 찾는 흐름에서 헷갈린다는 의견이 있어요.",
-      issues: [
+      /* 오늘 들어온 리뷰 중 f20은 분석 뒤라 그룹에 없고 "아직 반영되지 않은 리뷰 1건"으로 보인다 */
+      analyzedAt: hoursAgo(now, todayAt(0.5)),
+      analyticsSummary: "메모 저장 중 앱이 꺼지는 문제와 검색 결과 화면 멈춤을 먼저 확인하세요.",
+      praiseSummary: "밑줄 긋는 방식이 직관적이고 책 등록 흐름이 간단해서 처음 써도 어렵지 않았다는 평가가 많았어요.",
+      /* 칭찬 리뷰: 밑줄 긋기가 직관적(f15), 책 등록이 간단(f19) */
+      praiseFeedbackIds: f(15, 19),
+      groups: [
         {
-          text: "책 검색 결과에서 표지가 늦게 떠서 같은 책을 다시 눌러요",
-          feedbackCount: 2,
-          suggestion: "검색 결과에서 표지를 불러오는 동안 자리 표시를 보여 주기",
+          id: "booklog-first-g1",
+          code: "1",
+          name: "메모를 저장하는 중 앱이 꺼지며 쓴 내용이 사라짐",
+          category: "bug",
+          severity: 1,
+          issueTitle: "[버그] 밑줄 메모 저장 중 앱 종료와 메모 유실",
+          issueContent:
+            "## 현상\n밑줄 문장에 메모를 쓰고 저장하면 앱이 종료되고, 다시 열면 메모와 그 책의 밑줄 목록이 비어 있음\n\n## 재현 단서\n- 긴 메모(여러 줄)를 쓴 뒤 저장할 때 주로 보고됨\n- 3명이 4번 겪음, 한 테스터는 두 번 겪음\n\n## 개선 제안\n- 저장 실패 시 앱을 닫지 말고 오류를 보여 주기\n- 쓰는 중인 메모를 기기에 임시 저장해 두기",
+          issue: null,
+          feedbackIds: f(5, 6, 10, 18),
+          representativeFeedbackId: "booklog-first-f5",
         },
         {
-          text: "저장한 문장을 다시 찾는 메뉴가 잘 안 보여요",
-          feedbackCount: 1,
-          suggestion: "저장한 문장 모아 보기 메뉴를 눈에 띄는 곳에 두기",
+          id: "booklog-first-g2",
+          code: "6",
+          name: "검색 결과에서 책을 누르면 화면이 멈춤",
+          category: "bug",
+          severity: 1,
+          issueTitle: "[버그] 책 검색 결과 선택 시 화면 멈춤",
+          issueContent:
+            "## 현상\n검색 결과에서 책을 누르면 화면이 멈추고 뒤로 가기도 되지 않음\n\n## 재현 단서\n- 첫 번째가 아닌 결과를 누를 때 보고됨\n\n## 개선 제안\n- 책 상세를 불러오는 동안 로딩을 보여 주고, 실패하면 목록으로 돌아가게 하기",
+          issue: { number: 42, url: "https://github.com/testmoa-demo/booklog/issues/42" },
+          feedbackIds: f(8, 13),
+          representativeFeedbackId: "booklog-first-f8",
+        },
+        {
+          id: "booklog-first-g3",
+          code: "2",
+          name: "검색 결과 표지가 늦게 떠 같은 책을 다시 누름",
+          category: "bug",
+          severity: 2,
+          issueTitle: "[버그] 책 검색 결과 표지 로딩 지연",
+          issueContent:
+            "## 현상\n검색 결과의 표지가 한참 비어 있어 맞는 책인지 알기 어렵고, 같은 책을 두 번 누르게 됨\n\n## 개선 제안\n- 표지를 불러오는 동안 자리 표시를 보여 주기\n- 판본이 여러 개면 출판사와 출간 연도를 함께 보여 주기",
+          issue: null,
+          feedbackIds: f(1, 4, 12),
+          representativeFeedbackId: "booklog-first-f1",
+        },
+        {
+          id: "booklog-first-g4",
+          code: "5",
+          name: "저장한 문장을 다시 찾는 메뉴가 안 보임",
+          category: "ux",
+          severity: 3,
+          issueTitle: "[UX] 밑줄 모아 보기 메뉴 찾기 어려움",
+          issueContent:
+            "## 현상\n밑줄 문장을 저장한 뒤 모아 보기 메뉴를 찾지 못함. 메뉴가 설정 안쪽에 있음\n\n## 개선 제안\n- 저장 직후 모아 보기로 가는 바로가기를 보여 주기\n- 아래 탭에 모아 보기를 두기",
+          issue: null,
+          feedbackIds: f(3, 14, 17),
+          representativeFeedbackId: "booklog-first-f3",
+        },
+        {
+          id: "booklog-first-g5",
+          code: "7",
+          name: "다크 모드에서 밑줄 색이 잘 안 보임",
+          category: "ux",
+          severity: 3,
+          issueTitle: "[UX] 다크 모드 밑줄 색 대비 부족",
+          issueContent: "## 현상\n다크 모드에서 밑줄 색이 배경과 비슷해 밑줄 위치와 문장을 읽기 어려움\n\n## 개선 제안\n- 다크 모드 전용 밑줄 색을 두고 배경과 대비 4.5:1 이상 맞추기",
+          issue: null,
+          feedbackIds: f(7, 16),
+          representativeFeedbackId: "booklog-first-f7",
+        },
+        {
+          id: "booklog-first-g6",
+          code: "8",
+          name: "모아 보기를 책별로 묶어 보고 싶음",
+          category: "request",
+          severity: 4,
+          issueTitle: "[요청] 밑줄 모아 보기 책별 묶기",
+          issueContent: "## 요청\n모아 보기가 날짜순으로만 보여 책별로 찾기 어려움\n\n## 제안\n- 모아 보기에 책별 묶기와 정렬 옵션 더하기",
+          issue: null,
+          feedbackIds: f(9, 11),
+          representativeFeedbackId: "booklog-first-f9",
         },
       ],
-      strengths: [{ text: "밑줄 문장 저장이 편해요", feedbackCount: 1 }],
-      generatedAt: hoursAgo(now, 2),
-      isSample: true,
+    },
+    /* 클로즈드 베타(v1) 분석. 분류 코드 1·2·5는 1차 테스트(v2)에도 이어지고, 3·4는 v2에서 보고되지 않았다. 칭찬 리뷰(f10)는 그룹에 넣지 않는다 */
+    "booklog-beta": {
+      analyzedAt: daysAgo(now, 16),
+      analyticsSummary: "메모를 저장하면 앱이 꺼지는 문제를 먼저 확인하세요.",
+      praiseSummary: "책 등록이 빠르다는 평가가 있었어요.",
+      praiseFeedbackIds: ["booklog-beta-f10"],
+      groups: (
+        [
+          ["1", "메모를 저장하면 앱이 꺼짐", "bug", 1, [1, 2], 1],
+          ["2", "검색 결과 표지가 늦게 뜸", "bug", 2, [3, 4, 5], 3],
+          ["3", "바코드 스캔으로 책을 찾지 못함", "bug", 2, [6, 7], 6],
+          ["4", "본문 글자가 작아 밑줄 긋기 어려움", "ux", 3, [8], 8],
+          ["5", "밑줄 친 문장을 다시 보는 곳을 모름", "ux", 3, [9], 9],
+        ] as const
+      ).map(([code, name, category, severity, numbers, representative]) => ({
+        id: `booklog-beta-g${code}`,
+        code,
+        name,
+        category,
+        severity,
+        issueTitle: name,
+        issueContent: `## 현상\n${name}`,
+        issue: null,
+        feedbackIds: numbers.map((number) => `booklog-beta-f${number}`),
+        representativeFeedbackId: `booklog-beta-f${representative}`,
+      })),
+    },
+  };
+
+  /* 1차 테스트(v2)를 클로즈드 베타(v1)와 견준 결과. 두 버전 분석이 끝난 뒤에 비교해 오래된 비교가 아니다 */
+  const versionComparisons: Record<string, VersionComparisonSample> = {
+    "booklog-first": {
+      summary: "메모를 저장할 때 앱이 꺼지는 문제가 v1에 이어 더 자주 보고됐고, 검색 결과에서 화면이 멈추는 문제가 새로 나타났어요.",
+      comparedAt: now.toISOString(),
     },
   };
 
@@ -245,6 +429,17 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
         { id: "booklog-first-t2", title: "저장한 문장 다시 찾기", description: "밑줄 저장 뒤 모아 보기에서 다시 찾아 보세요.", required: true, images: [] },
       ],
     },
+    "booklog-beta": {
+      title: "북로그 클로즈드 베타 테스트",
+      selectionMode: "selection",
+      accessUrl: "https://alpha.booklog.example.com",
+      conditions: "",
+      images: [],
+      testItems: [
+        { id: "booklog-beta-t1", title: "책 등록하기", description: "검색이나 바코드로 책을 찾아 내 서재에 등록해 보세요.", required: true, images: [] },
+        { id: "booklog-beta-t2", title: "밑줄 긋기", description: "마음에 드는 문장에 밑줄을 긋고 메모를 남겨 보세요.", required: true, images: [] },
+      ],
+    },
     "folio-builder": {
       title: "포트폴리오 빌더 템플릿 테스터 모집",
       selectionMode: "firstCome",
@@ -270,9 +465,9 @@ export function buildDeveloperProjects(now: Date, homeRecruitments: Recruitment[
     "folio-builder-old": { reason: "서비스 화면을 크게 바꿔서 다시 모집할게요", cancelledAt: daysAgo(now, 10) },
   };
 
-  const projects: Project[] = buildProjectRecords(now).map(project => ({ ...project, recruitments: ({ "booklog": [booklog, booklogFirst], "folio-builder": [folioNext, folio, folioOld], "todo-memo": [] } as Record<string, Recruitment[]>)[project.key] }));
+  const projects: Project[] = buildProjectRecords(now).map(project => ({ ...project, recruitments: ({ "booklog": [booklog, booklogFirst, booklogBeta], "folio-builder": [folioNext, folio, folioOld], "todo-memo": [] } as Record<string, Recruitment[]>)[project.key] }));
 
-  return { projects, applications, feedbacks, aiSummaries, details, cancellations };
+  return { projects, applications, feedbacks, aiSummaries, versionComparisons, details, cancellations };
 }
 
 /**
@@ -297,6 +492,8 @@ key: "booklog",
     description:
       "읽은 책을 검색해 등록하고, 마음에 드는 문장에 밑줄을 그어 모아 두는 서비스예요.\n이번에는 책 등록부터 기록 작성까지 처음 쓰는 흐름이 자연스러운지 보고 싶어요.",
     image: { url: "/sample/projects/booklog.svg", name: "내 서재와 밑줄 문장 화면" },
+    /* 리뷰 분석의 GitHub 이슈 등록은 레포가 연결된 프로젝트에서만 된다 */
+    repository: "testmoa-demo/booklog",
     createdAt: daysAgo(now, 30)
 },
   {

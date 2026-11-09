@@ -1,0 +1,275 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 소제목: 리뷰 분석 탭과 같은 크기로 상자 밖에 둔다 */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.note {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+/* 세 칸: 칸 머리 아래 짝 줄 */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.part {
+  display: flex;
+  flex-direction: column;
+  transition: background-color var(--duration-150) var(--ease);
+}
+
+.part:not(:last-child) {
+  border-bottom: 1px solid var(--line);
+}
+
+.partHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background-color: var(--surface-muted);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+}
+
+.partTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding-block: var(--space-0-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+}
+
+.partCount {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.partEmpty {
+  border-top: 1px solid var(--line);
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 좁은 화면: 직전 버전 위, 이번 버전 아래. 넓은 화면: v1 → v2를 한 줄에 */
+.item {
+  display: grid;
+  /* 수·손잡이 칸 폭을 고정해 손잡이가 없는 줄도 v1·v2 칸이 위아래로 맞는다 */
+  grid-template-columns: minmax(0, 1fr) var(--space-24) var(--space-6);
+  grid-template-areas:
+    "previous counts handle"
+    "current counts handle";
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  border-top: 1px solid var(--line);
+  padding: var(--space-4) var(--space-3) var(--space-4) var(--space-5);
+  transition: background-color var(--duration-150) var(--ease), opacity var(--duration-150) var(--ease);
+}
+
+@media (min-width: 48rem) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) var(--space-24) var(--space-6);
+    grid-template-areas: "previous arrow current counts handle";
+    column-gap: var(--space-4);
+  }
+}
+
+.item[draggable="true"] {
+  cursor: grab;
+}
+
+@media (hover: hover) {
+  .item[draggable="true"]:hover {
+    background-color: var(--surface-muted);
+  }
+}
+
+/* 끄는 동안: 끄는 줄은 흐리게, 놓을 수 있는 곳은 점선, 위에 올라온 곳은 선택 초록으로 */
+.item[data-picked="true"] {
+  opacity: .45;
+}
+
+.list [data-droppable="true"] {
+  outline: 2px dashed var(--accent);
+  outline-offset: -4px;
+}
+
+.list [data-over="true"] {
+  background-color: var(--accent-selected);
+}
+
+.side {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.side[data-area="previous"] {
+  grid-area: previous;
+}
+
+.side[data-area="current"] {
+  grid-area: current;
+}
+
+.version {
+  flex-shrink: 0;
+  min-width: var(--space-6);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.name {
+  min-width: 0;
+  font-weight: 600;
+}
+
+.none {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.arrow {
+  display: none;
+  grid-area: arrow;
+  color: var(--text-muted);
+}
+
+@media (min-width: 48rem) {
+  .arrow {
+    display: block;
+  }
+}
+
+.counts {
+  grid-area: counts;
+  justify-self: end;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 손잡이: 마우스는 끌고, 키보드·터치는 눌러서 집는다. 집으면 선택 초록 */
+.handle {
+  grid-area: handle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-6);
+  height: var(--space-8);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  cursor: grab;
+}
+
+.handle[aria-pressed="true"] {
+  background-color: var(--accent-selected);
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .handle:hover {
+    background-color: var(--surface-strong);
+    color: var(--text);
+  }
+}
+
+.handle:focus-visible,
+.placeButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 집은 줄을 놓을 곳에 생기는 버튼 */
+.placeButton {
+  grid-area: counts;
+  justify-self: end;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-full);
+  background-color: var(--surface-card);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .placeButton:hover {
+    background-color: var(--accent-tint);
+  }
+}
+
+/* 맨 아래: 상태 문구는 왼쪽, 되돌리기·저장은 오른쪽 */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.footerNote {
+  margin-right: auto;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}

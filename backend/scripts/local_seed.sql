@@ -43,6 +43,7 @@ TRUNCATE TABLE
     projects,
     subscriptions,
     plans,
+    free_plans,
     accounts,
     users
     RESTART IDENTITY CASCADE;
@@ -74,9 +75,15 @@ FROM users;
 
 -- 3. 구독. 구독 여부는 subscriptions에서 ACTIVE이고 start_at <= 지금 < end_at인 행으로 판단한다(SubscriptionChecker)
 --    플랜은 로컬 DB에 있던 값과 같다. 회원 1만 구독하고 회원 2는 구독이 없다
-INSERT INTO plans (id, tier, cash_price, credit_price, monthly_recruit_limit, version, description, image_url, period_days,
+--    혜택 문구는 쉼표로 이어 description에 넣는다(문구에 쉼표를 쓰지 않는다)
+INSERT INTO plans (id, tier, cash_price, credit_price, version, description, image_url, period_days,
                    created_at, updated_at)
-VALUES (1, '구독', 10000, 9000, 30, 1, NULL, NULL, 30,
+VALUES (1, 'PRO', 10000, 9000, 1, '지원자 중 직접 선정,기본 + 추가 보상,선정한 테스터와 가능,상단 구독 영역,피드백 AI 정리 및 분석', NULL, 30,
+        date_trunc('day', LOCALTIMESTAMP) - interval '60 days', date_trunc('day', LOCALTIMESTAMP) - interval '60 days');
+
+-- 무료 플랜 조건(#203). plans와 별도 테이블이고 행은 하나, PK는 1이다
+INSERT INTO free_plans (id, tier, description, created_at, updated_at)
+VALUES (1, 'FREE', '선착순 자동 확정,기본 보상',
         date_trunc('day', LOCALTIMESTAMP) - interval '60 days', date_trunc('day', LOCALTIMESTAMP) - interval '60 days');
 
 INSERT INTO subscriptions (id, user_id, plan_id, start_at, end_at, status, created_at, updated_at)

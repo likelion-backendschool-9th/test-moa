@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+import com.testmoa.backend.dto.response.FreePlanResponse;
 import com.testmoa.backend.dto.response.PlanResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.PlanService;
@@ -28,5 +29,11 @@ public class PlanController {
     @GetMapping
     public ApiResponse<List<PlanResponse>> getPlans() {
         return ApiResponse.ok(planService.getPlans());
+    }
+
+    @Operation(summary = "무료 플랜 조회", description = "무료 플랜의 이름과 혜택 목록. 로그인 없이 읽는다. 행이 없으면 이름 FREE와 빈 혜택이다")
+    @GetMapping("/free")
+    public ApiResponse<FreePlanResponse> getFreePlan() {
+        return ApiResponse.ok(planService.getFreePlan());
     }
 }

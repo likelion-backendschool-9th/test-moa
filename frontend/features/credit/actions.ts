@@ -59,11 +59,6 @@ function serverErrors({ message, fields }: { message: string; fields?: Record<st
 
 export async function requestWithdrawal(_prev: WithdrawalFormState, formData: FormData): Promise<WithdrawalFormState> {
   await requireMember(PATH);
-  /*
-   * 백엔드 모드에서는 출금을 서버에 남기는 연결이 아직 없다(#206). 목업 쿠키에 남기면 성공 문구가 나와도
-   * 서버 잔액과 운영자 목록에는 남지 않아서, 신청한 것으로 믿지 않게 막는다
-   */
-  if (isBackendAuth) return { status: "error", errors: { form: "출금 신청은 아직 준비 중이에요" } };
   const cashable = cashableCredits(await getCreditBalance(PATH));
   if (cashable <= 0) return { status: "error", errors: { form: "출금할 수 있는 크레딧이 없어요" } };
 

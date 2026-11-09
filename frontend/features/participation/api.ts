@@ -23,7 +23,7 @@ import {
   type ParticipationTab,
 } from "@/features/participation/types";
 import { OTHER_FEEDBACK_KEY, type FeedbackFieldErrors } from "@/features/participation/feedback-fields";
-import { participationPath, PARTICIPATIONS_PATH } from "@/features/participation/paths";
+import { participationPath } from "@/features/participation/paths";
 
 /*
  * 로그인한 사용자의 참여 데이터 접근. AUTH_MODE=backend이면 백엔드를 읽고, 아니면 목업을 돌려준다.
@@ -102,20 +102,22 @@ function toParticipation(row: ParticipationResponse): ParticipationItem {
   };
 }
 
-/** 참여 API를 읽는다. 로그인이 끊겼으면 돌아올 주소를 붙여 로그인으로 보낸다 */
-async function readParticipationApi<T>(path: string, next: string): Promise<T | null> {
+/**
+ * 참여 API를 읽는다. next가 있으면 로그인이 끊겼을 때 그 주소로 돌아오도록 로그인으로 보낸다.
+ * 목록 화면은 next 없이 읽는다. 현재 탭을 아는 LoginGate가 로그인 이동을 맡아야 탭이 유지된다
+ */
+async function readParticipationApi<T>(path: string, next?: string): Promise<T | null> {
   const result = await backendFetch<T>(`${PARTICIPATIONS_API}${path}`);
   if (result.ok) return result.data;
-  if (result.status === 401) redirect(`/login?next=${encodeURIComponent(next)}`);
-  if (result.status === 404) return null;
+  if (result.status === 401 && next) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (result.status === 401 || result.status === 404) return null;
   throw new Error(result.message);
 }
 
 /* 탭 개수와 요약을 한 요청 안에서 한 번만 읽는다 */
-const readSummary = cache(async () => {
-  const summary = await readParticipationApi<ParticipationSummaryResponse>("/summary", PARTICIPATIONS_PATH);
-  if (!summary) throw new Error("참여 요약을 불러오지 못했어요");
-  return summary;
+const readSummary = cache(async (): Promise<ParticipationSummaryResponse> => {
+  const summary = await readParticipationApi<ParticipationSummaryResponse>("/summary");
+  return summary ?? { counts: { applied: 0, ongoing: 0, history: 0 }, feedbackToSubmit: 0, payoutPendingCredits: 0 };
 });
 
 /* 한 요청 안에서 여러 영역이 불러도 한 번만 읽는다 */
@@ -144,7 +146,7 @@ const byKeyDate = (a: ParticipationItem, b: ParticipationItem) => keyDateOf(a).a
 /** 탭의 참여. 지원한·참여 중은 할 일 순서(상태 순서 → 날짜 가까운 순), 참여했던은 최근 순 */
 export async function getParticipations(tab: ParticipationTab): Promise<ParticipationItem[]> {
   if (isBackendAuth) {
-    const rows = await readParticipationApi<ParticipationResponse[]>(`?tab=${tab}`, PARTICIPATIONS_PATH);
+    const rows = await readParticipationApi<ParticipationResponse[]>(`?tab=${tab}`);
     return (rows ?? []).map(toParticipation);
   }
   const items = (await loadAll()).filter((item) => tabOf(item.status) === tab);
@@ -201,7 +203,7 @@ export async function getParticipation(key: string): Promise<ParticipationItem |
 
 /** 이 회원의 제출 전 참여를 피드백 제출 마감이 가까운 순서로. 없으면 빈 배열 */
 export async function getUpcomingDeadlines(): Promise<ParticipationItem[]> {
-  if (isBackendAuth) return ((await readParticipationApi<ParticipationResponse[]>("/deadlines", PARTICIPATIONS_PATH)) ?? []).map(toParticipation);
+  if (isBackendAuth) return ((await readParticipationApi<ParticipationResponse[]>("/deadlines")) ?? []).map(toParticipation);
   return (await loadAll()).filter((item) => item.status === "beforeSubmit").sort(byKeyDate);
 }
 

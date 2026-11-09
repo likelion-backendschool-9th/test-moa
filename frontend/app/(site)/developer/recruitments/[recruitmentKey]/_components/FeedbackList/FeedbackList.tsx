@@ -23,7 +23,7 @@ import styles from "./FeedbackList.module.css";
  * 카드 아래 버튼 줄은 언제나 4개다: 채팅하기, AI 질문 받기(둘은 유료 기능), 유용해요(예전 "추천"), 신고.
  * - 상태 배지 대신 신고 버튼이 상태를 보여 준다. 신고했으면 "신고 정보", 아니면 "신고하기"다.
  *   신고하기는 제출 후 72시간 안에만 대화상자를 열고, 지난 피드백은 신고 기간이 지났다고 안내한다.
- * - 무료 모집에서는 채팅하기·AI 질문 받기가 구독 안내로 이어진다.
+ * - 구독하지 않은 계정에서는 채팅하기·AI 질문 받기가 구독 안내로 이어진다.
  * - 유용해요와 신고는 백엔드에 저장한다(#190). 저장에 실패하면 유용해요는 되돌리고 카드에, 신고는 대화상자에 이유를 보여 준다.
  *   채팅방 생성과 신고 정보 조회는 백엔드 API가 아직 없어 채팅하기와 신고 정보는 준비 중 안내만 보여 준다.
  * 대화상자는 기본 dialog를 써서 Esc 닫기와 포커스 복귀를 브라우저에 맡긴다.
@@ -42,8 +42,8 @@ type FeedbackListProps = {
   feedbacks: FeedbackView[];
   testItems: TestItem[];
   recruitmentKey: string;
-  /** 구독 모집이면 채팅하기·AI 질문 받기를 바로 쓴다 */
-  isSubscription: boolean;
+  /** 내 계정이 구독 중이면 채팅하기·AI 질문 받기를 바로 쓴다 */
+  isSubscribed: boolean;
   confirmedCount: number;
   /** 피드백을 한 건이라도 낸 확정 테스터 수 */
   submittedCount: number;
@@ -61,7 +61,7 @@ export function FeedbackList({
   feedbacks,
   testItems,
   recruitmentKey,
-  isSubscription,
+  isSubscribed,
   confirmedCount,
   submittedCount,
   submitDeadline,
@@ -302,10 +302,10 @@ export function FeedbackList({
               )}
               <div className={styles.box3}>
                 {notices[item.id] && <p className={styles.text3}>{notices[item.id]}</p>}
-                <PaidAction subscribed={isSubscription} label={`${nickname}님과 채팅하기`} onClick={() => showNotice(item, CHAT_NOT_READY)}>
+                <PaidAction subscribed={isSubscribed} label={`${nickname}님과 채팅하기`} onClick={() => showNotice(item, CHAT_NOT_READY)}>
                   채팅하기
                 </PaidAction>
-                <PaidAction subscribed={isSubscription} label={`${nickname}님 피드백으로 AI 질문 받기`} onClick={() => askFollowup(item)}>
+                <PaidAction subscribed={isSubscribed} label={`${nickname}님 피드백으로 AI 질문 받기`} onClick={() => askFollowup(item)}>
                   AI 질문 받기
                 </PaidAction>
                 <Button

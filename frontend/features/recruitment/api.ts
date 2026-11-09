@@ -708,10 +708,11 @@ async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
 /** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
 export async function getRecruitmentDetail(path: string, recruitmentKey: string) {
   const { role, project, recruitment: currentRecruitment, cancellation } = await getMyRecruitment(path, recruitmentKey);
-  const [applications, feedbacks, found] = await Promise.all([
+  const [applications, feedbacks, found, isSubscribed] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
+    findIsSubscribed(role),
   ]);
   /* 조회할 수 없는 상세는 목록에서 알고 있는 제목과 선정 방식만 채운다. 나머지는 unavailable로 알린다 */
   const detail = found.unavailable
@@ -723,6 +724,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     project,
     recruitment,
     detail,
+    isSubscribed,
     cancellation,
     canCancel: canCancelRecruitment(recruitment),
     applications: [...applications]

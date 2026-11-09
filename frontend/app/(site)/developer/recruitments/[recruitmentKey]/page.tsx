@@ -40,7 +40,7 @@ export default function RecruitmentManagePage({ params, searchParams }: Props) {
 async function ManageSlot({ params, searchParams }: Props) {
   const { recruitmentKey } = await params;
   const basePath = recruitmentManagePath(recruitmentKey);
-  const [{ project, recruitment, applications, feedbacks, analytics, detail, cancellation, canCancel, locks }, { tab }] = await Promise.all([
+  const [{ project, recruitment, applications, feedbacks, analytics, detail, isSubscribed, cancellation, canCancel, locks }, { tab }] = await Promise.all([
     getRecruitmentDetail(basePath, recruitmentKey),
     searchParams,
   ]);
@@ -83,7 +83,7 @@ async function ManageSlot({ params, searchParams }: Props) {
           feedbacks={feedbacks}
           testItems={detail.testItems}
           recruitmentKey={recruitmentKey}
-          isSubscription={recruitment.isSubscription}
+          isSubscribed={isSubscribed}
           confirmedCount={analytics.confirmedCount}
           submittedCount={analytics.submittedCount}
           submitDeadline={recruitment.submitDeadline}

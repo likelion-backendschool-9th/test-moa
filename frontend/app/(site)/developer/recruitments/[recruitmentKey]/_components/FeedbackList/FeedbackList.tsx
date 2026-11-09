@@ -83,9 +83,15 @@ export function FeedbackList({
   const [reporting, setReporting] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  /** 저장 중인 유용해요. 응답 전 연속 클릭을 막아, 실패 복원 값이 늘 마지막 저장 성공 값이 되게 한다 */
+  const recommending = useRef(new Set<string>());
+  /** 지금 열려 있는 신고 대화상자의 피드백. 늦게 끝난 다른 피드백의 요청이 이 폼을 건드리지 않게 한다 */
+  const openReportId = useRef<string | null>(null);
 
   /** 먼저 화면에 반영하고 저장한다. 저장하지 못하면 이전 값으로 되돌리고 이유를 카드에 보여 준다 */
   async function toggleRecommend(feedback: FeedbackView, next: boolean) {
+    if (recommending.current.has(feedback.id)) return;
+    recommending.current.add(feedback.id);
     const previous = recommended[feedback.id] ?? feedback.recommended;
     setRecommended((prev) => ({ ...prev, [feedback.id]: next }));
     setNotices((prev) => ({ ...prev, [feedback.id]: "" }));
@@ -97,6 +103,7 @@ export function FeedbackList({
       unstable_rethrow(caught);
       message = SAVE_NETWORK_ERROR;
     }
+    recommending.current.delete(feedback.id);
     if (message === null) {
       setAnnouncement(`${feedback.testerNickname}님의 피드백${next ? "을 유용해요로 표시했어요" : "에서 유용해요를 뺐어요"}`);
       return;
@@ -130,6 +137,7 @@ export function FeedbackList({
   function openReport(feedback: FeedbackView) {
     setTarget(feedback);
     setError("");
+    openReportId.current = feedback.id;
     dialogRef.current?.showModal();
   }
 
@@ -153,14 +161,19 @@ export function FeedbackList({
       message = SAVE_NETWORK_ERROR;
     }
     setReporting(false);
+    /* 저장 중에 대화상자를 닫고 다른 피드백의 신고를 열었다면 그 폼은 건드리지 않는다 */
+    const stillOpen = openReportId.current === target.id;
     if (message !== null) {
-      setError(message);
+      if (stillOpen) setError(message);
+      else showNotice(target, message);
       return;
     }
     setStatuses((prev) => ({ ...prev, [target.id]: "reported" }));
     setAnnouncement(`${target.testerNickname}님의 피드백을 신고했어요`);
-    form.reset();
-    dialogRef.current?.close();
+    if (stillOpen) {
+      form.reset();
+      dialogRef.current?.close();
+    }
   }
 
   const dashboard = (
@@ -350,6 +363,9 @@ export function FeedbackList({
 
       <Card as="dialog"
         ref={dialogRef}
+        onClose={() => {
+          openReportId.current = null;
+        }}
         aria-labelledby="report-title"
         className={styles.dialog}
       >

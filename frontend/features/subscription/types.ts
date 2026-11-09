@@ -26,22 +26,21 @@ export type SubscriptionOverview = {
 
 /** 공개 구독 소개(`/subscription`). 비로그인도 읽을 수 있다 */
 export type SubscriptionIntro = {
-  freePlan: PlanTerms;
+  freePlan: FreePlan;
   plans: SubscriptionPlan[];
   /** 비로그인은 미구독으로 본다. 운영자는 null */
   subscription: Subscription | null;
   isGuest: boolean;
 };
 
-/** 켜고 끄는 혜택. 문구로 비교한다 (spec.md 2장) */
-export type BenefitKey = "selection" | "reward" | "chat" | "exposure" | "analytics";
-
-/** 카드에 보여 줄 혜택의 순서 */
-export const BENEFIT_KEYS: BenefitKey[] = ["selection", "reward", "chat", "exposure", "analytics"];
-
-/** 무료와 구독 상품이 함께 갖는 혜택 조건 */
+/** 무료와 구독 상품이 함께 갖는 혜택. 서버가 준 문구 목록이고, 비어 있으면 카드에 혜택 영역을 그리지 않는다 */
 export type PlanTerms = {
-  benefits: Record<BenefitKey, string>;
+  benefits: string[];
+};
+
+/** 무료 플랜. 이름과 혜택은 서버 값이다. 가격 표기("무료")와 카드 소개 문구는 화면이 정한다 */
+export type FreePlan = PlanTerms & {
+  name: string;
 };
 
 /** 구독 상품. 지금은 하나지만 늘어날 수 있어 화면은 목록을 그린다 */

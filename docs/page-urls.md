@@ -66,6 +66,12 @@
 | 채팅함 | `/my/chats` | 확정 |
 | 채팅방 | `/my/chats/:roomKey` | 확정 |
 
+## 구독
+
+| 페이지 | URL | 상태 |
+| --- | --- | --- |
+| 구독 소개 | `/subscription` | 확정 (`docs/frontend/subscription-intro.md`) |
+
 ## 관리자
 
 | 페이지 | URL | 상태 |

@@ -10,6 +10,7 @@
 | [#49](https://github.com/likelion-backendschool-9th/test-moa/issues/49) | 메시지 조회·보내기 | [messages.md](messages.md) |
 | [#48](https://github.com/likelion-backendschool-9th/test-moa/issues/48) | 채팅함 조회 | [inbox.md](inbox.md) |
 | [#111](https://github.com/likelion-backendschool-9th/test-moa/issues/111) | 메시지 최대 길이 10,000자로 확대 | [message-length.md](message-length.md) |
+| [#170](https://github.com/likelion-backendschool-9th/test-moa/issues/170) | 채팅함 최근 메시지 미리보기 앞 100자 | [inbox-preview.md](inbox-preview.md) |
 | [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | [rooms.md](rooms.md) |
 | [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | [read.md](read.md) |
 | [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | [realtime.md](realtime.md) |
@@ -20,6 +21,7 @@
 진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다. 진행 상태는 이슈와 PR에서 본다.
 
 ## 정한 것
+- 채팅함 `lastMessage`는 앞 100자, 메시지 조회는 전체 내용을 준다 ([#170](inbox-preview.md), 11-09)
 - 저장소는 기존 PostgreSQL이다. 채팅은 구조가 고정된 1대1 대화이고 참가·모집 건·회원에 연결되며, 별도 저장소가 필요한 요구나 성능 근거가 없다. 메시지 순서·중복 방지·동시 갱신은 제약 조건과 트랜잭션으로 보장한다 (11-05)
 - 삭제한 방에 상대가 새 메시지를 보내면 내 채팅함에 다시 나타난다(#50) (11-04)
 - 모집이 끝나거나 구독이 끝난 방은 읽기 전용이다(#53) (11-04)

@@ -6,6 +6,7 @@ import type { FormState } from "@/features/project/types";
 import { validateProjectForm } from "@/features/project/types";
 import { requireRole } from "@/features/session/guard";
 import { isBackendAuth } from "@/lib/backend";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 /*
@@ -23,6 +24,8 @@ export async function saveProject(projectKey: string | null, _prev: FormState, f
   if (isBackendAuth) {
     const failed = await saveBackendProject(projectKey, result, formData, owned?.image?.url ?? null);
     if (failed) return failed;
+    /* 뒤로 가기로 돌아간 목록·상세·수정 화면에 저장 전 값이 남지 않게 한다 */
+    revalidatePath(PROJECTS_PATH, "layout");
   }
   redirect(projectKey ? `${projectPath(projectKey)}?notice=saved` : `${PROJECTS_PATH}?notice=saved`);
 }

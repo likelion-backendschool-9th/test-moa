@@ -95,12 +95,6 @@ const RECRUITMENTS_API = "/api/v1/recruitments";
 const MAX_SEARCH_LENGTH = 100;
 const MAX_SEARCH_PAGE = 2147483647;
 
-/** 공개 API에는 보상 금액이 없어 서비스 상수로 채운다 */
-const publicRewards = (isSubscription: boolean) => ({
-  baseReward: BASE_REWARD,
-  ...(isSubscription ? { extraReward: EXTRA_REWARD } : {}),
-});
-
 /** 백엔드 RecruitmentPageResponse */
 type RecruitmentPageResponse = {
   items: Array<{
@@ -141,7 +135,8 @@ async function readRecruitmentPage(params: URLSearchParams): Promise<Recruitment
       recruitDeadline: item.recruitDeadline,
       submitDeadline: item.submitDeadline,
       confirmedCount: 0,
-      ...publicRewards(item.subscription),
+      /* 공개 API에는 금액이 없어 서비스 상수로 채운다. 추가 보상은 지급하지 않아 넣지 않는다 */
+      baseReward: BASE_REWARD,
     })),
   };
 }
@@ -334,7 +329,7 @@ async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentDat
       recruitDeadline: data.recruitDeadline,
       submitDeadline: data.submitDeadline,
       confirmedCount: 0,
-      ...publicRewards(data.subscription),
+      baseReward: BASE_REWARD,
     },
     detail: {
       title: data.title,

@@ -4,9 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { getSubscriptionOverview } from "@/features/subscription/api";
-import { PAYMENT_NOT_READY } from "@/features/subscription/types";
-import { isBackendAuth } from "@/lib/backend";
+import { getCheckoutPeriods, getSubscriptionOverview } from "@/features/subscription/api";
 import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm/CheckoutForm";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
@@ -48,14 +46,16 @@ async function Checkout() {
       </AccountCard>
     );
   }
+  /* 운영자가 아닌 회원만 서버의 결제 기간을 읽는다(운영자는 위에서 안내만 보인다). 목업은 null이라 화면이 직접 계산한다 */
+  const periods = await getCheckoutPeriods(plans);
   return (
     <div className={styles.checkout}>
       <CheckoutForm
         plans={plans}
+        periods={periods}
         payableCredits={payableCredits}
         activeUntil={subscription.status === "active" ? subscription.expiresAt : null}
         now={now}
-        blockedReason={isBackendAuth ? PAYMENT_NOT_READY : undefined}
       />
     </div>
   );

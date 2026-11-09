@@ -7,6 +7,7 @@ import { usesPlan } from "@/features/subscription/types";
 import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry/SubscriptionExpiry";
 import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment/SubscriptionPayment";
 import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus/SubscriptionStatus";
+import { isBackendAuth } from "@/lib/backend";
 import { formatDate } from "@/lib/format";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
@@ -50,7 +51,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
       {/* 구독 결제에서 돌아왔다 */}
       {notice === "paid" && active && (
         <p role="status" className={styles.overviewText2}>
-          결제했어요. {formatDate(subscription.expiresAt)}까지 구독 혜택을 쓸 수 있어요. 시연용이라 실제로 결제되지 않고 이 브라우저에만 남아요.
+          결제했어요. {formatDate(subscription.expiresAt)}까지 구독 혜택을 쓸 수 있어요.{!isBackendAuth && " 시연용이라 실제로 결제되지 않고 이 브라우저에만 남아요."}
         </p>
       )}
       <div className={styles.overviewBox}>

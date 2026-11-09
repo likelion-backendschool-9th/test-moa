@@ -131,7 +131,7 @@ public class CashoutServiceImpl implements CashoutService {
     }
 
     private CreditWallet lockWallet(Cashout cashout) {
-        return creditWalletRepository.findByUserIdForUpdate(cashout.getUser().getId())
+        return creditWalletRepository.findLockedByUserId(cashout.getUser().getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 }

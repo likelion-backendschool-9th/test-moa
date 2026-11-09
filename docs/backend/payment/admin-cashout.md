@@ -63,7 +63,7 @@
 **지급 (`pay`)**
 1. 요청 행을 `PESSIMISTIC_WRITE`로 읽는다 (`findByIdForUpdate`). 없으면 `NOT_FOUND`
 2. 상태가 `REQUESTED`가 아니면 `CASHOUT_ALREADY_PROCESSED`(409)
-3. 요청자의 지갑 행을 `findByUserIdForUpdate`로 잠근다
+3. 요청자의 지갑 행을 `findLockedByUserId`로 잠근다
 4. `wallet.confirmCashout(amount)` — 잠김만 줄어든다
 5. `request.pay(now)`
 6. 장부 한 줄: `EARNED`, `delta = -amount`, 설명 "출금 지급"

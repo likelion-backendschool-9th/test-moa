@@ -154,7 +154,7 @@ class CashoutServiceImplTest {
                         2L, new CashoutRejectRequest(Cashout.RejectReason.OTHER, "메모"))))) {
             assertEquals(ErrorCode.CASHOUT_ALREADY_PROCESSED, e.getErrorCode());
         }
-        verify(creditWalletRepository, never()).findByUserIdForUpdate(any());
+        verify(creditWalletRepository, never()).findLockedByUserId(any());
         verify(creditLedgerRepository, never()).save(any());
     }
 
@@ -260,7 +260,7 @@ class CashoutServiceImplTest {
         wallet.grantEarned(locked);
         wallet.lockForCashout(locked);
         when(cashoutRepository.findByIdForUpdate(CASHOUT_ID)).thenReturn(Optional.of(cashout));
-        when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
+        when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
         return wallet;
     }
 }

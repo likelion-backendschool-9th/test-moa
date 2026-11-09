@@ -224,11 +224,14 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 - 되돌리기 흐름: 유예 회원이 이메일·소셜 로그인에 성공하면 403 `WITHDRAWAL_PENDING`과 `error.fields.restoreToken`(10분), `error.fields.purgeAt`(파기 예정 일시)을 받는다. 프론트가 "되돌릴까요?"를 묻고 `restoreToken`으로 되돌린다
   - 이슈의 `POST /api/users/me/restore` 대신 이 주소로 했다. 유예 회원은 로그인 전이라 access 토큰이 없다
   - 되돌리기 토큰은 회원 id를 `sub`가 아닌 `uid`에 넣어 access 토큰으로 쓸 수 없다
+  - 토큰에 탈퇴 신청 일시(`wat`)를 넣어 그 탈퇴에만 쓴다. 되돌린 뒤 다시 탈퇴하면 예전 토큰은 401 `INVALID_RESTORE_TOKEN`
+  - 30일이 지나면 파기 작업(04:00) 전이라도 되돌릴 수 없다. 로그인은 파기된 회원과 같이 401 `INVALID_CREDENTIALS`, 되돌리기는 401 `INVALID_RESTORE_TOKEN`
 - 출금 처리 중(`cashouts.status = REQUESTED`)이면 409 `CASHOUT_IN_PROGRESS`
   - 출금 신청도 회원 행을 먼저 잠가서(`findByIdForUpdate`), 탈퇴와 출금이 동시에 와도 둘 중 하나만 된다. 탈퇴가 먼저 끝났으면 출금 신청은 401
 - 파기: 매일 04:00(`withdrawal.purge-cron`) 탈퇴 신청 뒤 30일이 지난 회원의
+  - 회원마다 되돌리기와 같은 행 잠금(`findByIdForUpdate`)을 잡고 상태와 기한을 다시 확인한다. 목록을 읽은 뒤 되돌린 회원은 건너뛴다
   - 로그인 계정(`accounts`)과 로그인 세션(`refresh_tokens`)을 지운다
-  - 이름·프로필 이미지는 비우고, 이메일은 `deleted-{id}@withdrawn.invalid`, 닉네임은 `탈퇴한 회원#{id}`로 바꾼다. 이메일이 바뀌어 같은 이메일로 다시 가입할 수 있다
+  - 이름·프로필 이미지는 비우고, 이메일은 `deleted-{id}@withdrawn`, 닉네임은 `탈퇴한 회원#{id}`로 바꾼다. 이메일이 바뀌어 같은 이메일로 다시 가입할 수 있다. 바꾼 이메일은 도메인에 점이 없어 가입 형식 검사를 통과하지 못하므로, 누가 먼저 그 주소로 가입해 파기가 막히는 일이 없다
   - 피드백·결제·크레딧·출금 기록은 회원 행(id)을 그대로 가리켜 남는다
 - 남은 크레딧은 로그인할 수 없어 쓸 수 없게 된다. 지갑과 원장은 기록으로 남는다
 - DB 변경: `users.withdrawn_at` 컬럼(자동 추가), `users.status`에 `DELETED`. `ddl-auto: update`는 기존 check 제약을 고치지 않으므로 테스트 서버에서 한 번 실행한다
@@ -262,6 +265,18 @@ alter table users add constraint users_status_check
 
 #84-S21 탈퇴 신청과 출금 신청이 동시에 와도 둘 중 하나만 된다 [테스트]
 - 탈퇴 유예이면서 처리 중인 출금 요청이 있는 회원이 생기지 않는다
+
+#84-S26 파기 작업과 되돌리기가 동시에 와도 되돌린 회원은 파기하지 않는다 [테스트]
+- 되돌리기가 성공했으면 `ACTIVE`, 아니면 `DELETED`. 되돌리기 성공 응답 뒤 파기되는 일이 없다
+
+#84-S27 30일이 지나면 파기 작업 전이라도 로그인·되돌리기를 할 수 없다 [테스트]
+- 로그인은 401 `INVALID_CREDENTIALS`, 받아 둔 되돌리기 토큰은 401 `INVALID_RESTORE_TOKEN`. 상태는 `WITHDRAWN` 그대로이고 파기 작업이 지운다
+
+#84-S28 되돌린 뒤 다시 탈퇴하면 예전 되돌리기 토큰은 쓸 수 없다 [테스트]
+- 예전 토큰은 401 `INVALID_RESTORE_TOKEN`. 새로 로그인해 받은 토큰으로는 되돌린다
+
+#84-S29 파기한 회원의 이메일 주소로는 가입할 수 없어, 파기가 가입 이메일과 겹치지 않는다 [테스트]
+- `deleted-1@withdrawn`으로 가입하면 400(칸 `email`)
 
 ## 범위 밖
 - 알림(공통 알림 기능 때), 허위 신고자 제재, 이메일 인증, 비밀번호 찾기, 만료된 refresh 토큰 정리

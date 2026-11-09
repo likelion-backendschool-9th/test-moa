@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Entity(name = "users")
@@ -97,7 +98,8 @@ public class User {
     public void withdraw(LocalDateTime now) {
         if (status != UserStatus.ACTIVE) throw new IllegalStateException("활성 회원만 탈퇴할 수 있습니다.");
         this.status = UserStatus.WITHDRAWN;
-        this.withdrawnAt = now;
+        // DB(PostgreSQL)는 마이크로초까지 저장한다. 되돌리기 토큰이 이 값을 그대로 비교한다
+        this.withdrawnAt = now.truncatedTo(ChronoUnit.MICROS);
     }
 
     /** 유예 기간의 탈퇴 되돌리기 */
@@ -109,13 +111,13 @@ public class User {
 
     /**
      * 개인정보 파기. 이름·프로필 이미지는 지우고, 빈 값을 둘 수 없는 이메일·닉네임은 회원 id로 만든 값으로 바꾼다.
-     * 이메일이 바뀌어 같은 이메일로 다시 가입할 수 있다. 피드백·결제 같은 기록은 이 회원(id)을 그대로 가리킨다
+     * 이메일이 바뀌어 같은 이메일로 다시 가입할 수 있다. 바꾼 이메일은 도메인에 점이 없어 가입 형식 검사(SignupRequest)를 통과하지 못하므로 가입 이메일과 겹치지 않는다. 피드백·결제 같은 기록은 이 회원(id)을 그대로 가리킨다
      */
     public void purge() {
         if (status != UserStatus.WITHDRAWN) throw new IllegalStateException("탈퇴 유예 회원만 파기할 수 있습니다.");
         this.name = null;
         this.imageUrl = null;
-        this.email = "deleted-" + id + "@withdrawn.invalid";
+        this.email = "deleted-" + id + "@withdrawn";
         this.nickname = "탈퇴한 회원#" + id;
         this.status = UserStatus.DELETED;
     }

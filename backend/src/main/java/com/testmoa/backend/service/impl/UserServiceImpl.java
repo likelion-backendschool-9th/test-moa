@@ -152,13 +152,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public int purgeWithdrawnBefore(LocalDateTime cutoff) {
-        List<User> expired = userRepository.findByStatusAndWithdrawnAtBefore(UserStatus.WITHDRAWN, cutoff);
-        for (User user : expired) {
-            accountRepository.deleteAll(accountRepository.findByUserId(user.getId()));
+        int purged = 0;
+        for (Long id : userRepository.findIdsByStatusAndWithdrawnAtBefore(UserStatus.WITHDRAWN, cutoff)) {
+            // 되돌리기(restore)와 같은 행 잠금. 목록을 읽은 뒤 되돌린 회원은 건너뛴다
+            User user = userRepository.findByIdForUpdate(id).orElse(null);
+            if (user == null || user.getStatus() != UserStatus.WITHDRAWN || !user.getWithdrawnAt().isBefore(cutoff)) continue;
+            accountRepository.deleteAll(accountRepository.findByUserId(id));
             refreshTokenRepository.deleteByUser(user);
             user.purge();
+            purged++;
         }
-        return expired.size();
+        return purged;
     }
 
     private static BusinessException fieldError(String field, String message) {

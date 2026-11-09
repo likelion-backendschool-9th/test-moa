@@ -115,20 +115,29 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public TokenResponse restore(String restoreToken) {
-        Long userId = jwtProvider.readRestoreToken(restoreToken)
+        JwtProvider.RestoreToken token = jwtProvider.readRestoreToken(restoreToken)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_RESTORE_TOKEN));
-        User user = userRepository.findByIdForUpdate(userId)
-                .filter(found -> found.getStatus() == UserStatus.WITHDRAWN)
+        // 같은 탈퇴(신청 일시가 같음)이고 30일 안이어야 한다. 되돌린 뒤 다시 탈퇴했으면 예전 토큰은 못 쓴다
+        User user = userRepository.findByIdForUpdate(token.userId())
+                .filter(found -> found.getStatus() == UserStatus.WITHDRAWN
+                        && found.getWithdrawnAt().toString().equals(token.withdrawnAt())
+                        && !graceOver(found))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_RESTORE_TOKEN));
         user.restore();
         return startSession(user);
     }
 
+    private static boolean graceOver(User user) {
+        return !user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).isAfter(LocalDateTime.now());
+    }
+
     // 이메일·소셜 로그인과 소셜 가입의 새 로그인 세션. 정지 회원은 막고, 만료된 refresh 토큰을 지운다
     private TokenResponse startSession(User user) {
         if (user.getStatus() == UserStatus.WITHDRAWN) {
+            // 30일이 지났으면 파기 작업 전이라도 파기된 회원과 같다
+            if (graceOver(user)) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
             Map<String, String> fields = Map.of(
-                    "restoreToken", jwtProvider.createRestoreToken(user.getId()),
+                    "restoreToken", jwtProvider.createRestoreToken(user.getId(), user.getWithdrawnAt()),
                     "purgeAt", user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).toString());
             throw new BusinessException(ErrorCode.WITHDRAWAL_PENDING, ErrorCode.WITHDRAWAL_PENDING.getMessage(), fields);
         }

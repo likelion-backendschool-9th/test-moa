@@ -26,6 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select u from users u where u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);
 
-    // 탈퇴 신청이 cutoff보다 앞선 유예 회원(#84 파기 작업)
-    List<User> findByStatusAndWithdrawnAtBefore(UserStatus status, java.time.LocalDateTime cutoff);
+    // 탈퇴 신청이 cutoff보다 앞선 유예 회원 id(#84 파기 작업). 파기는 회원마다 잠근 뒤 상태를 다시 확인한다
+    @Query("select u.id from users u where u.status = :status and u.withdrawnAt < :cutoff")
+    List<Long> findIdsByStatusAndWithdrawnAtBefore(@Param("status") UserStatus status, @Param("cutoff") java.time.LocalDateTime cutoff);
 }

@@ -209,6 +209,12 @@ const HOUR_MS = 60 * 60 * 1000;
 /* ---------- 계산 ---------- */
 
 /** 모집 건 상태. 개발자가 취소했으면 취소, 모집 마감 전이면 모집 중, 마감 뒤면 제출 마감일로 나눈다 */
+/** 홈 배너에 놓을 모집 건. 구독 모집을 먼저 놓고 남는 자리를 전체 최신순으로 채우며, 같은 모집 건은 한 번만 넣는다 */
+export function pickBannerRecruitments(subscription: Recruitment[], latest: Recruitment[], limit: number): Recruitment[] {
+  const bySlug = new Map([...subscription, ...latest].map((item) => [item.slug, item]));
+  return [...new Set([...subscription, ...latest].map((item) => item.slug))].slice(0, limit).map((slug) => bySlug.get(slug) as Recruitment);
+}
+
 export function getRecruitmentStatus(recruitment: Recruitment, now: Date, cancelled = false): RecruitmentStatus {
   if (cancelled) return "cancelled";
   if (now < new Date(recruitment.recruitDeadline)) return "recruiting";

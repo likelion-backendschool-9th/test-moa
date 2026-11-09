@@ -31,6 +31,17 @@ type CheckoutFormProps = {
  */
 export function CheckoutForm({ plans, periods, payableCredits, activeUntil, now }: CheckoutFormProps) {
   const [state, formAction, pending] = useActionState(payForSubscription, initialState);
+  /*
+   * 서버 Action이 끝나면 React가 폼을 처음 상태로 되돌린다. 라디오는 처음 그릴 때의 선택(defaultChecked)으로 돌아가서,
+   * 그 뒤 선택이 바뀌었거나 화면 값이 갱신됐으면 금액·버튼(현재 선택)과 라디오 모양이 어긋난다.
+   * 응답이 올 때마다 선택 칸을 새로 그려 지금 선택을 기본값으로 삼는다
+   */
+  const [lastState, setLastState] = useState(state);
+  const [responses, setResponses] = useState(0);
+  if (lastState !== state) {
+    setLastState(state);
+    setResponses(responses + 1);
+  }
   const [planId, setPlanId] = useState(plans[0]?.id);
   const plan = plans.find(({ id }) => id === planId) ?? plans[0];
   const affordable = plan ? payableCredits >= plan.creditPrice : false;
@@ -54,7 +65,7 @@ export function CheckoutForm({ plans, periods, payableCredits, activeUntil, now 
         <p className={styles.text}>지금 구독은 {formatDate(activeUntil)}에 끝나요. 결제하면 그날부터 이어져요.</p>
       )}
 
-      <fieldset className={styles.fieldset}>
+      <fieldset key={`plan-${responses}`} className={styles.fieldset}>
         <legend className={styles.legend}>상품</legend>
         {plans.map((item) => (
           <Choice
@@ -69,7 +80,7 @@ export function CheckoutForm({ plans, periods, payableCredits, activeUntil, now 
         ))}
       </fieldset>
 
-      <fieldset className={styles.fieldset2}>
+      <fieldset key={`method-${responses}`} className={styles.fieldset2}>
         <legend className={styles.legend2}>결제 수단</legend>
         <Choice
           name="method"

@@ -57,7 +57,7 @@ class CashoutServiceImplTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(9480);
-        when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
+        when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
         when(cashoutRepository.save(any(Cashout.class))).thenAnswer(invocation -> {
             Cashout saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 11L);
@@ -72,7 +72,7 @@ class CashoutServiceImplTest {
         assertEquals("100012345678", response.getAccountNumber());
         assertEquals(4480, wallet.getEarnedBalance());
         assertEquals(5000, wallet.getLockedBalance());
-        verify(creditWalletRepository).findByUserIdForUpdate(USER_ID);
+        verify(creditWalletRepository).findLockedByUserId(USER_ID);
         verify(creditLedgerRepository, never()).save(any());
         ArgumentCaptor<Cashout> captor = ArgumentCaptor.forClass(Cashout.class);
         verify(cashoutRepository).save(captor.capture());
@@ -87,7 +87,7 @@ class CashoutServiceImplTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(4480);
-        when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
+        when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
 
         BusinessException ex = assertThrows(
                 BusinessException.class,
@@ -112,7 +112,7 @@ class CashoutServiceImplTest {
         );
 
         assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
-        verify(creditWalletRepository, never()).findByUserIdForUpdate(any());
+        verify(creditWalletRepository, never()).findLockedByUserId(any());
         verify(cashoutRepository, never()).save(any());
     }
 
@@ -123,7 +123,7 @@ class CashoutServiceImplTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEvent(3000);
-        when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
+        when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
 
         BusinessException ex = assertThrows(
                 BusinessException.class,
@@ -142,7 +142,7 @@ class CashoutServiceImplTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         CreditWallet wallet = CreditWallet.builder().user(user).build();
         wallet.grantEarned(5000);
-        when(creditWalletRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(wallet));
+        when(creditWalletRepository.findLockedByUserId(USER_ID)).thenReturn(Optional.of(wallet));
         when(cashoutRepository.save(any(Cashout.class))).thenAnswer(invocation -> {
             Cashout saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "id", 12L);
@@ -151,7 +151,7 @@ class CashoutServiceImplTest {
 
         cashoutService.requestCashout(USER_ID, validRequest(5000));
 
-        verify(creditWalletRepository).findByUserIdForUpdate(USER_ID);
+        verify(creditWalletRepository).findLockedByUserId(USER_ID);
         verify(creditWalletRepository, never()).findByUserId(USER_ID);
         assertEquals(0, wallet.getEarnedBalance());
         assertEquals(5000, wallet.getLockedBalance());

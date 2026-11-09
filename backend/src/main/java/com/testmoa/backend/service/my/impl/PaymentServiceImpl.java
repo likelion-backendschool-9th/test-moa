@@ -96,7 +96,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 지갑을 없으면 만들고 잠근다. 이후의 읽기는 모두 잠금 안에서 한다
         creditWalletRepository.insertIfAbsent(userId, LocalDateTime.now(clock));
-        CreditWallet wallet = creditWalletRepository.findByUserIdForUpdate(userId)
+        CreditWallet wallet = creditWalletRepository.findLockedByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR));
         // 기준 시각은 잠근 뒤에 읽는다. 늦게 잠근 요청의 시각이 먼저 처리된 결제보다 이르면 더블클릭 검사가 틀린다
         LocalDateTime now = LocalDateTime.now(clock);

@@ -64,7 +64,7 @@ public class CashoutServiceImpl implements CashoutService {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "은행을 골라 주세요");
         }
 
-        CreditWallet wallet = creditWalletRepository.findByUserIdForUpdate(userId)
+        CreditWallet wallet = creditWalletRepository.findLockedByUserId(userId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.INVALID_INPUT,
                         "출금할 수 있는 크레딧이 없어요"

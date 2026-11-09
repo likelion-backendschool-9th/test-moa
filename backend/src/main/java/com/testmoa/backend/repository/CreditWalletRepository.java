@@ -16,12 +16,11 @@ public interface CreditWalletRepository extends JpaRepository<CreditWallet, Long
 
     /** 출금·결제 시 동시 차감을 막기 위해 지갑 행을 잠근다 */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select w from credit_wallets w where w.user.id = :userId")
-    Optional<CreditWallet> findByUserIdForUpdate(@Param("userId") Long userId);
+    Optional<CreditWallet> findLockedByUserId(Long userId);
 
     /**
      * 지갑이 없을 때만 잔액 0으로 만든다. 같은 회원의 첫 결제 둘이 동시에 와도 유일 제약 오류 없이 하나만 생긴다.
-     * 만든 뒤에는 findByUserIdForUpdate로 잠근다.
+     * 만든 뒤에는 findLockedByUserId로 잠근다.
      */
     @Modifying
     @Query(value = "INSERT INTO credit_wallets (user_id, event_credit, earned_balance, locked_balance, created_at, updated_at) "

@@ -1023,7 +1023,7 @@ type BackendAnalysis = {
 type BackendFeedback = { status: string; submittedAt: string };
 
 /** 백엔드 PraiseReviewResponse (GET .../analysis/praises) */
-type BackendPraise = Omit<BackendGroupReview, "representative">;
+type BackendPraise = Omit<BackendGroupReview, "representative" | "registerId">;
 
 /** 백엔드 오류를 화면 오류로 바꾼다. 없거나 남의 모집글은 404, 나머지는 오류 화면에 문구를 보인다 */
 function unwrap<T>(result: BackendResult<T>): T {

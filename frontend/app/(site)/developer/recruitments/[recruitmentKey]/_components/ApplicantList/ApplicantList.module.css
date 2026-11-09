@@ -115,11 +115,21 @@
 }
 
 .link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
   margin-left: auto;
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);
   font-weight: 600;
   color: var(--text-muted);
+}
+
+.link:disabled {
+  cursor: wait;
 }
 
 @media (hover: hover) {

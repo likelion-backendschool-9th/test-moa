@@ -65,6 +65,7 @@ export const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> = {
 /** 모집 건에 들어온 지원 한 건. 테스터 개인정보는 닉네임만 둔다 */
 export type Application = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   status: ApplicationStatus;
   appliedAt: string;
@@ -82,6 +83,7 @@ export const FEEDBACK_STATUS_LABEL: Record<FeedbackStatus, string> = {
 /** 확정된 테스터가 제출한 피드백 한 건 */
 export type Feedback = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   /** 어느 테스트 항목에 대한 피드백인지. 기타 의견은 null (백엔드 Feedback.testItem) */
   testItemId: string | null;
@@ -200,6 +202,7 @@ export type ReviewGroup = {
 /** 그룹에 든 리뷰 하나. 대표 리뷰가 맨 앞이다 */
 export type GroupReview = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   content: string;
   submittedAt: string;
@@ -410,6 +413,7 @@ export type BackendAnalysisGroup = {
 /** 백엔드 GroupReviewResponse (GET .../analysis/groups/{groupId}/reviews) */
 export type BackendGroupReview = {
   feedbackId: number;
+  registerId: number;
   nickname: string;
   testItemTitle: string | null;
   content: string;
@@ -441,6 +445,7 @@ export function fromBackendGroups(groups: BackendAnalysisGroup[], reviews: Recor
         testerCount: group.testerCount,
         reviews: (reviews[group.groupId] ?? []).map((review) => ({
           id: String(review.feedbackId),
+          registerId: String(review.registerId),
           testerNickname: review.nickname,
           content: review.content,
           submittedAt: review.submittedAt,

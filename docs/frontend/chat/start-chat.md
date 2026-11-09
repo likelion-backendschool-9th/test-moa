@@ -134,7 +134,6 @@ PR ② (#190 병합 뒤 그 브랜치의 변환 함수를 보고 시작한다)
 5. 직접 확인 — #195-S2~#195-S7, #195-S9, #195-S10, #195-S12, #195-S13. 로컬 `AUTH_MODE=backend`에서 하고, 원격 도커의 Postgres를 쓴다
 
 ## 브랜치·커밋
-- PR ①: `feature/chat-start-feedback-register`(`origin/develop`에서 만들고 `git branch --unset-upstream`), `Feat: 피드백 응답에 참가 id 추가 (#195)`
 - PR ②: `feature/chat-start-button`(#190 병합 뒤 `origin/develop`에서), `Feat: 채팅 시작 API와 실패 안내 연결 (#195)`(2단계), `Feat: 모집 관리 화면의 채팅 걸기 버튼 연결 (#195)`(3단계), `Docs: 채팅 걸기 시나리오 갱신 (#195)`(4단계). PR ①은 이슈를 닫지 않게 본문에 `closes`를 쓰지 않고, PR ②에 `closes #195`를 쓴다
 
 ## 가정

@@ -1,0 +1,272 @@
+/* 직전 버전은 물러나는 연한 회색, 이번 버전은 범주 색 첫 번째 */
+.split [data-side="previous"] {
+  --side: var(--chart-previous);
+}
+
+.split [data-side="current"] {
+  --side: var(--chart-1);
+}
+
+/* 리뷰 분석 탭의 시간대별 분석·리뷰 성향과 같은 반 나누기. 두 카드는 같은 높이로 늘어난다 */
+.split {
+  display: grid;
+  gap: var(--space-10);
+}
+
+@media (min-width: 64rem) {
+  .split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.section > :last-child {
+  flex: 1;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.note {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+/* 기준 고르기는 왼쪽, 범례는 오른쪽. 좁으면 범례가 아래로 내려간다 */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.segment {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-strong);
+  padding: var(--space-0-5);
+}
+
+.segmentButton {
+  border-radius: var(--radius-full);
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segmentButton[aria-pressed="true"] {
+  background-color: var(--surface-card);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+@media (hover: hover) {
+  .segmentButton[aria-pressed="false"]:hover {
+    color: var(--text);
+  }
+}
+
+.segmentButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.legend {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.swatch {
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--side);
+}
+
+.empty {
+  padding-block: var(--space-10);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* 칸마다 이름 아래 두 버전 막대. 이름이 길어도 막대 폭이 줄지 않게 이름을 위에 둔다 */
+.chart {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  margin-bottom: var(--space-0-5);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.fill {
+  height: var(--space-3);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background-color: var(--side);
+  transform-origin: left;
+  animation: grow-bar var(--duration-500) var(--ease-default);
+}
+
+@keyframes grow-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.value {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar[data-side="current"] .value {
+  color: var(--text);
+}
+
+/* 막대 기준 설명 */
+
+.guide {
+  line-height: var(--leading-relaxed);
+  text-wrap: pretty;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.table th,
+.table td {
+  padding: var(--space-2-5) var(--space-2);
+  text-align: left;
+}
+
+.table th:first-child {
+  padding-left: 0;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 0;
+}
+
+.table thead th {
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.table tbody tr:not(:last-child) > * {
+  border-bottom: 1px solid var(--line);
+}
+
+.table tfoot > tr > * {
+  border-top: 1px solid var(--text);
+  font-weight: 700;
+}
+
+.rowLabel {
+  width: 100%;
+  font-weight: 600;
+}
+
+.table .number,
+.delta {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table .delta {
+  text-align: right;
+  font-weight: 700;
+}
+
+.delta[data-trend="up"] {
+  color: var(--like);
+}
+
+.delta[data-trend="down"] {
+  color: var(--accent);
+}
+
+.delta[data-trend="same"] {
+  color: var(--text-muted);
+}
+
+.srOnly {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}

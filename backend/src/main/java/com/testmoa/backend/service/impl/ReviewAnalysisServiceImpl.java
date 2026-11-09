@@ -1,6 +1,8 @@
 package com.testmoa.backend.service.impl;
 
 import com.testmoa.backend.dto.request.AnalysisGroupUpdateRequest;
+import com.testmoa.backend.dto.response.GroupReviewResponse;
+import com.testmoa.backend.dto.response.PraiseReviewResponse;
 import com.testmoa.backend.dto.response.ReviewAnalysisResponse;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
@@ -22,6 +24,7 @@ import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 // 분석 서버는 분석 전용 스레드(ReviewAnalysisWorker)에서 부르고, 이 서비스에는 트랜잭션을 두지 않음.
 // 조회는 ReviewAnalysisReader의 읽기 트랜잭션, 상태 바꾸기와 저장은 ReviewAnalysisWriter의 쓰기 트랜잭션에서 끝냄
@@ -71,6 +74,18 @@ public class ReviewAnalysisServiceImpl implements ReviewAnalysisService {
     public ReviewAnalysisResponse find(Long userId, Long recruitmentId) {
         subscriptionChecker.require(userId);
         return reviewAnalysisReader.readResult(userId, recruitmentId);
+    }
+
+    @Override
+    public List<PraiseReviewResponse> findPraises(Long userId, Long recruitmentId) {
+        subscriptionChecker.require(userId);
+        return reviewAnalysisReader.readPraises(userId, recruitmentId);
+    }
+
+    @Override
+    public List<GroupReviewResponse> findGroupReviews(Long userId, Long recruitmentId, Long groupId) {
+        subscriptionChecker.require(userId);
+        return reviewAnalysisReader.readGroupReviews(userId, recruitmentId, groupId);
     }
 
     /**

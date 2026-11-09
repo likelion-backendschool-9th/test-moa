@@ -9,7 +9,14 @@ import {
   recommendFollowupQuestions,
   saveBackendRecruitment,
   submitApplication,
+  registerGithubIssue,
+  runReviewAnalysis,
+  runVersionComparison,
+  saveIssueDraft,
+  saveVersionLinks,
   updateRecruitment as update,
+  type ActionResult,
+  type RegisterIssueResult,
 } from "@/features/recruitment/api";
 import type { ApplyState, EditState, FollowupResult, RecruitmentEditSection } from "@/features/recruitment/types";
 import { validateRecruitmentForm } from "@/features/recruitment/types";
@@ -73,6 +80,49 @@ export async function updateRecruitment(
 }
 
 const EDIT_SECTIONS: RecruitmentEditSection[] = ["post", "terms", "testItems", "repository"];
+
+/** AI 리뷰 분석 시작. 일주일 3번 한도는 백엔드가 센다 */
+export async function startAnalysisAction(recruitmentKey: string): Promise<ActionResult> {
+  if (typeof recruitmentKey !== "string") return { ok: false, message: "잘못된 요청이에요" };
+  return runReviewAnalysis(recruitmentKey);
+}
+
+/** 그룹의 이슈 초안 저장. 글자 수 한도는 백엔드가 다시 확인한다 */
+export async function saveIssueDraftAction(
+  recruitmentKey: string,
+  groupId: string,
+  draft: { title: string; content: string },
+): Promise<ActionResult> {
+  if (typeof recruitmentKey !== "string" || typeof groupId !== "string" || typeof draft?.title !== "string" || typeof draft?.content !== "string") {
+    return { ok: false, message: "잘못된 요청이에요" };
+  }
+  return saveIssueDraft(recruitmentKey, groupId, draft);
+}
+
+/** 그룹의 이슈를 GitHub에 등록한다 */
+export async function registerIssueAction(recruitmentKey: string, groupId: string): Promise<RegisterIssueResult> {
+  if (typeof recruitmentKey !== "string" || typeof groupId !== "string") return { ok: false, message: "잘못된 요청이에요" };
+  return registerGithubIssue(recruitmentKey, groupId);
+}
+
+/** AI 버전 비교 실행. 일주일 3번 한도는 백엔드가 센다 */
+export async function compareVersionsAction(recruitmentKey: string): Promise<ActionResult> {
+  if (typeof recruitmentKey !== "string") return { ok: false, message: "잘못된 요청이에요" };
+  return runVersionComparison(recruitmentKey);
+}
+
+/** 버전 비교에서 고친 짝 저장. 그룹이 어느 버전 것인지는 백엔드가 다시 확인한다 */
+export async function saveVersionLinksAction(
+  recruitmentKey: string,
+  links: Array<{ groupId: string; previousGroupId: string | null }>,
+): Promise<ActionResult> {
+  const valid =
+    typeof recruitmentKey === "string" &&
+    Array.isArray(links) &&
+    links.every((link) => typeof link?.groupId === "string" && (link.previousGroupId === null || typeof link.previousGroupId === "string"));
+  if (!valid) return { ok: false, message: "잘못된 요청이에요" };
+  return saveVersionLinks(recruitmentKey, links);
+}
 
 /** 피드백 하나로 AI 후속 질문을 받는다. 하루 3번 한도는 백엔드가 센다 */
 export async function getFollowupQuestions(recruitmentKey: string, feedbackId: string): Promise<FollowupResult> {

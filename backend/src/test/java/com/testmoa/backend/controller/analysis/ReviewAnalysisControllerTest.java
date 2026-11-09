@@ -59,6 +59,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,6 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ReviewAnalysisControllerTest {
     private static final String PRAISE = "기록 화면이 편하다는 의견이 있어요";
+    private static final String SUMMARY = "로그인 시 앱이 꺼지는 문제를 먼저 확인하세요";
 
     @Autowired MockMvc mvc;
     @Autowired EntityManager em;
@@ -202,12 +204,13 @@ class ReviewAnalysisControllerTest {
                 group("로그인 버튼", ClusterCategory.UX, 1, r.f2(), List.of(r.f2().getId(), r.f4().getId())),
                 // 칭찬은 심각도·이슈 초안을 버리고, 보내지 않은 리뷰 ID는 매핑하지 않는다
                 group("기록 화면 칭찬", ClusterCategory.PRAISE, 3, r.f4(), List.of(r.f4().getId(), 999_999L))
-        ), PRAISE));
+        ), SUMMARY, PRAISE));
 
         start(developer, r.recruitment().getId())
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.data.analysisStatus").value("DONE"))
                 .andExpect(jsonPath("$.data.analysisRequestedAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.analyticsSummary").value(SUMMARY))
                 .andExpect(jsonPath("$.data.praiseSummary").value(PRAISE))
                 .andExpect(jsonPath("$.data.unanalyzedFeedbackCount").value(0))
                 .andExpect(jsonPath("$.data.lastAnalyzedFeedbackAt").isNotEmpty())
@@ -250,6 +253,7 @@ class ReviewAnalysisControllerTest {
         assertThat(analyzed.getAnalysisStatus()).isEqualTo(AnalysisStatus.DONE);
         assertThat(analyzed.getAnalyzedAt()).isNotNull();
         assertThat(analyzed.getPraiseSummary()).isEqualTo(PRAISE);
+        assertThat(analyzed.getAnalyticsSummary()).isEqualTo(SUMMARY);
     }
 
     @Test
@@ -260,7 +264,7 @@ class ReviewAnalysisControllerTest {
         ClusterGroup registered = saveGroup(r.recruitment(), "1", "https://github.com/likelion/booklog/issues/1", r.f1());
         ClusterGroup unregistered = saveGroup(r.recruitment(), "2", null, r.f2());
         given(analysisClient.analyze(any())).willReturn(new AnalysisResponse(List.of(
-                group("결제 화면 느림", ClusterCategory.BUG, 3, r.f3(), List.of(r.f3().getId()))), null));
+                group("결제 화면 느림", ClusterCategory.BUG, 3, r.f3(), List.of(r.f3().getId()))), null, null));
 
         start(developer, r.recruitment().getId()).andExpect(status().isAccepted());
 
@@ -285,7 +289,7 @@ class ReviewAnalysisControllerTest {
         ClusterGroup stale = saveGroup(r.recruitment(), "2", null, r.f2());
         ReflectionTestUtils.setField(stale, "gitIssueRegisteringAt", LocalDateTime.now().minusMinutes(10));
         given(analysisClient.analyze(any())).willReturn(new AnalysisResponse(List.of(
-                group("결제 화면 느림", ClusterCategory.BUG, 3, r.f3(), List.of(r.f3().getId()))), null));
+                group("결제 화면 느림", ClusterCategory.BUG, 3, r.f3(), List.of(r.f3().getId()))), null, null));
 
         start(developer, r.recruitment().getId()).andExpect(status().isAccepted());
 
@@ -302,7 +306,7 @@ class ReviewAnalysisControllerTest {
         User developer = saveSubscriber();
         Reviews r = saveReviews(developer);
         ClusterGroup previous = saveGroup(r.recruitment(), "1", null, r.f1());
-        r.recruitment().completeAnalysis("지난 칭찬 요약", LocalDateTime.now().minusDays(1));
+        r.recruitment().completeAnalysis("지난 전체 요약", "지난 칭찬 요약", LocalDateTime.now().minusDays(1));
         given(analysisClient.analyze(any())).willThrow(new BusinessException(ErrorCode.AI_UNAVAILABLE));
 
         start(developer, r.recruitment().getId())
@@ -314,6 +318,7 @@ class ReviewAnalysisControllerTest {
         Recruitment failed = em.find(Recruitment.class, r.recruitment().getId());
         assertThat(failed.getAnalysisStatus()).isEqualTo(AnalysisStatus.FAILED);
         assertThat(failed.getPraiseSummary()).isEqualTo("지난 칭찬 요약");
+        assertThat(failed.getAnalyticsSummary()).isEqualTo("지난 전체 요약");
         assertThat(groupsOf(r.recruitment())).extracting(ClusterGroup::getId).containsExactly(previous.getId());
         assertThat(mappingsOf(r.recruitment())).hasSize(1);
     }
@@ -492,5 +497,91 @@ class ReviewAnalysisControllerTest {
         ReflectionTestUtils.setField(group, "gitIssueRegisteringAt", LocalDateTime.now().minusMinutes(6));
         editDraft(developer, r, group, "{\"gitIssueTitle\":\"새 제목\"}").andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.groups[0].gitIssueTitle").value("새 제목"));
+    }
+
+    @Test
+    @DisplayName("#107-S22 칭찬 리뷰 목록은 칭찬 그룹에 든 리뷰만 최근 제출 순으로 주고, 두 칭찬 그룹에 든 리뷰는 한 번만, 신고된 리뷰는 뺀다. 구독하지 않으면 SUBSCRIPTION_REQUIRED다")
+    void 칭찬_리뷰_목록() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup screen = ClusterGroup.builder().recruitment(r.recruitment()).groupCode("8").name("기록 화면 칭찬")
+                .category(ClusterCategory.PRAISE).build();
+        ClusterGroup login = ClusterGroup.builder().recruitment(r.recruitment()).groupCode("9").name("로그인 칭찬")
+                .category(ClusterCategory.PRAISE).build();
+        em.persist(screen);
+        em.persist(login);
+        // f4는 두 칭찬 그룹에, f2는 하나에 들어 있다. f1은 버그 그룹에만 있고, f3은 칭찬 그룹에 있지만 신고됐다
+        em.persist(FeedbackCluster.builder().clusterGroup(screen).feedback(r.f4()).representative(true).build());
+        em.persist(FeedbackCluster.builder().clusterGroup(login).feedback(r.f4()).representative(false).build());
+        em.persist(FeedbackCluster.builder().clusterGroup(login).feedback(r.f2()).representative(true).build());
+        em.persist(FeedbackCluster.builder().clusterGroup(screen).feedback(r.f3()).representative(false).build());
+        r.f3().report("광고예요");
+        saveGroup(r.recruitment(), "1", null, r.f1());
+        em.flush();
+        em.clear();
+
+        mvc.perform(get("/api/v1/developer/recruitments/{recruitmentId}/analysis/praises", r.recruitment().getId())
+                        .header("Authorization", "Bearer " + jwtProvider.createAccessToken(developer.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].feedbackId").value(r.f4().getId()))
+                .andExpect(jsonPath("$.data[0].content").value("기록 화면이 편해요"))
+                .andExpect(jsonPath("$.data[0].testItemTitle").value(nullValue()))
+                .andExpect(jsonPath("$.data[0].nickname").isNotEmpty())
+                .andExpect(jsonPath("$.data[1].feedbackId").value(r.f2().getId()))
+                .andExpect(jsonPath("$.data[1].testItemTitle").value("로그인"));
+
+        User notSubscribed = saveUser();
+        Reviews other = saveReviews(notSubscribed);
+        mvc.perform(get("/api/v1/developer/recruitments/{recruitmentId}/analysis/praises", other.recruitment().getId())
+                        .header("Authorization", "Bearer " + jwtProvider.createAccessToken(notSubscribed.getId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("SUBSCRIPTION_REQUIRED"));
+    }
+
+    private ResultActions findGroupReviews(User user, Long recruitmentId, Long groupId) throws Exception {
+        return mvc.perform(get("/api/v1/developer/recruitments/{recruitmentId}/analysis/groups/{groupId}/reviews", recruitmentId, groupId)
+                .header("Authorization", "Bearer " + jwtProvider.createAccessToken(user.getId())));
+    }
+
+    @Test
+    @DisplayName("#168-S3 그룹 리뷰는 대표 리뷰가 먼저, 나머지는 최근 제출 순이고 신고된 리뷰는 뺀다")
+    void 그룹_리뷰_목록() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        // 대표 f1, 나머지 f2(2시간 전)·f4(30분 전), 신고된 f3
+        ClusterGroup group = saveGroup(r.recruitment(), "1", null, r.f1());
+        em.persist(FeedbackCluster.builder().clusterGroup(group).feedback(r.f2()).representative(false).build());
+        em.persist(FeedbackCluster.builder().clusterGroup(group).feedback(r.f3()).representative(false).build());
+        em.persist(FeedbackCluster.builder().clusterGroup(group).feedback(r.f4()).representative(false).build());
+        r.f3().report("광고예요");
+        em.flush();
+        em.clear();
+
+        findGroupReviews(developer, r.recruitment().getId(), group.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].feedbackId").value(contains(
+                        r.f1().getId().intValue(), r.f4().getId().intValue(), r.f2().getId().intValue())))
+                .andExpect(jsonPath("$.data[*].representative").value(contains(true, false, false)))
+                .andExpect(jsonPath("$.data[0].testItemTitle").value("로그인"))
+                .andExpect(jsonPath("$.data[0].content").value("로그인하면 앱이 꺼져요"))
+                .andExpect(jsonPath("$.data[0].nickname").value(r.a().getNickname()))
+                .andExpect(jsonPath("$.data[1].testItemTitle").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("#168-S4 다른 모집글의 그룹이나 다른 회원의 그룹은 NOT_FOUND다")
+    void 남의_그룹_리뷰는_404() throws Exception {
+        User developer = saveSubscriber();
+        Reviews mine = saveReviews(developer);
+        Reviews other = saveReviews(developer);
+        ClusterGroup group = saveGroup(mine.recruitment(), "1", null, mine.f1());
+
+        findGroupReviews(developer, other.recruitment().getId(), group.getId())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
+        findGroupReviews(saveSubscriber(), mine.recruitment().getId(), group.getId())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
     }
 }

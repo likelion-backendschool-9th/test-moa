@@ -105,7 +105,7 @@ public class ReviewAnalysisWriter {
                         .build());
             }
         }
-        recruitment.completeAnalysis(response.praiseSummary(), LocalDateTime.now());
+        recruitment.completeAnalysis(response.analyticsSummary(), response.praiseSummary(), LocalDateTime.now());
     }
 
     /**

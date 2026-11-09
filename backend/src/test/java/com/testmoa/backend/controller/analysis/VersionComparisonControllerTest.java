@@ -28,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,6 +48,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -103,7 +105,7 @@ class VersionComparisonControllerTest {
         Recruitment recruitment = Recruitment.builder().project(project).title(version + "차 베타 테스트").description("기록 화면을 봐 주세요")
                 .recruitDeadline(now.plusDays(7)).feedbackDeadline(now.plusDays(14)).selectionMode(SelectionMode.FIRST_COME).build();
         ReflectionTestUtils.setField(recruitment, "version", version);
-        recruitment.completeAnalysis(null, now.minusHours(1));
+        recruitment.completeAnalysis(null, null, now.minusHours(1));
         em.persist(recruitment);
         return recruitment;
     }
@@ -158,7 +160,7 @@ class VersionComparisonControllerTest {
     }
 
     @Test
-    @DisplayName("#108-S1 짝지은 그룹은 이전 코드를 이어받고 새 그룹은 새 코드를 받는다. 요약을 저장하고 화면 값을 돌려준다(#108-S10)")
+    @DisplayName("#108-S1 짝지은 그룹은 이전 코드를 이어받고 새 그룹은 새 코드를 받는다. 요약을 저장하고 화면 값을 돌려준다(#108-S10, #168-S2)")
     void 코드를_이어받고_새_코드를_발급한다() throws Exception {
         User developer = saveSubscriber();
         Versions v = saveVersions(developer);
@@ -170,6 +172,8 @@ class VersionComparisonControllerTest {
                 .andExpect(jsonPath("$.data.summary").value(SUMMARY))
                 .andExpect(jsonPath("$.data.currentVersion").value(2))
                 .andExpect(jsonPath("$.data.previousVersion").value(1))
+                .andExpect(jsonPath("$.data.currentTitle").value("2차 베타 테스트"))
+                .andExpect(jsonPath("$.data.previousTitle").value("1차 베타 테스트"))
                 .andExpect(jsonPath("$.data.stale").value(false))
                 .andExpect(jsonPath("$.data.groups[*].groupId").value(contains(
                         v.g21().getId().intValue(), v.g22().getId().intValue(), v.g23().getId().intValue())))
@@ -289,5 +293,122 @@ class VersionComparisonControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("NO_PREVIOUS_VERSION"));
         verifyNoInteractions(analysisClient);
+    }
+
+    @Test
+    @DisplayName("#168-S1 비교 전 조회는 직전 버전 없음 → 분석 전 → 비교 전 순으로 알린다")
+    void 비교_전_조회는_상태를_나눈다() throws Exception {
+        User developer = saveSubscriber();
+        Project project = saveProject(developer);
+        Recruitment first = saveAnalyzedVersion(project, 1);
+        find(developer, first.getId())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("NO_PREVIOUS_VERSION"));
+
+        Recruitment second = saveAnalyzedVersion(project, 2);
+        ReflectionTestUtils.setField(second, "analyzedAt", null);
+        find(developer, second.getId())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("ANALYSIS_NOT_DONE"));
+
+        ReflectionTestUtils.setField(second, "analyzedAt", LocalDateTime.now());
+        find(developer, second.getId())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("COMPARISON_NOT_FOUND"));
+    }
+
+    // #108-S1처럼 비교를 마친 상태: g21이 g11의 코드 "1"을 이어받았다. 프로젝트 최대 코드는 5다
+    private Versions saveCompared(User developer) {
+        Versions v = saveVersions(developer);
+        v.g21().updateGroupCode("1");
+        em.persist(VersionComparison.builder().recruitment(v.current()).previousRecruitment(v.previous()).summary(SUMMARY).build());
+        return v;
+    }
+
+    private ResultActions relink(User user, Long recruitmentId, String body) throws Exception {
+        return mvc.perform(put("/api/v1/developer/recruitments/{recruitmentId}/version-comparison/links", recruitmentId)
+                .header("Authorization", "Bearer " + jwtProvider.createAccessToken(user.getId()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body));
+    }
+
+    private static String link(ClusterGroup group, ClusterGroup previous) {
+        return "{\"groupId\":" + group.getId() + ",\"previousGroupId\":" + (previous == null ? "null" : previous.getId()) + "}";
+    }
+
+    private static String links(String... items) {
+        return "{\"links\":[" + String.join(",", items) + "]}";
+    }
+
+    @Test
+    @DisplayName("#168-S5 짝을 바꾸면 직전 그룹의 코드를 이어받고, 짝을 풀면 새 코드를 받는다. 요약은 그대로다")
+    void 짝을_바꾸고_푼다() throws Exception {
+        User developer = saveSubscriber();
+        Versions v = saveCompared(developer);
+
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g11()), link(v.g21(), null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary").value(SUMMARY))
+                .andExpect(jsonPath("$.data.groups[*].groupId").value(contains(
+                        v.g21().getId().intValue(), v.g22().getId().intValue(), v.g23().getId().intValue())))
+                .andExpect(jsonPath("$.data.groups[*].previouslyReported").value(contains(false, false, true)));
+
+        em.flush();
+        em.clear();
+        assertThat(codeOf(v.g23())).isEqualTo("1");
+        assertThat(codeOf(v.g21())).isEqualTo("6");
+        assertThat(codeOf(v.g22())).isEqualTo("4");
+        verifyNoInteractions(analysisClient);
+    }
+
+    @Test
+    @DisplayName("#168-S6 보내지 않은 그룹이 이어받은 코드를 쓰고 있으면 그 그룹도 새 코드를 받는다")
+    void 겹친_코드는_새_코드를_받는다() throws Exception {
+        User developer = saveSubscriber();
+        Versions v = saveCompared(developer);
+
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g11()))).andExpect(status().isOk());
+
+        em.flush();
+        em.clear();
+        assertThat(codeOf(v.g23())).isEqualTo("1");
+        assertThat(codeOf(v.g21())).isEqualTo("6");
+    }
+
+    @Test
+    @DisplayName("#168-S7 다른 버전의 그룹이나 같은 직전 그룹을 두 번 넣으면 INVALID_INPUT이고 코드는 그대로다")
+    void 잘못된_짝은_거절한다() throws Exception {
+        User developer = saveSubscriber();
+        Versions v = saveCompared(developer);
+
+        relink(developer, v.current().getId(), links(link(v.g11(), v.g12())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g21())))
+                .andExpect(status().isBadRequest());
+        relink(developer, v.current().getId(), links(link(v.g22(), v.g11()), link(v.g23(), v.g11())))
+                .andExpect(status().isBadRequest());
+
+        em.flush();
+        em.clear();
+        assertThat(codeOf(v.g21())).isEqualTo("1");
+        assertThat(codeOf(v.g22())).isEqualTo("4");
+        assertThat(codeOf(v.g23())).isEqualTo("5");
+    }
+
+    @Test
+    @DisplayName("#168-S8 비교 전이면 COMPARISON_NOT_FOUND, 분석 중이면 ANALYSIS_IN_PROGRESS다")
+    void 비교_전이나_분석_중이면_거절한다() throws Exception {
+        User developer = saveSubscriber();
+        Versions notCompared = saveVersions(developer);
+        relink(developer, notCompared.current().getId(), links(link(notCompared.g23(), notCompared.g11())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("COMPARISON_NOT_FOUND"));
+
+        Versions v = saveCompared(developer);
+        ReflectionTestUtils.setField(v.previous(), "analysisStatus", AnalysisStatus.PENDING);
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g11())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("ANALYSIS_IN_PROGRESS"));
     }
 }

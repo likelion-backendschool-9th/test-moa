@@ -16,10 +16,34 @@
   --brand-logo: #129357;
   --accent: var(--brand-green);
   --accent-soft: #def7eb;
+  /*
+   * 고른 줄·말풍선처럼 넓게 까는 초록. --accent-soft보다 밝게 해 오래 봐도 편하게 한다.
+   * 아래 --accent-selected와 함께 브랜드 초록과 같은 색상(152°)·같은 채도대로 맞춰 잿빛이 돌지 않게 한다
+   */
+  --accent-tint: #ebfaf3;
+  /* 고른 줄·1위 말풍선·분석 버튼에 마우스를 올렸을 때의 바탕. 위에 올리는 먹색 글씨 대비 13.6:1, 초록 글씨 4.1:1 */
+  --accent-selected: #c6ecda;
   --on-accent: #ffffff;
   /* 피드백 "유용해요"를 누른 상태. 연한 분홍 바탕에 빨강 글씨, 대비 4.82:1 */
   --like: #c4264a;
   --like-soft: #fde8ed;
+  /* 리뷰 그룹 심각도 딱지. 치명은 --like, 차단은 주황, 불편은 파랑 */
+  --warning: #b4530a;
+  --warning-soft: #fdefe0;
+  --info: #1f5fae;
+  --info-soft: #e5eefa;
+  /*
+   * 원형 그래프의 범주 색. 이 순서대로 쓰고 돌려 쓰지 않는다(6개를 넘으면 "기타"로 묶는다).
+   * 이웃한 두 색은 색약에서도 구분된다(데이터 시각화 기준 팔레트, 라이트·다크 각각 검증)
+   */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  /* 버전 비교에서 직전 버전 막대. 이번 버전 색보다 물러나는 연한 회색 */
+  --chart-previous: #c5cac4;
   /*
    * 유료 기능 그라데이션. 민트에서 라벤더로 옅게 번지는 바탕이고 글씨는 강조색(글씨 아래 대비 4.51:1 이상).
    * 피드백의 채팅하기·AI 질문 받기 버튼에 쓰고, 구독 화면 같은 다른 유료 기능 면도 bg-paid-gradient로 가져다 쓴다.
@@ -46,6 +70,8 @@
   /* 매트 위 글씨·도장, 반투명 칩 바탕, 매트 위 교정지 글씨 */
   --hero-text: #ffffff;
   --hero-chip: rgb(255 255 255 / 0.14);
+  /* 매트 위 치명 숫자. 큰 글씨라 매트와 대비 3:1 이상 */
+  --hero-like: #ffb3c3;
   --hero-paper-text: #1a1a1a;
   /* 교정지·썸네일의 진한 초록 위 글씨. 다크의 검정 --on-accent는 진한 초록 위에서 대비가 4.5:1에 못 미친다 */
   --on-paper-accent: #ffffff;
@@ -142,10 +168,24 @@
     --text-muted: #a3aab5;
     --accent: #129357;
     --accent-soft: #123625;
+    /* 다크의 --accent-soft와 같은 채도. 위에 올리는 초록 글씨 대비 4.25:1 */
+    --accent-tint: #0b2218;
+    --accent-selected: #1c4a35;
     --on-accent: #000000;
     /* 남회색 패널에서 튀지 않게 어두운 장미색 바탕에 밝힌 분홍 글씨, 대비 6.42:1 */
     --like: #f47c97;
     --like-soft: #341520;
+    --warning: #f4a660;
+    --warning-soft: #33220f;
+    --info: #86b4f2;
+    --info-soft: #14243a;
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-previous: #4a515b;
     /* 같은 민트→라벤더 흐름을 어둡게 낮춘 바탕. 글씨는 흰색 */
     --paid-start: #123625;
     --paid-mid: #1a2a26;

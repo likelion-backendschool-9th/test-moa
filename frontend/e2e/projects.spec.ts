@@ -192,21 +192,16 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 5명");
   });
 
-  test("S525 확정 결과는 요약·분석·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {
+  test("S525 확정 결과는 요약·내 프로젝트에도 반영되고 새로고침해도 남는다", async ({ page }) => {
     await page.goto(BOOKLOG_TESTERS);
     await page.getByRole("checkbox", { name: "전체 선택" }).check();
     await page.getByRole("checkbox", { name: /선택$/ }).last().uncheck();
     await page.getByRole("button", { name: "선택한 7명 확정" }).click();
-    const summaryValue = (term: string) =>
-      page.locator("dl div").filter({ has: page.getByRole("term").filter({ hasText: new RegExp(`^${term}$`) }) }).getByRole("definition");
     await expect(page.getByRole("main").getByText(/^확정 20명 · /)).toBeVisible();
     await expect(page.getByRole("main").getByText("모집 중", { exact: true })).toBeVisible();
 
     await page.reload();
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명");
-
-    await page.goto(`${BOOKLOG_MANAGE}?tab=analytics`);
-    await expect(summaryValue("확정 수")).toHaveText("20명");
 
     await page.goto("/developer/projects");
     await expect(page.getByTestId("todo").filter({ hasText: "지원자 1명이 확정을 기다려요" })).toHaveCount(1);

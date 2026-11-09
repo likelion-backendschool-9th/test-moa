@@ -161,25 +161,410 @@ export const BASE_REWARD = 1000;
 /** 구독 모집의 추가 보상 크레딧 */
 export const EXTRA_REWARD = 300;
 
-/** AI 분석 항목 하나. 근거가 된 피드백 수를 함께 둔다 */
-export type AiFinding = {
-  text: string;
-  feedbackCount: number;
+/** 리뷰 그룹 심각도. 백엔드 improvementRank 1 = 치명 ~ 4 = 사소 */
+export type ReviewSeverity = 1 | 2 | 3 | 4;
+
+export const REVIEW_SEVERITY_LABEL: Record<ReviewSeverity, string> = { 1: "치명", 2: "높음", 3: "보통", 4: "사소" };
+
+/** 리뷰 그룹 카테고리. 백엔드 ClusterCategory 중 심각도가 있는 것만(칭찬·미분류는 그룹 목록에 없다) */
+export type ReviewCategory = "bug" | "ux" | "request";
+
+export const REVIEW_CATEGORY_LABEL: Record<ReviewCategory, string> = { bug: "버그", ux: "UX", request: "요청" };
+
+/** 리뷰 그룹으로 등록한 GitHub 이슈 */
+export type GithubIssue = { number: number; url: string };
+
+/**
+ * AI가 묶은 리뷰 그룹 하나 (백엔드 ClusterGroup + FeedbackCluster).
+ * 백엔드 ReviewAnalysisResponse.Group에는 리뷰 id가 없고, 그룹 리뷰는 GET .../analysis/groups/{groupId}/reviews로 받는다(fromBackendGroups).
+ * shortcut: 목업은 리뷰 id를 그룹에 둔다. 리뷰 분석 탭을 백엔드에 붙일 때 fromBackendGroups를 쓴다
+ */
+export type ReviewGroup = {
+  id: string;
+  /** 분류 코드(백엔드 groupCode). 버전이 달라도 같은 문제면 같은 코드다 */
+  code: string;
+  name: string;
+  category: ReviewCategory;
+  severity: ReviewSeverity;
+  issueTitle: string;
+  issueContent: string;
+  /** 등록한 GitHub 이슈(백엔드 gitIssueNumber·gitIssueUrl). 등록 전에는 null */
+  issue: GithubIssue | null;
+  /** 그룹에 든 리뷰(피드백) id */
+  feedbackIds: string[];
+  representativeFeedbackId: string | null;
 };
 
-/** 모집 건 피드백을 AI가 정리한 결과. 지금은 시연용 샘플이다 */
-export type AiSummary = {
-  /** 한 줄 요약 */
-  headline: string;
-  /** 고칠 점 (버그·사용성). 해결 제안이 있으면 문제에 짝지어 둔다 */
-  issues: Array<AiFinding & { suggestion?: string }>;
-  /** 좋았던 점 */
-  strengths: AiFinding[];
-  /** 정리한 시각 */
-  generatedAt: string;
-  /** 시연용 샘플이면 true. 실제 AI를 붙이면 false */
-  isSample: boolean;
+/** 그룹에 든 리뷰 하나. 대표 리뷰가 맨 앞이다 */
+export type GroupReview = {
+  id: string;
+  testerNickname: string;
+  content: string;
+  submittedAt: string;
+  /** 어느 테스트 항목의 리뷰인지. 기타 의견은 null */
+  testItemTitle: string | null;
+  representative: boolean;
 };
+
+/** 화면에 그리는 그룹. 리뷰 목록과 그 리뷰를 쓴 테스터 수를 붙인다 */
+export type ReviewGroupView = Omit<ReviewGroup, "feedbackIds" | "representativeFeedbackId"> & {
+  reviews: GroupReview[];
+  testerCount: number;
+};
+
+/** 그룹의 리뷰 id를 리뷰로 바꾼다. 신고된 리뷰는 분석에 넣지 않으니 뺀다. 대표 리뷰가 먼저, 나머지는 최신순 */
+export function toGroupView(group: ReviewGroup, feedbacks: Feedback[], testItems: Array<{ id: string; title: string }>): ReviewGroupView {
+  const { feedbackIds, representativeFeedbackId, ...rest } = group;
+  const reviews = toGroupReviews(feedbackIds, representativeFeedbackId, feedbacks, testItems);
+  return { ...rest, reviews, testerCount: new Set(reviews.map((item) => item.testerNickname)).size };
+}
+
+/** 리뷰 id를 리뷰로 바꾼다. 신고된 리뷰는 분석에 넣지 않으니 뺀다. 대표 리뷰가 먼저, 나머지는 최신순 */
+export function toGroupReviews(
+  feedbackIds: string[],
+  representativeFeedbackId: string | null,
+  feedbacks: Feedback[],
+  testItems: Array<{ id: string; title: string }>,
+): GroupReview[] {
+  return feedbacks
+    .filter((item) => feedbackIds.includes(item.id) && item.status !== "reported")
+    .map((item) => ({
+      id: item.id,
+      testerNickname: item.testerNickname,
+      content: item.content,
+      submittedAt: item.submittedAt,
+      testItemTitle: testItems.find((testItem) => testItem.id === item.testItemId)?.title ?? null,
+      representative: item.id === representativeFeedbackId,
+    }))
+    .sort((a, b) => Number(b.representative) - Number(a.representative) || b.submittedAt.localeCompare(a.submittedAt));
+}
+
+/** 이슈 초안 검증. 백엔드 AnalysisGroupUpdateRequest와 같은 한도. 문제가 없으면 null */
+export function validateIssueDraft(title: string, content: string) {
+  if (!title.trim()) return "이슈 제목을 적어 주세요";
+  if (title.length > 255) return "이슈 제목은 255자까지 적을 수 있어요";
+  if (content.length > 60_000) return "이슈 내용은 60,000자까지 적을 수 있어요";
+  return null;
+}
+
+/** AI 리뷰 묶기 결과 (백엔드 ReviewAnalysisResponse). 지금은 시연용 샘플이다 */
+export type AiSummary = {
+  /** 마지막으로 분석을 마친 시각 */
+  analyzedAt: string;
+  /** 리뷰 전체를 한 문장으로 요약한 분석(백엔드 analyticsSummary). 화면 맨 위 "핵심 요약"이다. 없으면 null */
+  analyticsSummary: string | null;
+  /** 칭찬 리뷰 한 줄 요약. 칭찬이 없으면 null */
+  praiseSummary: string | null;
+  /**
+   * AI가 칭찬으로 묶은 리뷰 id.
+   * shortcut: 목업은 분석 결과에 id를 둔다. 백엔드에 붙일 때는 GET .../analysis/praises로 받는다
+   */
+  praiseFeedbackIds: string[];
+  groups: ReviewGroup[];
+};
+
+/** 분석 탭에 그리는 값. 리뷰 수와 시간대 별 수는 피드백에서 센다 */
+export type ReviewAnalysis = Omit<AiSummary, "groups" | "praiseFeedbackIds"> & {
+  groups: ReviewGroupView[];
+  totalCount: number;
+  todayCount: number;
+  /** 마지막 분석 뒤에 들어와 아직 분석에 반영되지 않은 리뷰 수(백엔드 unanalyzedFeedbackCount) */
+  unanalyzedCount: number;
+  /** 시간대별 그래프. 범위마다 구간별 리뷰 수 */
+  trends: Record<TrendRange, TrendPoint[]>;
+  /** 칭찬으로 묶인 리뷰. 최근 제출 순 */
+  praiseReviews: GroupReview[];
+};
+
+/** 심각도 순(1 = 치명 먼저), 같으면 테스터가 많은 순. 백엔드 정렬과 같다 */
+export function sortReviewGroups(groups: ReviewGroupView[]) {
+  return [...groups].sort((a, b) => a.severity - b.severity || b.testerCount - a.testerCount);
+}
+
+/** 리뷰 성향 원형 그래프 보기: 태그 별, 그룹 별, 심각도 별 */
+export type ReviewMixView = "tag" | "group" | "severity";
+
+/**
+ * 원형 그래프 한 조각. color는 범주 색 순번(1~6), severity는 심각도 딱지와 같은 색을 쓴다
+ */
+export type ReviewMixSlice = { key: string; label: string; count: number; color: number | `severity-${ReviewSeverity}` };
+
+/** 그룹 별 보기에서 색이 모자라지 않게 이보다 많으면 나머지를 "기타"로 묶는다 */
+const MIX_MAX_SLICES = 6;
+
+/**
+ * 리뷰 성향. 그룹에 묶인 리뷰 수를 태그(버그·UX·요청과 칭찬)·그룹·심각도로 나눈다. 0건인 조각은 뺀다.
+ * 그룹은 받은 순서(심각도 순)대로이고, 6개를 넘으면 앞의 5개만 두고 나머지를 "기타"로 묶는다
+ */
+export function buildReviewMix(groups: ReviewGroupView[], praiseCount: number): Record<ReviewMixView, ReviewMixSlice[]> {
+  const sum = (items: ReviewGroupView[]) => items.reduce((total, group) => total + group.reviews.length, 0);
+  const tag: ReviewMixSlice[] = [
+    ...(Object.keys(REVIEW_CATEGORY_LABEL) as ReviewCategory[]).map((category, index) => ({
+      key: category,
+      label: REVIEW_CATEGORY_LABEL[category],
+      count: sum(groups.filter((group) => group.category === category)),
+      color: index + 1,
+    })),
+    { key: "praise", label: "칭찬", count: praiseCount, color: 4 },
+  ];
+  const named = groups.length > MIX_MAX_SLICES ? groups.slice(0, MIX_MAX_SLICES - 1) : groups;
+  const rest = groups.slice(named.length);
+  const group: ReviewMixSlice[] = [
+    ...named.map((item, index) => ({ key: item.id, label: item.name, count: item.reviews.length, color: index + 1 })),
+    ...(rest.length > 0 ? [{ key: "rest", label: "기타", count: sum(rest), color: MIX_MAX_SLICES }] : []),
+  ];
+  const severity: ReviewMixSlice[] = ([1, 2, 3, 4] as const).map((level) => ({
+    key: String(level),
+    label: REVIEW_SEVERITY_LABEL[level],
+    count: sum(groups.filter((item) => item.severity === level)),
+    color: `severity-${level}` as const,
+  }));
+  const nonEmpty = (slices: ReviewMixSlice[]) => slices.filter((slice) => slice.count > 0);
+  return { tag: nonEmpty(tag), group: nonEmpty(group), severity: nonEmpty(severity) };
+}
+
+/** 직전 버전과 견준 분류의 상태 (백엔드 previouslyReported, notReportedGroups). "해결됨"이라고 쓰지 않는다(#108 정한 것 12) */
+export type ComparisonStatus = "continued" | "new" | "notReported";
+
+/** 버전 별 분석 그룹 목록의 칸 이름 */
+export const COMPARISON_STATUS_LABEL: Record<ComparisonStatus, string> = {
+  continued: "이전 버전과 묶인 그룹",
+  new: "새로 생긴 그룹",
+  notReported: "리뷰가 들어오지 않은 그룹",
+};
+
+/** 두 버전에 걸친 분류 하나. 이름·심각도는 있으면 현재 버전 것을 쓴다 */
+export type ComparisonGroup = Pick<ReviewGroupView, "code" | "name" | "category" | "severity"> & {
+  status: ComparisonStatus;
+  previous: ReviewGroupView | null;
+  current: ReviewGroupView | null;
+};
+
+/** AI 버전 비교 결과 중 저장되는 값 (백엔드 version_comparisons). 지금은 시연용 샘플이다 */
+export type VersionComparisonSample = { summary: string; comparedAt: string };
+
+/** 버전 별 분석 탭의 상태: 직전 버전 없음, 분석 전, 비교 전, 결과 있음 (백엔드 409 NO_PREVIOUS_VERSION·ANALYSIS_NOT_DONE, 404 COMPARISON_NOT_FOUND) */
+export type VersionComparison =
+  | { state: "noPrevious"; currentVersion: number }
+  | { state: "notAnalyzed"; previousVersion: number; currentVersion: number }
+  | { state: "notCompared"; previousVersion: number; currentVersion: number }
+  | (VersionComparisonSample & {
+      state: "ready";
+      previousKey: string;
+      previousVersion: number;
+      currentVersion: number;
+      /** 두 버전 모집글 제목 */
+      previousTitle: string;
+      currentTitle: string;
+      /** 비교한 뒤 두 버전 중 하나를 다시 분석했으면 true */
+      stale: boolean;
+      /** 두 버전에서 마지막 분석 뒤에 들어와 비교에 반영되지 않은 리뷰 수 */
+      unreflectedCount: number;
+      groups: ComparisonGroup[];
+    });
+
+/**
+ * 직전·현재 버전 그룹을 분류 코드로 잇는다(백엔드와 같은 규칙).
+ * 현재 그룹을 심각도·테스터 수 순으로 먼저 두고, 그 뒤에 이번 버전에서 보고되지 않은 직전 그룹을 같은 순서로 둔다
+ */
+export function compareVersions(previous: ReviewGroupView[], current: ReviewGroupView[]): ComparisonGroup[] {
+  const pick = ({ code, name, category, severity }: ReviewGroupView) => ({ code, name, category, severity });
+  const currentCodes = new Set(current.map((group) => group.code));
+  const continuing = sortReviewGroups(current).map((group): ComparisonGroup => {
+    const before = previous.find((item) => item.code === group.code) ?? null;
+    return { ...pick(group), status: before ? "continued" : "new", previous: before, current: group };
+  });
+  const dropped = sortReviewGroups(previous.filter((group) => !currentCodes.has(group.code))).map(
+    (group): ComparisonGroup => ({ ...pick(group), status: "notReported", previous: group, current: null }),
+  );
+  return [...continuing, ...dropped];
+}
+
+/**
+ * 짝 고치기. 이번 버전 그룹의 분류 코드를 바꿔 다시 잇는다(백엔드도 코드로 잇는다).
+ * 직전 그룹 코드를 주면 그 그룹과 묶고, null이면 짝을 풀어 새로 생긴 그룹으로 둔다. 그 코드를 쓰던 다른 그룹은 짝이 풀린다(한 그룹은 한 번만 짝짓는다)
+ */
+export function relinkGroup(current: ReviewGroupView[], currentId: string, previousCode: string | null): ReviewGroupView[] {
+  return current.map((group) => {
+    if (group.id === currentId) return { ...group, code: previousCode ?? group.id };
+    return previousCode !== null && group.code === previousCode ? { ...group, code: group.id } : group;
+  });
+}
+
+/** 백엔드 ReviewAnalysisResponse.Group 중 화면이 쓰는 값 */
+export type BackendAnalysisGroup = {
+  groupId: number;
+  groupCode: string;
+  name: string;
+  category: "BUG" | "UX" | "REQUEST" | "PRAISE" | "UNCLASSIFIED";
+  improvementRank: number | null;
+  gitIssueTitle: string | null;
+  gitIssueContent: string | null;
+  gitIssueUrl: string | null;
+  gitIssueNumber: number | null;
+  testerCount: number;
+};
+
+/** 백엔드 GroupReviewResponse (GET .../analysis/groups/{groupId}/reviews) */
+export type BackendGroupReview = {
+  feedbackId: number;
+  nickname: string;
+  testItemTitle: string | null;
+  content: string;
+  submittedAt: string;
+  representative: boolean;
+};
+
+const BACKEND_CATEGORY: Partial<Record<BackendAnalysisGroup["category"], ReviewCategory>> = { BUG: "bug", UX: "ux", REQUEST: "request" };
+
+/**
+ * 백엔드 분석 그룹을 화면 그룹으로 바꾼다. 칭찬·미분류는 그룹 목록에 없어(ReviewCategory) 뺀다.
+ * reviews는 그룹 id별 리뷰이고, 백엔드가 대표 리뷰 먼저·최근 제출 순으로 준다
+ */
+export function fromBackendGroups(groups: BackendAnalysisGroup[], reviews: Record<number, BackendGroupReview[]>): ReviewGroupView[] {
+  return groups.flatMap((group) => {
+    const category = BACKEND_CATEGORY[group.category];
+    if (!category) return [];
+    return [
+      {
+        id: String(group.groupId),
+        code: group.groupCode,
+        name: group.name,
+        category,
+        /* 심각도가 있는 카테고리라 백엔드가 늘 채운다. 비어 있으면 가장 낮은 단계로 둔다 */
+        severity: (group.improvementRank ?? 4) as ReviewSeverity,
+        issueTitle: group.gitIssueTitle ?? "",
+        issueContent: group.gitIssueContent ?? "",
+        issue: group.gitIssueUrl && group.gitIssueNumber !== null ? { number: group.gitIssueNumber, url: group.gitIssueUrl } : null,
+        testerCount: group.testerCount,
+        reviews: (reviews[group.groupId] ?? []).map((review) => ({
+          id: String(review.feedbackId),
+          testerNickname: review.nickname,
+          content: review.content,
+          submittedAt: review.submittedAt,
+          testItemTitle: review.testItemTitle,
+          representative: review.representative,
+        })),
+      },
+    ];
+  });
+}
+
+/**
+ * 짝 저장 요청(PUT .../version-comparison/links). 저장한 짝과 코드가 달라진 이번 버전 그룹만 보낸다.
+ * 바뀐 코드가 직전 그룹 코드면 그 그룹과 잇고, 아니면(relinkGroup이 짝을 풀며 붙인 자기 id) 짝 없음(null)이다
+ */
+export function toVersionLinks(previous: ReviewGroupView[], saved: ReviewGroupView[], draft: ReviewGroupView[]) {
+  return draft
+    .filter((group, index) => group.code !== saved[index].code)
+    .map((group) => ({ groupId: group.id, previousGroupId: previous.find((item) => item.code === group.code)?.id ?? null }));
+}
+
+/** 버전 비교 막대 기준: 심각도 별, 그룹 별, 태그 별 */
+export type VersionBarView = "severity" | "group" | "tag";
+
+/** 막대 한 칸: 그 칸에 든 리뷰 수를 직전·이번 버전으로 */
+export type VersionBar = { key: string; label: string; previous: number; current: number };
+
+/**
+ * 버전 비교 막대. 그룹에 묶인 리뷰 수를 심각도·그룹·태그로 나눠 두 버전을 견준다. 두 버전 모두 0건인 칸은 뺀다.
+ * 심각도·태그는 각 버전 그룹의 값으로 세서 짝을 고쳐도 그대로이고, 그룹은 받은 순서대로다
+ */
+export function buildVersionBars(groups: ComparisonGroup[]): Record<VersionBarView, VersionBar[]> {
+  const previous = groups.flatMap((group) => group.previous ?? []);
+  const current = groups.flatMap((group) => group.current ?? []);
+  const sum = (items: ReviewGroupView[]) => items.reduce((total, group) => total + group.reviews.length, 0);
+  const split = (match: (group: ReviewGroupView) => boolean) => ({ previous: sum(previous.filter(match)), current: sum(current.filter(match)) });
+  const severity = ([1, 2, 3, 4] as const).map((level) => ({
+    key: String(level),
+    label: REVIEW_SEVERITY_LABEL[level],
+    ...split((group) => group.severity === level),
+  }));
+  const tag = (Object.keys(REVIEW_CATEGORY_LABEL) as ReviewCategory[]).map((category) => ({
+    key: category,
+    label: REVIEW_CATEGORY_LABEL[category],
+    ...split((group) => group.category === category),
+  }));
+  const group = groups.map((item) => ({
+    key: item.code,
+    label: item.name,
+    previous: item.previous?.reviews.length ?? 0,
+    current: item.current?.reviews.length ?? 0,
+  }));
+  const nonEmpty = (bars: VersionBar[]) => bars.filter((bar) => bar.previous + bar.current > 0);
+  return { severity: nonEmpty(severity), group: nonEmpty(group), tag: nonEmpty(tag) };
+}
+
+const seoulHour = (date: Date) =>
+  Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", hour: "numeric", hourCycle: "h23" }).format(date));
+
+/** 시간대별 그래프 범위: 하루(3시간 간격 8칸), 일주일(하루 간격 7칸), 30일(3일 간격 10칸). 모두 어제(한국 날짜)까지다 */
+export type TrendRange = "day" | "week" | "month";
+
+/** 그래프 한 칸: 그 구간에 들어온 리뷰 수 */
+export type TrendPoint = {
+  /** x축 이름 */
+  label: string;
+  /** 구간 전체 이름. 마우스를 올렸을 때와 읽는 프로그램에 쓴다 */
+  title: string;
+  reviews: number;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** 한국 날짜 "YYYY-MM-DD"를 1970-01-01부터 며칠째인지로 바꾼다 */
+const dayNumber = (date: string) => Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) / DAY_MS;
+const monthDay = (day: number) => {
+  const date = new Date(day * DAY_MS);
+  return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+};
+
+/** 오늘 들어온 리뷰 수와 범위별 그래프 칸. 날짜는 한국 기준이라 자정이 지나면 오늘은 0부터 다시 센다 */
+export function buildTrends(submittedAt: string[], now: Date) {
+  const yesterday = dayNumber(seoulDate(now)) - 1;
+  const hh = (hour: number) => String(hour).padStart(2, "0");
+  const ranges: Record<TrendRange, { size: number; slot: (day: number, hour: number) => number; name: (index: number) => [string, string] }> = {
+    day: {
+      size: 8,
+      slot: (day, hour) => (day === yesterday ? Math.floor(hour / 3) : -1),
+      name: (index) => [`${hh(index * 3)}시`, `${hh(index * 3)}~${hh(index * 3 + 3)}시`],
+    },
+    week: {
+      size: 7,
+      slot: (day) => day - (yesterday - 6),
+      name: (index) => [monthDay(yesterday - 6 + index), monthDay(yesterday - 6 + index)],
+    },
+    month: {
+      size: 10,
+      slot: (day) => (day > yesterday ? -1 : Math.floor((day - (yesterday - 29)) / 3)),
+      name: (index) => {
+        const start = yesterday - 29 + index * 3;
+        return [monthDay(start), `${monthDay(start)}~${monthDay(start + 2)}`];
+      },
+    },
+  };
+  const dates = submittedAt.map((value) => new Date(value));
+  const trends = {} as Record<TrendRange, TrendPoint[]>;
+  for (const [range, { size, slot, name }] of Object.entries(ranges) as Array<[TrendRange, (typeof ranges)[TrendRange]]>) {
+    const counts = Array<number>(size).fill(0);
+    for (const date of dates) {
+      const index = slot(dayNumber(seoulDate(date)), seoulHour(date));
+      if (index >= 0 && index < size) counts[index] += 1;
+    }
+    trends[range] = counts.map((reviews, index) => {
+      const [label, title] = name(index);
+      return { label, title, reviews };
+    });
+  }
+  const todayCount = dates.filter((date) => dayNumber(seoulDate(date)) === yesterday + 1).length;
+  return { todayCount, trends };
+}
+
+/** 그래프 y축 눈금. 가장 많은 칸을 덮는 정수 눈금 다섯 개 이하. 값이 모두 0이면 0과 1 */
+export function yTicks(hourly: number[]) {
+  const max = Math.max(1, ...hourly);
+  const step = Math.ceil(max / 4);
+  return Array.from({ length: Math.ceil(max / step) + 1 }, (_, index) => index * step);
+}
 
 /** AI 분석을 시작하는 최소 피드백 수. 기획에서 미정이라 임시값이다 */
 export const AI_MIN_FEEDBACKS = 3;
@@ -209,6 +594,12 @@ const HOUR_MS = 60 * 60 * 1000;
 /* ---------- 계산 ---------- */
 
 /** 모집 건 상태. 개발자가 취소했으면 취소, 모집 마감 전이면 모집 중, 마감 뒤면 제출 마감일로 나눈다 */
+/** 홈 배너에 놓을 모집 건. 구독 모집을 먼저 놓고 남는 자리를 전체 최신순으로 채우며, 같은 모집 건은 한 번만 넣는다 */
+export function pickBannerRecruitments(subscription: Recruitment[], latest: Recruitment[], limit: number): Recruitment[] {
+  const bySlug = new Map([...subscription, ...latest].map((item) => [item.slug, item]));
+  return [...new Set([...subscription, ...latest].map((item) => item.slug))].slice(0, limit).map((slug) => bySlug.get(slug) as Recruitment);
+}
+
 export function getRecruitmentStatus(recruitment: Recruitment, now: Date, cancelled = false): RecruitmentStatus {
   if (cancelled) return "cancelled";
   if (now < new Date(recruitment.recruitDeadline)) return "recruiting";
@@ -312,11 +703,14 @@ export function canSelectApplicants(recruitment: Pick<RecruitmentView, "status" 
   return recruitment.isSubscription && selectionMode === "selection" && recruitment.status === "recruiting";
 }
 
+/** 마지막 분석 요청의 상태 (백엔드 AnalysisStatus). 분석 중이어도 지난 결과가 있으면 함께 온다 */
+export type AnalysisStatus = "NONE" | "PENDING" | "DONE" | "FAILED";
+
 /** AI 분석 영역의 상태: 결과 있음, 피드백 부족, 아직 정리 전 */
 export type AiAnalysis =
-  | { state: "ready"; summary: AiSummary }
+  | { state: "ready"; status: AnalysisStatus; summary: ReviewAnalysis }
   | { state: "notEnough"; feedbackCount: number; minFeedbacks: number }
-  | { state: "empty" };
+  | { state: "empty"; status: AnalysisStatus };
 
 /* ---------- 폼 검증 ---------- */
 

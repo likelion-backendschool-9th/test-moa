@@ -49,13 +49,14 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `version` | `version` | Integer | 불가 | 1로 시작. 모집 작성 서비스가 프로젝트마다 1, 2, 3으로 매긴다(고침 #177: 처음에는 항상 1이었다) |
 | `analysisStatus` | `analysis_status` | enum `AnalysisStatus` | 불가 | `NONE`/`PENDING`/`DONE`/`FAILED`. `NONE`으로 시작 |
 | `analyzedAt` | `analyzed_at` | LocalDateTime | 가능 | 피드백 분석 완료 시각. 분석 전에는 null (#108) |
+| `analyticsSummary` | `analytics_summary` | TEXT | 가능 | 리뷰 전체를 한 문장으로 요약한 분석. 분석 전이면 null |
 | `praiseSummary` | `praise_summary` | TEXT | 가능 | 칭찬 리뷰 한 줄 요약. 분석 전이거나 칭찬이 없으면 null (#107) |
 | `analysisRequestedAt` | `analysis_requested_at` | LocalDateTime | 가능 | 마지막 분석 요청(접수) 시각. 요청한 적이 없으면 null (#107) |
 | `cancelReason` | `cancel_reason` | TEXT | 가능 | 테스트 전 취소는 비어 있다 |
 | `cancelledAt` | `cancelled_at` | LocalDateTime | 가능 | 취소 시각 |
 
 - `RecruitmentType`(`recruitment_types`)과 `RecruitmentImage`(`recruitment_images`: `recruitment`, `url`, `sortOrder`)는 모집글을 가리킨다
-- 메서드: `cancel(String reason, LocalDateTime cancelledAt)`, `completeAnalysis(String praiseSummary, LocalDateTime now)`(#107·#108)
+- 메서드: `cancel(String reason, LocalDateTime cancelledAt)`, `completeAnalysis(String analyticsSummary, String praiseSummary, LocalDateTime now)`(#107·#108)
 - 취소할 수 있는 시기와 사유가 필수인 경우는 확정 테스터와 일정을 함께 봐야 해서 서비스가 확인한다(`docs/frontend/project/projects.md` 모집 취소 표)
 
 #89-S1 프로젝트에는 프로젝트 정보만 있다 [직접]

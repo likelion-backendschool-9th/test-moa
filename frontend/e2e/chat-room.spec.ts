@@ -74,7 +74,7 @@ test.describe("R166 메시지 보내기", () => {
     await sendButton(page).click();
     await expect(messages(page)).toHaveCount(count + 1);
     expect(await spoken(messages(page).last())).toBe("나: 첫 줄\n둘째 줄");
-    await expect(messageInput(page)).toHaveAttribute("maxlength", "500");
+    await expect(messageInput(page)).toHaveAttribute("maxlength", "10000");
   });
 
   test("S151 한글을 조합하는 중에 누른 Enter로는 보내지 않는다", async ({ page }) => {

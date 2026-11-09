@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/Badge/Badge";
 import { cn } from "@/lib/cn";
 import { formatChatTime, isTodayInSeoul } from "@/lib/format";
 import type { ChatRoom } from "@/features/chat/types";
@@ -48,13 +49,14 @@ export function ChatCard({ room, now, eager = false }: { room: ChatRoom; now: Da
           </div>
           <p className={styles.text}>
             <span className={styles.srOnly2}>대화 상대 </span>
+            {room.readOnly && <><Badge tone="muted">종료</Badge>{" "}</>}
             <ChatRoleBadge role={room.partner.role} />{" "}
             <span data-partner className={styles.partner}>
               {room.partner.nickname}
             </span>
           </p>
           <p data-preview className={styles.preview}>
-            {room.lastMessage}
+            {room.lastMessage ?? "아직 대화가 없어요"}
           </p>
         </div>
         <ChatCardMenu roomKey={room.roomKey} title={title} className={styles.chatCardMenu} />

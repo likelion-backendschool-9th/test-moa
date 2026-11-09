@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { isBackendAuth } from "@/lib/backend";
 import { redirect } from "next/navigation";
 import { deleteChatRoom, renameChatRoom, sendChatMessage } from "@/features/chat/api";
 import { CHATS_PATH } from "@/features/chat/query";
@@ -10,18 +12,29 @@ import { CHATS_PATH } from "@/features/chat/query";
  */
 
 export async function renameChatRoomAction(roomKey: string, name: string) {
-  if (typeof roomKey !== "string" || typeof name !== "string") return;
-  await renameChatRoom(roomKey, name);
+  if (typeof roomKey !== "string" || typeof name !== "string") return { ok: false };
+  const result = await renameChatRoom(roomKey, name);
+  if (!result.ok) return result;
+  if (isBackendAuth) {
+    revalidatePath(CHATS_PATH);
+    revalidatePath(`${CHATS_PATH}/${roomKey}`);
+  }
+  return result;
 }
 
 /** leave가 true면(채팅방 안에서 지웠을 때) 지운 뒤 채팅함으로 보낸다. 사라진 방을 다시 그리지 않기 위해서다 */
 export async function deleteChatRoomAction(roomKey: string, leave = false) {
-  if (typeof roomKey !== "string") return;
-  await deleteChatRoom(roomKey);
+  if (typeof roomKey !== "string") return { ok: false };
+  const result = await deleteChatRoom(roomKey);
+  if (!result.ok) return result;
+  if (isBackendAuth) revalidatePath(CHATS_PATH);
   if (leave === true) redirect(CHATS_PATH);
+  return result;
 }
 
 export async function sendChatMessageAction(roomKey: string, text: string) {
   if (typeof roomKey !== "string" || typeof text !== "string") return;
-  await sendChatMessage(roomKey, text);
+  const result = await sendChatMessage(roomKey, text);
+  if (isBackendAuth && result) revalidatePath(CHATS_PATH);
+  return result;
 }

@@ -11,13 +11,13 @@ export const CHAT_ROLE_LABEL: Record<ChatRole, string> = {
 export const CHAT_ROOM_NAME_MAX = 30;
 
 /** 메시지 한 개의 최대 글자 수 */
-export const CHAT_MESSAGE_MAX = 500;
+export const CHAT_MESSAGE_MAX = 10_000;
 
 /** 채팅방 하나. 구독 모집 건의 개발자와 선정된 테스터의 1대1 대화를 보는 사람 기준으로 정리했다 */
 export type ChatRoom = {
   roomKey: string;
   /** 모집 건 slug */
-  recruitmentSlug: string;
+  recruitmentSlug: string | null;
   projectName: string;
   /** 회원이 바꾼 대화방 이름. 없으면 프로젝트명을 이름으로 쓴다 */
   roomName?: string;
@@ -27,7 +27,8 @@ export type ChatRoom = {
   myRole: ChatRole;
   /** 대화 상대 */
   partner: { nickname: string; role: ChatRole };
-  lastMessage: string;
+  readOnly: boolean;
+  lastMessage: string | null;
   lastMessageAt: string;
 };
 
@@ -37,6 +38,7 @@ export type ChatRoleCounts = Record<"all" | ChatRole, number>;
 /** 메시지 한 개. 보낸 사람은 보는 사람 기준으로 나(me)와 대화 상대(partner)다 */
 export type ChatMessage = {
   id: string;
+  seq: number;
   from: "me" | "partner";
   /** 줄바꿈을 그대로 담는다 */
   text: string;
@@ -47,6 +49,9 @@ export type ChatMessage = {
 export type ChatRoomData = {
   room: ChatRoom;
   messages: ChatMessage[];
+  hasMore: boolean;
+  /** 백엔드 메시지를 클라이언트 상태로 유지하는 모드 */
+  live: boolean;
   /** 날짜 구분("오늘", "어제")의 기준 시각 */
   now: string;
 };

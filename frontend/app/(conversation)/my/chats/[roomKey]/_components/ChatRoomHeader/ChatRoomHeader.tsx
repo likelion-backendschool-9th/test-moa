@@ -23,6 +23,7 @@ export function ChatRoomHeader({ room }: { room: ChatRoom }) {
           <span data-partner className={styles.partner}>
             {room.partner.nickname}
           </span>
+          {room.recruitmentSlug !== null && <>
           <span aria-hidden className={styles.label}>
             ·
           </span>
@@ -32,6 +33,7 @@ export function ChatRoomHeader({ room }: { room: ChatRoom }) {
           >
             {room.projectName} 모집 글
           </Link>
+          </>}
         </p>
       </div>
       <ChatCardMenu roomKey={room.roomKey} title={title} leaveOnDelete className={styles.chatCardMenu} />

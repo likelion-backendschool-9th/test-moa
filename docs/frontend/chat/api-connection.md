@@ -63,6 +63,13 @@
 - When  주소로 연다
 - Then  지금의 없는 방 안내가 보인다
 
+#54-S28 열어 둔 사이 쌓인 메시지 [테스트: unit]
+- Given 화면에 순번 6~35가 있다
+- When  서버가 47~76을 준다
+- Then  대화 중간이 비지 않도록 목록을 47~76으로 바꾼다
+- When  서버가 7~36을 준다
+- Then  기존 목록에 순번 6이 있어 합친다
+
 ## 3. 보내기 (#54-R3) — PR ①
 보낸 메시지가 저장되고 내 말풍선으로 붙는다. 최대 글자 수는 서버와 같은 10,000자다.
 
@@ -196,7 +203,7 @@
 2. 조회 연결 — #54-S1, S6, S7, S9
    - 파일: `features/chat/api.ts`(`getChatInbox`·`getChatRoom`·`getChatRoomTitle` 맨 위에 `if (isBackendAuth)`. 401은 로그인으로, 404는 `notFound()`, 그 밖의 실패는 throw), `ChatCard.tsx`, `ChatRoomHeader.tsx`(`recruitmentSlug`가 null이면 링크를 그리지 않는다)
    - 확인: `npx tsc --noEmit`, `npm run lint`
-3. 이전 메시지 — #54-S8
+3. 이전 메시지 — #54-S8, S28
    - 파일: `features/chat/api.ts`(`getChatMessages(roomKey, {before, after})`), `app/api/chats/[roomKey]/messages/route.ts`(새로, 목업 모드 404), `[roomKey]/_components/ChatConversation/ChatConversation.tsx`·`hook.ts`(새로, "use client", 메시지 상태를 순번으로 합친다. 목록과 입력창을 감싼다), `ChatRoomView.tsx`
    - 확인: `npx tsc --noEmit`, `npm run lint`
 4. 보내기·이름 변경·삭제·읽기 전용 — #54-S10~S15

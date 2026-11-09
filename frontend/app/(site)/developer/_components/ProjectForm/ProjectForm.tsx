@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { Card } from "@/components/ui/Card/Card";
+import { FormMessage } from "@/components/ui/FormField/FormField";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { saveProject } from "@/features/project/actions";
 import { checkImages, formatBytes, type FileMeta } from "@/features/project/media";
@@ -127,6 +128,8 @@ export function ProjectForm({
         </FormSection>
 
         <input type="hidden" name="imagesMeta" value={JSON.stringify(image ? [toMeta(image)] : [])} />
+
+        {state.errors.form && <FormMessage status="error" message={state.errors.form} />}
 
         <div className={styles.box2}>
           <Button type="submit" disabled={pending}>

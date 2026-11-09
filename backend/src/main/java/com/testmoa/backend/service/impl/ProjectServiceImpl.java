@@ -42,7 +42,9 @@ import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.SubscriptionChecker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -82,6 +84,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
     private final SubscriptionChecker subscriptionChecker;
     private final GitHubIssueClient gitHubIssueClient;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 프로젝트 등록
@@ -192,18 +195,22 @@ public class ProjectServiceImpl implements ProjectService {
 
     /**
      * GitHub 레포 연결(#227). 입력한 레포를 토큰으로 GitHub에서 읽어 이슈를 만들 수 있는지 확인한 뒤 저장한다.
-     * shortcut: GitHub 확인 동안(최대 15초) 트랜잭션을 연 채로 기다린다. 개발자가 레포를 바꿀 때만 불러서 드물다. 잦아지면 확인을 트랜잭션 밖으로 뺀다
+     * 확인(최대 15초)은 트랜잭션 밖에서 하고, 확인 뒤 짧은 트랜잭션에서 프로젝트를 다시 읽어 연결 필드만 바꾼다.
+     * 확인을 기다리는 사이 다른 요청이 고친 이름·설명·이미지를 이전 값으로 덮어쓰지 않기 위해서다
      */
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.SUPPORTS)
     public ProjectResponse connectRepository(Long userId, Long projectId, RepositoryConnectRequest request) {
-        Project project = findOwned(userId, projectId);
+        findOwned(userId, projectId);
         var name = GitHubRepositoryNames.parse(request.repository())
                 .orElseThrow(() -> invalid("repository", "owner/repo 형식이나 GitHub 주소를 적어 주세요"));
         String token = request.token().trim();
         gitHubIssueClient.verify(new RepositoryLink(name.owner(), name.repo(), token));
-        project.connectRepository(name.full(), token);
-        return withCounts(List.of(project)).getFirst();
+        return transactionTemplate.execute(status -> {
+            Project project = findOwned(userId, projectId);
+            project.connectRepository(name.full(), token);
+            return withCounts(List.of(project)).getFirst();
+        });
     }
 
     /**

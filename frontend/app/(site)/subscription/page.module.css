@@ -1,0 +1,76 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-block: var(--space-8);
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 42rem;
+}
+
+.title {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.lead {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  color: var(--text-muted);
+}
+
+.skeletonGrid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .skeletonGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+@media (min-width: 48rem) {
+  .skeletonCard {
+    padding: var(--space-8);
+  }
+}
+
+.skName {
+  width: 6rem;
+  height: var(--space-8);
+}
+
+.skBlurb {
+  width: 100%;
+  max-width: 20rem;
+  height: var(--space-4);
+}
+
+.skButton {
+  width: 8rem;
+  height: var(--space-10);
+}
+
+.skPrice {
+  width: 10rem;
+  height: var(--space-8);
+}
+
+.skRow {
+  width: 100%;
+  height: var(--space-5);
+}

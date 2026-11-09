@@ -152,7 +152,7 @@ export function AnalyticsPanel({ isSubscription, analytics }: { isSubscription: 
       <Card as="div" className={styles.analyticsPanel}>
         <p className={styles.analyticsPanelText}>구독 모집에서 분석을 볼 수 있어요</p>
         <p className={styles.analyticsPanelText2}>구독하면 지원·제출·신고 흐름을 숫자로 확인할 수 있어요.</p>
-        <LinkButton href="/my/subscription" className={styles.analyticsPanelButton}>
+        <LinkButton href="/subscription" className={styles.analyticsPanelButton}>
           구독 알아보기
         </LinkButton>
       </Card>

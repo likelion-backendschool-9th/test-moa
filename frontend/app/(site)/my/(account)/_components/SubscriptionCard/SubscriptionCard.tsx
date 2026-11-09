@@ -14,7 +14,7 @@ export function SubscriptionCard({ subscription }: { subscription: Subscription 
         <AccountCardTitle id="my-subscription-heading">
           구독
         </AccountCardTitle>
-        <LinkButton href="/my/subscription" variant="secondary" size="sm">
+        <LinkButton href={active ? "/my/subscription" : "/subscription"} variant="secondary" size="sm">
           {active ? "구독 관리" : "구독 알아보기"}
         </LinkButton>
       </AccountCardHeader>

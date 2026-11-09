@@ -16,6 +16,7 @@ const NAV: NavDefinition[] = [
   { label: "참여 테스트", path: PARTICIPATIONS_PATH, requiresAuth: true },
   { label: "내 프로젝트", path: PROJECTS_PATH, activePaths: [PROJECTS_PATH, DEVELOPER_RECRUITMENTS_PATH], requiresAuth: true },
   { label: "채팅", path: "/my/chats", requiresAuth: true },
+  { label: "구독", path: "/subscription" },
   { label: "운영자 페이지", path: "/admin", adminOnly: true },
 ];
 

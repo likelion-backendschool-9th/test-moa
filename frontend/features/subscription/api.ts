@@ -5,14 +5,13 @@ import {
   FREE_PLAN,
   getDemoSubscriptionPayments,
   MAX_DEMO_PAYMENTS,
-  monthlyRecruitUsed,
   SUBSCRIPTION_PLANS,
 } from "@/demo/subscription";
 import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
 import { requireMember } from "@/features/session/guard";
-import type { Role } from "@/features/session/session";
-import type { Subscription, SubscriptionOverview } from "@/features/subscription/types";
+import { getSession, type Role } from "@/features/session/session";
+import type { Subscription, SubscriptionIntro, SubscriptionOverview } from "@/features/subscription/types";
 import { connection } from "next/server";
 import "server-only";
 
@@ -23,27 +22,29 @@ export async function getSubscriptionOverview(next = "/my/subscription"): Promis
   await connection();
   const now = new Date();
   const [subscription, { balance }] = await Promise.all([subscriptionFor(session.role, now), creditDataFor(session.role, now)]);
-  const plan = subscription?.status === "active" ? SUBSCRIPTION_PLANS.find(({ id }) => id === subscription.planId) : undefined;
   return {
     subscription,
     freePlan: FREE_PLAN,
     plans: SUBSCRIPTION_PLANS,
-    recruitQuota: {
-      used: monthlyRecruitUsed(session.role),
-      limit: (plan ?? FREE_PLAN).monthlyLimit,
-      resetsAt: startOfNextMonthInSeoul(now),
-    },
     payableCredits: payableCredits(balance),
     now: now.toISOString(),
   };
 }
 
-const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
-
-/** 한국 시간 기준 다음 달 1일 0시 */
-function startOfNextMonthInSeoul(now: Date) {
-  const seoul = new Date(now.getTime() + SEOUL_OFFSET_MS);
-  return new Date(Date.UTC(seoul.getUTCFullYear(), seoul.getUTCMonth() + 1, 1) - SEOUL_OFFSET_MS).toISOString();
+/** 공개 구독 소개. 로그인 없이 상품·무료 조건을 읽고, 회원이면 구독 상태도 붙인다 */
+export async function getSubscriptionIntro(): Promise<SubscriptionIntro> {
+  const session = await getSession();
+  await waitIfSlow();
+  await connection();
+  if (session.role === "guest") {
+    return { freePlan: FREE_PLAN, plans: SUBSCRIPTION_PLANS, subscription: { status: "none" }, isGuest: true };
+  }
+  return {
+    freePlan: FREE_PLAN,
+    plans: SUBSCRIPTION_PLANS,
+    subscription: await subscriptionFor(session.role, new Date()),
+    isGuest: false,
+  };
 }
 
 /**

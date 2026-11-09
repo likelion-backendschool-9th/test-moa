@@ -8,6 +8,7 @@ import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.repository.FreePlanRepository;
 import com.testmoa.backend.repository.PlanRepository;
 import com.testmoa.backend.repository.UserRepository;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,6 +178,13 @@ class FreePlanControllerTest {
         String plansBefore = mvc.perform(get("/api/v1/plans")).andReturn().getResponse().getContentAsString();
         String statusBefore = mvc.perform(get("/api/v1/my/subscription/status").header("Authorization", bearer))
                 .andReturn().getResponse().getContentAsString();
+        Long planId = planRepository.findCurrentPlans().stream()
+                .filter(plan -> plan.getTier().equals(tier)).findFirst().orElseThrow().getId();
+        String creditsBefore = mvc.perform(get("/api/v1/my/subscription/payable-credits").header("Authorization", bearer))
+                .andReturn().getResponse().getContentAsString();
+        String checkoutBefore = mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", String.valueOf(planId))
+                        .header("Authorization", bearer))
+                .andReturn().getResponse().getContentAsString();
 
         mvc.perform(put(ADMIN_FREE).header("Authorization", bearer(saveUser(Role.ADMIN)))
                 .contentType(MediaType.APPLICATION_JSON).content(body("FREE-" + tier, "기본 보상")));
@@ -190,5 +198,16 @@ class FreePlanControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.active").value(false))
                 .andExpect(content().string(statusBefore));
+        mvc.perform(get("/api/v1/my/subscription/payable-credits").header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(content().string(creditsBefore));
+        // 결제 화면 조회도 같다. 이용 기간의 시작이 요청 시각이라 응답 전체가 아니라 플랜과 결제 수단별 값을 비교한다
+        mvc.perform(get("/api/v1/my/subscription/checkout").param("planId", String.valueOf(planId))
+                        .header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.plan.id").value(planId))
+                .andExpect(jsonPath("$.data.active").value(false))
+                .andExpect(jsonPath("$.data.payableCredits").value(JsonPath.<Integer>read(checkoutBefore, "$.data.payableCredits")))
+                .andExpect(jsonPath("$.data.credit.affordable").value(JsonPath.<Boolean>read(checkoutBefore, "$.data.credit.affordable")));
     }
 }

@@ -16,6 +16,7 @@ export const PAGES: [path: string, role: Role][] = [
   ["/recruitments/booklog", "guest"],
   ["/my/credits/withdrawals", "tester"],
   ["/my/profile/edit", "tester"],
+  ["/subscription", "guest"],
   ["/my/subscription", "developer"],
   ["/my/subscription/checkout", "developer"],
   ["/my/chats", "tester"],

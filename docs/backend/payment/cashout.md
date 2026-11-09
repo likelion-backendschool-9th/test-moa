@@ -76,7 +76,7 @@
 동시에 두 번 신청해도 `cashable`보다 많이 잠기지 않게 한다 (#67 이슈 시나리오 5).
 
 1. 사용자 확인 (`BusinessException` `NOT_FOUND`)
-2. 지갑 행을 `PESSIMISTIC_WRITE`로 잠근다 (`findByUserIdForUpdate` — #71 결제와 같은 방식. #66에 없으면 #67에서 추가)
+2. 지갑 행을 `PESSIMISTIC_WRITE`로 잠근다 (`findLockedByUserId` — #71 결제와 같은 방식. #66에 없으면 #67에서 추가)
 3. 요청 값 검증 (DTO + `cashable()` 부족·금액 1 미만)
 4. `wallet.lockForCashout(amount)` — 장부 행 없음
 5. `Cashout` 생성 (`REQUESTED`)
@@ -138,7 +138,7 @@ flowchart LR
 ---
 
 ## 구현 메모
-- Repository: `CashoutRepository` (userId 최신순), `CreditWalletRepository.findByUserIdForUpdate`
+- Repository: `CashoutRepository` (userId 최신순), `CreditWalletRepository.findLockedByUserId`
 - Service: 신청·목록. 예외는 `BusinessException` (#66과 동일)
 - Converter + 키 설정. `.env.example`·`application-local` 예시·CI 테스트 키
 - 은행 허용 목록은 프론트 `BANKS`와 맞춤

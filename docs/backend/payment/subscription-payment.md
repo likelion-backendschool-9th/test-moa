@@ -219,7 +219,7 @@
 6. 문서 정리(README 이슈 표 링크, #71 섹션을 이 문서로 연결, 진행 표기 확인)
 
 ## 가정
-- `CreditWallet.spendForSubscription`·`payable()`, `findByUserIdForUpdate`, `Payment`·`Subscription`·`CreditLedger` 엔티티는 #45·#66에 있다.
+- `CreditWallet.spendForSubscription`·`payable()`, `findLockedByUserId`, `Payment`·`Subscription`·`CreditLedger` 엔티티는 #45·#66에 있다.
 - 지갑은 회원마다 하나이고 `credit_wallets.user_id`에 유일 제약이 있다(`ON CONFLICT (user_id)`가 쓰는 제약).
 - `SecurityConfig`는 공개 경로(`PUBLIC_PATHS`) 밖의 모든 요청에 로그인을 요구한다(`anyRequest().authenticated()`). 그래서 결제와 이력 API는 따로 설정할 것이 없고, 토큰이 없으면 401이다.
 - 시각은 서버 시간대의 `LocalDateTime.now()`다(다른 코드와 같다).

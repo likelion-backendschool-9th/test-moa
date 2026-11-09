@@ -15,7 +15,7 @@
 - 구독은 계정 단위다. 개발자와 테스터는 한 계정이라 화면을 역할로 나누지 않는다. 구독 혜택은 모집 글을 올리는 쪽(개발자 활동)에 붙는다.
 - 구독 가격·주기·크레딧 우대율은 기획에서 미정이다 (spec.md 3장). 화면은 목업 가격으로 만들고, 정해지면 목업 값만 바꾼다 (10-31 사용자 결정).
 - 구독 상품은 지금 하나다. 나중에 늘어날 수 있어서 상품은 목록 데이터로 두고, 화면은 목록을 그린다.
-- 백엔드는 고려하지 않는다. 데이터는 목업이다.
+- 백엔드는 고려하지 않는다. 데이터는 목업이다. (고침 #203: `AUTH_MODE=backend`에서는 구독 상태·플랜·결제 가능 크레딧을 서버에서 읽는다. 아래 "백엔드 연결")
 
 ## 1. 접근 제어 (R148)
 비로그인 사용자는 구독 관리를 볼 수 없고 로그인으로 이동한다.
@@ -195,6 +195,28 @@ S543 기록 보관 기간 (리뷰 반영) [직접]
 - 시연용 결제 기록은 10건까지다. 오래된 기록을 지우면 만료일과 크레딧이 함께 틀어져서, 가득 차면 더 받지 않는다.
 - 클라이언트 컴포넌트 `CheckoutForm` 1개를 더한다 (고른 칸에 따라 금액·이용 기간·버튼 이름이 바뀐다). 홈 문서 S78 갱신.
 - 구조: `src/lib/demo-subscription.ts`(시연용 결제 기록), `src/features/my/subscription-actions.ts`(`payForSubscription`), `src/features/my/components/CheckoutForm.tsx`, `src/app/my/(account)/subscription/checkout/page.tsx`. 결제 기록은 `features/my/api.ts`(만료일), `features/credit/api.ts`(잔액·내역), `lib/session.ts`(헤더 크레딧)가 읽는다.
+
+## 백엔드 연결 (#203)
+`AUTH_MODE=backend`에서 `getSubscriptionOverview`가 서버 값을 읽는다. 값이 없으면 목업이다. 구독 결제(저장)는 이번 범위가 아니라 결제 화면의 저장은 계속 목업이다.
+
+| 화면 값 | 서버 |
+| --- | --- |
+| 구독 상태·만료일 | `GET /api/v1/my/subscription/status` (`eligible=false`면 운영자라 구독 대상 아님, `active`면 `endAt`) |
+| 상품 이름·가격·기간 | `GET /api/v1/plans` (`tier`, `cashPrice`, `creditPrice`, `periodDays`) |
+| 구독 결제에 쓸 수 있는 크레딧 | `GET /api/v1/my/subscription/payable-credits` (이벤트 + 적립, 출금 처리 중 제외) |
+
+시각은 오프셋이 붙은 값(`…Z`)이라 한국 시간으로 표시한다(#193).
+
+#203-S11 구독 상태를 서버 값으로 본다 [직접]
+- Given 구독 중인 회원(남은 기간 D-29)과 구독하지 않은 회원
+- Then  구독 중이면 "구독 중", 상품 "PRO", 남은 기간, 만료일이 보이고 아니면 "구독하지 않았어요"가 보인다
+
+#203-S12 결제 가능 크레딧을 서버 값으로 본다 [직접]
+- Given 적립 12,000, 이벤트 3,000, 출금 처리 중 2,000인 회원
+- Then  "구독 결제에 쓸 수 있는 크레딧"과 결제 화면의 "쓸 수 있는 크레딧"이 15,000 크레딧이다
+
+#203-S13 `AUTH_MODE=backend`가 아니면 목업으로 동작한다 [테스트: subscription-checkout.spec.ts, subscription-intro.spec.ts]
+- 기존 시나리오 E2E가 그대로 통과한다
 
 ## 범위 밖
 - 구독 해지, 실제 결제(현금 결제 수단 입력·결제 대행), 결제 영수증 (고침 11-02: 구독 시작·연장과 결제 수단 선택은 R196~R199로 옮김)

@@ -1,8 +1,3 @@
-.infoRows {
-  font-weight: 700;
-  color: var(--accent);
-}
-
 .submittedFeedback {
   display: flex;
   gap: var(--space-3);
@@ -181,6 +176,8 @@
 
 .box2 {
   display: flex;
+  min-width: 0;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-4);
 }
@@ -432,7 +429,102 @@
   width: 100%;
 }
 
-.accessLink {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+/* 테스트 접속 패널: 연한 강조 바탕 면에 도메인과 큰 버튼. 좁은 화면에서는 버튼이 한 줄 전체를 쓴다 */
+.access {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-radius: var(--radius-2xl);
+  background-color: var(--accent-soft);
+  padding: var(--space-5);
+}
+
+@media (min-width: 40rem) {
+  .access {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+}
+
+.accessText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.accessTitle {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.accessHost {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  overflow-wrap: anywhere;
+}
+
+.accessHint {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.accessButton {
+  flex-shrink: 0;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* 핵심 칸: 마감과 보상. 큰 글씨로 먼저 읽히게 하고, 좁은 화면에서도 두 칸을 나란히 둔다 */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-strong);
+  padding: var(--space-4);
+}
+
+.factValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.factExtra {
+  width: 100%;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.factNote {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 800;
 }

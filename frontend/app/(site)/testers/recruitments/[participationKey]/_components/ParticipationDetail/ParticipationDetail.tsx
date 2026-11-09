@@ -1,5 +1,5 @@
 import { isBackendAuth } from "@/lib/backend";
-import { ImageIcon } from "@phosphor-icons/react/ssr";
+import { ArrowSquareOutIcon, ImageIcon } from "@phosphor-icons/react/ssr";
 import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -72,31 +72,76 @@ function statusMessage(item: ParticipationItem, now: Date): { title: string; bod
   }
 }
 
-/** 제목 아래 테스트 정보. 마감일·보상은 모집 글의 값이고, 진행에 따라 제출일·지급일이 붙는다 */
-function infoRows(item: ParticipationItem): Array<[string, ReactNode]> {
+/** 핵심 칸. 지금 가장 먼저 봐야 하는 마감과 보상을 큰 글씨로 둔다. 마감은 제출 전이면 남은 날을 함께 보인다 */
+function keyFacts(item: ParticipationItem, now: Date): Array<{ label: string; value: ReactNode; note?: string }> {
   const { recruitment } = item;
-  const rows: Array<[string, ReactNode]> = [
-    ["모집 마감", formatDate(recruitment.recruitDeadline)],
-    ["피드백 제출 마감", formatDate(recruitment.submitDeadline)],
-    ["기본 보상", formatCredits(recruitment.baseReward)],
+  const reward: ReactNode = (
+    <>
+      {formatCredits(recruitment.baseReward)}
+      {recruitment.extraReward !== undefined && <span className={styles.factExtra}>추가 보상 +{formatCredits(recruitment.extraReward)}</span>}
+    </>
+  );
+  return [
+    {
+      label: "피드백 제출 마감",
+      value: formatDate(recruitment.submitDeadline),
+      note: item.status === "beforeSubmit" ? formatDday(recruitment.submitDeadline, now) : undefined,
+    },
+    { label: "기본 보상", value: reward },
   ];
-  if (recruitment.extraReward !== undefined) {
-    rows.push(["추가 보상", <span key="extra" className={styles.infoRows}>+{formatCredits(recruitment.extraReward)}</span>]);
-  }
-  if (item.accessUrl) {
-    rows.push([
-      "테스트 접속",
-      <a key="access" href={item.accessUrl} target="_blank" rel="noopener noreferrer" className={styles.accessLink}>
-        바로 가기<span className={styles.srOnly}> (새 탭)</span>
-      </a>,
-    ]);
-  }
-  rows.push(["지원일", formatDate(item.appliedAt)]);
+}
+
+/** 핵심 칸 아래 작은 글씨 정보. 모집 마감·지원일과, 진행에 따라 붙는 제출일·지급일 */
+function detailRows(item: ParticipationItem): Array<[string, ReactNode]> {
+  const rows: Array<[string, ReactNode]> = [
+    ["모집 마감", formatDate(item.recruitment.recruitDeadline)],
+    ["지원일", formatDate(item.appliedAt)],
+  ];
   if (item.submittedAt) rows.push(["제출일", formatDateTime(item.submittedAt)]);
   if (item.status === "payoutPending" && item.submittedAt) rows.push(["지급 예정", formatDateTime(payoutAt(item.submittedAt))]);
   if (item.status === "paid" && item.paidAt) rows.push(["지급일", formatDate(item.paidAt)]);
   if (item.status === "excluded" && item.reviewedAt) rows.push(["검토 완료", formatDate(item.reviewedAt)]);
   return rows;
+}
+
+/** 접속 링크의 도메인. 주소가 아니면 null이라 패널을 그리지 않는다 */
+function accessHost(url: string | undefined): string | null {
+  if (!url || !/^https?:\/\//i.test(url)) return null;
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 테스트 접속 패널. 확정된 참여에서 가장 먼저 하는 일이라 제목 아래에 따로 크게 둔다.
+ * 피드백을 내기 전에는 강조색 버튼, 낸 뒤에는 다시 들어갈 때 쓰는 보조 버튼이다
+ */
+function AccessPanel({ item, host }: { item: ParticipationItem; host: string }) {
+  const beforeSubmit = item.status === "beforeSubmit";
+  return (
+    <section aria-labelledby="access-heading" className={styles.access}>
+      <div className={styles.accessText}>
+        <h2 id="access-heading" className={styles.accessTitle}>
+          테스트 접속
+        </h2>
+        <p className={styles.accessHost}>{host}</p>
+        <p className={styles.accessHint}>{beforeSubmit ? "먼저 테스트를 해 본 뒤 아래에 피드백을 적어 주세요." : "새 탭에서 열려요."}</p>
+      </div>
+      <LinkButton
+        href={item.accessUrl as string}
+        target="_blank"
+        rel="noopener noreferrer"
+        variant={beforeSubmit ? "primary" : "secondary"}
+        className={styles.accessButton}
+      >
+        테스트 열기
+        <ArrowSquareOutIcon aria-hidden size={18} weight="bold" />
+        <span className={styles.srOnly}> (새 탭)</span>
+      </LinkButton>
+    </section>
+  );
 }
 
 /** 제출한 피드백 한 건. 항목 이름 아래에 내용과 첨부 이미지를 둔다 */
@@ -144,6 +189,7 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
   const { recruitment, status } = item;
   const tab = tabOf(status);
   const message = statusMessage(item, now);
+  const host = accessHost(item.accessUrl);
 
   /* 한 건을 읽고 쓰는 화면이라 넓은 화면에서도 가운데 한 칸에 모은다 */
   return (
@@ -178,13 +224,26 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
             </div>
             <p className={styles.request}>{recruitment.request}</p>
           </div>
-          {/* 테스트 정보는 이 모집 글에 대한 것이라 제목 바로 아래, 목록 행과 같은 모양으로 둔다 */}
-          <section aria-labelledby="info-heading">
+          {/* 접속 링크는 확정된 참여에서 가장 먼저 쓰므로 제목 바로 아래에 따로 크게 둔다 */}
+          {host && <AccessPanel item={item} host={host} />}
+          {/* 테스트 정보는 이 모집 글에 대한 것이라 제목 아래에 둔다. 마감·보상은 큰 칸, 나머지는 작은 줄이다 */}
+          <section aria-labelledby="info-heading" className={styles.info}>
             <h2 id="info-heading" className={styles.srOnly}>
               테스트 정보
             </h2>
+            <dl className={styles.facts}>
+              {keyFacts(item, now).map(({ label, value, note }) => (
+                <div key={label} className={styles.fact}>
+                  <dt className={styles.label}>{label}</dt>
+                  <dd className={styles.factValue}>
+                    {value}
+                    {note && <span className={styles.factNote}>{note}</span>}
+                  </dd>
+                </div>
+              ))}
+            </dl>
             <dl className={styles.list}>
-              {infoRows(item).map(([label, value]) => (
+              {detailRows(item).map(([label, value]) => (
                 <div key={label}>
                   <dt className={styles.label}>{label}</dt>
                   <dd className={styles.value}>{value}</dd>

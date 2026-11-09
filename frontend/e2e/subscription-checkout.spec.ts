@@ -80,3 +80,21 @@ test.describe("R198 결제 기록", () => {
     await expect(region(page, "내 구독").getByText("구독하지 않았어요")).toBeVisible();
   });
 });
+
+test.describe("#204-R6 결제 화면 배치", () => {
+  test("#204-S23 사이드바가 없는 폭에서는 결제 카드가 한쪽으로 치우치지 않고 좌우 여백이 같다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    for (const width of [375, 768, 1000]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/my/subscription/checkout");
+      const form = checkout(page);
+      await expect(form).toBeVisible();
+      const box = await form.boundingBox();
+      if (!box) throw new Error("결제 폼 위치를 읽지 못했어요");
+      const left = box.x;
+      const right = width - (box.x + box.width);
+      /* 소수점 오차는 허용한다 */
+      expect(Math.abs(left - right), `${width}px: 왼쪽 ${left} / 오른쪽 ${right}`).toBeLessThanOrEqual(1);
+    }
+  });
+});

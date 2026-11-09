@@ -38,12 +38,15 @@
   font-weight: 800;
 }
 
-.checkout {
-  max-width: 42rem;
-}
+/* 사이드바가 있는 넓은 화면(64rem~)에서만 폭을 제한한다. 그보다 좁으면 다른 계정 카드처럼 폭을 채워, 카드가 한쪽으로 치우치지 않는다 */
+@media (min-width: 64rem) {
+  .checkout {
+    max-width: 42rem;
+  }
 
-.checkoutSkeleton {
-  max-width: 42rem;
+  .checkoutSkeleton {
+    max-width: 42rem;
+  }
 }
 
 .checkoutSkeletonSkeleton {

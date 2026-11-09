@@ -80,4 +80,12 @@ public class Subscription {
         this.endAt = endAt;
         this.status = Status.ACTIVE;
     }
+
+    /**
+     * 이 이용 기간을 취소한다. 행은 지우지 않고 상태만 CANCELLED로 바꾼다.
+     * 환불(결제 취소)과 운영자가 시연용으로 구독을 빼는 경우(#204)가 같이 쓴다.
+     */
+    public void cancel() {
+        this.status = Status.CANCELLED;
+    }
 }

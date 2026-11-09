@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isBackendAuth } from "@/lib/backend";
 import { redirect } from "next/navigation";
 import { deleteChatRoom, renameChatRoom, sendChatMessage, markChatRead, startChat, roomPagePath } from "@/features/chat/api";
-import { toChatStartFailureMessage } from "@/features/chat/backend-map";
+import { isStartChatInput, toChatStartFailureMessage } from "@/features/chat/backend-map";
 import { CHATS_PATH } from "@/features/chat/query";
 
 /*
@@ -47,9 +47,8 @@ export async function markChatReadAction(roomKey: string, seq: number) {
 
 /** 개발자가 참가의 채팅방을 열고 그 방으로 이동한다 */
 export async function startChatAction(registerId: string, nextPath: string) {
-  if (typeof registerId !== "string" || !/^\d+$/.test(registerId)
-    || typeof nextPath !== "string" || !nextPath.startsWith("/developer/recruitments/")) {
-    return { ok: false as const, message: toChatStartFailureMessage("INVALID_INPUT") };
+  if (!isStartChatInput(registerId, nextPath)) {
+    return { ok: false as const, message: toChatStartFailureMessage("BACKEND_UNAVAILABLE") };
   }
   const result = await startChat(registerId, nextPath);
   if (!result.ok) return result;

@@ -28,6 +28,12 @@ export type ChatMessageResponse = {
 
 const roles: Record<BackendRole, ChatRole> = { DEVELOPER: "developer", TESTER: "tester" };
 
+/** 참가 id는 숫자 문자열, 돌아올 주소는 모집 관리 경로일 때만 채팅을 시작한다 */
+export function isStartChatInput(registerId: unknown, nextPath: unknown): boolean {
+  return typeof registerId === "string" && /^\d+$/.test(registerId)
+    && typeof nextPath === "string" && nextPath.startsWith("/developer/recruitments/");
+}
+
 /** 채팅을 여는 상황에 맞춰 백엔드 실패를 안내한다 */
 export function toChatStartFailureMessage(code: string): string {
   switch (code) {

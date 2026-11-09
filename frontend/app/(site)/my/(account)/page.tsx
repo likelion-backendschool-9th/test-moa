@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { getMyPageSummary } from "@/features/member/api";
+import { getLeaveNotice, getMyPageSummary } from "@/features/member/api";
+import { AccountMenu } from "@/app/(site)/my/(account)/_components/AccountMenu/AccountMenu";
 import { ActivitySummary } from "@/app/(site)/my/(account)/_components/ActivitySummary/ActivitySummary";
 import { CreditSummaryCard } from "@/app/(site)/my/(account)/_components/CreditSummaryCard/CreditSummaryCard";
 import { ProfileHeader } from "@/app/(site)/my/(account)/_components/ProfileHeader/ProfileHeader";
@@ -26,7 +27,7 @@ export default function MyPage() {
 }
 
 async function Dashboard() {
-  const summary = await getMyPageSummary();
+  const [summary, notice] = await Promise.all([getMyPageSummary(), getLeaveNotice("/my")]);
   return (
     <div className={styles.dashboard}>
       <ProfileHeader profile={summary.profile} />
@@ -37,6 +38,7 @@ async function Dashboard() {
         {summary.subscription && <SubscriptionCard subscription={summary.subscription} />}
       </div>
       <RecentCredits entries={summary.recentCredits} now={new Date()} />
+      <AccountMenu notice={notice} providers={summary.profile.providers} />
     </div>
   );
 }

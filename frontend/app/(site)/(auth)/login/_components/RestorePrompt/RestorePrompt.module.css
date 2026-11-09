@@ -1,0 +1,72 @@
+.dialog {
+  margin: auto;
+  width: calc(100% - 2rem);
+  max-width: 24rem;
+  border-radius: var(--radius-2xl);
+  background-color: var(--surface);
+  padding: 0;
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background-color: var(--text);
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .dialog::backdrop {
+    background-color: color-mix(in oklab, var(--text) 50%, transparent);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.button {
+  width: 100%;
+}
+
+.link {
+  align-self: center;
+  border: 0;
+  background: none;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--text);
+  }
+}

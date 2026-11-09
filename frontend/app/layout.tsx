@@ -1,3 +1,8 @@
+import { isBackendAuth } from "@/lib/backend";
+import { Suspense } from "react";
+import { getSession } from "@/features/session/session";
+import { getChatUnreadCount } from "@/features/chat/api";
+import { ChatEvents } from "@/app/_components/ChatEvents/ChatEvents";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { AppHeader } from "@/app/_components/AppHeader/AppHeader";
@@ -32,8 +37,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           본문으로 건너뛰기
         </a>
         <AppHeader />
+        <Suspense fallback={null}><ChatEventsSlot /></Suspense>
         {children}
       </body>
     </html>
   );
+}
+
+async function ChatEventsSlot() {
+  if (!isBackendAuth) return null;
+  const session = await getSession();
+  if (session.role === "guest" || session.role === "admin") return null;
+  return <ChatEvents unreadCount={await getChatUnreadCount()} />;
 }

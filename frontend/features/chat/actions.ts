@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { isBackendAuth } from "@/lib/backend";
 import { redirect } from "next/navigation";
-import { deleteChatRoom, renameChatRoom, sendChatMessage } from "@/features/chat/api";
+import { deleteChatRoom, renameChatRoom, sendChatMessage, markChatRead } from "@/features/chat/api";
 import { CHATS_PATH } from "@/features/chat/query";
 
 /*
@@ -37,4 +37,9 @@ export async function sendChatMessageAction(roomKey: string, text: string) {
   const result = await sendChatMessage(roomKey, text);
   if (isBackendAuth && result) revalidatePath(CHATS_PATH);
   return result;
+}
+
+export async function markChatReadAction(roomKey: string, seq: number) {
+  if (typeof roomKey !== "string" || !Number.isSafeInteger(seq) || seq < 0) return { ok: false };
+  return markChatRead(roomKey, seq);
 }

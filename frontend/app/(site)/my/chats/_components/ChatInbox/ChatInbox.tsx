@@ -1,3 +1,8 @@
+"use client";
+
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useChatEvents, requestChatRefresh } from "@/app/_components/ChatEvents/hook";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
@@ -16,6 +21,8 @@ const ROLE_EMPTY_DESCRIPTION: Record<ChatRole, string> = {
 
 /** 채팅함 본문. 채팅방이 없으면 빈 상태, 있으면 검색 영역과 카드 목록을 그린다 */
 export function ChatInbox({ query, inbox }: { query: ChatQuery; inbox: ChatInboxData }) {
+  const router = useRouter();
+  useChatEvents(useCallback(() => requestChatRefresh(() => router.refresh()), [router]));
   if (inbox.total === 0) {
     return (
       <EmptyState

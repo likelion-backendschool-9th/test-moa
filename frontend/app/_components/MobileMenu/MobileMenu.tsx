@@ -1,5 +1,6 @@
 "use client";
 
+import { useChatUnreadCount } from "../ChatEvents/hook";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +18,7 @@ type MobileMenuProps = {
 
 /** 좁은 화면 메뉴 버튼과 전체 높이 패널 */
 export function MobileMenu({ items, isMember }: MobileMenuProps) {
+  const count = useChatUnreadCount(items.find(item => item.path === "/my/chats")?.badge);
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
@@ -44,8 +46,8 @@ export function MobileMenu({ items, isMember }: MobileMenuProps) {
     };
   }, [open]);
 
-  const links = items.map((item) => ({ label: item.label, href: item.href, active: item.path === activePath }));
-  if (isMember) links.push({ label: "마이페이지", href: MY_PAGE_PATH, active: isMyPagePath(pathname) });
+  const links = items.map((item) => ({ label: item.label, href: item.href, badge: item.badge, active: item.path === activePath }));
+  if (isMember) links.push({ label: "마이페이지", href: MY_PAGE_PATH, badge: undefined, active: isMyPagePath(pathname) });
 
   return (
     <>
@@ -85,6 +87,7 @@ export function MobileMenu({ items, isMember }: MobileMenuProps) {
                       className={cn(styles.item, link.active ? styles.labelActive : styles.labelNotActive)}
                     >
                       {link.label}
+                      {link.badge !== undefined && count > 0 && <span className={styles.badge} ><span aria-hidden>{count >= 100 ? "99+" : count}</span><span className={styles.srOnly}>{`안 읽은 메시지 ${count}개`}</span></span>}
                     </Link>
                   </li>
                 ))}

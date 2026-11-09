@@ -8,7 +8,7 @@ import { useChatConversation } from "./hook";
 
 /** 이전 대화와 새로 저장한 메시지를 함께 유지한다 */
 export function ChatConversation({ data, className }: { data: ChatRoomData; className: string }) {
-  const { messages, readOnly, loading, failed, hasMore, sentinelRef, listRef, loadPrevious, onSent } = useChatConversation(data);
+  const { messages, partnerLastReadSeq, readOnly, loading, failed, hasMore, sentinelRef, listRef, loadPrevious, onSent } = useChatConversation(data);
   const last = messages[messages.length - 1];
   return (
     <>
@@ -21,7 +21,7 @@ export function ChatConversation({ data, className }: { data: ChatRoomData; clas
             <Button type="button" variant="secondary" onClick={loadPrevious} disabled={loading}>다시 시도</Button>
           </div>
         )}
-        <ChatMessageList room={data.room} messages={messages} now={new Date(data.now)} />
+        <ChatMessageList partnerLastReadSeq={partnerLastReadSeq} room={data.room} messages={messages} now={new Date(data.now)} />
       </div>
       <ChatComposer roomKey={data.room.roomKey} lastMessage={last ?? null} now={data.now} readOnly={readOnly} onSent={onSent} />
     </>

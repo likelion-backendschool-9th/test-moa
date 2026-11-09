@@ -28,6 +28,9 @@ export type ChatRoom = {
   /** 대화 상대 */
   partner: { nickname: string; role: ChatRole };
   readOnly: boolean;
+  /** 백엔드에서만 제공한다. 목업에는 표시하지 않는다 */
+  unreadCount?: number;
+  partnerLastReadSeq?: number;
   lastMessage: string | null;
   lastMessageAt: string;
 };

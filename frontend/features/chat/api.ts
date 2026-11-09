@@ -198,3 +198,16 @@ export async function getChatMessages(roomKey: string, query: { before?: number;
   const data = chatResult(await backendFetch<MessageSliceResponse>(`${chatRoomPath(roomKey)}/messages${params.size ? `?${params}` : ""}`));
   return { ...data, messages: data.messages.map(toChatMessage) };
 }
+
+/** 일반 회원의 헤더 안 읽은 수. 같은 요청의 데스크톱·모바일·SSE 초기값은 함께 읽는다 */
+export const getChatUnreadCount = cache(async (): Promise<number> => {
+  if (!isBackendAuth) return 0;
+  const result = await backendFetch<{ count: number }>("/api/v1/chats/unread");
+  return result.ok ? result.data.count : 0;
+});
+
+/** 화면에 그린 마지막 순번까지 읽음 처리한다 */
+export async function markChatRead(roomKey: string, seq: number): Promise<{ ok: boolean }> {
+  if (!isBackendAuth) return { ok: true };
+  return chatMutationResult(await backendFetch(`${chatRoomPath(roomKey)}/read`, { method: "POST", body: { seq } }), roomPagePath(roomKey));
+}

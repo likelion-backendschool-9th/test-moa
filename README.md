@@ -91,7 +91,7 @@ flowchart LR
 
 ## 데이터 모델
 
-서비스의 전체 테이블 27개와 관계입니다.
+서비스의 주요 테이블 23개와 관계입니다. 이미지·첨부 파일 테이블은 생략했습니다.
 
 ```mermaid
 erDiagram
@@ -110,11 +110,9 @@ erDiagram
   test_items |o--o{ feedbacks : "test_item_id"
   cluster_groups ||--o{ feedback_clusters : "cluster_group_id"
   feedbacks ||--o{ feedback_clusters : "feedback_id"
-  feedbacks ||--o{ feedback_images : "feedback_id"
   subscriptions ||--o| payments : "subscription_id"
   users ||--o{ projects : "user_id"
   projects ||--o{ recruitments : "project_id"
-  recruitments ||--o{ recruitment_images : "recruitment_id"
   types ||--o{ recruitment_types : "type_id"
   recruitments ||--o{ recruitment_types : "recruitment_id"
   users ||--o{ refresh_tokens : "user_id"
@@ -123,11 +121,9 @@ erDiagram
   users ||--o{ reports : "user_id"
   users ||--o{ reports : "reported_user_id"
   users |o--o{ reports : "reviewer_id"
-  reports ||--o{ report_evidences : "report_id"
   users ||--o{ subscriptions : "user_id"
   plans ||--o{ subscriptions : "plan_id"
   recruitments ||--o{ test_items : "recruitment_id"
-  test_items ||--o{ test_item_images : "test_item_id"
   recruitments ||--o| version_comparisons : "recruitment_id"
   recruitments ||--o{ version_comparisons : "previous_recruitment_id"
 
@@ -236,13 +232,6 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
-  feedback_images {
-    bigint id PK
-    bigint feedback_id FK
-    text url
-    timestamp created_at
-    timestamp updated_at
-  }
   payments {
     bigint id PK
     bigint subscription_id FK
@@ -296,14 +285,6 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
-  recruitment_images {
-    bigint id PK
-    bigint recruitment_id FK
-    text url
-    integer sort_order
-    timestamp created_at
-    timestamp updated_at
-  }
   recruitment_types {
     bigint id PK
     bigint type_id FK
@@ -344,15 +325,6 @@ erDiagram
     timestamp reviewed_at
     timestamp created_at
   }
-  report_evidences {
-    bigint id PK
-    bigint report_id FK
-    text stored_path
-    varchar original_name
-    varchar content_type
-    bigint size
-    integer sort_order
-  }
   subscriptions {
     bigint id PK
     bigint user_id FK
@@ -369,14 +341,6 @@ erDiagram
     varchar title
     text description
     boolean is_required
-    integer sort_order
-    timestamp created_at
-    timestamp updated_at
-  }
-  test_item_images {
-    bigint id PK
-    bigint test_item_id FK
-    text url
     integer sort_order
     timestamp created_at
     timestamp updated_at

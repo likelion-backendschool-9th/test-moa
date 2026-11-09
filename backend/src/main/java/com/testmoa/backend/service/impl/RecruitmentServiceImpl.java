@@ -1,5 +1,7 @@
 package com.testmoa.backend.service.impl;
 
+import com.testmoa.backend.global.file.FileStorage;
+import com.testmoa.backend.global.file.FileStorage.ImageFile;
 import com.testmoa.backend.dto.request.RecruitmentSearchRequest;
 import com.testmoa.backend.dto.response.RecruitmentPageResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse;
@@ -39,12 +41,18 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class RecruitmentServiceImpl implements RecruitmentService {
 
+    private final FileStorage fileStorage;
     private final RecruitmentRepository recruitmentRepository;
     private final RecruitmentImageRepository recruitmentImageRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
     private final TestItemRepository testItemRepository;
     private final TestItemImageRepository testItemImageRepository;
     private final RegisterRepository registerRepository;
+
+    @Override
+    public ImageFile findImage(String name) {
+        return fileStorage.loadImage(name).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+    }
 
     /**
      * 공개 모집글 상세. 마감된 모집도 보여 주고, 취소된 모집은 없는 것처럼 404다

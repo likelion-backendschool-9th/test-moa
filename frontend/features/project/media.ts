@@ -2,8 +2,7 @@ import { PROJECT_MEDIA_LIMIT } from "@/features/project/types";
 
 /*
  * 프로젝트 이미지 검사. 화면(파일을 고를 때)과 서버(제출할 때)가 같은 규칙을 쓴다.
- * 시연용이라 파일 자체는 서버로 보내지 않고 이름·크기·형식만 보낸다.
- * ponytail: 실제 업로드는 백엔드 저장소(예: 미리 서명한 업로드 주소)가 정해지면 붙인다.
+ * 새 파일은 제출할 때 Route Handler로 보내고, 저장 API에는 반환된 주소만 보낸다.
  */
 
 /** 고른 파일의 이름·크기·형식 */
@@ -44,6 +43,55 @@ export function parseFileMeta(raw: unknown): FileMeta[] | null {
       (item) => typeof item?.name === "string" && typeof item?.size === "number" && typeof item?.type === "string",
     );
     return ok ? (parsed as FileMeta[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 업로드 API가 돌려주는 공개 이미지 주소 모양. */
+export function isUploadedImageUrl(value: string) {
+  return /^\/api\/v1\/recruitments\/images\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp)$/.test(value);
+}
+
+export type UploadImage = FileMeta & { url: string; file?: File };
+
+/** 한 장씩 올린다. 성공한 파일의 주소는 폼 수명 동안 남겨 실패 후 재제출에서도 재사용한다. */
+export async function uploadImages(images: UploadImage[], endpoint: string, uploaded: WeakMap<File, string>): Promise<string[]> {
+  const urls: string[] = [];
+  for (const image of images) {
+    if (!image.file) {
+      urls.push(image.url);
+      continue;
+    }
+    let url = uploaded.get(image.file);
+    if (!url) {
+      const body = new FormData();
+      body.set("file", image.file);
+      let response: Response;
+      try {
+        response = await fetch(endpoint, { method: "POST", body });
+      } catch {
+        throw new Error("이미지를 올리지 못했어요. 다시 시도해 주세요");
+      }
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(response.status === 413 ? "이미지는 5MB까지 올릴 수 있어요" : json?.error?.fields?.file ?? json?.error?.message ?? "이미지를 올리지 못했어요. 다시 시도해 주세요");
+      }
+      const returned: unknown = json?.data?.url;
+      if (typeof returned !== "string" || !isUploadedImageUrl(returned)) throw new Error("이미지 주소를 받지 못했어요. 다시 시도해 주세요");
+      url = returned;
+      uploaded.set(image.file, url);
+    }
+    urls.push(url);
+  }
+  return urls;
+}
+
+/** 서버 액션에는 파일 대신 주소 목록만 전달한다. */
+export function parseImageUrls(raw: FormDataEntryValue | null): string[] | null {
+  try {
+    const urls: unknown = JSON.parse(String(raw ?? "[]"));
+    return Array.isArray(urls) && urls.every((url) => typeof url === "string") ? urls : null;
   } catch {
     return null;
   }

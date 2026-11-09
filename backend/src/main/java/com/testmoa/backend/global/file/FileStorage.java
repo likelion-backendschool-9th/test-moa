@@ -1,5 +1,6 @@
 package com.testmoa.backend.global.file;
 
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -45,6 +46,33 @@ public class FileStorage {
 
     /** 저장한 파일. path는 업로드 폴더 안의 상대 경로다 */
     public record Stored(String path, Kind kind, long size) {}
+
+    public static final String IMAGE_URL_PREFIX = "/api/v1/recruitments/images/";
+    private static final Pattern IMAGE_NAME = Pattern.compile(
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[.](png|jpg|webp)");
+
+    public static boolean isImageName(String name) {
+        return name != null && IMAGE_NAME.matcher(name).matches();
+    }
+
+    public static boolean isImageUrl(String url) {
+        return url != null && url.startsWith(IMAGE_URL_PREFIX)
+                && isImageName(url.substring(IMAGE_URL_PREFIX.length()));
+    }
+
+    public record ImageFile(Resource resource, String contentType) {}
+
+    /** 공개 이미지만 읽는다. 신고 증거 폴더와 임의 파일 이름에는 접근하지 않는다. */
+    public Optional<ImageFile> loadImage(String name) {
+        if (!isImageName(name)) return Optional.empty();
+        String extension = name.substring(name.lastIndexOf('.') + 1);
+        String contentType = switch (extension) {
+            case "png" -> Kind.PNG.contentType();
+            case "jpg" -> Kind.JPG.contentType();
+            default -> Kind.WEBP.contentType();
+        };
+        return load("images/" + name).map(resource -> new ImageFile(resource, contentType));
+    }
 
     private final Path root;
 

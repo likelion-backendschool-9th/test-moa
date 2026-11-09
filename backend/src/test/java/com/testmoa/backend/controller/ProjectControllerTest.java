@@ -67,6 +67,126 @@ class ProjectControllerTest {
     @Autowired EntityManager em;
     @Autowired JwtProvider jwtProvider;
 
+    @Autowired com.testmoa.backend.global.file.FileStorage fileStorage;
+
+    private static final byte[] PNG = new byte[]{(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10};
+
+    private String upload(String endpoint, byte[] bytes, String extension) throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "image." + extension, "application/octet-stream", bytes);
+        var result = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
+                .file(file).header("Authorization", "Bearer " + jwtProvider.createAccessToken(me.getId())))
+                .andExpect(status().isOk()).andReturn();
+        return JSON.readTree(result.getResponse().getContentAsString()).path("data").path("url").asText();
+    }
+
+    @Test
+    @DisplayName("#191-S1 프로젝트 이미지 업로드")
+    void uploadProjectImage() throws Exception {
+        byte[] bytes = java.util.Arrays.copyOf(PNG, 1024 * 1024);
+        String url = upload(PROJECTS + "/images", bytes, "png");
+        try {
+            assertThat(url).matches("/api/v1/recruitments/images/[0-9a-f-]{36}[.]png");
+            assertThat(fileStorage.load("images/" + url.substring(url.lastIndexOf('/') + 1))).isPresent();
+        } finally {
+            fileStorage.delete("images/" + url.substring(url.lastIndexOf('/') + 1));
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S2 비로그인 업로드는 저장하지 않는다")
+    void anonymousImageUpload() throws Exception {
+        for (String endpoint : List.of(PROJECTS + "/images", RECRUITMENTS + "/images")) {
+            mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
+                    .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", PNG)))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S5 모집글 JPG·항목 WEBP 업로드")
+    void uploadRecruitmentImages() throws Exception {
+        for (var entry : Map.of("jpg", new byte[]{(byte) 255, (byte) 216, (byte) 255},
+                "webp", "RIFF0000WEBP".getBytes(java.nio.charset.StandardCharsets.US_ASCII)).entrySet()) {
+            String extension = entry.getKey();
+            String url = upload(RECRUITMENTS + "/images", entry.getValue(), extension);
+            try {
+                assertThat(url).endsWith("." + extension);
+            } finally {
+                fileStorage.delete("images/" + url.substring(url.lastIndexOf('/') + 1));
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S7 내용이 이미지가 아닌 파일 거절")
+    void rejectFakeImage() throws Exception {
+        rejectImage("text".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("#191-S8 정상 PDF도 이미지 업로드에서 거절")
+    void rejectPdfImage() throws Exception {
+        rejectImage("%PDF-1.7".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+    }
+
+    private void rejectImage(byte[] bytes) throws Exception {
+        for (String endpoint : List.of(PROJECTS + "/images", RECRUITMENTS + "/images")) {
+            mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(endpoint)
+                    .file(new org.springframework.mock.web.MockMultipartFile("file", "a.png", "image/png", bytes))
+                    .header("Authorization", "Bearer " + jwtProvider.createAccessToken(me.getId())))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.fields.file").value("PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S13 공개 이미지 조회와 경로 차단")
+    void publicImage() throws Exception {
+        String url = upload(PROJECTS + "/images", PNG, "png");
+        var report = fileStorage.save("reports", new org.springframework.mock.web.MockMultipartFile("file", PNG),
+                com.testmoa.backend.global.file.FileStorage.Kind.PNG);
+        try {
+            mvc.perform(get(url)).andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("image/png"))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes(PNG));
+            for (String name : List.of(UUID.randomUUID() + ".png", "..png", "a.png",
+                    UUID.randomUUID() + ".pdf", report.path().substring("reports/".length()))) {
+                mvc.perform(get("/api/v1/recruitments/images/" + name)).andExpect(status().isNotFound());
+            }
+        } finally {
+            fileStorage.delete("images/" + url.substring(url.lastIndexOf('/') + 1));
+            fileStorage.delete(report.path());
+        }
+    }
+
+    @Test
+    @DisplayName("#191-S11 프로젝트·모집·항목의 외부 이미지 주소 거절")
+    void rejectExternalImageUrl() throws Exception {
+        send(me, post(PROJECTS), Map.of("name", "프로젝트", "imageUrl", "https://evil.example/a.png"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.imageUrl").value("이미지 주소를 확인해 주세요"));
+        Project project = saveProject(me, "프로젝트");
+        send(me, put(PROJECTS + "/" + project.getId()), Map.of("name", "프로젝트", "imageUrl", "https://evil.example/a.png"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.imageUrl").value("이미지 주소를 확인해 주세요"));
+        var body = recruitment();
+        body.put("imageUrls", List.of("https://evil.example/a.png"));
+        expectInvalid(project, body, "imageUrls[0]", "이미지 주소를 확인해 주세요");
+        body.put("imageUrls", List.of());
+        body.put("testItems", List.of(item("항목", true, "https://evil.example/a.png")));
+        expectInvalid(project, body, "testItems[0].imageUrls[0]", "이미지 주소를 확인해 주세요");
+    }
+
+    @Test
+    @DisplayName("#191-S12 프로젝트 수정에서 예전 이미지 주소 유지")
+    void preserveLegacyImageUrl() throws Exception {
+        Project project = Project.builder().user(me).title("프로젝트").imageUrl("https://img.example.com/a.png").build();
+        em.persist(project);
+        send(me, put(PROJECTS + "/" + project.getId()), Map.of("name", "프로젝트", "imageUrl", project.getImageUrl()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.imageUrl").value("https://img.example.com/a.png"));
+    }
+
     private User me;
     private User other;
 
@@ -134,7 +254,7 @@ class ProjectControllerTest {
         body.put("conditions", "책을 읽는 분");
         body.put("recruitDeadline", today.plusDays(3).toString());
         body.put("submitDeadline", today.plusDays(9).toString());
-        body.put("testItems", List.of(item("책 등록하기", true, "https://img.example.com/1.png", "https://img.example.com/2.png"), item("기록 쓰기", false)));
+        body.put("testItems", List.of(item("책 등록하기", true, "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000001.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000002.png"), item("기록 쓰기", false)));
         return body;
     }
 
@@ -320,7 +440,7 @@ class ProjectControllerTest {
 
         List<TestItemImage> images = em.createQuery("select i from test_item_images i where i.testItem.id = :id order by i.sortOrder", TestItemImage.class)
                 .setParameter("id", items.getFirst().getId()).getResultList();
-        assertThat(images).extracting(TestItemImage::getUrl).containsExactly("https://img.example.com/1.png", "https://img.example.com/2.png");
+        assertThat(images).extracting(TestItemImage::getUrl).containsExactly("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000001.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000002.png");
         assertThat(images).extracting(TestItemImage::getSortOrder).containsExactly(0, 1);
     }
 
@@ -451,12 +571,12 @@ class ProjectControllerTest {
         Project project = saveProject(me, "북로그");
 
         Map<String, Object> withImages = recruitment();
-        withImages.put("imageUrls", List.of("https://img.example.com/main.png", "https://img.example.com/flow.png"));
+        withImages.put("imageUrls", List.of("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000003.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000004.png"));
         String body = create(project, withImages).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         Long id = JSON.readTree(body).at("/data/id").asLong();
         List<RecruitmentImage> images = em.createQuery("select i from recruitment_images i where i.recruitment.id = :id order by i.sortOrder", RecruitmentImage.class)
                 .setParameter("id", id).getResultList();
-        assertThat(images).extracting(RecruitmentImage::getUrl).containsExactly("https://img.example.com/main.png", "https://img.example.com/flow.png");
+        assertThat(images).extracting(RecruitmentImage::getUrl).containsExactly("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000003.png", "/api/v1/recruitments/images/00000000-0000-0000-0000-000000000004.png");
         assertThat(images).extracting(RecruitmentImage::getSortOrder).containsExactly(0, 1);
 
         String noImages = create(project, recruitment()).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
@@ -466,7 +586,7 @@ class ProjectControllerTest {
 
         Project other = saveProject(me, "모아플랜");
         List<String> eleven = new ArrayList<>();
-        for (int index = 0; index < 11; index++) eleven.add("https://img.example.com/" + index + ".png");
+        for (int index = 0; index < 11; index++) eleven.add("/api/v1/recruitments/images/" + UUID.randomUUID() + ".png");
         Map<String, Object> tooMany = recruitment();
         tooMany.put("imageUrls", eleven);
         expectInvalid(other, tooMany, "imageUrls", "모집글 이미지는 10장까지 올릴 수 있어요");

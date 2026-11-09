@@ -64,7 +64,7 @@ class ProjectRecruitmentRollbackTest {
         User user = userRepository.save(User.builder().name("김모아").nickname("모아" + suffix).email(suffix + "@example.com")
                 .role(Role.USER).status(UserStatus.ACTIVE).build());
         Project project = projectRepository.save(Project.builder().user(user).title("북로그").build());
-        RecruitmentCreateRequest request = request(project, List.of("https://img.example.com/main.png"));
+        RecruitmentCreateRequest request = request(project, List.of("/api/v1/recruitments/images/00000000-0000-0000-0000-000000000003.png"));
         long before = recruitmentRepository.count();
         doThrow(new IllegalStateException("저장 실패")).when(testItemRepository).save(any(TestItem.class));
 

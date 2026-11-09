@@ -29,7 +29,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 구독 결제 실행과 결제 이력. 결제는 한 트랜잭션에서 지갑 행을 먼저 잠가 같은 회원의 결제를 한 줄로 처리한다.
+ * 구독 결제 실행과 결제 이력. 결제는 한 트랜잭션에서 회원 행 → 지갑 행 순서로 잠가, 같은 회원의 결제와
+ * 운영자 구독 부여·해제(AdminSubscriptionService)를 한 줄로 처리한다.
  * 실제 PG 결제는 하지 않고 현금도 완료 기록만 남긴다.
  */
 @Service

@@ -18,6 +18,7 @@ import {
 } from "@/features/recruitment/types";
 import { Card } from "@/components/ui/Card/Card";
 import { ManageDashboard } from "../ManageDashboard/ManageDashboard";
+import { useStartChat } from "../../_lib/use-start-chat";
 import styles from "./ApplicantList.module.css";
 
 /*
@@ -70,6 +71,7 @@ async function canReachServer() {
 /** 지원자 목록, 개별 확정·거절 버튼, 일괄 확정 */
 export function ApplicantList({ applications, canSelect, isSubscription, selectionMode, recruitmentKey, recruitDeadline }: ApplicantListProps) {
   const router = useRouter();
+  const { start, isPending } = useStartChat(recruitmentKey);
   const [, startTransition] = useTransition();
   const [statuses, setStatuses] = useState<Record<string, ApplicationStatus>>({});
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -259,7 +261,18 @@ export function ApplicantList({ applications, canSelect, isSubscription, selecti
               <span className={styles.label}>{formatDate(item.appliedAt)} 지원</span>
               {item.submission && <Badge tone="muted">{SUBMISSION_STATUS_LABEL[item.submission]}</Badge>}
               {isSubscription && item.status === "confirmed" && (
-                <Link
+                item.registerId ? <button
+                  type="button"
+                  aria-label={`${item.testerNickname}님과 채팅`}
+                  className={styles.link}
+                  disabled={isPending}
+                  onClick={() => {
+                    setError("");
+                    start(item.registerId!, setError);
+                  }}
+                >
+                  채팅
+                </button> : <Link
                   href={`/my/chats?q=${encodeURIComponent(item.testerNickname)}`}
                   aria-label={`${item.testerNickname}님과 채팅`}
                   className={styles.link}

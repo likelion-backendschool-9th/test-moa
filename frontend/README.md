@@ -199,3 +199,8 @@ E2E에는 핵심 작업의 성공·실패, 권한·개인정보 보호, 잔액·
 세부 기준과 Next 문서 근거: [목표 구조](../docs/frontend-structure/03-target-structure.md). 페이지 URL: [URL 문서](../docs/page-urls.md).
 
 요구사항과 시나리오: [`../docs/frontend/home.md`](../docs/frontend/home.md) · [`../docs/frontend/admin/home.md`](../docs/frontend/admin/home.md) · [`../docs/frontend/admin/reports.md`](../docs/frontend/admin/reports.md) · 디자인 토큰: [`../docs/design-tokens.html`](../docs/design-tokens.html)
+
+## 기술적으로 고민한 점
+
+- **백엔드를 외부에 직접 열지 않았습니다.** 브라우저는 nginx를 거쳐 Next.js에만 접속하고, 백엔드는 Next.js가 서버 안에서 호출합니다.
+- **요구사항과 테스트를 같은 번호로 이었습니다.** 계획 문서의 시나리오 번호를 E2E 테스트 이름에 붙여, 어떤 요구사항을 어떤 테스트가 확인하는지 바로 찾을 수 있습니다.

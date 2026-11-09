@@ -1,228 +1,558 @@
-# Test Moa
+<a id="readme-top"></a>
 
-**개발자와 테스터를 연결하는 소프트웨어 테스터 모집 플랫폼**
+<a href="https://test-moa.newlecture.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
+    <img src="docs/images/logo-light.png" width="240" alt="test moa">
+  </picture>
+</a>
 
-개발자는 테스트할 소프트웨어와 요청 사항을 등록하고, 테스터는 직접 사용한 뒤 버그와 사용성 피드백을 전달합니다. 테스터는 참여 보상으로 크레딧을 받고, 개발자는 피드백을 바탕으로 소프트웨어를 개선합니다.
+**써 보고, 남기고, 받고**
 
-> 현재 개발 중입니다. 아래 내용은 서비스의 기획 방향이며, 구현 완료된 기능을 의미하지 않습니다. 개발 범위는 추후 결정하고, 기술 스택과 실행 방법은 [개발 현황](#개발-현황)과 [실행 방법](#실행-방법)에 있습니다.
+개발자와 테스터를 연결하는 소프트웨어 테스터 모집 플랫폼
+
+[문서 살펴보기](docs/README.md) · [테스트 서버](https://test-moa.newlecture.com) · [버그 제보](https://github.com/likelion-backendschool-9th/test-moa/issues/new?template=2-bug.yml) · [기능 제안](https://github.com/likelion-backendschool-9th/test-moa/issues/new?template=1-feature.yml)
+
+<br/>
+<br/>
+
+## 목차
+
+<ol>
+    <li>
+      <a href="#프로젝트-소개">프로젝트 소개</a>
+      <ul>
+        <li><a href="#기획-의도">기획 의도</a></li>
+        <li><a href="#주요-기능">주요 기능</a></li>
+        <li><a href="#기술-스택">기술 스택</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#시스템-설계">시스템 설계</a>
+      <ul>
+        <li><a href="#시스템-구성">시스템 구성</a></li>
+        <li><a href="#데이터-모델">데이터 모델</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#시작하기">시작하기</a>
+      <ul>
+        <li><a href="#사전-준비">사전 준비</a></li>
+        <li><a href="#설치-및-실행">설치 및 실행</a></li>
+        <li><a href="#ai-분석-서버-실행">AI 분석 서버 실행</a></li>
+      </ul>
+    </li>
+    <li><a href="#협업-방식">협업 방식</a></li>
+    <li><a href="#팀-소개">팀 소개</a></li>
+    <li><a href="#참고-문서">참고 문서</a></li>
+</ol>
+
+<br/>
+<br/>
 
 ## 프로젝트 소개
 
-| 항목 | 내용 |
+![Test Moa 홈 화면](docs/images/home-mockup.png)
+
+<p align="center"><sub>목업 데이터로 띄운 홈 화면입니다. 실제 시연 화면은 추가할 예정입니다.</sub></p>
+
+<br/>
+
+### 기획 의도
+
+서비스를 만든 개발자에게는 실제로 써 보고 의견을 줄 사람이 필요합니다. 하지만 **적합한 테스터를 모으는 일도, 유용한 피드백을 받는 일도** 쉽지 않습니다. Test Moa는 이 두 가지 어려움을 함께 풀기 위해 시작했습니다.
+
+| 어려움 | Test Moa의 방식 |
 | --- | --- |
-| 목표 | 테스터 모집과 유용한 피드백 수집을 돕는 플랫폼 개발 |
-| 팀 규모 | 5명 |
-| 우선 목표 | 포트폴리오·발표 시연이 가능한 서비스 제작 |
-| 첫 지원 대상 | 접속 링크로 이용할 수 있는 웹서비스 |
-| 향후 확장 대상 | 모바일 앱, 게임, API·라이브러리 |
+| 적합한 테스터를 찾기 어렵다 | 필요한 경험·관심사·사용 환경을 모집 조건으로 안내합니다. 개발 경험이 없어도 테스터가 될 수 있습니다. |
+| 유용한 피드백을 받기 어렵다 | 요청한 항목별 수행 결과와 사용 경험, 버그 재현 방법을 정해진 양식으로 받습니다. |
+| 테스터가 참여할 이유가 필요하다 | 피드백을 제출하면 크레딧으로 보상합니다. 버그를 찾지 못해도 요청한 테스트를 수행했다면 보상 대상입니다. |
+| 모집 비용이 부담스럽다 | 무료로 모집할 수 있고, 개발자가 보상 예산을 따로 충전하지 않습니다. |
 
-테스터는 개발 경험이 없는 사용자도 참여할 수 있습니다. 개발자는 필요한 경험·관심사·사용 환경을 모집 조건으로 안내할 수 있습니다.
+<br/>
 
-## 핵심 이용 흐름
+### 주요 기능
 
-1. 개발자가 프로젝트를 등록하고 테스터 모집 글을 작성합니다.
-2. 테스터가 모집 조건과 일정을 확인하고 지원합니다.
-3. 참여가 확정되면 안내된 항목을 테스트합니다.
-4. 테스터가 수행 결과와 사용 경험, 발견한 버그를 제출합니다.
-5. 제출 후 72시간 동안 신고가 없으면 크레딧을 지급합니다. 신고가 접수되면 운영자가 검토합니다.
-
-**프로젝트**는 테스트할 소프트웨어를 뜻합니다. 하나의 프로젝트에서 여러 **테스트 모집 건**을 진행하며, 참여자·피드백·보상은 모집 건별로 관리합니다.
-
-## 주요 서비스 구성
-
-| 영역 | 기획 내용 |
+| 기능 | 내용 |
 | --- | --- |
-| 테스트 모집 | 모집 목록·상세 확인 및 지원 |
-| 참여 테스트 | 지원한 테스트, 참여 중인 테스트, 지난 참여 내역 관리 |
-| 개발자 프로젝트 | 프로젝트와 모집 건 관리, 테스터 및 피드백 확인 |
-| 마이페이지 | 개인정보 수정, 크레딧·출금·구독 관리 |
-| 채팅 | 구독 개발자와 해당 모집 건에 선정된 테스터의 1대1 소통 |
-| 관리자 | 회원, 신고·제재, 출금 요청 관리 |
+| 조건 맞춤 모집 | 필요한 경험·관심사·사용 환경을 모집 조건으로 걸고, 선착순 자동 확정이나 지원자 직접 선정으로 테스터를 정합니다. |
+| 항목별 피드백 | 개발자가 요청한 테스트 항목마다 수행 결과를 받고, 버그는 재현 방법과 함께 받습니다. |
+| 크레딧 보상 | 피드백 제출 후 72시간 동안 신고가 없으면 크레딧을 자동 지급합니다. 받은 크레딧은 구독 결제나 출금에 씁니다. |
+| AI 피드백 분석 | 비슷한 피드백을 묶어 개선 우선순위를 매기고 GitHub 이슈 초안을 만듭니다. 버전 간 비교와 후속 질문 추천도 제공합니다. |
 
-## 구독과 크레딧
+<br/>
 
-### 개발자 구독
+### 기술 스택
 
-무료 개발자도 모집 글을 등록하고 피드백을 받을 수 있습니다. 무료 모집은 지원하면 바로 참여를 확정하고, 구독 개발자는 지원자를 직접 선정합니다.
-
-구독 혜택으로 더 큰 모집 인원 한도, 모집 글 상단 순환 노출, 선정된 테스터와의 채팅, 피드백 관리·분석 편의 기능을 기획하고 있습니다. 구독 모집에 참여하는 테스터에게는 기본 보상에 추가 크레딧을 제공합니다.
-
-### 크레딧의 획득과 사용
-
-| 종류 | 획득 방법 | 구독 결제 | 현금화 |
-| --- | --- | --- | --- |
-| 가입 크레딧 | 회원가입 시 지급 | 가능 | 불가 |
-| 테스트 획득 크레딧 | 테스트 수행 및 피드백 제출에 대한 보상 | 가능 | 가능 |
-
-테스트로 얻은 크레딧은 1크레딧당 1원으로 현금화할 수 있도록 기획합니다. 구독은 현금 또는 크레딧으로 결제하며, 크레딧 결제에는 우대 가격을 적용합니다. 개발자가 보상 예산을 별도로 충전하는 방식은 사용하지 않습니다.
-
-구독 가격, 크레딧 지급량, 모집 인원 한도, 최소 출금액은 미정입니다. 실제 결제·현금화 연동 범위도 추후 결정합니다.
-
-## 운영 원칙
-
-- 피드백은 모집한 개발자와 작성한 테스터가 확인하고, 운영자는 신고 검토에 필요한 경우 확인합니다.
-- 버그를 발견하지 못했더라도 요청한 테스트를 수행하고 필요한 피드백을 제출하면 보상 대상입니다.
-- 제출 기한 내 미제출은 보상 없이 미완료 처리합니다.
-- 악의적이거나 무성의한 참여는 신고할 수 있습니다. 운영자가 문제가 있다고 인정한 신고를 제재 이력에 반영하며, 악의적인 미완료 반복도 제재할 수 있습니다.
-- 개발자의 구독이 만료되어도 이미 참여가 확정된 테스터에게 안내한 보상은 유지합니다.
-
-## 기능 후보 우선순위
-
-핵심 모집·테스트·피드백 흐름을 바탕으로 다음 순서로 검토합니다. 전체 구현 범위와 첫 시연 범위는 아직 정하지 않았습니다.
-
-| 우선순위 | 기능 후보 |
+| 영역 | 기술 |
 | --- | --- |
-| 1 | 피드백 정리 |
-| 2 | 모집 글 상단 노출 |
-| 3 | 테스터와 1대1 채팅 |
-| 4 | 통계 대시보드 |
-| 5 | 버전별 비교 |
-| 6 | AI 요약 |
+| 프론트엔드 | ![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white) ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) |
+| 백엔드 | ![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white) ![JPA](https://img.shields.io/badge/JPA-59666C?style=for-the-badge&logo=hibernate&logoColor=white) |
+| 데이터베이스 | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL_17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white) |
+| 인프라 | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) ![nginx](https://img.shields.io/badge/nginx-009639?style=for-the-badge&logo=nginx&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white) |
+| 테스트 | ![JUnit](https://img.shields.io/badge/JUnit5-25A162?style=for-the-badge&logo=junit5&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge) |
 
-## 협업 규칙
+<p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
-### Git Flow
+<br/>
+<br/>
 
-| 브랜치 | 용도 |
-| --- | --- |
-| `main` | 운영 배포용 브랜치. 지금은 `develop`의 내용을 보관만 하고 배포하지 않음 |
-| `develop` | 개발을 위한 브랜치. 머지되면 테스트 서버(3005번 포트)에 배포 |
-| `feature` | 각각의 개발자가 기능을 개발하는 브랜치 |
-| `hotfix` | 출시 버전에서 발생한 버그를 수정하는 브랜치 |
+## 시스템 설계
 
-`release` 브랜치는 쓰지 않습니다. 실제 운영 단계로 넘어가면 `main`을 운영 서버에 배포합니다.
+### 시스템 구성
 
-### Commit Message Rules
-
-커밋 메시지는 `유형: 변경 내용` 형식으로 작성합니다.
-
-| 유형 | 사용 기준 |
-| --- | --- |
-| `Feat` | 새로운 기능 및 관련 파일 추가 |
-| `Fix` | 버그 수정 |
-| `Docs` | README를 포함한 모든 문서의 추가 및 수정 |
-| `Style` | 코드 포맷, 세미콜론 누락 등 코드 자체의 변경이 없는 경우 |
-| `Refactor` | 코드 리팩토링 |
-| `Test` | 테스트 코드 추가 및 리팩토링 |
-| `Chore` | 패키지 매니저 및 설정 파일 수정 등 기타 작업. 예: `.gitignore` |
-| `Design` | CSS 등 사용자 UI 디자인 변경 |
-| `Comment` | 필요한 주석 추가 및 변경 |
-| `Rename` | 파일 또는 폴더 이름 수정 및 위치 변경 |
-| `Remove` | 파일 삭제 |
-| `!BREAKING CHANGE` | API의 대대적인 변경 |
-| `!HOTFIX` | 긴급한 버그 수정 |
-
-예시:
-
-```text
-Fix: 북마크 테스트 수정
+```mermaid
+flowchart LR
+  B[브라우저] --> N[nginx] --> F["Next.js (BFF)"] --> S[Spring Boot] --> D[(PostgreSQL)]
+  S --> A["AI 분석 서버 (Python)"]
 ```
 
-### Pull Request Rules
+<br/>
 
-PR 제목은 커밋 메시지와 같은 `유형: 변경 내용` 형식으로 작성합니다.
+### 데이터 모델
 
-| 작업 브랜치 | base 브랜치 |
-| --- | --- |
-| `feature/*` | `develop` |
-| `develop` | `main` |
-| `hotfix/*` | `main` |
+서비스의 핵심 테이블 19개와 관계입니다. 컬럼까지 보려면 아래 항목을 펼쳐 주세요.
 
-`develop`과 `main`에는 브랜치 보호 규칙이 걸려 있습니다.
-
-- 직접 push와 force push, 브랜치 삭제는 막혀 있고 PR로만 머지합니다.
-- CI 검사 4개(`Frontend lint·build`, `Backend test`, `Docker build (backend)`, `Docker build (frontend)`)가 통과해야 합니다.
-- 본인 외 팀원 1명이 승인해야 합니다. 승인 뒤 커밋을 더 올리면 다시 승인을 받습니다.
-
-PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. 필수 섹션은 비우지 않고, 해당 없는 선택 섹션은 지웁니다.
-
-PR을 열면 [PR meta 워크플로](.github/workflows/pr-meta.yml)가 연 사람을 담당자로 넣고, 제목 유형으로 라벨을 붙입니다. 라벨은 붙이기만 하고, 직접 붙인 라벨은 지우지 않습니다.
-
-| 제목 유형 | 라벨 |
-| --- | --- |
-| `Feat`, `Design` | `enhancement` |
-| `Fix`, `!HOTFIX` | `bug` |
-| `Docs` | `documentation` |
-| `Test` | `test` |
-| `Refactor` | `refactor` |
-| `Chore`, `Style`, `Comment`, `Rename`, `Remove` | `chore` |
-| `!BREAKING CHANGE` | `breaking change` |
-
-| 섹션 | 구분 | 내용 |
-| --- | --- | --- |
-| 변경 요약 | 필수 | 무엇이 왜 바뀌었는지 사용자·화면 기준으로 한두 문장 |
-| 관련 문서·이슈 | 필수 | 계획 문서(`docs/`) 링크, 이슈 번호 |
-| 시나리오 | 필수 | 이번 PR에서 완료한 시나리오 번호와 남은 번호. 번호는 이슈마다 1부터 센다(`#42-S1`) |
-| 확인 방법 | 필수 | 실행한 테스트와 결과, `[직접]` 시나리오마다 확인한 URL·조건과 결과 |
-| 화면 변경 | 선택 | 바뀐 화면의 전후 스크린샷. `Design` 커밋이 있으면 필수 |
-| 리뷰 포인트 | 선택 | 판단이 애매했던 곳, 일부러 하지 않은 것, 미정 규칙 |
-| 배포 영향 | 선택 | Breaking change·Hotfix의 영향 범위와 되돌리는 방법 |
-| 설정·의존성 | 선택 | 새 패키지·환경 변수, 팀원이 따로 해야 할 일 |
-
-## 개발 현황
-
-저장소에는 프론트엔드(`frontend/`, Next.js)와 백엔드(`backend/`, Spring Boot), Docker Compose 실행 환경, GitHub Actions CI/CD가 있습니다. `develop`에 머지하면 테스트 서버 <https://test-moa.newlecture.com>에 자동으로 배포됩니다. 팀원별 역할과 개발 일정은 결정 후 추가합니다.
-
-## 실행 방법
-
-Docker만 있으면 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄울 수 있습니다.
-
-```text
-브라우저 → nginx (localhost:TEAM_PORT) → frontend:3000 → backend:8080 → db:5432
+```mermaid
+erDiagram
+  users ||--o{ projects : "등록한다"
+  projects ||--o{ recruitments : "모집한다"
+  recruitments ||--o{ test_items : "요청한다"
+  recruitments ||--o{ registers : "지원받는다"
+  users ||--o{ registers : "지원한다"
+  registers ||--o{ feedbacks : "제출한다"
+  test_items |o--o{ feedbacks : "받는다"
+  recruitments ||--o{ cluster_groups : "묶는다"
+  cluster_groups ||--o{ feedback_clusters : "포함한다"
+  feedbacks ||--o{ feedback_clusters : "속한다"
+  recruitments ||--o| version_comparisons : "비교한다"
+  recruitments ||--o{ version_comparisons : "이전 버전"
+  recruitments ||--o{ chat_rooms : "연결된다"
+  registers ||--o| chat_rooms : "연결된다"
+  chat_rooms ||--o{ chat_participants : "포함한다"
+  users ||--o{ chat_participants : "참여한다"
+  chat_rooms ||--o{ chat_messages : "담는다"
+  chat_participants ||--o{ chat_messages : "보낸다"
+  users ||--o| credit_wallets : "가진다"
+  credit_wallets ||--o{ credit_ledgers : "기록한다"
+  users ||--o{ cashouts : "출금 신청한다"
+  users ||--o{ subscriptions : "구독한다"
+  plans ||--o{ subscriptions : "적용된다"
+  subscriptions ||--o| payments : "결제한다"
+  users ||--o{ reports : "신고한다"
+  users ||--o{ reports : "신고당한다"
+  users |o--o{ reports : "검토한다"
 ```
 
-브라우저는 nginx만 거쳐 프론트엔드에 접속합니다. 백엔드는 프론트엔드가 서버 안에서 부르므로(BFF) 호스트에 포트를 열지 않습니다.
+<details>
+<summary><strong>전체 컬럼 보기</strong> (테이블 23개, 이미지·첨부 파일 테이블 생략)</summary>
 
-### 처음 한 번
+```mermaid
+erDiagram
+  users ||--o{ accounts : "user_id"
+  users ||--o{ cashouts : "user_id"
+  chat_rooms ||--o{ chat_messages : "room_id"
+  chat_participants ||--o{ chat_messages : "sender_id"
+  chat_rooms ||--o{ chat_participants : "room_id"
+  users ||--o{ chat_participants : "user_id"
+  recruitments ||--o{ chat_rooms : "recruitment_id"
+  registers ||--o| chat_rooms : "register_id"
+  recruitments ||--o{ cluster_groups : "recruitment_id"
+  credit_wallets ||--o{ credit_ledgers : "credit_wallet_id"
+  users ||--o| credit_wallets : "user_id"
+  registers ||--o{ feedbacks : "register_id"
+  test_items |o--o{ feedbacks : "test_item_id"
+  cluster_groups ||--o{ feedback_clusters : "cluster_group_id"
+  feedbacks ||--o{ feedback_clusters : "feedback_id"
+  subscriptions ||--o| payments : "subscription_id"
+  users ||--o{ projects : "user_id"
+  projects ||--o{ recruitments : "project_id"
+  types ||--o{ recruitment_types : "type_id"
+  recruitments ||--o{ recruitment_types : "recruitment_id"
+  users ||--o{ refresh_tokens : "user_id"
+  recruitments ||--o{ registers : "recruitment_id"
+  users ||--o{ registers : "user_id"
+  users ||--o{ reports : "user_id"
+  users ||--o{ reports : "reported_user_id"
+  users |o--o{ reports : "reviewer_id"
+  users ||--o{ subscriptions : "user_id"
+  plans ||--o{ subscriptions : "plan_id"
+  recruitments ||--o{ test_items : "recruitment_id"
+  recruitments ||--o| version_comparisons : "recruitment_id"
+  recruitments ||--o{ version_comparisons : "previous_recruitment_id"
 
-```sh
-cp .env.example .env
+  accounts {
+    bigint id PK
+    bigint user_id FK
+    varchar password
+    varchar provider
+    text provider_code
+    timestamp created_at
+    timestamp updated_at
+  }
+  cashouts {
+    bigint id PK
+    bigint user_id FK
+    integer amount
+    varchar bank
+    varchar account_number
+    varchar account_holder
+    varchar status
+    varchar reject_reason
+    varchar reject_memo
+    timestamp processed_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  chat_messages {
+    bigint id PK
+    bigint room_id FK
+    bigint seq
+    bigint sender_id FK
+    varchar content
+    timestamp sent_at
+  }
+  chat_participants {
+    bigint id PK
+    bigint room_id FK
+    bigint user_id FK
+    varchar role
+    varchar custom_room_name
+    boolean hidden
+    bigint last_read_seq
+    timestamp created_at
+    timestamp updated_at
+  }
+  chat_rooms {
+    bigint id PK
+    varchar room_key
+    bigint recruitment_id FK
+    bigint register_id FK
+    bigint last_seq
+    timestamp last_message_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  cluster_groups {
+    bigint id PK
+    bigint recruitment_id FK
+    varchar group_code
+    varchar name
+    integer improvement_rank
+    varchar category
+    varchar git_issue_title
+    text git_issue_content
+    text git_issue_url
+    integer git_issue_number
+    timestamp git_issue_registering_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  credit_ledgers {
+    bigint id PK
+    bigint credit_wallet_id FK
+    integer delta
+    varchar description
+    varchar type
+    timestamp created_at
+    timestamp updated_at
+  }
+  credit_wallets {
+    bigint id PK
+    bigint user_id FK
+    integer event_credit
+    integer earned_balance
+    integer locked_balance
+    timestamp created_at
+    timestamp updated_at
+  }
+  feedbacks {
+    bigint id PK
+    bigint register_id FK
+    bigint test_item_id FK
+    text content
+    timestamp submitted_at
+    varchar status
+    boolean is_recommended
+    text report_reason
+    timestamp created_at
+    timestamp updated_at
+  }
+  feedback_clusters {
+    bigint id PK
+    bigint cluster_group_id FK
+    bigint feedback_id FK
+    boolean is_representative
+    timestamp created_at
+    timestamp updated_at
+  }
+  payments {
+    bigint id PK
+    bigint subscription_id FK
+    varchar method
+    integer amount
+    timestamp paid_at
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+  }
+  plans {
+    bigint id PK
+    varchar tier
+    integer cash_price
+    integer credit_price
+    integer version
+    text description
+    text image_url
+    integer period_days
+    timestamp created_at
+    timestamp updated_at
+  }
+  projects {
+    bigint id PK
+    bigint user_id FK
+    varchar title
+    text description
+    text image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  recruitments {
+    bigint id PK
+    bigint project_id FK
+    varchar title
+    text description
+    text conditions
+    text access_url
+    timestamp recruit_deadline
+    timestamp feedback_deadline
+    varchar status
+    varchar selection_mode
+    boolean is_subscription
+    integer version
+    varchar analysis_status
+    timestamp analyzed_at
+    timestamp analysis_requested_at
+    text analytics_summary
+    text praise_summary
+    text cancel_reason
+    timestamp cancelled_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  recruitment_types {
+    bigint id PK
+    bigint type_id FK
+    bigint recruitment_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  refresh_tokens {
+    bigint id PK
+    bigint user_id FK
+    varchar token_hash
+    varchar session_id
+    timestamp used_at
+    timestamp expires_at
+    timestamp created_at
+  }
+  registers {
+    bigint id PK
+    bigint recruitment_id FK
+    bigint user_id FK
+    varchar status
+    timestamp applied_at
+    timestamp confirmed_at
+    integer base_reward_snapshot
+    integer extra_reward_snapshot
+    timestamp created_at
+    timestamp updated_at
+  }
+  reports {
+    bigint id PK
+    bigint user_id FK
+    bigint reported_user_id FK
+    bigint reviewer_id FK
+    varchar target_type
+    bigint target_id
+    text reason
+    varchar status
+    timestamp reviewed_at
+    timestamp created_at
+  }
+  subscriptions {
+    bigint id PK
+    bigint user_id FK
+    bigint plan_id FK
+    timestamp start_at
+    timestamp end_at
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+  }
+  test_items {
+    bigint id PK
+    bigint recruitment_id FK
+    varchar title
+    text description
+    boolean is_required
+    integer sort_order
+    timestamp created_at
+    timestamp updated_at
+  }
+  types {
+    bigint id PK
+    varchar code
+    text image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  users {
+    bigint id PK
+    varchar name
+    varchar nickname
+    varchar email
+    varchar role
+    varchar status
+    text image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  version_comparisons {
+    bigint id PK
+    bigint recruitment_id FK
+    bigint previous_recruitment_id FK
+    text summary
+    timestamp created_at
+    timestamp updated_at
+  }
 ```
 
-`.env`에서 `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`를 채웁니다. 로컬에서는 아무 값이나 써도 됩니다. `TEAM_PORT`는 브라우저로 접속할 포트입니다. `.env`는 커밋하지 않습니다.
+</details>
 
-### 개발 모드
+<p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
-```sh
-docker compose up --build
-```
+<br/>
+<br/>
 
-`http://localhost:<TEAM_PORT>`로 접속합니다. `compose.override.yaml`이 자동으로 합쳐져 소스 폴더가 컨테이너에 붙습니다.
+## 시작하기
 
-- 프론트엔드: 파일을 저장하면 바로 반영됩니다.
-- 백엔드: 고친 뒤 `docker compose restart backend`로 다시 시작합니다.
+Docker Compose로 프론트엔드, 백엔드, PostgreSQL을 한 번에 띄웁니다.
 
-프론트엔드는 실제 백엔드에 연결되어 뜹니다. 목업으로 확인하려면 `.env`에 `AUTH_MODE=mock`을 추가하고 `docker compose up`으로 컨테이너를 다시 만듭니다. 아래의 운영 이미지로 띄울 때는 이 값이 빌드에 들어가므로 `--build`까지 붙입니다. 테스트 서버는 이 값과 상관없이 항상 백엔드 모드입니다.
+<br/>
 
-### 운영 이미지로 띄우기
+### 사전 준비
 
-```sh
-docker compose -f compose.yaml up --build
-```
+- [Docker](https://www.docker.com/) (Docker Compose 포함)
 
-`compose.override.yaml`을 빼고 운영과 같은 이미지로 빌드해 띄웁니다. 배포 전에 이미지가 제대로 뜨는지 볼 때 씁니다.
+<br/>
 
-### 로컬 HTTPS
+### 설치 및 실행
 
-[mkcert](https://github.com/FiloSottile/mkcert)로 인증서를 만든 뒤 `https` 프로필을 붙여 띄웁니다. 인증서는 `nginx/certs/`에 생기고 커밋하지 않습니다.
+1. 저장소를 내려받습니다.
+   ```sh
+   git clone https://github.com/likelion-backendschool-9th/test-moa.git
+   cd test-moa
+   ```
+2. 환경 변수 파일을 만들고 값을 채웁니다. 각 값의 설명은 파일의 주석에 있습니다.
+   ```sh
+   cp .env.example .env
+   ```
+3. 서비스를 띄웁니다.
+   ```sh
+   docker compose up --build
+   ```
+4. 브라우저에서 `http://localhost:<TEAM_PORT>`로 접속합니다.
 
-```sh
-mkcert -install
-mkcert -cert-file nginx/certs/local.pem -key-file nginx/certs/local-key.pem localhost 127.0.0.1 ::1
-docker compose --profile https up --build
-```
+개발 모드, 로컬 HTTPS, 자주 쓰는 명령은 [실행 방법](docs/running.md)을 참고하세요.
 
-`https://localhost:<HTTPS_PORT>`로 접속합니다. `HTTP_PORT`로 들어오면 HTTPS로 넘어갑니다.
+<br/>
 
-### 자주 쓰는 명령
+### AI 분석 서버 실행
 
-| 명령 | 하는 일 |
-| --- | --- |
-| `docker compose ps` | 컨테이너 상태 |
-| `docker compose logs -f backend` | 한 서비스의 로그 |
-| `docker compose down` | 컨테이너 중지·삭제. DB 데이터는 남음 |
-| `docker compose down -v` | DB 데이터까지 삭제 |
+AI 피드백 분석은 Python 분석 서버를 따로 띄워야 동작합니다. 분석 서버가 없어도 AI 기능을 뺀 나머지는 그대로 동작합니다.
 
-### 테스트 서버 배포
+1. [AI 분석 서버 README](ANALYSIS_SERVER_README_URL)를 따라 서버를 띄웁니다.
+2. `.env`의 `ANALYSIS_BASE_URL`에 백엔드 컨테이너에서 접속할 수 있는 분석 서버 주소를 넣습니다.
+3. `.env`의 `ANALYSIS_INTERNAL_TOKEN`에 분석 서버와 같은 토큰을 넣습니다.
+4. `docker compose up -d backend`로 백엔드를 다시 띄웁니다.
 
-`develop`에 머지하면 [GitHub Actions](.github/workflows/deploy.yml)가 이미지를 빌드해 GHCR에 올리고, 테스트 서버에 접속해 [compose.prod.yaml](compose.prod.yaml)로 다시 띄웁니다. 직접 할 일은 없고, Actions 탭에서 `CI/CD` 워크플로의 결과를 확인합니다.
+<p align="right">(<a href="#readme-top">맨 위로</a>)</p>
+
+<br/>
+<br/>
+
+## 협업 방식
+
+1. `develop`에서 `feature/기능이름` 브랜치를 만듭니다.
+2. `유형: 변경 내용` 형식으로 커밋합니다.
+3. `develop`으로 PR을 엽니다.
+4. CI 통과와 팀원 1명의 승인을 받아 병합합니다.
+5. 병합되면 테스트 서버에 자동으로 배포됩니다.
+
+자세한 규칙은 [협업 규칙](CONTRIBUTING.md)을 참고하세요.
+
+<p align="right">(<a href="#readme-top">맨 위로</a>)</p>
+
+<br/>
+<br/>
+
+## 팀 소개
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="20%">
+        <a href="https://github.com/isle-blu"><img src="https://avatars.githubusercontent.com/isle-blu?size=200" width="100" alt="양덕관"></a>
+        <br/><br/><strong>양덕관</strong>
+        <br/><sub><a href="https://github.com/isle-blu">isle-blu</a></sub>
+        <br/><br/>실시간 채팅
+        <br/>프론트 공통·배포
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/jykim78982"><img src="https://avatars.githubusercontent.com/jykim78982?size=200" width="100" alt="김재연"></a>
+        <br/><br/><strong>김재연</strong>
+        <br/><sub><a href="https://github.com/jykim78982">jykim78982</a></sub>
+        <br/><br/>결제·크레딧·출금
+        <br/>운영자 화면
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/Dev-JihyeMoon"><img src="https://avatars.githubusercontent.com/Dev-JihyeMoon?size=200" width="100" alt="문지혜"></a>
+        <br/><br/><strong>문지혜</strong>
+        <br/><sub><a href="https://github.com/Dev-JihyeMoon">Dev-JihyeMoon</a></sub>
+        <br/><br/>AI 피드백 분석
+        <br/>백엔드 초기 구성
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/j0615671-arch"><img src="https://avatars.githubusercontent.com/j0615671-arch?size=200" width="100" alt="이재용"></a>
+        <br/><br/><strong>이재용</strong>
+        <br/><sub><a href="https://github.com/j0615671-arch">j0615671-arch</a></sub>
+        <br/><br/>회원·인증
+        <br/>신고
+      </td>
+      <td align="center" width="20%">
+        <a href="https://github.com/songmin04"><img src="https://avatars.githubusercontent.com/songmin04?size=200" width="100" alt="최송민"></a>
+        <br/><br/><strong>최송민</strong>
+        <br/><sub><a href="https://github.com/songmin04">songmin04</a></sub>
+        <br/><br/>프로젝트·모집
+        <br/>피드백
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="right">(<a href="#readme-top">맨 위로</a>)</p>
+
+<br/>
+<br/>
+
+## 참고 문서
+
+- [실행 방법](docs/running.md): 개발 모드, 로컬 HTTPS, 배포
+- [협업 규칙](CONTRIBUTING.md): 브랜치, 커밋 메시지, PR
+- [프론트엔드 안내](frontend/README.md): 폴더 구조, 테스트 명령, 기술적으로 고민한 점
+- [백엔드 안내](backend/README.md): 기술적으로 고민한 점
+- [AI 분석 서버](#ai-분석-서버-실행): 별도 실행 방법
+- [계획 문서](docs/README.md): 도메인별 요구사항과 결정 기록
+
+<p align="right">(<a href="#readme-top">맨 위로</a>)</p>

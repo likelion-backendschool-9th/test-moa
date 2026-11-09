@@ -18,30 +18,29 @@ export function renewedExpiry(subscription: Subscription, periodDays: number, no
 export type SubscriptionOverview = {
   /** 운영자처럼 구독 대상이 아니면 null */
   subscription: Subscription | null;
-  freePlan: PlanTerms;
   plans: SubscriptionPlan[];
-  recruitQuota: RecruitQuota;
   payableCredits: number;
   /** 남은 날 계산 기준 시각 */
   now: string;
 };
 
-/** 켜고 끄는 혜택. 문구로 비교한다 (spec.md 2장) */
-export type BenefitKey = "selection" | "reward" | "chat" | "exposure";
+/** 공개 구독 소개(`/subscription`). 비로그인도 읽을 수 있다 */
+export type SubscriptionIntro = {
+  freePlan: PlanTerms;
+  plans: SubscriptionPlan[];
+  /** 비로그인은 미구독으로 본다. 운영자는 null */
+  subscription: Subscription | null;
+  isGuest: boolean;
+};
 
-/** 혜택 비교의 행. 월간 모집 인원만 숫자 한도로 비교한다 */
-export const BENEFIT_ROWS: { key: BenefitKey | "monthlyLimit"; label: string }[] = [
-  { key: "selection", label: "참여 확정 방식" },
-  { key: "monthlyLimit", label: "월간 모집 인원" },
-  { key: "reward", label: "테스터 보상" },
-  { key: "chat", label: "1대1 채팅" },
-  { key: "exposure", label: "모집 목록 노출" },
-];
+/** 켜고 끄는 혜택. 문구로 비교한다 (spec.md 2장) */
+export type BenefitKey = "selection" | "reward" | "chat" | "exposure" | "analytics";
+
+/** 카드에 보여 줄 혜택의 순서 */
+export const BENEFIT_KEYS: BenefitKey[] = ["selection", "reward", "chat", "exposure", "analytics"];
 
 /** 무료와 구독 상품이 함께 갖는 혜택 조건 */
 export type PlanTerms = {
-  /** 한 달 동안 모집 글에 걸 수 있는 인원 합계 */
-  monthlyLimit: number;
   benefits: Record<BenefitKey, string>;
 };
 
@@ -54,14 +53,6 @@ export type SubscriptionPlan = PlanTerms & {
   cashPrice: number;
   /** 크레딧. 현금보다 우대 가격이다 */
   creditPrice: number;
-};
-
-/** 이번 달 모집 인원 사용량 */
-export type RecruitQuota = {
-  used: number;
-  limit: number;
-  /** 다시 채워지는 시각 (다음 달 1일) */
-  resetsAt: string;
 };
 
 /** 구독이 만료되면 남는 것과 멈추는 것 (spec.md 4장 구독 만료) */

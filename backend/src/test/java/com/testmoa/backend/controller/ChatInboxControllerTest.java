@@ -129,14 +129,38 @@ class ChatInboxControllerTest {
                 .andExpect(jsonPath("$.data.rooms[0].lastMessage").value("확인했어요"));
     }
 
-    @Test @DisplayName("#111-S3 10,000자 메시지로 끝난 방이 맨 위에 표시되고 최근 메시지 전체를 반환")
+    @Test @DisplayName("#111-S3 10,000자 메시지로 끝난 방이 맨 위에 표시되고 최근 메시지는 앞 100자")
     void longLastMessage() throws Exception {
         String text = "가".repeat(10_000);
         send(first, me, text);
         messageTime(first, LocalDateTime.of(2026, 11, 5, 12, 0));
         inbox(me).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.rooms[*].roomKey", contains(first.getRoomKey(), second.getRoomKey())))
-                .andExpect(jsonPath("$.data.rooms[0].lastMessage").value(text));
+                .andExpect(jsonPath("$.data.rooms[0].lastMessage").value("가".repeat(100)));
+    }
+
+    @Test @DisplayName("#170-S1 100자 메시지는 그대로 주고 101자 메시지는 앞 100자만 반환")
+    void previewLengthBoundary() throws Exception {
+        send(first, me, "가".repeat(100));
+        send(second, tester, "나".repeat(100) + "끝");
+        messageTime(first, LocalDateTime.of(2026, 11, 5, 12, 0));
+        messageTime(second, LocalDateTime.of(2026, 11, 5, 13, 0));
+        inbox(me).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.rooms[*].roomKey", contains(second.getRoomKey(), first.getRoomKey())))
+                .andExpect(jsonPath("$.data.rooms[0].lastMessage").value("나".repeat(100)))
+                .andExpect(jsonPath("$.data.rooms[1].lastMessage").value("가".repeat(100)));
+    }
+
+    @Test @DisplayName("#170-S2 이모지가 경계에 있어도 서로게이트 쌍을 보존하고 앞 100자만 반환")
+    void previewEmojiBoundary() throws Exception {
+        send(first, me, "가".repeat(99) + "😀😀");
+        send(second, tester, "😀".repeat(5_000));
+        messageTime(first, LocalDateTime.of(2026, 11, 5, 12, 0));
+        messageTime(second, LocalDateTime.of(2026, 11, 5, 13, 0));
+        inbox(me).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.rooms[*].roomKey", contains(second.getRoomKey(), first.getRoomKey())))
+                .andExpect(jsonPath("$.data.rooms[0].lastMessage").value("😀".repeat(100)))
+                .andExpect(jsonPath("$.data.rooms[1].lastMessage").value("가".repeat(99) + "😀"));
     }
 
     @Test @DisplayName("#48-S3 내가 바꾼 이름은 내 채팅함에만 표시")

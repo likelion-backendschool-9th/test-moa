@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getSubscriptionOverview } from "@/features/subscription/api";
-import { PlanComparison } from "@/app/(site)/my/(account)/subscription/_components/PlanComparison/PlanComparison";
 import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry/SubscriptionExpiry";
 import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment/SubscriptionPayment";
 import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus/SubscriptionStatus";
@@ -28,7 +27,7 @@ export default function SubscriptionPage({ searchParams }: PageProps<"/my/subscr
 }
 
 async function Overview({ searchParams }: { searchParams: SearchParams }) {
-  const [{ subscription, freePlan, plans, recruitQuota, payableCredits, now }, { notice }] = await Promise.all([
+  const [{ subscription, plans, payableCredits, now }, { notice }] = await Promise.all([
     getSubscriptionOverview(),
     searchParams,
   ]);
@@ -58,13 +57,10 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         <SubscriptionStatus
           subscription={subscription}
           plan={plans.find((plan) => plan.id === currentPlanId)}
-          recruitQuota={recruitQuota}
-          upgradeLimit={Math.max(...plans.map((plan) => plan.monthlyLimit))}
           now={new Date(now)}
         />
         <SubscriptionPayment plans={plans} payableCredits={payableCredits} active={active} />
       </div>
-      <PlanComparison freePlan={freePlan} plans={plans} currentPlanId={currentPlanId} />
       {active && <SubscriptionExpiry />}
     </div>
   );
@@ -82,12 +78,6 @@ function SubscriptionSkeleton() {
           </AccountCard>
         ))}
       </div>
-      <AccountCard>
-        <Skeleton className={styles.subscriptionSkeletonSkeleton4} />
-        {Array.from({ length: 5 }, (_, index) => (
-          <Skeleton key={index} className={styles.subscriptionSkeleton2} />
-        ))}
-      </AccountCard>
     </div>
   );
 }

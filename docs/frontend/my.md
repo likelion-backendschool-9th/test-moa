@@ -109,7 +109,7 @@ S88 잔액 0 [직접]
 
 S89 미구독 [직접]
 - Given `demo-role=tester`
-- Then  "구독하지 않았어요"와 "구독 알아보기"(`/my/subscription`)가 보인다
+- Then  "구독하지 않았어요"와 "구독 알아보기"(`/subscription`)가 보인다 `(고침 #76: 구독 알아보기는 공개 소개 페이지로)`
 
 S90 구독 중 [직접]
 - Given `demo-role=developer`

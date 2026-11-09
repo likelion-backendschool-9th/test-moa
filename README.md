@@ -192,6 +192,8 @@ docker compose up --build
 - 프론트엔드: 파일을 저장하면 바로 반영됩니다.
 - 백엔드: 고친 뒤 `docker compose restart backend`로 다시 시작합니다.
 
+프론트엔드는 실제 백엔드에 연결되어 뜹니다. 목업으로 확인하려면 `.env`에 `AUTH_MODE=mock`을 추가하고 `docker compose up`으로 컨테이너를 다시 만듭니다. 아래의 운영 이미지로 띄울 때는 이 값이 빌드에 들어가므로 `--build`까지 붙입니다. 테스트 서버는 이 값과 상관없이 항상 백엔드 모드입니다.
+
 ### 운영 이미지로 띄우기
 
 ```sh

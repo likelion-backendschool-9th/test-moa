@@ -22,6 +22,9 @@ COPY . .
 # NEXT_PUBLIC_ 값은 빌드할 때 코드에 박히므로 build arg로 받는다
 ARG NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+# 로그인 안내 같은 정적 화면은 빌드할 때 만들어지므로, 실행할 때의 값과 같은 모드로 빌드한다
+ARG AUTH_MODE=backend
+ENV AUTH_MODE=$AUTH_MODE
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -32,6 +35,9 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# 빌드 단계의 ENV는 여기로 넘어오지 않으므로, 이미지만 띄워도 빌드와 같은 모드가 되게 다시 받는다
+ARG AUTH_MODE=backend
+ENV AUTH_MODE=$AUTH_MODE
 
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static

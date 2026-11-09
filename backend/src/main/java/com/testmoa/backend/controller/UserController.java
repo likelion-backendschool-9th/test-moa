@@ -2,6 +2,12 @@ package com.testmoa.backend.controller;
 
 
 import com.testmoa.backend.dto.request.OAuthCodeRequest;
+import com.testmoa.backend.dto.request.PasswordChangeRequest;
+import com.testmoa.backend.dto.request.ProfileUpdateRequest;
+import com.testmoa.backend.global.security.JwtProvider;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.PatchMapping;
 import com.testmoa.backend.global.security.OAuthClient;
 import com.testmoa.backend.service.AuthService;
 import jakarta.validation.Valid;
@@ -39,6 +45,24 @@ public class UserController {
     @GetMapping("/me")
     public ApiResponse<MeResponse> getMe(@Parameter(hidden = true) @AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(userService.getMe(userId));
+    }
+
+    @Operation(summary = "내 정보 수정", description = "이름·닉네임. 다른 회원의 닉네임이면 409. 바뀐 내 정보를 준다")
+    @PatchMapping("/me")
+    public ApiResponse<MeResponse> updateMe(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                            @Valid @RequestBody ProfileUpdateRequest request) {
+        return ApiResponse.ok(userService.updateProfile(userId, request));
+    }
+
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인하고 바꾼다. 비밀번호가 없는 소셜 회원은 currentPassword 없이 만든다. 바꾸면 다른 기기의 로그인이 끊긴다")
+    @PatchMapping("/me/password")
+    public ApiResponse<Void> changePassword(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                            @Parameter(hidden = true) Authentication authentication,
+                                            @Valid @RequestBody PasswordChangeRequest request) {
+        // 지금 로그인 세션은 남기고 다른 세션만 끊는다. 세션 id는 access 토큰의 sid에 있다
+        String sessionId = ((Jwt) authentication.getDetails()).getClaimAsString(JwtProvider.SESSION_CLAIM);
+        userService.changePassword(userId, sessionId, request);
+        return ApiResponse.ok();
     }
 
     @Operation(summary = "소셜 계정 연동", description = "provider: google, github. 연동 화면에서 받은 code를 보낸다. 다른 회원에 연동된 계정이면 409")

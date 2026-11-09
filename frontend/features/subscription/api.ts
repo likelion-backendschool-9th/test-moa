@@ -9,9 +9,9 @@ import {
 } from "@/demo/subscription";
 import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
-import { requireMember } from "@/features/session/guard";
+import { assertAdmin, requireMember } from "@/features/session/guard";
 import { getSession, type Role } from "@/features/session/session";
-import type { FreePlan, Subscription, SubscriptionIntro, SubscriptionOverview, SubscriptionPlan } from "@/features/subscription/types";
+import type { CheckoutPeriod, FreePlan, MemberSubscription, MemberSubscriptionLookup, Subscription, SubscriptionIntro, SubscriptionOverview, SubscriptionPlan } from "@/features/subscription/types";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
 import { connection } from "next/server";
 import "server-only";
@@ -87,6 +87,34 @@ async function readPayableCredits(): Promise<number> {
   return result.data.payableCredits ?? 0;
 }
 
+/**
+ * 결제 화면의 이용 기간. 플랜마다 서버가 계산한 시작·끝이다(구독 중이면 지금 만료일부터 이어진다).
+ * 목업에는 서버 값이 없어 null이고, 그때는 화면이 직접 계산한다
+ */
+export async function getCheckoutPeriods(plans: SubscriptionPlan[]): Promise<Record<string, CheckoutPeriod> | null> {
+  if (!isBackendAuth) return null;
+  const entries = await Promise.all(
+    plans.map(async ({ id }) => {
+      const result = await backendFetch<{ period: CheckoutPeriod | null }>(`/api/v1/my/subscription/checkout?planId=${encodeURIComponent(id)}`);
+      if (!result.ok) throw new Error(result.message);
+      return [id, result.data.period] as const;
+    }),
+  );
+  return Object.fromEntries(entries.filter((entry): entry is readonly [string, CheckoutPeriod] => entry[1] !== null));
+}
+
+export type SubscriptionPaymentResult = { ok: true } | { ok: false; message: string };
+
+/** 서버에 구독 결제를 요청한다. 5초 안의 중복·크레딧 부족·운영자 계정이면 서버가 거절하고, 그 이유 문구를 돌려준다 */
+export async function requestSubscriptionPayment(planId: string, method: "credit" | "cash"): Promise<SubscriptionPaymentResult> {
+  await requireMember("/my/subscription/checkout");
+  const result = await backendFetch<unknown>("/api/v1/my/subscription/checkout", {
+    method: "POST",
+    body: { planId: Number(planId), method: method === "credit" ? "CREDIT" : "CASH" },
+  });
+  return result.ok ? { ok: true } : { ok: false, message: result.message };
+}
+
 /** 내 구독 상태. 운영자는 구독 대상이 아니라 null */
 async function readSubscription(): Promise<Subscription | null> {
   const result = await backendFetch<{ eligible: boolean; active: boolean | null; planId: number | null; plan: string | null; endAt: string | null }>(
@@ -134,4 +162,60 @@ export async function canPayForSubscription(role: Parameters<typeof getDemoSubsc
 export async function saveSubscriptionPayment(role: Parameters<typeof addDemoSubscriptionPayment>[0], payment: Parameters<typeof addDemoSubscriptionPayment>[1]) {
   await requireMember("/my/subscription/checkout");
   return addDemoSubscriptionPayment(role, payment);
+}
+
+/* ---------- 운영자 구독 부여·해제 (#204) ---------- */
+
+const ADMIN_SUBSCRIPTIONS = "/api/v1/admin/subscriptions";
+
+type MemberSubscriptionResponse = {
+  nickname: string;
+  email: string;
+  eligible: boolean;
+  active: boolean | null;
+  plan: string | null;
+  endAt: string | null;
+  remainingDays: number | null;
+};
+
+const toMemberSubscription = (data: MemberSubscriptionResponse): MemberSubscription => ({
+  nickname: data.nickname,
+  email: data.email,
+  eligible: data.eligible,
+  active: data.active === true,
+  plan: data.plan,
+  endAt: data.endAt,
+  remainingDays: data.remainingDays,
+});
+
+export type MemberSubscriptionChange = { ok: true; member: MemberSubscription } | { ok: false; message: string };
+
+/** 이메일로 회원의 구독 상태를 본다. 가입하지 않은 이메일은 not-found다 */
+export async function findMemberSubscription(email: string): Promise<MemberSubscriptionLookup> {
+  await assertAdmin();
+  const result = await backendFetch<MemberSubscriptionResponse>(`${ADMIN_SUBSCRIPTIONS}?email=${encodeURIComponent(email)}`);
+  if (result.ok) return { status: "found", member: toMemberSubscription(result.data) };
+  if (result.status === 404) return { status: "not-found" };
+  throw new Error(result.message);
+}
+
+/** 결제 없이 구독을 준다. 지금 파는 첫 플랜으로 준다(운영자 화면은 플랜 하나를 가정한다) */
+export async function grantMemberSubscription(email: string): Promise<MemberSubscriptionChange> {
+  await assertAdmin();
+  const [plan] = await readPlans();
+  if (!plan) return { ok: false, message: "지금 파는 구독 플랜이 없어요" };
+  const result = await backendFetch<MemberSubscriptionResponse>(ADMIN_SUBSCRIPTIONS, {
+    method: "POST",
+    body: { email, planId: Number(plan.id) },
+  });
+  return result.ok ? { ok: true, member: toMemberSubscription(result.data) } : { ok: false, message: result.message };
+}
+
+/** 끝나지 않은 구독을 모두 뺀다 */
+export async function revokeMemberSubscription(email: string): Promise<MemberSubscriptionChange> {
+  await assertAdmin();
+  const result = await backendFetch<MemberSubscriptionResponse>(`${ADMIN_SUBSCRIPTIONS}?email=${encodeURIComponent(email)}`, {
+    method: "DELETE",
+  });
+  return result.ok ? { ok: true, member: toMemberSubscription(result.data) } : { ok: false, message: result.message };
 }

@@ -29,7 +29,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 구독 결제 실행과 결제 이력. 결제는 한 트랜잭션에서 지갑 행을 먼저 잠가 같은 회원의 결제를 한 줄로 처리한다.
+ * 구독 결제 실행과 결제 이력. 결제는 한 트랜잭션에서 회원 행 → 지갑 행 순서로 잠가, 같은 회원의 결제와
+ * 운영자 구독 부여·해제(AdminSubscriptionService)를 한 줄로 처리한다.
  * 실제 PG 결제는 하지 않고 현금도 완료 기록만 남긴다.
  */
 @Service
@@ -85,16 +86,19 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentResponse pay(Long userId, PaymentRequest request) {
-        User user = requireUser(userId);
+        // 구독 기간을 읽고 쓰는 일은 회원 행을 먼저 잠근 뒤에 한다. 운영자의 구독 부여·해제(AdminSubscriptionService)도
+        // 같은 회원 행을 잠그므로, 결제와 운영자 작업이 같은 "가장 늦은 end_at"을 읽고 서로의 기간을 덮어쓰지 않는다
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         if (user.getRole() == Role.ADMIN) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.FORBIDDEN, "운영자 계정은 구독 대상이 아니에요");
         }
         Plan plan = planRepository.findCurrentPlans().stream()
                 .filter(current -> current.getId().equals(request.planId()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        // 지갑을 없으면 만들고 잠근다. 이후의 읽기는 모두 잠금 안에서 한다
+        // 지갑을 없으면 만들고 잠근다(회원 → 지갑 순서). 이후의 읽기는 모두 잠금 안에서 한다
         creditWalletRepository.insertIfAbsent(userId, LocalDateTime.now(clock));
         CreditWallet wallet = creditWalletRepository.findLockedByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR));

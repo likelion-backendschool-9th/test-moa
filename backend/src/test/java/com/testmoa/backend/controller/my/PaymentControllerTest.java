@@ -355,7 +355,8 @@ class PaymentControllerTest {
 
         pay(admin, plan.getId(), "CASH")
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.error.message").value("운영자 계정은 구독 대상이 아니에요"));
         mvc.perform(get(PAYMENTS).header("Authorization", bearer(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(0));

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
+import { DEFAULT_PROJECT_IMAGE_URL } from "@/features/project/types";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { formatDate } from "@/lib/format";
 import { SOFTWARE_TYPE_LABEL, type Recruitment } from "@/features/recruitment/types";
@@ -19,19 +19,13 @@ export function RecruitmentCard({ recruitment }: { recruitment: Recruitment }) {
       className={styles.root}
     >
       <div data-thumb className={styles.thumb}>
-        {recruitment.projectImage ? (
-          <Image
-            src={recruitment.projectImage}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 75vw"
-            className={styles.image}
-          />
-        ) : (
-          <div aria-hidden className={styles.box}>
-            <ImageSquareIcon size={32} weight="light" />
-          </div>
-        )}
+        <Image
+          src={recruitment.projectImage ?? DEFAULT_PROJECT_IMAGE_URL}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 75vw"
+          className={styles.image}
+        />
         <div className={styles.box2}>
           {recruitment.softwareTypes.map((type) => (
             <Badge key={type} tone="outline" className={styles.badge}>{SOFTWARE_TYPE_LABEL[type]}</Badge>

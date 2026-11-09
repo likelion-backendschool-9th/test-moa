@@ -1,6 +1,6 @@
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
 import { buildProjectRecords } from "@/demo/project";
-import { parseFileMeta } from "@/features/project/media";
+import { parseFileMeta, parseImageUrls } from "@/features/project/media";
 import type { FormState, Project } from "@/features/project/types";
 import { requireRole } from "@/features/session/guard";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
@@ -81,7 +81,7 @@ export async function getOwnedProject(path: string, projectKey: string) {
 /**
  * 검증을 마친 프로젝트를 백엔드에 저장한다. 성공하면 null, 실패하면 폼에 보여 줄 상태를 돌려준다.
  * 폼의 이미지 정보에서 크기가 0이면 원래 있던 이미지다. 수정 API는 보낸 값으로 모두 바꾸므로 그 주소를 다시 보낸다.
- * shortcut: 파일 저장소가 없어(#119) 새 이미지는 저장하지 못한다. 저장소가 생기면 업로드한 주소를 보낸다
+ * 새 이미지는 브라우저가 Route Handler에 올린 뒤 주소만 보낸다.
  */
 export async function saveBackendProject(
   projectKey: string | null,
@@ -90,12 +90,13 @@ export async function saveBackendProject(
   currentImageUrl: string | null,
 ): Promise<FormState | null> {
   const [picked] = parseFileMeta(formData.get("imagesMeta")) ?? [];
-  if (picked && picked.size > 0) {
-    return { values: state.values, errors: { images: "대표 이미지 업로드는 아직 준비 중이에요. 이미지를 빼고 저장해 주세요" } };
+  const urls = parseImageUrls(formData.get("imageUrls"));
+  if (!urls || (picked && picked.size > 0 && urls.length !== 1)) {
+    return { values: state.values, errors: { images: "이미지를 다시 올려 주세요" } };
   }
   const result = await backendFetch<ProjectResponse>(projectKey ? `${PROJECTS_API}/${projectKey}` : PROJECTS_API, {
     method: projectKey ? "PUT" : "POST",
-    body: { name: state.values.name, description: state.values.description, imageUrl: picked ? currentImageUrl : null },
+    body: { name: state.values.name, description: state.values.description, imageUrl: picked ? (picked.size > 0 ? urls[0] : currentImageUrl) : null },
   });
   if (result.ok) return null;
   return { values: state.values, errors: toFormErrors(result.message, result.fields) };

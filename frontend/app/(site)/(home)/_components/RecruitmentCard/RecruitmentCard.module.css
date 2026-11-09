@@ -31,14 +31,6 @@
   object-fit: cover;
 }
 
-.box {
-  display: flex;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-}
-
 .box2 {
   position: absolute;
   top: var(--space-3);

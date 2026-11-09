@@ -24,6 +24,7 @@
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 피드백 관리 API(목록, 유용해요, 신고) | [feedback-management.md](feedback-management.md) |
 | [#177](https://github.com/likelion-backendschool-9th/test-moa/issues/177) | 모집글 버전 매기기 | [recruitment-version.md](recruitment-version.md) |
 | [#227](https://github.com/likelion-backendschool-9th/test-moa/issues/227) | GitHub 레포 연결 | [repository-link.md](repository-link.md) |
+| [#191](https://github.com/likelion-backendschool-9th/test-moa/issues/191) | 프로젝트·모집글·테스트 항목 이미지 업로드 | [image-upload.md](image-upload.md) |
 
 진행 상태는 이슈와 PR에서 본다.
 

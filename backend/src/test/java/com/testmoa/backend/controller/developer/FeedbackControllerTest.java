@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -134,13 +135,27 @@ class FeedbackControllerTest {
     @DisplayName("#195-S1 피드백마다 참가 id를 준다")
     void 피드백마다_참가_id를_준다() throws Exception {
         saveFeedbackList();
+        Register anotherRegister = Register.builder().recruitment(recruitment).user(saveUser("다른 테스터")).build();
+        anotherRegister.confirm(1000, 0, LocalDateTime.now());
+        em.persist(anotherRegister);
+        Feedback anotherFeedback = Feedback.builder().register(anotherRegister).content("화면이 깔끔해요")
+                .submittedAt(LocalDateTime.now()).build();
+        em.persist(anotherFeedback);
         String path = "/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks";
 
-        send(developer, get(path), null)
+        String response = send(developer, get(path), null)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(2))
-                .andExpect(jsonPath("$.data[0].registerId").value(register.getId()))
-                .andExpect(jsonPath("$.data[1].registerId").value(register.getId()));
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        var feedbacks = JSON.readTree(response).get("data");
+        assertThat(feedbacks.size()).isEqualTo(3);
+        Map<String, Long> registerIdsByContent = new HashMap<>();
+        for (var feedback : feedbacks) {
+            registerIdsByContent.put(feedback.get("content").asText(), feedback.get("registerId").asLong());
+        }
+        assertThat(registerIdsByContent).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "검색이 느려요", register.getId(),
+                "전체적으로 좋아요", register.getId(),
+                "화면이 깔끔해요", anotherRegister.getId()));
     }
 
     @Test

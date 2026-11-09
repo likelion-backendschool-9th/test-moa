@@ -12,7 +12,7 @@ import styles from "./ChatMessageList.module.css";
  * 같은 사람이 이어 보낸 말풍선은 붙이고, 같은 분 묶음의 마지막에만 시각을 붙인다.
  * role="log"라 새 메시지가 붙으면 보조 기술이 읽는다. 말풍선 앞에는 보낸 사람("나", 상대 닉네임)을 숨겨서 둔다.
  */
-export function ChatMessageList({ room, messages, now }: { room: ChatRoom; messages: ChatMessage[]; now: Date }) {
+export function ChatMessageList({ room, messages, now, partnerLastReadSeq }: { room: ChatRoom; messages: ChatMessage[]; now: Date; partnerLastReadSeq?: number }) {
   const days = groupChatMessages(messages, now);
   return (
     <div role="log" aria-label="대화 내용" className={styles.root}>
@@ -33,7 +33,14 @@ export function ChatMessageList({ room, messages, now }: { room: ChatRoom; messa
                   <span className={styles.srOnly}>{message.from === "me" ? "나" : room.partner.nickname}: </span>
                   {message.text}
                 </ChatBubble>
-                {endsRun && <ChatBubbleTime dateTime={message.sentAt}>{formatClock(message.sentAt)}</ChatBubbleTime>}
+                {(endsRun || (message.from === "me" && partnerLastReadSeq !== undefined && message.seq > partnerLastReadSeq)) && (
+                  <span className={styles.meta}>
+                    {message.from === "me" && partnerLastReadSeq !== undefined && message.seq > partnerLastReadSeq && (
+                      <span className={styles.unread}><span aria-hidden>1</span><span className={styles.srOnly}>안 읽음</span></span>
+                    )}
+                    {endsRun && <ChatBubbleTime dateTime={message.sentAt}>{formatClock(message.sentAt)}</ChatBubbleTime>}
+                  </span>
+                )}
               </ChatBubbleRow>
             ))}
           </ol>

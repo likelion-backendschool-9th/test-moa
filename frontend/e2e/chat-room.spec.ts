@@ -10,8 +10,6 @@ const messageInput = (page: Page) => page.getByRole("textbox", { name: "메시�
 const sendButton = (page: Page) => page.getByRole("button", { name: "보내기" });
 const inboxCards = (page: Page) => page.getByRole("list", { name: "채팅 목록" }).getByRole("listitem");
 
-const ACCENT_LIGHT = "rgb(15, 124, 74)";
-
 /** 보조 기술이 읽는 말풍선 글. 숨긴 보낸 사람이 앞에 붙고, 줄바꿈은 그대로다 */
 const spoken = (item: Locator) => bubble(item).evaluate((element) => element.textContent);
 
@@ -54,8 +52,8 @@ test.describe("R166 메시지 보내기", () => {
     const first = inboxCards(page).first();
     await expect(first.getByRole("link")).toHaveText("모아플랜 채팅방");
     await expect(first.locator("[data-preview]")).toHaveText(text);
-    await expect(first.locator("time")).toHaveAttribute("data-today", "true");
-    expect(await first.locator("time").evaluate((element) => getComputedStyle(element).color)).toBe(ACCENT_LIGHT);
+    await expect(first.locator("time")).not.toHaveAttribute("data-today");
+    expect(await first.locator("time").evaluate((element) => getComputedStyle(element).color)).toBe("rgb(92, 92, 88)");
   });
 
   test("S150 빈 메시지는 보내지 않고, Shift+Enter는 줄을 바꾼다", async ({ page }) => {

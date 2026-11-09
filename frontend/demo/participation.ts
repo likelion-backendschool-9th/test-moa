@@ -143,6 +143,8 @@ const SEEDS: Seed[] = [
 
 const HOUR_MS = 60 * 60 * 1000;
 
+const UNCONFIRMED: ParticipationStatus[] = ["selectionPending", "notSelected", "cancelled"];
+
 function toParticipation(seed: Seed, now: Date): Participation {
   const testItems: FeedbackTestItem[] = (seed.testItems ?? []).map(([title, description, required], index) => ({
     id: `${seed.key}-t${index + 1}`,
@@ -165,6 +167,8 @@ function toParticipation(seed: Seed, now: Date): Participation {
     paidAt: ago(seed.paidHoursAgo),
     reviewedAt: ago(seed.reviewedHoursAgo),
     earnedCredits: seed.earnedCredits ?? 0,
+    /* 접속 링크는 확정된 참여에만 있다. 시연용 주소다 */
+    ...(UNCONFIRMED.includes(seed.status) ? {} : { accessUrl: `https://${seed.recruitmentSlug}.example.com` }),
     testItems,
     feedbacks,
   };

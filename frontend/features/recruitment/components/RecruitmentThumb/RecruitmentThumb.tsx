@@ -20,7 +20,7 @@ export function RecruitmentThumb({
   inset = false,
   showImage = false,
 }: {
-  recruitment: Recruitment;
+  recruitment: Pick<Recruitment, "projectName" | "projectImage">;
   stamp?: string;
   category?: string;
   badge?: ReactNode;

@@ -451,9 +451,12 @@ export async function requestFollowupQuestions(
   return { ok: true, data: { questions: buildFollowupQuestions(testItem?.title ?? null) } };
 }
 
-/** 모집 건의 모집 조건과 테스트 항목 */
+const EMPTY_DETAIL: RecruitmentDetail = { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", images: [], testItems: [] };
+
+/** 모집 건의 모집 조건과 테스트 항목. 백엔드 모드에서는 공개 모집글 API로 읽는다 */
 export async function findRecruitmentDetail(role: Role, recruitmentKey: string): Promise<RecruitmentDetail> {
-  return (await load(role)).details[recruitmentKey] ?? { title: "", selectionMode: "firstCome", accessUrl: "", conditions: "", testItems: [] };
+  if (isBackendAuth) return (await readPublicRecruitment(recruitmentKey))?.detail ?? { ...EMPTY_DETAIL, unavailable: true };
+  return (await load(role)).details[recruitmentKey] ?? EMPTY_DETAIL;
 }
 
 /** 모집 건의 취소 기록. 취소하지 않았으면 null */
@@ -593,6 +596,9 @@ type RecruitmentSummaryResponse = {
   submitDeadline: string;
   confirmedCount: number;
   createdAt: string;
+  selectionMode: SelectionMode;
+  cancelReason: string | null;
+  cancelledAt: string | null;
   subscription: boolean;
   version: number;
   feedbackCount: number;
@@ -617,6 +623,8 @@ function toRecruitmentRow(projectName: string, item: RecruitmentSummaryResponse)
     version: item.version,
     feedbackCount: item.feedbackCount,
     analyzedAt: item.analyzedAt,
+    selectionMode: item.selectionMode,
+    cancellation: item.status === "cancelled" && item.cancelledAt ? { reason: item.cancelReason ?? "", cancelledAt: item.cancelledAt } : null,
   };
 }
 
@@ -667,8 +675,22 @@ export async function getPublicRecruitment(slug: string) {
 }
 
 /** 내 모집의 소유권과 현재 상태. 화면 목록이나 통계는 읽지 않는다 */
-async function getMyRecruitment(path: string, recruitmentKey: string) {
+async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
+  role: Role;
+  project: Project;
+  recruitment: Recruitment & { status: RecruitmentStatus; title?: string; selectionMode?: SelectionMode; version?: number };
+  cancellation: RecruitmentCancellation | null;
+}> {
   const role = await requireRole(path);
+  /* 백엔드 응답은 상태·버전을 이미 계산해 준다. 내 프로젝트의 모집 목록에서 id로 찾아 소유권도 함께 확인한다 */
+  if (isBackendAuth) {
+    for (const { key } of await findBackendProjects()) {
+      const { project, recruitments } = await findBackendProjectDetail(key);
+      const recruitment = recruitments.find((item) => item.slug === recruitmentKey);
+      if (recruitment) return { role, project, recruitment, cancellation: recruitment.cancellation ?? null };
+    }
+    notFound();
+  }
   const owned = await findOwnedRecruitment(role, recruitmentKey);
   if (!owned) notFound();
   const cancellation = await findCancellation(role, recruitmentKey);
@@ -683,12 +705,16 @@ async function getMyRecruitment(path: string, recruitmentKey: string) {
 /** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
 export async function getRecruitmentDetail(path: string, recruitmentKey: string) {
   const { role, project, recruitment: currentRecruitment, cancellation } = await getMyRecruitment(path, recruitmentKey);
-  const [applications, feedbacks, detail] = await Promise.all([
+  const [applications, feedbacks, found] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
   ]);
-  const recruitment = { ...currentRecruitment, title: detail.title, version: versionOf(project.recruitments, currentRecruitment) };
+  /* 조회할 수 없는 상세는 목록에서 알고 있는 제목과 선정 방식만 채운다. 나머지는 unavailable로 알린다 */
+  const detail = found.unavailable
+    ? { ...found, title: currentRecruitment.title ?? "", selectionMode: currentRecruitment.selectionMode ?? found.selectionMode }
+    : found;
+  const recruitment = { ...currentRecruitment, title: detail.title || currentRecruitment.title || "", version: currentRecruitment.version ?? versionOf(project.recruitments, currentRecruitment) };
   const now = new Date();
   return {
     project,
@@ -753,7 +779,7 @@ async function saveEdit(recruitmentKey: string, section: RecruitmentEditSection,
           method: "PATCH",
           body:
             section === "post"
-              ? { title: values.title, description: values.request, accessUrl: values.accessUrl, softwareTypes: formData.getAll("categories").map(String) }
+              ? { title: values.title, description: values.request, ...(values.accessUrl ? { accessUrl: values.accessUrl } : {}), softwareTypes: formData.getAll("categories").map(String) }
               : { conditions: values.conditions, selectionMode: values.selectionMode, recruitDeadline: values.recruitDeadline, submitDeadline: values.submitDeadline },
         });
   if (result.ok) return state;
@@ -805,6 +831,14 @@ export async function cancelRecruitment(
     errors.reason = `취소 사유는 ${RECRUITMENT_LIMIT.cancelReasonLength}자까지 적을 수 있어요`;
   }
   if (Object.keys(errors).length > 0) return { values, errors };
+  if (isBackendAuth) {
+    const reason = testing ? values.reason : undefined;
+    const result = await backendFetch<unknown>(`/api/v1/developer/recruitments/${encodeURIComponent(recruitmentKey)}/cancel`, {
+      method: "POST",
+      body: reason ? { reason } : {},
+    });
+    return result.ok ? { values: {}, errors: {}, ok: true } : { values, errors: { reason: result.message } };
+  }
   const ok = await saveRecruitmentCancellation(recruitmentKey, testing ? values.reason : "");
   return ok ? { values: {}, errors: {}, ok } : { values, errors: { reason: "취소를 저장하지 못했어요. 다시 시도해 주세요" } };
 }

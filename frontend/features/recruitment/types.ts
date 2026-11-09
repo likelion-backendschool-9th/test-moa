@@ -134,6 +134,8 @@ export type RecruitmentDetail = {
   /** 모집글 이미지 (백엔드 recruitment_images). 배열 순서가 sort_order이고, 모집글 상세 이미지 띠에서 대표 이미지 다음에 놓인다 */
   images: ProjectImage[];
   testItems: TestItem[];
+  /** 모집 조건·테스트 항목·접속 링크를 조회할 수 없다. 취소된 모집은 공개 API가 404라서 비어 있는 값이 실제 값이 아니다 */
+  unavailable?: boolean;
 };
 
 /** 확정된 테스터의 피드백 제출 현황. 제출 마감까지 안 내면 미완료 (README: 보상 없이 미완료 처리) */
@@ -663,7 +665,14 @@ export function getAnalytics(applications: Application[], feedbacks: Feedback[])
 export type RecruitmentView = Recruitment & { status: RecruitmentStatus; title: string };
 
 /** 프로젝트 상세의 모집글 한 줄. 버전은 프로젝트 안에서 만든 순서(첫 모집이 v1)이고, AI 분석을 안 했으면 analyzedAt이 null이다 */
-export type ProjectRecruitmentRow = RecruitmentView & { version: number; feedbackCount: number; analyzedAt: string | null };
+export type ProjectRecruitmentRow = RecruitmentView & {
+  version: number;
+  feedbackCount: number;
+  analyzedAt: string | null;
+  selectionMode?: SelectionMode;
+  /** 취소된 모집의 사유와 일시. 백엔드 응답에만 있다 */
+  cancellation?: RecruitmentCancellation | null;
+};
 
 export type ProjectSummary = Omit<Project, "recruitments"> & {
   recruitments: RecruitmentView[];
@@ -825,7 +834,7 @@ export type RecruitmentEditSection = "post" | "terms" | "testItems" | "repositor
 /** 저장 결과. ok면 화면에 저장 완료를 알린다 */
 export type EditState = FormState & { ok?: boolean };
 
-/** 글 정보: 제목, 설명, 접속 링크, 카테고리 */
+/** 글 정보: 제목, 설명, 접속 링크, 카테고리. 접속 링크를 읽을 수 없는 화면(accessUrlKept)은 비워 두면 기존 링크를 그대로 둔다 */
 export function validatePostEdit(formData: FormData): EditState {
   const values = { title: text(formData, "title"), request: text(formData, "request"), accessUrl: text(formData, "accessUrl") };
   const errors: Record<string, string> = {};
@@ -833,7 +842,8 @@ export function validatePostEdit(formData: FormData): EditState {
   else if (values.title.length > RECRUITMENT_LIMIT.titleLength) errors.title = `모집글 제목은 ${RECRUITMENT_LIMIT.titleLength}자까지 적을 수 있어요`;
   if (!values.request) errors.request = "모집 설명을 적어 주세요";
   else if (values.request.length > 200) errors.request = "모집 설명은 200자까지 적을 수 있어요";
-  if (!isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
+  const keepAccessUrl = !values.accessUrl && formData.has("accessUrlKept");
+  if (!keepAccessUrl && !isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
   const picked = formData.getAll("categories").map(String);
   if (picked.length === 0 || !picked.every((value) => SOFTWARE_TYPES.includes(value as SoftwareType))) {
     errors.categories = "카테고리를 하나 이상 골라 주세요";

@@ -101,6 +101,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponse create(Long userId, ProjectSaveRequest request) {
+        checkImageUrl("imageUrl", request.imageUrl());
         Project project = projectRepository.save(Project.builder()
                 .user(userRepository.getReferenceById(userId))
                 .title(request.name().trim())
@@ -198,6 +199,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public ProjectResponse update(Long userId, Long projectId, ProjectSaveRequest request) {
         Project project = findOwned(userId, projectId);
+        if (!Objects.equals(project.getImageUrl(), request.imageUrl())) checkImageUrl("imageUrl", request.imageUrl());
         project.update(request.name().trim(), blankToNull(request.description()), blankToNull(request.imageUrl()));
         return withCounts(List.of(project)).getFirst();
     }
@@ -209,6 +211,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public RecruitmentCreateResponse createRecruitment(Long userId, RecruitmentCreateRequest request) {
         Project project = findOwned(userId, request.projectId());
+        checkImageUrls("imageUrls", request.imageUrls());
+        for (int index = 0; index < request.testItems().size(); index++) {
+            checkImageUrls("testItems[" + index + "].imageUrls", request.testItems().get(index).imageUrls());
+        }
         checkDeadlines(request.recruitDeadline(), request.submitDeadline());
         SelectionMode selectionMode = selectionModeOf(request.selectionMode());
         boolean subscribed = subscriptionChecker.isActive(userId);
@@ -409,6 +415,17 @@ public class ProjectServiceImpl implements ProjectService {
 
     private SelectionMode selectionModeOf(String value) {
         return "selection".equals(value) ? SelectionMode.MANUAL : SelectionMode.FIRST_COME;
+    }
+
+    private void checkImageUrl(String field, String url) {
+        if (url != null && !url.isBlank() && !FileStorage.isImageUrl(url)) {
+            throw invalid(field, "이미지 주소를 확인해 주세요");
+        }
+    }
+
+    private void checkImageUrls(String field, List<String> urls) {
+        if (urls == null) return;
+        for (int index = 0; index < urls.size(); index++) checkImageUrl(field + "[" + index + "]", urls.get(index));
     }
 
     private String blankToNull(String value) {

@@ -38,3 +38,6 @@ out/
 
 ### development ###
 application-local.yml
+
+### 로컬에서 올린 파일(upload.dir 기본값) ###
+uploads/

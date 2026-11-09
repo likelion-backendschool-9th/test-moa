@@ -27,6 +27,8 @@ FROM eclipse-temurin:21-jre AS runner
 WORKDIR /app
 
 RUN groupadd --system app && useradd --system --gid app app
+# 올린 파일 폴더(볼륨 upload-data). 새 볼륨은 이 폴더의 소유자를 이어받아 app 사용자가 쓸 수 있다
+RUN mkdir -p /app/uploads && chown app:app /app/uploads
 # bootJar만 실행했으므로 build/libs에는 jar가 하나만 있다
 COPY --from=build /app/build/libs/*.jar app.jar
 USER app

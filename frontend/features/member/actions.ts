@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
@@ -65,6 +66,9 @@ export async function changePassword(_prev: FormState<PasswordField>, formData: 
   const next = String(formData.get("next") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
+  /* 다른 탭에서 비밀번호를 만들어 이 화면에 현재 비밀번호 칸이 없으면, 칸 아래 오류가 숨지 않게 폼 위에 알린다 */
+  if (hasPassword && !formData.has("current")) return { status: "error", errors: { form: "비밀번호가 이미 있어요. 새로고침한 뒤 다시 시도해 주세요" } };
+
   const errors: Partial<Record<PasswordField, string>> = {};
   if (hasPassword && !current) errors.current = "현재 비밀번호를 입력해 주세요";
   else if (!isBackendAuth && !isCurrentPassword(current)) errors.current = "현재 비밀번호가 맞지 않아요";
@@ -80,6 +84,8 @@ export async function changePassword(_prev: FormState<PasswordField>, formData: 
     if (!result.ok) {
       return { status: "error", errors: pick(result.fields, { currentPassword: "current", newPassword: "next" }, result.message) };
     }
+    /* 비밀번호를 처음 만들면 비밀번호 칸·탈퇴 창·계정 카드가 "비밀번호 있음"으로 바뀌어야 해서 마이페이지를 다시 읽게 한다 */
+    if (!hasPassword) revalidatePath("/my", "layout");
     return {
       status: "success",
       message: hasPassword ? "비밀번호를 바꿨어요. 다른 기기에서는 다시 로그인해야 해요" : "비밀번호를 만들었어요. 이제 이메일로도 로그인할 수 있어요",
@@ -109,6 +115,8 @@ export async function leaveAccount(_prev: FormState<LeaveField>, formData: FormD
 
   const password = String(formData.get("password") ?? "");
   const confirmText = String(formData.get("confirmText") ?? "").trim();
+  /* 화면이 비밀번호를 만들기 전 상태(확인 문구 칸)로 남아 있으면 숨은 칸 오류 대신 폼 위에 알린다 */
+  if (notice.hasPassword && !formData.has("password")) return { status: "error", errors: { form: "비밀번호가 이미 있어요. 새로고침한 뒤 다시 시도해 주세요" } };
   if (notice.hasPassword && !password) return { status: "error", errors: { password: "비밀번호를 입력해 주세요" } };
   if (!notice.hasPassword && confirmText !== LEAVE_CONFIRM_TEXT) {
     return { status: "error", errors: { confirmText: `'${LEAVE_CONFIRM_TEXT}'를 그대로 입력해 주세요` } };

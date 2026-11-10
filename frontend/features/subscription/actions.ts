@@ -3,7 +3,6 @@
 import { getSession } from "@/features/session/session";
 import {
   canPayForSubscription,
-  getAdminPlans,
   getSubscriptionOverview,
   grantMemberSubscription,
   registerPlanVersion,
@@ -108,8 +107,16 @@ export async function changeMemberSubscription(_prev: MemberSubscriptionFormStat
 
 export type PlanFormState = { status: "idle" } | { status: "done"; message: string } | { status: "error"; error: string };
 
+/* 편집하는 사이 운영자 세션이 끝났으면 저장 API의 assertAdmin이 예외를 던져 오류 화면이 된다. 먼저 보고 패널 오류로 돌려줘 입력한 내용이 남게 한다 */
+const ADMIN_SESSION_LOST: PlanFormState = { status: "error", error: "운영자 로그인을 확인하지 못했어요. 다시 로그인한 뒤 저장해 주세요" };
+
+async function isAdminSession() {
+  return (await getSession()).role === "admin";
+}
+
 /** 무료 플랜의 이름과 혜택 저장. 혜택은 한 줄에 하나다 */
 export async function saveFreePlanTerms(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
+  if (!(await isAdminSession())) return ADMIN_SESSION_LOST;
   const name = formData.get("name")?.toString().trim() ?? "";
   if (!name) return { status: "error", error: "무료 플랜 이름을 입력해 주세요" };
   if (name.length > PLAN_NAME_MAX_LENGTH) return { status: "error", error: `무료 플랜 이름은 ${PLAN_NAME_MAX_LENGTH}자까지 쓸 수 있어요` };
@@ -123,20 +130,14 @@ export async function saveFreePlanTerms(_prev: PlanFormState, formData: FormData
   return { status: "done", message: "무료 플랜을 저장했어요" };
 }
 
-/**
- * 구독 플랜 혜택 저장. 편집 중에 판매 플랜이 바뀌었을 수 있어서 가격·기간은 양식 값이 아니라 저장 시점의
- * 서버 값(planId로 찾은 플랜)을 쓴다. 찾지 못하면 화면이 오래된 것이라 저장하지 않는다
- */
+/** 구독 플랜 혜택 저장. 가격·기간은 저장 시점의 서버 값을 쓴다(registerPlanVersion) */
 export async function registerPlanTerms(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
-  const planId = formData.get("planId")?.toString();
+  if (!(await isAdminSession())) return ADMIN_SESSION_LOST;
+  const planId = formData.get("planId")?.toString() ?? "";
   const parsed = parseBenefits(formData.get("benefits")?.toString() ?? "");
   if (!parsed.ok) return { status: "error", error: parsed.message };
 
-  const { plans } = await getAdminPlans();
-  const plan = plans.find((candidate) => candidate.id === planId);
-  if (!plan) return { status: "error", error: "지금 파는 플랜이 바뀌었어요. 화면을 새로고침해 주세요" };
-
-  const result = await registerPlanVersion({ ...plan, benefits: parsed.benefits });
+  const result = await registerPlanVersion(planId, parsed.benefits);
   if (!result.ok) return { status: "error", error: result.message };
   revalidatePath("/", "layout");
   return { status: "done", message: "새 버전으로 등록했어요" };

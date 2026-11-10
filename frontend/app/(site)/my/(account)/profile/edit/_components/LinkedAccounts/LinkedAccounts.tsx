@@ -77,7 +77,7 @@ export function LinkedAccounts({
                 )}
                 <form action={linked ? unlinkSocialAccount : linkSocialAccount} className={styles.form}>
                   <input type="hidden" name="provider" value={account.id} />
-                  <Button type="submit" size="sm" className={styles.button} aria-label={`${account.label} ${linked ? "연동 해제" : "연동하기"}`}>
+                  <Button type="submit" variant="secondary" size="sm" className={styles.button} aria-label={`${account.label} ${linked ? "연동 해제" : "연동하기"}`}>
                     {linked ? "해제" : "연동하기"}
                   </Button>
                 </form>

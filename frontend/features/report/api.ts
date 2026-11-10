@@ -75,13 +75,17 @@ async function getBackendReports(tab: ListTab, target: ReportTargetFilter): Prom
   const type = backendTarget(target);
   if (type) query.set("targetType", type);
   const result = await backendFetch<AdminReportResponse[]>(`/api/v1/admin/reports?${query}`);
-  return { now: new Date(), reports: result.ok ? result.data.map(toReport) : [] };
+  /* 백엔드 장애를 "신고 없음"으로 보이면 운영자가 대기 신고를 놓친다. 실패는 오류 화면으로 올린다 */
+  if (!result.ok) throw new Error(`신고 목록을 읽지 못했어요: ${result.code}`);
+  return { now: new Date(), reports: result.data.map(toReport) };
 }
 
 async function getBackendReport(reportKey: string): Promise<{ now: Date; report: Report | null }> {
   await assertAdmin();
   await connection();
   const result = await backendFetch<AdminReportResponse>(`/api/v1/admin/reports/${reportKey}`);
+  /* 없는 신고(404)만 "찾을 수 없어요"로 보이고, 그 밖의 실패는 오류 화면으로 올린다 */
+  if (!result.ok && result.status !== 404) throw new Error(`신고를 읽지 못했어요: ${result.code}`);
   return { now: new Date(), report: result.ok ? toReport(result.data) : null };
 }
 
@@ -90,5 +94,7 @@ async function getBackendReport(reportKey: string): Promise<{ now: Date; report:
 /** 내가 한 신고, 최신순(#85). 실제 로그인에서만 부른다 */
 export async function getMyReports(): Promise<MyReport[]> {
   const result = await backendFetch<MyReport[]>("/api/v1/reports/me");
-  return result.ok ? result.data : [];
+  /* 장애를 "신고한 적 없음"으로 보이지 않게 실패는 오류 화면으로 올린다 */
+  if (!result.ok) throw new Error(`내 신고를 읽지 못했어요: ${result.code}`);
+  return result.data;
 }

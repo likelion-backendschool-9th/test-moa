@@ -97,9 +97,7 @@ public class ProjectServiceImpl implements ProjectService {
     public String uploadImage(List<MultipartFile> files) {
         if (files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");
         MultipartFile file = files.getFirst();
-        var kind = FileStorage.detect(file)
-                .filter(value -> value != FileStorage.Kind.PDF)
-                .filter(value -> !file.isEmpty())
+        var kind = FileStorage.detectImage(file)
                 .orElseThrow(() -> invalid("file", "PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
         var stored = fileStorage.save("images", file, kind);
         return FileStorage.IMAGE_URL_PREFIX

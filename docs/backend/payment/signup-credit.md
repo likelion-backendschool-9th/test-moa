@@ -15,7 +15,7 @@
 - **가입 지급은 가입과 같은 트랜잭션이다.** `AuthServiceImpl`의 `signup`·`oauthSignup`이 회원·계정을 저장한 뒤 `grant`를 부른다. 지급이 실패하면 가입 전체가 되돌아가서 회원은 있고 지갑이 없는 상태가 새로 생기지 않는다. 가입은 오류로 끝나고 사용자는 다시 가입한다.
 - **지급액은 설정이다.** `credit.signup-bonus.amount`(환경 변수 `CREDIT_SIGNUP_BONUS_AMOUNT`, 기본 3,000). 0 이하이면 지급하지 않는다(지갑도 만들지 않는다).
 - **기존 회원은 일회성 실행기가 채운다.** `credit.signup-bonus.backfill`(환경 변수 `CREDIT_SIGNUP_BONUS_BACKFILL`, 기본 `false`)이 `true`일 때만 `SignupCreditBackfillRunner`가 만들어져 서버 시작 때 한 번 돈다. 지급 뒤에는 설정을 끈다. 켜 둔 채 재시작해도 중복 지급되지 않는다(위 장부 검사).
-- **소급 지급 대상.** 권한 `USER`이고 상태가 `ACTIVE`·`SUSPENDED`인 회원이다. 관리자(`ADMIN`), 탈퇴 유예(`WITHDRAWN`), 파기(`DELETED`)는 뺀다. 이미 구독 결제로 지갑이 있으면 만들지 않고 이벤트 크레딧만 더한다.
+- **소급 지급 대상.** 권한 `USER`이고 상태가 `ACTIVE`·`SUSPENDED`인 회원이다. 후보 ID를 먼저 읽고 지급하므로, 지급 직전에 `grantToExistingMember`가 회원 행을 잠그고(`findByIdForUpdate`, 탈퇴도 같은 행을 잠근다) 권한·상태를 다시 확인한다. 그사이 탈퇴·파기된 회원은 건너뛴다. 관리자(`ADMIN`), 탈퇴 유예(`WITHDRAWN`), 파기(`DELETED`)는 뺀다. 이미 구독 결제로 지갑이 있으면 만들지 않고 이벤트 크레딧만 더한다.
 - **회원마다 트랜잭션을 나눈다.** 실행기는 트랜잭션 밖에서 회원마다 `grant`를 불러서 한 회원이 실패해도 나머지는 계속한다. 실패한 회원은 로그에 남기고 마지막에 지급·건너뜀·실패 수를 로그로 남긴다.
 - **서버 반영.** 병합·배포 뒤 서버 `.env`에 `CREDIT_SIGNUP_BONUS_BACKFILL=true`를 넣고 백엔드를 한 번 재시작해 지급한다. 로그의 지급·실패 수를 확인한 뒤 값을 지우거나 `false`로 바꾼다. 서버 DB를 바꾸는 일이라 실행 시점은 사용자가 정한다.
 
@@ -63,6 +63,8 @@
 - When  실행기를 돌린다
 - Then  앞의 세 회원만 `eventCredit` 3,000과 장부 "가입 크레딧" 한 줄을 받는다. 지갑이 없던 회원은 지갑이 만들어지고, 있던 회원의 `earnedBalance`는 500 그대로다
 - Then  `ADMIN`·`WITHDRAWN`·`DELETED` 회원에게는 지갑도 장부도 생기지 않는다
+- Given 후보 목록을 읽은 뒤 탈퇴·파기되었거나 `ADMIN`인 회원이 목록에 남아 있다
+- Then  그 회원에게는 지급하지 않고 나머지는 지급한다
 
 #255-S8 두 번 돌려도 중복 지급되지 않고, 한 회원이 실패해도 나머지는 계속한다 [테스트]
 - Given 실행기를 이미 한 번 돌렸다

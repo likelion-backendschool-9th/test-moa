@@ -7,7 +7,7 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { requireMember } from "@/features/session/guard";
 import { approveCashPayment } from "@/features/subscription/api";
-import { approvalFromQuery } from "@/features/subscription/pg";
+import { approvalFromQuery, completePath } from "@/features/subscription/pg";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
 
@@ -17,7 +17,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /*
  * 카카오페이·토스 결제창에서 돌아오는 주소(#249). 돌아온 값으로 서버에 승인을 요청하고,
- * 승인되면 구독 화면으로 보낸다. 승인하지 못하면 이 화면에 서버가 준 이유와 결제 화면으로 돌아가는 링크를 보인다.
+ * 승인되면 결제 완료 화면으로 보낸다. 승인하지 못하면 이 화면에 서버가 준 이유와 결제 화면으로 돌아가는 링크를 보인다.
  * 이 화면을 새로고침해도 서버가 같은 결제를 한 번만 승인해서 구독이 늘지 않는다
  */
 export default function CheckoutResultPage({ searchParams }: { searchParams: SearchParams }) {
@@ -42,8 +42,8 @@ async function Result({ searchParams }: { searchParams: SearchParams }) {
   let message = "결제 정보를 확인하지 못했어요. 결제 화면에서 다시 시도해 주세요";
   if (approval) {
     const approved = await approveCashPayment(approval);
-    /* 새 구독 상태는 구독 화면이 요청마다 서버에서 읽는다 */
-    if (approved.ok) redirect("/my/subscription?notice=paid");
+    /* 새 구독 상태는 결제 완료 화면과 구독 화면이 요청마다 서버에서 읽는다 */
+    if (approved.ok) redirect(completePath(approved.paymentId));
     message = approved.message;
   }
   return (

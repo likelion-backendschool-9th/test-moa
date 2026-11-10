@@ -98,3 +98,53 @@ export function pgNotice(value: string | string[] | undefined): string | null {
       return null;
   }
 }
+
+/** 결제 완료 화면이 보여 주는 결제 한 건. 서버의 결제 이력 한 줄을 화면 값으로 바꾼 것이다 */
+export type PaymentReceipt = {
+  id: string;
+  plan: string;
+  method: "CASH" | "CREDIT";
+  provider: PgProvider | null;
+  amount: number;
+  paidAt: string;
+  period: { startAt: string; endAt: string };
+};
+
+type ServerPayment = {
+  paymentId: number;
+  plan: string;
+  method: "CASH" | "CREDIT";
+  provider?: string | null;
+  amount: number;
+  paidAt: string;
+  period: { startAt: string; endAt: string };
+};
+
+export function receiptFromServer(payment: ServerPayment): PaymentReceipt {
+  return {
+    id: String(payment.paymentId),
+    plan: payment.plan,
+    method: payment.method,
+    provider: isPgProvider(payment.provider) ? payment.provider : null,
+    amount: payment.amount,
+    paidAt: payment.paidAt,
+    period: payment.period,
+  };
+}
+
+/** 결제 수단 문구. 크레딧, 카카오페이·토스페이, PG 연동 전의 현금 결제는 "현금"이다 */
+export function receiptMethodLabel({ method, provider }: Pick<PaymentReceipt, "method" | "provider">): string {
+  if (method === "CREDIT") return "크레딧";
+  return provider ? PG_LABEL[provider] : "현금";
+}
+
+/** 서버 결제 id가 될 수 있는 숫자만 받는다(0으로 시작하지 않는 18자리 이하). 아니면 서버에 묻지 않는다 */
+export function parsePaymentId(value: string | string[] | undefined): string | null {
+  const id = one(value);
+  return id && /^[1-9]\d{0,17}$/.test(id) ? id : null;
+}
+
+/** 결제가 끝난 뒤 보낼 곳. 결제 id를 알면 결제 완료 화면, 모르면 구독 화면이다 */
+export function completePath(paymentId: string | null): string {
+  return paymentId ? `/my/subscription/checkout/complete?payment=${paymentId}` : "/my/subscription?notice=paid";
+}

@@ -10,7 +10,7 @@ import {
   revokeMemberSubscription,
   saveSubscriptionPayment,
 } from "@/features/subscription/api";
-import { isMobileUserAgent, isPgProvider, kakaoRedirectUrl, tossWindowFrom, type TossWindow } from "@/features/subscription/pg";
+import { completePath, isMobileUserAgent, isPgProvider, kakaoRedirectUrl, tossWindowFrom, type TossWindow } from "@/features/subscription/pg";
 import { parseMemberEmail, renewedExpiry } from "@/features/subscription/types";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
@@ -58,7 +58,7 @@ export async function payForSubscription(_prev: CheckoutFormState, formData: For
     if (!paid.ok) return { status: "error", error: paid.message };
     /* 크레딧 결제만 여기서 끝난다(현금은 위에서 결제창으로 간다). 헤더·마이페이지·구독 화면이 서버의 새 구독 상태를 읽게 한다 */
     revalidatePath("/", "layout");
-    redirect("/my/subscription?notice=paid");
+    redirect(completePath(paid.paymentId));
   }
 
   /* 목업은 서버가 없어서 여기서 검사한다 */

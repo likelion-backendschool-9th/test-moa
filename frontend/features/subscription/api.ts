@@ -11,7 +11,7 @@ import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
 import { assertAdmin, requireMember } from "@/features/session/guard";
 import { getSession, type Role } from "@/features/session/session";
-import { readProviders, type PgApproval, type PgProvider, type PgReady } from "@/features/subscription/pg";
+import { readProviders, receiptFromServer, type PaymentReceipt, type PgApproval, type PgProvider, type PgReady } from "@/features/subscription/pg";
 import type { CheckoutPeriod, FreePlan, MemberSubscription, MemberSubscriptionLookup, Subscription, SubscriptionIntro, SubscriptionOverview, SubscriptionPlan } from "@/features/subscription/types";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
 import { connection } from "next/server";
@@ -110,7 +110,13 @@ export async function getCheckoutInfo(plans: SubscriptionPlan[]): Promise<Checko
 
 export type CheckoutInfo = { periods: Record<string, CheckoutPeriod>; providers: PgProvider[] };
 
-export type SubscriptionPaymentResult = { ok: true } | { ok: false; message: string };
+/** 결제 성공이면 서버가 만든 결제 id를 돌려준다(결제 완료 화면이 그 결제를 읽는다) */
+export type SubscriptionPaymentResult = { ok: true; paymentId: string | null } | { ok: false; message: string };
+
+function paymentIdOf(data: unknown): string | null {
+  const id = typeof data === "object" && data !== null && "paymentId" in data ? (data as { paymentId: unknown }).paymentId : null;
+  return typeof id === "number" && Number.isSafeInteger(id) ? String(id) : null;
+}
 
 /** 서버에 구독 결제를 요청한다. 5초 안의 중복·크레딧 부족·운영자 계정이면 서버가 거절하고, 그 이유 문구를 돌려준다 */
 export async function requestSubscriptionPayment(planId: string, method: "credit" | "cash"): Promise<SubscriptionPaymentResult> {
@@ -119,7 +125,7 @@ export async function requestSubscriptionPayment(planId: string, method: "credit
     method: "POST",
     body: { planId: Number(planId), method: method === "credit" ? "CREDIT" : "CASH" },
   });
-  return result.ok ? { ok: true } : { ok: false, message: result.message };
+  return result.ok ? { ok: true, paymentId: paymentIdOf(result.data) } : { ok: false, message: result.message };
 }
 
 export type CashReadyResult = { ok: true; ready: PgReady } | { ok: false; message: string };
@@ -138,7 +144,20 @@ export async function requestCashPaymentReady(planId: string, provider: PgProvid
 export async function approveCashPayment(approval: PgApproval): Promise<SubscriptionPaymentResult> {
   await requireMember("/my/subscription/checkout");
   const result = await backendFetch<unknown>("/api/v1/my/subscription/checkout/approve", { method: "POST", body: approval });
-  return result.ok ? { ok: true } : { ok: false, message: result.message };
+  return result.ok ? { ok: true, paymentId: paymentIdOf(result.data) } : { ok: false, message: result.message };
+}
+
+/**
+ * 결제 완료 화면이 보여 줄 결제 한 건. 서버의 내 결제 이력에서 id로 찾는다(내 결제만 나오므로 남의 결제 id는 찾지 못한다).
+ * 목업이거나 이력에 없으면 null이다
+ */
+export async function getPaymentReceipt(paymentId: string): Promise<PaymentReceipt | null> {
+  if (!isBackendAuth) return null;
+  await requireMember("/my/subscription/checkout/complete");
+  const result = await backendFetch<Parameters<typeof receiptFromServer>[0][]>("/api/v1/my/subscription/payments");
+  if (!result.ok) throw new Error(result.message);
+  const found = result.data.find((payment) => String(payment.paymentId) === paymentId);
+  return found ? receiptFromServer(found) : null;
 }
 
 /** 내 구독 상태. 운영자는 구독 대상이 아니라 null */

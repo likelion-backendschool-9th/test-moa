@@ -38,7 +38,7 @@ async function Dashboard() {
         {summary.subscription && <SubscriptionCard subscription={summary.subscription} />}
       </div>
       <RecentCredits entries={summary.recentCredits} now={new Date()} />
-      <AccountMenu notice={notice} providers={summary.profile.providers} />
+      <AccountMenu notice={notice} email={summary.profile.email} providers={summary.profile.providers} />
     </div>
   );
 }

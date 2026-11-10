@@ -4,12 +4,15 @@ import {
   completePath,
   isJustPaid,
   isMobileUserAgent,
+  isPopupName,
   isPopupReturnPath,
   isTossWindow,
+  newPopupName,
   kakaoRedirectUrl,
   parsePaymentId,
   pgNotice,
   popupFeatures,
+  popupReturnHref,
   readProviders,
   receiptFromServer,
   receiptPath,
@@ -177,4 +180,29 @@ test("#252-S11 원래 창이 보낸 토스 결제창 값은 모양이 맞을 때
   for (const value of [null, undefined, "x", 1, []]) {
     expect(isTossWindow(value), String(value)).toBe(false);
   }
+});
+
+test("#252-S13 팝업 창 이름은 열 때마다 다르고 결제 팝업 이름만 알아본다", () => {
+  const a = newPopupName();
+  const b = newPopupName();
+  expect(a).not.toBe(b);
+  expect(isPopupName(a)).toBe(true);
+  for (const bad of ["", "moa-pay", "moa-pay-", "other-window", null, undefined, 1]) {
+    expect(isPopupName(bad), String(bad)).toBe(false);
+  }
+});
+
+test("#252-S13 결제 결과는 이 창이 연 팝업(창 이름이 같음)이 보낸 것만 받는다", () => {
+  const href = "/my/subscription/checkout/complete?payment=1&paid=1";
+  const message = { type: "moa-pay-return", href, name: "moa-pay-A" };
+  expect(popupReturnHref("moa-pay-A", message, "moa-pay-return")).toBe(href);
+  /* 다른 탭의 팝업이 같은 통로로 보낸 결과 */
+  expect(popupReturnHref("moa-pay-B", message, "moa-pay-return")).toBeNull();
+  /* 이 창이 팝업을 열지 않은 상태, 이름이 없는 메시지, 다른 종류의 메시지 */
+  expect(popupReturnHref(null, message, "moa-pay-return")).toBeNull();
+  expect(popupReturnHref("moa-pay-A", { type: "moa-pay-return", href }, "moa-pay-return")).toBeNull();
+  expect(popupReturnHref("moa-pay-A", { ...message, type: "x" }, "moa-pay-return")).toBeNull();
+  /* 결제 화면 밖의 주소나 객체가 아닌 값 */
+  expect(popupReturnHref("moa-pay-A", { ...message, href: "https://evil.example" }, "moa-pay-return")).toBeNull();
+  for (const data of [null, undefined, "x", 1]) expect(popupReturnHref("moa-pay-A", data, "moa-pay-return")).toBeNull();
 });

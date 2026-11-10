@@ -10,6 +10,13 @@
   color: var(--text-muted);
 }
 
+.notice {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
 .list {
   display: flex;
   flex-direction: column;

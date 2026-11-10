@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { balanceFromServer, cashableCredits, entryFromServer, payableCredits, totalCredits, withdrawalFromServer } from "@/features/credit/types";
+import {
+  adminWithdrawalFromServer,
+  balanceFromServer,
+  cashableCredits,
+  entryFromServer,
+  isServerWithdrawalId,
+  payableCredits,
+  totalCredits,
+  withdrawalFromServer,
+} from "@/features/credit/types";
 
 test("S350 S391 잔액·결제 가능액·출금 가능액은 잠금과 이벤트·대기 보상을 구분한다", () => {
   const cases = [
@@ -46,4 +55,34 @@ test("#206-S4 서버 출금 응답을 화면 값으로 바꾼다: 상태 이름,
     .toMatchObject({ rejectReason: "기타 (본인 계좌가 아니에요)" });
   /* 사유가 없는 반려도 오류 없이 변환된다 */
   expect(withdrawalFromServer({ ...base, status: "REJECTED", accountNumber: "****5678", rejectReason: null, rejectMemo: null }).rejectReason).toBeUndefined();
+  /* 사유 없이 메모만 있는 반려는 메모만 보인다 */
+  expect(withdrawalFromServer({ ...base, status: "REJECTED", accountNumber: "****5678", rejectReason: null, rejectMemo: "본인 계좌가 아니에요" }).rejectReason)
+    .toBe("본인 계좌가 아니에요");
+});
+
+test("#207-S7 서버 운영자 출금 응답을 운영자 화면 값으로 바꾼다", () => {
+  const base = {
+    id: 9, nickname: "시드출금", userName: "시드출금", amount: 3000, bank: "국민은행",
+    accountNumber: "123456789012", accountHolder: "시드출금", rejectReason: null, rejectMemo: null,
+    requestedAt: "2026-11-09T05:12:00Z", processedAt: null,
+  } as const;
+  /* 처리 대기는 처리 결과가 없고 계좌·예금주 전체가 그대로다 */
+  expect(adminWithdrawalFromServer({ ...base, status: "REQUESTED" })).toEqual({
+    id: "9", nickname: "시드출금", memberName: "시드출금", amount: 3000, bank: "국민은행",
+    accountNumber: "123456789012", accountHolder: "시드출금", createdAt: "2026-11-09T05:12:00Z",
+  });
+  expect(adminWithdrawalFromServer({ ...base, status: "PAID", accountNumber: "****9012", accountHolder: "시*출", processedAt: "2026-11-09T06:00:00Z" }).review)
+    .toEqual({ decision: "paid", memo: "", processedAt: "2026-11-09T06:00:00Z" });
+  expect(adminWithdrawalFromServer({ ...base, status: "REJECTED", rejectReason: "OTHER", rejectMemo: "본인 계좌가 아니에요", processedAt: "2026-11-09T06:00:00Z" }).review)
+    .toEqual({ decision: "rejected", reason: "other", memo: "본인 계좌가 아니에요", processedAt: "2026-11-09T06:00:00Z" });
+  /* 사유가 없는 반려도 오류 없이 변환된다 */
+  expect(adminWithdrawalFromServer({ ...base, status: "REJECTED", processedAt: "2026-11-09T06:00:00Z" }).review)
+    .toEqual({ decision: "rejected", memo: "", processedAt: "2026-11-09T06:00:00Z" });
+});
+
+test("#207-S10 서버 id가 될 수 없는 출금 키는 서버에 묻지 않는다", () => {
+  for (const key of ["1", "9001", "999999999999999999"]) expect(isServerWithdrawalId(key), key).toBe(true);
+  for (const key of ["", "abc", "0", "007", "-1", "1.5", "9223372036854775808", "99999999999999999999"]) {
+    expect(isServerWithdrawalId(key), key).toBe(false);
+  }
 });

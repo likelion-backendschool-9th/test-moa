@@ -167,7 +167,7 @@ export function isRejectReason(value: unknown): value is RejectReason {
 }
 
 /** 출금 처리 양식이 막힌 이유. 저장 공간 부족은 memo, 기타에 메모가 없으면 note */
-export type RequestFormError = "decision" | "reason" | "note" | "memo";
+export type RequestFormError = "decision" | "reason" | "note" | "memo" | "server";
 
 /** 출금 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
 export type RequestFormState = { error: RequestFormError | null };
@@ -202,6 +202,56 @@ export type WithdrawalRequest = {
   createdAt: string;
   review?: WithdrawalReview;
 };
+
+/** 서버 `GET /api/v1/admin/withdrawals` 응답의 한 줄. 처리 대기는 계좌·예금주 전체, 끝난 요청은 가려져 온다 */
+export type ServerAdminWithdrawal = {
+  id: number;
+  nickname: string;
+  /** 가입 실명 */
+  userName: string;
+  amount: number;
+  status: "REQUESTED" | "PAID" | "REJECTED";
+  bank: string;
+  accountNumber: string;
+  accountHolder: string;
+  rejectReason: "HOLDER" | "ACCOUNT" | "OTHER" | null;
+  rejectMemo: string | null;
+  requestedAt: string;
+  processedAt: string | null;
+};
+
+/**
+ * 주소의 키가 서버 출금 id(Long)가 될 수 있는지. 0으로 시작하지 않는 18자리 이하 숫자만 받는다.
+ * 더 긴 숫자는 Long을 넘을 수 있고, 그러면 서버가 404가 아니라 400으로 답해 오류 화면이 된다
+ */
+export function isServerWithdrawalId(key: string) {
+  return /^[1-9]\d{0,17}$/.test(key);
+}
+
+/** 서버 출금 요청 한 줄을 운영자 화면 값으로 바꾼다. 처리 대기는 `review`가 없다 */
+export function adminWithdrawalFromServer(item: ServerAdminWithdrawal): WithdrawalRequest {
+  const request: WithdrawalRequest = {
+    id: String(item.id),
+    nickname: item.nickname,
+    memberName: item.userName,
+    amount: item.amount,
+    bank: item.bank,
+    accountNumber: item.accountNumber,
+    accountHolder: item.accountHolder,
+    createdAt: item.requestedAt,
+  };
+  if (item.status === "REQUESTED") return request;
+  const reason = item.rejectReason?.toLowerCase();
+  return {
+    ...request,
+    review: {
+      decision: item.status === "PAID" ? "paid" : "rejected",
+      ...(reason && isRejectReason(reason) ? { reason } : {}),
+      memo: item.rejectMemo ?? "",
+      processedAt: item.processedAt ?? item.requestedAt,
+    },
+  };
+}
 
 /** 예금주가 회원 이름과 다른지. 알리기만 하고 처리를 막지는 않는다 */
 export function isHolderMismatch(request: WithdrawalRequest) {

@@ -10,7 +10,8 @@ import styles from "./PendingSummary.module.css";
 
 type SummaryCard = {
   label: string;
-  count: number;
+  /** 읽지 못하면 null */
+  count: number | null;
   href: string;
   detail: ReactNode;
 };
@@ -49,7 +50,9 @@ export function PendingSummary({ summary }: { summary: AdminSummary }) {
               className={cn(styles.summaryCard, styles.link)}
             >
               <span className={styles.label}>{card.label}</span>
-              {card.count === 0 ? (
+              {card.count === null ? (
+                <span className={styles.label2}>불러오지 못했어요</span>
+              ) : card.count === 0 ? (
                 <span className={styles.label2}>처리할 요청 없음</span>
               ) : (
                 <>

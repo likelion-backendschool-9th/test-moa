@@ -13,7 +13,8 @@ import styles from "./RecentRequests.module.css";
 type RecentRequestsProps = {
   now: Date;
   reports: Report[];
-  withdrawals: WithdrawalRequest[];
+  /** 읽지 못하면 null */
+  withdrawals: WithdrawalRequest[] | null;
 };
 
 /** 영역별 최근 요청. 확인만 하고 승인·반려는 각 관리 페이지에서 한다 */
@@ -34,8 +35,8 @@ export function RecentRequests({ now, reports, withdrawals }: RecentRequestsProp
             />
           ))}
         </Column>
-        <Column title="출금 요청" href={ADMIN_REQUEST_PATH.withdrawal}>
-          {withdrawals.map((item) => (
+        <Column title="출금 요청" href={ADMIN_REQUEST_PATH.withdrawal} unavailable={withdrawals === null}>
+          {(withdrawals ?? []).map((item) => (
             <Row
               key={item.id}
               href={adminRequestHref("withdrawal", item.id)}
@@ -50,11 +51,13 @@ export function RecentRequests({ now, reports, withdrawals }: RecentRequestsProp
   );
 }
 
-function Column({ title, href, children }: { title: string; href: string; children: ReactNode[] }) {
+function Column({ title, href, children, unavailable = false }: { title: string; href: string; children: ReactNode[]; unavailable?: boolean }) {
   return (
     <Card className={styles.column}>
       <h3 className={styles.columnTitle}>{title}</h3>
-      {children.length === 0 ? (
+      {unavailable ? (
+        <p className={styles.columnText}>불러오지 못했어요.</p>
+      ) : children.length === 0 ? (
         <p className={styles.columnText}>최근 요청이 없어요.</p>
       ) : (
         <ul className={styles.columnChildren}>{children}</ul>

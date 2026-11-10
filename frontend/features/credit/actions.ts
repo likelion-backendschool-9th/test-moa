@@ -5,10 +5,12 @@ import {
   getAdminWithdrawal as getWithdrawal,
   isWithdrawalKey,
   saveAdminWithdrawalReview,
+  saveServerWithdrawalReview,
   saveWithdrawalRequest,
   submitServerWithdrawal,
 } from "@/features/credit/api";
 import { withdrawalsHref } from "@/features/credit/paths";
+import { withdrawalErrorsFromServer } from "@/features/credit/withdrawal-errors";
 import {
   BANKS,
   cashableCredits,
@@ -39,24 +41,6 @@ export type WithdrawalFormState =
 
 const ACCOUNT_PATTERN = /^\d{10,14}$/;
 
-/** 서버 요청 필드 이름 → 화면 칸 */
-const SERVER_FIELD: Record<string, WithdrawalField> = {
-  amount: "amount",
-  bank: "bank",
-  accountNumber: "account",
-  accountHolder: "holder",
-};
-
-function serverErrors({ message, fields }: { message: string; fields?: Record<string, string> }) {
-  const errors: Partial<Record<WithdrawalField | "form", string>> = {};
-  for (const [name, text] of Object.entries(fields ?? {})) {
-    const field = SERVER_FIELD[name];
-    if (field) errors[field] = text;
-  }
-  if (Object.keys(errors).length === 0) errors.form = message;
-  return errors;
-}
-
 export async function requestWithdrawal(_prev: WithdrawalFormState, formData: FormData): Promise<WithdrawalFormState> {
   await requireMember(PATH);
   const cashable = cashableCredits(await getCreditBalance(PATH));
@@ -83,7 +67,7 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
   if (isBackendAuth) {
     /* 화면의 검사를 지나도 서버가 거절할 수 있다(다른 창에서 잔액이 바뀐 경우 등). 칸별 문구가 있으면 그 칸에, 아니면 폼 위에 보인다 */
     const result = await submitServerWithdrawal({ amount, bank, accountNumber: account, accountHolder: holder });
-    if (!result.ok) return { status: "error", errors: serverErrors(result) };
+    if (!result.ok) return { status: "error", errors: withdrawalErrorsFromServer(result) };
   } else {
     await saveWithdrawalRequest({ amount, bank, account });
   }
@@ -121,10 +105,21 @@ export async function processWithdrawal(_prev: RequestFormState, formData: FormD
 
   const tab = formData.get("tab") === "done" ? "done" : undefined;
 
-  /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
-  const { withdrawal } = await getWithdrawal(withdrawalKey);
-  if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
-
-  if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
+  if (isBackendAuth) {
+    /*
+     * 처리 전인지는 서버가 PUT에서 확인한다(409). 미리 상세를 읽지 않는다. 그 조회가 실패하면 폼 오류가 아니라 예외로 끝나기 때문이다.
+     * 그 사이 다른 운영자가 처리했거나 요청이 없으면 새로 불러와 모달(없으면 목록)로 보여 준다
+     */
+    const result = await saveServerWithdrawalReview(withdrawalKey, review);
+    if (result === "failed") return { error: "server" };
+    if (result === "already") redirect(withdrawalsHref({ tab, open: withdrawalKey }));
+    /* 지급하면 회원의 잠긴 금액이 줄고 반려하면 적립으로 돌아가므로, 회원 화면도 새 값을 읽게 한다 */
+    revalidatePath("/my", "layout");
+  } else {
+    /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
+    const { withdrawal } = await getWithdrawal(withdrawalKey);
+    if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
+    if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
+  }
   redirect(withdrawalsHref({ tab, processed: withdrawalKey }));
 }

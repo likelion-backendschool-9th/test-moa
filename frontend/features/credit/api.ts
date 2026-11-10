@@ -13,12 +13,15 @@ import { type DemoSubscriptionPayment, getDemoSubscriptionPayments } from "@/dem
 import { type ListTab } from "@/features/credit/paths";
 import { backendFetch, backendFetchOnce, isBackendAuth } from "@/lib/backend";
 import {
+  adminWithdrawalFromServer,
   balanceFromServer,
   type CreditBalance,
   type CreditEntry,
   entryFromServer,
+  isServerWithdrawalId,
   type LedgerType,
   type ServerCreditBalance,
+  type ServerAdminWithdrawal,
   type ServerCreditLedger,
   type ServerWithdrawal,
   type Withdrawal,
@@ -33,7 +36,7 @@ import "server-only";
 
 /*
  * 크레딧 데이터 접근. `AUTH_MODE=backend`에서는 잔액과 내역을 서버에서 읽고(#205), 아니면 목업을 돌려준다.
- * 출금 요청도 서버 값이다(#206). 운영자 출금 처리는 아직 목업이다(#207).
+ * 출금 요청도 서버 값이다(#206). 운영자 출금 목록·처리도 서버 값이다(#207).
  * 모든 함수는 비로그인이면 next 경로를 붙여 로그인으로 보낸다.
  */
 
@@ -161,6 +164,35 @@ export async function saveWithdrawalRequest(request: Parameters<typeof addDemoWi
 
 export { DEMO_ADMIN_WITHDRAWALS_COOKIE } from "@/demo/credit";
 
+/** 서버의 운영자 출금 목록. 처리 대기는 신청이 오래된 순, 처리 완료는 최근 처리 순으로 온다 */
+async function readAdminWithdrawals(tab: ListTab): Promise<WithdrawalRequest[]> {
+  const result = await backendFetch<ServerAdminWithdrawal[]>(`/api/v1/admin/withdrawals?tab=${tab}`);
+  if (!result.ok) throw new Error(result.message);
+  return result.data.map(adminWithdrawalFromServer);
+}
+
+/** 서버의 출금 요청 한 건. 없으면 null, 그 밖의 실패는 오류로 멈춘다 */
+async function readAdminWithdrawal(withdrawalKey: string): Promise<WithdrawalRequest | null> {
+  const result = await backendFetch<ServerAdminWithdrawal>(`/api/v1/admin/withdrawals/${withdrawalKey}`);
+  if (result.ok) return adminWithdrawalFromServer(result.data);
+  if (result.status === 404) return null;
+  throw new Error(result.message);
+}
+
+/** 서버에 출금 처리 결과를 보낸다. 이미 처리한 요청(409)과 그 밖의 실패를 나눠 돌려준다 */
+export type WithdrawalProcessResult = "done" | "already" | "failed";
+
+async function processServerWithdrawal(withdrawalKey: string, review: WithdrawalReview): Promise<WithdrawalProcessResult> {
+  const body =
+    review.decision === "paid"
+      ? { decision: "PAID" }
+      : { decision: "REJECTED", reason: review.reason?.toUpperCase(), memo: review.memo };
+  const result = await backendFetch<unknown>(`/api/v1/admin/withdrawals/${withdrawalKey}`, { method: "PUT", body });
+  if (result.ok) return "done";
+  /* 409는 이미 처리됨, 404는 없는 요청이다. 둘 다 처리하지 않고 상세를 새로 불러온다(없으면 모달 없이 목록) */
+  return result.status === 409 || result.status === 404 ? "already" : "failed";
+}
+
 /** 운영자 출금 목록. 일반 회원의 출금 신청 조회와 구분한다. */
 async function loadAdminWithdrawals() {
   await assertAdmin();
@@ -176,13 +208,18 @@ async function loadAdminWithdrawals() {
 
 const byOldest = (a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt);
 
-/** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다 */
+/** 상세 주소의 출금 요청 키가 있는 키인지. isReportKey와 같은 용도다. 백엔드 모드는 서버 id가 될 수 있는 숫자인지만 본다 */
 export function isWithdrawalKey(withdrawalKey: string) {
-  return WITHDRAWAL_KEYS.includes(withdrawalKey);
+  return isBackendAuth ? isServerWithdrawalId(withdrawalKey) : WITHDRAWAL_KEYS.includes(withdrawalKey);
 }
 
 /** 처리 대기는 오래 기다린 순서로, 처리 완료는 최근 처리 순서로 */
 export async function getAdminWithdrawals(tab: ListTab): Promise<{ now: Date; withdrawals: WithdrawalRequest[] }> {
+  if (isBackendAuth) {
+    await assertAdmin();
+    await connection();
+    return { now: new Date(), withdrawals: await readAdminWithdrawals(tab) };
+  }
   const { now, withdrawals } = await loadAdminWithdrawals();
   if (tab === "pending") return { now, withdrawals: withdrawals.filter((request) => !request.review).sort(byOldest) };
   const done = withdrawals.filter((request) => request.review);
@@ -190,6 +227,11 @@ export async function getAdminWithdrawals(tab: ListTab): Promise<{ now: Date; wi
 }
 
 export async function getAdminWithdrawal(withdrawalKey: string): Promise<{ now: Date; withdrawal: WithdrawalRequest | null }> {
+  if (isBackendAuth) {
+    await assertAdmin();
+    await connection();
+    return { now: new Date(), withdrawal: await readAdminWithdrawal(withdrawalKey) };
+  }
   const { now, withdrawals } = await loadAdminWithdrawals();
   return { now, withdrawal: withdrawals.find((request) => request.id === withdrawalKey) ?? null };
 }
@@ -197,4 +239,10 @@ export async function getAdminWithdrawal(withdrawalKey: string): Promise<{ now: 
 export async function saveAdminWithdrawalReview(withdrawalKey: string, review: WithdrawalReview) {
   await assertAdmin();
   return saveWithdrawalReview(withdrawalKey, review);
+}
+
+/** 서버에 처리 결과를 남긴다. 서버가 처리 전인지 다시 확인하므로 이미 처리했으면 "already"다 */
+export async function saveServerWithdrawalReview(withdrawalKey: string, review: WithdrawalReview): Promise<WithdrawalProcessResult> {
+  await assertAdmin();
+  return processServerWithdrawal(withdrawalKey, review);
 }

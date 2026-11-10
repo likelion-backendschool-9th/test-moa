@@ -39,6 +39,7 @@ export type PendingItem = {
 export type AdminSummary = {
   reportCount: number;
   heldRewardCount: number;
-  withdrawalCount: number;
+  /** 출금 목록을 읽지 못하면 null */
+  withdrawalCount: number | null;
   withdrawalAmount: number;
 };

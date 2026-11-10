@@ -1,6 +1,8 @@
 "use server";
 
-import { getProfile, isCurrentPassword, isNicknameTaken } from "@/features/member/api";
+import { redirect } from "next/navigation";
+import { getProfile, isCurrentPassword, isNicknameTaken, unlinkAccount } from "@/features/member/api";
+import { isBackendAuth } from "@/lib/backend";
 import { validateName, validateNewPassword, validateNickname } from "@/features/member/validation";
 import type { FormState } from "@/lib/form";
 
@@ -50,4 +52,13 @@ export async function changePassword(_prev: FormState<PasswordField>, formData: 
 
   if (Object.keys(errors).length > 0) return { status: "error", errors };
   return { status: "success", message: "비밀번호를 바꿨어요", submittedAt: Date.now() };
+}
+
+/** 소셜 계정 연동 해제(#84). 결과는 개인정보 수정 화면 주소의 unlinked·accountError로 보인다. 목업에는 연동이 없다 */
+export async function unlinkSocialAccount(formData: FormData): Promise<void> {
+  await getProfile(PATH);
+  const provider = String(formData.get("provider") ?? "");
+  if (!isBackendAuth || (provider !== "google" && provider !== "github")) redirect(PATH);
+  const result = await unlinkAccount(provider);
+  redirect(result.ok ? `${PATH}?unlinked=${provider}` : `${PATH}?accountError=${result.code}`);
 }

@@ -18,7 +18,8 @@ export type OAuthLogin =
   | { signupRequired: false; tokens: Tokens }
   | { signupRequired: true; signupToken: string; email: string; nickname: string };
 
-type PendingState = { state: string; provider: SocialProviderId; next: string };
+/** link: 로그인이 아니라 로그인한 회원의 계정 연동(개인정보 수정 화면에서 시작) */
+type PendingState = { state: string; provider: SocialProviderId; next: string; link?: boolean };
 export type PendingSignup = { signupToken: string; email: string; nickname: string; next: string };
 
 /* sameSite lax: 제공자에서 돌아오는 이동(최상위 GET)에도 쿠키가 실린다 */

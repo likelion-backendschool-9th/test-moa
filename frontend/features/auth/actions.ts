@@ -97,6 +97,22 @@ export async function socialLogin(formData: FormData): Promise<void> {
 }
 
 /**
+ * 로그인한 회원의 소셜 계정 연동(#84). 로그인과 같은 동의 화면을 거치고, 돌아오면 콜백이 연동 API를 부른다.
+ * 결과는 개인정보 수정 화면 주소의 linked·accountError로 보인다. 목업에는 연동이 없다
+ */
+export async function linkSocialAccount(formData: FormData): Promise<void> {
+  const back = "/my/profile/edit";
+  const provider = SOCIAL_PROVIDERS.find(({ id }) => id === formData.get("provider"))?.id;
+  if (!provider || !isBackendAuth) redirect(back);
+  const state = crypto.randomUUID();
+  const query = new URLSearchParams({ redirectUri: callbackUrl(provider), state });
+  const result = await backendFetch<string>(`/api/auth/oauth/${provider}/authorize-url?${query}`, { withToken: false });
+  if (!result.ok) redirect(`${back}?accountError=oauth`);
+  await saveState({ state, provider, next: back, link: true });
+  redirect(result.data);
+}
+
+/**
  * 소셜 가입의 이름 입력. 이름은 출금 예금주 확인에 써서 이메일 가입처럼 필수다. 성공하면 로그인한 채 돌아갈 곳으로 간다.
  * 실제 로그인: 쿠키의 가입 토큰(10분)과 이름으로 백엔드에 가입한다. 목업: 테스터 시연 계정으로 로그인한다
  */

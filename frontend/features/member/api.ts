@@ -2,12 +2,13 @@ import { buildMyPageSummary, buildUsers, DEMO_PASSWORD, DEMO_PROFILES } from "@/
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
 import { creditDataFor } from "@/features/credit/api";
 import type { UserDetail, UserFilter, UserSummary } from "@/features/member/admin";
-import type { MyPageSummary, Profile, Todo } from "@/features/member/types";
+import type { LinkedAccountsInfo, LoginProvider, MyPageSummary, Profile, Todo } from "@/features/member/types";
 import { loadReports as loadAll } from "@/features/report/api";
 import type { Report } from "@/features/report/types";
 import { requireMember } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
 import { subscriptionForGlance } from "@/features/subscription/api";
+import { type BackendResult, backendFetch } from "@/lib/backend";
 import { formatDday } from "@/lib/format";
 import { connection } from "next/server";
 import "server-only";
@@ -146,4 +147,22 @@ function sortTodos(todos: Todo[], now: Date): Todo[] {
   return [...withDue, ...rest]
     .slice(0, TODO_LIMIT)
     .map((todo) => (todo.dueAt ? { ...todo, detail: formatDday(todo.dueAt, now) } : todo));
+}
+
+/* ---- 실제 로그인(AUTH_MODE=backend): 연동된 계정(#84) ---- */
+
+type MeAccounts = { providers: LoginProvider[]; accounts?: { provider: LoginProvider; email: string | null }[] };
+
+/** 연동된 로그인 방식과 방식별 이메일. 실제 로그인에서만 부른다. 비로그인이면 로그인으로 보낸다 */
+export async function getLinkedAccounts(next: string): Promise<LinkedAccountsInfo> {
+  await requireMember(next);
+  const me = await backendFetch<MeAccounts>("/api/users/me");
+  if (!me.ok) throw new Error(`내 정보를 읽지 못했어요: ${me.code}`);
+  const emails = Object.fromEntries((me.data.accounts ?? []).filter((a) => a.email).map((a) => [a.provider, a.email!]));
+  return { providers: me.data.providers, emails };
+}
+
+/** 소셜 계정 연동 해제. 마지막 로그인 방법이면 백엔드가 409 LAST_LOGIN_METHOD */
+export async function unlinkAccount(provider: string): Promise<BackendResult<unknown>> {
+  return backendFetch(`/api/users/me/accounts/${provider}`, { method: "DELETE" });
 }

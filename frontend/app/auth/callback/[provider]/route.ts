@@ -16,12 +16,22 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/auth/
   const next = saved?.next ?? "/";
   const query = request.nextUrl.searchParams;
 
-  // 동의 화면에서 취소하면 code 없이 돌아온다. 문구 없이 로그인 화면으로 간다
+  // 동의 화면에서 취소하면 code 없이 돌아온다. 문구 없이 로그인 화면(연동이면 시작한 화면)으로 간다
   if (saved && saved.provider === provider && query.get("state") === saved.state && !query.get("code")) {
-    redirect(withNext("/login", next));
+    redirect(saved.link ? next : withNext("/login", next));
   }
   if (!saved || saved.provider !== provider || query.get("state") !== saved.state) {
-    redirect(withNext("/login", next, { error: "oauth" }));
+    redirect(saved?.link ? `${next}?accountError=oauth` : withNext("/login", next, { error: "oauth" }));
+  }
+
+  // 로그인한 회원의 계정 연동(#84): 쿠키의 access 토큰으로 연동 API를 부르고 개인정보 수정 화면으로 돌아간다
+  if (saved.link) {
+    const linked = await backendFetch(`/api/users/me/accounts/${saved.provider}`, {
+      method: "POST",
+      body: { code: query.get("code"), redirectUri: callbackUrl(saved.provider) },
+      timeoutMs: 20_000,
+    });
+    redirect(linked.ok ? `${next}?linked=${saved.provider}` : `${next}?accountError=${linked.code}`);
   }
 
   const result = await backendFetch<OAuthLogin>(`/api/auth/oauth/${saved.provider}`, {

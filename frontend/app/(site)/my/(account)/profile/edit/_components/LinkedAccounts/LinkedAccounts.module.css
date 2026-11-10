@@ -1,0 +1,79 @@
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.text {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 제공자 카드. 연동된 카드는 강조색 테두리로 구분한다 */
+.card {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--space-2);
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-4);
+}
+
+.card[data-linked="true"] {
+  border-color: var(--accent);
+}
+
+.icon {
+  color: var(--text);
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.state {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+/* 연동한 계정의 이메일. 긴 주소는 칸 안에서 줄을 바꾼다 */
+.email {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: flex;
+  margin-top: var(--space-1);
+}
+
+.button {
+  width: 100%;
+}

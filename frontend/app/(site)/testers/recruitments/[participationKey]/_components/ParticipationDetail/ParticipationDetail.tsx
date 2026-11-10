@@ -307,7 +307,7 @@ export function ParticipationDetail({ item, now, justSubmitted, projectDescripti
             테스트 항목
           </h2>
           <Card className={styles.card}>
-            <FeedbackForm participationKey={item.key} testItems={item.testItems} />
+            <FeedbackForm participationKey={item.key} testItems={item.testItems} uploadEnabled={isBackendAuth} />
           </Card>
         </section>
       )}

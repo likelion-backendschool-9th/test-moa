@@ -16,7 +16,7 @@ import {
 import { FEEDBACK_MAX_LENGTH } from "@/features/participation/types";
 import styles from "./FeedbackField.module.css";
 
-type PickedImage = FileMeta & { url: string };
+export type PickedImage = FileMeta & { url: string; file: File };
 
 const toMeta = ({ name, size, type }: PickedImage): FileMeta => ({ name, size, type });
 
@@ -28,6 +28,8 @@ type FeedbackFieldProps = {
   description: string;
   required: boolean;
   error?: string;
+  images: PickedImage[];
+  onImagesChange: (images: PickedImage[]) => void;
 };
 
 /**
@@ -35,9 +37,8 @@ type FeedbackFieldProps = {
  * 이미지는 고를 때 바로 한도를 확인해 브라우저 안에서 미리 보여 준다. 파일 칸에 name이 없어 파일은 서버로 가지 않고,
  * 숨은 칸으로 이름·크기·형식만 보낸다(feedback-images.ts).
  */
-export function FeedbackField({ fieldKey, number, title, description, required, error }: FeedbackFieldProps) {
+export function FeedbackField({ fieldKey, number, title, description, required, error, images, onImagesChange }: FeedbackFieldProps) {
   const [content, setContent] = useState("");
-  const [images, setImages] = useState<PickedImage[]>([]);
   const [imageError, setImageError] = useState<string>();
   const fileInput = useRef<HTMLInputElement>(null);
   const full = images.length >= FEEDBACK_IMAGE_LIMIT.count;
@@ -64,15 +65,15 @@ export function FeedbackField({ fieldKey, number, title, description, required, 
     const problem = checkFeedbackImages([...images, ...picked]);
     setImageError(problem);
     if (problem) return;
-    setImages((prev) => [
-      ...prev,
-      ...picked.map((file) => ({ name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file) })),
+    onImagesChange([
+      ...images,
+      ...picked.map((file) => ({ name: file.name, size: file.size, type: file.type, file, url: URL.createObjectURL(file) })),
     ]);
   }
 
   function removeImage(url: string) {
     URL.revokeObjectURL(url);
-    setImages((prev) => prev.filter((image) => image.url !== url));
+    onImagesChange(images.filter((image) => image.url !== url));
     setImageError(undefined);
     /* 5장이 차 있었으면 추가 칸이 다시 그려진 뒤에 포커스를 옮길 수 있다 */
     requestAnimationFrame(() => fileInput.current?.focus());

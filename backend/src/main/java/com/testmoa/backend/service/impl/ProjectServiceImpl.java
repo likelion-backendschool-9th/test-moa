@@ -160,9 +160,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         long recruiting = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.RECRUITING).count();
         long testing = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.TESTING).count();
-        long waitingReports = feedbacks.stream().mapToLong(ProjectDashboardResponse.Todo::count).sum();
+        long closed = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.CLOSED).count();
         return new ProjectDashboardResponse(Stream.concat(applicants.stream(), feedbacks.stream()).toList(),
-                new ProjectDashboardResponse.Overview(recruiting, testing, waitingReports));
+                new ProjectDashboardResponse.Overview(recruiting, testing, closed));
     }
 
     /**

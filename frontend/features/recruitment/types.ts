@@ -699,7 +699,7 @@ export type TodoItem = {
 };
 
 /** 모든 프로젝트를 합친 숫자. 진행 중인 모집 건을 상태별로 센다(종료·취소는 세지 않는다) */
-export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed" | "cancelled">, number> & { waitingReports: number };
+export type ProjectOverview = Record<Exclude<RecruitmentStatus, "cancelled">, number>;
 
 export type PublicRecruitmentView = PublicRecruitmentData & { now: Date; status: Exclude<RecruitmentStatus, "cancelled"> };
 

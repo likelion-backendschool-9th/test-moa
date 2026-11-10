@@ -15,5 +15,5 @@ public record ProjectDashboardResponse(List<Todo> todos, Overview overview) {
      */
     public record Todo(String kind, Long recruitmentId, String projectName, long count, LocalDateTime payoutAt) {}
 
-    public record Overview(long recruiting, long testing, long waitingReports) {}
+    public record Overview(long recruiting, long testing, long closed) {}
 }

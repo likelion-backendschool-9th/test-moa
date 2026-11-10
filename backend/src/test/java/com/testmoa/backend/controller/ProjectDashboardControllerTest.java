@@ -179,7 +179,7 @@ class ProjectDashboardControllerTest {
 
     @Test
     @DisplayName("#122-S4 전체 현황")
-    void 모든_프로젝트의_진행_중인_모집과_신고_대기를_센다() throws Exception {
+    void 모든_프로젝트의_모집과_테스트와_완료된_모집을_센다() throws Exception {
         Project second = saveProject(me, "메모");
         recruiting(project, false);
         recruiting(second, true);
@@ -193,7 +193,7 @@ class ProjectDashboardControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.overview.recruiting").value(2))
                 .andExpect(jsonPath("$.data.overview.testing").value(1))
-                .andExpect(jsonPath("$.data.overview.waitingReports").value(2));
+                .andExpect(jsonPath("$.data.overview.closed").value(1));
     }
 
     @Test
@@ -208,7 +208,7 @@ class ProjectDashboardControllerTest {
                 .andExpect(jsonPath("$.data.todos", empty()))
                 .andExpect(jsonPath("$.data.overview.recruiting").value(0))
                 .andExpect(jsonPath("$.data.overview.testing").value(0))
-                .andExpect(jsonPath("$.data.overview.waitingReports").value(0));
+                .andExpect(jsonPath("$.data.overview.closed").value(0));
 
         dashboard(saveUser())
                 .andExpect(status().isOk())

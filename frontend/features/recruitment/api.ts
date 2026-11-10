@@ -544,7 +544,7 @@ export async function getMyDashboard(path: string) {
 
   const applicantTodos: TodoItem[] = [];
   const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
-  const overview: ProjectOverview = { recruiting: 0, testing: 0, waitingReports: 0 };
+  const overview: ProjectOverview = { recruiting: 0, testing: 0, closed: 0 };
 
   for (const project of projects) {
     for (const recruitment of project.recruitments) {
@@ -558,8 +558,7 @@ export async function getMyDashboard(path: string) {
       const pending = applications.filter((item) => item.status === "applied").length;
       const waitingHours = feedbacks.map((item) => getHoursUntilPaid(item, now)).filter((hours) => hours > 0);
 
-      if (status !== "closed") overview[status] += 1;
-      overview.waitingReports += waitingHours.length;
+      overview[status] += 1;
 
       /* 지금 확정할 수 있는 지원자만 할 일로 본다. 무료 모집은 자동 확정이라 뺀다 */
       if (recruitment.isSubscription && status === "recruiting" && pending > 0) {

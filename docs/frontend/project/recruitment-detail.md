@@ -18,8 +18,8 @@
 - Given 비로그인, `/recruitments/booklog`
 - Then  제목, "모집 중", "추가 보상" 배지, 모집 마감, 피드백 제출 마감, 선정 방식, 기본 보상, 추가 보상이 보인다
 - Then  모집 조건과 테스트 항목(필수·선택)이 보이고 접속 링크는 없다
-- When  "지원하기"를 누른다
-- Then  `/recruitments/booklog/apply`의 준비 중 화면으로 간다
+- When  "지원하기" 버튼을 누른다 (고침: 지원 페이지를 없애고 이 화면의 버튼 하나로 지원한다)
+- Then  `/login?next=%2Frecruitments%2Fbooklog`로 가서 로그인 뒤 이 모집글로 돌아온다
 
 #63-S2 지원할 수 없음 [테스트]
 - Given 모집이 끝난 모집 건(`memo-garden`)

@@ -1,0 +1,62 @@
+.resultPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.resultPageLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  color: var(--text-muted);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-duration: var(--duration-300);
+  transition-timing-function: var(--ease);
+}
+
+@media (hover: hover) {
+  .resultPageLink:hover {
+    color: var(--text);
+  }
+}
+
+.resultPageTitle {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.resultText {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 800;
+}
+
+.resultMessage {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+/* 결제 화면과 같이 사이드바가 있는 넓은 화면에서만 폭을 제한한다 */
+@media (min-width: 64rem) {
+  .result {
+    max-width: 42rem;
+  }
+}
+
+.resultSkeleton {
+  height: 1.5rem;
+  width: 10rem;
+}
+
+.resultSkeleton2 {
+  height: 3rem;
+  width: 100%;
+}

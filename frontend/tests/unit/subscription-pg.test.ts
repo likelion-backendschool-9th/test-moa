@@ -2,12 +2,14 @@ import { expect, test } from "@playwright/test";
 import {
   approvalFromQuery,
   completePath,
+  isJustPaid,
   isMobileUserAgent,
   kakaoRedirectUrl,
   parsePaymentId,
   pgNotice,
   readProviders,
   receiptFromServer,
+  receiptPath,
   receiptMethodLabel,
   tossWindowFrom,
   type PgReady,
@@ -88,7 +90,7 @@ test("#249-S23 결제 완료 화면의 결제 id는 서버 id가 될 수 있는 
 });
 
 test("#249-S23 결제가 끝나면 결제 id가 있을 때만 결제 완료 화면으로 보낸다", () => {
-  expect(completePath("42")).toBe("/my/subscription/checkout/complete?payment=42");
+  expect(completePath("42")).toBe("/my/subscription/checkout/complete?payment=42&paid=1");
   expect(completePath(null)).toBe("/my/subscription?notice=paid");
 });
 
@@ -102,4 +104,12 @@ test("#249-S23 결제 완료 화면은 결제 수단을 크레딧·카카오페�
   expect(kakao).toEqual({ id: "5", plan: "PRO", method: "CASH", provider: "KAKAO_PAY", amount: 10000, paidAt: base.paidAt, period: base.period });
   /* 모르는 결제 대행사는 없는 것으로 본다 */
   expect(receiptFromServer({ ...base, method: "CASH", provider: "PAYCO" }).provider).toBeNull();
+});
+
+test("#249-S25 결제 내역에서 한 건을 열면 방금 결제했다는 표시 없이 같은 화면으로 간다", () => {
+  expect(receiptPath("42")).toBe("/my/subscription/checkout/complete?payment=42");
+  /* 결제 직후에만 "결제가 완료됐어요"로 보인다 */
+  expect(isJustPaid("1")).toBe(true);
+  expect(isJustPaid(["1", "0"])).toBe(true);
+  for (const value of [undefined, "", "0", "true", "2"]) expect(isJustPaid(value), String(value)).toBe(false);
 });

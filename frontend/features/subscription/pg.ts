@@ -158,3 +158,56 @@ export function receiptPath(paymentId: string): string {
 export function isJustPaid(value: string | string[] | undefined): boolean {
   return one(value) === "1";
 }
+
+/* ---------- 결제 팝업 (#252) ---------- */
+
+/** PC에서 결제창을 여는 팝업의 창 이름. 결제창을 거쳐 돌아온 팝업이 자기가 결제 팝업인지 알아보는 데도 쓴다 */
+export const POPUP_NAME = "moa-pay";
+
+/** 팝업창 크기. 카카오페이 PC 결제창은 작은 팝업을 전제로 한 화면이라 좁고, 토스 자체창은 조금 더 넓게 연다 */
+const POPUP_SIZE: Record<PgProvider, { width: number; height: number }> = {
+  KAKAO_PAY: { width: 430, height: 620 },
+  TOSS_PAY: { width: 480, height: 700 },
+};
+
+type WindowFrame = { screenX: number; screenY: number; outerWidth: number; outerHeight: number };
+
+/** `window.open`에 줄 창 설정. 팝업이 원래 창의 가운데에 열리게 위치를 계산하고, 화면 밖으로 나가지 않게 0 이상으로 둔다 */
+export function popupFeatures(provider: PgProvider, frame: WindowFrame): string {
+  const { width, height } = POPUP_SIZE[provider];
+  const left = Math.max(0, Math.round(frame.screenX + (frame.outerWidth - width) / 2));
+  const top = Math.max(0, Math.round(frame.screenY + (frame.outerHeight - height) / 2));
+  return `popup,width=${width},height=${height},left=${left},top=${top}`;
+}
+
+/** 결제 팝업이 원래 창에 알릴 수 있는 곳. 결제 화면 아래 주소만 받아서 다른 주소로 보내는 데 쓰이지 않게 한다 */
+export function isPopupReturnPath(value: unknown): value is string {
+  return typeof value === "string" && /^\/my\/subscription\/checkout(\/[a-z]+)?(\?[^#]*)?$/.test(value);
+}
+
+/** 토스 결제창을 팝업 안에서 여는 화면의 주소. 팝업을 클릭하는 순간 먼저 열어 두고 준비가 끝나면 이 주소로 보낸다 */
+export function tossPopupPath(window: TossWindow): string {
+  return `/my/subscription/checkout/toss?${new URLSearchParams({
+    orderId: window.orderId,
+    amount: String(window.amount),
+    orderName: window.orderName,
+    clientKey: window.clientKey,
+    customerKey: window.customerKey,
+    successUrl: window.successUrl,
+    failUrl: window.failUrl,
+  })}`;
+}
+
+/** 토스 팝업 화면의 쿼리에서 결제창을 열 값을 읽는다. 하나라도 빠지거나 금액이 이상하면 null이다 */
+export function tossWindowFromQuery(query: Query): TossWindow | null {
+  const orderId = one(query.orderId);
+  const orderName = one(query.orderName);
+  const clientKey = one(query.clientKey);
+  const customerKey = one(query.customerKey);
+  const successUrl = one(query.successUrl);
+  const failUrl = one(query.failUrl);
+  const amount = Number(one(query.amount));
+  if (!orderId || !orderName || !clientKey || !customerKey || !successUrl || !failUrl) return null;
+  if (!Number.isInteger(amount) || amount <= 0) return null;
+  return { orderId, amount, orderName, clientKey, customerKey, successUrl, failUrl };
+}

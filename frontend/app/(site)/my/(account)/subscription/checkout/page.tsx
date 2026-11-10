@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getCheckoutInfo, getSubscriptionOverview } from "@/features/subscription/api";
 import { pgNotice } from "@/features/subscription/pg";
 import { CheckoutForm } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm/CheckoutForm";
+import { PopupReturn } from "@/app/(site)/my/(account)/subscription/checkout/_components/PopupReturn/PopupReturn";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
 
@@ -26,6 +27,7 @@ export default function CheckoutPage({ searchParams }: { searchParams: Promise<{
         구독
       </Link>
       <h1 className={styles.checkoutPageTitle}>구독 결제</h1>
+      <PopupReturn />
       <Suspense fallback={<CheckoutSkeleton />}>
         <Checkout searchParams={searchParams} />
       </Suspense>

@@ -1,18 +1,28 @@
 "use client";
 
 import { WarningCircleIcon } from "@phosphor-icons/react";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { formatCredits, formatDate, formatWon } from "@/lib/format";
 import { payForSubscription, type CheckoutFormState } from "@/features/subscription/actions";
-import { PG_LABEL, PG_PROVIDERS, type PgProvider, type TossWindow } from "@/features/subscription/pg";
+import { isMobileUserAgent, PG_LABEL, PG_PROVIDERS, tossPopupPath, type PgProvider } from "@/features/subscription/pg";
+import { openTossWindow } from "@/features/subscription/toss-window";
 import type { CheckoutPeriod, SubscriptionPlan } from "@/features/subscription/types";
 import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
+import { usePaymentPopup } from "./usePaymentPopup";
 import styles from "./CheckoutForm.module.css";
 
 const initialState: CheckoutFormState = { status: "idle" };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const POPUP_BLOCKED = "팝업이 막혀 있어요. 주소창 오른쪽에서 이 사이트의 팝업을 허용한 뒤 결제하기를 다시 눌러 주세요";
+
+/* PC 브라우저만 결제창을 팝업으로 연다. 서버 렌더에서는 알 수 없어서 PC로 본다 */
+const noSubscription = () => () => {};
+function useMobile(): boolean {
+  return useSyncExternalStore(noSubscription, () => isMobileUserAgent(navigator.userAgent), () => false);
+}
 
 type Method = "credit" | "cash";
 
@@ -38,18 +48,25 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
   const [state, formAction, pending] = useActionState(payForSubscription, initialState);
   /* 서버가 토스 결제 준비를 마치면 브라우저가 토스 결제창을 연다. 열리면 페이지가 토스로 이동하고, 돌아오면(창을 닫음·열지 못함) 결과 문구를 남긴다 */
   const [opened, setOpened] = useState<{ state: CheckoutFormState; message: string } | null>(null);
-  const tossOpening = state.status === "toss" && opened?.state !== state;
+  /* 결제 팝업(#252). 팝업을 결과 없이 닫았거나 브라우저가 막았을 때의 안내를 남기고, 다시 결제하면 지운다 */
+  const [popupNotice, setPopupNotice] = useState<string | null>(null);
+  const popup = usePaymentPopup(() => setPopupNotice("결제를 취소했어요"));
+  const mobile = useMobile();
+  const tossOpening = state.status === "toss" && opened?.state !== state && !popup.opened;
   const tossError = opened?.state === state ? opened.message : null;
   /* 개발 모드의 효과 두 번 실행에도 같은 결제창을 두 번 열지 않는다(토스가 이미 열린 창이 있다고 거절한다) */
   const started = useRef<CheckoutFormState | null>(null);
   const bannerRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    if (state.status !== "toss" || started.current === state) return;
+    if (started.current === state) return;
     started.current = state;
-    openTossWindow(state.window).then((message) => setOpened({ state, message }));
-  }, [state]);
+    if (state.status === "kakao") popup.navigate(state.url);
+    else if (state.status === "toss" && popup.opened) popup.navigate(tossPopupPath(state.window));
+    else if (state.status === "toss") openTossWindow(state.window).then((message) => setOpened({ state, message }));
+    else if (state.status === "error") popup.close();
+  }, [state, popup]);
   /* 안내가 새로 뜨면(결제창을 닫음) 화면을 많이 내려 둔 경우에도 보이게 한다 */
-  const bannerText = tossError ?? notice;
+  const bannerText = tossError ?? popupNotice ?? notice;
   useEffect(() => {
     if (bannerText) bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [bannerText]);
@@ -76,18 +93,32 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
   /* 서버가 준 대행사 목록이 있는 백엔드 모드의 현금 결제만 대행사를 고른다. 쓸 수 있는 곳이 없으면 현금 결제를 막는다 */
   const askProvider = method === "cash" && providers !== null;
   const noProvider = askProvider && provider === null;
+  const popupMode = askProvider && provider !== null && !mobile;
 
   const serverPeriod = periods?.[plan.id];
   const startsAt = serverPeriod?.startAt ?? activeUntil ?? now;
   const endsAt = serverPeriod?.endAt ?? new Date(new Date(startsAt).getTime() + plan.periodDays * DAY_MS).toISOString();
   const price = method === "credit" ? formatCredits(plan.creditPrice) : formatWon(plan.cashPrice);
   /* 결제를 취소했거나 결제창을 열지 못한 안내는 버튼 옆의 작은 글씨로는 놓치기 쉬워서 카드 위쪽에 눈에 띄게 보인다. 서버가 거절한 이유는 버튼 위에 그대로 둔다 */
-  const banner = tossError ?? notice ?? undefined;
+  const banner = tossError ?? popupNotice ?? notice ?? undefined;
   const error = state.status === "error" ? state.error : undefined;
-  const busy = pending || tossOpening;
+  const busy = pending || tossOpening || popup.opened;
 
   return (
-    <AccountCard as="form" action={formAction} aria-labelledby="checkout-heading">
+    <AccountCard
+      as="form"
+      action={formAction}
+      onSubmit={(event: React.FormEvent) => {
+        setPopupNotice(null);
+        /* 응답을 기다린 뒤에는 브라우저가 팝업을 막으므로 누른 순간에 연다. 막히면 서버에 결제를 준비시키지 않고 허용 방법을 안내한다 */
+        if (popupMode && provider && !popup.open(provider)) {
+          event.preventDefault();
+          setPopupNotice(POPUP_BLOCKED);
+        }
+      }}
+      aria-labelledby="checkout-heading"
+    >
+      {popupMode && <input type="hidden" name="popup" value="1" />}
       <AccountCardTitle id="checkout-heading">
         {activeUntil ? "구독 연장" : "구독 시작"}
       </AccountCardTitle>
@@ -184,37 +215,22 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
         </p>
       )}
       <div className={styles.box4}>
-        <p className={styles.text3}>자동으로 갱신되지 않아요. 만료일이 지나면 무료로 돌아가요.</p>
+        {popup.opened ? (
+          <p role="status" className={styles.text3}>
+            결제창이 열려 있어요. 결제를 마치면 이 화면이 자동으로 바뀌어요.{" "}
+            <button type="button" className={styles.link} onClick={popup.focus}>
+              결제창 앞으로 가져오기
+            </button>
+          </p>
+        ) : (
+          <p className={styles.text3}>자동으로 갱신되지 않아요. 만료일이 지나면 무료로 돌아가요.</p>
+        )}
         <Button type="submit" shape="field" disabled={busy || noProvider} className={styles.button}>
           {busy ? "결제하는 중…" : `${price} 결제하기`}
         </Button>
       </div>
     </AccountCard>
   );
-}
-
-/**
- * 토스페이 결제창을 연다(자체창 직접 열기). 성공하면 토스가 successUrl로 이동시켜서 이 함수는 돌아오지 않는다.
- * 돌아오면 사용자가 창을 닫았거나 열지 못한 것이라 화면에 보일 문구를 돌려준다
- */
-async function openTossWindow(window: TossWindow): Promise<string> {
-  try {
-    const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
-    const toss = await loadTossPayments(window.clientKey);
-    await toss.payment({ customerKey: window.customerKey }).requestPayment({
-      method: "CARD",
-      amount: { currency: "KRW", value: window.amount },
-      orderId: window.orderId,
-      orderName: window.orderName,
-      successUrl: window.successUrl,
-      failUrl: window.failUrl,
-      card: { flowMode: "DIRECT", easyPay: "토스페이" },
-    });
-    return "";
-  } catch (error) {
-    const code = typeof error === "object" && error !== null && "code" in error ? String((error as { code: unknown }).code) : "";
-    return code === "USER_CANCEL" || code === "PAY_PROCESS_CANCELED" ? "결제를 취소했어요" : "결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요";
-  }
 }
 
 type ChoiceProps = {

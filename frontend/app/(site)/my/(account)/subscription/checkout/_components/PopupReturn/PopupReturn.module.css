@@ -1,0 +1,20 @@
+/* 결제 팝업이 돌아와서 닫히기 전에 잠깐 보이는 안내. 화면 전체를 덮어 아래 결제 화면이 비치지 않게 한다 */
+.notice {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-skip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: var(--space-6);
+  background-color: var(--surface);
+  color: var(--text);
+  text-align: center;
+  font-size: var(--text-base);
+  line-height: var(--text-base-leading);
+}
+
+.notice[hidden] {
+  display: none;
+}

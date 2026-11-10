@@ -100,7 +100,9 @@ class TestAnalyses:
     def test_bad_praise_summary_keeps_groups(self, client: TestClient, llm: FakeLLM) -> None:
         # 칭찬 요약만 이상하면 묶은 결과는 살리고 칭찬 요약만 비운다
         llm.praise_fail_with = LLMOutputError("broken")
-        res = client.post("/v1/analyses", json=_analysis_body("좋아요 마음에 들어요", "로그인 하면 꺼져요"))
+        res = client.post(
+            "/v1/analyses", json=_analysis_body("좋아요 마음에 들어요", "로그인 하면 꺼져요")
+        )
 
         assert res.status_code == 200
         assert res.json()["praiseSummary"] is None

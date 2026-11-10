@@ -277,7 +277,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .version(version)
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());
-        recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());
+        replaceTypes(recruitment, request.softwareTypes());
         for (int index = 0; index < request.testItems().size(); index++) {
             saveTestItem(recruitment, request.testItems().get(index), index);
         }

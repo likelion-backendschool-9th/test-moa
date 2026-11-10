@@ -248,7 +248,7 @@ class ProjectControllerTest {
         Map<String, Object> body = new HashMap<>();
         body.put("title", "북로그 2차 모집");
         body.put("description", "회원가입부터 첫 기록까지 해 보기");
-        body.put("softwareType", "web");
+        body.put("softwareTypes", List.of("web"));
         body.put("selectionMode", "firstCome");
         body.put("accessUrl", "https://booklog.example.com");
         body.put("conditions", "책을 읽는 분");
@@ -500,8 +500,8 @@ class ProjectControllerTest {
         expectInvalid(project, title, "title", "모집글 제목은 50자까지 적을 수 있어요");
 
         Map<String, Object> description = recruitment();
-        description.put("description", "가".repeat(201));
-        expectInvalid(project, description, "description", "모집 설명은 200자까지 적을 수 있어요");
+        description.put("description", "가".repeat(5001));
+        expectInvalid(project, description, "description", "모집 설명은 5000자까지 적을 수 있어요");
 
         Map<String, Object> conditions = recruitment();
         conditions.put("conditions", "가".repeat(501));
@@ -536,8 +536,8 @@ class ProjectControllerTest {
         Project project = saveProject(me, "북로그");
 
         Map<String, Object> game = recruitment();
-        game.put("softwareType", "game");
-        expectInvalid(project, game, "softwareType", "지금은 웹서비스만 모집할 수 있어요");
+        game.put("softwareTypes", List.of("desktop"));
+        expectInvalid(project, game, "softwareTypes[0]", "유형을 확인해 주세요");
 
         Map<String, Object> unknown = recruitment();
         unknown.put("selectionMode", "lottery");

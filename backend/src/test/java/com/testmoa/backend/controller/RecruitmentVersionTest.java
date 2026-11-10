@@ -46,7 +46,7 @@ class RecruitmentVersionTest {
 
     static Map<String, Object> body(Long projectId) {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        return Map.of("projectId", projectId, "title", "북로그 베타", "description", "써 봐 주세요", "softwareType", "web",
+        return Map.of("projectId", projectId, "title", "북로그 베타", "description", "써 봐 주세요", "softwareTypes", List.of("web"),
                 "selectionMode", "firstCome", "accessUrl", "https://booklog.example.com",
                 "recruitDeadline", today.plusDays(3).toString(), "submitDeadline", today.plusDays(9).toString(),
                 "testItems", List.of(Map.of("title", "책 등록하기", "required", true, "imageUrls", List.of())));

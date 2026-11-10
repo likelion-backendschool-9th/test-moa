@@ -56,6 +56,38 @@ export type MyPageSummary = {
   recentCredits: CreditEntry[];
 };
 
+/* ---- 실제 로그인(AUTH_MODE=backend): 운영자 제재(#86) ---- */
+
+export type SanctionType = "WARNING" | "SUSPENSION" | "PERMANENT";
+
+export const SANCTION_TYPE_LABEL: Record<SanctionType, string> = {
+  WARNING: "경고",
+  SUSPENSION: "기간 정지",
+  PERMANENT: "영구 정지",
+};
+
+export type Restriction = "LOGIN" | "APPLY" | "RECRUIT" | "FEEDBACK" | "CHAT";
+
+export const RESTRICTION_LABEL: Record<Restriction, string> = {
+  LOGIN: "로그인",
+  APPLY: "테스트 지원",
+  RECRUIT: "모집 글 작성",
+  FEEDBACK: "피드백 작성",
+  CHAT: "채팅",
+};
+
+/** 내가 받은 경고·정지(GET /api/v1/sanctions/me) */
+export type MySanction = {
+  id: number;
+  type: SanctionType;
+  restrictions: Restriction[];
+  reason: string;
+  startedAt: string;
+  endsAt: string | null;
+  releasedAt: string | null;
+  active: boolean;
+};
+
 /* ---- 연동된 계정(#84) ---- */
 
 /** 연동된 로그인 방식과 방식별 이메일(GET /api/users/me의 providers·accounts). 이메일을 모르는 계정은 빠진다 */

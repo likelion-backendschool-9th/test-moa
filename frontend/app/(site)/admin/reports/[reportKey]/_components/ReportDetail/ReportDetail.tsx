@@ -7,21 +7,26 @@ import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { formatDate, formatElapsed } from "@/lib/format";
 import { processReport } from "@/features/report/actions";
 import {
+  evidenceHref,
+  formatFileSize,
   isOverdue,
   REPORT_DECISION_LABEL,
   REPORT_TARGET_LABEL,
   REVIEW_MEMO_MAX_LENGTH,
   type Report,
+  type ReportEvidence,
 } from "@/features/report/types";
 import { reportsHref, type ReportListView } from "@/features/report/paths";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
 import styles from "./ReportDetail.module.css";
 
-export type ReviewFormError = "decision" | "memo";
+/** memo: 목업 쿠키에 저장하지 못함. failed: 백엔드가 거절함(다른 운영자가 먼저 처리한 경우 등) */
+export type ReviewFormError = "decision" | "memo" | "failed";
 
 const ERROR_MESSAGE: Record<ReviewFormError, string> = {
   decision: "처리 결과를 골라 주세요.",
   memo: "시연용 저장 공간이 모자라 처리하지 못했어요. 메모를 줄이거나 demo-reports 쿠키를 지운 뒤 다시 시도해 주세요.",
+  failed: "처리하지 못했어요. 다른 운영자가 먼저 처리했을 수 있어요. 새로고침한 뒤 다시 확인해 주세요.",
 };
 
 
@@ -76,12 +81,56 @@ export function ReportDetail({ report, now, view }: { report: Report; now: Date;
         </AdminPanel>
       )}
 
-      {report.targetType === "recruitment" && (
-        <LinkButton href={`/recruitments/${report.recruitmentSlug}`} variant="secondary" size="sm" className={styles.button}>
-          모집 글 보기
-        </LinkButton>
-      )}
+      {report.evidences && report.evidences.length > 0 && <Evidences reportId={report.id} evidences={report.evidences} />}
+
+      <div className={styles.actions}>
+        {/* 실제 로그인에서는 모집 글 신고만 모집 id를 안다(그 밖에는 빈 값) */}
+        {report.targetType === "recruitment" && report.recruitmentSlug && (
+          <LinkButton href={`/recruitments/${report.recruitmentSlug}`} size="sm">
+            모집 글 보기
+          </LinkButton>
+        )}
+        {/* 인정한 뒤 회원 관리에서 다시 찾지 않고 바로 제재 양식으로 간다 */}
+        {report.targetUserKey && report.targetNickname && (
+          <LinkButton href={`/admin/users/${report.targetUserKey}#sanction-form-heading`} size="sm">
+            {report.targetNickname} 제재하기
+          </LinkButton>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** 증거 파일. 이미지는 미리보기, PDF는 이름만 보이고 누르면 새 탭에서 연다 */
+function Evidences({ reportId, evidences }: { reportId: string; evidences: ReportEvidence[] }) {
+  return (
+    <AdminPanel as="section" aria-labelledby="evidence-heading">
+      <h3 id="evidence-heading" className={styles.title2}>
+        증거 파일 <span className={styles.count}>{evidences.length}</span>
+      </h3>
+      <ul className={styles.evidences}>
+        {evidences.map((evidence) => {
+          const href = evidenceHref(reportId, evidence.id);
+          return (
+            <li key={evidence.id}>
+              <a href={href} target="_blank" rel="noreferrer" className={styles.evidence}>
+                {evidence.contentType.startsWith("image/") ? (
+                  /* 로그인 토큰이 필요한 비공개 파일이라 next/image 최적화를 거치지 않는다 */
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={href} alt="" className={styles.thumb} />
+                ) : (
+                  <span aria-hidden className={styles.fileIcon}>
+                    PDF
+                  </span>
+                )}
+                <span className={styles.evidenceName}>{evidence.originalName}</span>
+                <span className={styles.evidenceSize}>{formatFileSize(evidence.size)}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </AdminPanel>
   );
 }
 
@@ -96,7 +145,18 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** 처리 양식. 서버 양식이라 확인도 서버에서 하고, 문제가 있으면 error와 함께 돌아온다 */
-export function ReviewForm({ report, error, view }: { report: Report; error: ReviewFormError | null; view: ReportListView }) {
+/** withMemo: 처리 메모를 받는지. 백엔드에는 처리 메모가 없어서 실제 로그인에서는 칸을 숨긴다 */
+export function ReviewForm({
+  report,
+  error,
+  view,
+  withMemo = true,
+}: {
+  report: Report;
+  error: ReviewFormError | null;
+  view: ReportListView;
+  withMemo?: boolean;
+}) {
   const upheldDetail =
     report.targetType === "feedback" ? "제재 이력에 반영되고, 이 피드백의 보상은 지급하지 않아요." : "제재 이력에 반영돼요.";
   return (
@@ -118,17 +178,19 @@ export function ReviewForm({ report, error, view }: { report: Report; error: Rev
           {ERROR_MESSAGE[error]}
         </p>
       )}
-      <label className={styles.reviewFormField}>
-        처리 메모
-        <textarea
-          name="memo"
-          rows={3}
-          maxLength={REVIEW_MEMO_MAX_LENGTH}
-          aria-describedby={error === "memo" ? "review-error" : undefined}
-          placeholder={`판단 근거를 남겨 주세요 (선택, ${REVIEW_MEMO_MAX_LENGTH}자까지)`}
-          className={styles.reviewFormTextarea}
-        />
-      </label>
+      {withMemo && (
+        <label className={styles.reviewFormField}>
+          처리 메모
+          <textarea
+            name="memo"
+            rows={3}
+            maxLength={REVIEW_MEMO_MAX_LENGTH}
+            aria-describedby={error === "memo" ? "review-error" : undefined}
+            placeholder={`판단 근거를 남겨 주세요 (선택, ${REVIEW_MEMO_MAX_LENGTH}자까지)`}
+            className={styles.reviewFormTextarea}
+          />
+        </label>
+      )}
       <Button type="submit" className={styles.reviewFormButton}>
         처리하기
       </Button>
@@ -149,7 +211,7 @@ function Choice({ value, label, detail }: { value: string; label: string; detail
 }
 
 /** 처리한 신고. 결과는 바꿀 수 없어서 읽기만 한다 */
-export function ReviewResult({ report, now }: { report: Report; now: Date }) {
+export function ReviewResult({ report, now, withMemo = true }: { report: Report; now: Date; withMemo?: boolean }) {
   if (!report.review) return null;
   return (
     <AdminPanel as="section" aria-labelledby="review-result-heading">
@@ -160,7 +222,7 @@ export function ReviewResult({ report, now }: { report: Report; now: Date }) {
         <Info label="결과">
           <Badge tone="neutral">{REPORT_DECISION_LABEL[report.review.decision]}</Badge>
         </Info>
-        <Info label="메모">{report.review.memo || "남긴 메모가 없어요"}</Info>
+        {withMemo && <Info label="메모">{report.review.memo || "남긴 메모가 없어요"}</Info>}
         <Info label="처리">
           {formatDate(report.review.processedAt)} · {formatElapsed(report.review.processedAt, now)}
         </Info>

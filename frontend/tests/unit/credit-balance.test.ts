@@ -55,6 +55,9 @@ test("#206-S4 서버 출금 응답을 화면 값으로 바꾼다: 상태 이름,
     .toMatchObject({ rejectReason: "기타 (본인 계좌가 아니에요)" });
   /* 사유가 없는 반려도 오류 없이 변환된다 */
   expect(withdrawalFromServer({ ...base, status: "REJECTED", accountNumber: "****5678", rejectReason: null, rejectMemo: null }).rejectReason).toBeUndefined();
+  /* 사유 없이 메모만 있는 반려는 메모만 보인다 */
+  expect(withdrawalFromServer({ ...base, status: "REJECTED", accountNumber: "****5678", rejectReason: null, rejectMemo: "본인 계좌가 아니에요" }).rejectReason)
+    .toBe("본인 계좌가 아니에요");
 });
 
 test("#207-S7 서버 운영자 출금 응답을 운영자 화면 값으로 바꾼다", () => {

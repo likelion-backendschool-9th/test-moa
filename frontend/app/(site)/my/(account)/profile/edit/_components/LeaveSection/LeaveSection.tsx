@@ -13,7 +13,7 @@ export function LeaveSection({ notice }: { notice: LeaveNotice }) {
         <p className={styles.text}>탈퇴해도 30일 안에는 되돌릴 수 있어요.</p>
       </div>
       <SettingsBody className={styles.body}>
-        <p className={styles.text}>30일이 지나면 개인정보가 파기되고 남은 크레딧은 사라져요.</p>
+        <p className={styles.text}>30일이 지나면 개인정보가 전부 사라지고 남은 크레딧도 사라져요.</p>
         <div className={styles.action}>
           <LeaveAccountButton {...notice} />
         </div>

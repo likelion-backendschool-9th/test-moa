@@ -4,6 +4,7 @@ import { type FormEvent, type ReactNode, startTransition, useActionState, useEff
 import { Button } from "@/components/ui/Button/Button";
 import { FormField, FormMessage } from "@/components/ui/FormField/FormField";
 import type { FormState } from "@/lib/form";
+import { formatCredits } from "@/lib/format";
 import { type LeaveField, leaveAccount } from "@/features/member/actions";
 import { LEAVE_CONFIRM_TEXT, LEAVE_PENDING_WITHDRAWAL, type LeaveNotice } from "@/features/member/types";
 import styles from "./LeaveAccountButton.module.css";
@@ -49,7 +50,7 @@ export function LeaveAccountButton({ credits, pendingWithdrawal, hasPassword, tr
           {children}
         </button>
       ) : (
-        <Button type="button" onClick={open}>
+        <Button type="button" variant="secondary" onClick={open}>
           {children}
         </Button>
       )}
@@ -68,9 +69,9 @@ export function LeaveAccountButton({ credits, pendingWithdrawal, hasPassword, tr
             </h2>
             <ul className={styles.notes}>
               <li>30일 안에 다시 로그인하면 되돌릴 수 있어요.</li>
-              <li>30일이 지나면 이름·이메일 같은 개인정보가 사라지고 되돌릴 수 없어요.</li>
+              <li>30일이 지나면 개인정보가 전부 사라지고 되돌릴 수 없어요.</li>
               <li>
-                남은 크레딧 <span className={styles.credits}>{credits.toLocaleString("ko-KR")}</span>은 사라져요.
+                남은 <span className={styles.credits}>{formatCredits(credits)}</span>은 사라져요.
               </li>
             </ul>
           </div>
@@ -106,7 +107,7 @@ export function LeaveAccountButton({ credits, pendingWithdrawal, hasPassword, tr
               취소
             </Button>
             {!blocked && (
-              <Button type="submit" size="sm" disabled={pending}>
+              <Button type="submit" variant="strong" size="sm" disabled={pending}>
                 {pending ? "탈퇴하는 중…" : "탈퇴하기"}
               </Button>
             )}

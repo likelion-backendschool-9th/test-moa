@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getLeaveNotice, getMyPageSummary, getMySanctions } from "@/features/member/api";
@@ -30,13 +31,26 @@ export default function MyPage() {
   );
 }
 
+/**
+ * 카드 하나의 조회 실패가 마이페이지 전체를 오류 화면으로 만들지 않게, 실패하면 "failed"로 바꿔 그 카드만 안내한다.
+ * Next의 리다이렉트·동적 렌더링 신호는 그대로 다시 던진다
+ */
+async function orFailed<T>(load: Promise<T>): Promise<T | "failed"> {
+  try {
+    return await load;
+  } catch (error) {
+    unstable_rethrow(error);
+    return "failed";
+  }
+}
+
 async function Dashboard() {
   /* 내 신고·받은 제재는 실제 로그인(AUTH_MODE=backend)에서만 백엔드에서 읽는다(#85·#86) */
   const [summary, notice, reports, sanctions] = await Promise.all([
     getMyPageSummary(),
     getLeaveNotice("/my"),
-    isBackendAuth ? getMyReports() : Promise.resolve(null),
-    isBackendAuth ? getMySanctions() : Promise.resolve(null),
+    isBackendAuth ? orFailed(getMyReports()) : Promise.resolve(null),
+    isBackendAuth ? orFailed(getMySanctions()) : Promise.resolve(null),
   ]);
   return (
     <div className={styles.dashboard}>
@@ -48,8 +62,8 @@ async function Dashboard() {
         {summary.subscription && <SubscriptionCard subscription={summary.subscription} />}
       </div>
       <RecentCredits entries={summary.recentCredits} now={new Date()} />
-      {sanctions && <MySanctions sanctions={sanctions} />}
-      {reports && <MyReports reports={reports} />}
+      {sanctions && <MySanctions sanctions={sanctions === "failed" ? null : sanctions} />}
+      {reports && <MyReports reports={reports === "failed" ? null : reports} />}
       <AccountMenu notice={notice} email={summary.profile.email} providers={summary.profile.providers} />
     </div>
   );

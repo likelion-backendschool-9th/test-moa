@@ -8,14 +8,17 @@ import styles from "./MyReports.module.css";
 const PREVIEW_COUNT = 3;
 
 /** 내가 한 신고와 처리 상태(#85). 신고당한 회원과 판정한 운영자는 보이지 않는다 */
-export function MyReports({ reports }: { reports: MyReport[] }) {
+/** reports가 null이면 조회에 실패한 것이라 이 카드만 안내한다 */
+export function MyReports({ reports }: { reports: MyReport[] | null }) {
   return (
     <AccountCard as="section" aria-labelledby="my-reports-heading">
       <div className={styles.head}>
         <AccountCardTitle id="my-reports-heading">내 신고</AccountCardTitle>
-        {reports.length > 0 && <MyReportsDialog reports={reports} />}
+        {reports && reports.length > 0 && <MyReportsDialog reports={reports} />}
       </div>
-      {reports.length === 0 ? (
+      {reports === null ? (
+        <p className={styles.empty}>내 신고를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>
+      ) : reports.length === 0 ? (
         <p className={styles.empty}>아직 한 신고가 없어요.</p>
       ) : (
         <ul className={styles.list}>

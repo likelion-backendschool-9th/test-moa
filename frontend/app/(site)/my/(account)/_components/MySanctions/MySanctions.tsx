@@ -23,11 +23,14 @@ function state(sanction: MySanction) {
 }
 
 /** 내가 받은 경고·정지(#86). 신고자와 증거는 없다 */
-export function MySanctions({ sanctions }: { sanctions: MySanction[] }) {
+/** sanctions가 null이면 조회에 실패한 것이라 이 카드만 안내한다 */
+export function MySanctions({ sanctions }: { sanctions: MySanction[] | null }) {
   return (
     <AccountCard as="section" aria-labelledby="my-sanctions-heading">
       <AccountCardTitle id="my-sanctions-heading">받은 제재</AccountCardTitle>
-      {sanctions.length === 0 ? (
+      {sanctions === null ? (
+        <p className={styles.empty}>받은 제재를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>
+      ) : sanctions.length === 0 ? (
         <p className={styles.empty}>받은 제재가 없어요.</p>
       ) : (
         <ul className={styles.list}>

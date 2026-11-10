@@ -89,6 +89,12 @@ public class FileStorage {
         }
     }
 
+    /** PNG·JPG·WEBP만 알아낸다. 빈 파일, PDF, 그 밖은 빈 값. 오류 문구는 각 서비스가 정한다 */
+    public static Optional<Kind> detectImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) return Optional.empty();
+        return detect(file).filter(kind -> kind != Kind.PDF);
+    }
+
     static Optional<Kind> detect(byte[] head) {
         if (startsWith(head, new byte[]{(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A})) return Optional.of(Kind.PNG);
         if (startsWith(head, new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF})) return Optional.of(Kind.JPG);

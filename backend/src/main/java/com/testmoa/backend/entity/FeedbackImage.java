@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FeedbackImage {
+    /** 업로드 폴더. 테스터 주소와 개발자 주소가 이 이름 아래에서 파일을 읽고 쓴다 */
+    public static final String FOLDER = "feedback-images";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

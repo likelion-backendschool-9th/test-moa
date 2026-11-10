@@ -4,6 +4,7 @@ import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
 import com.testmoa.backend.dto.response.ParticipationListItemResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
 import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,6 +20,12 @@ public interface ParticipationService {
      * 이미 냈으면 FEEDBACK_ALREADY_SUBMITTED, 필수 항목이 비었거나 아무것도 적지 않았으면 INVALID_INPUT
      */
     ParticipationResponse submitFeedback(Long userId, Long registerId, FeedbackSubmitRequest request);
+
+    /**
+     * 피드백 이미지를 한 장 올린다(#119). 제출과 같이 확정·마감·이미 제출·피드백 제재를 확인한다.
+     * 잠그지 않는다. 파일이 한 장이 아니거나 PNG·JPG·WEBP가 아니면 INVALID_INPUT이고 저장하지 않는다
+     */
+    String uploadFeedbackImage(Long userId, Long registerId, List<MultipartFile> files);
 
     /**
      * 탭의 내 참여(#117). 지원한·참여 중 탭은 할 일 순서(상태 순서 → 날짜 가까운 순), 참여했던 탭은 최근 순.

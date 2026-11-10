@@ -1,6 +1,7 @@
 package com.testmoa.backend.controller.tester;
 
 import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
+import com.testmoa.backend.dto.response.ImageUploadResponse;
 import com.testmoa.backend.dto.response.ParticipationListItemResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
 import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -57,6 +60,15 @@ public class ParticipationController {
     public ApiResponse<ParticipationResponse> find(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
                                                    @PathVariable Long registerId) {
         return ApiResponse.ok(participationService.find(userId, registerId));
+    }
+
+    @Operation(summary = "피드백 이미지 업로드", description = "확정된 참가가 제출 전에 PNG·JPG·WEBP를 한 장씩 올린다. 한 장 5MB. "
+            + "응답 url을 제출 본문의 imageUrls에 넣는다")
+    @PostMapping(value = "/{registerId}/feedbacks/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<ImageUploadResponse> uploadImage(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                                        @PathVariable Long registerId,
+                                                        @RequestParam("file") List<MultipartFile> files) {
+        return ApiResponse.ok(new ImageUploadResponse(participationService.uploadFeedbackImage(userId, registerId, files)));
     }
 
     @Operation(summary = "항목별 피드백 제출", description = "확정된 참가가 제출 마감 전에 한 번만 낸다. 필수 항목은 비울 수 없고 칸마다 500자까지. "

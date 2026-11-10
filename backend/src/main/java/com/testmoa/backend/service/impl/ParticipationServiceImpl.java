@@ -8,6 +8,7 @@ import com.testmoa.backend.dto.response.ParticipationResponse.FeedbackInfo;
 import com.testmoa.backend.dto.response.ParticipationResponse.RecruitmentInfo;
 import com.testmoa.backend.dto.response.ParticipationResponse.TestItemInfo;
 import com.testmoa.backend.entity.Feedback;
+import com.testmoa.backend.entity.FeedbackImage;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Register;
@@ -15,6 +16,7 @@ import com.testmoa.backend.entity.TestItem;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
+import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.RecruitmentTypeRepository;
 import com.testmoa.backend.repository.RegisterRepository;
@@ -28,6 +30,7 @@ import com.testmoa.backend.service.RewardPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -48,7 +51,9 @@ public class ParticipationServiceImpl implements ParticipationService {
     // 제출 뒤 이 시간 동안 신고가 없으면 자동 지급한다(README)
     private static final Duration PAYOUT_WAIT = Duration.ofHours(72);
     private static final String EMPTY_MESSAGE = "피드백을 적어 주세요";
+    private static final String IMAGE_TYPE_MESSAGE = "PNG, JPG, WEBP 이미지만 올릴 수 있어요";
 
+    private final FileStorage fileStorage;
     private final RegisterRepository registerRepository;
     private final SanctionChecker sanctionChecker;
     private final FeedbackRepository feedbackRepository;
@@ -98,6 +103,39 @@ public class ParticipationServiceImpl implements ParticipationService {
         if (etc != null) saved.add(Feedback.builder().register(register).content(etc).submittedAt(now).build());
         feedbackRepository.saveAll(saved);
         return toResponse(register, testItems, saved, now);
+    }
+
+    // 제출과 겹쳐도 잠그지 않는다. 그 파일은 제출에 안 쓰인 채로 남고, 정리는 #225가 한다
+    @Override
+    public String uploadFeedbackImage(Long userId, Long registerId, List<MultipartFile> files) {
+        openParticipation(userId, registerId);
+        if (files == null || files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");
+        MultipartFile file = files.getFirst();
+        FileStorage.Kind kind = FileStorage.detectImage(file).orElseThrow(() -> invalid("file", IMAGE_TYPE_MESSAGE));
+        FileStorage.Stored stored = fileStorage.save(FeedbackImage.FOLDER + "/" + registerId, file, kind);
+        String name = stored.path().substring(stored.path().lastIndexOf('/') + 1);
+        return feedbackImageUrl(registerId, name);
+    }
+
+    // 이미지를 올릴 수 있는 참가. 제재는 참가를 찾기 전에 알린다. 제출은 행을 잠그므로 이 메서드를 쓰지 않는다
+    private Register openParticipation(Long userId, Long registerId) {
+        sanctionChecker.require(userId, Restriction.FEEDBACK);
+        Register register = registerRepository.findMine(registerId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (register.getStatus() != RegisterStatus.CONFIRMED) throw new BusinessException(ErrorCode.PARTICIPATION_NOT_CONFIRMED);
+        if (!LocalDateTime.now().isBefore(register.getRecruitment().getFeedbackDeadline())) {
+            throw new BusinessException(ErrorCode.FEEDBACK_DEADLINE_PASSED);
+        }
+        if (feedbackRepository.existsByRegisterId(registerId)) throw new BusinessException(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
+        return register;
+    }
+
+    private static String feedbackImageUrl(Long registerId, String name) {
+        return "/api/v1/tester/participations/" + registerId + "/feedbacks/images/" + name;
+    }
+
+    private static BusinessException invalid(String field, String message) {
+        return new BusinessException(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage(), Map.of(field, message));
     }
 
     // 항목 id → 공백을 지운 내용(비었으면 null). 이 모집의 항목이 아니거나 같은 항목을 두 번 보내면 400

@@ -23,4 +23,7 @@ public interface CreditLedgerRepository extends JpaRepository<CreditLedger, Long
             Integer delta,
             Limit limit
     );
+
+    /** 그 지갑에 같은 종류·같은 원인의 장부 행이 이미 있는지. 가입 크레딧을 두 번 주지 않기 위해 쓴다 */
+    boolean existsByCreditWalletIdAndTypeAndDescription(Long creditWalletId, CreditLedger.Type type, String description);
 }

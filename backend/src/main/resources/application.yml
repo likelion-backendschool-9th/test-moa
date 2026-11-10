@@ -89,3 +89,10 @@ chat:
     timeout: 30m
     heartbeat: 25s
     max-connections: 5
+
+# 가입 크레딧(이벤트 크레딧, #255). 가입 때 amount만큼 지급한다(0이면 지급하지 않음).
+# backfill=true 로 시작하면 이미 가입한 회원에게 한 번 지급한다. 지급한 뒤에는 끄고, 켜 둬도 이미 받은 회원은 건너뛴다
+credit:
+  signup-bonus:
+    amount: ${CREDIT_SIGNUP_BONUS_AMOUNT:3000}
+    backfill: ${CREDIT_SIGNUP_BONUS_BACKFILL:false}

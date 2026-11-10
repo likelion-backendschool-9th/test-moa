@@ -18,6 +18,7 @@
 | [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 | [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204) | 운영자 구독 부여·해제 API(+ 구독 결제 화면 프론트 연결) | [admin-subscription.md](admin-subscription.md) |
 | [#249](https://github.com/likelion-backendschool-9th/test-moa/issues/249) | 구독 현금 결제 PG 연동(카카오페이·토스페이 테스트) | [pg-checkout.md](pg-checkout.md) |
+| [#255](https://github.com/likelion-backendschool-9th/test-moa/issues/255) | 회원가입 때 가입 크레딧 지급(+ 기존 회원 일회성 지급) | [signup-credit.md](signup-credit.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 
@@ -134,7 +135,7 @@ erDiagram
 
 | 메서드 | 동작 | 호출하는 코드 |
 | --- | --- | --- |
-| `grantEvent` | `wallet.grantEvent` + 장부 EVENT | 아직 없음 |
+| `grantEvent` | `wallet.grantEvent` + 장부 EVENT | 가입 크레딧 `SignupCreditServiceImpl`(#255, 이메일·소셜 가입과 기존 회원 일회성 지급) |
 | `grantEarned` | `wallet.grantEarned` + 장부 EARNED | 아직 없음(보상 지급 이슈에서 만든다) |
 | `spendForSubscription` | `wallet.spendForSubscription` 후 `SpendResult`로 장부 행 | 구독 결제 `PaymentServiceImpl`(#71) |
 

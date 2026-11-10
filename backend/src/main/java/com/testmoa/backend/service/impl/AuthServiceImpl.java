@@ -20,6 +20,7 @@ import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.OAuthClient;
 import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
 import com.testmoa.backend.service.AuthService;
+import com.testmoa.backend.service.SignupCreditService;
 import com.testmoa.backend.service.SanctionChecker;
 import com.testmoa.backend.entity.enums.Restriction;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final OAuthClient oauthClient;
     private final SanctionChecker sanctionChecker;
+    private final SignupCreditService signupCreditService;
     private final Duration refreshTokenTtl;
 
     public AuthServiceImpl(UserRepository userRepository,
@@ -65,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
                            JwtProvider jwtProvider,
                            OAuthClient oauthClient,
                            SanctionChecker sanctionChecker,
+                           SignupCreditService signupCreditService,
                            @Value("${jwt.refresh-token-ttl}") Duration refreshTokenTtl) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
@@ -73,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
         this.jwtProvider = jwtProvider;
         this.oauthClient = oauthClient;
         this.sanctionChecker = sanctionChecker;
+        this.signupCreditService = signupCreditService;
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
@@ -101,6 +105,8 @@ public class AuthServiceImpl implements AuthService {
                 .provider(Provider.LOCAL)
                 .password(passwordEncoder.encode(request.password()))
                 .build());
+        // 가입과 같은 트랜잭션이라 지급이 실패하면 가입도 되돌아간다(#255)
+        signupCreditService.grant(user.getId());
     }
 
     /**
@@ -217,6 +223,7 @@ public class AuthServiceImpl implements AuthService {
                 .status(UserStatus.ACTIVE)
                 .build());
         saveSocialAccount(user, profile);
+        signupCreditService.grant(user.getId());
         return startSession(user);
     }
 

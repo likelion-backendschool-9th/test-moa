@@ -42,6 +42,9 @@ class AuthConcurrencyTest {
 
     @AfterEach
     void cleanUp() {
+        // 가입하면 지갑과 가입 크레딧 장부가 생긴다(#255)
+        jdbc.update("delete from credit_ledgers where credit_wallet_id in (select id from credit_wallets where user_id in (select id from users where email = ?))", email);
+        jdbc.update("delete from credit_wallets where user_id in (select id from users where email = ?)", email);
         jdbc.update("delete from refresh_tokens where user_id in (select id from users where email = ?)", email);
         jdbc.update("delete from accounts where user_id in (select id from users where email = ?)", email);
         jdbc.update("delete from users where email = ?", email);

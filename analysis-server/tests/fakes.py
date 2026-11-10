@@ -34,6 +34,7 @@ class FakeLLM:
     proposed_groups: list[ProposedGroup] | None = None
     group_fail_with: Exception | None = None
     overall_fail_with: Exception | None = None
+    praise_fail_with: Exception | None = None
     calls: list[str] = field(default_factory=list)
 
     async def group_reviews(
@@ -67,6 +68,8 @@ class FakeLLM:
 
     async def summarize_praise(self, context: ProjectContext, praises: Sequence[Feedback]) -> str:
         self.calls.append("praise")
+        if self.praise_fail_with:
+            raise self.praise_fail_with
         return f"칭찬 {len(praises)}건 요약"
 
     async def summarize_overall(

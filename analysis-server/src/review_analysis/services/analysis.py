@@ -139,6 +139,11 @@ class AnalysisService:
         ]
         if not praises:
             return None
-        return await self._llm.summarize_praise(
-            context, praises[: self._clustering.samples_per_group * 3]
-        )
+        try:
+            return await self._llm.summarize_praise(
+                context, praises[: self._clustering.samples_per_group * 3]
+            )
+        except LLMOutputError:
+            # 칭찬 요약만 이상하다고 묶은 결과까지 버리지 않는다. (API 장애는 그대로 올려 재시도)
+            logger.warning("praise_summary_fallback")
+            return None

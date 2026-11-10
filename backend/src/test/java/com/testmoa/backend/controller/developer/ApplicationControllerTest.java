@@ -70,12 +70,20 @@ class ApplicationControllerTest {
     }
 
     // 모집 마감을 지금부터 며칠 뒤로 둔다. 음수면 마감된 모집이다
+    // 구독 여부는 DB가 읽을 때 계산하는 값이라, 저장만 한 엔티티에는 아직 채워지지 않는다. 구독을 만든 뒤 다시 읽어 맞춘다
+    private void refreshSubscription(Recruitment recruitment, boolean subscription) {
+        if (!subscription) return;
+        em.flush();
+        em.refresh(recruitment);
+    }
+
     private Recruitment saveRecruitment(boolean subscription, SelectionMode selectionMode, int recruitDays) {
         Recruitment recruitment = Recruitment.builder().project(project).title("2차 모집")
                 .recruitDeadline(LocalDateTime.now().plusDays(recruitDays)).feedbackDeadline(LocalDateTime.now().plusDays(9))
                 .selectionMode(selectionMode).build();
         if (subscription) new ChatFixtures(em).subscribe(developer);
         em.persist(recruitment);
+        refreshSubscription(recruitment, subscription);
         return recruitment;
     }
 

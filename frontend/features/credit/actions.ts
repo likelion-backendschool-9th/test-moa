@@ -10,6 +10,7 @@ import {
   submitServerWithdrawal,
 } from "@/features/credit/api";
 import { withdrawalsHref } from "@/features/credit/paths";
+import { withdrawalErrorsFromServer } from "@/features/credit/withdrawal-errors";
 import {
   BANKS,
   cashableCredits,
@@ -40,26 +41,6 @@ export type WithdrawalFormState =
 
 const ACCOUNT_PATTERN = /^\d{10,14}$/;
 
-/** 서버 요청 필드 이름 → 화면 칸 */
-const SERVER_FIELD: Record<string, WithdrawalField> = {
-  amount: "amount",
-  bank: "bank",
-  accountNumber: "account",
-  accountHolder: "holder",
-};
-
-function serverErrors({ message, fields }: { message: string; fields?: Record<string, string> }) {
-  const errors: Partial<Record<WithdrawalField | "form", string>> = {};
-  for (const [name, text] of Object.entries(fields ?? {})) {
-    const field = SERVER_FIELD[name];
-    if (field) errors[field] = text;
-  }
-  /* 화면 칸에 맞는 서버 칸이 없거나, 맞지 않는 칸이 섞여 있으면 그 문구가 어디에도 안 보이지 않게 폼 위쪽에도 보인다 */
-  const unmatched = Object.keys(fields ?? {}).some((name) => !SERVER_FIELD[name]);
-  if (Object.keys(errors).length === 0 || unmatched) errors.form = message;
-  return errors;
-}
-
 export async function requestWithdrawal(_prev: WithdrawalFormState, formData: FormData): Promise<WithdrawalFormState> {
   await requireMember(PATH);
   const cashable = cashableCredits(await getCreditBalance(PATH));
@@ -86,7 +67,7 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
   if (isBackendAuth) {
     /* 화면의 검사를 지나도 서버가 거절할 수 있다(다른 창에서 잔액이 바뀐 경우 등). 칸별 문구가 있으면 그 칸에, 아니면 폼 위에 보인다 */
     const result = await submitServerWithdrawal({ amount, bank, accountNumber: account, accountHolder: holder });
-    if (!result.ok) return { status: "error", errors: serverErrors(result) };
+    if (!result.ok) return { status: "error", errors: withdrawalErrorsFromServer(result) };
   } else {
     await saveWithdrawalRequest({ amount, bank, account });
   }

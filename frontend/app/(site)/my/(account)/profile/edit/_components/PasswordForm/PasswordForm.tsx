@@ -13,8 +13,11 @@ import styles from "./PasswordForm.module.css";
 
 const initialState: FormState<PasswordField> = { status: "idle" };
 
-/** 비밀번호 변경. 오류가 나면 입력이 남고, 성공하면 세 칸을 비운다 */
-export function PasswordForm() {
+/**
+ * 비밀번호 변경. 오류가 나면 입력이 남고, 성공하면 칸을 비운다.
+ * hasPassword가 false(소셜로만 가입)면 현재 비밀번호 칸 없이 "비밀번호 만들기"로 보인다
+ */
+export function PasswordForm({ hasPassword = true }: { hasPassword?: boolean }) {
   const [state, formAction, pending] = useActionState(changePassword, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -35,23 +38,28 @@ export function PasswordForm() {
     <SettingsSection aria-labelledby="password-form-heading">
       <div className={styles.box}>
         <AccountCardTitle id="password-form-heading">
-          비밀번호 변경
+          {hasPassword ? "비밀번호 변경" : "비밀번호 만들기"}
         </AccountCardTitle>
-        <p className={styles.text}>현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요.</p>
+        <p className={styles.text}>
+          {hasPassword ? "현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요." : "비밀번호를 만들면 소셜 계정 없이 이메일로도 로그인할 수 있어요."}
+        </p>
       </div>
       <SettingsBody>
         {state.status === "success" && <FormMessage status="success" message={state.message} />}
+        {errors.form && <FormMessage status="error" message={errors.form} />}
         {/* JS가 아직 없을 때도 비밀번호가 주소(GET)로 나가지 않게 서버 액션으로 POST 제출한다. JS가 있으면 handleSubmit이 대신 제출한다 */}
         <form ref={formRef} action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
           <div className={styles.box2}>
-            <FormField
-              id="password-current"
-              name="current"
-              type="password"
-              label="현재 비밀번호"
-              autoComplete="current-password"
-              error={errors.current}
-            />
+            {hasPassword && (
+              <FormField
+                id="password-current"
+                name="current"
+                type="password"
+                label="현재 비밀번호"
+                autoComplete="current-password"
+                error={errors.current}
+              />
+            )}
             <FormField
               id="password-next"
               name="next"
@@ -73,7 +81,7 @@ export function PasswordForm() {
           <div className={styles.box3}>
             {/* 주 버튼은 기본 정보 "저장" 하나다 (DESIGN.md The One Green Rule) */}
           <Button type="submit" variant="secondary" disabled={pending} className={styles.button}>
-              {pending ? "바꾸는 중…" : "비밀번호 변경"}
+              {pending ? "저장하는 중…" : hasPassword ? "비밀번호 변경" : "비밀번호 만들기"}
             </Button>
           </div>
         </form>

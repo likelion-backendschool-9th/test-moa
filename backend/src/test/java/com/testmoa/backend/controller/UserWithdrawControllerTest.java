@@ -158,7 +158,9 @@ class UserWithdrawControllerTest {
 
         ResultActions pending = login().andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error.code").value("WITHDRAWAL_PENDING"))
-                .andExpect(jsonPath("$.error.fields.purgeAt").exists());
+                // 시간대가 붙어 있어 브라우저가 날짜를 어긋나게 읽지 않는다 (예: 2026-12-10T01:20:00.123456Z)
+                .andExpect(jsonPath("$.error.fields.purgeAt").value(org.hamcrest.Matchers.matchesPattern(".*(Z|[+-]\\d{2}:\\d{2})$")))
+                .andExpect(jsonPath("$.error.fields.nickname").value("탈퇴" + suffix));
         String restoreToken = field(pending, "$.error.fields.restoreToken");
 
         // 되돌리기 토큰은 access 토큰으로 쓸 수 없다

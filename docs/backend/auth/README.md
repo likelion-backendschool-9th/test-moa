@@ -232,7 +232,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 - API
   - `DELETE /api/users/me` `{password}` 또는 `{confirmText: "탈퇴합니다"}`: 탈퇴 신청. 비밀번호가 있으면 비밀번호, 소셜로만 가입했으면 확인 문구를 확인한다. 모든 기기의 로그인(refresh 토큰)을 지운다
   - `POST /api/auth/restore` `{restoreToken}`: 탈퇴 되돌리기. 로그인 토큰을 준다
-- 되돌리기 흐름: 유예 회원이 이메일·소셜 로그인에 성공하면 403 `WITHDRAWAL_PENDING`과 `error.fields.restoreToken`(10분), `error.fields.purgeAt`(파기 예정 일시)을 받는다. 프론트가 "되돌릴까요?"를 묻고 `restoreToken`으로 되돌린다
+- 되돌리기 흐름: 유예 회원이 이메일·소셜 로그인에 성공하면 403 `WITHDRAWAL_PENDING`과 `error.fields.restoreToken`(10분), `error.fields.purgeAt`(파기 예정 일시, 시간대 포함 ISO 8601), `error.fields.nickname`을 받는다. 프론트가 "닉네임 님의 계정"으로 되돌릴지 묻고 `restoreToken`으로 되돌린다
   - 이슈의 `POST /api/users/me/restore` 대신 이 주소로 했다. 유예 회원은 로그인 전이라 access 토큰이 없다
   - 되돌리기 토큰은 회원 id를 `sub`가 아닌 `uid`에 넣어 access 토큰으로 쓸 수 없다
   - 토큰에 탈퇴 신청 일시(`wat`)를 넣어 그 탈퇴에만 쓴다. 되돌린 뒤 다시 탈퇴하면 예전 토큰은 401 `INVALID_RESTORE_TOKEN`
@@ -263,7 +263,7 @@ alter table users add constraint users_status_check
 - 409 `CASHOUT_IN_PROGRESS`, 상태는 그대로
 
 #84-S17 유예 기간에 로그인하면 되돌리기 안내를 받고, 되돌리면 그대로 다시 쓴다 [테스트]
-- 로그인은 403 `WITHDRAWAL_PENDING`과 `restoreToken`·`purgeAt`. 되돌리면 `ACTIVE`, `withdrawn_at`은 비고 로그인 토큰을 받는다
+- 로그인은 403 `WITHDRAWAL_PENDING`과 `restoreToken`·`purgeAt`·`nickname`. 되돌리면 `ACTIVE`, `withdrawn_at`은 비고 로그인 토큰을 받는다
 - 되돌리기 토큰을 Bearer로 쓰면 401, 틀린 토큰과 이미 되돌린 토큰은 401 `INVALID_RESTORE_TOKEN`
 
 #84-S18 유예 회원은 소셜 로그인에서도 되돌리기 안내를 받는다 [테스트]

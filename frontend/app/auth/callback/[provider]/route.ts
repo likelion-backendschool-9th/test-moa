@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
-import { callbackUrl, type OAuthLogin, oauthErrorKey, saveSignup, takeState } from "@/features/auth/oauth";
+import { callbackUrl, holdRestore, type OAuthLogin, oauthErrorKey, saveSignup, takeState } from "@/features/auth/oauth";
 import { withNext } from "@/features/auth/types";
 import { getMyUserId } from "@/features/member/api";
 import { backendFetch, isBackendAuth, saveTokens } from "@/lib/backend";
@@ -44,6 +44,8 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/auth/
     /* 백엔드가 제공자에게 2~3번(한 번에 5초까지) 묻는다. 5초에 끊으면 백엔드는 연동했는데 화면은 실패가 될 수 있다 */
     timeoutMs: 20_000,
   });
+  // 탈퇴 유예 계정은 이메일 로그인과 같이 되돌릴지 묻는다(#84)
+  if (!result.ok && (await holdRestore(result, next))) redirect("/login?restore=1");
   if (!result.ok) redirect(withNext("/login", next, { error: oauthErrorKey(result.code) }));
 
   if (result.data.signupRequired) {

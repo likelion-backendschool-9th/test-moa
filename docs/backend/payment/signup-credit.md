@@ -56,7 +56,7 @@
 - Given `AUTH_MODE=backend`, 화면으로 새로 가입한 회원
 - Then  `/my/credits`에 이벤트 크레딧 3,000과 내역 "가입 크레딧 +3,000"이 보인다
 - Then  `/my/subscription/checkout`에서 크레딧 결제는 가격(9,000)보다 6,000 모자라 막히고, 현금(카카오페이·토스페이)은 고를 수 있다
-- 가입 크레딧이 가격 이상일 때의 크레딧 결제는 이 이슈가 바꾸지 않는 #71의 동작이고 그 테스트가 확인한다
+- 가입 크레딧이 가격 이상일 때의 크레딧 결제(이벤트 크레딧부터 차감되고 장부와 잔액이 맞는다)는 이 이슈가 바꾸지 않는 동작이라 기존 테스트 `PaymentControllerTest`의 #71-S3과 `CreditWalletTest`의 #45-S9가 확인한다
 
 #255-S7 일회성 실행기가 가입 크레딧을 받지 않은 기존 회원에게 지급한다 [테스트]
 - Given 지갑이 없는 `USER`, 구독 결제로 지갑이 있고 `earnedBalance` 500인 `USER`, 정지(`SUSPENDED`) `USER`, `ADMIN`, 탈퇴 유예(`WITHDRAWN`) `USER`, 파기(`DELETED`) `USER`

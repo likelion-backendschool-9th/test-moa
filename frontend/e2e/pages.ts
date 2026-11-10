@@ -39,5 +39,6 @@ export const PAGES: [path: string, role: Role][] = [
   ["/admin/withdrawals?open=withdrawal-1", "admin"],
   ["/admin/users", "admin"],
   ["/admin/users/user-1", "admin"],
-  ["/admin/subscriptions", "admin"],
+  ["/admin/plans", "admin"],
+  ["/admin/plans?tab=subscriptions", "admin"],
 ];

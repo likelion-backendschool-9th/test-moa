@@ -5,13 +5,15 @@ import {
   canPayForSubscription,
   getSubscriptionOverview,
   grantMemberSubscription,
+  registerPlanVersion,
+  saveFreePlan,
   requestCashPaymentReady,
   requestSubscriptionPayment,
   revokeMemberSubscription,
   saveSubscriptionPayment,
 } from "@/features/subscription/api";
 import { completePath, isMobileUserAgent, isPgProvider, kakaoRedirectUrl, tossWindowFrom, type TossWindow } from "@/features/subscription/pg";
-import { parseMemberEmail, renewedExpiry } from "@/features/subscription/types";
+import { parseBenefits, parseMemberEmail, PLAN_NAME_MAX_LENGTH, renewedExpiry } from "@/features/subscription/types";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -97,6 +99,46 @@ export async function changeMemberSubscription(_prev: MemberSubscriptionFormStat
   const result = intent === "grant" ? await grantMemberSubscription(email) : await revokeMemberSubscription(email);
   if (!result.ok) return { status: "error", error: result.message };
   /* 같은 주소의 검색 결과(구독 상태)가 새 값으로 다시 그려지게 한다 */
-  revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/plans");
   return { status: "done", message: intent === "grant" ? "구독했어요" : "구독을 뺐어요" };
+}
+
+/* ---------- 운영자 플랜 혜택 편집 (#257) ---------- */
+
+export type PlanFormState = { status: "idle" } | { status: "done"; message: string } | { status: "error"; error: string };
+
+/* 편집하는 사이 운영자 세션이 끝났으면 저장 API의 assertAdmin이 예외를 던져 오류 화면이 된다. 먼저 보고 패널 오류로 돌려줘 입력한 내용이 남게 한다 */
+const ADMIN_SESSION_LOST: PlanFormState = { status: "error", error: "운영자 로그인을 확인하지 못했어요. 다시 로그인한 뒤 저장해 주세요" };
+
+async function isAdminSession() {
+  return (await getSession()).role === "admin";
+}
+
+/** 무료 플랜의 이름과 혜택 저장. 혜택은 한 줄에 하나다 */
+export async function saveFreePlanTerms(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
+  if (!(await isAdminSession())) return ADMIN_SESSION_LOST;
+  const name = formData.get("name")?.toString().trim() ?? "";
+  if (!name) return { status: "error", error: "무료 플랜 이름을 입력해 주세요" };
+  if (name.length > PLAN_NAME_MAX_LENGTH) return { status: "error", error: `무료 플랜 이름은 ${PLAN_NAME_MAX_LENGTH}자까지 쓸 수 있어요` };
+  const parsed = parseBenefits(formData.get("benefits")?.toString() ?? "");
+  if (!parsed.ok) return { status: "error", error: parsed.message };
+
+  const result = await saveFreePlan(name, parsed.benefits);
+  if (!result.ok) return { status: "error", error: result.message };
+  /* 구독 소개와 마이페이지가 새 혜택으로 다시 그려지게 한다 */
+  revalidatePath("/", "layout");
+  return { status: "done", message: "무료 플랜을 저장했어요" };
+}
+
+/** 구독 플랜 혜택 저장. 가격·기간은 저장 시점의 서버 값을 쓴다(registerPlanVersion) */
+export async function registerPlanTerms(_prev: PlanFormState, formData: FormData): Promise<PlanFormState> {
+  if (!(await isAdminSession())) return ADMIN_SESSION_LOST;
+  const planId = formData.get("planId")?.toString() ?? "";
+  const parsed = parseBenefits(formData.get("benefits")?.toString() ?? "");
+  if (!parsed.ok) return { status: "error", error: parsed.message };
+
+  const result = await registerPlanVersion(planId, parsed.benefits);
+  if (!result.ok) return { status: "error", error: result.message };
+  revalidatePath("/", "layout");
+  return { status: "done", message: "새 버전으로 등록했어요" };
 }

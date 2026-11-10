@@ -1,6 +1,6 @@
 import Form from "next/form";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
-import { MemberSubscriptionActions } from "@/app/(site)/admin/subscriptions/_components/MemberSubscriptionActions/MemberSubscriptionActions";
+import { MemberSubscriptionActions } from "@/app/(site)/admin/plans/_components/MemberSubscriptionActions/MemberSubscriptionActions";
 import { Button } from "@/components/ui/Button/Button";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { findMemberSubscription } from "@/features/subscription/api";
@@ -9,12 +9,13 @@ import { formatDate } from "@/lib/format";
 import styles from "./MemberSubscription.module.css";
 
 /**
- * 이메일 검색. GET 양식이라 검색어가 주소(email)에 남고, next/form이 페이지를 새로 받지 않고 이동한다.
+ * 이메일 검색. GET 양식이라 검색어가 주소(tab=subscriptions&email)에 남고, next/form이 페이지를 새로 받지 않고 이동한다.
  * 같은 페이지 이동에서는 입력칸이 그대로 남아 defaultValue가 다시 적용되지 않으므로, 주소의 검색어가 바뀌면 key로 새로 그린다.
  */
 export function MemberSearch({ email }: { email: string }) {
   return (
-    <Form action="/admin/subscriptions" role="search" className={styles.search}>
+    <Form action="/admin/plans" role="search" className={styles.search}>
+      <input type="hidden" name="tab" value="subscriptions" />
       <input
         key={email}
         type="email"

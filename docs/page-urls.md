@@ -84,8 +84,10 @@
 | 처리 완료 신고 탭 | `/admin/reports?tab=done` | 후보 |
 | 신고 대상 종류 필터 | `/admin/reports?tab=…&target=feedback\|recruitment\|user` | 후보 |
 | 신고 상세 | `/admin/reports/:reportKey` | 후보 |
-| 구독 관리 | `/admin/subscriptions` | 후보 |
-| 구독 관리 회원 검색 | `/admin/subscriptions?email=:email` | 후보 |
+| 플랜 관리(혜택 편집) | `/admin/plans` | 후보 |
+| 회원 구독 관리(탭) | `/admin/plans?tab=subscriptions` | 후보 |
+| 회원 구독 검색 | `/admin/plans?tab=subscriptions&email=:email` | 후보 |
+| (예전 주소) 구독 관리 | `/admin/subscriptions` → 회원 구독 탭으로 넘어감 | 후보 |
 | 출금 요청 관리 | `/admin/withdrawals` | 후보 |
 | 처리 완료 출금 탭 | `/admin/withdrawals?tab=done` | 후보 |
 | 출금 요청 모달 | `/admin/withdrawals?open=:withdrawalKey` | 후보 |

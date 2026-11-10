@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { renewedExpiry, type Subscription, type SubscriptionPlan, usesPlan } from "@/features/subscription/types";
+import { parseBenefits, renewedExpiry, type Subscription, type SubscriptionPlan, usesPlan } from "@/features/subscription/types";
 
 test("S539 새 구독·만료 구독은 현재부터, 유효한 구독은 만료일부터 연장한다", () => {
   const now = new Date("2026-11-08T00:00:00Z");
@@ -23,4 +23,14 @@ test("#203-S15 구독이 쓰는 상품은 서버가 준 이름으로, 목업은 
   expect(usesPlan({ status: "active", planId: "basic", expiresAt }, plan)).toBe(false);
   expect(usesPlan({ status: "none" }, plan)).toBe(false);
   expect(usesPlan(null, plan)).toBe(false);
+});
+
+test("#257-S6 혜택 입력은 한 줄에 하나로 자르고 서버 상한을 넘으면 거절한다", () => {
+  expect(parseBenefits("  선착순 자동 확정 \r\n\n기본 보상\n")).toEqual({ ok: true, benefits: ["선착순 자동 확정", "기본 보상"] });
+  expect(parseBenefits("")).toEqual({ ok: true, benefits: [] });
+  expect(parseBenefits(Array.from({ length: 10 }, (_, i) => `혜택${i}`).join("\n")).ok).toBe(true);
+  expect(parseBenefits(Array.from({ length: 11 }, (_, i) => `혜택${i}`).join("\n"))).toEqual({ ok: false, message: "혜택은 10개까지 쓸 수 있어요" });
+  expect(parseBenefits("가".repeat(100)).ok).toBe(true);
+  expect(parseBenefits("가".repeat(101))).toEqual({ ok: false, message: "혜택 문구는 100자까지 쓸 수 있어요" });
+  expect(parseBenefits("분석, 채팅")).toEqual({ ok: false, message: "혜택 문구에는 쉼표를 쓸 수 없어요" });
 });

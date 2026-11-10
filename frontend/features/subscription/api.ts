@@ -62,16 +62,26 @@ type PlanResponse = {
 
 /** 지금 파는 구독 플랜. 로그인이 필요 없어 토큰을 붙이지 않는다(로그아웃·정지로 막힌 회원도 소개를 읽는다) */
 async function readPlans(): Promise<SubscriptionPlan[]> {
-  const result = await backendFetch<PlanResponse[]>("/api/v1/plans", { withToken: false });
+  const result = await fetchPlans();
   if (!result.ok) throw new Error(result.message);
-  return result.data.map(({ id, tier, periodDays, cashPrice, creditPrice, benefits }) => ({
-    id: String(id),
-    name: tier,
-    periodDays,
-    cashPrice,
-    creditPrice,
-    benefits,
-  }));
+  return result.plans;
+}
+
+/** readPlans와 같지만 실패하면 예외 대신 이유를 돌려준다. 저장 액션이 그 이유를 패널에 보여 준다 */
+async function fetchPlans(): Promise<{ ok: true; plans: SubscriptionPlan[] } | { ok: false; message: string }> {
+  const result = await backendFetch<PlanResponse[]>("/api/v1/plans", { withToken: false });
+  if (!result.ok) return { ok: false, message: result.message };
+  return {
+    ok: true,
+    plans: result.data.map(({ id, tier, periodDays, cashPrice, creditPrice, benefits }) => ({
+      id: String(id),
+      name: tier,
+      periodDays,
+      cashPrice,
+      creditPrice,
+      benefits,
+    })),
+  };
 }
 
 /** 무료 플랜의 이름과 혜택. 서버에 값이 없으면 이름 FREE와 빈 혜택이 온다 */
@@ -274,4 +284,44 @@ export async function revokeMemberSubscription(email: string): Promise<MemberSub
     method: "DELETE",
   });
   return result.ok ? { ok: true, member: toMemberSubscription(result.data) } : { ok: false, message: result.message };
+}
+
+/* ---------- 운영자 플랜 혜택 편집 (#257) ---------- */
+
+export type AdminPlans = { freePlan: FreePlan; plans: SubscriptionPlan[] };
+
+/** 편집 화면이 채울 현재 값. 무료 플랜과 지금 파는 구독 플랜이다 */
+export async function getAdminPlans(): Promise<AdminPlans> {
+  await assertAdmin();
+  await connection();
+  const [freePlan, plans] = await Promise.all([readFreePlan(), readPlans()]);
+  return { freePlan, plans };
+}
+
+export type PlanSave = { ok: true } | { ok: false; message: string };
+
+/** 무료 플랜의 이름과 혜택을 저장한다(서버가 없으면 만들고 있으면 고친다) */
+export async function saveFreePlan(name: string, benefits: string[]): Promise<PlanSave> {
+  await assertAdmin();
+  const result = await backendFetch<unknown>("/api/v1/admin/plans/free", { method: "PUT", body: { tier: name, benefits } });
+  return result.ok ? { ok: true } : { ok: false, message: result.message };
+}
+
+/**
+ * 혜택을 고친 구독 플랜을 새 버전으로 등록한다. 편집 중에 판매 플랜이 바뀌었을 수 있어서 가격·기간은 양식 값이 아니라
+ * 저장 시점의 서버 값(planId로 찾은 플랜)을 그대로 보낸다. 찾지 못하면 화면이 오래된 것이라 저장하지 않는다.
+ * 서버가 version을 올린 새 행을 만들어서, 이미 구독한 회원의 조건은 그대로 남는다
+ */
+export async function registerPlanVersion(planId: string, benefits: string[]): Promise<PlanSave> {
+  await assertAdmin();
+  const current = await fetchPlans();
+  if (!current.ok) return { ok: false, message: current.message };
+  const plan = current.plans.find((candidate) => candidate.id === planId);
+  if (!plan) return { ok: false, message: "지금 파는 플랜이 바뀌었어요. 화면을 새로고침해 주세요" };
+  const { name, cashPrice, creditPrice, periodDays } = plan;
+  const result = await backendFetch<unknown>("/api/v1/admin/plans", {
+    method: "POST",
+    body: { tier: name, cashPrice, creditPrice, periodDays, benefits },
+  });
+  return result.ok ? { ok: true } : { ok: false, message: result.message };
 }

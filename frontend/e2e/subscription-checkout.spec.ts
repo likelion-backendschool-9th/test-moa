@@ -98,3 +98,27 @@ test.describe("#204-R6 결제 화면 배치", () => {
     }
   });
 });
+
+test.describe("#249 결제창에서 돌아온 안내", () => {
+  test("#249-S28 취소·실패로 돌아오면 안내가 카드 위쪽에 눈에 띄게 보이고 모르는 값은 보이지 않는다", async ({ page, context }) => {
+    await setDemo(context, { role: "developer" });
+    const cases = [
+      ["cancel", "결제를 취소했어요"],
+      ["fail", "결제하지 못했어요. 다시 시도해 주세요"],
+    ] as const;
+    for (const [pg, message] of cases) {
+      await page.goto(`/my/subscription/checkout?pg=${pg}`);
+      const alert = checkout(page).getByRole("alert");
+      await expect(alert).toHaveText(message);
+      /* 상품 고르는 칸보다 위에 있고, 버튼 옆의 작은 글씨(14px)가 아니라 본문 크기 이상이다 */
+      const alertBox = await alert.boundingBox();
+      const productBox = await checkout(page).getByRole("group", { name: "상품" }).boundingBox();
+      if (!alertBox || !productBox) throw new Error("안내 위치를 읽지 못했어요");
+      expect(alertBox.y).toBeLessThan(productBox.y);
+      expect(await alert.evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
+    }
+    await page.goto("/my/subscription/checkout?pg=approved");
+    await expect(checkout(page)).toBeVisible();
+    await expect(checkout(page).getByRole("alert")).toHaveCount(0);
+  });
+});

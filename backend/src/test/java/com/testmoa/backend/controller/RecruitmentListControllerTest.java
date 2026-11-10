@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+import com.testmoa.backend.support.ChatFixtures;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.Project;
@@ -46,6 +47,7 @@ class RecruitmentListControllerTest {
     @Autowired EntityManager em;
 
     private User developer;
+    private User subscribed;
     private String tag;
 
     @BeforeEach
@@ -57,14 +59,27 @@ class RecruitmentListControllerTest {
         tag = "tag" + suffix;
     }
 
+    // 구독 여부는 모집이 아니라 작성자 기준이라, 구독 모집은 구독 중인 다른 개발자의 프로젝트로 만든다
+    private User subscribedDeveloper() {
+        if (subscribed == null) {
+            String suffix = UUID.randomUUID().toString().substring(0, 8);
+            subscribed = User.builder().name("구독자").nickname("구독" + suffix).email(suffix + "s@example.com")
+                    .role(Role.USER).status(UserStatus.ACTIVE).build();
+            em.persist(subscribed);
+            new ChatFixtures(em).subscribe(subscribed);
+        }
+        return subscribed;
+    }
+
     private Recruitment save(String projectName, String title, LocalDateTime recruitDeadline, boolean subscription) {
-        Project project = Project.builder().user(developer).title(projectName).description("독서 기록 서비스")
+        User owner = subscription ? subscribedDeveloper() : developer;
+        Project project = Project.builder().user(owner).title(projectName).description("독서 기록 서비스")
                 .imageUrl("https://img.test/" + projectName + ".png").build();
         em.persist(project);
         Recruitment recruitment = Recruitment.builder().project(project).title(title).description("써 봐 주세요")
                 .conditions("누구나").accessUrl("https://app.example.com")
                 .recruitDeadline(recruitDeadline).feedbackDeadline(recruitDeadline.plusDays(7))
-                .selectionMode(SelectionMode.FIRST_COME).subscription(subscription).build();
+                .selectionMode(SelectionMode.FIRST_COME).build();
         em.persist(recruitment);
         return recruitment;
     }

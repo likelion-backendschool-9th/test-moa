@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+import com.testmoa.backend.support.ChatFixtures;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
@@ -63,11 +64,20 @@ class ProjectDashboardControllerTest {
         return saved;
     }
 
+    // 구독 여부는 DB가 읽을 때 계산하는 값이라, 저장만 한 엔티티에는 아직 채워지지 않는다. 구독을 만든 뒤 다시 읽어 맞춘다
+    private void refreshSubscription(Recruitment recruitment, boolean subscription) {
+        if (!subscription) return;
+        em.flush();
+        em.refresh(recruitment);
+    }
+
     private Recruitment save(Project owner, boolean subscription, LocalDateTime recruitDeadline, LocalDateTime feedbackDeadline) {
         Recruitment recruitment = Recruitment.builder().project(owner).title("모집")
                 .recruitDeadline(recruitDeadline).feedbackDeadline(feedbackDeadline)
-                .selectionMode(SelectionMode.MANUAL).subscription(subscription).build();
+                .selectionMode(SelectionMode.MANUAL).build();
+        if (subscription) new ChatFixtures(em).subscribe(owner.getUser());
         em.persist(recruitment);
+        refreshSubscription(recruitment, subscription);
         return recruitment;
     }
 

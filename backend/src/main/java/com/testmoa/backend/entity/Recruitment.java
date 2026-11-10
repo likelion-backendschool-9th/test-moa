@@ -6,7 +6,7 @@ import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -61,9 +61,11 @@ public class Recruitment {
     @Column(nullable = false)
     private SelectionMode selectionMode;
 
-    // 구독 모집 여부. 작성할 때 작성자의 구독 여부를 저장한다(#113). 행이 있는 테이블에 컬럼을 더할 수 있게 기본값을 둔다
-    @ColumnDefault("false")
-    @Column(name = "is_subscription", nullable = false)
+    // 구독 모집 여부. 저장하지 않고 읽을 때마다 프로젝트 작성자의 지금 구독으로 계산한다.
+    // 구독을 시작하면 이전 모집도 구독 모집이 되고, 해지·만료되면 다시 일반 모집이 된다.
+    // 판단 기준은 SubscriptionChecker와 같다(ACTIVE이고 start_at <= 지금 < end_at). 한쪽을 바꾸면 다른 쪽도 바꾼다
+    @Formula("exists (select 1 from subscriptions s join projects p on p.user_id = s.user_id"
+            + " where p.id = project_id and s.status = 'ACTIVE' and s.start_at <= localtimestamp and s.end_at > localtimestamp)")
     private boolean subscription;
 
     // 모집글 버전. 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고 수정해도 그대로다(#177). 작성 서비스가 정한다
@@ -117,7 +119,6 @@ public class Recruitment {
      * @param recruitDeadline   모집 마감 일시
      * @param feedbackDeadline  피드백 제출 마감 일시
      * @param selectionMode     테스터 선택 방식
-     * @param subscription      구독 모집 여부
      * @param version           프로젝트 안 모집글 버전. 비우면 1
      *
      * 상태는 RECRUITING, 분석 상태는 NONE으로 시작한다.
@@ -132,7 +133,6 @@ public class Recruitment {
             LocalDateTime recruitDeadline,
             LocalDateTime feedbackDeadline,
             SelectionMode selectionMode,
-            boolean subscription,
             Integer version
     ){
         this.project = project;
@@ -143,7 +143,6 @@ public class Recruitment {
         this.recruitDeadline = recruitDeadline;
         this.feedbackDeadline = feedbackDeadline;
         this.selectionMode = selectionMode;
-        this.subscription = subscription;
         this.status = RecruitmentStatus.RECRUITING;
         this.version = version == null ? 1 : version;
         this.analysisStatus = AnalysisStatus.NONE;

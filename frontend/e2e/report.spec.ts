@@ -20,6 +20,11 @@ test.describe("#85-R6 모집 글·채팅방 신고", () => {
     /* 사유 없이 보내면 칸 아래에 알린다 */
     await dialog.getByRole("button", { name: "신고하기" }).click();
     await expect(dialog.getByText("신고 사유를 적어 주세요")).toBeVisible();
+    /* 서버가 거절해도 적은 내용은 지워지지 않는다(공백만 적어 거절되게 한다) */
+    await dialog.getByRole("textbox", { name: "신고 사유" }).fill("   ");
+    await dialog.getByRole("button", { name: "신고하기" }).click();
+    await expect(dialog.getByText("신고 사유를 적어 주세요")).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "신고 사유" })).toHaveValue("   ");
 
     await dialog.getByRole("textbox", { name: "신고 사유" }).fill("모집 조건과 실제 테스트 내용이 달라요");
     await dialog.getByRole("button", { name: "신고하기" }).click();

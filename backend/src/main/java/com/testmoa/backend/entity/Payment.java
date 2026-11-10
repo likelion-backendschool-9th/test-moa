@@ -1,5 +1,6 @@
 package com.testmoa.backend.entity;
 
+import com.testmoa.backend.entity.enums.PaymentProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -39,6 +40,14 @@ public class Payment {
     @Column(nullable = false)
     private Method method;
 
+    // 현금 결제를 맡은 결제 대행사. 크레딧 결제와 PG 연동 전의 현금 결제는 null이다(기존 행이 있어 null을 허용한다)
+    @Enumerated(EnumType.STRING)
+    private PaymentProvider provider;
+
+    // 결제 대행사의 거래 식별자(카카오페이 tid, 토스 paymentKey). 크레딧 결제는 null이다
+    @Column(length = 200)
+    private String pgTransactionId;
+
     // 결제 금액
     @Column(nullable = false)
     private Integer amount;
@@ -67,6 +76,8 @@ public class Payment {
      *
      * @param subscription  이 결제로 산 이용 기간(구독)
      * @param method        결제 방식
+     * @param provider      현금 결제를 맡은 결제 대행사(크레딧이면 null)
+     * @param pgTransactionId 결제 대행사의 거래 식별자(크레딧이면 null)
      * @param amount        결제 금액
      * @param paidAt        결제 일시
      *
@@ -76,11 +87,15 @@ public class Payment {
     public Payment(
             Subscription subscription,
             Method method,
+            PaymentProvider provider,
+            String pgTransactionId,
             Integer amount,
             LocalDateTime paidAt
     ){
         this.subscription = subscription;
         this.method = method;
+        this.provider = provider;
+        this.pgTransactionId = pgTransactionId;
         this.amount = amount;
         this.paidAt = paidAt;
         this.status = Status.COMPLETED;

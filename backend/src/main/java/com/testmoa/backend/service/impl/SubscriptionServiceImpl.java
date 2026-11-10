@@ -9,6 +9,7 @@ import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.global.exception.BusinessException;
+import com.testmoa.backend.global.client.pg.PaymentGateways;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.repository.CreditWalletRepository;
@@ -38,17 +39,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final CreditWalletRepository creditWalletRepository;
     private final PlanRepository planRepository;
+    private final PaymentGateways paymentGateways;
 
     public SubscriptionServiceImpl(
             UserRepository userRepository,
             SubscriptionRepository subscriptionRepository,
             CreditWalletRepository creditWalletRepository,
-            PlanRepository planRepository
+            PlanRepository planRepository,
+            PaymentGateways paymentGateways
     ) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.creditWalletRepository = creditWalletRepository;
         this.planRepository = planRepository;
+        this.paymentGateways = paymentGateways;
     }
 
     @Override
@@ -141,7 +145,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 payable,
                 status.active(),
                 status.endAt(),
-                new CheckoutResponse.Period(startAt, startAt.plusDays(plan.getPeriodDays()))
+                new CheckoutResponse.Period(startAt, startAt.plusDays(plan.getPeriodDays())),
+                paymentGateways.available()
         );
     }
 

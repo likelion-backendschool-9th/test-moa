@@ -16,6 +16,8 @@ import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.service.ApplicationService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import com.testmoa.backend.service.RewardPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private static final List<RegisterStatus> BLOCKING = List.of(RegisterStatus.APPLIED, RegisterStatus.CONFIRMED, RegisterStatus.REJECTED);
 
     private final RecruitmentRepository recruitmentRepository;
+    private final SanctionChecker sanctionChecker;
     private final RegisterRepository registerRepository;
     private final UserRepository userRepository;
     private final FeedbackRepository feedbackRepository;
@@ -40,6 +43,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional
     public ApplicationResponse apply(Long userId, Long recruitmentId) {
+        sanctionChecker.require(userId, Restriction.APPLY);
         /* 모집글 행을 잠가 취소(#116)와 겹치지 않고, 같은 회원이 두 번 눌러도 두 번째는 첫 지원을 본다 */
         Recruitment recruitment = recruitmentRepository.findForApplyById(recruitmentId)
                 .filter(item -> item.getStatus() != RecruitmentStatus.CANCELLED)

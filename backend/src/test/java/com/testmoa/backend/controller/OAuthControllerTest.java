@@ -241,7 +241,7 @@ class OAuthControllerTest {
         // 가입 토큰을 로그인 토큰처럼 쓰면 401
         me(signupToken).andExpect(status().isUnauthorized());
         // 서명을 바꾸면 401
-        oauthSignup(signupToken.substring(0, signupToken.length() - 2) + "xx", "김소셜")
+        oauthSignup(tamper(signupToken), "김소셜")
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("INVALID_SIGNUP_TOKEN"));
         // 로그인 토큰을 가입 토큰으로 쓰면 401
@@ -276,5 +276,11 @@ class OAuthControllerTest {
                 .startsWith("https://accounts.google.com/o/oauth2/v2/auth?")
                 .contains("client_id=google-id", "scope=openid%20email%20profile")
                 .doesNotContain("secret");
+    }
+
+    // 서명의 끝에서 다섯째 글자를 바꾼다. 마지막 글자는 Base64 남는 비트가 있어 바꿔도 같은 서명이 될 수 있다
+    private static String tamper(String jwt) {
+        int i = jwt.length() - 5;
+        return jwt.substring(0, i) + (jwt.charAt(i) == 'A' ? 'B' : 'A') + jwt.substring(i + 1);
     }
 }

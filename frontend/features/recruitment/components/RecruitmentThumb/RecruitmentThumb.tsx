@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { ImageSquareIcon } from "@phosphor-icons/react/ssr";
+import { DEFAULT_PROJECT_IMAGE_URL } from "@/features/project/types";
 import type { Recruitment } from "@/features/recruitment/types";
 import { ProofStamp } from "@/features/recruitment/components/ProofStamp/ProofStamp";
 import { cn } from "@/lib/cn";
@@ -20,16 +20,16 @@ export function RecruitmentThumb({
   inset = false,
   showImage = false,
 }: {
-  recruitment: Recruitment;
+  recruitment: Pick<Recruitment, "projectName" | "projectImage">;
   stamp?: string;
   category?: string;
   badge?: ReactNode;
   /** 카드 안에 들어갈 때. 카드가 외곽선을 가지므로 썸네일 자신의 외곽선을 빼고 모서리를 한 단계 줄인다 */
   inset?: boolean;
-  /** 홈 배너용 이미지 모드. 기본 이미지 자산은 후속 PR에서 연결한다 */
+  /** 홈 배너용 이미지 모드. 대표 이미지가 없으면 기본 이미지를 보여 준다 */
   showImage?: boolean;
 }) {
-  const imageUrl = showImage ? recruitment.projectImage : undefined;
+  const imageUrl = showImage ? recruitment.projectImage ?? DEFAULT_PROJECT_IMAGE_URL : undefined;
   return (
     <div
       data-thumb
@@ -37,10 +37,6 @@ export function RecruitmentThumb({
     >
       {imageUrl ? (
         <Image src={imageUrl} alt="" fill sizes="(min-width: 1024px) 25vw, 75vw" className={styles.image} />
-      ) : showImage ? (
-        <div aria-hidden className={styles.box}>
-          <ImageSquareIcon size={32} weight="light" />
-        </div>
       ) : (
         <h3 className={styles.projectName}>{recruitment.projectName}</h3>
       )}

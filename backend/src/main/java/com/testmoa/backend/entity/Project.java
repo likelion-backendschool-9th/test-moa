@@ -1,5 +1,6 @@
 package com.testmoa.backend.entity;
 
+import com.testmoa.backend.global.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,6 +34,16 @@ public class Project {
     // 대표 이미지 URL
     @Column(columnDefinition = "TEXT")
     private String imageUrl;
+
+    // 이슈를 등록할 GitHub 레포("owner/repo"). 연결하지 않았으면 null (#227)
+    @Column(length = 140)
+    private String githubRepository;
+
+    // 레포에 이슈를 만들 때 쓰는 GitHub 토큰. 개발자가 입력하고, DB에는 AES-GCM 암호문으로 저장한다. 연결하지 않았으면 null
+    @ToString.Exclude
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(length = 512)
+    private String githubToken;
 
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
@@ -76,5 +87,24 @@ public class Project {
         this.title = title;
         this.description = description;
         this.imageUrl = imageUrl;
+    }
+
+    /**
+     * GitHub 레포 연결. 이미 연결했으면 바꾼다. 레포와 토큰은 함께 바뀌어야 한다.
+     *
+     * @param githubRepository  이슈를 등록할 레포 ("owner/repo")
+     * @param githubToken       그 레포에 이슈를 만들 수 있는 토큰
+     */
+    public void connectRepository(String githubRepository, String githubToken) {
+        this.githubRepository = githubRepository;
+        this.githubToken = githubToken;
+    }
+
+    /**
+     * GitHub 레포 연결 해제. 토큰도 함께 지운다.
+     */
+    public void disconnectRepository() {
+        this.githubRepository = null;
+        this.githubToken = null;
     }
 }

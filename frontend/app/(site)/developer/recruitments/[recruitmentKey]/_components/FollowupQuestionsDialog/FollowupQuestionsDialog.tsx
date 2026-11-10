@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { Card } from "@/components/ui/Card/Card";
+import { useStartChat } from "../../_lib/use-start-chat";
 import styles from "./FollowupQuestionsDialog.module.css";
 
 /*
@@ -14,7 +15,7 @@ import styles from "./FollowupQuestionsDialog.module.css";
  * 대화상자 밖은 모달이 열린 동안 보조 기술에서 숨겨지므로 안내는 대화상자 안의 aria-live로 읽는다.
  */
 
-/** 채팅방을 만드는 API가 아직 없어 채팅 버튼은 이 안내만 보여 준다 */
+/** 참가 id가 없는 목업 모드에서 채팅 버튼을 누르면 보여 주는 안내 */
 export const CHAT_NOT_READY = "채팅방 연결은 준비 중이에요";
 
 /** 질문을 받는 중, 받음, 실패 */
@@ -22,6 +23,8 @@ export type FollowupState = { state: "loading" } | { state: "done"; questions: s
 
 type FollowupQuestionsDialogProps = {
   nickname: string;
+  registerId?: string;
+  recruitmentKey: string;
   /** 질문의 근거가 된 피드백 내용 */
   content: string;
   followup: FollowupState;
@@ -30,7 +33,8 @@ type FollowupQuestionsDialogProps = {
   onClose: () => void;
 };
 
-export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, onClose }: FollowupQuestionsDialogProps) {
+export function FollowupQuestionsDialog({ nickname, registerId, recruitmentKey, content, followup, onRetry, onClose }: FollowupQuestionsDialogProps) {
+  const { start, isPending } = useStartChat(recruitmentKey);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -56,8 +60,14 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
   }
 
   function goChat() {
-    setChatNotice(CHAT_NOT_READY);
-    setAnnouncement(CHAT_NOT_READY);
+    const showFailure = (message: string) => {
+      setChatNotice(message);
+      setAnnouncement(message);
+    };
+    if (registerId) {
+      setChatNotice("");
+      start(registerId, showFailure);
+    } else showFailure(CHAT_NOT_READY);
   }
 
   return (
@@ -130,7 +140,7 @@ export function FollowupQuestionsDialog({ nickname, content, followup, onRetry, 
             <Button size="sm" variant="ghost" onClick={close}>
               닫기
             </Button>
-            <Button size="sm" onClick={goChat}>
+            <Button size="sm" onClick={goChat} disabled={isPending}>
               <ChatsIcon aria-hidden size={16} weight="bold" />
               채팅으로 물어보러 가기
             </Button>

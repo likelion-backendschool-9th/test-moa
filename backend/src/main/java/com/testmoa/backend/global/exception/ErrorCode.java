@@ -32,11 +32,19 @@ public enum ErrorCode {
     EMAIL_ACCOUNT_EXISTS(HttpStatus.CONFLICT, "이미 이메일로 가입한 계정이에요. 이메일로 로그인한 뒤 마이페이지에서 연동해 주세요"),
     PROVIDER_ALREADY_LINKED(HttpStatus.CONFLICT, "이미 같은 서비스의 다른 계정이 연동돼 있어요"),
     LAST_LOGIN_METHOD(HttpStatus.CONFLICT, "마지막 로그인 방법은 해제할 수 없어요"),
+    WITHDRAWAL_PENDING(HttpStatus.FORBIDDEN, "탈퇴 예정 계정이에요. 되돌릴까요?"),
+    INVALID_RESTORE_TOKEN(HttpStatus.UNAUTHORIZED, "되돌리기 시간이 지났어요. 다시 로그인해 주세요"),
+    CASHOUT_IN_PROGRESS(HttpStatus.CONFLICT, "출금 처리 중인 크레딧이 있어요. 처리된 뒤 탈퇴할 수 있어요"),
 
     // 회원 신고
     REPORT_SELF(HttpStatus.BAD_REQUEST, "자기 자신은 신고할 수 없어요"),
     REPORT_DUPLICATED(HttpStatus.CONFLICT, "이미 신고해서 검토를 기다리고 있어요"),
     REPORT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 처리한 신고예요"),
+
+    // 운영자 제재
+    RESTRICTED(HttpStatus.FORBIDDEN, "운영자 제재로 이용이 제한됐어요"),
+    SANCTION_NOT_ACTIVE(HttpStatus.CONFLICT, "이미 해제했거나 끝난 제재예요"),
+    SANCTION_DUPLICATE(HttpStatus.CONFLICT, "같은 제재가 이미 걸려 있어요"),
 
     // 채팅
     CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),
@@ -76,6 +84,7 @@ public enum ErrorCode {
     GITHUB_REPO_NOT_LINKED(HttpStatus.CONFLICT, "프로젝트에 GitHub 레포가 연결되지 않았어요"),
     GITHUB_AUTH_REQUIRED(HttpStatus.FAILED_DEPENDENCY, "GitHub 연결을 다시 해 주세요"),
     GITHUB_REPO_UNAVAILABLE(HttpStatus.FAILED_DEPENDENCY, "GitHub 레포를 찾을 수 없거나 이슈를 만들 권한이 없어요. 레포 연결을 확인해 주세요"),
+    GITHUB_ISSUES_DISABLED(HttpStatus.FAILED_DEPENDENCY, "이 레포는 이슈 기능이 꺼져 있어요. GitHub 레포 설정에서 Issues를 켜 주세요"),
     GITHUB_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "GitHub에 잠시 이슈를 등록할 수 없어요. 잠시 후 다시 시도해 주세요"),
 
     // AI 버전 비교

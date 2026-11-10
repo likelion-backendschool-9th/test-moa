@@ -1,6 +1,5 @@
 import { isBackendAuth } from "@/lib/backend";
-import { ImageIcon } from "@phosphor-icons/react/ssr";
-import { CaretLeftIcon } from "@phosphor-icons/react/ssr";
+import { ArrowSquareOutIcon, CaretLeftIcon, ImageIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { participationsPath } from "@/features/participation/paths";
@@ -9,7 +8,9 @@ import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { RecruitmentThumb } from "@/features/recruitment/components/RecruitmentThumb/RecruitmentThumb";
-import { formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
+import { SELECTION_MODE_LABEL, SOFTWARE_TYPE_LABEL, type SelectionMode } from "@/features/recruitment/types";
+import { cn } from "@/lib/cn";
+import { daysUntil, formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
 import {
   payoutAt,
   STATUS_LABEL,
@@ -18,15 +19,29 @@ import {
   type FeedbackEntry,
   type ParticipationItem,
 } from "@/features/participation/types";
+import { CollapsibleText } from "../CollapsibleText/CollapsibleText";
 import { FeedbackForm } from "../FeedbackForm/FeedbackForm";
 import { FeedbackMarker } from "../FeedbackMarker/FeedbackMarker";
 import styles from "./ParticipationDetail.module.css";
+
+/*
+ * 내 참여 상세. 위에서 아래로: 제목 줄(프로젝트 이름·상태·마감, 모집 글·테스트 열기 버튼) → 프로젝트 소개 한 줄 →
+ * 썸네일 | 접속 링크와 항목 표 → 진행 상황(제출 전에는 위 제목 줄이 같은 말을 해서 뺀다) → 모집 설명 → 테스트 항목(제출 전에는 피드백을 쓰는 칸, 뒤에는 제출한 피드백).
+ * 테스트 열기는 제출 전에 가장 먼저 하는 일이라 강조색 주 버튼이고, 제출 뒤에는 보조 버튼으로 내린다.
+ * 프로젝트 소개, 모집 설명, 선정 방식은 참여 API에 믿을 값이 없어 공개 모집글 API에서 읽어 넘겨 받는다.
+ */
 
 type ParticipationDetailProps = {
   item: ParticipationItem;
   now: Date;
   /** 피드백을 막 제출하고 돌아왔다 */
   justSubmitted: boolean;
+  /** 프로젝트 소개. 제목 줄 아래에 한 줄로 보인다. 없으면 그 줄을 그리지 않는다 */
+  projectDescription: string;
+  /** 모집 설명. 3줄이 넘으면 접어 둔다. 없으면 칸을 그리지 않는다 */
+  recruitmentDescription: string;
+  /** 선정 방식. 공개 모집글을 읽지 못했으면 없다 */
+  selectionMode?: SelectionMode;
 };
 
 /** 상태마다 지금 어떤 단계인지와 다음에 일어날 일을 한 문장씩 알린다. 운영 용어(신고 사유, 제재)는 쓰지 않는다 */
@@ -72,31 +87,68 @@ function statusMessage(item: ParticipationItem, now: Date): { title: string; bod
   }
 }
 
-/** 제목 아래 테스트 정보. 마감일·보상은 모집 글의 값이고, 진행에 따라 제출일·지급일이 붙는다 */
-function infoRows(item: ParticipationItem): Array<[string, ReactNode]> {
+/** 접속 링크의 도메인. http(s) 주소가 아니면 null이라 접속 링크와 버튼을 그리지 않는다 */
+function accessHost(url: string | undefined): string | null {
+  if (!url || !/^https?:\/\//i.test(url)) return null;
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
+}
+
+type Fact = [term: string, value: ReactNode];
+
+/** 정보 표 왼쪽 줄: 모집 글 자체의 성격 */
+function leftFacts(item: ParticipationItem, selectionMode: SelectionMode | undefined): Fact[] {
   const { recruitment } = item;
-  const rows: Array<[string, ReactNode]> = [
+  const required = item.testItems.filter((testItem) => testItem.required).length;
+  const mode = selectionMode ? SELECTION_MODE_LABEL[selectionMode] : recruitment.isSubscription ? "구독 모집" : "일반 모집";
+  const facts: Fact[] = [
+    ["유형", recruitment.softwareTypes.map((type) => SOFTWARE_TYPE_LABEL[type]).join(", ") || "정하지 않음"],
+    ["모집 방식", mode],
+  ];
+  if (item.testItems.length > 0) facts.push(["테스트 항목", `${item.testItems.length}개 · 필수 ${required}개`]);
+  facts.push(["지원일", formatDate(item.appliedAt)]);
+  return facts;
+}
+
+/** 정보 표 오른쪽 줄: 일정과 보상. 진행에 따라 제출일·지급일이 붙는다 */
+function rightFacts(item: ParticipationItem, now: Date): Fact[] {
+  const { recruitment, status } = item;
+  const dday = status === "beforeSubmit" ? formatDday(recruitment.submitDeadline, now) : null;
+  const facts: Fact[] = [
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
-    ["피드백 제출 마감", formatDate(recruitment.submitDeadline)],
-    ["기본 보상", formatCredits(recruitment.baseReward)],
+    [
+      "제출 마감",
+      <>
+        {formatDate(recruitment.submitDeadline)}
+        {dday && <span className={styles.dday}>{dday}</span>}
+      </>,
+    ],
+    ["크레딧", formatCredits(recruitment.baseReward)],
   ];
   if (recruitment.extraReward !== undefined) {
-    rows.push(["추가 보상", <span key="extra" className={styles.infoRows}>+{formatCredits(recruitment.extraReward)}</span>]);
+    facts.push(["추가 크레딧", <span key="extra" className={styles.extra}>+{formatCredits(recruitment.extraReward)}</span>]);
   }
-  if (item.accessUrl) {
-    rows.push([
-      "테스트 접속",
-      <a key="access" href={item.accessUrl} target="_blank" rel="noopener noreferrer" className={styles.accessLink}>
-        바로 가기<span className={styles.srOnly}> (새 탭)</span>
-      </a>,
-    ]);
-  }
-  rows.push(["지원일", formatDate(item.appliedAt)]);
-  if (item.submittedAt) rows.push(["제출일", formatDateTime(item.submittedAt)]);
-  if (item.status === "payoutPending" && item.submittedAt) rows.push(["지급 예정", formatDateTime(payoutAt(item.submittedAt))]);
-  if (item.status === "paid" && item.paidAt) rows.push(["지급일", formatDate(item.paidAt)]);
-  if (item.status === "excluded" && item.reviewedAt) rows.push(["검토 완료", formatDate(item.reviewedAt)]);
-  return rows;
+  if (item.submittedAt) facts.push(["제출일", formatDateTime(item.submittedAt)]);
+  if (status === "payoutPending" && item.submittedAt) facts.push(["지급 예정", formatDateTime(payoutAt(item.submittedAt))]);
+  if (status === "paid" && item.paidAt) facts.push(["지급일", formatDate(item.paidAt)]);
+  if (status === "excluded" && item.reviewedAt) facts.push(["검토 완료", formatDate(item.reviewedAt)]);
+  return facts;
+}
+
+function FactList({ facts }: { facts: Fact[] }) {
+  return (
+    <dl className={styles.factList}>
+      {facts.map(([term, value]) => (
+        <div key={term} className={styles.fact}>
+          <dt className={styles.term}>{term}</dt>
+          <dd className={styles.factValue}>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 /** 제출한 피드백 한 건. 항목 이름 아래에 내용과 첨부 이미지를 둔다 */
@@ -139,19 +191,20 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
   );
 }
 
-/** 내 참여 상세. 지금 단계와 다음 일, 피드백 작성 또는 제출한 내용, 모집 정보를 한 화면에 둔다 */
-export function ParticipationDetail({ item, now, justSubmitted }: ParticipationDetailProps) {
+/** 내 참여 상세. 지금 단계와 다음 일, 모집 조건, 피드백 작성 또는 제출한 내용을 한 화면에 둔다 */
+export function ParticipationDetail({ item, now, justSubmitted, projectDescription, recruitmentDescription, selectionMode }: ParticipationDetailProps) {
   const { recruitment, status } = item;
   const tab = tabOf(status);
   const message = statusMessage(item, now);
+  const host = accessHost(item.accessUrl);
+  const beforeSubmit = status === "beforeSubmit";
+  /* 제출 전이면 마감까지 남은 날을 제목 옆에 보이고, 사흘 이하는 색 대신 굵기로 알린다(Weight-Not-Paint) */
+  const dday = beforeSubmit ? formatDday(recruitment.submitDeadline, now) : null;
+  const urgent = beforeSubmit && daysUntil(recruitment.submitDeadline, now) <= 3;
 
-  /* 한 건을 읽고 쓰는 화면이라 넓은 화면에서도 가운데 한 칸에 모은다 */
   return (
     <div className={styles.root}>
-      <Link
-        href={participationsPath(tab)}
-        className={styles.link}
-      >
+      <Link href={participationsPath(tab)} className={styles.link}>
         <CaretLeftIcon aria-hidden size={16} weight="bold" />
         {TAB_LABEL[tab]}
       </Link>
@@ -163,81 +216,116 @@ export function ParticipationDetail({ item, now, justSubmitted }: ParticipationD
       )}
 
       <header className={styles.header}>
-        {/* 이름은 제목에 있으니 썸네일은 보조 기술에서 숨긴다. 지급 완료는 상태 배지로도 읽힌다 */}
-        <div aria-hidden className={styles.box}>
-          <RecruitmentThumb recruitment={recruitment} stamp={status === "paid" ? "지급 완료" : undefined} />
-        </div>
-        <div className={styles.box2}>
-          <div className={styles.box3}>
-            <div className={styles.box4}>
+        <div className={styles.titleRow}>
+          <div className={styles.titleBox}>
+            <div className={styles.titleLine}>
               <h1 className={styles.projectName}>{recruitment.projectName}</h1>
-              <p className={styles.text2}>
+              <div className={styles.badges}>
                 <Badge>{STATUS_LABEL[status]}</Badge>
                 {recruitment.isSubscription && <Badge tone="muted">구독 모집</Badge>}
-              </p>
+                {dday && <span className={cn(styles.deadline, urgent && styles.deadlineUrgent)}>마감 {dday}</span>}
+              </div>
             </div>
-            <p className={styles.request}>{recruitment.request}</p>
+            {projectDescription && <p className={styles.summary}>{projectDescription}</p>}
           </div>
-          {/* 테스트 정보는 이 모집 글에 대한 것이라 제목 바로 아래, 목록 행과 같은 모양으로 둔다 */}
-          <section aria-labelledby="info-heading">
-            <h2 id="info-heading" className={styles.srOnly}>
-              테스트 정보
-            </h2>
-            <dl className={styles.list}>
-              {infoRows(item).map(([label, value]) => (
-                <div key={label}>
-                  <dt className={styles.label}>{label}</dt>
-                  <dd className={styles.value}>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        </div>
-      </header>
-
-      <div className={styles.box5}>
-        <section aria-labelledby="status-heading" className={styles.section}>
-          <h2 id="status-heading" className={styles.title}>
-            진행 상황
-          </h2>
-          <p className={styles.title2}>{message.title}</p>
-          {/* 이 참여가 가리키는 모집 글은 설명 문장과 같은 줄 오른쪽에 둔다. 좁은 화면에서는 문장 아래로 내려간다 */}
-          <div className={styles.box6}>
-            <p className={styles.body}>{message.body}</p>
+          <div className={styles.actions}>
             {/* 취소된 모집은 공개 상세가 없다 */}
-            {item.recruitmentCancelled ? (
-              <p className={styles.body}>취소된 모집이라 모집 글을 볼 수 없어요.</p>
-            ) : (
-              <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" size="sm" className={styles.button}>
-                모집 글 보기
+            {!item.recruitmentCancelled && (
+              <LinkButton href={`/recruitments/${recruitment.slug}`} variant="secondary" className={styles.action}>
+                모집 글
+              </LinkButton>
+            )}
+            {host && (
+              <LinkButton
+                href={item.accessUrl as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant={beforeSubmit ? "primary" : "secondary"}
+                className={styles.action}
+              >
+                테스트 열기
+                <ArrowSquareOutIcon aria-hidden size={18} weight="bold" />
+                <span className={styles.srOnly}> (새 탭)</span>
               </LinkButton>
             )}
           </div>
+        </div>
+
+        <div className={styles.info}>
+          {/* 이름은 제목에 있으니 썸네일은 보조 기술에서 숨긴다. 지급 완료는 상태 배지로도 읽힌다 */}
+          <div aria-hidden className={styles.thumb}>
+            <RecruitmentThumb recruitment={recruitment} stamp={status === "paid" ? "지급 완료" : undefined} />
+          </div>
+          <Card as="section" aria-labelledby="info-heading" className={styles.infoCard}>
+            <h2 id="info-heading" className={styles.srOnly}>
+              테스트 정보
+            </h2>
+            {host && (
+              <a href={item.accessUrl} target="_blank" rel="noopener noreferrer" className={styles.accessLink}>
+                {item.accessUrl}
+                <span className={styles.srOnly}> (새 탭)</span>
+              </a>
+            )}
+            <div className={styles.facts}>
+              <FactList facts={leftFacts(item, selectionMode)} />
+              <FactList facts={rightFacts(item, now)} />
+            </div>
+          </Card>
+        </div>
+      </header>
+
+      {/* 제출 전에는 제목 줄의 "마감 D-n"과 아래 테스트 항목 안내가 같은 말이라 진행 상황을 빼고, 다른 단계에서만 보인다 */}
+      {!beforeSubmit && (
+        <section aria-labelledby="status-heading" className={styles.section}>
+          <h2 id="status-heading" className={styles.sectionTitle}>
+            진행 상황
+          </h2>
+          <p className={styles.title2}>{message.title}</p>
+          <p className={styles.body}>{message.body}</p>
           {status === "notSelected" && (
             <LinkButton href="/recruitments" variant="secondary" size="sm" className={styles.button2}>
               테스트 둘러보기
             </LinkButton>
           )}
         </section>
+      )}
 
-        {status === "beforeSubmit" && (
+      {recruitmentDescription && (
+        <section aria-labelledby="description-heading" className={styles.section}>
+          <h2 id="description-heading" className={styles.sectionTitle}>
+            모집 설명
+          </h2>
           <Card className={styles.card}>
-            <h2 className={styles.title3}>피드백 쓰기</h2>
+            <CollapsibleText text={recruitmentDescription} />
+          </Card>
+        </section>
+      )}
+
+      {beforeSubmit && (
+        <section aria-labelledby="items-heading" className={styles.section}>
+          <h2 id="items-heading" className={styles.sectionTitle}>
+            테스트 항목
+          </h2>
+          <Card className={styles.card}>
             <FeedbackForm participationKey={item.key} testItems={item.testItems} />
           </Card>
-        )}
+        </section>
+      )}
 
-        {item.feedbacks.length > 0 && (
-          <Card className={styles.card2}>
-            <h2 className={styles.title4}>제출한 피드백</h2>
+      {item.feedbacks.length > 0 && (
+        <section aria-labelledby="submitted-heading" className={styles.section}>
+          <h2 id="submitted-heading" className={styles.sectionTitle}>
+            제출한 피드백
+          </h2>
+          <Card className={styles.card}>
             <ol className={styles.list2}>
               {item.feedbacks.map((feedback) => (
                 <SubmittedFeedback key={feedback.testItemId ?? "other"} item={item} feedback={feedback} />
               ))}
             </ol>
           </Card>
-        )}
-      </div>
+        </section>
+      )}
     </div>
   );
 }

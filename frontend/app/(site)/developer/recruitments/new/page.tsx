@@ -1,3 +1,4 @@
+import { isBackendAuth } from "@/lib/backend";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -33,7 +34,7 @@ async function FormSlot({ searchParams }: Pick<Props, "searchParams">) {
   return (
     <div className={styles.formSlot}>
       <p className={styles.formSlotName}>{projectInfo.name}</p>
-      <RecruitmentForm projectKey={projectInfo.key} {...info} />
+      <RecruitmentForm uploadEnabled={isBackendAuth} projectKey={projectInfo.key} {...info} />
     </div>
   );
 }

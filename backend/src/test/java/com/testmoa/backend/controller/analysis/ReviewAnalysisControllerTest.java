@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller.analysis;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.ClusterGroup;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.FeedbackCluster;
@@ -44,7 +45,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -567,6 +570,33 @@ class ReviewAnalysisControllerTest {
                 .andExpect(jsonPath("$.data[0].content").value("로그인하면 앱이 꺼져요"))
                 .andExpect(jsonPath("$.data[0].nickname").value(r.a().getNickname()))
                 .andExpect(jsonPath("$.data[1].testItemTitle").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("#195-S14 그룹 리뷰마다 참가 id를 준다")
+    void 그룹_리뷰마다_참가_id를_준다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup group = saveGroup(r.recruitment(), "1", null, r.f1());
+        em.persist(FeedbackCluster.builder().clusterGroup(group).feedback(r.f2()).representative(false).build());
+        em.persist(FeedbackCluster.builder().clusterGroup(group).feedback(r.f3()).representative(false).build());
+        Map<Long, Long> expected = Map.of(
+                r.f1().getId(), r.f1().getRegister().getId(),
+                r.f2().getId(), r.f2().getRegister().getId(),
+                r.f3().getId(), r.f3().getRegister().getId());
+        em.flush();
+        em.clear();
+
+        String response = findGroupReviews(developer, r.recruitment().getId(), group.getId())
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        var reviews = new ObjectMapper().readTree(response).get("data");
+        assertThat(reviews.size()).isEqualTo(3);
+        Map<Long, Long> actual = new HashMap<>();
+        for (var review : reviews) {
+            actual.put(review.get("feedbackId").asLong(), review.get("registerId").asLong());
+        }
+        assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected);
     }
 
     @Test

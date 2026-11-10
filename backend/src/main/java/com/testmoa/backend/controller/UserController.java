@@ -4,6 +4,7 @@ package com.testmoa.backend.controller;
 import com.testmoa.backend.dto.request.OAuthCodeRequest;
 import com.testmoa.backend.dto.request.PasswordChangeRequest;
 import com.testmoa.backend.dto.request.ProfileUpdateRequest;
+import com.testmoa.backend.dto.request.WithdrawRequest;
 import com.testmoa.backend.global.security.JwtProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -63,6 +64,14 @@ public class UserController {
         // details에 JWT가 없으면 세션 없는 토큰과 같이 그 회원의 토큰을 모두 지운다
         String sessionId = authentication.getDetails() instanceof Jwt jwt ? jwt.getClaimAsString(JwtProvider.SESSION_CLAIM) : null;
         userService.changePassword(userId, sessionId, request);
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "회원 탈퇴", description = "비밀번호(소셜로만 가입했으면 confirmText \"탈퇴합니다\")를 확인하고 30일 탈퇴 유예로 바꾼다. 모든 기기의 로그인이 끊긴다. 출금 처리 중이면 409")
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdraw(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                      @RequestBody WithdrawRequest request) {
+        userService.withdraw(userId, request);
         return ApiResponse.ok();
     }
 

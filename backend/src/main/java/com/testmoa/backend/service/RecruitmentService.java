@@ -1,10 +1,13 @@
 package com.testmoa.backend.service;
 
+import com.testmoa.backend.global.file.FileStorage.ImageFile;
 import com.testmoa.backend.dto.request.RecruitmentSearchRequest;
 import com.testmoa.backend.dto.response.RecruitmentPageResponse;
 import com.testmoa.backend.dto.response.RecruitmentResponse;
 
 public interface RecruitmentService {
+    ImageFile findImage(String name);
+
     /**
      * 공개 모집글 상세. 없거나 취소된 모집은 NOT_FOUND
      *

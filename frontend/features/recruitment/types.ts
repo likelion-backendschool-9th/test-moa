@@ -65,6 +65,7 @@ export const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> = {
 /** 모집 건에 들어온 지원 한 건. 테스터 개인정보는 닉네임만 둔다 */
 export type Application = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   status: ApplicationStatus;
   appliedAt: string;
@@ -82,6 +83,7 @@ export const FEEDBACK_STATUS_LABEL: Record<FeedbackStatus, string> = {
 /** 확정된 테스터가 제출한 피드백 한 건 */
 export type Feedback = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   /** 어느 테스트 항목에 대한 피드백인지. 기타 의견은 null (백엔드 Feedback.testItem) */
   testItemId: string | null;
@@ -200,6 +202,7 @@ export type ReviewGroup = {
 /** 그룹에 든 리뷰 하나. 대표 리뷰가 맨 앞이다 */
 export type GroupReview = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   content: string;
   submittedAt: string;
@@ -410,6 +413,7 @@ export type BackendAnalysisGroup = {
 /** 백엔드 GroupReviewResponse (GET .../analysis/groups/{groupId}/reviews) */
 export type BackendGroupReview = {
   feedbackId: number;
+  registerId: number;
   nickname: string;
   testItemTitle: string | null;
   content: string;
@@ -441,6 +445,7 @@ export function fromBackendGroups(groups: BackendAnalysisGroup[], reviews: Recor
         testerCount: group.testerCount,
         reviews: (reviews[group.groupId] ?? []).map((review) => ({
           id: String(review.feedbackId),
+          registerId: String(review.registerId),
           testerNickname: review.nickname,
           content: review.content,
           submittedAt: review.submittedAt,
@@ -582,6 +587,8 @@ export const RECRUITMENT_LIMIT = {
   imageCount: 10,
   testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300, imageCount: 5 },
   cancelReasonLength: 300,
+  /** 피드백 신고 사유. 백엔드 FeedbackReportRequest와 같다 */
+  reportReasonLength: 500,
 } as const;
 
 export type ProjectWithRecruitments = Project & { recruitments: Recruitment[] };
@@ -917,6 +924,13 @@ export function validateRepository(formData: FormData): EditState {
   const match = GITHUB_REPO.exec(text(formData, "repository"));
   if (!match) return { values: { repository: text(formData, "repository") }, errors: { repository: "owner/repo 형식이나 GitHub 주소를 적어 주세요" } };
   return { values: { repository: `${match[1]}/${match[2]}` }, errors: {} };
+}
+
+/** 레포 연결 요청 검증. 백엔드 연결은 이슈를 만들 토큰이 있어야 해서 tokenRequired일 때 토큰도 비울 수 없다 */
+export function validateRepositoryConnect(formData: FormData, tokenRequired: boolean): EditState {
+  const state = validateRepository(formData);
+  if (tokenRequired && !text(formData, "token")) state.errors.token = "GitHub 토큰을 적어 주세요";
+  return state;
 }
 
 export type PublicRecruitmentData = {

@@ -17,6 +17,9 @@ public interface AuthService {
     TokenResponse login(LoginRequest request);
     // 쓴 refresh 토큰은 버리고 새 토큰 쌍을 준다
     TokenResponse refresh(String refreshToken);
+
+    /** 탈퇴 되돌리기(#84). 로그인에서 받은 되돌리기 토큰을 쓴다 */
+    TokenResponse restore(String restoreToken);
     // refresh 토큰을 버린다. 없는 토큰이어도 성공으로 본다
     void logout(String refreshToken);
 

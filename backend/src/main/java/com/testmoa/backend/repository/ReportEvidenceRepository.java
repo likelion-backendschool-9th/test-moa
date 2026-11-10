@@ -10,6 +10,9 @@ public interface ReportEvidenceRepository extends JpaRepository<ReportEvidence, 
     // 신고 한 건의 증거, 올린 순서대로
     List<ReportEvidence> findByReportIdOrderBySortOrderAsc(Long reportId);
 
+    // 여러 신고의 증거를 한 번에(운영자 회원 상세)
+    List<ReportEvidence> findByReportIdInOrderBySortOrderAsc(java.util.Collection<Long> reportIds);
+
     // 주소의 신고 id와 증거 id가 함께 맞을 때만 찾는다
     Optional<ReportEvidence> findByIdAndReportId(Long id, Long reportId);
 }

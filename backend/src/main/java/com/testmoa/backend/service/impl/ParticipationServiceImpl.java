@@ -20,6 +20,8 @@ import com.testmoa.backend.repository.RecruitmentTypeRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.service.ParticipationService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import com.testmoa.backend.service.ParticipationStatuses;
 import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.RewardPolicy;
@@ -48,6 +50,7 @@ public class ParticipationServiceImpl implements ParticipationService {
     private static final String EMPTY_MESSAGE = "피드백을 적어 주세요";
 
     private final RegisterRepository registerRepository;
+    private final SanctionChecker sanctionChecker;
     private final FeedbackRepository feedbackRepository;
     private final TestItemRepository testItemRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
@@ -63,6 +66,7 @@ public class ParticipationServiceImpl implements ParticipationService {
     @Override
     @Transactional
     public ParticipationResponse submitFeedback(Long userId, Long registerId, FeedbackSubmitRequest request) {
+        sanctionChecker.require(userId, Restriction.FEEDBACK);
         /* 참가 행을 잠가 두 번 눌러도 두 번째는 첫 제출을 본다 */
         Register register = registerRepository.findMineForUpdate(registerId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));

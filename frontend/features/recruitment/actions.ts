@@ -1,10 +1,11 @@
 "use server";
 
-import { PROJECTS_PATH, projectPath, recruitmentCreatePath } from "@/features/project/paths";
+import { PROJECTS_PATH, projectPath, recruitmentCreatePath, recruitmentManagePath } from "@/features/project/paths";
 import type { FormState } from "@/features/project/types";
 import {
   cancelRecruitment as cancel,
   decideApplicants as decide,
+  disconnectRepository as disconnect,
   getRecruitmentFormInfo,
   recommendFollowupQuestions,
   saveBackendRecruitment,
@@ -13,13 +14,15 @@ import {
   runReviewAnalysis,
   runVersionComparison,
   saveIssueDraft,
+  recommendFeedback,
+  reportFeedback,
   saveVersionLinks,
   updateRecruitment as update,
   type ActionResult,
   type RegisterIssueResult,
 } from "@/features/recruitment/api";
 import type { ApplyState, EditState, FollowupResult, RecruitmentEditSection } from "@/features/recruitment/types";
-import { validateRecruitmentForm } from "@/features/recruitment/types";
+import { RECRUITMENT_LIMIT, validateRecruitmentForm } from "@/features/recruitment/types";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -56,7 +59,25 @@ export async function decideApplicants(
   status: "confirmed" | "rejected",
 ): Promise<{ ok: boolean }> {
   if (status !== "confirmed" && status !== "rejected") return { ok: false };
-  return decide(recruitmentKey, ids, status);
+  const result = await decide(recruitmentKey, ids, status);
+  /* 뒤로 가기로 돌아간 프로젝트 화면에 이전 확정 수가 남지 않게 한다 */
+  if (result.ok && isBackendAuth) revalidatePath(PROJECTS_PATH, "layout");
+  return result;
+}
+
+/** 피드백 유용해요 표시. 누르면 true, 다시 누르면 false */
+export async function recommendFeedbackAction(feedbackId: string, recommended: boolean): Promise<ActionResult> {
+  if (typeof feedbackId !== "string" || typeof recommended !== "boolean") return { ok: false, message: "잘못된 요청이에요" };
+  return recommendFeedback(feedbackId, recommended);
+}
+
+/** 피드백 신고. 사유는 비울 수 없고 500자까지이며, 72시간이 지났는지는 백엔드가 다시 확인한다 */
+export async function reportFeedbackAction(feedbackId: string, reason: string): Promise<ActionResult> {
+  if (typeof feedbackId !== "string" || typeof reason !== "string") return { ok: false, message: "잘못된 요청이에요" };
+  const trimmed = reason.trim();
+  if (!trimmed) return { ok: false, message: "신고 사유를 적어 주세요" };
+  if (trimmed.length > RECRUITMENT_LIMIT.reportReasonLength) return { ok: false, message: `신고 사유는 ${RECRUITMENT_LIMIT.reportReasonLength}자까지 적을 수 있어요` };
+  return reportFeedback(feedbackId, trimmed);
 }
 
 /** 모집 취소. 운영자 승인 없이 바로 취소된다. 시연용이라 브라우저 쿠키에 남는다 */
@@ -76,7 +97,17 @@ export async function updateRecruitment(
   formData: FormData,
 ): Promise<EditState> {
   if (!EDIT_SECTIONS.includes(section)) return { values: {}, errors: { form: "잘못된 요청이에요" } };
-  return update(recruitmentKey, section, formData);
+  const result = await update(recruitmentKey, section, formData);
+  /* 연결한 저장소가 화면에 바로 반영되게 한다 */
+  if (section === "repository" && result.ok && isBackendAuth) revalidatePath(recruitmentManagePath(recruitmentKey));
+  return result;
+}
+
+/** 프로젝트의 GitHub 레포 연결 해제. 레포와 토큰이 함께 지워진다 */
+export async function disconnectRepository(recruitmentKey: string): Promise<EditState> {
+  const result = await disconnect(recruitmentKey);
+  if (result.ok && isBackendAuth) revalidatePath(recruitmentManagePath(recruitmentKey));
+  return result;
 }
 
 const EDIT_SECTIONS: RecruitmentEditSection[] = ["post", "terms", "testItems", "repository"];

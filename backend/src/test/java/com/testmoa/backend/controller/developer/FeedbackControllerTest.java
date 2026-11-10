@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -100,9 +101,7 @@ class FeedbackControllerTest {
         return send(user, post("/api/v1/developer/feedbacks/" + feedback.getId() + "/report"), Map.of("reason", reason));
     }
 
-    @Test
-    @DisplayName("#175-S10 피드백 목록")
-    void 최근_제출_순으로_닉네임_항목_스크린샷을_준다() throws Exception {
+    private TestItem saveFeedbackList() {
         TestItem item = TestItem.builder().recruitment(recruitment).title("책 등록").required(true).build();
         em.persist(item);
         Feedback older = saveFeedback(item, "검색이 느려요", LocalDateTime.now().minusHours(5));
@@ -110,6 +109,13 @@ class FeedbackControllerTest {
         em.persist(FeedbackImage.builder().feedback(older).url("https://img.example.com/2.png").build());
         Feedback newer = saveFeedback(null, "전체적으로 좋아요", LocalDateTime.now().minusHours(1));
         newer.updateRecommended(true);
+        return item;
+    }
+
+    @Test
+    @DisplayName("#175-S10 피드백 목록")
+    void 최근_제출_순으로_닉네임_항목_스크린샷을_준다() throws Exception {
+        TestItem item = saveFeedbackList();
         String path = "/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks";
 
         send(developer, get(path), null)
@@ -123,6 +129,33 @@ class FeedbackControllerTest {
                 .andExpect(jsonPath("$.data[1].nickname").value(register.getUser().getNickname()));
 
         send(other, get(path), null).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("#195-S1 피드백마다 참가 id를 준다")
+    void 피드백마다_참가_id를_준다() throws Exception {
+        saveFeedbackList();
+        Register anotherRegister = Register.builder().recruitment(recruitment).user(saveUser("다른 테스터")).build();
+        anotherRegister.confirm(1000, 0, LocalDateTime.now());
+        em.persist(anotherRegister);
+        Feedback anotherFeedback = Feedback.builder().register(anotherRegister).content("화면이 깔끔해요")
+                .submittedAt(LocalDateTime.now()).build();
+        em.persist(anotherFeedback);
+        String path = "/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks";
+
+        String response = send(developer, get(path), null)
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        var feedbacks = JSON.readTree(response).get("data");
+        assertThat(feedbacks.size()).isEqualTo(3);
+        Map<String, Long> registerIdsByContent = new HashMap<>();
+        for (var feedback : feedbacks) {
+            registerIdsByContent.put(feedback.get("content").asText(), feedback.get("registerId").asLong());
+        }
+        assertThat(registerIdsByContent).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "검색이 느려요", register.getId(),
+                "전체적으로 좋아요", register.getId(),
+                "화면이 깔끔해요", anotherRegister.getId()));
     }
 
     @Test

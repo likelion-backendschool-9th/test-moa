@@ -11,8 +11,9 @@ import {
   type Decision,
 } from "@/demo/recruitment";
 import { findBackendProject, findBackendProjects, isBackendId, readProjectApi } from "@/features/project/api";
-import { parseFileMeta } from "@/features/project/media";
+import { parseImageUrls } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
+import { type ApplicantResponse, type DeveloperFeedbackResponse, toApplication, toFeedback } from "@/features/recruitment/backend-map";
 import { type FormState } from "@/features/project/types";
 import type { RecruitmentQuery } from "@/features/recruitment/query";
 import type {
@@ -58,7 +59,7 @@ import {
   getAnalytics,
   getEditLocks,
   validatePostEdit,
-  validateRepository,
+  validateRepositoryConnect,
   validateTermsEdit,
   validateTestItemsEdit,
   getHoursUntilPaid,
@@ -404,11 +405,13 @@ export async function findOwnedRecruitment(role: Role, recruitmentKey: string) {
 
 /** 모집 건 하나의 지원 목록 */
 export async function findApplications(role: Role, recruitmentKey: string): Promise<Application[]> {
+  if (isBackendAuth) return (await backendGet<ApplicantResponse[]>(`${encodeURIComponent(recruitmentKey)}/applications`)).map(toApplication);
   return (await load(role)).applications[recruitmentKey] ?? [];
 }
 
 /** 모집 건 하나의 피드백 목록 */
 export async function findFeedbacks(role: Role, recruitmentKey: string): Promise<Feedback[]> {
+  if (isBackendAuth) return (await backendGet<DeveloperFeedbackResponse[]>(`${encodeURIComponent(recruitmentKey)}/feedbacks`)).map(toFeedback);
   return (await load(role)).feedbacks[recruitmentKey] ?? [];
 }
 
@@ -705,10 +708,12 @@ async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
 /** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
 export async function getRecruitmentDetail(path: string, recruitmentKey: string) {
   const { role, project, recruitment: currentRecruitment, cancellation } = await getMyRecruitment(path, recruitmentKey);
-  const [applications, feedbacks, found] = await Promise.all([
+  const [applications, feedbacks, found, isSubscribed] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
+    /* 구독 조회가 잠깐 실패해도 지원자·피드백 탭은 열리게 구독하지 않은 것으로 본다 */
+    findIsSubscribed(role).catch(() => false),
   ]);
   /* 조회할 수 없는 상세는 목록에서 알고 있는 제목과 선정 방식만 채운다. 나머지는 unavailable로 알린다 */
   const detail = found.unavailable
@@ -720,6 +725,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     project,
     recruitment,
     detail,
+    isSubscribed,
     cancellation,
     canCancel: canCancelRecruitment(recruitment),
     applications: [...applications]
@@ -742,9 +748,12 @@ const NOT_EDITABLE: EditState = { values: {}, errors: { form: "종료되거나 �
  */
 export async function updateRecruitment(recruitmentKey: string, section: RecruitmentEditSection, formData: FormData): Promise<EditState> {
   const path = recruitmentManagePath(recruitmentKey);
-  const { role, recruitment } = await getMyRecruitment(path, recruitmentKey);
-  /* 저장소는 프로젝트 정보라 모집이 끝나도 연결할 수 있다. shortcut: 레포 연결 API가 없어 검증만 한다(#168의 다음 작업) */
-  if (section === "repository") return withOk(validateRepository(formData));
+  const { role, project, recruitment } = await getMyRecruitment(path, recruitmentKey);
+  /* 저장소는 프로젝트 정보라 모집이 끝나도 연결할 수 있다. 목업은 검증만 하고 저장하지 않는다 */
+  if (section === "repository") {
+    const checked = withOk(validateRepositoryConnect(formData, isBackendAuth));
+    return checked.ok && isBackendAuth ? connectRepository(project.key, checked, text(formData, "token")) : checked;
+  }
   const [applications, feedbacks, detail] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
@@ -760,6 +769,33 @@ export async function updateRecruitment(recruitmentKey: string, section: Recruit
         : validateTestItemsEdit(formData, locks.lockedItemIds);
   if (Object.keys(state.errors).length > 0) return withOk(state);
   return withOk(await saveEdit(recruitmentKey, section, formData, state));
+}
+
+/**
+ * 프로젝트에 GitHub 레포를 연결한다. 백엔드가 토큰으로 GitHub에서 레포를 읽어 확인한 뒤 저장한다.
+ * 토큰은 화면 상태에 되돌려 주지 않는다(values에는 저장소만 넣는다)
+ */
+async function connectRepository(projectKey: string, state: EditState, token: string): Promise<EditState> {
+  const result = await backendFetch<unknown>(`/api/v1/developer/projects/${encodeURIComponent(projectKey)}/repository`, {
+    method: "PUT",
+    body: { repository: state.values.repository, token },
+    timeoutMs: REPOSITORY_TIMEOUT_MS,
+  });
+  if (result.ok) return state;
+  return { values: state.values, errors: result.fields ? toFormFields(result.fields) : { form: result.message } };
+}
+
+/* 백엔드가 GitHub 확인을 최대 15초 기다린다 */
+const REPOSITORY_TIMEOUT_MS = 20_000;
+
+/** 프로젝트의 GitHub 레포 연결을 해제한다. 레포와 토큰이 함께 지워진다. 목업은 저장하지 않는다 */
+export async function disconnectRepository(recruitmentKey: string): Promise<EditState> {
+  const { project } = await getMyRecruitment(recruitmentManagePath(recruitmentKey), recruitmentKey);
+  if (isBackendAuth) {
+    const result = await backendFetch<unknown>(`/api/v1/developer/projects/${encodeURIComponent(project.key)}/repository`, { method: "DELETE" });
+    if (!result.ok) return { values: {}, errors: { form: result.message } };
+  }
+  return { values: {}, errors: {}, ok: true };
 }
 
 const withOk = (state: EditState): EditState => ({ ...state, ok: Object.keys(state.errors).length === 0 });
@@ -801,9 +837,11 @@ function testItemRows(formData: FormData) {
 
 /* 백엔드 칸 이름(요청 필드)을 화면 칸 이름으로 바꾼다. testItems[0].title → testItemTitle-0 */
 function toFormFields(fields: Record<string, string>) {
-  const names: Record<string, string> = { description: "request", softwareTypes: "categories" };
+  const names: Record<string, string> = { description: "request", softwareTypes: "categories", imageUrls: "recruitmentImages" };
   return Object.fromEntries(
     Object.entries(fields).map(([key, message]) => {
+      const imageRow = /^testItems\[(\d+)]\.imageUrls(?:\[\d+])?$/.exec(key);
+      if (imageRow) return [`testItemImages-${imageRow[1]}`, message];
       const row = /^testItems\[(\d+)]\.(title|description)$/.exec(key);
       if (row) return [`testItem${row[2] === "title" ? "Title" : "Description"}-${row[1]}`, message];
       const base = key.replace(/\[\d+]$/, "");
@@ -861,7 +899,26 @@ export async function decideApplicants(
   const pendingIds = new Set(applications.filter((item) => item.status === "applied").map((item) => item.id));
   const unique = [...new Set(ids)];
   if (!canSelectApplicants(recruitment, detail.selectionMode) || unique.length === 0 || !unique.every((id) => pendingIds.has(id))) return { ok: false };
+  if (isBackendAuth) {
+    const result = await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/applications`, {
+      method: "PATCH",
+      body: { registerIds: unique.map(Number), status },
+    });
+    return { ok: result.ok };
+  }
   return { ok: await saveApplicationDecisions(unique, status) };
+}
+
+/** 피드백 하나에 유용해요를 표시하거나 뺀다. 내 모집의 피드백인지는 백엔드가 확인한다. 목업은 화면에서만 바뀐다 */
+export async function recommendFeedback(feedbackId: string, recommended: boolean): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  return toActionResult(await backendFetch(`/api/v1/developer/feedbacks/${encodeURIComponent(feedbackId)}/recommendation`, { method: "PUT", body: { recommended } }));
+}
+
+/** 피드백을 신고한다. 제출 후 72시간 안의 제출 상태 피드백만 되고, 아니면 백엔드가 409로 이유를 준다 */
+export async function reportFeedback(feedbackId: string, reason: string): Promise<ActionResult> {
+  if (!isBackendAuth) return { ok: true };
+  return toActionResult(await backendFetch(`/api/v1/developer/feedbacks/${encodeURIComponent(feedbackId)}/report`, { method: "POST", body: { reason } }));
 }
 
 /** AI 분석 결과. 신고된 피드백을 뺀 피드백이 최소 수보다 적으면 분석하지 않는다 */
@@ -969,7 +1026,7 @@ type BackendAnalysis = {
 type BackendFeedback = { status: string; submittedAt: string };
 
 /** 백엔드 PraiseReviewResponse (GET .../analysis/praises) */
-type BackendPraise = Omit<BackendGroupReview, "representative">;
+type BackendPraise = Omit<BackendGroupReview, "representative" | "registerId">;
 
 /** 백엔드 오류를 화면 오류로 바꾼다. 없거나 남의 모집글은 404, 나머지는 오류 화면에 문구를 보인다 */
 function unwrap<T>(result: BackendResult<T>): T {
@@ -1182,25 +1239,15 @@ function createItemRows(formData: FormData) {
     .filter((row) => row.title || row.description);
 }
 
-/* shortcut: 파일 저장소가 없어(#191) 고른 이미지는 저장하지 못한다. 조용히 버리지 않고 그 칸에 알린다 */
-function pickedImageErrors(formData: FormData) {
-  const message = "이미지 업로드는 아직 준비 중이에요. 이미지를 빼고 등록해 주세요";
-  const errors: Record<string, string> = {};
-  if (parseFileMeta(formData.get("recruitmentImagesMeta"))?.length) errors.recruitmentImages = message;
-  formData.getAll("testItemImagesMeta").forEach((meta, index) => {
-    if (parseFileMeta(meta)?.length) errors[`testItemImages-${index}`] = message;
-  });
-  return errors;
-}
-
 /**
  * 검증을 마친 모집을 백엔드에 저장한다. 성공하면 null, 실패하면 폼에 보여 줄 상태를 돌려준다.
  * 보낸 항목 순서는 빈 줄을 뺀 순서라, 서버의 항목 오류를 화면의 줄 번호로 되돌린다
  */
 export async function saveBackendRecruitment(projectKey: string, state: FormState, formData: FormData): Promise<FormState | null> {
   const { values } = state;
-  const imageErrors = pickedImageErrors(formData);
-  if (Object.keys(imageErrors).length > 0) return { values, errors: imageErrors };
+  const imageUrls = parseImageUrls(formData.get("imageUrls"));
+  const itemImageUrls = formData.getAll("testItemImageUrls").map(parseImageUrls);
+  if (!imageUrls || itemImageUrls.some((urls) => !urls)) return { values, errors: { form: "이미지 주소를 확인해 주세요" } };
   const rows = createItemRows(formData);
   const result = await backendFetch<{ id: number }>("/api/v1/developer/recruitments", {
     method: "POST",
@@ -1214,7 +1261,8 @@ export async function saveBackendRecruitment(projectKey: string, state: FormStat
       conditions: values.conditions,
       recruitDeadline: values.recruitDeadline,
       submitDeadline: values.submitDeadline,
-      testItems: rows.map(({ title, description, required }) => ({ title, description, required })),
+      imageUrls,
+      testItems: rows.map(({ index, title, description, required }) => ({ title, description, required, imageUrls: itemImageUrls[index] ?? [] })),
     },
   });
   if (result.ok) return null;

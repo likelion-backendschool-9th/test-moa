@@ -23,6 +23,8 @@
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 테스터 관리 API(지원 목록, 확정·거절) | [tester-management.md](tester-management.md) |
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 피드백 관리 API(목록, 유용해요, 신고) | [feedback-management.md](feedback-management.md) |
 | [#177](https://github.com/likelion-backendschool-9th/test-moa/issues/177) | 모집글 버전 매기기 | [recruitment-version.md](recruitment-version.md) |
+| [#227](https://github.com/likelion-backendschool-9th/test-moa/issues/227) | GitHub 레포 연결 | [repository-link.md](repository-link.md) |
+| [#191](https://github.com/likelion-backendschool-9th/test-moa/issues/191) | 프로젝트·모집글·테스트 항목 이미지 업로드 | [image-upload.md](image-upload.md) |
 
 진행 상태는 이슈와 PR에서 본다.
 
@@ -54,6 +56,7 @@
 | 14 | 참가를 확정할 때 기본 보상 1,000 크레딧, 추가 보상 0을 고정한다. 금액은 `RewardPolicy` 상수 하나다 (#114, 11-07 팀 채팅) | 추가 보상은 기준이 애매해 빼고, 기본 보상만 임의 금액으로 먼저 개발하기로 했다. 프론트 `BASE_REWARD`와 같은 값이다. 바꾸면 그 뒤 확정부터 적용되고 이미 확정한 참가는 스냅샷이라 그대로다 |
 | 15 | 역할별 기능은 역할 패키지(`controller.developer`, `controller.admin` 등)에 두고, 클래스 이름은 모집글 자체를 기준으로 붙인다(`RecruitmentController`, `RecruitmentService`, `RecruitmentResponse`). `Public` 같은 접두사를 붙이지 않고, 같은 이름이 겹치면 빈 이름을 `developerRecruitmentController`처럼 준다 (#113 리뷰, 11-08) | `controller.admin.CashoutController`(`adminCashoutController`)와 같은 방식이다. 지금은 개발자 모집 컨트롤러만 옮겼고, 다른 개발자 컨트롤러(`ProjectController` 등)는 옮기지 않았다 |
 | 16 | 모집글 버전은 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고, 글을 수정해도 그대로다. 취소한 모집도 번호를 차지한다 (#177, 11-08 팀 결정) | 분석할 콘텐츠의 순서를 버전으로 관리해 AI 버전 비교(#108)가 직전 버전을 찾는다. 작성할 때 프로젝트 행을 잠그고 가장 큰 버전 + 1을 준다 |
+| 17 | 프로젝트의 GitHub 레포는 개발자가 입력한 레포 주소와 토큰(PAT)으로 연결한다. 토큰은 `EncryptedStringConverter`로 암호화해 `projects.github_token`에 저장하고 응답·로그에 내보내지 않는다. 저장하기 전에 GitHub에서 레포를 읽어 확인한다 (#227, 11-09) | GitHub App·OAuth 연결은 하지 않는다. 입력한 토큰의 권한 범위는 검사하지 않고, 이슈를 만들 수 있는지는 등록 때 GitHub가 정한다. 자세한 규칙은 [repository-link.md](repository-link.md) |
 
 ### AI 분석 서버 연동 (#107~#109)
 리뷰 묶기·버전 비교·후속 질문은 파이썬 분석 서버(`analysis-server`, 별도 EC2)가 만들고, 메인 백엔드는 데이터를 모아 보내고 결과를 받는다. 분석 서버는 DB에 연결하지 않는다.

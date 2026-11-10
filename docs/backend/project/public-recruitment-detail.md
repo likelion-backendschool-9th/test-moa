@@ -29,7 +29,7 @@
 - 이미지: 프로젝트 대표 이미지(`project.imageUrl`), 모집글 이미지(`imageUrls`, `sortOrder` 순), 테스트 항목 이미지(`testItems[].imageUrls`, `sortOrder` 순)를 따로 준다. 상세 이미지 띠는 프론트가 대표 이미지 다음에 모집글 이미지를 잇는다(#124)
 - 테스트 항목은 저장한 순서(id 순)다. 모집 작성이 요청 순서대로 저장한다
 - 지원 여부(`myRegisterStatus`): 로그인한 회원의 이 모집 참가 중 가장 최근 것의 상태(`applied`, `confirmed`, `rejected`, `cancelled`, 프론트 `ApplicationStatus`와 같은 이름). 참가가 없거나 비로그인이면 null. 다시 지원할 수 있는지는 지원 API(#114)가 정한다
-- 구독 모집 여부(`subscription`): 모집 작성 때 작성자의 구독 여부를 모집글에 저장한다(`recruitments.is_subscription`). 추가 보상 표시와 공개 목록(#112)의 구독 모집 영역이 같은 값을 쓴다
+- 구독 모집 여부(`subscription`): 저장하지 않고 읽을 때마다 프로젝트 작성자의 지금 구독으로 계산한다([README 정한 것 12](README.md#정한-것)). 추가 보상 표시와 공개 목록(#112)의 구독 모집 영역이 같은 값을 쓴다 (고침 #250: 처음에는 모집 작성 때 저장했다)
 
 #113-S1 비로그인 상세 [테스트]
 - Given 구독 회원의 프로젝트(대표 이미지 있음)에 선발형 모집글, 모집글 이미지 2장, 테스트 항목 2개
@@ -58,11 +58,15 @@
 - When  잘못된 토큰을 보낸다
 - Then  401이다
 
-#113-S6 구독 모집 여부 저장 [테스트]
-- When  구독 회원이 모집을 작성한다
-- Then  상세의 `subscription`이 true다
-- When  구독하지 않은 회원이 작성한다
-- Then  false다
+#113-S6 구독 모집 여부는 작성자의 지금 구독으로 계산 [테스트] (고침 #250: 작성 때 저장하던 것을 읽을 때 계산으로 바꿨다)
+- Given 구독 회원과 구독하지 않은 회원이 각자 모집을 썼다
+- Then  상세의 `subscription`이 구독 회원의 모집은 true, 다른 모집은 false다
+- When  구독하지 않은 회원이 구독을 시작한다
+- Then  그 회원이 이미 쓴 모집의 `subscription`이 true가 된다
+- When  그 구독을 환불로 취소한다
+- Then  false로 돌아온다
+- Given 기간이 끝난 구독(상태는 `ACTIVE`)
+- Then  `subscription`은 false다
 
 #113-S7 진행 단계 계산 [테스트]
 - Given 모집 마감이 하루 뒤, 제출 마감이 8일 뒤인 모집

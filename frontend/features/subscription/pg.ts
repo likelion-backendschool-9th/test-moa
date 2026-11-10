@@ -158,3 +158,64 @@ export function receiptPath(paymentId: string): string {
 export function isJustPaid(value: string | string[] | undefined): boolean {
   return one(value) === "1";
 }
+
+/* ---------- 결제 팝업 (#252) ---------- */
+
+/**
+ * PC에서 결제창을 여는 팝업의 창 이름 앞부분. 결제창을 거쳐 돌아온 팝업이 자기가 결제 팝업인지 알아보는 데 쓴다.
+ * 창 이름은 팝업을 열 때마다 새로 만들어서, 같은 결제 화면을 연 다른 탭의 팝업과 구분되고 결과가 시작한 탭에만 간다
+ */
+export const POPUP_NAME = "moa-pay";
+
+export function newPopupName(): string {
+  return `${POPUP_NAME}-${crypto.randomUUID()}`;
+}
+
+export function isPopupName(name: unknown): name is string {
+  return typeof name === "string" && name.startsWith(`${POPUP_NAME}-`) && name.length > POPUP_NAME.length + 1;
+}
+
+/** 팝업창 크기. 카카오페이 PC 결제창은 작은 팝업을 전제로 한 화면이라 좁고, 토스 자체창은 조금 더 넓게 연다 */
+const POPUP_SIZE: Record<PgProvider, { width: number; height: number }> = {
+  KAKAO_PAY: { width: 430, height: 620 },
+  TOSS_PAY: { width: 480, height: 700 },
+};
+
+type WindowFrame = { screenX: number; screenY: number; outerWidth: number; outerHeight: number };
+
+/** `window.open`에 줄 창 설정. 팝업이 원래 창의 가운데에 열리게 위치를 계산하고, 화면 밖으로 나가지 않게 0 이상으로 둔다 */
+export function popupFeatures(provider: PgProvider, frame: WindowFrame): string {
+  const { width, height } = POPUP_SIZE[provider];
+  const left = Math.max(0, Math.round(frame.screenX + (frame.outerWidth - width) / 2));
+  const top = Math.max(0, Math.round(frame.screenY + (frame.outerHeight - height) / 2));
+  return `popup,width=${width},height=${height},left=${left},top=${top}`;
+}
+
+/** 결제 팝업이 원래 창에 알릴 수 있는 곳. 결제 화면 아래 주소만 받아서 다른 주소로 보내는 데 쓰이지 않게 한다 */
+export function isPopupReturnPath(value: unknown): value is string {
+  return typeof value === "string" && /^\/my\/subscription\/checkout(\/[a-z]+)?(\?[^#]*)?$/.test(value);
+}
+
+/**
+ * 원래 창이 결제 팝업에 넘겨 주는 토스 결제창 값인지 본다. 값은 쿼리가 아니라 원래 창이 직접 보내므로 주소로 바꿔치기할 수 없고,
+ * 여기서는 모양만 본다(빠진 값이 있거나 금액이 정수·양수가 아니면 결제창을 열지 않는다)
+ */
+export function isTossWindow(value: unknown): value is TossWindow {
+  if (typeof value !== "object" || value === null) return false;
+  const window = value as Record<string, unknown>;
+  for (const key of ["orderId", "orderName", "clientKey", "customerKey", "successUrl", "failUrl"]) {
+    if (typeof window[key] !== "string" || window[key] === "") return false;
+  }
+  return Number.isInteger(window.amount) && (window.amount as number) > 0;
+}
+
+/**
+ * 결제 팝업이 보낸 메시지에서 원래 창이 이동할 주소를 꺼낸다. 이 창이 연 팝업(창 이름이 같음)이 보낸 결제 화면 아래 주소만 받고, 아니면 null이다.
+ * 다른 탭의 팝업이 같은 통로로 보낸 결과나 직접 보낸 메시지는 받지 않는다
+ */
+export function popupReturnHref(ownName: string | null, data: unknown, type: string): string | null {
+  if (!ownName || typeof data !== "object" || data === null) return null;
+  const message = data as Record<string, unknown>;
+  if (message.type !== type || message.name !== ownName) return null;
+  return isPopupReturnPath(message.href) ? message.href : null;
+}

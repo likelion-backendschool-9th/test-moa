@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { requireMember } from "@/features/session/guard";
 import { approveCashPayment } from "@/features/subscription/api";
 import { approvalFromQuery, completePath } from "@/features/subscription/pg";
+import { PopupReturn } from "@/app/(site)/my/(account)/subscription/checkout/_components/PopupReturn/PopupReturn";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
 
@@ -48,6 +49,7 @@ async function Result({ searchParams }: { searchParams: SearchParams }) {
   }
   return (
     <AccountCard as="section" aria-labelledby="result-heading" className={styles.result}>
+      <PopupReturn />
       <p id="result-heading" role="alert" className={styles.resultText}>
         결제를 완료하지 못했어요
       </p>

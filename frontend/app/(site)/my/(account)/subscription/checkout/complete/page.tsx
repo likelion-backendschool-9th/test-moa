@@ -9,6 +9,7 @@ import { getPaymentReceipt } from "@/features/subscription/api";
 import { isJustPaid, parsePaymentId, receiptMethodLabel } from "@/features/subscription/pg";
 import { isBackendAuth } from "@/lib/backend";
 import { formatCredits, formatDate, formatDateTime, formatWon } from "@/lib/format";
+import { PopupReturn } from "@/app/(site)/my/(account)/subscription/checkout/_components/PopupReturn/PopupReturn";
 import { AccountCard } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./page.module.css";
 
@@ -25,6 +26,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 export default function CheckoutCompletePage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className={styles.completePage}>
+      <PopupReturn />
       <Suspense fallback={<CompleteSkeleton />}>
         <Complete searchParams={searchParams} />
       </Suspense>

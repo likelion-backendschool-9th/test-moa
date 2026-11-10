@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+import com.testmoa.backend.support.ChatFixtures;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.Plan;
@@ -82,7 +83,8 @@ class RecruitmentControllerTest {
         Recruitment recruitment = Recruitment.builder().project(project).title("북로그 2차 베타").description("책 검색을 써 봐 주세요")
                 .conditions("한 달에 책을 한 권 이상 읽는 분").accessUrl("https://booklog.example.com")
                 .recruitDeadline(recruitDeadline).feedbackDeadline(feedbackDeadline)
-                .selectionMode(SelectionMode.MANUAL).subscription(true).build();
+                .selectionMode(SelectionMode.MANUAL).build();
+        new ChatFixtures(em).subscribe(developer);
         em.persist(recruitment);
         return recruitment;
     }

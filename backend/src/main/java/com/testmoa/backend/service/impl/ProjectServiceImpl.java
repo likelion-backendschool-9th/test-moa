@@ -256,8 +256,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
         checkDeadlines(request.recruitDeadline(), request.submitDeadline());
         SelectionMode selectionMode = selectionModeOf(request.selectionMode());
-        boolean subscribed = subscriptionChecker.isActive(userId);
-        if (selectionMode == SelectionMode.MANUAL && !subscribed) {
+        if (selectionMode == SelectionMode.MANUAL && !subscriptionChecker.isActive(userId)) {
             throw invalid("selectionMode", "선발형은 구독 모집에서만 쓸 수 있어요");
         }
         int version = nextVersion(project);
@@ -271,7 +270,6 @@ public class ProjectServiceImpl implements ProjectService {
                 .recruitDeadline(endOf(request.recruitDeadline()))
                 .feedbackDeadline(endOf(request.submitDeadline()))
                 .selectionMode(selectionMode)
-                .subscription(subscribed)
                 .version(version)
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());

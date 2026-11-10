@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller;
 
+import com.testmoa.backend.support.ChatFixtures;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
@@ -71,7 +72,8 @@ class ProjectDashboardControllerTest {
     private Recruitment save(Project owner, boolean subscription, LocalDateTime recruitDeadline, LocalDateTime feedbackDeadline) {
         Recruitment recruitment = Recruitment.builder().project(owner).title("모집")
                 .recruitDeadline(recruitDeadline).feedbackDeadline(feedbackDeadline)
-                .selectionMode(SelectionMode.MANUAL).subscription(subscription).build();
+                .selectionMode(SelectionMode.MANUAL).build();
+        if (subscription) new ChatFixtures(em).subscribe(owner.getUser());
         em.persist(recruitment);
         return recruitment;
     }

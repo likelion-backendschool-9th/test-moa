@@ -1,5 +1,6 @@
 package com.testmoa.backend.controller.developer;
 
+import com.testmoa.backend.support.ChatFixtures;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.Project;
@@ -72,7 +73,8 @@ class ApplicationControllerTest {
     private Recruitment saveRecruitment(boolean subscription, SelectionMode selectionMode, int recruitDays) {
         Recruitment recruitment = Recruitment.builder().project(project).title("2차 모집")
                 .recruitDeadline(LocalDateTime.now().plusDays(recruitDays)).feedbackDeadline(LocalDateTime.now().plusDays(9))
-                .selectionMode(selectionMode).subscription(subscription).build();
+                .selectionMode(selectionMode).build();
+        if (subscription) new ChatFixtures(em).subscribe(developer);
         em.persist(recruitment);
         return recruitment;
     }

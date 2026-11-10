@@ -86,13 +86,13 @@ export function ReportDetail({ report, now, view }: { report: Report; now: Date;
       <div className={styles.actions}>
         {/* 실제 로그인에서는 모집 글 신고만 모집 id를 안다(그 밖에는 빈 값) */}
         {report.targetType === "recruitment" && report.recruitmentSlug && (
-          <LinkButton href={`/recruitments/${report.recruitmentSlug}`} variant="secondary" size="sm">
+          <LinkButton href={`/recruitments/${report.recruitmentSlug}`} size="sm">
             모집 글 보기
           </LinkButton>
         )}
         {/* 인정한 뒤 회원 관리에서 다시 찾지 않고 바로 제재 양식으로 간다 */}
         {report.targetUserKey && report.targetNickname && (
-          <LinkButton href={`/admin/users/${report.targetUserKey}#sanction-form-heading`} variant="secondary" size="sm">
+          <LinkButton href={`/admin/users/${report.targetUserKey}#sanction-form-heading`} size="sm">
             {report.targetNickname} 제재하기
           </LinkButton>
         )}

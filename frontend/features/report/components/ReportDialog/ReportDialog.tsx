@@ -122,7 +122,7 @@ export function ReportDialog({ subject, title, description, onClose }: ReportDia
             <Button variant="ghost" size="sm" onClick={() => ref.current?.close()}>
               취소
             </Button>
-            <Button type="submit" variant="strong" size="sm" disabled={pending || fileError !== null}>
+            <Button type="submit" size="sm" disabled={pending || fileError !== null}>
               {pending ? "신고하는 중…" : "신고하기"}
             </Button>
           </div>

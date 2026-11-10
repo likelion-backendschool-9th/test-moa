@@ -189,7 +189,8 @@ async function processServerWithdrawal(withdrawalKey: string, review: Withdrawal
       : { decision: "REJECTED", reason: review.reason?.toUpperCase(), memo: review.memo };
   const result = await backendFetch<unknown>(`/api/v1/admin/withdrawals/${withdrawalKey}`, { method: "PUT", body });
   if (result.ok) return "done";
-  return result.status === 409 ? "already" : "failed";
+  /* 409는 이미 처리됨, 404는 없는 요청이다. 둘 다 처리하지 않고 상세를 새로 불러온다(없으면 모달 없이 목록) */
+  return result.status === 409 || result.status === 404 ? "already" : "failed";
 }
 
 /** 운영자 출금 목록. 일반 회원의 출금 신청 조회와 구분한다. */

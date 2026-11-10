@@ -105,19 +105,21 @@ export async function processWithdrawal(_prev: RequestFormState, formData: FormD
 
   const tab = formData.get("tab") === "done" ? "done" : undefined;
 
-  /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
-  const { withdrawal } = await getWithdrawal(withdrawalKey);
-  if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
-
   if (isBackendAuth) {
-    /* 서버가 처리 전인지 다시 확인한다. 그 사이 다른 운영자가 처리했으면(409) 결과를 새로 불러와 모달로 보여 준다 */
+    /*
+     * 처리 전인지는 서버가 PUT에서 확인한다(409). 미리 상세를 읽지 않는다. 그 조회가 실패하면 폼 오류가 아니라 예외로 끝나기 때문이다.
+     * 그 사이 다른 운영자가 처리했거나 요청이 없으면 새로 불러와 모달(없으면 목록)로 보여 준다
+     */
     const result = await saveServerWithdrawalReview(withdrawalKey, review);
     if (result === "failed") return { error: "server" };
     if (result === "already") redirect(withdrawalsHref({ tab, open: withdrawalKey }));
     /* 지급하면 회원의 잠긴 금액이 줄고 반려하면 적립으로 돌아가므로, 회원 화면도 새 값을 읽게 한다 */
     revalidatePath("/my", "layout");
-  } else if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) {
-    return { error: "memo" };
+  } else {
+    /* 이미 처리한 요청은 결과를 바꾸지 않는다. 새로 불러와 결과 모달을 보여 준다 */
+    const { withdrawal } = await getWithdrawal(withdrawalKey);
+    if (!withdrawal || withdrawal.review) redirect(withdrawalsHref({ tab, open: withdrawalKey }));
+    if (!(await saveAdminWithdrawalReview(withdrawalKey, review))) return { error: "memo" };
   }
   redirect(withdrawalsHref({ tab, processed: withdrawalKey }));
 }

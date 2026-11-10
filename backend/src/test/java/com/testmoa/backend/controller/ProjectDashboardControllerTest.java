@@ -23,17 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 내 프로젝트의 할 일·전체 현황(#122). 요청부터 DB까지 확인한다
+ * 내 프로젝트 전체 현황(#122). 요청부터 DB까지 확인한다
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -113,71 +108,6 @@ class ProjectDashboardControllerTest {
     }
 
     @Test
-    @DisplayName("#122-S1 지원자 할 일")
-    void 구독_모집_중인_모집의_대기_지원자만_센다() throws Exception {
-        Recruitment target = recruiting(project, true);
-        applied(target);
-        applied(target);
-        confirmed(target);
-
-        applied(recruiting(project, false));
-        applied(closed(project));
-        recruiting(project, true);
-        Recruitment cancelled = recruiting(project, true);
-        applied(cancelled);
-        cancelled.cancel(null, LocalDateTime.now());
-
-        dashboard(me)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos", hasSize(1)))
-                .andExpect(jsonPath("$.data.todos[0].kind").value("applicants"))
-                .andExpect(jsonPath("$.data.todos[0].recruitmentId").value(target.getId()))
-                .andExpect(jsonPath("$.data.todos[0].projectName").value("북로그"))
-                .andExpect(jsonPath("$.data.todos[0].count").value(2))
-                .andExpect(jsonPath("$.data.todos[0].payoutAt").value(nullValue()));
-    }
-
-    @Test
-    @DisplayName("#122-S2 신고 대기 피드백")
-    void 제출_후_72시간이_지나지_않은_제출_상태_피드백만_센다() throws Exception {
-        Recruitment target = testing(project);
-        LocalDateTime earlier = LocalDateTime.of(LocalDateTime.now().minusHours(10).toLocalDate(), LocalDateTime.now().minusHours(10).toLocalTime().withNano(0));
-        feedback(target, earlier);
-        feedback(target, earlier.plusHours(5));
-        feedback(target, LocalDateTime.now().minusHours(73));
-        feedback(target, LocalDateTime.now().minusHours(2)).report("문제가 있어요");
-
-        Recruitment cancelled = testing(project);
-        feedback(cancelled, LocalDateTime.now().minusHours(1));
-        cancelled.cancel("사유", LocalDateTime.now());
-
-        dashboard(me)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos", hasSize(1)))
-                .andExpect(jsonPath("$.data.todos[0].kind").value("feedback"))
-                .andExpect(jsonPath("$.data.todos[0].recruitmentId").value(target.getId()))
-                .andExpect(jsonPath("$.data.todos[0].count").value(2))
-                .andExpect(jsonPath("$.data.todos[0].payoutAt", startsWith(earlier.plusHours(72).toString().substring(0, 16))));
-    }
-
-    @Test
-    @DisplayName("#122-S3 순서")
-    void 지원자가_먼저이고_피드백은_자동_지급이_가까운_순서다() throws Exception {
-        Recruitment later = testing(project);
-        feedback(later, LocalDateTime.now().minusHours(1));
-        Recruitment sooner = testing(project);
-        feedback(sooner, LocalDateTime.now().minusHours(60));
-        Recruitment waiting = recruiting(project, true);
-        applied(waiting);
-
-        dashboard(me)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos[*].kind", contains("applicants", "feedback", "feedback")))
-                .andExpect(jsonPath("$.data.todos[*].recruitmentId", contains(
-                        waiting.getId().intValue(), sooner.getId().intValue(), later.getId().intValue())));
-    }
-
-    @Test
     @DisplayName("#122-S4 전체 현황")
     void 모든_프로젝트의_모집과_테스트와_완료된_모집을_센다() throws Exception {
         Project second = saveProject(me, "메모");
@@ -205,14 +135,13 @@ class ProjectDashboardControllerTest {
 
         dashboard(me)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos", empty()))
                 .andExpect(jsonPath("$.data.overview.recruiting").value(0))
                 .andExpect(jsonPath("$.data.overview.testing").value(0))
                 .andExpect(jsonPath("$.data.overview.closed").value(0));
 
         dashboard(saveUser())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos", empty()));
+                .andExpect(jsonPath("$.data.overview.recruiting").value(0));
 
         mvc.perform(get(DASHBOARD)).andExpect(status().isUnauthorized());
     }

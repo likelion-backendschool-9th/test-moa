@@ -46,7 +46,7 @@ export async function getAdminSummary(): Promise<AdminSummary> {
 }
 
 /** 두 종류를 합쳐 접수가 오래된 순서로 */
-export async function getOldestPending(limit = 5): Promise<{ now: Date; items: PendingItem[] }> {
+export async function getOldestPending(limit = 5): Promise<{ now: Date; items: PendingItem[]; withdrawalsUnavailable: boolean }> {
   const { now, reports, withdrawals } = await loadPending();
   const items: PendingItem[] = [
     ...reports.map((item) => ({
@@ -58,7 +58,7 @@ export async function getOldestPending(limit = 5): Promise<{ now: Date; items: P
     })),
     ...(withdrawals ?? []).map((item) => ({ kind: "withdrawal" as const, id: item.id, title: item.nickname, createdAt: item.createdAt, overdue: false })),
   ];
-  return { now, items: items.sort(byOldest).slice(0, limit) };
+  return { now, items: items.sort(byOldest).slice(0, limit), withdrawalsUnavailable: withdrawals === null };
 }
 
 /** 영역별 최근 접수 */

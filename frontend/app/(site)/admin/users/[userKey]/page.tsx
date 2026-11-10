@@ -8,6 +8,7 @@ import { requireAdmin } from "@/features/session/guard";
 import { AdminShell, AdminShellSkeleton } from "@/app/(site)/admin/_components/AdminShell/AdminShell";
 import { UserDetailSkeleton, UserDetailView } from "@/app/(site)/admin/users/[userKey]/_components/UserDetail/UserDetail";
 import { getUser, getUserKeys, isUserKey } from "@/features/member/api";
+import { isBackendAuth } from "@/lib/backend";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = { title: "회원 상세" };
@@ -53,6 +54,8 @@ async function Detail({ params, searchParams }: DetailProps) {
 
 async function DetailSlot({ userKey, notice }: { userKey: string; notice?: string }) {
   const { user } = await getUser(userKey);
-  if (!user) return <EmptyState title="회원을 찾을 수 없어요" description="시연용 데이터에 이 회원이 없어요." />;
+  if (!user) {
+    return <EmptyState title="회원을 찾을 수 없어요" description={isBackendAuth ? "없는 회원이에요. 목록에서 다시 골라 주세요." : "시연용 데이터에 이 회원이 없어요."} />;
+  }
   return <UserDetailView user={user} notice={notice} />;
 }

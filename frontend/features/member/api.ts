@@ -118,13 +118,17 @@ async function getBackendUsers(filter: UserFilter, query: string): Promise<UserS
   const params = new URLSearchParams({ filter });
   if (query) params.set("q", query);
   const result = await backendFetch<AdminUserResponse[]>(`/api/v1/admin/users?${params}`);
-  return result.ok ? result.data.map(toUserSummary) : [];
+  /* 백엔드 장애를 "회원 없음"으로 보이지 않게 실패는 오류 화면으로 올린다 */
+  if (!result.ok) throw new Error(`회원 목록을 읽지 못했어요: ${result.code}`);
+  return result.data.map(toUserSummary);
 }
 
 async function getBackendUser(userKey: string): Promise<{ now: Date; user: UserDetail | null }> {
   await assertAdmin();
   await connection();
   const result = await backendFetch<AdminUserResponse>(`/api/v1/admin/users/${userKey}`);
+  /* 없는 회원(404)만 "찾을 수 없어요"로 보이고, 그 밖의 실패는 오류 화면으로 올린다 */
+  if (!result.ok && result.status !== 404) throw new Error(`회원을 읽지 못했어요: ${result.code}`);
   return { now: new Date(), user: result.ok ? toUserDetail(result.data) : null };
 }
 
@@ -196,7 +200,9 @@ export async function saveProfile(name: string, nickname: string): Promise<Backe
 /** 내가 받은 경고·정지, 최근 순(#86). 실제 로그인에서만 부른다 */
 export async function getMySanctions(): Promise<MySanction[]> {
   const result = await backendFetch<MySanction[]>("/api/v1/sanctions/me");
-  return result.ok ? result.data : [];
+  /* 장애를 "받은 제재가 없어요"로 보이지 않게 실패는 오류 화면으로 올린다 */
+  if (!result.ok) throw new Error(`받은 제재를 읽지 못했어요: ${result.code}`);
+  return result.data;
 }
 
 /** 탈퇴 확인 창의 안내(#84). 비로그인이면 로그인으로 보낸다. 크레딧은 요청 시각 기준이라 미리 렌더링하지 않는다 */

@@ -1,7 +1,7 @@
 "use client";
 
 import { WarningCircleIcon } from "@phosphor-icons/react";
-import { useActionState } from "react";
+import { type FormEvent, startTransition, useActionState } from "react";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
 import { Button } from "@/components/ui/Button/Button";
 import { TextArea, TextInput } from "@/components/ui/TextField/TextField";
@@ -19,16 +19,22 @@ type Props =
 /**
  * 플랜 하나의 혜택 양식. 혜택은 한 줄에 하나다.
  * 무료는 이름도 고치고 바로 저장되며, 구독은 이름·가격·기간을 서버 값 그대로 두고 혜택만 고쳐 새 버전으로 등록한다.
- * 저장하면 서버 값으로 다시 그려지도록 값이 바뀌면 key로 새로 그린다
+ * 저장이 성공해 서버 값이 바뀌면 key로 새로 그려 새 값을 채운다. 거절되면 값이 그대로라 입력한 내용이 남는다
  */
 export function PlanTermsForm(props: Props) {
   const isFree = props.kind === "free";
   const [state, formAction, pending] = useActionState(isFree ? saveFreePlanTerms : registerPlanTerms, initialState);
+  /* React가 폼 액션 뒤 칸을 자동으로 비우지 않게 직접 제출한다. 저장이 거절돼도 운영자가 쓴 내용이 남는다 */
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  }
   const id = isFree ? "free" : `plan-${props.planId}`;
   return (
     <AdminPanel as="section" aria-label={props.title} className={styles.panel}>
       <h2 className={styles.title}>{props.title}</h2>
-      <form key={props.benefits.join("\n")} action={formAction} className={styles.form} aria-label={`${props.title} 혜택`}>
+      <form key={props.benefits.join("\n")} action={formAction} onSubmit={handleSubmit} className={styles.form} aria-label={`${props.title} 혜택`}>
         {props.kind === "subscription" && <input type="hidden" name="planId" value={props.planId} />}
         {isFree && (
           <div className={styles.field}>

@@ -16,7 +16,8 @@ export async function PlanTerms() {
         </AdminPanel>
       )}
       {plans.map((plan) => (
-        <PlanTermsForm key={plan.id} kind="subscription" title={`구독 플랜 ${plan.name}`} planId={plan.id} name={plan.name} benefits={plan.benefits} />
+        /* 새 버전은 id가 달라서 id로 key를 두면 저장 뒤 양식이 통째로 새로 그려져 "새 버전으로 등록했어요"가 사라진다. 이름으로 둔다 */
+        <PlanTermsForm key={plan.name} kind="subscription" title={`구독 플랜 ${plan.name}`} planId={plan.id} name={plan.name} benefits={plan.benefits} />
       ))}
     </>
   );

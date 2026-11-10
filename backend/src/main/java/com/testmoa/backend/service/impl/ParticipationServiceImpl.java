@@ -144,6 +144,14 @@ public class ParticipationServiceImpl implements ParticipationService {
         return feedbackImageUrl(registerId, name);
     }
 
+    @Override
+    public FileStorage.ImageFile loadFeedbackImage(Long userId, Long registerId, String name) {
+        registerRepository.findMine(registerId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        return fileStorage.loadImage(FeedbackImage.FOLDER + "/" + registerId, name)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+    }
+
     // 이미지를 올릴 수 있는 참가. 제재는 참가를 찾기 전에 알린다. 제출은 행을 잠그므로 이 메서드를 쓰지 않는다
     private Register openParticipation(Long userId, Long registerId) {
         sanctionChecker.require(userId, Restriction.FEEDBACK);

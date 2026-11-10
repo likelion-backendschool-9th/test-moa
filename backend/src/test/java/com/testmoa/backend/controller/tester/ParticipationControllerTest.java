@@ -52,6 +52,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -536,6 +538,63 @@ class ParticipationControllerTest {
         }
         assertThat(feedbackCount(register)).isZero();
         assertThat(imageCount(register)).isZero();
+    }
+
+    @Test
+    @DisplayName("#119-S11")
+    void 제출한_이미지를_상세에서_순서대로_다시_본다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        try {
+            String first = uploadedUrl(tester, register);
+            String second = uploadedUrl(tester, register);
+            Map<String, Object> entry = item(required, "화면을 확인했어요");
+            entry.put("imageUrls", List.of(first, second));
+            submit(tester, register, body(null, entry)).andExpect(status().isCreated());
+
+            JsonNode detail = data(detail(tester, register).andExpect(status().isOk()));
+            assertThat(urls(detail.at("/feedbacks/0/imageUrls"))).containsExactly(first, second);
+            send(tester, get(first), null).andExpect(status().isOk())
+                    .andExpect(content().contentType("image/png"))
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andExpect(content().bytes(PNG));
+        } finally {
+            deleteFeedbackFiles(register.getId());
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S13")
+    void 다른_회원과_잘못된_파일의_조회와_공개_주소_접근을_막는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        User other = saveUser();
+        Register otherRegister = confirmed(recruitment, other);
+        try {
+            String url = uploadedUrl(tester, register);
+            String otherUrl = uploadedUrl(other, otherRegister);
+            // 자기 참가에 올린 파일은 제출 전에도 읽는다.
+            send(tester, get(url), null).andExpect(status().isOk());
+            Feedback feedback = feedback(register, required);
+            String name = url.substring(url.lastIndexOf('/') + 1);
+            String developerBase = "/api/v1/developer/feedbacks/" + feedback.getId() + "/images/";
+            String testerBase = BASE + register.getId() + "/feedbacks/images/";
+            send(other, get(url), null).andExpect(status().isNotFound());
+            send(other, get(developerBase + name), null).andExpect(status().isNotFound());
+            send(null, get(url), null).andExpect(status().isUnauthorized());
+            send(null, get(developerBase + name), null).andExpect(status().isUnauthorized());
+            for (String invalid : List.of(UUID.randomUUID() + ".png", "a..png",
+                    otherUrl.substring(otherUrl.lastIndexOf('/') + 1))) {
+                send(tester, get(testerBase + invalid), null).andExpect(status().isNotFound());
+                send(developer, get(developerBase + invalid), null).andExpect(status().isNotFound());
+            }
+            send(tester, get(BASE + 999_999_999L + "/feedbacks/images/" + name), null)
+                    .andExpect(status().isNotFound());
+            send(developer, get("/api/v1/developer/feedbacks/999999999/images/" + name), null)
+                    .andExpect(status().isNotFound());
+            send(null, get("/api/v1/recruitments/images/" + name), null).andExpect(status().isNotFound());
+        } finally {
+            deleteFeedbackFiles(register.getId());
+            deleteFeedbackFiles(otherRegister.getId());
+        }
     }
 
     private String uploadedUrl(User user, Register register) throws Exception {

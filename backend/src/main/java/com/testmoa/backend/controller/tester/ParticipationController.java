@@ -11,6 +11,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,6 +37,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ParticipationController {
     private final ParticipationService participationService;
+
+    @Operation(summary = "피드백 이미지 조회", description = "자기 참가의 이미지를 읽는다. 다른 회원의 참가는 404")
+    @GetMapping("/{registerId}/feedbacks/images/{name}")
+    public ResponseEntity<Resource> image(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                          @PathVariable Long registerId, @PathVariable String name) {
+        var image = participationService.loadFeedbackImage(userId, registerId, name);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .contentType(MediaType.parseMediaType(image.contentType())).body(image.resource());
+    }
 
     @Operation(summary = "내 참여 목록", description = "탭(applied 지원한, ongoing 참여 중, history 참여했던)의 참여. "
             + "지원한·참여 중은 할 일 순서, 참여했던은 최근 순. 참여 취소는 참여했던 탭에 있다")

@@ -1,6 +1,7 @@
 package com.testmoa.backend.service;
 
 import com.testmoa.backend.dto.request.FeedbackSubmitRequest;
+import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.dto.response.ParticipationListItemResponse;
 import com.testmoa.backend.dto.response.ParticipationResponse;
 import com.testmoa.backend.dto.response.ParticipationSummaryResponse;
@@ -9,6 +10,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface ParticipationService {
+    /** 내 참가의 이미지를 읽는다. 제출에 연결하지 않은 파일도 읽을 수 있고, 남의 참가는 NOT_FOUND */
+    FileStorage.ImageFile loadFeedbackImage(Long userId, Long registerId, String name);
+
     /**
      * 내 참여 상세(#118). 없거나 다른 회원의 참가는 NOT_FOUND
      */

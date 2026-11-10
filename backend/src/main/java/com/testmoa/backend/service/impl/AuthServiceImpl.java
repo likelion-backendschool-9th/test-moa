@@ -168,7 +168,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public OAuthLoginResponse oauthLogin(OAuthProfile profile) {
         Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
-        if (linked.isPresent()) return OAuthLoginResponse.loggedIn(startSocialSession(linked.get().getUser()));
+        if (linked.isPresent()) {
+            // 연동된 계정 화면에 보일 제공자 이메일을 최신으로 둔다(이 값을 저장하기 전에 연동한 계정도 여기서 채워진다)
+            linked.get().rememberProviderEmail(providerEmail(profile));
+            return OAuthLoginResponse.loggedIn(startSocialSession(linked.get().getUser()));
+        }
 
         if (!profile.emailVerified() || profile.email() == null) throw new BusinessException(ErrorCode.OAUTH_EMAIL_REQUIRED);
         String email = normalizeEmail(profile.email());
@@ -216,8 +220,9 @@ public class AuthServiceImpl implements AuthService {
 
         Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
         if (linked.isPresent()) {
-            if (linked.get().getUser().getId().equals(userId)) return; // 이미 내 계정
-            throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+            if (!linked.get().getUser().getId().equals(userId)) throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+            linked.get().rememberProviderEmail(providerEmail(profile)); // 이미 내 계정
+            return;
         }
         saveSocialAccount(user, profile);
     }
@@ -246,7 +251,13 @@ public class AuthServiceImpl implements AuthService {
                 .user(user)
                 .provider(profile.provider())
                 .providerCode(profile.providerCode())
+                .providerEmail(providerEmail(profile))
                 .build());
+    }
+
+    // 화면에 보일 제공자 이메일. 확인 여부와 상관없이 제공자가 준 값을 소문자로 둔다(로그인·가입 판단에는 쓰지 않는다)
+    private String providerEmail(OAuthProfile profile) {
+        return profile.email() == null ? null : normalizeEmail(profile.email());
     }
 
     /**

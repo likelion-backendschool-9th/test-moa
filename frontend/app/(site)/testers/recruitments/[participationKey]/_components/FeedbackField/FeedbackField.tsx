@@ -34,8 +34,8 @@ type FeedbackFieldProps = {
 
 /**
  * 피드백 칸 하나. 내용과 이미지를 칸마다 따로 갖는다.
- * 이미지는 고를 때 바로 한도를 확인해 브라우저 안에서 미리 보여 준다. 파일 칸에 name이 없어 파일은 서버로 가지 않고,
- * 숨은 칸으로 이름·크기·형식만 보낸다(feedback-images.ts).
+ * 이미지는 고를 때 바로 한도를 확인해 브라우저 안에서 미리 보여 준다. 파일 칸에는 name이 없어 폼에는 실리지 않고,
+ * 숨은 칸으로 이름·크기·형식만 보낸다. 백엔드 모드에서는 폼이 제출할 때 이 파일을 올린다(feedback-images.ts).
  */
 export function FeedbackField({ fieldKey, number, title, description, required, error, images, onImagesChange }: FeedbackFieldProps) {
   const [content, setContent] = useState("");

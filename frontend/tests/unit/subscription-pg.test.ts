@@ -1,10 +1,14 @@
 import { expect, test } from "@playwright/test";
 import {
   approvalFromQuery,
+  completePath,
   isMobileUserAgent,
   kakaoRedirectUrl,
+  parsePaymentId,
   pgNotice,
   readProviders,
+  receiptFromServer,
+  receiptMethodLabel,
   tossWindowFrom,
   type PgReady,
 } from "@/features/subscription/pg";
@@ -44,7 +48,7 @@ test("#249-S21 모바일 브라우저는 모바일 결제창 주소를 쓰고 �
   expect(kakaoRedirectUrl({}, false)).toBeNull();
 });
 
-test("#249-S17 토스 결제창은 준비 값이 모두 있을 때만 열 수 있다", () => {
+test("#249-S21 토스 결제창은 준비 값이 모두 있을 때만 열 수 있다", () => {
   const ready: PgReady = {
     orderId: "MOA1", provider: "TOSS_PAY", amount: 10000, orderName: "PRO",
     clientKey: "test_ck_x", customerKey: "moa-abc", successUrl: "http://localhost:3005/my/subscription/checkout/result",
@@ -59,17 +63,43 @@ test("#249-S17 토스 결제창은 준비 값이 모두 있을 때만 열 수 �
   }
 });
 
-test("#249-S14 서버가 준 결제 대행사 목록에서 알 수 있는 값만 남긴다", () => {
+test("#249-S21 서버가 준 결제 대행사 목록에서 알 수 있는 값만 남긴다", () => {
   expect(readProviders(["KAKAO_PAY", "TOSS_PAY"])).toEqual(["KAKAO_PAY", "TOSS_PAY"]);
   expect(readProviders(["TOSS_PAY", "PAYCO", 1, null])).toEqual(["TOSS_PAY"]);
   expect(readProviders(undefined)).toEqual([]);
   expect(readProviders("TOSS_PAY")).toEqual([]);
 });
 
-test("#249-S18 취소·실패로 돌아오면 안내를 보이고 알 수 없는 값은 보이지 않는다", () => {
+test("#249-S21 취소·실패로 돌아오면 안내를 보이고 알 수 없는 값은 보이지 않는다", () => {
   expect(pgNotice("cancel")).toBe("결제를 취소했어요");
   expect(pgNotice("fail")).toBe("결제하지 못했어요. 다시 시도해 주세요");
   expect(pgNotice(["cancel", "fail"])).toBe("결제를 취소했어요");
   expect(pgNotice("approved")).toBeNull();
   expect(pgNotice(undefined)).toBeNull();
+});
+
+test("#249-S23 결제 완료 화면의 결제 id는 서버 id가 될 수 있는 숫자만 받는다", () => {
+  for (const id of ["1", "42", "999999999999999999"]) expect(parsePaymentId(id), id).toBe(id);
+  expect(parsePaymentId(["7", "8"])).toBe("7");
+  for (const id of ["", "abc", "0", "007", "-1", "1.5", "1e3", "9999999999999999999", " 7"]) {
+    expect(parsePaymentId(id), id).toBeNull();
+  }
+  expect(parsePaymentId(undefined)).toBeNull();
+});
+
+test("#249-S23 결제가 끝나면 결제 id가 있을 때만 결제 완료 화면으로 보낸다", () => {
+  expect(completePath("42")).toBe("/my/subscription/checkout/complete?payment=42");
+  expect(completePath(null)).toBe("/my/subscription?notice=paid");
+});
+
+test("#249-S23 결제 완료 화면은 결제 수단을 크레딧·카카오페이·토스페이로 말하고 예전 현금 결제는 현금이라 한다", () => {
+  const base = { paymentId: 5, plan: "PRO", amount: 10000, paidAt: "2026-11-10T08:30:00Z", period: { startAt: "2026-11-10T08:30:00Z", endAt: "2026-12-10T08:30:00Z" } };
+  const credit = receiptFromServer({ ...base, method: "CREDIT", provider: null, amount: 9000 });
+  const kakao = receiptFromServer({ ...base, method: "CASH", provider: "KAKAO_PAY" });
+  const toss = receiptFromServer({ ...base, method: "CASH", provider: "TOSS_PAY" });
+  const legacy = receiptFromServer({ ...base, method: "CASH" });
+  expect([credit, kakao, toss, legacy].map(receiptMethodLabel)).toEqual(["크레딧", "카카오페이", "토스페이", "현금"]);
+  expect(kakao).toEqual({ id: "5", plan: "PRO", method: "CASH", provider: "KAKAO_PAY", amount: 10000, paidAt: base.paidAt, period: base.period });
+  /* 모르는 결제 대행사는 없는 것으로 본다 */
+  expect(receiptFromServer({ ...base, method: "CASH", provider: "PAYCO" }).provider).toBeNull();
 });

@@ -106,16 +106,36 @@ class SignupCreditBackfillRunnerTest {
     void 한_회원이_실패해도_나머지는_계속한다() {
         UserRepository users = mock(UserRepository.class);
         SignupCreditService service = mock(SignupCreditService.class);
-        when(users.findIdsByRoleAndStatusIn(Role.USER, SignupCreditBackfillRunner.TARGET_STATUSES)).thenReturn(List.of(1L, 2L, 3L));
-        when(service.grant(1L)).thenReturn(true);
-        when(service.grant(2L)).thenThrow(new IllegalStateException("저장 실패"));
-        when(service.grant(3L)).thenReturn(false);
+        when(users.findIdsByRoleAndStatusIn(Role.USER, SignupCreditService.BACKFILL_STATUSES)).thenReturn(List.of(1L, 2L, 3L));
+        when(service.grantToExistingMember(1L)).thenReturn(true);
+        when(service.grantToExistingMember(2L)).thenThrow(new IllegalStateException("저장 실패"));
+        when(service.grantToExistingMember(3L)).thenReturn(false);
 
         assertThatCode(() -> new SignupCreditBackfillRunner(users, service).run(null)).doesNotThrowAnyException();
 
-        verify(service).grant(1L);
-        verify(service).grant(2L);
-        verify(service).grant(3L);
+        verify(service).grantToExistingMember(1L);
+        verify(service).grantToExistingMember(2L);
+        verify(service).grantToExistingMember(3L);
+    }
+
+    @Test
+    @DisplayName("#255-S7 후보를 읽은 뒤 탈퇴·파기·권한이 바뀐 회원은 지급하지 않고 나머지는 지급한다")
+    void 후보를_읽은_뒤_대상이_아니게_된_회원은_건너뛴다() {
+        User active = saveUser(Role.USER, UserStatus.ACTIVE);
+        User withdrawn = saveUser(Role.USER, UserStatus.WITHDRAWN);
+        User deleted = saveUser(Role.USER, UserStatus.DELETED);
+        User admin = saveUser(Role.ADMIN, UserStatus.ACTIVE);
+        /* 후보 목록에는 네 명 모두 들어 있었다(읽은 뒤에 상태가 바뀐 상황) */
+        UserRepository users = mock(UserRepository.class);
+        when(users.findIdsByRoleAndStatusIn(Role.USER, SignupCreditService.BACKFILL_STATUSES))
+                .thenReturn(List.of(withdrawn.getId(), deleted.getId(), admin.getId(), active.getId(), Long.MAX_VALUE));
+
+        new SignupCreditBackfillRunner(users, signupCreditService).run(null);
+
+        assertThat(eventCredit(active)).isEqualTo(3000);
+        for (User user : List.of(withdrawn, deleted, admin)) {
+            assertThat(creditWalletRepository.findByUserId(user.getId())).isEmpty();
+        }
     }
 
     @Test

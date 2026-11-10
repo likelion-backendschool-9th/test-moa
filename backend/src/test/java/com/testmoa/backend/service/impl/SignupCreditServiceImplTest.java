@@ -39,7 +39,7 @@ class SignupCreditServiceImplTest {
     }
 
     private SignupCreditServiceImpl service(int amount) {
-        return new SignupCreditServiceImpl(creditWalletRepository, creditLedgerRepository, amount, Clock.systemDefaultZone());
+        return new SignupCreditServiceImpl(userRepository, creditWalletRepository, creditLedgerRepository, amount, Clock.systemDefaultZone());
     }
 
     @Test

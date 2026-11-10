@@ -62,7 +62,7 @@ type ParticipationResponse = {
 type ParticipationDetailResponse = ParticipationResponse & {
   accessUrl: string | null;
   testItems: Array<{ id: number; title: string; description: string | null; required: boolean }>;
-  feedbacks: Array<{ testItemId: number | null; content: string }>;
+  feedbacks: Array<{ testItemId: number | null; content: string; imageUrls: string[] }>;
 };
 
 type ParticipationSummaryResponse = ParticipationSummary & { counts: ParticipationCounts };
@@ -197,6 +197,7 @@ export async function getParticipation(key: string): Promise<ParticipationItem |
         testItemId: feedback.testItemId === null ? null : String(feedback.testItemId),
         content: feedback.content,
         imageNames: [],
+        imageUrls: feedback.imageUrls,
       })),
     };
   }

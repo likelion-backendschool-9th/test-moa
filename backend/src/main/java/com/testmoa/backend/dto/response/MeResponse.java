@@ -12,6 +12,7 @@ import java.util.List;
  * 내 정보. 프론트는 이 응답으로 헤더·마이페이지·구독 화면을 그린다
  *
  * @param providers    연동된 로그인 방식 (LOCAL, GOOGLE, GITHUB)
+ * @param accounts     로그인 방식별 이메일(#84). LOCAL은 가입 이메일, 소셜은 제공자가 알려 준 이메일(모르면 null)
  * @param hasPassword  이메일 로그인 계정(LOCAL)이 있는지. 없으면 비밀번호 변경 대신 "비밀번호 만들기"
  * @param subscription 구독 상태. 운영자는 구독 대상이 아니라 null
  */
@@ -23,6 +24,7 @@ public record MeResponse(
         String imageUrl,
         Role role,
         List<Provider> providers,
+        List<LinkedAccount> accounts,
         boolean hasPassword,
         SubscriptionStatusResponse subscription
 ) {
@@ -32,6 +34,9 @@ public record MeResponse(
      * @param endAt  구독 만료 일시. 구독 중이 아니면 null
      */
     public record SubscriptionStatusResponse(boolean active, String plan, LocalDateTime endAt) {}
+
+    /** 연동된 로그인 방식 하나와 그 이메일 */
+    public record LinkedAccount(Provider provider, String email) {}
 
     public static MeResponse of(User user, List<Account> accounts, SubscriptionStatusResponse subscription) {
         List<Provider> providers = accounts.stream().map(Account::getProvider).toList();
@@ -44,6 +49,9 @@ public record MeResponse(
                 user.getImageUrl(),
                 user.getRole(),
                 providers,
+                accounts.stream()
+                        .map(a -> new LinkedAccount(a.getProvider(), a.getProvider() == Provider.LOCAL ? user.getEmail() : a.getProviderEmail()))
+                        .toList(),
                 providers.contains(Provider.LOCAL),
                 subscription);
     }

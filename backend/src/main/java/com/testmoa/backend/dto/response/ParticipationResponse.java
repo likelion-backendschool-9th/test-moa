@@ -10,7 +10,7 @@ import java.util.List;
  * @param earnedCredits 받은 크레딧. 지급 완료가 아니면 0
  * @param reward        확정한 참가는 고정한 보상(기본 + 추가), 확정 전에는 지금 기준 금액
  * @param accessUrl     테스트 접속 링크. 참여가 확정된 테스터에게만 준다
- * @param feedbacks     제출한 피드백. 제출 전이면 빈 배열. 기타 의견은 testItemId가 null
+ * @param feedbacks     제출한 피드백. 제출 전이면 빈 배열. 기타 의견은 testItemId가 null. imageUrls는 올린 순서
  */
 public record ParticipationResponse(
         Long id,
@@ -34,6 +34,6 @@ public record ParticipationResponse(
     /** 피드백을 쓸 테스트 항목. 화면 배치 순서대로, 같으면 저장 순서대로 */
     public record TestItemInfo(Long id, String title, String description, boolean required) {}
 
-    /** 제출한 피드백 한 건 */
-    public record FeedbackInfo(Long testItemId, String content) {}
+    /** 제출한 피드백 한 건. imageUrls는 올린 순서이고, 없으면 빈 배열 */
+    public record FeedbackInfo(Long testItemId, String content, List<String> imageUrls) {}
 }

@@ -40,4 +40,21 @@ public final class Masking {
         int lastStart = name.offsetByCodePoints(0, length - 1);
         return first + "*".repeat(length - 2) + name.substring(lastStart);
     }
+
+    /**
+     * 이메일. 아이디 앞 두 글자만 남기고 도메인은 그대로 둔다. 두 글자 이하는 앞 한 글자만.
+     * 예: member04@example.com → me***@example.com
+     */
+    public static String email(String email) {
+        if (email == null) {
+            return null;
+        }
+        int at = email.indexOf('@');
+        if (at <= 0) {
+            return "***";
+        }
+        String local = email.substring(0, at);
+        int keep = local.length() <= 2 ? 1 : 2;
+        return local.substring(0, keep) + "***" + email.substring(at);
+    }
 }

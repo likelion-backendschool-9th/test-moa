@@ -45,8 +45,8 @@ async function SummarySlot() {
 }
 
 async function OldestSlot() {
-  const { now, items } = await getOldestPending(5);
-  return <OldestPendingPanel items={items} now={now} />;
+  const { now, items, withdrawalsUnavailable } = await getOldestPending(5);
+  return <OldestPendingPanel items={items} now={now} withdrawalsUnavailable={withdrawalsUnavailable} />;
 }
 
 async function RecentSlot() {

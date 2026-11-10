@@ -1,10 +1,14 @@
 package com.testmoa.backend.controller.my;
 
 import com.testmoa.backend.dto.request.PaymentRequest;
+import com.testmoa.backend.dto.request.PgApproveRequest;
+import com.testmoa.backend.dto.request.PgReadyRequest;
 import com.testmoa.backend.dto.response.PaymentHistoryResponse;
 import com.testmoa.backend.dto.response.PaymentResponse;
+import com.testmoa.backend.dto.response.PgReadyResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.my.PaymentService;
+import com.testmoa.backend.service.my.PgPaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -28,12 +32,14 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PgPaymentService pgPaymentService;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService, PgPaymentService pgPaymentService) {
         this.paymentService = paymentService;
+        this.pgPaymentService = pgPaymentService;
     }
 
-    @Operation(summary = "구독 결제 실행", description = "현금(완료 기록만)이나 크레딧으로 결제한다. 직전 결제 후 5초 안이면 409")
+    @Operation(summary = "구독 결제 실행(크레딧)", description = "크레딧으로 결제한다. 현금은 PG 승인을 거쳐야 해서 400. 직전 결제 후 5초 안이면 409")
     @PostMapping("/checkout")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PaymentResponse> pay(
@@ -41,6 +47,26 @@ public class PaymentController {
             @Valid @RequestBody PaymentRequest request
     ) {
         return ApiResponse.ok(paymentService.pay(userId, request));
+    }
+
+    @Operation(summary = "구독 현금 결제 준비", description = "서버가 금액을 정해 결제 시도를 저장하고 카카오페이·토스 결제창 정보를 준다")
+    @PostMapping("/checkout/ready")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<PgReadyResponse> ready(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody PgReadyRequest request
+    ) {
+        return ApiResponse.ok(pgPaymentService.ready(userId, request));
+    }
+
+    @Operation(summary = "구독 현금 결제 승인", description = "결제창에서 돌아온 값으로 PG 승인을 부르고, 성공하면 결제와 이용 기간을 저장한다")
+    @PostMapping("/checkout/approve")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<PaymentResponse> approve(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody PgApproveRequest request
+    ) {
+        return ApiResponse.ok(pgPaymentService.approve(userId, request));
     }
 
     @Operation(summary = "내 결제 이력", description = "최신순. 운영자는 빈 배열")

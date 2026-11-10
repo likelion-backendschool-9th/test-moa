@@ -39,11 +39,12 @@
 {
   "success": true,
   "data": [
-    { "feedbackId": 31, "nickname": "모아", "testItemTitle": "로그인", "content": "로그인하면 앱이 꺼져요", "submittedAt": "2026-11-07T10:00:00", "representative": true }
+    { "feedbackId": 31, "registerId": 7, "nickname": "모아", "testItemTitle": "로그인", "content": "로그인하면 앱이 꺼져요", "submittedAt": "2026-11-07T10:00:00", "representative": true }
   ]
 }
 ```
 - `testItemTitle`은 기타 의견이면 null이다
+- `registerId`는 그 리뷰를 쓴 참가의 id다 (고침 #195: 버전 비교 화면에서 채팅 걸기에 참가 id가 필요하다)
 - 오류: 401, 403 `SUBSCRIPTION_REQUIRED`, 404 `NOT_FOUND`(없거나 다른 모집글·회원의 그룹)
 
 ### 짝 저장 `PUT .../{recruitmentId}/version-comparison/links`

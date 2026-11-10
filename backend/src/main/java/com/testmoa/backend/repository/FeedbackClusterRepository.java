@@ -56,7 +56,7 @@ public interface FeedbackClusterRepository extends JpaRepository<FeedbackCluster
     // 그룹 하나에 든 리뷰. 대표 리뷰가 먼저이고 나머지는 최근 제출 순. 주어진 상태의 리뷰만 읽음
     @Query("""
             select new com.testmoa.backend.dto.response.GroupReviewResponse(
-                f.id, u.nickname, ti.title, f.content, f.submittedAt, fc.representative)
+                f.id, r.id, u.nickname, ti.title, f.content, f.submittedAt, fc.representative)
             from feedback_clusters fc
             join fc.feedback f
             join f.register r

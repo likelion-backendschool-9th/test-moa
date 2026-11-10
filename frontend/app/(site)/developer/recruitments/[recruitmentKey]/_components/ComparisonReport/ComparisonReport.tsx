@@ -131,6 +131,8 @@ export function ComparisonReport({ groups, previousKey, currentKey, previousVers
         <FollowupQuestionsDialog
           key={asking.review.id}
           nickname={asking.review.testerNickname}
+          registerId={asking.review.registerId}
+          recruitmentKey={currentKey}
           content={asking.review.content}
           followup={followups[asking.review.id] ?? { state: "loading" }}
           onRetry={() => askFollowup(asking.review, asking.recruitmentKey)}

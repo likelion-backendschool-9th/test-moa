@@ -31,7 +31,6 @@ import com.testmoa.backend.repository.TestItemImageRepository;
 import com.testmoa.backend.repository.TestItemRepository;
 import com.testmoa.backend.repository.TypeRepository;
 import com.testmoa.backend.repository.UserRepository;
-import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
@@ -40,6 +39,8 @@ import com.testmoa.backend.entity.enums.TypeCode;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import com.testmoa.backend.service.RecruitmentNames;
 import com.testmoa.backend.service.SubscriptionChecker;
 import lombok.RequiredArgsConstructor;
@@ -48,19 +49,15 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -72,10 +69,10 @@ public class ProjectServiceImpl implements ProjectService {
     // 마감일은 한국 시간으로 그날 끝까지다
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
     // 제출 뒤 이 시간 동안 신고가 없으면 자동 지급한다
-    private static final Duration PAYOUT_WAIT = Duration.ofHours(72);
 
     private final FileStorage fileStorage;
     private final ProjectRepository projectRepository;
+    private final SanctionChecker sanctionChecker;
     private final RecruitmentRepository recruitmentRepository;
     private final RecruitmentImageRepository recruitmentImageRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
@@ -94,9 +91,7 @@ public class ProjectServiceImpl implements ProjectService {
     public String uploadImage(List<MultipartFile> files) {
         if (files.size() != 1) throw invalid("file", "이미지는 한 번에 한 장씩 올려 주세요");
         MultipartFile file = files.getFirst();
-        var kind = FileStorage.detect(file)
-                .filter(value -> value != FileStorage.Kind.PDF)
-                .filter(value -> !file.isEmpty())
+        var kind = FileStorage.detectImage(file)
                 .orElseThrow(() -> invalid("file", "PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
         var stored = fileStorage.save("images", file, kind);
         return FileStorage.IMAGE_URL_PREFIX
@@ -128,40 +123,20 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
-     * 내 프로젝트의 할 일과 전체 현황. 모집 건별 수를 한 번에 읽어 프로젝트가 많아도 쿼리가 늘지 않는다
+     * 내 프로젝트 전체 현황. 모집 건을 상태별로 센다
      */
     @Override
     public ProjectDashboardResponse findDashboard(Long userId) {
-        Map<Long, String> projectNames = projectRepository.findByUserIdOrderByCreatedAtDescIdDesc(userId).stream()
-                .collect(Collectors.toMap(Project::getId, Project::getTitle));
+        List<Long> projectIds = projectRepository.findByUserIdOrderByCreatedAtDescIdDesc(userId).stream().map(Project::getId).toList();
         LocalDateTime now = LocalDateTime.now();
-        List<Recruitment> recruitments = projectNames.isEmpty() ? List.of()
-                : recruitmentRepository.findByProjectIdInOrderByCreatedAtDescIdDesc(projectNames.keySet()).stream()
-                .filter(item -> item.phaseAt(now) != RecruitmentPhase.CANCELLED).toList();
-        if (recruitments.isEmpty()) return new ProjectDashboardResponse(List.of(), new ProjectDashboardResponse.Overview(0, 0, 0));
-
-        List<Long> recruitmentIds = recruitments.stream().map(Recruitment::getId).toList();
-        Map<Long, Long> pending = countMap(registerRepository.countByRecruitmentIds(recruitmentIds, RegisterStatus.APPLIED));
-        Map<Long, FeedbackRepository.WaitingCount> waiting = feedbackRepository
-                .countWaitingByRecruitmentIds(recruitmentIds, FeedbackStatus.SUBMITTED, now.minus(PAYOUT_WAIT)).stream()
-                .collect(Collectors.toMap(FeedbackRepository.WaitingCount::getRecruitmentId, Function.identity()));
-
-        List<ProjectDashboardResponse.Todo> applicants = recruitments.stream()
-                .filter(item -> item.isSubscription() && item.phaseAt(now) == RecruitmentPhase.RECRUITING && pending.containsKey(item.getId()))
-                .map(item -> new ProjectDashboardResponse.Todo("applicants", item.getId(), projectNames.get(item.getProject().getId()), pending.get(item.getId()), null))
-                .toList();
-        List<ProjectDashboardResponse.Todo> feedbacks = recruitments.stream()
-                .filter(item -> waiting.containsKey(item.getId()))
-                .map(item -> new ProjectDashboardResponse.Todo("feedback", item.getId(), projectNames.get(item.getProject().getId()),
-                        waiting.get(item.getId()).getCount(), waiting.get(item.getId()).getFirstSubmittedAt().plus(PAYOUT_WAIT)))
-                .sorted(Comparator.comparing(ProjectDashboardResponse.Todo::payoutAt))
-                .toList();
-
-        long recruiting = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.RECRUITING).count();
-        long testing = recruitments.stream().filter(item -> item.phaseAt(now) == RecruitmentPhase.TESTING).count();
-        long waitingReports = feedbacks.stream().mapToLong(ProjectDashboardResponse.Todo::count).sum();
-        return new ProjectDashboardResponse(Stream.concat(applicants.stream(), feedbacks.stream()).toList(),
-                new ProjectDashboardResponse.Overview(recruiting, testing, waitingReports));
+        List<Recruitment> recruitments = projectIds.isEmpty() ? List.of()
+                : recruitmentRepository.findByProjectIdInOrderByCreatedAtDescIdDesc(projectIds);
+        Map<RecruitmentPhase, Long> counts = recruitments.stream()
+                .collect(Collectors.groupingBy(item -> item.phaseAt(now), Collectors.counting()));
+        return new ProjectDashboardResponse(new ProjectDashboardResponse.Overview(
+                counts.getOrDefault(RecruitmentPhase.RECRUITING, 0L),
+                counts.getOrDefault(RecruitmentPhase.TESTING, 0L),
+                counts.getOrDefault(RecruitmentPhase.CLOSED, 0L)));
     }
 
     /**
@@ -249,6 +224,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public RecruitmentCreateResponse createRecruitment(Long userId, RecruitmentCreateRequest request) {
+        sanctionChecker.require(userId, Restriction.RECRUIT);
         Project project = findOwned(userId, request.projectId());
         checkImageUrls("imageUrls", request.imageUrls());
         for (int index = 0; index < request.testItems().size(); index++) {
@@ -273,7 +249,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .version(version)
                 .build());
         saveRecruitmentImages(recruitment, request.imageUrls());
-        recruitmentTypeRepository.save(RecruitmentType.builder().recruitment(recruitment).type(findOrCreateType(TypeCode.WEB)).build());
+        replaceTypes(recruitment, request.softwareTypes());
         for (int index = 0; index < request.testItems().size(); index++) {
             saveTestItem(recruitment, request.testItems().get(index), index);
         }

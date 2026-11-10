@@ -2,13 +2,13 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { findRoleByCredentials, isEmailTaken, isNicknameTaken } from "@/features/member/api";
+import { findRoleByCredentials, getMyUserId, isEmailTaken, isNicknameTaken } from "@/features/member/api";
 import { backendFetch, clearTokens, getRefreshToken, isBackendAuth, saveTokens, type Tokens } from "@/lib/backend";
 import type { FormState } from "@/lib/form";
 import { safeNextPath } from "@/lib/next-path";
 import { DEMO_ROLE_COOKIE, type Role } from "@/features/session/session";
 import { validateEmail, validateName, validateNewPassword, validateNickname } from "@/features/member/validation";
-import { callbackUrl, clearSignup, readSignup, saveState } from "@/features/auth/oauth";
+import { callbackUrl, clearRestore, clearSignup, clearState, holdRestore, readRestore, readSignup, saveState } from "@/features/auth/oauth";
 import {
   type LoginField,
   type SignupField,
@@ -45,6 +45,7 @@ export async function logout(): Promise<void> {
     const refreshToken = await getRefreshToken();
     if (refreshToken) await backendFetch("/api/auth/logout", { method: "POST", body: { refreshToken }, withToken: false });
     await clearTokens();
+    await clearState();
   } else {
     await setRole("guest");
   }
@@ -66,15 +67,35 @@ export async function login(_prev: FormState<LoginField>, formData: FormData): P
 
   if (isBackendAuth) {
     const result = await backendFetch<Tokens>("/api/auth/login", { method: "POST", body: { email, password }, withToken: false });
-    /* 틀린 계정·정지 계정·서버 오류 모두 백엔드 문구를 그대로 보여 준다 */
+    /* 탈퇴 유예 계정은 되돌릴지 묻는다(#84). 틀린 계정·정지 계정·서버 오류는 백엔드 문구를 그대로 보여 준다 */
+    if (!result.ok && (await holdRestore(result, safeNextPath(formData.get("next"))))) redirect("/login?restore=1");
     if (!result.ok) return { status: "error", errors: { form: result.message } };
     await saveTokens(result.data);
+    await clearState();
     redirect(safeNextPath(formData.get("next")));
   }
 
   const role = findRoleByCredentials(email, password);
   if (!role) return { status: "error", errors: { form: "이메일 또는 비밀번호가 맞지 않아요" } };
   return signIn(role, formData.get("next"));
+}
+
+/**
+ * 탈퇴 되돌리기(#84). 로그인에서 받아 둔 되돌리기 토큰으로 탈퇴 유예를 풀고 로그인한다.
+ * 토큰이 없거나 시간이 지났으면 로그인 화면에 안내한다
+ */
+export async function restoreAccount(): Promise<void> {
+  const pending = await readRestore();
+  if (!isBackendAuth || !pending) redirect("/login?error=restore");
+  const result = await backendFetch<Tokens>("/api/auth/restore", {
+    method: "POST",
+    body: { restoreToken: pending.restoreToken },
+    withToken: false,
+  });
+  await clearRestore();
+  if (!result.ok) redirect("/login?error=restore");
+  await saveTokens(result.data);
+  redirect(pending.next);
 }
 
 /**
@@ -93,6 +114,24 @@ export async function socialLogin(formData: FormData): Promise<void> {
   const result = await backendFetch<string>(`/api/auth/oauth/${provider}/authorize-url?${query}`, { withToken: false });
   if (!result.ok) redirect(withNext("/login", next, { error: "oauth" }));
   await saveState({ state, provider, next });
+  redirect(result.data);
+}
+
+/**
+ * 로그인한 회원의 소셜 계정 연동(#84). 로그인과 같은 동의 화면을 거치고, 돌아오면 콜백이 연동 API를 부른다.
+ * 결과는 개인정보 수정 화면 주소의 linked·accountError로 보인다. 목업에는 연동이 없다
+ */
+export async function linkSocialAccount(formData: FormData): Promise<void> {
+  const back = "/my/profile/edit";
+  const provider = SOCIAL_PROVIDERS.find(({ id }) => id === formData.get("provider"))?.id;
+  if (!provider || !isBackendAuth) redirect(back);
+  const userId = await getMyUserId();
+  if (userId === null) redirect(withNext("/login", back));
+  const state = crypto.randomUUID();
+  const query = new URLSearchParams({ redirectUri: callbackUrl(provider), state });
+  const result = await backendFetch<string>(`/api/auth/oauth/${provider}/authorize-url?${query}`, { withToken: false });
+  if (!result.ok) redirect(`${back}?accountError=oauth`);
+  await saveState({ state, provider, next: back, link: true, userId });
   redirect(result.data);
 }
 

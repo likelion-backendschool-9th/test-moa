@@ -66,8 +66,9 @@ public class RecruitmentServiceImpl implements RecruitmentService {
 
         List<String> imageUrls = recruitmentImageRepository.findByRecruitmentIdOrderBySortOrderAsc(recruitmentId).stream()
                 .map(RecruitmentImage::getUrl).toList();
-        String softwareType = recruitmentTypeRepository.findFirstByRecruitmentId(recruitmentId)
-                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).orElse(null);
+        List<String> softwareTypes = recruitmentTypeRepository.findByRecruitmentIdIn(List.of(recruitmentId)).stream()
+                .map(item -> RecruitmentNames.softwareType(item.getType().getCode())).toList();
+        String softwareType = softwareTypes.isEmpty() ? null : softwareTypes.getFirst();
         String myRegisterStatus = userId == null ? null : registerRepository
                 .findFirstByRecruitmentIdAndUserIdOrderByIdDesc(recruitmentId, userId)
                 .map(register -> RecruitmentNames.registerStatus(register.getStatus())).orElse(null);
@@ -80,10 +81,11 @@ public class RecruitmentServiceImpl implements RecruitmentService {
                 RecruitmentNames.phase(recruitment.phaseAt(LocalDateTime.now())),
                 RecruitmentNames.selectionMode(recruitment.getSelectionMode()),
                 softwareType,
+                softwareTypes,
                 recruitment.isSubscription(),
                 recruitment.getRecruitDeadline(),
                 recruitment.getFeedbackDeadline(),
-                new ProjectInfo(project.getId(), project.getTitle(), project.getDescription(), project.getImageUrl()),
+                new ProjectInfo(project.getId(), project.getTitle(), project.getDescription(), project.getImageUrl(), project.getUser().getNickname()),
                 imageUrls,
                 testItems(recruitmentId),
                 myRegisterStatus);

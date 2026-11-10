@@ -4,6 +4,7 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getSubscriptionOverview } from "@/features/subscription/api";
 import { usesPlan } from "@/features/subscription/types";
+import { PaymentHistory } from "@/app/(site)/my/(account)/subscription/_components/PaymentHistory/PaymentHistory";
 import { SubscriptionExpiry } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionExpiry/SubscriptionExpiry";
 import { SubscriptionPayment } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionPayment/SubscriptionPayment";
 import { SubscriptionStatus } from "@/app/(site)/my/(account)/subscription/_components/SubscriptionStatus/SubscriptionStatus";
@@ -62,6 +63,10 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         />
         <SubscriptionPayment plans={plans} payableCredits={payableCredits} active={active} />
       </div>
+      {/* 결제 내역은 따로 읽어서, 읽지 못해도 구독 화면은 그대로 열린다 */}
+      <Suspense fallback={null}>
+        <PaymentHistory />
+      </Suspense>
       {active && <SubscriptionExpiry />}
     </div>
   );

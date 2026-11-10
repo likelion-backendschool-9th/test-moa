@@ -15,7 +15,7 @@
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
 | `GET` | `/api/v1/my/credits` | 잔액·승인 대기·파생 값. 로그인 필요 |
-| `GET` | `/api/v1/my/credits/ledger?type=all\|in\|out` | 장부. 최신순. 잘못된 type은 400 |
+| `GET` | `/api/v1/my/credits/ledger?type=all\|in\|out&limit=` | 장부. 최신순. 잘못된 type은 400. `limit`(1~100)을 주면 앞에서부터 그 개수만, 없으면 전부. 범위 밖이거나 숫자가 아니면 400 (고침 #205: 마이페이지 요약이 최근 5건만 받게 `limit`을 더함, #205-S11) |
 
 ### 잔액 응답 필드
 
@@ -133,6 +133,15 @@ flowchart LR
 - Then  그 장부 id가 보인다
 - When  토큰 없이 `GET /api/v1/my/credits`
 - Then  401이다
+
+#205-S11 내역을 앞에서부터 정한 개수만 받는다 [테스트: CreditServiceImplTest, CreditControllerAuthTest #205-S11]
+- Given 장부가 3줄인 회원
+- When  `GET /api/v1/my/credits/ledger` (limit 없음)
+- Then  3줄 모두다(지금과 같다)
+- When  `GET /api/v1/my/credits/ledger?type=all&limit=2`
+- Then  최신 2줄이다. 저장소에서도 2줄만 읽는다
+- When  `limit`이 `0`, `101`, `abc`다
+- Then  400 `INVALID_INPUT`이고 장부를 읽지 않는다
 
 ---
 

@@ -64,6 +64,11 @@ public class FileStorage {
 
     /** 공개 이미지만 읽는다. 신고 증거 폴더와 임의 파일 이름에는 접근하지 않는다. */
     public Optional<ImageFile> loadImage(String name) {
+        return loadImage("images", name);
+    }
+
+    /** 권한을 확인한 서비스가 정한 폴더에서 이미지만 읽는다. */
+    public Optional<ImageFile> loadImage(String folder, String name) {
         if (!isImageName(name)) return Optional.empty();
         String extension = name.substring(name.lastIndexOf('.') + 1);
         String contentType = switch (extension) {
@@ -71,7 +76,7 @@ public class FileStorage {
             case "jpg" -> Kind.JPG.contentType();
             default -> Kind.WEBP.contentType();
         };
-        return load("images/" + name).map(resource -> new ImageFile(resource, contentType));
+        return load(folder + "/" + name).map(resource -> new ImageFile(resource, contentType));
     }
 
     private final Path root;
@@ -87,6 +92,12 @@ public class FileStorage {
         } catch (IOException e) {
             return Optional.empty();
         }
+    }
+
+    /** PNG·JPG·WEBP만 알아낸다. 빈 파일, PDF, 그 밖은 빈 값. 오류 문구는 각 서비스가 정한다 */
+    public static Optional<Kind> detectImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) return Optional.empty();
+        return detect(file).filter(kind -> kind != Kind.PDF);
     }
 
     static Optional<Kind> detect(byte[] head) {

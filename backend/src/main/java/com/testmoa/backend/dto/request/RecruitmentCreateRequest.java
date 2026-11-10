@@ -24,13 +24,12 @@ public record RecruitmentCreateRequest(
         String title,
 
         @NotBlank(message = "모집 설명을 적어 주세요")
-        @Size(max = 200, message = "모집 설명은 200자까지 적을 수 있어요")
+        @Size(max = 5000, message = "모집 설명은 5000자까지 적을 수 있어요")
         String description,
 
-        // 첫 지원 대상이 웹서비스라 web만 받는다
-        @NotBlank(message = "유형을 골라 주세요")
-        @Pattern(regexp = "^$|^web$", message = "지금은 웹서비스만 모집할 수 있어요")
-        String softwareType,
+        // 웹·모바일·게임·API 중 하나 이상. 소문자 이름으로 받는다
+        @NotEmpty(message = "유형을 골라 주세요")
+        List<@Pattern(regexp = "^(web|mobile|game|api)$", message = "유형을 확인해 주세요") String> softwareTypes,
 
         @NotBlank(message = "선정 방식을 골라 주세요")
         @Pattern(regexp = "^$|^(firstCome|selection)$", message = "선정 방식을 골라 주세요")

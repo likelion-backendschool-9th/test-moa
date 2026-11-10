@@ -20,6 +20,8 @@ import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.OAuthClient;
 import com.testmoa.backend.global.security.OAuthClient.OAuthProfile;
 import com.testmoa.backend.service.AuthService;
+import com.testmoa.backend.service.SanctionChecker;
+import com.testmoa.backend.entity.enums.Restriction;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
@@ -51,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final OAuthClient oauthClient;
+    private final SanctionChecker sanctionChecker;
     private final Duration refreshTokenTtl;
 
     public AuthServiceImpl(UserRepository userRepository,
@@ -59,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
                            PasswordEncoder passwordEncoder,
                            JwtProvider jwtProvider,
                            OAuthClient oauthClient,
+                           SanctionChecker sanctionChecker,
                            @Value("${jwt.refresh-token-ttl}") Duration refreshTokenTtl) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
@@ -66,6 +72,7 @@ public class AuthServiceImpl implements AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
         this.oauthClient = oauthClient;
+        this.sanctionChecker = sanctionChecker;
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
@@ -138,10 +145,16 @@ public class AuthServiceImpl implements AuthService {
             if (graceOver(user)) throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
             Map<String, String> fields = Map.of(
                     "restoreToken", jwtProvider.createRestoreToken(user.getId(), user.getWithdrawnAt()),
-                    "purgeAt", user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).toString());
+                    // 서버 시간대(UTC)를 붙여 보낸다. 시간대 없는 값은 브라우저가 자기 시간대로 읽어 날짜가 하루 어긋난다
+                    "purgeAt", DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
+                            user.getWithdrawnAt().plus(UserServiceImpl.WITHDRAWAL_GRACE).atZone(ZoneId.systemDefault())),
+                    // 되돌리기 창에 "닉네임 님의 계정" (로그인에 성공한 본인에게만 간다)
+                    "nickname", user.getNickname());
             throw new BusinessException(ErrorCode.WITHDRAWAL_PENDING, ErrorCode.WITHDRAWAL_PENDING.getMessage(), fields);
         }
         if (user.getStatus() == UserStatus.SUSPENDED) throw new BusinessException(ErrorCode.SUSPENDED);
+        // 운영자가 로그인을 막았으면 403 RESTRICTED와 사유·해제 일시(#86)
+        sanctionChecker.require(user.getId(), Restriction.LOGIN);
         refreshTokenRepository.deleteByUserAndExpiresAtBefore(user, LocalDateTime.now());
         return issueTokens(user, UUID.randomUUID().toString());
     }
@@ -161,7 +174,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public OAuthLoginResponse oauthLogin(OAuthProfile profile) {
         Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
-        if (linked.isPresent()) return OAuthLoginResponse.loggedIn(startSocialSession(linked.get().getUser()));
+        if (linked.isPresent()) {
+            // 연동된 계정 화면에 보일 제공자 이메일을 최신으로 둔다(이 값을 저장하기 전에 연동한 계정도 여기서 채워진다)
+            linked.get().rememberProviderEmail(providerEmail(profile));
+            return OAuthLoginResponse.loggedIn(startSocialSession(linked.get().getUser()));
+        }
 
         if (!profile.emailVerified() || profile.email() == null) throw new BusinessException(ErrorCode.OAUTH_EMAIL_REQUIRED);
         String email = normalizeEmail(profile.email());
@@ -209,8 +226,9 @@ public class AuthServiceImpl implements AuthService {
 
         Optional<Account> linked = accountRepository.findByProviderAndProviderCode(profile.provider(), profile.providerCode());
         if (linked.isPresent()) {
-            if (linked.get().getUser().getId().equals(userId)) return; // 이미 내 계정
-            throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+            if (!linked.get().getUser().getId().equals(userId)) throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_LINKED);
+            linked.get().rememberProviderEmail(providerEmail(profile)); // 이미 내 계정
+            return;
         }
         saveSocialAccount(user, profile);
     }
@@ -239,7 +257,13 @@ public class AuthServiceImpl implements AuthService {
                 .user(user)
                 .provider(profile.provider())
                 .providerCode(profile.providerCode())
+                .providerEmail(providerEmail(profile))
                 .build());
+    }
+
+    // 화면에 보일 제공자 이메일. 확인 여부와 상관없이 제공자가 준 값을 소문자로 둔다(로그인·가입 판단에는 쓰지 않는다)
+    private String providerEmail(OAuthProfile profile) {
+        return profile.email() == null ? null : normalizeEmail(profile.email());
     }
 
     /**

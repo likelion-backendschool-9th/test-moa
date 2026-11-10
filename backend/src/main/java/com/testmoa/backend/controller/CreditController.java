@@ -36,12 +36,13 @@ public class CreditController {
         return ApiResponse.ok(creditService.getBalance(userId));
     }
 
-    @Operation(summary = "크레딧 내역 조회")
+    @Operation(summary = "크레딧 내역 조회", description = "최신순. limit(1~100)을 주면 앞에서부터 그 개수만, 없으면 전부")
     @GetMapping("/ledger")
     public ApiResponse<List<CreditLedgerResponse>> getLedgers(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
-            @RequestParam(defaultValue = "all") String type
+            @RequestParam(defaultValue = "all") String type,
+            @RequestParam(required = false) Integer limit
     ) {
-        return ApiResponse.ok(creditService.getLedgers(userId, LedgerFlow.fromQuery(type)));
+        return ApiResponse.ok(creditService.getLedgers(userId, LedgerFlow.fromQuery(type), limit));
     }
 }

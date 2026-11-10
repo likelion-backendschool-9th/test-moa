@@ -14,6 +14,7 @@
 
 - `developer/FeedbackController`에 두고 서비스는 `FeedbackService`다. 다른 회원의 모집·피드백은 404이고, 피드백의 주인 확인은 AI 후속 질문과 같은 쿼리(`findWithRecruitmentById`)로 한다
 - 목록은 최근 제출 순이고 건마다 `feedbackId`, `registerId`, `nickname`, `testItemId`(기타 의견은 null), `content`, `imageUrls`(올린 순서), `submittedAt`, `status`, `recommended`를 준다. 테스터는 닉네임만 준다 (고침 #195: 채팅 걸기에 참가 id가 필요하다)
+- `imageUrls`는 저장된 주소의 파일 이름으로 만든 개발자 조회 주소(`/api/v1/developer/feedbacks/{feedbackId}/images/<파일 이름>`)다. 조회 권한은 [feedback-images.md](feedback-images.md)를 따른다 (고침 #119: 저장값은 테스터 주소라 개발자가 열 수 없다)
 - `status`는 `submitted`(72시간 신고 대기), `reported`, `rewarded`, `excluded`다. 남은 신고 시간은 `submittedAt`으로 프론트가 센다
 - 유용해요 본문은 `{"recommended": true | false}`이고 상태와 상관없이 바꿀 수 있다
 - 신고 본문은 `{"reason": "…"}`이고 500자까지, 앞뒤 공백을 지워 `feedbacks.report_reason`에 남긴다. 운영자가 신고를 검토할 때 읽는다. 컬럼은 null 허용이라 `ddl-auto: update`로 생긴다

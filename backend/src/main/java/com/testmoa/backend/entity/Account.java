@@ -42,6 +42,9 @@ public class Account {
     @Column(columnDefinition = "TEXT")
     private String providerCode;
 
+    // 제공자가 알려 준 이 소셜 계정의 이메일(#84). 연동된 계정 화면에 보인다. 로컬 로그인과, 저장 전에 연동한 계정은 null
+    private String providerEmail;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -59,18 +62,26 @@ public class Account {
      * @param password      비밀번호 (소셜 로그인은 null)
      * @param provider      로그인 방식
      * @param providerCode  소셜 로그인 고유 식별자 (로컬 로그인은 null)
+     * @param providerEmail 제공자가 알려 준 소셜 계정 이메일 (로컬 로그인은 null)
      */
     @Builder
     public Account(
             User user,
             String password,
             Provider provider,
-            String providerCode
+            String providerCode,
+            String providerEmail
     ){
         this.user = user;
         this.password = password;
         this.provider = provider;
         this.providerCode = providerCode;
+        this.providerEmail = providerEmail;
+    }
+
+    // 소셜 로그인 때 제공자 이메일이 바뀌었거나 비어 있으면 새 값으로 바꾼다. 제공자가 이메일을 주지 않으면 그대로 둔다
+    public void rememberProviderEmail(String email) {
+        if (email != null && !email.equals(this.providerEmail)) this.providerEmail = email;
     }
 
     // 비밀번호 변경. 이미 암호화한 값을 받는다

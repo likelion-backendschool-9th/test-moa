@@ -76,7 +76,6 @@ async function SummarySlot() {
 
 async function DeadlineSlot() {
   const items = await getUpcomingDeadlines();
-  if (items.length === 0) return null;
   await connection();
   return <DeadlinePanel items={items} now={new Date()} />;
 }

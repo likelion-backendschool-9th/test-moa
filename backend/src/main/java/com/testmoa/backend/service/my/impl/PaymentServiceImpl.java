@@ -9,6 +9,7 @@ import com.testmoa.backend.entity.Payment;
 import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.PaymentProvider;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.Role;
@@ -31,7 +32,7 @@ import java.util.List;
 /**
  * 구독 결제 실행과 결제 이력. 결제는 한 트랜잭션에서 회원 행 → 지갑 행 순서로 잠가, 같은 회원의 결제와
  * 운영자 구독 부여·해제(AdminSubscriptionService)를 한 줄로 처리한다.
- * 실제 PG 결제는 하지 않고 현금도 완료 기록만 남긴다.
+ * 크레딧 결제는 PG 없이 하고, 현금 결제는 PG 승인을 마친 뒤 {@link #completePgPayment}로만 저장한다(준비·승인은 PgPaymentServiceImpl).
  */
 @Service
 @Transactional(readOnly = true)
@@ -86,6 +87,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentResponse pay(Long userId, PaymentRequest request) {
+        // 현금은 PG 승인 없이 저장하지 않는다. 회원 행을 잠그기 전에 막는다
+        if (request.method() == Payment.Method.CASH) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "현금 결제는 카카오페이·토스페이로만 할 수 있어요");
+        }
         // 구독 기간을 읽고 쓰는 일은 회원 행을 먼저 잠근 뒤에 한다. 운영자의 구독 부여·해제(AdminSubscriptionService)도
         // 같은 회원 행을 잠그므로, 결제와 운영자 작업이 같은 "가장 늦은 end_at"을 읽고 서로의 기간을 덮어쓰지 않는다
         User user = userRepository.findByIdForUpdate(userId)
@@ -112,9 +117,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessException(ErrorCode.DUPLICATE_PAYMENT);
         }
 
-        boolean byCredit = request.method() == Payment.Method.CREDIT;
-        int amount = byCredit ? plan.getCreditPrice() : plan.getCashPrice();
-        if (byCredit && wallet.payable() < amount) {
+        int amount = plan.getCreditPrice();
+        if (wallet.payable() < amount) {
             throw new BusinessException(ErrorCode.INSUFFICIENT_CREDIT);
         }
 
@@ -127,11 +131,36 @@ public class PaymentServiceImpl implements PaymentService {
         Subscription subscription = subscriptionRepository.save(Subscription.builder()
                 .user(user).plan(plan).startAt(startAt).endAt(startAt.plusDays(plan.getPeriodDays())).build());
         Payment payment = paymentRepository.save(Payment.builder()
-                .subscription(subscription).method(request.method()).amount(amount).paidAt(now).build());
+                .subscription(subscription).method(Payment.Method.CREDIT).amount(amount).paidAt(now).build());
 
-        if (byCredit && amount > 0) {
+        if (amount > 0) {
             spendCredit(wallet, amount);
         }
+        return PaymentResponse.of(payment, wallet.payable());
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse completePgPayment(Long userId, Plan plan, PaymentProvider provider, String pgTransactionId, int amount) {
+        // 크레딧 결제와 같은 순서(회원 → 지갑)로 잠가서, 같은 회원의 결제·운영자 구독 부여·해제와 한 줄로 처리한다
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        creditWalletRepository.insertIfAbsent(userId, LocalDateTime.now(clock));
+        CreditWallet wallet = creditWalletRepository.findLockedByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR));
+        LocalDateTime now = LocalDateTime.now(clock);
+
+        LocalDateTime startAt = subscriptionRepository
+                .findByUserIdAndStatusAndEndAtAfterOrderByStartAtAsc(userId, Subscription.Status.ACTIVE, now)
+                .stream()
+                .map(Subscription::getEndAt)
+                .max(LocalDateTime::compareTo)
+                .orElse(now);
+        Subscription subscription = subscriptionRepository.save(Subscription.builder()
+                .user(user).plan(plan).startAt(startAt).endAt(startAt.plusDays(plan.getPeriodDays())).build());
+        Payment payment = paymentRepository.save(Payment.builder()
+                .subscription(subscription).method(Payment.Method.CASH).provider(provider)
+                .pgTransactionId(pgTransactionId).amount(amount).paidAt(now).build());
         return PaymentResponse.of(payment, wallet.payable());
     }
 

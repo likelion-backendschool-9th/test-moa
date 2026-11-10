@@ -41,6 +41,11 @@ public enum ErrorCode {
     REPORT_DUPLICATED(HttpStatus.CONFLICT, "이미 신고해서 검토를 기다리고 있어요"),
     REPORT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 처리한 신고예요"),
 
+    // 운영자 제재
+    RESTRICTED(HttpStatus.FORBIDDEN, "운영자 제재로 이용이 제한됐어요"),
+    SANCTION_NOT_ACTIVE(HttpStatus.CONFLICT, "이미 해제했거나 끝난 제재예요"),
+    SANCTION_DUPLICATE(HttpStatus.CONFLICT, "같은 제재가 이미 걸려 있어요"),
+
     // 채팅
     CHAT_READ_ONLY(HttpStatus.FORBIDDEN, "대화가 끝난 방이라 메시지를 보낼 수 없어요"),
 
@@ -48,6 +53,9 @@ public enum ErrorCode {
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
     DUPLICATE_PAYMENT(HttpStatus.CONFLICT, "방금 결제했어요. 잠시 후 다시 시도해 주세요"),
     INSUFFICIENT_CREDIT(HttpStatus.CONFLICT, "쓸 수 있는 크레딧이 부족해요"),
+    PAYMENT_NOT_APPROVABLE(HttpStatus.CONFLICT, "승인할 수 없는 결제예요. 처음부터 다시 결제해 주세요"),
+    PG_APPROVE_FAILED(HttpStatus.BAD_GATEWAY, "결제 승인에 실패했어요. 다시 시도해 주세요"),
+    PG_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 이 결제 수단을 쓸 수 없어요"),
 
     // 모집
     RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),

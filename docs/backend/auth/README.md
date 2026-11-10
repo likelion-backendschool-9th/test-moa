@@ -15,7 +15,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 | [#83](https://github.com/likelion-backendschool-9th/test-moa/issues/83) | Google·GitHub 로그인과 계정 연동 API | [아래 4](#4-googlegithub-로그인과-계정-연동-83) |
 | [#84](https://github.com/likelion-backendschool-9th/test-moa/issues/84) | 내 정보 수정·비밀번호·탈퇴 | [아래 5](#5-내-정보-수정과-비밀번호-84), [아래 6](#6-회원-탈퇴-84) |
 | [#85](https://github.com/likelion-backendschool-9th/test-moa/issues/85) | 회원 신고·증거 첨부 API | [reports.md](reports.md) |
-| [#86](https://github.com/likelion-backendschool-9th/test-moa/issues/86) | 운영자 제재·해제 API (#34와 역할 나누기 확정 후) | |
+| [#86](https://github.com/likelion-backendschool-9th/test-moa/issues/86) | 운영자 제재·해제 API (#34와 역할 나누기 확정 후) | [sanctions.md](sanctions.md) |
 | [#87](https://github.com/likelion-backendschool-9th/test-moa/issues/87) | 테스트 서버 `JWT_SECRET`과 스키마 생성 방식 | |
 
 진행 상태는 이슈와 PR에서 본다.
@@ -214,6 +214,17 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 
 #84-S13 로그인하지 않으면 두 API 모두 401 [테스트]
 
+### 연동한 계정의 이메일 (#84-R4)
+- 소셜 계정(`accounts`)에 제공자가 알려 준 이메일(`provider_email`, null 가능)을 둔다. 연동·소셜 가입 때 저장하고, 그 계정으로 소셜 로그인할 때마다 바뀌었으면 새 값으로 바꾼다. 제공자가 이메일을 주지 않으면 그대로 둔다. 확인되지 않은 이메일도 화면 표시용으로만 저장하고 로그인·가입 판단에는 쓰지 않는다
+- 이 칸이 생기기 전에 연동한 계정은 null이고, 다음 소셜 로그인 때 채워진다. 테스트 서버는 `ddl-auto: update`라 칸이 자동으로 더해진다
+- `GET /api/users/me`에 `accounts: [{provider, email}]`를 더한다. LOCAL은 가입 이메일, 소셜은 제공자 이메일(모르면 null). 기존 `providers`는 그대로 둔다
+- 파기(30일 뒤)는 계정 행을 지우므로 제공자 이메일도 함께 사라진다
+
+#84-S30 연동한 소셜 계정의 이메일이 내 정보에 보이고, 그 계정으로 로그인하면 바뀐 이메일로 갱신된다 [테스트]
+- 깃허브로 가입하면 `accounts`의 GITHUB 이메일이 가입 이메일이다. 구글을 연동하면 GOOGLE에 구글 이메일(소문자)이 보인다
+- 구글 쪽 이메일이 바뀐 뒤 구글로 로그인하면 새 이메일로 바뀌고, 이메일을 주지 않는 로그인은 값을 지우지 않는다
+- 칸이 생기기 전에 연동한 계정은 null이고, 다음 소셜 로그인 때 채워진다
+
 ## 6. 회원 탈퇴 (#84)
 
 탈퇴는 바로 지우지 않고 30일 유예(`WITHDRAWN`) 뒤 개인정보를 파기한다(`DELETED`).
@@ -221,7 +232,7 @@ JWT 로그인과 요청마다의 회원 상태·유료 구독 확인, Google·Gi
 - API
   - `DELETE /api/users/me` `{password}` 또는 `{confirmText: "탈퇴합니다"}`: 탈퇴 신청. 비밀번호가 있으면 비밀번호, 소셜로만 가입했으면 확인 문구를 확인한다. 모든 기기의 로그인(refresh 토큰)을 지운다
   - `POST /api/auth/restore` `{restoreToken}`: 탈퇴 되돌리기. 로그인 토큰을 준다
-- 되돌리기 흐름: 유예 회원이 이메일·소셜 로그인에 성공하면 403 `WITHDRAWAL_PENDING`과 `error.fields.restoreToken`(10분), `error.fields.purgeAt`(파기 예정 일시)을 받는다. 프론트가 "되돌릴까요?"를 묻고 `restoreToken`으로 되돌린다
+- 되돌리기 흐름: 유예 회원이 이메일·소셜 로그인에 성공하면 403 `WITHDRAWAL_PENDING`과 `error.fields.restoreToken`(10분), `error.fields.purgeAt`(파기 예정 일시, 시간대 포함 ISO 8601), `error.fields.nickname`을 받는다. 프론트가 "닉네임 님의 계정"으로 되돌릴지 묻고 `restoreToken`으로 되돌린다
   - 이슈의 `POST /api/users/me/restore` 대신 이 주소로 했다. 유예 회원은 로그인 전이라 access 토큰이 없다
   - 되돌리기 토큰은 회원 id를 `sub`가 아닌 `uid`에 넣어 access 토큰으로 쓸 수 없다
   - 토큰에 탈퇴 신청 일시(`wat`)를 넣어 그 탈퇴에만 쓴다. 되돌린 뒤 다시 탈퇴하면 예전 토큰은 401 `INVALID_RESTORE_TOKEN`
@@ -252,7 +263,7 @@ alter table users add constraint users_status_check
 - 409 `CASHOUT_IN_PROGRESS`, 상태는 그대로
 
 #84-S17 유예 기간에 로그인하면 되돌리기 안내를 받고, 되돌리면 그대로 다시 쓴다 [테스트]
-- 로그인은 403 `WITHDRAWAL_PENDING`과 `restoreToken`·`purgeAt`. 되돌리면 `ACTIVE`, `withdrawn_at`은 비고 로그인 토큰을 받는다
+- 로그인은 403 `WITHDRAWAL_PENDING`과 `restoreToken`·`purgeAt`·`nickname`. 되돌리면 `ACTIVE`, `withdrawn_at`은 비고 로그인 토큰을 받는다
 - 되돌리기 토큰을 Bearer로 쓰면 401, 틀린 토큰과 이미 되돌린 토큰은 401 `INVALID_RESTORE_TOKEN`
 
 #84-S18 유예 회원은 소셜 로그인에서도 되돌리기 안내를 받는다 [테스트]

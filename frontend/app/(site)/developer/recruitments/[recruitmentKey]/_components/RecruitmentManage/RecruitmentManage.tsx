@@ -147,7 +147,7 @@ export function RecruitmentTabs({ basePath, current, feedbackCount }: { basePath
 
 /** 리뷰 분석 탭을 무료 모집에서 열었을 때. 리뷰 분석은 구독 모집에서만 한다 */
 export function AnalyticsLocked({
-  title = "구독 모집에서 리뷰 분석을 볼 수 있어요",
+  title = "구독하면 리뷰 분석을 볼 수 있어요",
   description = "구독하면 AI가 리뷰를 묶어 심각도 순으로 정리하고 이슈 초안까지 써 줘요.",
 }: {
   title?: string;

@@ -2,12 +2,14 @@ import { buildMyPageSummary, buildUsers, DEMO_PASSWORD, DEMO_PROFILES } from "@/
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
 import { creditDataFor } from "@/features/credit/api";
 import type { UserDetail, UserFilter, UserSummary } from "@/features/member/admin";
-import type { MyPageSummary, Profile, Todo } from "@/features/member/types";
+import type { LeaveNotice, LinkedAccountsInfo, LoginProvider, MyPageSummary, Profile, Todo } from "@/features/member/types";
+import { totalCredits } from "@/features/credit/types";
 import { loadReports as loadAll } from "@/features/report/api";
 import type { Report } from "@/features/report/types";
 import { requireMember } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
 import { subscriptionForGlance } from "@/features/subscription/api";
+import { type BackendResult, backendFetch, isBackendAuth } from "@/lib/backend";
 import { formatDday } from "@/lib/format";
 import { connection } from "next/server";
 import "server-only";
@@ -119,11 +121,11 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
   await connection();
   const now = new Date();
   const summary = buildMyPageSummary(session.role, now);
-  const [credit, subscription] = await Promise.all([creditDataFor(session.role, now), subscriptionForGlance(session.role, now)]);
+  const [credit, subscription] = await Promise.all([creditDataFor(session.role, now, RECENT_CREDITS), subscriptionForGlance(session.role, now)]);
   return {
     ...summary,
     subscription,
-    profile: getMemberProfile(session.role),
+    profile: isBackendAuth ? await getBackendProfile() : getMemberProfile(session.role),
     todos: sortTodos(summary.todos, now),
     credits: credit.balance,
     recentCredits: credit.ledger.slice(0, RECENT_CREDITS),
@@ -133,8 +135,50 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
 /** 개인정보 수정에 채울 현재 회원 정보. 비로그인이면 로그인으로 보낸다 */
 export async function getProfile(next: string): Promise<Profile> {
   const session = await requireMember(next);
+  if (isBackendAuth) return getBackendProfile();
   await waitIfSlow();
   return getMemberProfile(session.role);
+}
+
+/* ---- 실제 로그인(AUTH_MODE=backend): 내 정보 조회·수정은 백엔드 /api/users/me (#84) ---- */
+
+type Me = { name: string | null; nickname: string; email: string; providers: Profile["providers"]; hasPassword: boolean };
+
+/** 백엔드의 내 정보. 세션 확인을 지난 뒤 부르므로 실패는 백엔드 장애로 본다 */
+async function getBackendProfile(): Promise<Profile> {
+  const me = await backendFetch<Me>("/api/users/me");
+  if (!me.ok) throw new Error(`내 정보를 읽지 못했어요: ${me.code}`);
+  const { name, nickname, email, providers, hasPassword } = me.data;
+  return { name: name ?? "", nickname, email, providers, hasPassword };
+}
+
+/** 이름·닉네임 저장. 실패하면 백엔드의 칸별 문구(name, nickname)를 그대로 돌려준다 */
+export async function saveProfile(name: string, nickname: string): Promise<BackendResult<unknown>> {
+  return backendFetch("/api/users/me", { method: "PATCH", body: { name, nickname } });
+}
+
+/** 탈퇴 확인 창의 안내(#84). 비로그인이면 로그인으로 보낸다. 크레딧은 요청 시각 기준이라 미리 렌더링하지 않는다 */
+export async function getLeaveNotice(next: string): Promise<LeaveNotice> {
+  const session = await requireMember(next);
+  await connection();
+  if (isBackendAuth) {
+    type Balance = { totalCredits: number; lockedBalance: number };
+    const [balance, profile] = await Promise.all([backendFetch<Balance>("/api/v1/my/credits"), getBackendProfile()]);
+    const { totalCredits: credits, lockedBalance } = balance.ok ? balance.data : { totalCredits: 0, lockedBalance: 0 };
+    return { credits, pendingWithdrawal: lockedBalance, hasPassword: profile.hasPassword !== false };
+  }
+  const { balance } = await creditDataFor(session.role, new Date());
+  return { credits: totalCredits(balance), pendingWithdrawal: balance.pendingWithdrawal, hasPassword: true };
+}
+
+/** 탈퇴 신청(#84). 비밀번호가 없는 회원은 확인 문구를 보낸다. 출금 처리 중이면 409 CASHOUT_IN_PROGRESS */
+export async function withdrawAccount(input: { password?: string; confirmText?: string }): Promise<BackendResult<unknown>> {
+  return backendFetch("/api/users/me", { method: "DELETE", body: input });
+}
+
+/** 비밀번호 변경. 소셜로만 가입한 회원은 current 없이 비밀번호를 만든다. 다른 기기의 로그인은 끊긴다 */
+export async function savePassword(current: string | undefined, next: string): Promise<BackendResult<unknown>> {
+  return backendFetch("/api/users/me/password", { method: "PATCH", body: { currentPassword: current, newPassword: next } });
 }
 
 const TODO_LIMIT = 5;
@@ -146,4 +190,28 @@ function sortTodos(todos: Todo[], now: Date): Todo[] {
   return [...withDue, ...rest]
     .slice(0, TODO_LIMIT)
     .map((todo) => (todo.dueAt ? { ...todo, detail: formatDday(todo.dueAt, now) } : todo));
+}
+
+/* ---- 실제 로그인(AUTH_MODE=backend): 연동된 계정(#84) ---- */
+
+type MeAccounts = { providers: LoginProvider[]; accounts?: { provider: LoginProvider; email: string | null }[] };
+
+/** 연동된 로그인 방식과 방식별 이메일. 실제 로그인에서만 부른다. 비로그인이면 로그인으로 보낸다 */
+export async function getLinkedAccounts(next: string): Promise<LinkedAccountsInfo> {
+  await requireMember(next);
+  const me = await backendFetch<MeAccounts>("/api/users/me");
+  if (!me.ok) throw new Error(`내 정보를 읽지 못했어요: ${me.code}`);
+  const emails = Object.fromEntries((me.data.accounts ?? []).filter((a) => a.email).map((a) => [a.provider, a.email!]));
+  return { providers: me.data.providers, emails };
+}
+
+/** 지금 로그인한 회원의 id. 로그인하지 않았으면 null. 계정 연동이 시작한 회원과 같은지 볼 때 쓴다 */
+export async function getMyUserId(): Promise<number | null> {
+  const me = await backendFetch<{ id: number }>("/api/users/me");
+  return me.ok ? me.data.id : null;
+}
+
+/** 소셜 계정 연동 해제. 마지막 로그인 방법이면 백엔드가 409 LAST_LOGIN_METHOD */
+export async function unlinkAccount(provider: string): Promise<BackendResult<unknown>> {
+  return backendFetch(`/api/users/me/accounts/${provider}`, { method: "DELETE" });
 }

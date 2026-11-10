@@ -62,7 +62,7 @@ type ParticipationResponse = {
 type ParticipationDetailResponse = ParticipationResponse & {
   accessUrl: string | null;
   testItems: Array<{ id: number; title: string; description: string | null; required: boolean }>;
-  feedbacks: Array<{ testItemId: number | null; content: string }>;
+  feedbacks: Array<{ testItemId: number | null; content: string; imageUrls: string[] }>;
 };
 
 type ParticipationSummaryResponse = ParticipationSummary & { counts: ParticipationCounts };
@@ -197,6 +197,7 @@ export async function getParticipation(key: string): Promise<ParticipationItem |
         testItemId: feedback.testItemId === null ? null : String(feedback.testItemId),
         content: feedback.content,
         imageNames: [],
+        imageUrls: feedback.imageUrls,
       })),
     };
   }
@@ -220,20 +221,18 @@ function toFeedbackFieldErrors(fields: Record<string, string>): FeedbackFieldErr
 
 /**
  * 검증을 마친 피드백을 백엔드에 저장한다. 성공하면 null, 실패하면 폼에 보여 줄 오류를 돌려준다.
- * shortcut: 파일 저장소가 없어(#119) 이미지를 고르면 조용히 버리지 않고 그 칸에 알린다
+ * 이미지 주소는 브라우저가 올린 뒤에 칸마다 넘어온다. 없으면 빈 목록이다.
  */
 export async function saveBackendFeedback(participationKey: string, entries: FeedbackEntry[]): Promise<{ errors: FeedbackFieldErrors; error?: string } | null> {
   const path = participationPath(participationKey);
   await requireMember(path);
-  const withImages = entries.filter((entry) => entry.imageNames.length > 0);
-  if (withImages.length > 0) {
-    return { errors: Object.fromEntries(withImages.map((entry) => [entry.testItemId ?? OTHER_FEEDBACK_KEY, "이미지 업로드는 아직 준비 중이에요. 이미지를 빼고 제출해 주세요"])) };
-  }
+  const etc = entries.find((entry) => entry.testItemId === null);
   const result = await backendFetch(`${PARTICIPATIONS_API}/${participationKey}/feedbacks`, {
     method: "POST",
     body: {
-      items: entries.flatMap((entry) => (entry.testItemId === null ? [] : [{ testItemId: Number(entry.testItemId), content: entry.content }])),
-      etc: entries.find((entry) => entry.testItemId === null)?.content ?? null,
+      items: entries.flatMap((entry) => (entry.testItemId === null ? [] : [{ testItemId: Number(entry.testItemId), content: entry.content, imageUrls: entry.imageUrls ?? [] }])),
+      etc: etc?.content ?? null,
+      etcImageUrls: etc?.imageUrls ?? [],
     },
   });
   if (result.ok) return null;

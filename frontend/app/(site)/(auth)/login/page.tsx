@@ -6,10 +6,12 @@ import { FormMessage } from "@/components/ui/FormField/FormField";
 import { AuthCard, AuthFormSkeleton, OrDivider } from "@/app/(site)/(auth)/_components/AuthCard/AuthCard";
 import { LoginForm } from "@/app/(site)/(auth)/login/_components/LoginForm/LoginForm";
 import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons/SocialButtons";
-import { OAUTH_ERRORS, type OAuthErrorKey } from "@/features/auth/oauth";
+import { OAUTH_ERRORS, type OAuthErrorKey, readRestore } from "@/features/auth/oauth";
+import { RestorePrompt } from "@/app/(site)/(auth)/login/_components/RestorePrompt/RestorePrompt";
 import { withNext } from "@/features/auth/types";
 import { getDemoAccounts } from "@/features/member/api";
 import { isBackendAuth } from "@/lib/backend";
+import { formatDate } from "@/lib/format";
 import { safeNextPath } from "@/lib/next-path";
 import { getSession } from "@/features/session/session";
 import styles from "./page.module.css";
@@ -43,9 +45,15 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
   /* 소셜 로그인 실패(/auth/callback에서 돌아옴). 주소에는 키만 있고 문구는 여기서 고른다. constructor 같은 객체 기본 이름은 무시한다 */
   const oauthError =
     typeof params.error === "string" && Object.hasOwn(OAUTH_ERRORS, params.error) ? OAUTH_ERRORS[params.error as OAuthErrorKey] : undefined;
+  /* 탈퇴 유예 계정의 로그인(#84). 되돌리기 토큰은 쿠키에 있고, 로그인 화면 위에 창을 바로 띄운다 */
+  const restore = params.restore === "1" ? await readRestore() : undefined;
   return (
     <>
+      {restore && (
+        <RestorePrompt nickname={restore.nickname || undefined} purgeDate={restore.purgeAt ? formatDate(restore.purgeAt) : undefined} />
+      )}
       {params.joined === "1" && <FormMessage status="success" message="가입했어요. 로그인해 주세요" />}
+      {params.left === "1" && <FormMessage status="success" message="탈퇴했어요. 30일 안에 다시 로그인하면 되돌릴 수 있어요" />}
       {oauthError && <FormMessage status="error" message={oauthError} />}
       <LoginForm next={next} />
       <OrDivider />

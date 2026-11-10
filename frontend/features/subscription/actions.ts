@@ -5,23 +5,27 @@ import {
   canPayForSubscription,
   getSubscriptionOverview,
   grantMemberSubscription,
+  requestCashPaymentReady,
   requestSubscriptionPayment,
   revokeMemberSubscription,
   saveSubscriptionPayment,
 } from "@/features/subscription/api";
+import { completePath, isMobileUserAgent, isPgProvider, kakaoRedirectUrl, tossWindowFrom, type TossWindow } from "@/features/subscription/pg";
 import { parseMemberEmail, renewedExpiry } from "@/features/subscription/types";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 /*
  * 구독 결제. 고른 상품과 결제 수단을 검사한 뒤, 백엔드 모드(AUTH_MODE=backend)에서는 서버에 결제를 요청하고(서버가 거절하면 그 이유를 보여 준다)
- * 아니면 시연용 쿠키(demo/subscription.ts)에 남긴다.
+ * 아니면 시연용 쿠키(demo/subscription.ts)에 남긴다. 백엔드 모드의 현금은 결제 준비 뒤 카카오페이·토스 결제창으로 간다(#249).
  */
 
 const PATH = "/my/subscription/checkout";
 
-export type CheckoutFormState = { status: "idle" } | { status: "error"; error: string };
+/* toss는 서버가 결제 준비를 마쳤으니 브라우저가 토스 결제창을 열라는 뜻이다 */
+export type CheckoutFormState = { status: "idle" } | { status: "error"; error: string } | { status: "toss"; window: TossWindow };
 
 export async function payForSubscription(_prev: CheckoutFormState, formData: FormData): Promise<CheckoutFormState> {
   const { subscription, plans, payableCredits } = await getSubscriptionOverview(PATH);
@@ -32,13 +36,29 @@ export async function payForSubscription(_prev: CheckoutFormState, formData: For
   const method = formData.get("method");
   if (method !== "credit" && method !== "cash") return { status: "error", error: "결제 수단을 골라 주세요" };
 
+  if (isBackendAuth && method === "cash") {
+    /* 현금은 카카오페이·토스 결제창을 거친다. 서버가 금액을 정하고, 승인은 결제창에서 돌아온 뒤 result 페이지가 부른다 */
+    const provider = formData.get("provider");
+    if (!isPgProvider(provider)) return { status: "error", error: "결제 대행사를 골라 주세요" };
+    const prepared = await requestCashPaymentReady(plan.id, provider);
+    if (!prepared.ok) return { status: "error", error: prepared.message };
+    if (provider === "KAKAO_PAY") {
+      const url = kakaoRedirectUrl(prepared.ready, isMobileUserAgent((await headers()).get("user-agent")));
+      if (!url) return { status: "error", error: "결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요" };
+      redirect(url);
+    }
+    const window = tossWindowFrom(prepared.ready);
+    if (!window) return { status: "error", error: "결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요" };
+    return { status: "toss", window };
+  }
+
   if (isBackendAuth) {
     /* 운영자 계정, 크레딧 부족, 5초 안의 재결제는 서버가 거절하고 그 이유를 보여 준다. 화면이 미리 막지 않는다 */
     const paid = await requestSubscriptionPayment(plan.id, method);
     if (!paid.ok) return { status: "error", error: paid.message };
-    /* 헤더·마이페이지·구독 화면이 서버의 새 구독 상태를 읽게 한다 */
+    /* 크레딧 결제만 여기서 끝난다(현금은 위에서 결제창으로 간다). 헤더·마이페이지·구독 화면이 서버의 새 구독 상태를 읽게 한다 */
     revalidatePath("/", "layout");
-    redirect("/my/subscription?notice=paid");
+    redirect(completePath(paid.paymentId));
   }
 
   /* 목업은 서버가 없어서 여기서 검사한다 */

@@ -9,6 +9,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +32,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FeedbackController {
     private final FeedbackService feedbackService;
+
+    @Operation(summary = "피드백 이미지 조회", description = "내 프로젝트의 피드백 이미지를 읽는다. 다른 회원의 프로젝트는 404")
+    @GetMapping("/feedbacks/{feedbackId}/images/{name}")
+    public ResponseEntity<Resource> image(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                          @PathVariable Long feedbackId, @PathVariable String name) {
+        var image = feedbackService.loadFeedbackImage(userId, feedbackId, name);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .contentType(MediaType.parseMediaType(image.contentType())).body(image.resource());
+    }
 
     @Operation(summary = "피드백 목록", description = "최근 제출 순. 테스터는 닉네임만 주고, 스크린샷 주소와 유용해요 여부를 함께 준다")
     @GetMapping("/recruitments/{recruitmentId}/feedbacks")

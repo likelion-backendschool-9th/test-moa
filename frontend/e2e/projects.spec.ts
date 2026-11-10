@@ -204,9 +204,8 @@ test.describe("R107 테스터 관리 탭", () => {
     await expect(page.getByTestId("confirmed-count")).toHaveText("확정 20명");
 
     await page.goto("/developer/projects");
-    await expect(page.getByTestId("todo").filter({ hasText: "지원자 1명이 확정을 기다려요" })).toHaveCount(1);
     const overview = page.getByRole("region", { name: "전체 현황" });
-    await expect(overview.getByRole("term")).toHaveText(["모집 중", "테스트 중", "신고 대기"]);
+    await expect(overview.getByRole("term")).toHaveText(["모집 중", "테스트 중", "테스트까지 완료"]);
   });
 });
 

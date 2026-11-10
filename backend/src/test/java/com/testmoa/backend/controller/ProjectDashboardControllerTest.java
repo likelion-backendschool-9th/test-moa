@@ -24,17 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 내 프로젝트의 할 일·전체 현황(#122). 요청부터 DB까지 확인한다
+ * 내 프로젝트 전체 현황(#122). 요청부터 DB까지 확인한다
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -200,7 +195,7 @@ class ProjectDashboardControllerTest {
 
     @Test
     @DisplayName("#122-S4 전체 현황")
-    void 모든_프로젝트의_진행_중인_모집과_신고_대기를_센다() throws Exception {
+    void 모든_프로젝트의_모집과_테스트와_완료된_모집을_센다() throws Exception {
         Project second = saveProject(me, "메모");
         recruiting(project, false);
         recruiting(second, true);
@@ -214,7 +209,7 @@ class ProjectDashboardControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.overview.recruiting").value(2))
                 .andExpect(jsonPath("$.data.overview.testing").value(1))
-                .andExpect(jsonPath("$.data.overview.waitingReports").value(2));
+                .andExpect(jsonPath("$.data.overview.closed").value(1));
     }
 
     @Test
@@ -226,14 +221,13 @@ class ProjectDashboardControllerTest {
 
         dashboard(me)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos", empty()))
                 .andExpect(jsonPath("$.data.overview.recruiting").value(0))
                 .andExpect(jsonPath("$.data.overview.testing").value(0))
-                .andExpect(jsonPath("$.data.overview.waitingReports").value(0));
+                .andExpect(jsonPath("$.data.overview.closed").value(0));
 
         dashboard(saveUser())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.todos", empty()));
+                .andExpect(jsonPath("$.data.overview.recruiting").value(0));
 
         mvc.perform(get(DASHBOARD)).andExpect(status().isUnauthorized());
     }

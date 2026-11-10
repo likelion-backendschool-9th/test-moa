@@ -65,6 +65,7 @@ export const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> = {
 /** 모집 건에 들어온 지원 한 건. 테스터 개인정보는 닉네임만 둔다 */
 export type Application = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   status: ApplicationStatus;
   appliedAt: string;
@@ -82,6 +83,7 @@ export const FEEDBACK_STATUS_LABEL: Record<FeedbackStatus, string> = {
 /** 확정된 테스터가 제출한 피드백 한 건 */
 export type Feedback = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   /** 어느 테스트 항목에 대한 피드백인지. 기타 의견은 null (백엔드 Feedback.testItem) */
   testItemId: string | null;
@@ -200,6 +202,7 @@ export type ReviewGroup = {
 /** 그룹에 든 리뷰 하나. 대표 리뷰가 맨 앞이다 */
 export type GroupReview = {
   id: string;
+  registerId?: string;
   testerNickname: string;
   content: string;
   submittedAt: string;
@@ -410,6 +413,7 @@ export type BackendAnalysisGroup = {
 /** 백엔드 GroupReviewResponse (GET .../analysis/groups/{groupId}/reviews) */
 export type BackendGroupReview = {
   feedbackId: number;
+  registerId: number;
   nickname: string;
   testItemTitle: string | null;
   content: string;
@@ -441,6 +445,7 @@ export function fromBackendGroups(groups: BackendAnalysisGroup[], reviews: Recor
         testerCount: group.testerCount,
         reviews: (reviews[group.groupId] ?? []).map((review) => ({
           id: String(review.feedbackId),
+          registerId: String(review.registerId),
           testerNickname: review.nickname,
           content: review.content,
           submittedAt: review.submittedAt,
@@ -578,6 +583,8 @@ export type FollowupResult = { ok: true; questions: string[] } | { ok: false; me
 export const RECRUITMENT_LIMIT = {
   titleLength: 50,
   conditionsLength: 500,
+  /** 모집 설명 글자 수. 백엔드 RecruitmentCreateRequest와 같다. 마크다운으로 적을 수 있다 */
+  requestLength: 5000,
   /** 모집글 이미지 장수. 형식과 한 장 용량은 PROJECT_MEDIA_LIMIT.images를 따른다 (#124) */
   imageCount: 10,
   testItems: { min: 1, max: 10, titleLength: 50, descriptionLength: 300, imageCount: 5 },
@@ -682,17 +689,8 @@ export type ProjectSummary = Omit<Project, "recruitments"> & {
   openRecruitmentCount: number;
 };
 
-/** 내 프로젝트 화면 맨 위 "지금 확인할 일" 한 줄 */
-export type TodoItem = {
-  kind: "applicants" | "feedback";
-  projectName: string;
-  /** 이동할 모집 관리 탭 주소 */
-  href: string;
-  text: string;
-};
-
 /** 모든 프로젝트를 합친 숫자. 진행 중인 모집 건을 상태별로 센다(종료·취소는 세지 않는다) */
-export type ProjectOverview = Record<Exclude<RecruitmentStatus, "closed" | "cancelled">, number> & { waitingReports: number };
+export type ProjectOverview = Record<Exclude<RecruitmentStatus, "cancelled">, number>;
 
 export type PublicRecruitmentView = PublicRecruitmentData & { now: Date; status: Exclude<RecruitmentStatus, "cancelled"> };
 
@@ -738,7 +736,7 @@ export function validateRecruitmentForm(formData: FormData, isSubscription: bool
   const values = {
     title: text(formData, "title"),
     request: text(formData, "request"),
-    softwareType: text(formData, "softwareType"),
+    softwareType: formData.getAll("softwareTypes").map(String).join(","),
     selectionMode: text(formData, "selectionMode"),
     accessUrl: text(formData, "accessUrl"),
     conditions: text(formData, "conditions"),
@@ -749,9 +747,9 @@ export function validateRecruitmentForm(formData: FormData, isSubscription: bool
   if (!values.title) errors.title = "모집글 제목을 적어 주세요";
   else if (values.title.length > RECRUITMENT_LIMIT.titleLength) errors.title = `모집글 제목은 ${RECRUITMENT_LIMIT.titleLength}자까지 적을 수 있어요`;
   if (!values.request) errors.request = "모집 설명을 적어 주세요";
-  else if (values.request.length > 200) errors.request = "모집 설명은 200자까지 적을 수 있어요";
-  /* 첫 지원 대상이 웹서비스라 유형은 web만 받는다 */
-  if (values.softwareType !== "web") errors.softwareType = "지금은 웹서비스만 모집할 수 있어요";
+  else if (values.request.length > RECRUITMENT_LIMIT.requestLength) errors.request = `모집 설명은 ${RECRUITMENT_LIMIT.requestLength}자까지 적을 수 있어요`;
+  const picked = values.softwareType ? values.softwareType.split(",") : [];
+  if (picked.length === 0 || !picked.every((value) => SOFTWARE_TYPES.includes(value as SoftwareType))) errors.softwareType = "유형을 하나 이상 골라 주세요";
   if (!isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
   /* 화면에서 막아도 요청은 조작될 수 있어서 여기서 다시 확인한다 */
   if (values.selectionMode !== "firstCome" && values.selectionMode !== "selection") errors.selectionMode = "선정 방식을 골라 주세요";
@@ -843,7 +841,7 @@ export function validatePostEdit(formData: FormData): EditState {
   if (!values.title) errors.title = "모집글 제목을 적어 주세요";
   else if (values.title.length > RECRUITMENT_LIMIT.titleLength) errors.title = `모집글 제목은 ${RECRUITMENT_LIMIT.titleLength}자까지 적을 수 있어요`;
   if (!values.request) errors.request = "모집 설명을 적어 주세요";
-  else if (values.request.length > 200) errors.request = "모집 설명은 200자까지 적을 수 있어요";
+  else if (values.request.length > RECRUITMENT_LIMIT.requestLength) errors.request = `모집 설명은 ${RECRUITMENT_LIMIT.requestLength}자까지 적을 수 있어요`;
   const keepAccessUrl = !values.accessUrl && formData.has("accessUrlKept");
   if (!keepAccessUrl && !isHttpUrl(values.accessUrl)) errors.accessUrl = "http:// 또는 https://로 시작하는 주소를 적어 주세요";
   const picked = formData.getAll("categories").map(String);
@@ -933,7 +931,7 @@ export type PublicRecruitmentData = {
   /** 모집글 제목, 모집 조건, 테스트 항목. 샘플이 없는 모집 건은 null */
   detail: RecruitmentDetail | null;
   /** 이 모집 건의 프로젝트. 샘플이 없는 모집 건은 null */
-  project: Pick<Project, "description" | "image"> | null;
+  project: (Pick<Project, "description" | "image"> & { ownerNickname?: string }) | null;
   /** 로그인한 회원의 참가 상태. 참가가 없거나 비로그인·목업이면 없다 */
   myRegisterStatus?: ApplicationStatus | null;
 };

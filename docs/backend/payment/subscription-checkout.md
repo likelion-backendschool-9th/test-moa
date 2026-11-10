@@ -15,9 +15,10 @@
 - **`planId`는 지금 파는 플랜의 id여야 한다.** 없는 id이거나 옛 `version` 행이면 404다. 결제는 지금 파는 조건으로만 받기 때문이다. `planId`가 빠졌거나 숫자가 아니면 400이다.
 - **`period.startAt`은 `max(지금, ACTIVE 행 중 가장 늦은 endAt)`이다.** #71 결제 실행이 쓸 시작 규칙과 같게 둔다([README.md](README.md)의 #71). `currentEndAt`은 #69의 화면 만료일(지금 기간에서 빈틈없이 이어 붙인 끝)이다. 결제가 항상 가장 늦은 끝에 이어 붙어서 빈틈이 생기지 않으므로 보통 둘은 같다. 다르게 나오는 경우가 둘 있다. ① 지금 기간이 환불로 `CANCELLED`가 됐는데 미리 결제한 다음 기간이 `ACTIVE`로 남은 경우, ② 시작 전인 `ACTIVE` 행만 있는 경우다. 이때는 `active=false`, `currentEndAt=null`이지만 `period.startAt`은 지금이 아니라 남은 `ACTIVE` 행의 가장 늦은 `endAt`이다. 그래서 화면은 이용 기간을 `currentEndAt`이 아니라 `period`로 보여 준다. (2026-11-08)
 - **`period.endAt`은 `period.startAt` + `periodDays`일이다.** 시작한 시각 기준이라 시·분·초가 시작과 같다. 예: 11/8 11:15에 시작하는 30일 플랜은 12/8 11:15에 끝난다. 이어 붙은 다음 기간은 앞 기간의 끝에서 시작해 매번 정확히 `periodDays`일씩 늘어난다.
-- **크레딧이 모자라면 `remainingAfter`는 `null`이다.** 0이나 음수로 내려주지 않는다. 현금 결제는 크레딧과 상관없이 할 수 있다.
+- **크레딧이 모자라면 `remainingAfter`는 `null`이다.** 0이나 음수로 내려주지 않는다. 현금 결제는 크레딧과 상관없이 할 수 있다(카카오페이·토스 승인 경로, [pg-checkout.md](pg-checkout.md)).
 - **응답 시각에는 오프셋이 붙는다.** `startAt`·`endAt`·`currentEndAt`은 서버 시간대(UTC로 고정)의 값에 오프셋을 붙여 `2026-11-08T08:21:43Z`처럼 내려간다. 프론트는 `new Date(iso)`로 읽으면 어느 환경에서나 같은 순간이다([server-time.md](../../server-time.md)) (고침 #193: 시간대 정보 없음 → 오프셋 포함)
 - **운영자는 `eligible=false`만 돌려준다.** 플랜을 찾는 일도 하지 않는다.
+- **`providers`는 지금 쓸 수 있는 현금 결제 대행사다.** 키가 설정된 곳만 `KAKAO_PAY`·`TOSS_PAY`로 담기고 없으면 빈 배열이다. 운영자도 빈 배열이다 (#249).
 
 ## API
 

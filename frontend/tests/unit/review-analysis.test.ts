@@ -188,7 +188,7 @@ test("백엔드 분석 그룹은 칭찬·미분류를 빼고, 이슈와 리뷰�
     testerCount: 2,
   });
   const groups = fromBackendGroups([backend(1, "UX", 7), backend(2, "PRAISE", null), backend(3, "UNCLASSIFIED", null)], {
-    1: [{ feedbackId: 31, nickname: "모아", testItemTitle: null, content: "버튼이 작아요", submittedAt: "2026-11-07T10:00:00+09:00", representative: true }],
+    1: [{ feedbackId: 31, registerId: 7, nickname: "모아", testItemTitle: null, content: "버튼이 작아요", submittedAt: "2026-11-07T10:00:00+09:00", representative: true }],
   });
   expect(groups).toEqual([
     {
@@ -201,7 +201,7 @@ test("백엔드 분석 그룹은 칭찬·미분류를 빼고, 이슈와 리뷰�
       issueContent: "내용",
       issue: { number: 7, url: "https://github.com/o/r/issues/7" },
       testerCount: 2,
-      reviews: [{ id: "31", testerNickname: "모아", content: "버튼이 작아요", submittedAt: "2026-11-07T10:00:00+09:00", testItemTitle: null, representative: true }],
+      reviews: [{ id: "31", registerId: "7", testerNickname: "모아", content: "버튼이 작아요", submittedAt: "2026-11-07T10:00:00+09:00", testItemTitle: null, representative: true }],
     },
   ]);
 });

@@ -96,6 +96,15 @@ class PaymentConcurrencyTest {
         return user;
     }
 
+    /** 이벤트 크레딧이 넉넉한 회원. 현금은 PG 승인을 거쳐야 해서 이 테스트의 결제는 크레딧으로 한다 */
+    private User saveUserWithCredit() {
+        User user = saveUser();
+        CreditWallet wallet = CreditWallet.builder().user(user).build();
+        wallet.grantEvent(100000);
+        creditWalletRepository.save(wallet);
+        return user;
+    }
+
     private Plan savePlan() {
         Plan plan = planRepository.save(Plan.builder()
                 .tier("구독-" + UUID.randomUUID().toString().substring(0, 8))
@@ -141,11 +150,11 @@ class PaymentConcurrencyTest {
     }
 
     @Test
-    @DisplayName("#71-S8·S9 같은 회원이 동시에 두 번 결제하면 하나만 되고 구독은 한 건, 지갑도 하나다")
+    @DisplayName("#71-S8 같은 회원이 동시에 두 번 결제하면 하나만 되고 구독은 한 건이다")
     void concurrentPaymentsAllowOnlyOne() throws Exception {
-        User user = saveUser();
+        User user = saveUserWithCredit();
         Plan plan = savePlan();
-        PaymentRequest request = new PaymentRequest(plan.getId(), Payment.Method.CASH);
+        PaymentRequest request = new PaymentRequest(plan.getId(), Payment.Method.CREDIT);
 
         List<Throwable> results = runTogether(
                 () -> paymentService.pay(user.getId(), request),
@@ -161,9 +170,9 @@ class PaymentConcurrencyTest {
     @Test
     @DisplayName("#71-S8 더블클릭 시간을 지난 두 요청이 겹쳐도 차례로 처리되어 두 번째 시작이 첫 번째 끝과 같다")
     void overlappingRequestsAreSerialized() throws Exception {
-        User user = saveUser();
+        User user = saveUserWithCredit();
         Plan plan = savePlan();
-        PaymentRequest request = new PaymentRequest(plan.getId(), Payment.Method.CASH);
+        PaymentRequest request = new PaymentRequest(plan.getId(), Payment.Method.CREDIT);
         // 부를 때마다 10초씩 흐르는 시계라서 두 번째 요청은 더블클릭 시간을 지난 뒤에 온 것이 된다
         AtomicInteger calls = new AtomicInteger();
         Instant base = Instant.now();
@@ -200,14 +209,14 @@ class PaymentConcurrencyTest {
                 creditLedgerRepository, subscriptionRepository, paymentRepository, clock);
         TransactionTemplate tx = new TransactionTemplate(transactionManager);
         Plan plan = savePlan();
-        PaymentRequest request = new PaymentRequest(plan.getId(), Payment.Method.CASH);
+        PaymentRequest request = new PaymentRequest(plan.getId(), Payment.Method.CREDIT);
 
-        User exactly = saveUser();
+        User exactly = saveUserWithCredit();
         seedPayment(exactly, plan, now.minusSeconds(5));
         tx.execute(status -> service.pay(exactly.getId(), request));
         assertEquals(2, count("subscriptions", "user_id = ?", exactly.getId()));
 
-        User justInside = saveUser();
+        User justInside = saveUserWithCredit();
         seedPayment(justInside, plan, now.minusSeconds(5).plusNanos(1_000_000));
         BusinessException e = assertThrows(BusinessException.class,
                 () -> tx.execute(status -> service.pay(justInside.getId(), request)));

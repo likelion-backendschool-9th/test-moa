@@ -4,13 +4,18 @@ import com.testmoa.backend.support.ResponseTimes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.Feedback;
+import com.testmoa.backend.entity.FeedbackImage;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Register;
+import com.testmoa.backend.entity.Sanction;
 import com.testmoa.backend.entity.TestItem;
 import com.testmoa.backend.entity.User;
+import com.testmoa.backend.entity.enums.Restriction;
+import com.testmoa.backend.entity.enums.SanctionType;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import com.testmoa.backend.entity.enums.UserStatus;
+import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.Role;
 import jakarta.persistence.EntityManager;
@@ -18,16 +23,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +49,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -49,9 +66,13 @@ class ParticipationControllerTest {
     private static final String BASE = "/api/v1/tester/participations/";
     private static final ObjectMapper JSON = new ObjectMapper();
 
+    private static final byte[] PNG = new byte[]{(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10};
+
     @Autowired MockMvc mvc;
     @Autowired EntityManager em;
     @Autowired JwtProvider jwtProvider;
+    @Autowired FileStorage fileStorage;
+    @Value("${upload.dir}") String uploadDir;
 
     private User developer;
     private User tester;
@@ -324,5 +345,318 @@ class ParticipationControllerTest {
             if (!expected.equals("paid") && data.get("earnedCredits").asInt() != 0) mismatches.add(entry.getKey() + " earnedCredits");
         }
         assertThat(mismatches).isEmpty();
+    }
+
+    @Test
+    @DisplayName("#119-S1 업로드")
+    void 확정된_테스터가_PNG를_올리면_참가_폴더에_저장한다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        byte[] bytes = Arrays.copyOf(PNG, 1024 * 1024);
+        try {
+            JsonNode data = data(upload(tester, register.getId(), file("shot.png", bytes)).andExpect(status().isOk()));
+            String url = data.get("url").asText();
+            assertThat(url).matches("/api/v1/tester/participations/" + register.getId()
+                    + "/feedbacks/images/[0-9a-f-]{36}[.]png");
+            String name = url.substring(url.lastIndexOf('/') + 1);
+            assertThat(fileStorage.load(FeedbackImage.FOLDER + "/" + register.getId() + "/" + name)).isPresent();
+        } finally {
+            deleteFeedbackFiles(register.getId());
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S2 받지 않는 파일")
+    void 이미지가_아니거나_한_요청에_두_장이면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        try {
+            upload(tester, register.getId(), file("a.png", "hello".getBytes(StandardCharsets.UTF_8)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.fields.file").value("PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
+            upload(tester, register.getId(), file("a.pdf", "%PDF-1.7".getBytes(StandardCharsets.US_ASCII)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.fields.file").value("PNG, JPG, WEBP 이미지만 올릴 수 있어요"));
+            upload(tester, register.getId(), file("a.png", PNG), file("b.png", PNG))
+                    .andExpect(status().isBadRequest());
+            assertThat(feedbackFileCount(register.getId())).isZero();
+        } finally {
+            deleteFeedbackFiles(register.getId());
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S4 올릴 수 없는 참가")
+    void 확정_전이거나_마감이_지났거나_이미_냈거나_제재_중이면_저장하지_않는다() throws Exception {
+        Register waiting = applied(recruitment, tester);
+        Recruitment closed = saveRecruitment(-9, -1);
+        saveItem(closed, "항목", true);
+        Register late = confirmed(closed, saveUser());
+        Register done = confirmed(recruitment, saveUser());
+        feedback(done, required);
+        User blocked = saveUser();
+        Register restricted = confirmed(recruitment, blocked);
+        em.persist(Sanction.builder().user(blocked).sanctionedBy(developer).type(SanctionType.SUSPENSION)
+                .restrictions(EnumSet.of(Restriction.FEEDBACK)).reason("피드백 제한")
+                .startedAt(LocalDateTime.now().minusHours(1)).endsAt(LocalDateTime.now().plusDays(1)).build());
+        List<Long> ids = List.of(waiting.getId(), late.getId(), done.getId(), restricted.getId());
+        try {
+            upload(tester, waiting.getId(), file("a.png", PNG))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.error.code").value("PARTICIPATION_NOT_CONFIRMED"));
+            upload(late.getUser(), late.getId(), file("a.png", PNG))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.error.code").value("FEEDBACK_DEADLINE_PASSED"));
+            upload(done.getUser(), done.getId(), file("a.png", PNG))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.error.code").value("FEEDBACK_ALREADY_SUBMITTED"));
+            upload(blocked, restricted.getId(), file("a.png", PNG))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error.code").value("RESTRICTED"));
+            for (Long id : ids) assertThat(feedbackFileCount(id)).isZero();
+        } finally {
+            for (Long id : ids) deleteFeedbackFiles(id);
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S5 남의 참가와 비로그인")
+    void 다른_회원의_참가와_없는_참가는_404이고_비로그인은_401이며_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        User other = saveUser();
+        long missing = 999_999_999L;
+        try {
+            upload(other, register.getId(), file("a.png", PNG))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
+            upload(tester, missing, file("a.png", PNG)).andExpect(status().isNotFound());
+            upload(null, register.getId(), file("a.png", PNG)).andExpect(status().isUnauthorized());
+            assertThat(feedbackFileCount(register.getId())).isZero();
+            assertThat(feedbackFileCount(missing)).isZero();
+        } finally {
+            deleteFeedbackFiles(register.getId());
+            deleteFeedbackFiles(missing);
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S6 항목과 기타 의견에 이미지 연결")
+    void 항목과_기타_의견에_올린_이미지를_순서대로_연결한다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        try {
+            String first = uploadedUrl(tester, register);
+            String second = uploadedUrl(tester, register);
+            String third = uploadedUrl(tester, register);
+            Map<String, Object> requiredItem = item(required, "밑줄이 보여요");
+            requiredItem.put("imageUrls", List.of(first, second));
+            Map<String, Object> request = body("기타도 있어요", requiredItem, item(optional, "  "));
+            request.put("etcImageUrls", List.of(third));
+
+            JsonNode data = data(submit(tester, register, request).andExpect(status().isCreated()));
+
+            assertThat(data.get("feedbacks")).hasSize(2);
+            assertThat(urls(data.at("/feedbacks/0/imageUrls"))).containsExactly(first, second);
+            assertThat(data.at("/feedbacks/0/testItemId").asLong()).isEqualTo(required.getId());
+            assertThat(urls(data.at("/feedbacks/1/imageUrls"))).containsExactly(third);
+            assertThat(data.at("/feedbacks/1/testItemId").isNull()).isTrue();
+
+            List<FeedbackImage> rows = em.createQuery(
+                            "select i from feedback_images i join fetch i.feedback f where f.register.id = :id order by i.id",
+                            FeedbackImage.class)
+                    .setParameter("id", register.getId()).getResultList();
+            assertThat(rows).extracting(FeedbackImage::getUrl).containsExactly(first, second, third);
+            assertThat(rows.get(0).getFeedback().getId()).isEqualTo(rows.get(1).getFeedback().getId());
+            assertThat(rows.get(0).getFeedback().getTestItem().getId()).isEqualTo(required.getId());
+            assertThat(rows.get(2).getFeedback().getId()).isNotEqualTo(rows.get(0).getFeedback().getId());
+            assertThat(rows.get(2).getFeedback().getTestItem()).isNull();
+        } finally {
+            deleteFeedbackFiles(register.getId());
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S7 이미지 없는 제출")
+    void 이미지_주소_없이_제출하면_피드백마다_빈_배열이다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+
+        JsonNode data = data(submit(tester, register, body(" 앱이 가벼워요 ", item(required, "좋아요"), item(optional, "  ")))
+                .andExpect(status().isCreated()));
+
+        assertThat(data.get("feedbacks")).hasSize(2);
+        assertThat(data.get("feedbacks")).allSatisfy(feedback -> assertThat(urls(feedback.get("imageUrls"))).isEmpty());
+    }
+
+    @Test
+    @DisplayName("#119-S8 장수 초과")
+    void 한_칸에_이미지를_여섯_장_넣으면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        List<String> six = new ArrayList<>();
+        for (int index = 0; index < 6; index++) six.add(ownImageUrl(register.getId()));
+        Map<String, Object> tooMany = item(required, "좋아요");
+        tooMany.put("imageUrls", six);
+
+        submit(tester, register, body(null, tooMany))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields['testItems." + required.getId() + "']").value("이미지는 5장까지 올릴 수 있어요"));
+
+        Map<String, Object> request = body("기타", item(required, "좋아요"));
+        request.put("etcImageUrls", six);
+        submit(tester, register, request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.etc").value("이미지는 5장까지 올릴 수 있어요"));
+        assertThat(feedbackCount(register)).isZero();
+        assertThat(imageCount(register)).isZero();
+    }
+
+    @Test
+    @DisplayName("#119-S9 내용 없는 칸의 이미지")
+    void 내용을_비운_선택_항목에_이미지를_넣으면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        Map<String, Object> optionalItem = item(optional, "  ");
+        optionalItem.put("imageUrls", List.of(ownImageUrl(register.getId())));
+
+        submit(tester, register, body(null, item(required, "좋아요"), optionalItem))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields['testItems." + optional.getId() + "']").value("내용을 적어야 이미지를 넣을 수 있어요"));
+        assertThat(feedbackCount(register)).isZero();
+    }
+
+    @Test
+    @DisplayName("#119-S10 쓸 수 없는 주소")
+    void 이번_참가의_주소가_아니면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        Register other = confirmed(recruitment, saveUser());
+        String field = "testItems." + required.getId();
+        List<String> badUrls = List.of(
+                "https://evil.example/a.png",
+                "/api/v1/recruitments/images/" + UUID.randomUUID() + ".png",
+                "/api/v1/tester/participations/" + other.getId() + "/feedbacks/images/" + UUID.randomUUID() + ".png");
+        for (String url : badUrls) {
+            Map<String, Object> requiredItem = item(required, "좋아요");
+            requiredItem.put("imageUrls", List.of(url));
+            submit(tester, register, body(null, requiredItem))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.fields['" + field + "']").value("이미지를 다시 올려 주세요"));
+        }
+        assertThat(feedbackCount(register)).isZero();
+        assertThat(imageCount(register)).isZero();
+    }
+
+    @Test
+    @DisplayName("#119-S11")
+    void 제출한_이미지를_상세에서_순서대로_다시_본다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        try {
+            String first = uploadedUrl(tester, register);
+            String second = uploadedUrl(tester, register);
+            Map<String, Object> entry = item(required, "화면을 확인했어요");
+            entry.put("imageUrls", List.of(first, second));
+            submit(tester, register, body(null, entry)).andExpect(status().isCreated());
+
+            JsonNode detail = data(detail(tester, register).andExpect(status().isOk()));
+            assertThat(urls(detail.at("/feedbacks/0/imageUrls"))).containsExactly(first, second);
+            send(tester, get(first), null).andExpect(status().isOk())
+                    .andExpect(content().contentType("image/png"))
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andExpect(content().bytes(PNG));
+        } finally {
+            deleteFeedbackFiles(register.getId());
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S13")
+    void 다른_회원과_잘못된_파일의_조회와_공개_주소_접근을_막는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        User other = saveUser();
+        Register otherRegister = confirmed(recruitment, other);
+        try {
+            String url = uploadedUrl(tester, register);
+            String otherUrl = uploadedUrl(other, otherRegister);
+            // 자기 참가에 올린 파일은 제출 전에도 읽는다.
+            send(tester, get(url), null).andExpect(status().isOk());
+            Feedback feedback = feedback(register, required);
+            String name = url.substring(url.lastIndexOf('/') + 1);
+            String developerBase = "/api/v1/developer/feedbacks/" + feedback.getId() + "/images/";
+            String testerBase = BASE + register.getId() + "/feedbacks/images/";
+            send(other, get(url), null).andExpect(status().isNotFound());
+            send(other, get(developerBase + name), null).andExpect(status().isNotFound());
+            send(null, get(url), null).andExpect(status().isUnauthorized());
+            send(null, get(developerBase + name), null).andExpect(status().isUnauthorized());
+            for (String invalid : List.of(UUID.randomUUID() + ".png", "a..png",
+                    otherUrl.substring(otherUrl.lastIndexOf('/') + 1))) {
+                send(tester, get(testerBase + invalid), null).andExpect(status().isNotFound());
+                send(developer, get(developerBase + invalid), null).andExpect(status().isNotFound());
+            }
+            send(tester, get(BASE + 999_999_999L + "/feedbacks/images/" + name), null)
+                    .andExpect(status().isNotFound());
+            send(developer, get("/api/v1/developer/feedbacks/999999999/images/" + name), null)
+                    .andExpect(status().isNotFound());
+            send(null, get("/api/v1/recruitments/images/" + name), null).andExpect(status().isNotFound());
+        } finally {
+            deleteFeedbackFiles(register.getId());
+            deleteFeedbackFiles(otherRegister.getId());
+        }
+    }
+
+    private String uploadedUrl(User user, Register register) throws Exception {
+        JsonNode data = data(upload(user, register.getId(), file("a.png", PNG)).andExpect(status().isOk()));
+        return data.get("url").asText();
+    }
+
+    private static String ownImageUrl(long registerId) {
+        return "/api/v1/tester/participations/" + registerId + "/feedbacks/images/" + UUID.randomUUID() + ".png";
+    }
+
+    private static List<String> urls(JsonNode node) {
+        assertThat(node.isArray()).isTrue();
+        List<String> values = new ArrayList<>();
+        node.forEach(item -> values.add(item.asText()));
+        return values;
+    }
+
+    private long imageCount(Register register) {
+        return em.createQuery("select count(i) from feedback_images i where i.feedback.register.id = :id", Long.class)
+                .setParameter("id", register.getId()).getSingleResult();
+    }
+
+    private MockMultipartFile file(String name, byte[] bytes) {
+        return new MockMultipartFile("file", name, "application/octet-stream", bytes);
+    }
+
+    private ResultActions upload(User user, long registerId, MockMultipartFile... files) throws Exception {
+        var request = multipart(BASE + registerId + "/feedbacks/images");
+        for (MockMultipartFile part : files) request.file(part);
+        if (user != null) request.header("Authorization", "Bearer " + jwtProvider.createAccessToken(user.getId()));
+        em.flush();
+        em.clear();
+        return mvc.perform(request);
+    }
+
+    private Path feedbackDir(long registerId) {
+        return Path.of(uploadDir).toAbsolutePath().normalize().resolve(FeedbackImage.FOLDER).resolve(Long.toString(registerId));
+    }
+
+    private long feedbackFileCount(long registerId) throws IOException {
+        Path dir = feedbackDir(registerId);
+        if (!Files.isDirectory(dir)) return 0;
+        try (var stream = Files.list(dir)) {
+            return stream.count();
+        }
+    }
+
+    private void deleteFeedbackFiles(long registerId) {
+        Path dir = feedbackDir(registerId);
+        if (!Files.isDirectory(dir)) return;
+        try (var stream = Files.list(dir)) {
+            stream.forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            Files.deleteIfExists(dir);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

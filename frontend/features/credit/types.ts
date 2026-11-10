@@ -40,6 +40,32 @@ export type CreditEntry = {
   occurredAt: string;
 };
 
+/** 서버 `GET /api/v1/my/credits` 응답 중 화면이 쓰는 값. `earnedBalance`는 출금 처리 중인 금액을 뺀 값이다 */
+export type ServerCreditBalance = {
+  earnedBalance: number;
+  eventCredit: number;
+  lockedBalance: number;
+  pendingReward: number;
+};
+
+/** 서버 잔액을 화면 모양으로 바꾼다. 화면의 `earned`는 출금 처리 중인 금액을 포함해서 잠긴 금액을 더한다 */
+export function balanceFromServer({ earnedBalance, eventCredit, lockedBalance, pendingReward }: ServerCreditBalance): CreditBalance {
+  return { earned: earnedBalance + lockedBalance, signup: eventCredit, pendingWithdrawal: lockedBalance, pendingReward };
+}
+
+/** 서버 `GET /api/v1/my/credits/ledger` 응답의 한 줄. 시각은 오프셋이 붙은 값이다 */
+export type ServerCreditLedger = {
+  id: number;
+  description: string;
+  delta: number;
+  createdAt: string;
+};
+
+/** 서버 내역 한 줄을 화면 모양으로 바꾼다. 이름은 서버의 설명을 그대로 쓴다 */
+export function entryFromServer({ id, description, delta, createdAt }: ServerCreditLedger): CreditEntry {
+  return { id: String(id), label: description, amount: delta, occurredAt: createdAt };
+}
+
 /** 크레딧 내역 필터. URL의 type 값 */
 export const LEDGER_TYPES = ["all", "in", "out"] as const;
 export type LedgerType = (typeof LEDGER_TYPES)[number];
@@ -70,6 +96,42 @@ export type Withdrawal = {
   requestedAt: string;
   rejectReason?: string;
 };
+
+/** 서버 `GET /api/v1/my/credits/withdrawals` 응답의 한 줄. 처리 중인 요청의 계좌번호는 그대로, 끝난 요청은 가려져 온다 */
+export type ServerWithdrawal = {
+  id: number;
+  amount: number;
+  status: "REQUESTED" | "PAID" | "REJECTED";
+  bank: string;
+  accountNumber: string;
+  rejectReason: "HOLDER" | "ACCOUNT" | "OTHER" | null;
+  rejectMemo: string | null;
+  requestedAt: string;
+};
+
+const SERVER_WITHDRAWAL_STATUS: Record<ServerWithdrawal["status"], WithdrawalStatus> = {
+  REQUESTED: "requested",
+  PAID: "paid",
+  REJECTED: "rejected",
+};
+
+/**
+ * 서버 출금 한 줄을 화면 값으로 바꾼다. 계좌는 처리 중이어도 끝 4자리만 보이게 가린다(이미 가려진 값도 같은 결과다).
+ * 반려는 사유 문구에 운영자가 적은 메모가 있으면 괄호로 붙인다
+ */
+export function withdrawalFromServer(item: ServerWithdrawal): Withdrawal {
+  const reason = item.rejectReason ? REJECT_REASONS[item.rejectReason.toLowerCase() as RejectReason] : undefined;
+  const memo = item.rejectMemo?.trim();
+  return {
+    id: String(item.id),
+    amount: item.amount,
+    status: SERVER_WITHDRAWAL_STATUS[item.status],
+    bank: item.bank,
+    accountMasked: maskAccount(item.accountNumber),
+    requestedAt: item.requestedAt,
+    ...(reason ? { rejectReason: memo ? `${reason} (${memo})` : reason } : memo ? { rejectReason: memo } : {}),
+  };
+}
 
 export const BANKS = ["국민은행", "신한은행", "우리은행", "하나은행", "농협은행", "카카오뱅크", "토스뱅크"] as const;
 
@@ -105,7 +167,7 @@ export function isRejectReason(value: unknown): value is RejectReason {
 }
 
 /** 출금 처리 양식이 막힌 이유. 저장 공간 부족은 memo, 기타에 메모가 없으면 note */
-export type RequestFormError = "decision" | "reason" | "note" | "memo";
+export type RequestFormError = "decision" | "reason" | "note" | "memo" | "server";
 
 /** 출금 처리 Server Action의 응답. 처리되면 목록으로 이동해서 오류만 돌려준다 */
 export type RequestFormState = { error: RequestFormError | null };
@@ -140,6 +202,56 @@ export type WithdrawalRequest = {
   createdAt: string;
   review?: WithdrawalReview;
 };
+
+/** 서버 `GET /api/v1/admin/withdrawals` 응답의 한 줄. 처리 대기는 계좌·예금주 전체, 끝난 요청은 가려져 온다 */
+export type ServerAdminWithdrawal = {
+  id: number;
+  nickname: string;
+  /** 가입 실명 */
+  userName: string;
+  amount: number;
+  status: "REQUESTED" | "PAID" | "REJECTED";
+  bank: string;
+  accountNumber: string;
+  accountHolder: string;
+  rejectReason: "HOLDER" | "ACCOUNT" | "OTHER" | null;
+  rejectMemo: string | null;
+  requestedAt: string;
+  processedAt: string | null;
+};
+
+/**
+ * 주소의 키가 서버 출금 id(Long)가 될 수 있는지. 0으로 시작하지 않는 18자리 이하 숫자만 받는다.
+ * 더 긴 숫자는 Long을 넘을 수 있고, 그러면 서버가 404가 아니라 400으로 답해 오류 화면이 된다
+ */
+export function isServerWithdrawalId(key: string) {
+  return /^[1-9]\d{0,17}$/.test(key);
+}
+
+/** 서버 출금 요청 한 줄을 운영자 화면 값으로 바꾼다. 처리 대기는 `review`가 없다 */
+export function adminWithdrawalFromServer(item: ServerAdminWithdrawal): WithdrawalRequest {
+  const request: WithdrawalRequest = {
+    id: String(item.id),
+    nickname: item.nickname,
+    memberName: item.userName,
+    amount: item.amount,
+    bank: item.bank,
+    accountNumber: item.accountNumber,
+    accountHolder: item.accountHolder,
+    createdAt: item.requestedAt,
+  };
+  if (item.status === "REQUESTED") return request;
+  const reason = item.rejectReason?.toLowerCase();
+  return {
+    ...request,
+    review: {
+      decision: item.status === "PAID" ? "paid" : "rejected",
+      ...(reason && isRejectReason(reason) ? { reason } : {}),
+      memo: item.rejectMemo ?? "",
+      processedAt: item.processedAt ?? item.requestedAt,
+    },
+  };
+}
 
 /** 예금주가 회원 이름과 다른지. 알리기만 하고 처리를 막지는 않는다 */
 export function isHolderMismatch(request: WithdrawalRequest) {

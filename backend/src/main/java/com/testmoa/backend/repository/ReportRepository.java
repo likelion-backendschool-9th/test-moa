@@ -41,4 +41,11 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     // 내 신고 목록, 최신순
     List<Report> findByReporterIdOrderByCreatedAtDescIdDesc(Long reporterId);
+
+    // 회원이 받은 신고, 최신순(운영자 회원 상세)
+    List<Report> findByReportedUserIdOrderByCreatedAtDescIdDesc(Long reportedUserId);
+
+    // 회원별로 받은 신고 중 이 상태인 신고 수(운영자 회원 목록)
+    @Query("select r.reportedUser.id, count(r) from reports r where r.reportedUser.id in :userIds and r.status = :status group by r.reportedUser.id")
+    List<Object[]> countReceivedByStatus(@Param("userIds") Collection<Long> userIds, @Param("status") ReportStatus status);
 }

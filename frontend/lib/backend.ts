@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, type Tokens, tokenCookies } from "@/lib/auth-tokens";
 import { type BackendResult, type RequestOptions, requestBackend } from "@/lib/backend-http";
 
@@ -24,6 +25,16 @@ type Options = Omit<RequestOptions, "token"> & {
 export async function backendFetch<T>(path: string, { withToken = true, ...options }: Options = {}): Promise<BackendResult<T>> {
   const token = withToken ? (await cookies()).get(ACCESS_TOKEN_COOKIE)?.value : undefined;
   return requestBackend<T>(path, { ...options, token });
+}
+
+const fetchOnce = cache((path: string) => backendFetch<unknown>(path));
+
+/**
+ * 한 요청(화면 렌더링) 안에서 같은 GET은 한 번만 보낸다. 헤더와 본문처럼 여러 곳이 같은 API를 읽을 때 쓴다.
+ * 결과를 바꾸는 요청(POST 등)이나 요청마다 새 값이 필요한 곳에는 쓰지 않는다
+ */
+export function backendFetchOnce<T>(path: string): Promise<BackendResult<T>> {
+  return fetchOnce(path) as Promise<BackendResult<T>>;
 }
 
 /** 토큰을 httpOnly 쿠키에 넣는다. Server Action·Route Handler에서만 부른다 */

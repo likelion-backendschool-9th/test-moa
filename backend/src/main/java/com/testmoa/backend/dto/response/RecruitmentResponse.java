@@ -19,6 +19,7 @@ public record RecruitmentResponse(
         String status,
         String selectionMode,
         String softwareType,
+        List<String> softwareTypes,
         boolean subscription,
         LocalDateTime recruitDeadline,
         LocalDateTime submitDeadline,
@@ -28,7 +29,7 @@ public record RecruitmentResponse(
         String myRegisterStatus
 ) {
     /** 모집글을 올린 프로젝트 */
-    public record ProjectInfo(Long id, String name, String description, String imageUrl) {}
+    public record ProjectInfo(Long id, String name, String description, String imageUrl, String ownerNickname) {}
 
     /** 테스트 항목 하나. 이미지는 보낸 순서대로, 없으면 빈 배열 */
     public record TestItemInfo(Long id, String title, String description, boolean required, List<String> imageUrls) {}

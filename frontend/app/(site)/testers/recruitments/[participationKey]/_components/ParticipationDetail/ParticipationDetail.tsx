@@ -156,6 +156,7 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
   const index = item.testItems.findIndex((testItem) => testItem.id === feedback.testItemId);
   const testItem = item.testItems[index];
   const title = testItem?.title ?? "기타 의견";
+  const imageUrls = feedback.imageUrls ?? [];
   return (
     <li className={styles.submittedFeedback}>
       <FeedbackMarker number={testItem ? index + 1 : undefined} />
@@ -166,7 +167,25 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
         </div>
         {/* 줄바꿈은 지키고, 긴 URL이나 공백 없는 오류 문자열은 칸 끝에서 끊어 좁은 화면에서 넘치지 않게 한다 */}
         <p className={styles.submittedFeedbackContent}>{feedback.content}</p>
-        {feedback.imageNames.length > 0 && (
+        {imageUrls.length > 0 ? (
+          <div className={styles.submittedFeedbackBox2}>
+            <h4 className={styles.submittedFeedbackTitle2}>
+              첨부 이미지 <span className={styles.submittedFeedbackLength}>{imageUrls.length}</span>
+            </h4>
+            <ul className={styles.submittedFeedbackList}>
+              {imageUrls.map((url, index) => (
+                <li key={`${url}-${index}`}>
+                  <a href={url} target="_blank" rel="noopener noreferrer" className={styles.submittedImageLink}>
+                    {/* 로그인 쿠키를 넘기려면 next/image가 아니라 브라우저 img를 쓴다 */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`${title} 첨부 이미지 ${index + 1}`} className={styles.submittedImage} />
+                    <span className={styles.srOnly}> (새 탭에서 크게 보기)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : feedback.imageNames.length > 0 ? (
           <div className={styles.submittedFeedbackBox2}>
             <h4 className={styles.submittedFeedbackTitle2}>
               첨부 이미지 <span className={styles.submittedFeedbackLength}>{feedback.imageNames.length}</span>
@@ -185,7 +204,7 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
               ))}
             </ul>
           </div>
-        )}
+        ) : null}
       </section>
     </li>
   );
@@ -307,7 +326,7 @@ export function ParticipationDetail({ item, now, justSubmitted, projectDescripti
             테스트 항목
           </h2>
           <Card className={styles.card}>
-            <FeedbackForm participationKey={item.key} testItems={item.testItems} />
+            <FeedbackForm participationKey={item.key} testItems={item.testItems} uploadEnabled={isBackendAuth} />
           </Card>
         </section>
       )}

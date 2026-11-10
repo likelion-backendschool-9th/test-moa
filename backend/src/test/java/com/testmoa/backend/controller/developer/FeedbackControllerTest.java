@@ -11,6 +11,7 @@ import com.testmoa.backend.entity.User;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.SelectionMode;
 import com.testmoa.backend.entity.enums.UserStatus;
+import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.global.security.JwtProvider;
 import com.testmoa.backend.global.security.Role;
 import jakarta.persistence.EntityManager;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -38,6 +40,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -52,6 +56,7 @@ class FeedbackControllerTest {
     @Autowired MockMvc mvc;
     @Autowired EntityManager em;
     @Autowired JwtProvider jwtProvider;
+    @Autowired FileStorage fileStorage;
 
     private User developer;
     private User other;
@@ -105,17 +110,52 @@ class FeedbackControllerTest {
         TestItem item = TestItem.builder().recruitment(recruitment).title("책 등록").required(true).build();
         em.persist(item);
         Feedback older = saveFeedback(item, "검색이 느려요", LocalDateTime.now().minusHours(5));
-        em.persist(FeedbackImage.builder().feedback(older).url("https://img.example.com/1.png").build());
-        em.persist(FeedbackImage.builder().feedback(older).url("https://img.example.com/2.png").build());
+        em.persist(FeedbackImage.builder().feedback(older).url(testerImageUrl("11111111-1111-1111-1111-111111111111.png")).build());
+        em.persist(FeedbackImage.builder().feedback(older).url(testerImageUrl("22222222-2222-2222-2222-222222222222.png")).build());
         Feedback newer = saveFeedback(null, "전체적으로 좋아요", LocalDateTime.now().minusHours(1));
         newer.updateRecommended(true);
         return item;
+    }
+
+    private String testerImageUrl(String name) {
+        return "/api/v1/tester/participations/" + register.getId() + "/feedbacks/images/" + name;
+    }
+
+    private String developerImageUrl(Long feedbackId, String name) {
+        return "/api/v1/developer/feedbacks/" + feedbackId + "/images/" + name;
+    }
+
+    @Test
+    @DisplayName("#119-S12")
+    void 개발자_목록의_주소로_피드백_이미지를_다시_본다() throws Exception {
+        byte[] png = new byte[]{(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10};
+        var stored = fileStorage.save(FeedbackImage.FOLDER + "/" + register.getId(),
+                new MockMultipartFile("file", "a.png", "image/png", png), FileStorage.Kind.PNG);
+        try {
+            String name = stored.path().substring(stored.path().lastIndexOf('/') + 1);
+            Feedback feedback = saveFeedback(null, "화면을 확인했어요", LocalDateTime.now());
+            em.persist(FeedbackImage.builder().feedback(feedback).url(testerImageUrl(name)).build());
+            String expected = developerImageUrl(feedback.getId(), name);
+            String response = send(developer, get("/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks"), null)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].imageUrls", contains(expected)))
+                    .andReturn().getResponse().getContentAsString();
+            String url = JSON.readTree(response).at("/data/0/imageUrls/0").asText();
+            send(developer, get(url), null).andExpect(status().isOk())
+                    .andExpect(content().contentType("image/png"))
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andExpect(content().bytes(png));
+        } finally {
+            fileStorage.delete(stored.path());
+        }
     }
 
     @Test
     @DisplayName("#175-S10 피드백 목록")
     void 최근_제출_순으로_닉네임_항목_스크린샷을_준다() throws Exception {
         TestItem item = saveFeedbackList();
+        Long olderId = em.createQuery("select f.id from feedbacks f where f.register.id = :id and f.testItem is not null", Long.class)
+                .setParameter("id", register.getId()).getSingleResult();
         String path = "/api/v1/developer/recruitments/" + recruitment.getId() + "/feedbacks";
 
         send(developer, get(path), null)
@@ -124,7 +164,8 @@ class FeedbackControllerTest {
                 .andExpect(jsonPath("$.data[0].testItemId").value(nullValue()))
                 .andExpect(jsonPath("$.data[0].recommended").value(true))
                 .andExpect(jsonPath("$.data[1].testItemId").value(item.getId()))
-                .andExpect(jsonPath("$.data[1].imageUrls", contains("https://img.example.com/1.png", "https://img.example.com/2.png")))
+                .andExpect(jsonPath("$.data[1].imageUrls", contains(developerImageUrl(olderId, "11111111-1111-1111-1111-111111111111.png"),
+                        developerImageUrl(olderId, "22222222-2222-2222-2222-222222222222.png"))))
                 .andExpect(jsonPath("$.data[1].status").value("submitted"))
                 .andExpect(jsonPath("$.data[1].nickname").value(register.getUser().getNickname()));
 

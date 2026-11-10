@@ -11,7 +11,6 @@ import {
   type Decision,
 } from "@/demo/recruitment";
 import { findBackendProject, findBackendProjects, isBackendId, readProjectApi } from "@/features/project/api";
-import { parseImageUrls } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
 import { type ApplicantResponse, type DeveloperFeedbackResponse, toApplication, toFeedback } from "@/features/recruitment/backend-map";
 import { type FormState } from "@/features/project/types";
@@ -51,7 +50,6 @@ import {
   type RecruitmentView,
   type SelectionMode,
   type SoftwareType,
-  type TodoItem,
   canCancelRecruitment,
   canSelectApplicants,
   type EditState,
@@ -72,6 +70,7 @@ import {
 import { requireRole } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
 import { backendFetch, isBackendAuth, type BackendResult } from "@/lib/backend";
+import { parseImageUrls } from "@/lib/image-upload";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
@@ -314,10 +313,11 @@ type PublicRecruitmentResponse = {
   conditions: string | null;
   selectionMode: SelectionMode;
   softwareType: SoftwareType | null;
+  softwareTypes?: SoftwareType[];
   subscription: boolean;
   recruitDeadline: string;
   submitDeadline: string;
-  project: { id: number; name: string; description: string | null; imageUrl: string | null };
+  project: { id: number; name: string; description: string | null; imageUrl: string | null; ownerNickname?: string };
   imageUrls: string[];
   testItems: Array<{ id: number; title: string; description: string | null; required: boolean; imageUrls: string[] }>;
   myRegisterStatus: ApplicationStatus | null;
@@ -344,7 +344,7 @@ async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentDat
       ...(data.project.imageUrl ? { projectImage: data.project.imageUrl } : {}),
       summary: projectDescription,
       request: data.description,
-      softwareTypes: data.softwareType ? [data.softwareType] : [],
+      softwareTypes: data.softwareTypes?.length ? data.softwareTypes : data.softwareType ? [data.softwareType] : [],
       isSubscription: data.subscription,
       /* 상세 응답에는 작성일이 없고, 화면은 마감일로만 상태를 계산한다 */
       createdAt: "",
@@ -370,6 +370,7 @@ async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentDat
     },
     project: {
       description: projectDescription,
+      ownerNickname: data.project.ownerNickname,
       image: data.project.imageUrl ? { url: data.project.imageUrl, name: `${data.project.name} 대표 이미지` } : null,
     },
     myRegisterStatus: data.myRegisterStatus,
@@ -513,79 +514,22 @@ export async function getMyProjects(path: string): Promise<ProjectSummary[]> {
 }
 
 /** 백엔드 ProjectDashboardResponse */
-type ProjectDashboardResponse = {
-  todos: Array<{ kind: TodoItem["kind"]; recruitmentId: number; projectName: string; count: number; payoutAt: string | null }>;
-  overview: ProjectOverview;
-};
+type ProjectDashboardResponse = { overview: ProjectOverview };
 
-function toTodoItem(todo: ProjectDashboardResponse["todos"][number], now: Date): TodoItem {
-  const base = recruitmentManagePath(String(todo.recruitmentId));
-  if (todo.kind === "applicants") {
-    return { kind: todo.kind, projectName: todo.projectName, href: `${base}?tab=testers`, text: `지원자 ${todo.count}명이 확정을 기다려요` };
-  }
-  const hours = Math.max(0, Math.ceil((new Date(todo.payoutAt ?? now).getTime() - now.getTime()) / (60 * 60 * 1000)));
-  return { kind: todo.kind, projectName: todo.projectName, href: `${base}?tab=feedback`, text: `신고 대기 피드백 ${todo.count}건 · ${hours}시간 뒤 자동 지급` };
-}
-
-/**
- * 내 프로젝트 화면 전체: 할 일, 전체 현황, 프로젝트 카드.
- * 할 일은 지원자 확정 대기(구독·모집 마감 전)가 먼저, 신고 대기 피드백은 자동 지급이 가까운 순서다.
- */
+/** 내 프로젝트 화면 전체: 전체 현황과 프로젝트 카드 */
 export async function getMyDashboard(path: string) {
   const projects = await getMyProjects(path);
-  const role = await requireRole(path);
-  const now = new Date();
+  await requireRole(path);
   if (isBackendAuth) {
-    const { todos, overview } = await readProjectApi<ProjectDashboardResponse>("/dashboard");
-    return { projects, overview, todos: todos.map((todo) => toTodoItem(todo, now)) };
+    const { overview } = await readProjectApi<ProjectDashboardResponse>("/dashboard");
+    return { projects, overview };
   }
 
-  const applicantTodos: TodoItem[] = [];
-  const feedbackTodos: Array<{ item: TodoItem; hours: number }> = [];
-  const overview: ProjectOverview = { recruiting: 0, testing: 0, waitingReports: 0 };
-
-  for (const project of projects) {
-    for (const recruitment of project.recruitments) {
-      const [applications, feedbacks] = await Promise.all([
-        findApplications(role, recruitment.slug),
-        findFeedbacks(role, recruitment.slug),
-      ]);
-      const { status } = recruitment;
-      if (status === "cancelled") continue;
-      const base = recruitmentManagePath(recruitment.slug);
-      const pending = applications.filter((item) => item.status === "applied").length;
-      const waitingHours = feedbacks.map((item) => getHoursUntilPaid(item, now)).filter((hours) => hours > 0);
-
-      if (status !== "closed") overview[status] += 1;
-      overview.waitingReports += waitingHours.length;
-
-      /* 지금 확정할 수 있는 지원자만 할 일로 본다. 무료 모집은 자동 확정이라 뺀다 */
-      if (recruitment.isSubscription && status === "recruiting" && pending > 0) {
-        applicantTodos.push({
-          kind: "applicants",
-          projectName: project.name,
-          href: `${base}?tab=testers`,
-          text: `지원자 ${pending}명이 확정을 기다려요`,
-        });
-      }
-      if (waitingHours.length > 0) {
-        const hours = Math.min(...waitingHours);
-        feedbackTodos.push({
-          item: {
-            kind: "feedback",
-            projectName: project.name,
-            href: `${base}?tab=feedback`,
-            text: `신고 대기 피드백 ${waitingHours.length}건 · ${hours}시간 뒤 자동 지급`,
-          },
-          hours,
-        });
-      }
-    }
+  const overview: ProjectOverview = { recruiting: 0, testing: 0, closed: 0 };
+  for (const { recruitments } of projects) {
+    for (const { status } of recruitments) if (status !== "cancelled") overview[status] += 1;
   }
-
-  feedbackTodos.sort((a, b) => a.hours - b.hours);
-  const todos: TodoItem[] = [...applicantTodos, ...feedbackTodos.map(({ item }) => item)];
-  return { projects, todos, overview };
+  return { projects, overview };
 }
 
 /** 백엔드 RecruitmentSummaryResponse */
@@ -708,10 +652,12 @@ async function getMyRecruitment(path: string, recruitmentKey: string): Promise<{
 /** 모집 관리 화면에 필요한 값 전부. 없는 모집 건이면 404 */
 export async function getRecruitmentDetail(path: string, recruitmentKey: string) {
   const { role, project, recruitment: currentRecruitment, cancellation } = await getMyRecruitment(path, recruitmentKey);
-  const [applications, feedbacks, found] = await Promise.all([
+  const [applications, feedbacks, found, isSubscribed] = await Promise.all([
     findApplications(role, recruitmentKey),
     findFeedbacks(role, recruitmentKey),
     findRecruitmentDetail(role, recruitmentKey),
+    /* 구독 조회가 잠깐 실패해도 지원자·피드백 탭은 열리게 구독하지 않은 것으로 본다 */
+    findIsSubscribed(role).catch(() => false),
   ]);
   /* 조회할 수 없는 상세는 목록에서 알고 있는 제목과 선정 방식만 채운다. 나머지는 unavailable로 알린다 */
   const detail = found.unavailable
@@ -723,6 +669,7 @@ export async function getRecruitmentDetail(path: string, recruitmentKey: string)
     project,
     recruitment,
     detail,
+    isSubscribed,
     cancellation,
     canCancel: canCancelRecruitment(recruitment),
     applications: [...applications]
@@ -1023,7 +970,7 @@ type BackendAnalysis = {
 type BackendFeedback = { status: string; submittedAt: string };
 
 /** 백엔드 PraiseReviewResponse (GET .../analysis/praises) */
-type BackendPraise = Omit<BackendGroupReview, "representative">;
+type BackendPraise = Omit<BackendGroupReview, "representative" | "registerId">;
 
 /** 백엔드 오류를 화면 오류로 바꾼다. 없거나 남의 모집글은 404, 나머지는 오류 화면에 문구를 보인다 */
 function unwrap<T>(result: BackendResult<T>): T {
@@ -1252,7 +1199,7 @@ export async function saveBackendRecruitment(projectKey: string, state: FormStat
       projectId: Number(projectKey),
       title: values.title,
       description: values.request,
-      softwareType: values.softwareType,
+      softwareTypes: formData.getAll("softwareTypes").map(String),
       selectionMode: values.selectionMode,
       accessUrl: values.accessUrl,
       conditions: values.conditions,

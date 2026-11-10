@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { setDemo } from "./helpers";
 
 test.describe("#63-R1 모집글 상세", () => {
-  test("#63-S1 비로그인도 일정·보상·조건·항목을 보고 지원으로 넘어간다", async ({ page, context }) => {
+  test("#63-S1 비로그인도 일정·보상·조건·항목을 보고 지원하기를 누르면 로그인으로 간다", async ({ page, context }) => {
     await setDemo(context, { role: "guest" });
     await page.goto("/recruitments/booklog");
     await expect(page).toHaveURL("/recruitments/booklog");
@@ -22,9 +22,9 @@ test.describe("#63-R1 모집글 상세", () => {
     /* 접속 링크는 확정된 테스터에게만 안내한다 */
     await expect(page.getByRole("main").getByText("booklog.example.com")).toHaveCount(0);
 
-    await summary.getByRole("link", { name: "지원하기" }).click();
-    await expect(page).toHaveURL("/recruitments/booklog/apply");
-    await expect(page.getByRole("heading", { name: "준비 중인 페이지예요" })).toBeVisible();
+    /* 지원은 이 화면의 버튼 하나로 끝난다. 비로그인은 로그인 뒤 이 모집글로 돌아온다 */
+    await summary.getByRole("button", { name: "지원하기" }).click();
+    await expect(page).toHaveURL("/login?next=%2Frecruitments%2Fbooklog");
   });
 
   test("#63-S2 모집 마감 전이면 지원하고, 마감되면 지원할 수 없다", async ({ page }) => {
@@ -32,10 +32,10 @@ test.describe("#63-R1 모집글 상세", () => {
     await expect(page.getByText("모집 중", { exact: true })).toBeVisible();
     /* 추가 보상이 없으면 배지도 없다 */
     await expect(page.getByText("추가 보상", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "지원하기" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "지원하기" })).toBeVisible();
 
     await page.goto("/recruitments/memo-garden");
     await expect(page.getByText("모집이 마감됐어요")).toBeVisible();
-    await expect(page.getByRole("link", { name: "지원하기" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "지원하기" })).toHaveCount(0);
   });
 });

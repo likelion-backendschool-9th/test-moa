@@ -71,7 +71,8 @@ test.describe("#84 회원 탈퇴", () => {
   test("#84-S1 마이페이지 홈 맨 아래 계정 카드에 로그인 방법과 로그아웃·회원 탈퇴가 있다", async ({ page }) => {
     await page.goto("/my");
     const card = region(page, "계정");
-    await expect(card).toContainText("로그인 방법이메일");
+    await expect(card).toContainText("이메일seoyun@example.com");
+    await expect(card).toContainText("로그인 방법이메일·비밀번호");
     await expect(card.getByRole("button")).toHaveText(["로그아웃", "회원 탈퇴"]);
     await expect(card.getByRole("link")).toHaveCount(0);
   });

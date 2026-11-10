@@ -69,6 +69,7 @@ export async function processReport(formData: FormData) {
 
   const memo = String(formData.get("memo") ?? "").trim().slice(0, REVIEW_MEMO_MAX_LENGTH);
   const saved = await saveReportReview(reportKey, { decision, memo, processedAt: new Date().toISOString() });
-  if (!saved) redirect(reportDetailHref(reportKey, view, { error: "memo" }));
+  /* 목업은 쿠키 저장 공간 부족, 실제 로그인은 백엔드 거절(먼저 처리된 신고 등) */
+  if (!saved) redirect(reportDetailHref(reportKey, view, { error: isBackendAuth ? "failed" : "memo" }));
   redirect(reportsHref(view, report.holdsReward ? { processed: decision, held: "1" } : { processed: decision }));
 }

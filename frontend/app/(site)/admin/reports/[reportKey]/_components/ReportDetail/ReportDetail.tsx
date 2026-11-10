@@ -20,11 +20,13 @@ import { reportsHref, type ReportListView } from "@/features/report/paths";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
 import styles from "./ReportDetail.module.css";
 
-export type ReviewFormError = "decision" | "memo";
+/** memo: 목업 쿠키에 저장하지 못함. failed: 백엔드가 거절함(다른 운영자가 먼저 처리한 경우 등) */
+export type ReviewFormError = "decision" | "memo" | "failed";
 
 const ERROR_MESSAGE: Record<ReviewFormError, string> = {
   decision: "처리 결과를 골라 주세요.",
   memo: "시연용 저장 공간이 모자라 처리하지 못했어요. 메모를 줄이거나 demo-reports 쿠키를 지운 뒤 다시 시도해 주세요.",
+  failed: "처리하지 못했어요. 다른 운영자가 먼저 처리했을 수 있어요. 새로고침한 뒤 다시 확인해 주세요.",
 };
 
 
@@ -143,7 +145,18 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** 처리 양식. 서버 양식이라 확인도 서버에서 하고, 문제가 있으면 error와 함께 돌아온다 */
-export function ReviewForm({ report, error, view }: { report: Report; error: ReviewFormError | null; view: ReportListView }) {
+/** withMemo: 처리 메모를 받는지. 백엔드에는 처리 메모가 없어서 실제 로그인에서는 칸을 숨긴다 */
+export function ReviewForm({
+  report,
+  error,
+  view,
+  withMemo = true,
+}: {
+  report: Report;
+  error: ReviewFormError | null;
+  view: ReportListView;
+  withMemo?: boolean;
+}) {
   const upheldDetail =
     report.targetType === "feedback" ? "제재 이력에 반영되고, 이 피드백의 보상은 지급하지 않아요." : "제재 이력에 반영돼요.";
   return (
@@ -165,17 +178,19 @@ export function ReviewForm({ report, error, view }: { report: Report; error: Rev
           {ERROR_MESSAGE[error]}
         </p>
       )}
-      <label className={styles.reviewFormField}>
-        처리 메모
-        <textarea
-          name="memo"
-          rows={3}
-          maxLength={REVIEW_MEMO_MAX_LENGTH}
-          aria-describedby={error === "memo" ? "review-error" : undefined}
-          placeholder={`판단 근거를 남겨 주세요 (선택, ${REVIEW_MEMO_MAX_LENGTH}자까지)`}
-          className={styles.reviewFormTextarea}
-        />
-      </label>
+      {withMemo && (
+        <label className={styles.reviewFormField}>
+          처리 메모
+          <textarea
+            name="memo"
+            rows={3}
+            maxLength={REVIEW_MEMO_MAX_LENGTH}
+            aria-describedby={error === "memo" ? "review-error" : undefined}
+            placeholder={`판단 근거를 남겨 주세요 (선택, ${REVIEW_MEMO_MAX_LENGTH}자까지)`}
+            className={styles.reviewFormTextarea}
+          />
+        </label>
+      )}
       <Button type="submit" className={styles.reviewFormButton}>
         처리하기
       </Button>
@@ -196,7 +211,7 @@ function Choice({ value, label, detail }: { value: string; label: string; detail
 }
 
 /** 처리한 신고. 결과는 바꿀 수 없어서 읽기만 한다 */
-export function ReviewResult({ report, now }: { report: Report; now: Date }) {
+export function ReviewResult({ report, now, withMemo = true }: { report: Report; now: Date; withMemo?: boolean }) {
   if (!report.review) return null;
   return (
     <AdminPanel as="section" aria-labelledby="review-result-heading">
@@ -207,7 +222,7 @@ export function ReviewResult({ report, now }: { report: Report; now: Date }) {
         <Info label="결과">
           <Badge tone="neutral">{REPORT_DECISION_LABEL[report.review.decision]}</Badge>
         </Info>
-        <Info label="메모">{report.review.memo || "남긴 메모가 없어요"}</Info>
+        {withMemo && <Info label="메모">{report.review.memo || "남긴 메모가 없어요"}</Info>}
         <Info label="처리">
           {formatDate(report.review.processedAt)} · {formatElapsed(report.review.processedAt, now)}
         </Info>

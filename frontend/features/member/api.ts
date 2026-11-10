@@ -119,7 +119,7 @@ export async function getMyPageSummary(): Promise<MyPageSummary> {
   await connection();
   const now = new Date();
   const summary = buildMyPageSummary(session.role, now);
-  const [credit, subscription] = await Promise.all([creditDataFor(session.role, now), subscriptionForGlance(session.role, now)]);
+  const [credit, subscription] = await Promise.all([creditDataFor(session.role, now, RECENT_CREDITS), subscriptionForGlance(session.role, now)]);
   return {
     ...summary,
     subscription,

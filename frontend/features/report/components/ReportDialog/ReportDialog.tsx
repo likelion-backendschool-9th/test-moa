@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, useActionState, useEffect, useId, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, startTransition, useActionState, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button/Button";
 import { Card } from "@/components/ui/Card/Card";
 import { TextArea } from "@/components/ui/TextField/TextField";
@@ -34,6 +34,13 @@ export function ReportDialog({ subject, title, description, onClose }: ReportDia
   useEffect(() => {
     ref.current?.showModal();
   }, []);
+
+  /* form action으로 바로 보내면 React가 오류 결과에도 입력을 비운다. 사유와 고른 파일이 남도록 직접 보낸다(FeedbackForm과 같다) */
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => action(formData));
+  }
 
   function onFiles(event: ChangeEvent<HTMLInputElement>) {
     setFileError(checkEvidence([...(event.currentTarget.files ?? [])]));
@@ -69,7 +76,7 @@ export function ReportDialog({ subject, title, description, onClose }: ReportDia
           </div>
         </div>
       ) : (
-        <form action={action} noValidate className={styles.form}>
+        <form onSubmit={onSubmit} noValidate className={styles.form}>
           <div className={styles.head}>
             <h2 id={`${id}-title`} className={styles.title}>
               {title}

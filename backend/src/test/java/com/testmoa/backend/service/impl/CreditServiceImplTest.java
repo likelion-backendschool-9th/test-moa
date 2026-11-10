@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Limit;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -114,10 +116,10 @@ class CreditServiceImplTest {
                 .type(CreditLedger.Type.EVENT)
                 .build();
         ReflectionTestUtils.setField(in, "id", 1L);
-        when(creditLedgerRepository.findByCreditWalletIdAndDeltaGreaterThanOrderByCreatedAtDesc(10L, 0))
+        when(creditLedgerRepository.findByCreditWalletIdAndDeltaGreaterThanOrderByCreatedAtDesc(10L, 0, Limit.unlimited()))
                 .thenReturn(List.of(in));
 
-        List<CreditLedgerResponse> responses = creditService.getLedgers(USER_ID, LedgerFlow.IN);
+        List<CreditLedgerResponse> responses = creditService.getLedgers(USER_ID, LedgerFlow.IN, null);
 
         assertEquals(1, responses.size());
         assertEquals(1000, responses.getFirst().getDelta());
@@ -142,7 +144,41 @@ class CreditServiceImplTest {
         when(userRepository.existsById(USER_ID)).thenReturn(true);
         when(creditWalletRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
-        assertTrue(creditService.getLedgers(USER_ID, LedgerFlow.ALL).isEmpty());
+        assertTrue(creditService.getLedgers(USER_ID, LedgerFlow.ALL, null).isEmpty());
+    }
+
+    @Test
+    @DisplayName("#205-S11 limit을 주면 앞에서부터 그 개수만 읽는다")
+    void getLedgersReadsOnlyLimit() {
+        when(userRepository.existsById(USER_ID)).thenReturn(true);
+        CreditWallet wallet = CreditWallet.builder().user(null).build();
+        ReflectionTestUtils.setField(wallet, "id", 10L);
+        when(creditWalletRepository.findByUserId(USER_ID)).thenReturn(Optional.of(wallet));
+        CreditLedger latest = CreditLedger.builder()
+                .creditWallet(wallet)
+                .delta(5000)
+                .description("테스트 보상")
+                .type(CreditLedger.Type.EARNED)
+                .build();
+        when(creditLedgerRepository.findByCreditWalletIdOrderByCreatedAtDesc(10L, Limit.of(5))).thenReturn(List.of(latest));
+
+        List<CreditLedgerResponse> responses = creditService.getLedgers(USER_ID, LedgerFlow.ALL, 5);
+
+        assertEquals(1, responses.size());
+        verify(creditLedgerRepository).findByCreditWalletIdOrderByCreatedAtDesc(10L, Limit.of(5));
+    }
+
+    @Test
+    @DisplayName("#205-S11 limit이 1보다 작거나 100보다 크면 400이고 내역을 읽지 않는다")
+    void getLedgersRejectsLimitOutOfRange() {
+        for (int limit : new int[]{0, -1, 101}) {
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> creditService.getLedgers(USER_ID, LedgerFlow.ALL, limit)
+            );
+            assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
+        }
+        verifyNoInteractions(creditLedgerRepository);
     }
 
     private static User user() {

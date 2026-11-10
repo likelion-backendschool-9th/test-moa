@@ -4,14 +4,18 @@ import {
   completePath,
   isJustPaid,
   isMobileUserAgent,
+  isPopupReturnPath,
   kakaoRedirectUrl,
   parsePaymentId,
   pgNotice,
+  popupFeatures,
   readProviders,
   receiptFromServer,
   receiptPath,
   receiptMethodLabel,
+  tossPopupPath,
   tossWindowFrom,
+  tossWindowFromQuery,
   type PgReady,
 } from "@/features/subscription/pg";
 
@@ -112,4 +116,71 @@ test("#249-S25 결제 내역에서 한 건을 열면 방금 결제했다는 표�
   expect(isJustPaid("1")).toBe(true);
   expect(isJustPaid(["1", "0"])).toBe(true);
   for (const value of [undefined, "", "0", "true", "2"]) expect(isJustPaid(value), String(value)).toBe(false);
+});
+
+test("#252-S10 팝업은 원래 창의 가운데에 열리고 화면 밖으로 나가지 않는다", () => {
+  /* 원래 창 (100,50) 크기 1200×800의 가운데: 카카오 430×620 */
+  expect(popupFeatures("KAKAO_PAY", { screenX: 100, screenY: 50, outerWidth: 1200, outerHeight: 800 })).toBe(
+    "popup,width=430,height=620,left=485,top=140",
+  );
+  expect(popupFeatures("TOSS_PAY", { screenX: 100, screenY: 50, outerWidth: 1200, outerHeight: 800 })).toBe(
+    "popup,width=480,height=700,left=460,top=100",
+  );
+  /* 원래 창이 팝업보다 작거나 화면 왼쪽 밖에 있어도 음수 위치를 주지 않는다 */
+  expect(popupFeatures("KAKAO_PAY", { screenX: -1500, screenY: -20, outerWidth: 300, outerHeight: 300 })).toBe(
+    "popup,width=430,height=620,left=0,top=0",
+  );
+});
+
+test("#252-S9 결제 팝업이 알릴 수 있는 주소는 결제 화면 아래 주소뿐이다", () => {
+  for (const ok of [
+    "/my/subscription/checkout",
+    "/my/subscription/checkout?pg=cancel",
+    "/my/subscription/checkout/complete?payment=12&paid=1",
+    "/my/subscription/checkout/result?orderId=MOA1&pg_token=t",
+  ]) {
+    expect(isPopupReturnPath(ok), ok).toBe(true);
+  }
+  for (const bad of [
+    "https://evil.example/my/subscription/checkout",
+    "//evil.example",
+    "/my/subscription",
+    "/my/subscription/checkout/../../admin",
+    "/my/subscription/checkoutx",
+    "/my/subscription/checkout#frag",
+    "javascript:alert(1)",
+    "",
+    null,
+    undefined,
+    42,
+  ]) {
+    expect(isPopupReturnPath(bad), String(bad)).toBe(false);
+  }
+});
+
+test("#252-S11 토스 팝업 주소에 담은 준비 값을 그대로 읽는다", () => {
+  const window = {
+    orderId: "MOA1",
+    amount: 10000,
+    orderName: "PRO 30일 구독",
+    clientKey: "test_ck_x",
+    customerKey: "moa-abc",
+    successUrl: "http://localhost:3005/my/subscription/checkout/result",
+    failUrl: "http://localhost:3005/my/subscription/checkout?pg=fail",
+  };
+  const path = tossPopupPath(window);
+  expect(path.startsWith("/my/subscription/checkout/toss?")).toBe(true);
+  const query = Object.fromEntries(new URL(path, "http://x").searchParams);
+  expect(tossWindowFromQuery(query)).toEqual(window);
+});
+
+test("#252-S11 토스 팝업 주소의 값이 빠졌거나 금액이 이상하면 null이다", () => {
+  const full = { orderId: "MOA1", amount: "10000", orderName: "n", clientKey: "c", customerKey: "k", successUrl: "s", failUrl: "f" };
+  expect(tossWindowFromQuery(full)).not.toBeNull();
+  for (const key of Object.keys(full)) {
+    expect(tossWindowFromQuery({ ...full, [key]: undefined }), key).toBeNull();
+  }
+  for (const amount of ["abc", "0", "-1", "1.5"]) {
+    expect(tossWindowFromQuery({ ...full, amount }), amount).toBeNull();
+  }
 });

@@ -144,7 +144,17 @@ export function parsePaymentId(value: string | string[] | undefined): string | n
   return id && /^[1-9]\d{0,17}$/.test(id) ? id : null;
 }
 
-/** 결제가 끝난 뒤 보낼 곳. 결제 id를 알면 결제 완료 화면, 모르면 구독 화면이다 */
+/** 결제가 끝난 직후 보낼 곳. 결제 id를 알면 결제 완료 화면(방금 결제했다는 표시 포함), 모르면 구독 화면이다 */
 export function completePath(paymentId: string | null): string {
-  return paymentId ? `/my/subscription/checkout/complete?payment=${paymentId}` : "/my/subscription?notice=paid";
+  return paymentId ? `/my/subscription/checkout/complete?payment=${paymentId}&paid=1` : "/my/subscription?notice=paid";
+}
+
+/** 결제 내역에서 한 건을 볼 때 가는 곳. 같은 결제 화면이지만 방금 결제했다는 표시는 없다 */
+export function receiptPath(paymentId: string): string {
+  return `/my/subscription/checkout/complete?payment=${paymentId}`;
+}
+
+/** 결제 직후에 온 것이면 "결제가 완료됐어요", 내역에서 들어왔으면 "결제 내역"으로 보인다 */
+export function isJustPaid(value: string | string[] | undefined): boolean {
+  return one(value) === "1";
 }

@@ -147,17 +147,28 @@ export async function approveCashPayment(approval: PgApproval): Promise<Subscrip
   return result.ok ? { ok: true, paymentId: paymentIdOf(result.data) } : { ok: false, message: result.message };
 }
 
+/** 서버의 내 결제 이력(최신순). 내 결제만 나온다 */
+async function readPayments(): Promise<PaymentReceipt[]> {
+  const result = await backendFetch<Parameters<typeof receiptFromServer>[0][]>("/api/v1/my/subscription/payments");
+  if (!result.ok) throw new Error(result.message);
+  return result.data.map(receiptFromServer);
+}
+
 /**
- * 결제 완료 화면이 보여 줄 결제 한 건. 서버의 내 결제 이력에서 id로 찾는다(내 결제만 나오므로 남의 결제 id는 찾지 못한다).
+ * 결제 완료 화면이 보여 줄 결제 한 건. 내 결제 이력에서 id로 찾는다(남의 결제 id는 찾지 못한다).
  * 목업이거나 이력에 없으면 null이다
  */
 export async function getPaymentReceipt(paymentId: string): Promise<PaymentReceipt | null> {
   if (!isBackendAuth) return null;
   await requireMember("/my/subscription/checkout/complete");
-  const result = await backendFetch<Parameters<typeof receiptFromServer>[0][]>("/api/v1/my/subscription/payments");
-  if (!result.ok) throw new Error(result.message);
-  const found = result.data.find((payment) => String(payment.paymentId) === paymentId);
-  return found ? receiptFromServer(found) : null;
+  return (await readPayments()).find((payment) => payment.id === paymentId) ?? null;
+}
+
+/** 구독 화면의 결제 내역. 최신 결제부터 limit건과 전체 건수다. 목업에는 서버 결제가 없어 null이다 */
+export async function getPaymentHistory(limit: number): Promise<{ items: PaymentReceipt[]; total: number } | null> {
+  if (!isBackendAuth) return null;
+  const payments = await readPayments();
+  return { items: payments.slice(0, limit), total: payments.length };
 }
 
 /** 내 구독 상태. 운영자는 구독 대상이 아니라 null */

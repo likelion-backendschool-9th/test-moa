@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { isPopupReturnPath, popupFeatures, POPUP_NAME, type PgProvider, type TossWindow } from "@/features/subscription/pg";
+import { newPopupName, popupFeatures, popupReturnHref, type PgProvider, type TossWindow } from "@/features/subscription/pg";
 
 /** 결제 팝업이 돌아와서 원래 창에 보내는 메시지 */
 export const POPUP_RETURN = "moa-pay-return";
 /** 창 연결(opener)이 없을 때 같은 사이트의 다른 창으로 알리는 통로 이름 */
 export const POPUP_CHANNEL = "moa-pay";
+/** 팝업이 닫히기 전에 결과를 받았다고 원래 창이 통로로 알리는 메시지. 연결이 끊긴 팝업은 이 대답이 있어야 자기를 닫는다 */
+export const POPUP_ACK = "moa-pay-ack";
 /** 토스 팝업 화면이 원래 창에 결제창 값을 달라고 하는 메시지와, 원래 창의 대답 */
 export const POPUP_TOSS_REQUEST = "moa-toss-request";
 export const POPUP_TOSS_WINDOW = "moa-toss-window";
@@ -21,6 +23,8 @@ const TOSS_POPUP_PATH = "/my/subscription/checkout/toss";
  */
 export function usePaymentPopup(onClosed: () => void) {
   const popupRef = useRef<Window | null>(null);
+  /* 이 창이 연 팝업의 창 이름. 결과 메시지에 이 이름이 있어야 받는다 */
+  const popupName = useRef<string | null>(null);
   const returned = useRef(false);
   const pendingToss = useRef<TossWindow | null>(null);
   const [opened, setOpened] = useState(false);
@@ -53,15 +57,15 @@ export function usePaymentPopup(onClosed: () => void) {
   }, [opened]);
 
   useEffect(() => {
-    function goTo(href: unknown) {
-      /* 이 창이 연 팝업이 없으면 다른 탭의 결제 결과다 */
-      if (!popupRef.current || !isPopupReturnPath(href)) return;
+    function goTo(href: string) {
       returned.current = true;
       window.location.assign(href);
     }
     function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
-      if (event.data?.type === POPUP_RETURN) goTo(event.data.href);
+      /* 이 창이 연 팝업이 직접 보낸 결과만 받는다 */
+      const href = event.source === popupRef.current ? popupReturnHref(popupName.current, event.data, POPUP_RETURN) : null;
+      if (href) goTo(href);
       /* 토스 팝업 화면은 이 창이 연 팝업일 때만, 한 번만 결제창 값을 받는다 */
       if (event.data?.type === POPUP_TOSS_REQUEST && event.source === popupRef.current && pendingToss.current) {
         (event.source as Window).postMessage({ type: POPUP_TOSS_WINDOW, window: pendingToss.current }, window.location.origin);
@@ -71,7 +75,11 @@ export function usePaymentPopup(onClosed: () => void) {
     window.addEventListener("message", onMessage);
     const channel = new BroadcastChannel(POPUP_CHANNEL);
     channel.onmessage = (event) => {
-      if (event.data?.type === POPUP_RETURN) goTo(event.data.href);
+      const href = popupReturnHref(popupName.current, event.data, POPUP_RETURN);
+      if (!href) return;
+      /* 팝업은 이 대답을 받아야 닫힌다. 받는 창이 없으면 팝업이 결과 화면으로 남는다 */
+      channel.postMessage({ type: POPUP_ACK, name: popupName.current });
+      goTo(href);
     };
     return () => {
       window.removeEventListener("message", onMessage);
@@ -84,7 +92,8 @@ export function usePaymentPopup(onClosed: () => void) {
       opened,
       /** 클릭 이벤트 안에서 불러야 한다. 브라우저가 막으면 false */
       open(provider: PgProvider): boolean {
-        const popup = window.open("", POPUP_NAME, popupFeatures(provider, window));
+        const name = newPopupName();
+        const popup = window.open("", name, popupFeatures(provider, window));
         if (!popup) return false;
         try {
           popup.document.body.textContent = "결제창을 준비하고 있어요…";
@@ -92,6 +101,7 @@ export function usePaymentPopup(onClosed: () => void) {
           /* 이미 다른 주소가 열려 있던 팝업이면 건드리지 않는다 */
         }
         popupRef.current = popup;
+        popupName.current = name;
         returned.current = false;
         pendingToss.current = null;
         setOpened(true);

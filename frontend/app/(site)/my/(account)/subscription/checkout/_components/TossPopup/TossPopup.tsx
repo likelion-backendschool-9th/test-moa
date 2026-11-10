@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { openTossWindow } from "@/features/subscription/toss-window";
-import { isTossWindow, POPUP_NAME } from "@/features/subscription/pg";
+import { isPopupName, isTossWindow } from "@/features/subscription/pg";
 import { POPUP_TOSS_REQUEST, POPUP_TOSS_WINDOW } from "@/app/(site)/my/(account)/subscription/checkout/_components/CheckoutForm/usePaymentPopup";
 import styles from "./TossPopup.module.css";
 
@@ -42,9 +42,9 @@ export function TossPopup() {
       openTossWindow(event.data.window, "self").then(setMessage);
     }
     /* 원래 창이 없거나 값을 보내지 않으면 기다리지 않고 이유를 보인다 */
-    const giveUp = setTimeout(() => setMessage(NO_VALUES), opener && window.name === POPUP_NAME ? 5000 : 0);
+    const giveUp = setTimeout(() => setMessage(NO_VALUES), opener && isPopupName(window.name) ? 5000 : 0);
     window.addEventListener("message", onMessage);
-    if (opener && window.name === POPUP_NAME) opener.postMessage({ type: POPUP_TOSS_REQUEST }, window.location.origin);
+    if (opener && isPopupName(window.name)) opener.postMessage({ type: POPUP_TOSS_REQUEST }, window.location.origin);
     return () => {
       window.removeEventListener("message", onMessage);
       clearTimeout(giveUp);

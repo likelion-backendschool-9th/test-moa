@@ -161,8 +161,19 @@ export function isJustPaid(value: string | string[] | undefined): boolean {
 
 /* ---------- 결제 팝업 (#252) ---------- */
 
-/** PC에서 결제창을 여는 팝업의 창 이름. 결제창을 거쳐 돌아온 팝업이 자기가 결제 팝업인지 알아보는 데도 쓴다 */
+/**
+ * PC에서 결제창을 여는 팝업의 창 이름 앞부분. 결제창을 거쳐 돌아온 팝업이 자기가 결제 팝업인지 알아보는 데 쓴다.
+ * 창 이름은 팝업을 열 때마다 새로 만들어서, 같은 결제 화면을 연 다른 탭의 팝업과 구분되고 결과가 시작한 탭에만 간다
+ */
 export const POPUP_NAME = "moa-pay";
+
+export function newPopupName(): string {
+  return `${POPUP_NAME}-${crypto.randomUUID()}`;
+}
+
+export function isPopupName(name: unknown): name is string {
+  return typeof name === "string" && name.startsWith(`${POPUP_NAME}-`) && name.length > POPUP_NAME.length + 1;
+}
 
 /** 팝업창 크기. 카카오페이 PC 결제창은 작은 팝업을 전제로 한 화면이라 좁고, 토스 자체창은 조금 더 넓게 연다 */
 const POPUP_SIZE: Record<PgProvider, { width: number; height: number }> = {
@@ -196,4 +207,15 @@ export function isTossWindow(value: unknown): value is TossWindow {
     if (typeof window[key] !== "string" || window[key] === "") return false;
   }
   return Number.isInteger(window.amount) && (window.amount as number) > 0;
+}
+
+/**
+ * 결제 팝업이 보낸 메시지에서 원래 창이 이동할 주소를 꺼낸다. 이 창이 연 팝업(창 이름이 같음)이 보낸 결제 화면 아래 주소만 받고, 아니면 null이다.
+ * 다른 탭의 팝업이 같은 통로로 보낸 결과나 직접 보낸 메시지는 받지 않는다
+ */
+export function popupReturnHref(ownName: string | null, data: unknown, type: string): string | null {
+  if (!ownName || typeof data !== "object" || data === null) return null;
+  const message = data as Record<string, unknown>;
+  if (message.type !== type || message.name !== ownName) return null;
+  return isPopupReturnPath(message.href) ? message.href : null;
 }

@@ -531,7 +531,7 @@ API는 그대로이고 상세의 구성만 바꾼다. "테스트 접속"이 작�
 - Then  "테스트 열기"와 접속 링크 줄이 없고 "모집 글"만 있다
 
 ## 18. 피드백 이미지 실제 연결 (#57)
-[#57](https://github.com/likelion-backendschool-9th/test-moa/issues/57). API, 주소, 권한은 [피드백 이미지 업로드 API](../../backend/project/feedback-images.md)를 따른다. 12-1장의 화면을 `AUTH_MODE=backend`에서 실제 저장소에 잇는다. #119(PR #241) 병합 뒤에 시작한다.
+[#57](https://github.com/likelion-backendschool-9th/test-moa/issues/57). API, 주소, 권한은 [피드백 이미지 업로드 API](../../backend/project/feedback-images.md)를 따른다. 12-1장의 화면을 `AUTH_MODE=backend`에서 실제 저장소에 잇는다.
 
 `[직접]`은 `AUTH_MODE=backend`로 실제 백엔드에 붙여 확인한다. `[테스트: 파일 번호]`는 그 단위 테스트가 확인한다.
 
@@ -668,10 +668,6 @@ API는 그대로이고 상세의 구성만 바꾼다. "테스트 접속"이 작�
    - 이 문서: 12-1장 설명, `#57-S4`(목업 모드에 한함), `#189-R6`, `#189-S6`에 `(고침 #57: …)`를 붙이고 `## 범위 밖`의 "이미지 실제 업로드와 다시 보기"를 지운다
    - `feedback-images.ts`, `FeedbackField`의 "서버로 보내지 않는다" 주석을 고친다
    - 확인: `git diff --check`
-
-### 브랜치·커밋
-- 브랜치: `feature/feedback-images-connect`. #241 병합 뒤 `origin/develop`에서 만들고 upstream을 해제한다
-- 커밋: `Refactor: 이미지 업로드 공용 코드를 lib로 옮긴다` — 1단계, `Feat: 피드백 이미지를 제출에 연결한다` — 2단계, `Feat: 제출한 피드백 이미지를 다시 보여 준다` — 3·4단계, `Docs: 피드백 이미지 연결을 문서에 반영한다` — 5단계
 
 ### 가정
 - 업로드는 칸 순서대로, 칸 안에서는 고른 순서대로 한 장씩 보낸다. 칸마다 5장이라 동시에 보내지 않는다.

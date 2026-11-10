@@ -288,7 +288,7 @@ S543 기록 보관 기간 (리뷰 반영) [직접]
 
 - **현금을 고르면 그 아래에 결제 대행사(카카오페이·토스페이) 칸이 나온다.** 쓸 수 있는 것만 고르게 하고, 서버가 쓸 수 없다고 한 것은 흐리게 두고 "지금은 쓸 수 없어요"를 적는다. 둘 다 쓸 수 없으면 현금 결제 버튼을 막는다. 크레딧을 고르면 이 칸은 보이지 않는다.
 - **카카오페이는 이동만 한다.** 폼 액션이 결제 준비를 부르고 서버가 준 결제창 주소로 이동한다. 모바일 브라우저(요청의 `user-agent`)면 모바일 주소, 아니면 PC 주소다.
-- **토스는 브라우저가 결제창을 연다.** 폼 액션이 준비 값(`orderId`, `amount`, `orderName`, `clientKey`, `customerKey`)을 돌려주면 폼 컴포넌트가 토스 SDK로 결제창을 연다. 결제창을 여는 동안 버튼은 "결제하는 중…"이다. SDK는 npm 패키지(`@tosspayments/tosspayments-sdk`)로 넣는 쪽이 기본이고(주소·버전이 고정되고 CSP를 건드리지 않는다), 구현할 때 현재 규격과 맞는지 공식 문서로 확인한다.
+- **토스는 브라우저가 토스페이 창을 바로 연다.** 폼 액션이 준비 값(`orderId`, `amount`, `orderName`, `clientKey`, `customerKey`, `successUrl`, `failUrl`)을 돌려주면 폼 컴포넌트가 토스 SDK의 `payment({ customerKey })`로 `requestPayment({ method: "CARD", amount: { currency: "KRW", value }, orderId, orderName, successUrl, failUrl, card: { flowMode: "DIRECT", easyPay: … } })`를 부른다(리다이렉트 방식, 모바일에서 되는 쪽). 결제창을 여는 동안 버튼은 "결제하는 중…"이다. SDK는 npm 패키지(`@tosspayments/tosspayments-sdk`)로 넣는다(주소·버전이 고정되고 CSP를 건드리지 않는다). `easyPay` 값과 호출 모양은 구현할 때 결제창을 열어 확인한다.
 - **돌아오는 주소는 `/my/subscription/checkout/result`다.** 카카오페이는 `pg_token`, 토스는 `paymentKey`·`orderId`·`amount`를 쿼리로 붙여 준다. 이 페이지가 `approve`를 부르고, 성공하면 `revalidatePath("/", "layout")` 뒤 `/my/subscription?notice=paid`로 보낸다. 실패하면 이 페이지에 서버 문구와 "결제 화면으로 돌아가기" 링크를 보여 준다. 승인 요청은 서버 쪽에서 한 번만 받으므로 새로고침해도 구독이 늘지 않는다.
 - **취소·실패는 결제 화면으로 돌아온다.** 카카오페이 취소·실패 주소와 토스 실패 주소는 `/my/subscription/checkout?pg=cancel`·`?pg=fail`이다. 이 값이 있으면 폼 위에 "결제를 취소했어요"·"결제하지 못했어요. 다시 시도해 주세요"를 보이고 구독은 만들어지지 않았다. 알 수 없는 `pg` 값은 무시한다.
 - **금액은 화면이 정하지 않는다.** 폼의 금액 표시는 안내용이고, PG에 넘기는 금액과 승인 때 비교하는 금액은 서버가 준비 때 정한 값이다.

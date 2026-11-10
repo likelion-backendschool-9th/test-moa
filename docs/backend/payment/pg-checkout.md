@@ -7,7 +7,7 @@
 ## 한눈에
 - 끝나면: 현금 결제는 카카오페이·토스페이 테스트 결제창에서 승인된 뒤에만 구독이 된다. 결제 준비 → PG 결제창 → 서버가 PG 승인 → 구독과 결제 저장. 크레딧 결제는 PG 없이 지금처럼 한다.
 - 선행: #71(결제 실행), #70(결제 화면 조회).
-- 실제 돈은 오가지 않는다. 카카오페이는 테스트 CID(`TC0ONETIME`)와 개발용 시크릿 키, 토스는 테스트 키(`test_…`)만 쓴다.
+- 실제 돈은 오가지 않는다. 카카오페이는 테스트 CID(`TC0ONETIME`)와 개발용 시크릿 키, 토스는 "API 개별 연동 키"의 테스트 키(`test_ck_…`·`test_sk_…`)만 쓴다. 주문서형·결제창형 키(`test_gck_…`·`test_gsk_…`)와 보안 키는 쓰지 않는다.
 - 이 이슈 범위 밖: 환불·결제 취소, 정기 결제(자동 갱신), 운영(실거래) 키, 웹훅.
 
 ## 정한 것 (#249)
@@ -20,7 +20,8 @@
 - **5초 더블클릭 검사는 `ready`에서 한다.** 직전 결제가 5초 안이면 409 `DUPLICATE_PAYMENT`. 승인에서는 하지 않는다(PG가 이미 승인했는데 거절하면 안 된다). 승인의 중복은 시도 상태가 막는다.
 - **결제 후 돌아올 주소는 서버 설정이 정한다.** 화면이 보낸 주소를 쓰지 않는다(엉뚱한 곳으로 돌려보내는 주소를 PG에 넣지 못하게). `PAYMENT_RETURN_BASE_URL`(기본 `http://localhost:3005`)에 경로를 붙인다. 이 도메인은 카카오페이 디벨로퍼스 앱의 사이트 도메인에 등록돼 있어야 한다.
 - **키가 없으면 그 PG만 쓸 수 없다.** 서버는 키가 비어도 뜨고, `GET …/checkout`(#70)의 응답에 쓸 수 있는 `providers`를 더해 화면이 막는다. 쓸 수 없는 PG로 `ready`를 부르면 503 `PG_UNAVAILABLE`.
-- **시도는 만료된다.** 만든 지 30분이 지난 `PENDING` 시도는 승인할 수 없다(PG의 결제 준비도 오래 못 간다). 배치로 지우지 않고 승인할 때 시각으로 판단한다.
+- **토스는 토스페이 자체창을 바로 연다.** 결제창형이 아니라 `payment()`의 `requestPayment`에 `method: "CARD"`, `card: { flowMode: "DIRECT", easyPay: … }`를 줘서 구매자가 수단을 다시 고르지 않고 토스페이 창이 열린다. 주문서형·결제창형 키(`test_gck_`)로는 토스페이만 고르게 하는 방법이 문서에 없어서 `test_ck_`·`test_sk_` 세트를 쓴다(2026-11-10). 결제창이 열리는 쪽은 브라우저 SDK이고 서버는 승인만 한다.
+- **시도는 만료된다.** 만든 지 10분이 지난 `PENDING` 시도는 승인할 수 없다(토스는 결제 요청 뒤 10분 안에 승인해야 하고, 카카오페이도 결제 준비가 오래 가지 않는다). 배치로 지우지 않고 승인할 때 시각으로 판단한다.
 - **PG 호출은 `PaymentGateway` 인터페이스 뒤에 둔다.** 구현은 `KakaoPayGateway`, `TossPaymentsGateway`이고 HTTP는 `RestClient`로 부른다(분석 서버 클라이언트와 같은 방식). 테스트는 가짜 구현을 끼운다.
 
 ## 설정
@@ -28,8 +29,8 @@
 | --- | --- | --- |
 | `KAKAOPAY_SECRET_KEY` | 카카오페이 개발용 Secret key(dev) | 카카오페이만 쓸 수 없음 |
 | `KAKAOPAY_CID` | 가맹점 코드. 테스트는 `TC0ONETIME` | 카카오페이만 쓸 수 없음 |
-| `TOSSPAYMENTS_CLIENT_KEY` | 토스 클라이언트 키(`test_ck_…`). 결제창을 여는 브라우저에 내려간다 | 토스만 쓸 수 없음 |
-| `TOSSPAYMENTS_SECRET_KEY` | 토스 시크릿 키(`test_sk_…`) | 토스만 쓸 수 없음 |
+| `TOSSPAYMENTS_CLIENT_KEY` | 토스 클라이언트 키(`test_ck_…`, API 개별 연동 키). 결제창을 여는 브라우저에 내려간다 | 토스만 쓸 수 없음 |
+| `TOSSPAYMENTS_SECRET_KEY` | 토스 시크릿 키(`test_sk_…`, API 개별 연동 키) | 토스만 쓸 수 없음 |
 | `PAYMENT_RETURN_BASE_URL` | 결제 뒤 돌아올 사이트 주소 | 기본값 |
 
 값은 코드와 저장소에 두지 않는다. 배포 서버 `.env`에도 병합 전에 넣어야 한다. `.env.example`과 `compose.yaml`·`compose.prod.yaml`의 백엔드 환경 변수에 이름을 더한다.
@@ -56,7 +57,8 @@
 | `provider`, `amount` | 결제 대행사와 서버가 정한 현금 금액 |
 | `orderName` | 결제창에 보일 이름(플랜 `tier`) |
 | `redirectUrl`, `mobileRedirectUrl` | 카카오페이만. 이동할 결제창 주소 |
-| `clientKey`, `customerKey` | 토스만. 브라우저에서 결제창을 여는 값. `customerKey`는 회원마다 정해진 무작위 값이고 이메일 같은 개인정보를 쓰지 않는다 |
+| `clientKey`, `customerKey` | 토스만. 브라우저에서 결제창을 여는 값. `customerKey`는 회원마다 정해진 무작위 값이고 이메일 같은 개인정보를 쓰지 않는다. 토스 규칙: 22~50자, 영문·숫자·`-`·`_`·`=`·`.`·`@`이고 특수문자를 하나 이상 포함 |
+| `successUrl`, `failUrl` | 토스만. 결제창에 넘길 돌아올 주소. 서버가 `PAYMENT_RETURN_BASE_URL`로 만든다 |
 
 ### 결제 승인 (`POST …/approve`, 201)
 
@@ -129,7 +131,7 @@
 - Then  404. PG를 부르지 않는다
 - When  토스가 돌려준 `amount`가 시도의 금액과 다르다
 - Then  409 `PAYMENT_NOT_APPROVABLE`. PG를 부르지 않고 구독이 생기지 않는다
-- When  만든 지 30분이 지났다
+- When  만든 지 10분이 지났다
 - Then  409 `PAYMENT_NOT_APPROVABLE`
 - When  카카오페이인데 `pgToken`이 없거나, 토스인데 `paymentKey`가 없다
 - Then  400
@@ -193,7 +195,7 @@
 
 ## 가정
 - 카카오페이는 단건 결제 API(`https://open-api.kakaopay.com/online/v1/payment/ready`·`approve`, 헤더 `Authorization: SECRET_KEY {키}`)를 쓴다. 준비는 테스트 CID와 개발용 키로 호출이 성공했다(응답에 `tid`와 PC·모바일·앱 결제창 주소). 승인의 필수 값(`cid`, `tid`, `partner_order_id`, `partner_user_id`, `pg_token`)은 구현할 때 공식 문서로 다시 확인한다. 준비 응답의 `tms_result` 뜻은 확인하지 못했다.
-- 토스는 결제 승인 API(`POST https://api.tosspayments.com/v1/payments/confirm`)를 `Basic base64(시크릿키:)` 인증으로 부른다. 결제창은 브라우저의 토스 SDK가 열고, 성공하면 `paymentKey`·`orderId`·`amount`가 성공 주소의 쿼리로 돌아온다. 토스페이 결제창의 정확한 SDK 호출 값과 테스트 키는 구현할 때 공식 문서로 확인한다(`test_ck_…`·`test_sk_…`로 시작해야 하고 `live_…`는 쓰지 않는다).
+- 토스는 결제 승인 API(`POST https://api.tosspayments.com/v1/payments/confirm`)를 `Authorization: Basic base64(시크릿키:)`(콜론 필수)로 부르고, 본문은 `paymentKey`·`orderId`·`amount`다. 결제창은 브라우저의 토스 SDK(`@tosspayments/tosspayments-sdk`)가 열고, 리다이렉트 방식에서 성공 주소 쿼리로 `paymentKey`·`orderId`·`amount`(`paymentType`은 없음), 실패 주소 쿼리로 `code`·`message`·`orderId`가 돌아온다(공식 문서, 2026-11-10 확인). 결제를 요청한 뒤 10분 안에 승인해야 한다. 토스페이 창을 바로 여는 `card.easyPay` 값이 `"토스페이"`(한글)인지 `TOSSPAY`인지는 문서마다 달라서 구현할 때 결제창을 열어 확인한다. 토스페이의 테스트 모드 제한도 문서에 없어서 실제로 열어 확인한다.
 - 개발용 키와 테스트 CID는 짝이다. 한쪽만 운영 값으로 바꾸면 오류가 나므로 환경 변수를 따로 둔다.
 - 결제 시도의 `order_id`는 PG에 중복 없이 넘길 수 있게 서버가 무작위로 만든다(회원 정보를 담지 않는다).
 - 응답 시각에는 오프셋이 붙는다([server-time.md](../../server-time.md)).

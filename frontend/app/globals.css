@@ -28,6 +28,8 @@
   --like: #c4264a;
   --like-soft: #fde8ed;
   /* 리뷰 그룹 심각도 딱지. 치명은 --like, 차단은 주황, 불편은 파랑 */
+  /* 필수 입력 표시(*) */
+  --required: #d92d20;
   --warning: #b4530a;
   --warning-soft: #fdefe0;
   --info: #1f5fae;
@@ -175,6 +177,7 @@
     /* 남회색 패널에서 튀지 않게 어두운 장미색 바탕에 밝힌 분홍 글씨, 대비 6.42:1 */
     --like: #f47c97;
     --like-soft: #341520;
+    --required: #f97066;
     --warning: #f4a660;
     --warning-soft: #33220f;
     --info: #86b4f2;

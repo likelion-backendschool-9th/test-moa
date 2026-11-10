@@ -1,8 +1,8 @@
 import { PROJECT_NEW_PATH, PROJECTS_PATH, projectPath } from "@/features/project/paths";
 import type { ParticipationView } from "@/features/participation/types";
 import { cn } from "@/lib/cn";
-import { ParticipationListFrame } from "@/app/(site)/testers/recruitments/_components/ParticipationListFrame/ParticipationListFrame";
-import { ParticipationViewToggle } from "@/app/(site)/testers/recruitments/_components/ParticipationViewToggle/ParticipationViewToggle";
+import { ParticipationListFrame } from "@/features/participation/components/ParticipationListFrame/ParticipationListFrame";
+import { ParticipationViewToggle } from "@/features/participation/components/ParticipationViewToggle/ParticipationViewToggle";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { Card } from "@/components/ui/Card/Card";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";

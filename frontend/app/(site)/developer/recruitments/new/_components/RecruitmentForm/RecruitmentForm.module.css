@@ -324,7 +324,7 @@
 
 
 .required {
-  color: #d92d20;
+  color: var(--required);
 }
 
 .conditionRow {

@@ -42,7 +42,7 @@ export function isDeveloperFeedbackImageUrl(value: string) {
 
 function isImageUrl(value: string, pattern: RegExp) {
   const name = pattern.exec(value)?.[1];
-  return name !== undefined && !name.includes("..") && IMAGE_NAME.test(name);
+  return name !== undefined && IMAGE_NAME.test(name);
 }
 
 /** 폼에 숨겨 보낸 파일 정보(JSON)를 읽는다. 모양이 다르면 null */

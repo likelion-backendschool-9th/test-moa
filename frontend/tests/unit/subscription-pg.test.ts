@@ -5,6 +5,7 @@ import {
   isJustPaid,
   isMobileUserAgent,
   isPopupReturnPath,
+  isTossWindow,
   kakaoRedirectUrl,
   parsePaymentId,
   pgNotice,
@@ -13,9 +14,7 @@ import {
   receiptFromServer,
   receiptPath,
   receiptMethodLabel,
-  tossPopupPath,
   tossWindowFrom,
-  tossWindowFromQuery,
   type PgReady,
 } from "@/features/subscription/pg";
 
@@ -158,7 +157,7 @@ test("#252-S9 결제 팝업이 알릴 수 있는 주소는 결제 화면 아래 
   }
 });
 
-test("#252-S11 토스 팝업 주소에 담은 준비 값을 그대로 읽는다", () => {
+test("#252-S11 원래 창이 보낸 토스 결제창 값은 모양이 맞을 때만 받는다", () => {
   const window = {
     orderId: "MOA1",
     amount: 10000,
@@ -168,19 +167,14 @@ test("#252-S11 토스 팝업 주소에 담은 준비 값을 그대로 읽는다"
     successUrl: "http://localhost:3005/my/subscription/checkout/result",
     failUrl: "http://localhost:3005/my/subscription/checkout?pg=fail",
   };
-  const path = tossPopupPath(window);
-  expect(path.startsWith("/my/subscription/checkout/toss?")).toBe(true);
-  const query = Object.fromEntries(new URL(path, "http://x").searchParams);
-  expect(tossWindowFromQuery(query)).toEqual(window);
-});
-
-test("#252-S11 토스 팝업 주소의 값이 빠졌거나 금액이 이상하면 null이다", () => {
-  const full = { orderId: "MOA1", amount: "10000", orderName: "n", clientKey: "c", customerKey: "k", successUrl: "s", failUrl: "f" };
-  expect(tossWindowFromQuery(full)).not.toBeNull();
-  for (const key of Object.keys(full)) {
-    expect(tossWindowFromQuery({ ...full, [key]: undefined }), key).toBeNull();
+  expect(isTossWindow(window)).toBe(true);
+  for (const key of Object.keys(window)) {
+    expect(isTossWindow({ ...window, [key]: undefined }), key).toBe(false);
   }
-  for (const amount of ["abc", "0", "-1", "1.5"]) {
-    expect(tossWindowFromQuery({ ...full, amount }), amount).toBeNull();
+  for (const amount of ["10000", 0, -1, 1.5, null]) {
+    expect(isTossWindow({ ...window, amount }), String(amount)).toBe(false);
+  }
+  for (const value of [null, undefined, "x", 1, []]) {
+    expect(isTossWindow(value), String(value)).toBe(false);
   }
 });

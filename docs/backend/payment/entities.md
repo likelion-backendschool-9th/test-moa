@@ -274,7 +274,7 @@ List<Plan> findCurrentPlans();
 
 ## 7. 구독 결제 (#45-R7)
 
-결제 1건 = 이용 기간 1건. 현금은 PG 없이 완료 기록만, 크레딧은 이벤트 우선 차감 후 장부에 종류별 행을 남긴다.
+결제 1건 = 이용 기간 1건. 현금은 카카오페이·토스 승인을 거친 뒤에만 저장하고(#249, 그 전에는 PG 없이 완료 기록만 남겼다), 크레딧은 이벤트 우선 차감 후 장부에 종류별 행을 남긴다.
 
 ### `payments`
 
@@ -283,6 +283,8 @@ List<Plan> findCurrentPlans();
 | `id` | `id` | Long | 불가 | PK |
 | `subscription` | `subscription_id` | FK unique | 불가 | 이 결제로 산 기간 (`@OneToOne`) |
 | `method` | `method` | enum | 불가 | `CASH` / `CREDIT` |
+| `provider` | `provider` | enum | 가능 | 현금 결제를 맡은 결제 대행사 `KAKAO_PAY` / `TOSS_PAY`. 크레딧 결제와 PG 연동 전 현금 결제는 null (#249) |
+| `pgTransactionId` | `pg_transaction_id` | String(200) | 가능 | 결제 대행사의 거래 식별자(카카오페이 `tid`, 토스 `paymentKey`). 크레딧 결제는 null (#249) |
 | `amount` | `amount` | Integer | 불가 | 결제 금액 |
 | `paidAt` | `paid_at` | datetime | 불가 | 결제 일시 |
 | `status` | `status` | enum | 불가 | 만들 때 `COMPLETED`(빌더 고정), 환불 시 `REFUNDED` |

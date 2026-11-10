@@ -5,13 +5,13 @@
 이슈: [#71](https://github.com/likelion-backendschool-9th/test-moa/issues/71). 요구·시나리오는 `#71-R…`, `#71-S…`부터 센다. 결제 화면 조회는 [subscription-checkout.md](subscription-checkout.md), 구독 상태·플랜은 [subscription.md](subscription.md), 엔티티는 [entities.md](entities.md), 도메인 결정은 [README.md](README.md).
 
 ## 한눈에
-- 끝나면: 결제 수단(현금·크레딧)과 플랜을 골라 결제하면 결제 한 건과 이용 기간(구독) 한 건이 짝으로 저장된다. 크레딧 결제는 지갑에서 빼고 크레딧 내역에 남긴다. 결제 이력도 조회한다. 실제 PG 결제는 하지 않고, 현금은 완료 기록만 남긴다.
+- 끝나면: 결제 수단(현금·크레딧)과 플랜을 골라 결제하면 결제 한 건과 이용 기간(구독) 한 건이 짝으로 저장된다. 크레딧 결제는 지갑에서 빼고 크레딧 내역에 남긴다. 결제 이력도 조회한다. 실제 PG 결제는 하지 않고, 현금은 완료 기록만 남긴다. (고침 #249: 현금은 이 API로 받지 않고 PG 승인을 거쳐야 저장된다. 이 API는 크레딧만 받는다. [pg-checkout.md](pg-checkout.md))
 - 선행: #70(결제 화면 조회), #69(플랜·구독 상태), #66(지갑·내역).
 - 화면: `/my/subscription/checkout` → 결제 뒤 `/my/subscription?notice=paid` — [subscription.md](../../frontend/payment/subscription.md)
 - 프론트 목업 제거와 API 연동, 환불은 이 이슈 범위 밖이다.
 
 ## 정한 것 (#71)
-- **경로는 `POST /api/v1/my/subscription/checkout`이다.** 본문은 `planId`, `method`(`CASH`|`CREDIT`). #69·#70과 같이 토큰의 회원을 쓰고 경로에 회원 id를 받지 않는다. 이슈 본문의 `/api/users/{userId}/subscription/checkout`은 쓰지 않는다. 결제 이력은 `GET /api/v1/my/subscription/payments`다.
+- **경로는 `POST /api/v1/my/subscription/checkout`이다.** 본문은 `planId`, `method`(`CASH`|`CREDIT`, 현금은 400이다 (고침 #249)). #69·#70과 같이 토큰의 회원을 쓰고 경로에 회원 id를 받지 않는다. 이슈 본문의 `/api/users/{userId}/subscription/checkout`은 쓰지 않는다. 결제 이력은 `GET /api/v1/my/subscription/payments`다.
 - **컨트롤러·서비스는 `PaymentController`·`PaymentService` 한 쌍이다.** 결제 실행과 이력을 맡는다. 화면 값을 계산하는 `GET .../checkout`(#70)은 `SubscriptionController`에 그대로 둔다.
 - **결제는 회원 행을 먼저 잠그고 이어서 지갑 행을 잠근다.** 운영자 구독 부여·해제([admin-subscription.md](admin-subscription.md))도 같은 회원 행을 잠가서, 결제와 운영자 작업이 겹쳐도 한 줄로 처리된다(고침 #204: 결제가 지갑만 잠가서 서로 다른 행을 잠그던 것을 맞춤). 회원 행을 잠그지 않으면 한쪽이 읽은 "가장 늦은 `end_at`"이 다른 쪽 커밋 뒤에는 낡은 값이 되어 이용 기간이 겹치거나 해제 뒤에 미래 구독이 남는다. 잠금 순서는 항상 회원 → 지갑이다. 출금은 지갑만 잠가서 이 순서와 얽히지 않는다.
 - **동시에 두 번 결제할 때도 같은 회원 행 잠금으로 막는다.** 결제는 맨 먼저 회원 행을 `PESSIMISTIC_WRITE`로 잠그고, 이용 시작을 계산하는 읽기와 저장을 모두 그 안에서 한다. 잠그지 않으면 두 요청이 같은 "가장 늦은 `end_at`"을 읽어 같은 기간 행이 두 개 생길 수 있다. 현금 결제도 같은 회원 행을 잠가서 현금과 크레딧이 섞여도 한 줄로 처리된다. 회원 행은 처음 구독하는 회원에게도 있으므로 잠글 행이 없는 경우가 없다. 지갑 행은 운영자와 플랜 검사 뒤에 이어서 잠그며, 크레딧 잔액 확인과 차감을 보호한다(고침 #204: 결제끼리의 순서도 지갑 행이 아니라 회원 행 잠금이 정한다).
@@ -37,7 +37,7 @@
 | 본문 필드 | 규칙 |
 | --- | --- |
 | `planId` | 필수. 지금 파는 플랜의 id |
-| `method` | 필수. `CASH` 또는 `CREDIT` |
+| `method` | 필수. `CREDIT`만 처리한다. `CASH`는 400(고침 #249: 현금은 카카오페이·토스 승인을 거쳐야 저장된다) |
 
 | 응답 필드 | 의미 |
 | --- | --- |
@@ -91,11 +91,11 @@
 
 ## 시나리오
 
-#71-S1 구독하지 않은 회원의 현금 결제 [테스트]
-- Given 구독 행이 없는 회원, 현금 10,000·크레딧 9,000·30일 플랜
-- When  `POST /api/v1/my/subscription/checkout` `method=CASH`
-- Then  201. 결제 한 건(`CASH`, 10,000, `COMPLETED`)과 구독 한 건(`ACTIVE`, 시작=지금, 끝=지금+30일)이 짝으로 저장된다
-- Then  지갑 잔액은 그대로이고 크레딧 내역은 늘지 않는다
+#71-S1 구독하지 않은 회원의 크레딧 결제 [테스트] (고침 #249: 현금 → 크레딧. 현금 결제의 짝 저장은 #249-S5)
+- Given 구독 행이 없는 회원, 적립 10,000, 현금 10,000·크레딧 9,000·30일 플랜
+- When  `POST /api/v1/my/subscription/checkout` `method=CREDIT`
+- Then  201. 결제 한 건(`CREDIT`, 9,000, `COMPLETED`, `provider` 없음)과 구독 한 건(`ACTIVE`, 시작=지금, 끝=지금+30일)이 짝으로 저장된다
+- Then  지갑 잔액은 1,000이 된다
 
 #71-S2 구독 중이면 가장 늦은 만료일부터 이어진다 [테스트]
 - Given 지금 기간이 12/1까지인 회원
@@ -126,7 +126,7 @@
 - When  `method=CREDIT`
 - Then  409 `INSUFFICIENT_CREDIT`. 결제·구독·내역이 늘지 않고 지갑도 그대로다
 - When  같은 회원이 `method=CASH`로 결제한다
-- Then  201. 현금 결제는 크레딧과 상관없이 된다
+- Then  400. 현금은 크레딧과 상관없이 이 API로 받지 않는다 (고침 #249: 예전에는 201. 현금 결제는 #249 PG 경로로만 된다)
 - Given 지갑이 없는 회원
 - Then  크레딧 결제는 409이고 지갑 행은 남지 않는다(롤백)
 
@@ -147,12 +147,12 @@
 - Given 더블클릭 시간을 지난 뒤의 두 요청이 겹쳐 들어오는 경우(시계를 조절한 테스트)
 - Then  회원 행 잠금 때문에 두 요청이 차례로 처리되어 두 번째 시작이 첫 번째 끝과 같다 (고침 #204: 순서를 정하는 잠금이 지갑 행에서 회원 행으로 바뀜)
 
-#71-S9 지갑이 없는 회원도 현금으로 결제할 수 있다 [테스트]
-- Given 지갑이 없는 회원
-- When  `method=CASH`
-- Then  201. 지갑이 잔액 0으로 만들어진다
-- Given 지갑이 없는 같은 회원의 첫 결제 둘이 동시에 온다
-- Then  하나는 201이고 다른 하나는 409이며, 지갑은 하나다(`ON CONFLICT DO NOTHING`). 구독도 한 건이다(S8)
+#71-S9 지갑이 없는 회원도 첫 현금 결제에서 지갑이 만들어진다 [테스트: #249-S5, #249-S8] (고침 #249: 현금 직접 결제를 없애 PG 승인 경로의 시나리오로 옮김)
+- Given 지갑이 없는 회원이 PG 승인으로 결제한다
+- Then  지갑이 잔액 0으로 만들어진다
+- Given 지갑이 없는 같은 회원의 PG 승인 둘이 동시에 온다
+- Then  지갑은 하나다(`ON CONFLICT DO NOTHING`). 구독 두 건은 이어 붙는다
+- 크레딧 결제만 하는 이 API에서는 지갑이 없으면 #71-S6대로 409이고 지갑 행이 남지 않는다
 
 #71-S10 중간에 실패하면 모두 되돌려진다 [테스트]
 - Given 결제 저장 이후(내역 저장 등)에 예외가 나는 상황
@@ -160,7 +160,7 @@
 
 #71-S11 입력 검사 [테스트]
 - When  `planId`가 없거나 `method`가 없거나 `CASH`·`CREDIT`이 아니다
-- Then  400
+- Then  400 (`CASH`도 400이다 (고침 #249))
 - When  없는 `planId`이거나 옛 `version` 행의 id다
 - Then  404. 결제가 생기지 않는다
 
@@ -188,7 +188,7 @@
 #71-S16 전체 흐름 [직접]
 - Given 일반 회원 토큰, 운영자가 등록한 플랜(`planId`)
 - Then  Postman으로 확인한다
-  1. 지갑 없는 회원이 `CASH`로 결제: 201, `GET .../status`가 `active=true`
+  1. 이벤트 크레딧을 SQL로 넣은 회원이 `CREDIT`으로 결제: 201, `GET .../status`가 `active=true` (고침 #249: 예전에는 지갑 없는 회원의 `CASH` 결제)
   2. 5초 안에 다시 결제: 409 `DUPLICATE_PAYMENT`
   3. 5초 뒤 다시 결제: 201, 시작이 앞 기간의 끝
   4. 이벤트·적립 크레딧을 SQL로 넣고 `CREDIT` 결제: 이벤트 먼저, 크레딧 내역에 두 줄(`GET /api/v1/my/credits/ledger`)

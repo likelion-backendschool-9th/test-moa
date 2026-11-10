@@ -18,7 +18,7 @@
 - **승인은 세 토막으로 나눈다.** ① 회원 행 잠금 안에서 시도를 검증하고 `APPROVING`으로 바꾼 뒤 커밋 ② 잠금 밖에서 PG 승인 호출 ③ 회원 행 → 지갑 행 순서로 다시 잠그고 구독·결제를 저장하고 `APPROVED`로 바꿈. PG 호출 동안 회원 행을 잡고 있지 않기 위해서다. `APPROVING`으로 바꾸는 순간 같은 시도의 둘째 승인은 막힌다.
 - **PG가 승인했는데 ③이 실패하면 시도는 `APPROVING`으로 남고 오류 로그를 남긴다.** 자동 취소(환불)는 이 이슈 밖이라 하지 않는다. 테스트 결제라 돈이 오가지 않는다.
 - **5초 더블클릭 검사는 `ready`에서 한다.** 직전 결제가 5초 안이면 409 `DUPLICATE_PAYMENT`. 승인에서는 하지 않는다(PG가 이미 승인했는데 거절하면 안 된다). 승인의 중복은 시도 상태가 막는다.
-- **결제 후 돌아올 주소는 서버 설정이 정한다.** 화면이 보낸 주소를 쓰지 않는다(엉뚱한 곳으로 돌려보내는 주소를 PG에 넣지 못하게). `PAYMENT_RETURN_BASE_URL`(기본 `http://localhost:3005`)에 경로를 붙인다. 이 도메인은 카카오페이 디벨로퍼스 앱의 사이트 도메인에 등록돼 있어야 한다.
+- **결제 후 돌아올 주소는 서버 설정이 정한다.** 화면이 보낸 주소를 쓰지 않는다(엉뚱한 곳으로 돌려보내는 주소를 PG에 넣지 못하게). `PAYMENT_RETURN_BASE_URL`(기본 `http://localhost:3005`)에 경로를 붙인다. 이 도메인은 카카오페이 디벨로퍼스 앱의 사이트 도메인에 등록돼 있어야 한다. 카카오페이의 승인 주소는 `<base>/my/subscription/checkout/result?orderId=<주문번호>`(카카오페이가 `pg_token`을 덧붙인다), 취소·실패 주소는 `<base>/my/subscription/checkout?pg=cancel`·`?pg=fail`이다. 토스의 성공 주소는 쿼리 없는 `<base>/my/subscription/checkout/result`(토스가 `paymentKey`·`orderId`·`amount`를 덧붙인다)이고 실패 주소는 `?pg=fail`이다.
 - **키가 없으면 그 PG만 쓸 수 없다.** 서버는 키가 비어도 뜨고, `GET …/checkout`(#70)의 응답에 쓸 수 있는 `providers`를 더해 화면이 막는다. 쓸 수 없는 PG로 `ready`를 부르면 503 `PG_UNAVAILABLE`.
 - **토스는 토스페이 자체창을 바로 연다.** 결제창형이 아니라 `payment()`의 `requestPayment`에 `method: "CARD"`, `card: { flowMode: "DIRECT", easyPay: … }`를 줘서 구매자가 수단을 다시 고르지 않고 토스페이 창이 열린다. 주문서형·결제창형 키(`test_gck_`)로는 토스페이만 고르게 하는 방법이 문서에 없어서 `test_ck_`·`test_sk_` 세트를 쓴다(2026-11-10). 결제창이 열리는 쪽은 브라우저 SDK이고 서버는 승인만 한다.
 - **시도는 만료된다.** 만든 지 10분이 지난 `PENDING` 시도는 승인할 수 없다(토스는 결제 요청 뒤 10분 안에 승인해야 하고, 카카오페이도 결제 준비가 오래 가지 않는다). 배치로 지우지 않고 승인할 때 시각으로 판단한다.
@@ -81,7 +81,7 @@
 | 직전 결제 후 5초 안(준비) | 409 | `DUPLICATE_PAYMENT` |
 | 이미 승인했거나 승인 중이거나 실패한 시도, 만료된 시도, 금액 불일치 | 409 | `PAYMENT_NOT_APPROVABLE` |
 | PG가 승인을 거절함 | 502 | `PG_APPROVE_FAILED` |
-| 키가 없는 PG | 503 | `PG_UNAVAILABLE` |
+| 키가 없는 PG, 카카오페이 결제 준비 호출이 실패함 | 503 | `PG_UNAVAILABLE` |
 
 세 코드(`PAYMENT_NOT_APPROVABLE`, `PG_APPROVE_FAILED`, `PG_UNAVAILABLE`)는 `ErrorCode`에 더한다. 남의 시도는 있는지 알려 주지 않게 404로 답한다.
 

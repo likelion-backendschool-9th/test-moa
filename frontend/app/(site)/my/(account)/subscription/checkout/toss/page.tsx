@@ -1,26 +1,23 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireMember } from "@/features/session/guard";
-import { tossWindowFromQuery } from "@/features/subscription/pg";
-import { TossPopup } from "@/app/(site)/my/(account)/subscription/checkout/_components/TossPopup/TossPopup";
+import { TossPopup, TossPopupView } from "@/app/(site)/my/(account)/subscription/checkout/_components/TossPopup/TossPopup";
 
 export const metadata: Metadata = { title: "토스페이 결제" };
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
 /*
- * 결제 팝업(#252)이 토스 결제창을 여는 화면. 결제 화면이 팝업을 먼저 열고 서버의 결제 준비가 끝나면 준비 값을 쿼리에 담아 이리로 보낸다.
- * 금액은 승인할 때 서버가 다시 확인하므로 쿼리를 바꿔도 다른 금액으로 결제되지 않는다
+ * 결제 팝업(#252)이 토스 결제창을 여는 화면. 결제 화면이 팝업을 먼저 열고 서버의 결제 준비가 끝나면 이리로 보낸다.
+ * 결제창 값은 주소가 아니라 원래 창이 직접 보내 준다(TossPopup)
  */
-export default function TossPopupPage({ searchParams }: { searchParams: SearchParams }) {
+export default function TossPopupPage() {
   return (
-    <Suspense fallback={<TossPopup window={null} loading />}>
-      <TossWindowOpener searchParams={searchParams} />
+    <Suspense fallback={<TossPopupView text="토스 결제창을 여는 중이에요…" />}>
+      <TossWindowOpener />
     </Suspense>
   );
 }
 
-async function TossWindowOpener({ searchParams }: { searchParams: SearchParams }) {
+async function TossWindowOpener() {
   await requireMember("/my/subscription/checkout/toss");
-  return <TossPopup window={tossWindowFromQuery(await searchParams)} />;
+  return <TossPopup />;
 }

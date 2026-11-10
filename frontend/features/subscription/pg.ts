@@ -185,29 +185,15 @@ export function isPopupReturnPath(value: unknown): value is string {
   return typeof value === "string" && /^\/my\/subscription\/checkout(\/[a-z]+)?(\?[^#]*)?$/.test(value);
 }
 
-/** 토스 결제창을 팝업 안에서 여는 화면의 주소. 팝업을 클릭하는 순간 먼저 열어 두고 준비가 끝나면 이 주소로 보낸다 */
-export function tossPopupPath(window: TossWindow): string {
-  return `/my/subscription/checkout/toss?${new URLSearchParams({
-    orderId: window.orderId,
-    amount: String(window.amount),
-    orderName: window.orderName,
-    clientKey: window.clientKey,
-    customerKey: window.customerKey,
-    successUrl: window.successUrl,
-    failUrl: window.failUrl,
-  })}`;
-}
-
-/** 토스 팝업 화면의 쿼리에서 결제창을 열 값을 읽는다. 하나라도 빠지거나 금액이 이상하면 null이다 */
-export function tossWindowFromQuery(query: Query): TossWindow | null {
-  const orderId = one(query.orderId);
-  const orderName = one(query.orderName);
-  const clientKey = one(query.clientKey);
-  const customerKey = one(query.customerKey);
-  const successUrl = one(query.successUrl);
-  const failUrl = one(query.failUrl);
-  const amount = Number(one(query.amount));
-  if (!orderId || !orderName || !clientKey || !customerKey || !successUrl || !failUrl) return null;
-  if (!Number.isInteger(amount) || amount <= 0) return null;
-  return { orderId, amount, orderName, clientKey, customerKey, successUrl, failUrl };
+/**
+ * 원래 창이 결제 팝업에 넘겨 주는 토스 결제창 값인지 본다. 값은 쿼리가 아니라 원래 창이 직접 보내므로 주소로 바꿔치기할 수 없고,
+ * 여기서는 모양만 본다(빠진 값이 있거나 금액이 정수·양수가 아니면 결제창을 열지 않는다)
+ */
+export function isTossWindow(value: unknown): value is TossWindow {
+  if (typeof value !== "object" || value === null) return false;
+  const window = value as Record<string, unknown>;
+  for (const key of ["orderId", "orderName", "clientKey", "customerKey", "successUrl", "failUrl"]) {
+    if (typeof window[key] !== "string" || window[key] === "") return false;
+  }
+  return Number.isInteger(window.amount) && (window.amount as number) > 0;
 }

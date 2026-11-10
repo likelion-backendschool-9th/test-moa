@@ -25,7 +25,7 @@ import { redirect } from "next/navigation";
 const PATH = "/my/subscription/checkout";
 
 /* toss는 서버가 결제 준비를 마쳤으니 브라우저가 토스 결제창을 열라는 뜻이고, kakao는 결제 팝업을 이 주소로 보내라는 뜻이다 */
-export type CheckoutFormState = { status: "idle" } | { status: "error"; error: string } | { status: "toss"; window: TossWindow } | { status: "kakao"; url: string };
+export type CheckoutFormState = { status: "idle" } | { status: "error"; error: string } | { status: "toss"; window: TossWindow; popup: boolean } | { status: "kakao"; url: string };
 
 export async function payForSubscription(_prev: CheckoutFormState, formData: FormData): Promise<CheckoutFormState> {
   const { subscription, plans, payableCredits } = await getSubscriptionOverview(PATH);
@@ -51,7 +51,7 @@ export async function payForSubscription(_prev: CheckoutFormState, formData: For
     }
     const window = tossWindowFrom(prepared.ready);
     if (!window) return { status: "error", error: "결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요" };
-    return { status: "toss", window };
+    return { status: "toss", window, popup: formData.get("popup") === "1" };
   }
 
   if (isBackendAuth) {

@@ -5,7 +5,7 @@ import { useActionState, useEffect, useRef, useState, useSyncExternalStore } fro
 import { Button } from "@/components/ui/Button/Button";
 import { formatCredits, formatDate, formatWon } from "@/lib/format";
 import { payForSubscription, type CheckoutFormState } from "@/features/subscription/actions";
-import { isMobileUserAgent, PG_LABEL, PG_PROVIDERS, tossPopupPath, type PgProvider } from "@/features/subscription/pg";
+import { isMobileUserAgent, PG_LABEL, PG_PROVIDERS, type PgProvider } from "@/features/subscription/pg";
 import { openTossWindow } from "@/features/subscription/toss-window";
 import type { CheckoutPeriod, SubscriptionPlan } from "@/features/subscription/types";
 import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
@@ -52,7 +52,7 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
   const [popupNotice, setPopupNotice] = useState<string | null>(null);
   const popup = usePaymentPopup(() => setPopupNotice("결제를 취소했어요"));
   const mobile = useMobile();
-  const tossOpening = state.status === "toss" && opened?.state !== state && !popup.opened;
+  const tossOpening = state.status === "toss" && !state.popup && opened?.state !== state;
   const tossError = opened?.state === state ? opened.message : null;
   /* 개발 모드의 효과 두 번 실행에도 같은 결제창을 두 번 열지 않는다(토스가 이미 열린 창이 있다고 거절한다) */
   const started = useRef<CheckoutFormState | null>(null);
@@ -61,7 +61,7 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
     if (started.current === state) return;
     started.current = state;
     if (state.status === "kakao") popup.navigate(state.url);
-    else if (state.status === "toss" && popup.opened) popup.navigate(tossPopupPath(state.window));
+    else if (state.status === "toss" && state.popup) popup.provideToss(state.window);
     else if (state.status === "toss") openTossWindow(state.window).then((message) => setOpened({ state, message }));
     else if (state.status === "error") popup.close();
   }, [state, popup]);

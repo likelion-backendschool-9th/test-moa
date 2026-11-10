@@ -18,7 +18,11 @@ export type OAuthLogin =
   | { signupRequired: false; tokens: Tokens }
   | { signupRequired: true; signupToken: string; email: string; nickname: string };
 
-type PendingState = { state: string; provider: SocialProviderId; next: string };
+/**
+ * link: 로그인이 아니라 로그인한 회원의 계정 연동(개인정보 수정 화면에서 시작).
+ * userId: 연동을 시작한 회원. 돌아왔을 때 지금 로그인한 회원과 같을 때만 연동한다(공용 PC에서 다른 회원에 붙지 않게)
+ */
+type PendingState = { state: string; provider: SocialProviderId; next: string; link?: boolean; userId?: number };
 export type PendingSignup = { signupToken: string; email: string; nickname: string; next: string };
 
 /* sameSite lax: 제공자에서 돌아오는 이동(최상위 GET)에도 쿠키가 실린다 */
@@ -45,6 +49,11 @@ export async function takeState(): Promise<PendingState | undefined> {
   const value = store.get(OAUTH_STATE_COOKIE)?.value;
   store.delete(OAUTH_STATE_COOKIE);
   return parse<PendingState>(value);
+}
+
+/** 로그아웃·로그인할 때 남은 state를 버린다. 앞 사람이 시작한 연동이 다음 사람 계정으로 이어지지 않게 한다 */
+export async function clearState() {
+  (await cookies()).delete(OAUTH_STATE_COOKIE);
 }
 
 export async function saveSignup(pending: PendingSignup) {

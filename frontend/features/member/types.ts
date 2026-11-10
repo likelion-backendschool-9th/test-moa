@@ -48,3 +48,10 @@ export type MyPageSummary = {
   /** 최신순 */
   recentCredits: CreditEntry[];
 };
+
+/* ---- 연동된 계정(#84) ---- */
+
+export type LoginProvider = "LOCAL" | "GOOGLE" | "GITHUB";
+
+/** 연동된 로그인 방식과 방식별 이메일(GET /api/users/me의 providers·accounts). 이메일을 모르는 계정은 빠진다 */
+export type LinkedAccountsInfo = { providers: LoginProvider[]; emails: Partial<Record<LoginProvider, string>> };

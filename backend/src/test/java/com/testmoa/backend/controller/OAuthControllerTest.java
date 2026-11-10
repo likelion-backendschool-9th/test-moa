@@ -1,6 +1,7 @@
 package com.testmoa.backend.controller;
 
 import com.jayway.jsonpath.JsonPath;
+import com.testmoa.backend.entity.Account;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.repository.AccountRepository;
 import com.testmoa.backend.repository.UserRepository;
@@ -25,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -214,6 +218,42 @@ class OAuthControllerTest {
                         .content("{\"code\":\"x\",\"redirectUri\":\"x\"}"))
                 .andExpect(status().isNotFound());
         mvc.perform(delete("/api/users/me/accounts/google")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("#84-S30 연동한 소셜 계정의 이메일이 내 정보에 보이고, 그 계정으로 로그인하면 바뀐 이메일로 갱신된다")
+    void 연동한_계정의_이메일이_보인다() throws Exception {
+        String access = signUpWithGithub("signup", "gh-" + suffix, "moa" + suffix);
+        me(access).andExpect(jsonPath("$.data.accounts[?(@.provider == 'GITHUB')].email", contains(email)));
+
+        provider("link", Provider.GOOGLE, "g-" + suffix, "Other" + email, true, "구글");
+        mvc.perform(post("/api/users/me/accounts/google").header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\":\"link\",\"redirectUri\":\"http://localhost:3000/auth/callback/google\"}"))
+                .andExpect(status().isOk());
+        // 제공자 이메일은 소문자로 둔다
+        me(access).andExpect(jsonPath("$.data.accounts[?(@.provider == 'GOOGLE')].email", contains("other" + email)));
+
+        // 구글 쪽 이메일이 바뀐 뒤 그 계정으로 로그인하면 새 이메일로 바뀐다. 제공자가 이메일을 주지 않으면 그대로 둔다
+        provider("changed", Provider.GOOGLE, "g-" + suffix, "new" + email, true, "구글");
+        oauthLogin("google", "changed").andExpect(jsonPath("$.data.signupRequired").value(false));
+        provider("noemail", Provider.GOOGLE, "g-" + suffix, null, false, "구글");
+        oauthLogin("google", "noemail").andExpect(jsonPath("$.data.signupRequired").value(false));
+        me(access).andExpect(jsonPath("$.data.accounts[?(@.provider == 'GOOGLE')].email", contains("new" + email)))
+                .andExpect(jsonPath("$.data.providers", containsInAnyOrder("GITHUB", "GOOGLE")));
+    }
+
+    @Test
+    @DisplayName("#84-S30 이메일을 저장하기 전에 연동한 계정은 null이고, 다음 소셜 로그인 때 채워진다")
+    void 예전_연동_계정은_다음_로그인_때_이메일이_채워진다() throws Exception {
+        User user = saveEmailUser(email, UserStatus.ACTIVE);
+        accountRepository.save(Account.builder().user(user).provider(Provider.GITHUB).providerCode("old-" + suffix).build());
+        String access = jwtProvider.createAccessToken(user.getId());
+        me(access).andExpect(jsonPath("$.data.accounts[0].email").value(nullValue()));
+
+        provider("old", Provider.GITHUB, "old-" + suffix, email, true, "moa");
+        oauthLogin("github", "old").andExpect(jsonPath("$.data.signupRequired").value(false));
+        me(access).andExpect(jsonPath("$.data.accounts[0].email").value(email));
     }
 
     @Test

@@ -16,7 +16,7 @@
   - 테스트로 받은 크레딧은 1크레딧 = 1원으로 현금화할 수 있다.
   - 현금화 흐름: 사용자 요청 → 운영자 확인 → 지급. 요청 금액은 처리 중 잠그고, 지급하면 차감, 반려하면 되돌린다.
 - 최소 출금액, 처리 기한은 미정이다. 화면에 약속하지 않는다.
-- 백엔드는 지금 고려하지 않는다. 데이터와 제출은 모두 목업이다.
+- 백엔드는 지금 고려하지 않는다. 데이터와 제출은 모두 목업이다. (고침 #205: `AUTH_MODE=backend`에서는 잔액·내역을 서버에서 읽는다. 아래 "백엔드 연결")
 
 ## 1. 접근 제어 (R123)
 비로그인 사용자는 두 페이지를 볼 수 없고 로그인으로 이동한다.
@@ -200,12 +200,104 @@ S369 구조 (기존 S78) [명령]
 - When  `grep -rln "mock" src --include='*.tsx'`
 - Then  결과가 없다
 
+## 백엔드 연결 (#205)
+`AUTH_MODE=backend`에서 `/my/credits`의 잔액과 내역, 마이페이지(`/my`)의 크레딧 카드·최근 크레딧 내역, 헤더의 크레딧 숫자, 구독 결제에 쓸 수 있는 크레딧이 서버 값을 읽는다. 백엔드 API는 [credit-balance-ledger.md](../../backend/payment/credit-balance-ledger.md)(`GET /api/v1/my/credits`, `GET /api/v1/my/credits/ledger?type=all|in|out`)다. 값이 없으면 지금처럼 목업이다. 번호는 `#205-S1`부터다. `#205-S11`(내역 개수 제한)은 백엔드 [credit-balance-ledger.md](../../backend/payment/credit-balance-ledger.md)에 있다.
+
+정한 것 (#205)
+- **크레딧 데이터는 `features/credit/api.ts`의 한 곳에서 읽는다.** `/my/credits`와 `/my`가 같은 변환을 거치게 해서 화면마다 숫자가 달라지지 않게 한다. 헤더는 서버의 `totalCredits`를, 구독 화면은 구독 API의 `payableCredits`를 그대로 쓴다(#203).
+- **화면마다 필요한 API만 한 번씩 읽는다.** `/my/credits`는 잔액과 고른 필터의 내역을 하나씩, `/my`는 잔액과 최근 내역 5건(`limit=5`, #205-S11)을 하나씩 읽는다. 헤더는 회원 확인 뒤 잔액을 읽는데, 화면도 잔액을 읽으면 한 요청 안에서 결과를 함께 써서 잔액 API는 한 번만 간다(`backendFetchOnce`). 운영자는 크레딧 대상이 아니라 헤더에서 읽지 않고 0으로 둔다.
+- **서버의 잔액은 화면 모양으로 이렇게 바꾼다.** 화면의 `earned`는 출금 처리 중인 금액을 포함하고 서버의 `earnedBalance`는 포함하지 않는다. 그래서 `earned = earnedBalance + lockedBalance`, `signup = eventCredit`, `pendingWithdrawal = lockedBalance`, `pendingReward`는 그대로 둔다. 그러면 화면의 계산(총 잔액, 결제 가능액, 출금 가능액)이 서버의 `totalCredits`, `payableCredits`, `cashableCredits`와 같은 값이 된다.
+- **내역의 이름은 서버의 `description`을 그대로 보인다.** 구독 결제는 이벤트와 적립에서 나뉘어 두 줄로 내려오고("구독 결제(이벤트 크레딧)", "구독 결제(적립 크레딧)"), 목업의 한 줄 "구독 결제"는 합치지 않고 서버처럼 두 줄로 보인다. 필터(`type`)는 서버에 넘긴다.
+- **시각은 서버가 준 오프셋 값을 한국 시간으로 보인다.** 날짜별 묶음도 서울 기준이다([server-time.md](../../server-time.md)).
+- **헤더의 크레딧 숫자는 총 잔액(`totalCredits`)이다.** 목업 헤더와 같은 뜻이다. 마이페이지 요약의 최근 크레딧 내역은 서버 내역의 앞 5건이다.
+- **크레딧 API만 실패하면 `/my/credits`와 `/my`는 오류로 멈추고 목업으로 채우지 않는다**(서버 전체가 내려가면 회원 확인이 먼저 실패해 비로그인으로 본다). `/my`는 구독 상태를 읽지 못하면 미구독으로 열리지만(#203-S16), 크레딧 카드를 0으로 채우면 잔액을 잘못 알리게 되므로 멈춘다. 다만 헤더는 모든 화면에 있으므로 크레딧을 읽지 못해도 페이지를 막지 않고 0으로 둔다(지금 백엔드 모드 헤더와 같다). 이때 본문 잔액과 달라 보일 수 있어 서버 로그에 경고를 남긴다.
+- **출금 신청·내역과 운영자 출금 처리는 이 이슈에서 연결하지 않는다.** #206, #207에서 한다. 그 전까지 백엔드 모드의 출금 화면은 출금 가능액만 서버 값이고 신청을 받지 않는다. 목업 쿠키에 남기면 성공 문구가 나와도 서버 잔액과 운영자 목록에는 남지 않아, 신청한 것으로 믿게 되기 때문이다. 신청하면 "출금 신청은 아직 준비 중이에요"가 폼 위에 보인다(#205-S10). #206에서 서버 신청으로 바꾼다.
+- 새 화면은 없다. 목업 모드의 동작과 화면은 바꾸지 않는다.
+
+확인 데이터 (#205)
+[직접] 시나리오는 실제 백엔드에 회원과 크레딧이 있어야 한다. 크레딧을 주는 API가 아직 없어서(테스트 보상 지급, 운영자 시연용 크레딧 지급은 다른 이슈) 지금은 아래처럼 만든다. 운영자 화면에서 크레딧을 줄 수 있게 되면 그 방법으로 바꾼다.
+1. 회원: `/signup`으로 가입한다. 크레딧을 넣을 회원 하나와 지갑이 없는 회원 하나(#205-S7)를 만든다.
+2. 운영자: 가입한 회원 하나를 SQL로 운영자로 바꾼다. `UPDATE users SET role = 'ADMIN' WHERE email = '<이메일>';`
+3. 크레딧: 지갑과 내역을 SQL로 넣는다. 지갑의 적립·이벤트 금액은 내역의 합과 같아야 한다. 아래는 적립 12,000, 이벤트 3,000이다. 셋째 내역은 어제 UTC 15:30(서울 오늘 00:30)이라 #205-S5의 날짜 묶음을 확인할 수 있다.
+   ```sql
+   INSERT INTO credit_wallets (user_id, earned_balance, event_credit, locked_balance, created_at, updated_at)
+   SELECT id, 12000, 3000, 0, timezone('UTC', now()), timezone('UTC', now()) FROM users WHERE email = '<이메일>';
+
+   INSERT INTO credit_ledgers (credit_wallet_id, delta, description, type, created_at, updated_at)
+   SELECT w.id, v.delta, v.description, v.type, v.at, v.at
+   FROM credit_wallets w
+   JOIN users u ON u.id = w.user_id
+   CROSS JOIN (VALUES
+       (3000, '가입 크레딧', 'EVENT', timezone('UTC', now()) - interval '7 days'),
+       (5000, '테스트 보상', 'EARNED', timezone('UTC', now()) - interval '3 days'),
+       (7000, '경계 확인용 테스트 보상', 'EARNED', date_trunc('day', timezone('UTC', now())) - interval '8 hours 30 minutes')
+   ) AS v(delta, description, type, at)
+   WHERE u.email = '<이메일>';
+   ```
+   compose 환경에서는 `docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'`에 넣어 실행한다.
+4. 나머지 값은 화면으로 만든다. 출금 처리 중(#205-S1)은 출금 신청(#206)으로, 구독 결제 두 줄(#205-S4)은 크레딧 구독 결제(#204)로 만든다. 승인 대기 보상은 참여가 확정되고 피드백을 제출한 참가에서 생긴다.
+5. 크레딧 API만 실패하는 경우(#205-S8)는 백엔드를 멈추면 회원 확인부터 실패한다. Next와 백엔드 사이에서 그 경로만 500으로 답하게 해서(확인용 프록시 등) 본다.
+
+#205-S1 잔액 구성을 서버 값으로 본다 [직접]
+- Given 서버 지갑이 적립 12,000, 이벤트 3,000, 출금 처리 중 2,000이고 승인 대기 보상이 1,350인 회원, `/my/credits`
+- Then  "적립 크레딧 12,000 크레딧", "이벤트 크레딧 3,000 크레딧", "출금 처리 중 2,000 크레딧", "승인 대기 1,350 크레딧"이 보이고 총 잔액은 "17,000 크레딧"이다
+- Then  "출금 신청" 링크가 `/my/credits/withdrawals`를 가리킨다
+
+#205-S2 서버 값과 화면 계산이 맞는다 [테스트: credit-balance.test.ts #205-S2]
+- Given 서버 응답 `earnedBalance=12000`, `eventCredit=3000`, `lockedBalance=2000`
+- Then  화면 값으로 바꾼 잔액의 총 잔액·결제 가능액·출금 가능액이 서버의 `totalCredits`(17,000)·`payableCredits`(15,000)·`cashableCredits`(12,000)와 같다
+- Given 지갑이 없는 회원(모두 0)
+- Then  모든 값이 0이고 승인 대기만 서버 값이다
+
+#205-S3 내역을 전체·받음·나감으로 거른다 [직접]
+- Given 서버 내역이 있는 회원, `/my/credits`
+- Then  최신순으로 보이고 "전체" 필터에 `aria-current="page"`가 있다
+- When  "받은 크레딧"을 누른다
+- Then  URL이 `/my/credits?type=in`이고 늘어난 기록(`+`)만 보인다
+- When  "쓴 크레딧"을 누른다
+- Then  URL이 `/my/credits?type=out`이고 줄어든 기록(`-`)만 보인다
+- Given `/my/credits?type=foo`
+- Then  "전체"가 선택되고 전체 내역이 보인다(서버에 모르는 값을 보내지 않는다)
+
+#205-S4 크레딧으로 구독을 결제하면 두 줄로 보인다 [직접]
+- Given 이벤트 크레딧과 적립 크레딧을 함께 써야 하는 크레딧 결제를 한 회원
+- When  `/my/credits?type=out`을 연다
+- Then  "구독 결제(이벤트 크레딧)", "구독 결제(적립 크레딧)" 두 줄이 각각 `-` 금액으로 보이고 합이 결제 금액이다
+
+#205-S5 시각을 한국 시간으로 보인다 [직접]
+- Given 서버가 `…Z`(UTC)로 준 내역 시각
+- Then  날짜별 묶음의 소제목(오늘·어제·"N월 N일")과 행의 시각("오후 3:12")이 서울 기준이다. 서울 날짜가 UTC 날짜와 달라지는 시각(UTC 15:00 이후)에는 다음 날로 묶인다
+
+#205-S6 `/my`·헤더·구독 화면이 같은 값을 보인다 [직접]
+- Given S1의 회원
+- Then  `/my`의 크레딧 카드가 S1과 같은 값이고 "최근 크레딧 내역"이 `/my/credits`의 앞 5건과 같다
+- Then  헤더의 크레딧 숫자가 총 잔액 "17,000"이다
+- Then  `/my/subscription`의 "구독 결제에 쓸 수 있는 크레딧"이 15,000이다
+
+#205-S7 크레딧이 없는 회원과 운영자 [직접]
+- Given 지갑이 없는 회원, 운영자
+- Then  `/my/credits`가 오류 없이 열리고 "0 크레딧", "아직 크레딧 내역이 없어요"가 보이며 "출금 신청" 링크는 없다(운영자는 `/my/credits`가 지금처럼 0으로 열린다)
+
+#205-S8 크레딧만 읽지 못하면 오류로 멈춘다 [직접]
+- Given 회원 확인(`/api/users/me`)은 되는데 크레딧 API만 실패한다(예: 500). 서버 전체가 내려가면 회원 확인도 실패해 비로그인으로 보이므로 이 시나리오가 아니다
+- When  `/my/credits` 또는 `/my`를 연다
+- Then  목업 값이나 0을 보이지 않고 오류로 멈춘다(앱 공용 오류 화면은 별도 작업, #203과 같다). 다른 화면의 헤더는 열리고 헤더 크레딧만 0이다
+
+#205-S9 목업 모드는 그대로다 [테스트: credits.spec.ts]
+- Given `AUTH_MODE`가 `backend`가 아니다
+- Then  S350~S381(기존 `credits.spec.ts`)과 `/my`·구독 화면 E2E가 그대로 통과한다
+
+#205-S10 백엔드 모드에서는 출금 신청을 받지 않는다 [직접]
+- Given 적립 크레딧이 있는 회원, `AUTH_MODE=backend`, `/my/credits/withdrawals`
+- When  금액·은행·계좌번호·예금주를 넣고 "출금 신청"을 누른다
+- Then  "출금 신청은 아직 준비 중이에요"가 폼 위에 보이고 성공 문구는 없다. 출금 내역, 서버 잔액, 운영자 출금 목록은 그대로다(#206에서 서버 신청으로 바꾼다)
+
 ## 범위 밖
 - 실제 출금 처리, 계좌 실명 확인, 운영자 승인 화면 (`/admin/withdrawals`). 시연용 신청은 계속 "처리 중"으로 남는다
 - 출금 요청 취소, 시연용 기록 초기화 버튼 (쿠키를 지우면 된다)
 - 최소 출금액, 처리 기한 (기획 미정)
 - 크레딧 내역 페이지 나누기·기간 필터
-- 백엔드 API 연동
+- 출금 신청·내역의 서버 연결(#206), 운영자 출금 처리의 서버 연결(#207). 잔액·내역은 위 "백엔드 연결 (#205)"에서 연결한다
 
 ## 작업 순서
 (R129 추가분)

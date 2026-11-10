@@ -75,4 +75,32 @@ class CreditControllerAuthTest {
 
         mvc.perform(get("/api/v1/my/credits")).andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("#205-S11 limit을 주면 최신 내역부터 그 개수만, 범위 밖이나 숫자가 아니면 400")
+    void limit을_주면_그_개수만_받는다() throws Exception {
+        User me = saveUser();
+        CreditWallet wallet = creditWalletRepository.save(CreditWallet.builder().user(me).build());
+        for (int i = 1; i <= 3; i++) {
+            creditLedgerRepository.save(CreditLedger.builder()
+                    .creditWallet(wallet)
+                    .delta(1000 * i)
+                    .description("보상 " + i)
+                    .type(CreditLedger.Type.EARNED)
+                    .build());
+        }
+        String token = "Bearer " + jwtProvider.createAccessToken(me.getId());
+
+        mvc.perform(get("/api/v1/my/credits/ledger").header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(3));
+        mvc.perform(get("/api/v1/my/credits/ledger?type=all&limit=2").header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2));
+        for (String limit : new String[]{"0", "101", "abc"}) {
+            mvc.perform(get("/api/v1/my/credits/ledger?limit=" + limit).header("Authorization", token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        }
+    }
 }

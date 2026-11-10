@@ -14,6 +14,7 @@ import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.service.CreditService;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,11 +55,15 @@ public class CreditServiceImpl implements CreditService {
                 .orElseGet(() -> CreditBalanceResponse.empty(userId, pendingReward));
     }
 
+    /** 내역 한 번에 받을 수 있는 최대 개수. 마이페이지 요약처럼 앞의 몇 건만 필요할 때 쓴다 */
+    static final int MAX_LEDGER_LIMIT = 100;
+
     /**
-     * 크레딧 장부. 최신순. flow로 받은/쓴만 가린다.
+     * 크레딧 장부. 최신순. flow로 받은/쓴만 가린다. limit이 있으면 앞에서부터 그 개수만 읽는다.
      */
     @Override
-    public List<CreditLedgerResponse> getLedgers(Long userId, LedgerFlow flow) {
+    public List<CreditLedgerResponse> getLedgers(Long userId, LedgerFlow flow, Integer limit) {
+        Limit rows = ledgerLimit(limit);
         requireUser(userId);
         CreditWallet wallet = creditWalletRepository.findByUserId(userId).orElse(null);
         if (wallet == null) {
@@ -67,12 +72,25 @@ public class CreditServiceImpl implements CreditService {
         Long walletId = wallet.getId();
         List<CreditLedger> ledgers = switch (flow) {
             case IN -> creditLedgerRepository
-                    .findByCreditWalletIdAndDeltaGreaterThanOrderByCreatedAtDesc(walletId, 0);
+                    .findByCreditWalletIdAndDeltaGreaterThanOrderByCreatedAtDesc(walletId, 0, rows);
             case OUT -> creditLedgerRepository
-                    .findByCreditWalletIdAndDeltaLessThanOrderByCreatedAtDesc(walletId, 0);
-            case ALL -> creditLedgerRepository.findByCreditWalletIdOrderByCreatedAtDesc(walletId);
+                    .findByCreditWalletIdAndDeltaLessThanOrderByCreatedAtDesc(walletId, 0, rows);
+            case ALL -> creditLedgerRepository.findByCreditWalletIdOrderByCreatedAtDesc(walletId, rows);
         };
         return ledgers.stream().map(CreditLedgerResponse::of).toList();
+    }
+
+    private static Limit ledgerLimit(Integer limit) {
+        if (limit == null) {
+            return Limit.unlimited();
+        }
+        if (limit < 1 || limit > MAX_LEDGER_LIMIT) {
+            throw new BusinessException(
+                    ErrorCode.INVALID_INPUT,
+                    "limit은 1에서 " + MAX_LEDGER_LIMIT + " 사이여야 합니다: " + limit
+            );
+        }
+        return Limit.of(limit);
     }
 
     private int pendingRewardOf(Long userId) {

@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import styles from "./DeadlineCalendar.module.css";
 
 /** 서울 기준 날짜 열쇠("2026-11-12")와 그날 마감인 서비스 이름 */
-export type CalendarDeadline = { day: string; name: string };
+export type CalendarDeadline = { day: string; name: string; /** 피드백을 이미 냈다 */ submitted: boolean };
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -70,14 +70,20 @@ export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDead
               {week.map((day, dayIndex) => {
                 if (day === null) return <td key={dayIndex} />;
                 const key = dayKey(year, monthIndex, day);
-                const names = deadlines.filter((deadline) => deadline.day === key).map((deadline) => deadline.name);
+                /* 아직 할 일(안 냈고 마감 전)을 앞에 둔다. 하루에 하나라도 있으면 그날은 초록이고, 제출했거나 마감이 지난 날은 회색이다. 마감일 당일은 아직 낼 수 있다 */
+                const entries = deadlines
+                  .filter((deadline) => deadline.day === key)
+                  .map((deadline) => ({ ...deadline, open: !deadline.submitted && key >= today }))
+                  .sort((a, b) => Number(b.open) - Number(a.open));
+                const names = entries.map((deadline) => deadline.name);
+                const pending = entries.some((deadline) => deadline.open);
                 const isToday = key === today;
                 return (
                   <td
                     key={dayIndex}
-                    data-deadline={names.length > 0 ? "" : undefined}
+                    data-deadline={names.length > 0 ? (pending ? "pending" : "submitted") : undefined}
                     aria-current={isToday ? "date" : undefined}
-                    className={cn(styles.root3, names.length > 0 && styles.root3On, isToday && styles.root3IsToday)}
+                    className={cn(styles.root3, names.length > 0 && (pending ? styles.root3Pending : styles.root3Done), isToday && styles.root3IsToday)}
                   >
                     <span className={cn(styles.day, (isToday || names.length > 0) && styles.dayOn)}>
                       {day}
@@ -91,7 +97,7 @@ export function DeadlineCalendar({ deadlines, today }: { deadlines: CalendarDead
                             <span className={styles.label4}>외 {names.length - 1}건</span>
                           )}
                         </span>
-                        <span data-deadline-label className={styles.srOnly}>{names.join(", ")} 제출 마감</span>
+                        <span data-deadline-label className={styles.srOnly}>{entries.map((deadline) => `${deadline.name}${deadline.submitted ? "(제출함)" : deadline.open ? "" : "(기한 지남)"}`).join(", ")} 제출 마감</span>
                       </>
                     )}
                   </td>

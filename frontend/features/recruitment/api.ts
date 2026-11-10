@@ -11,7 +11,6 @@ import {
   type Decision,
 } from "@/demo/recruitment";
 import { findBackendProject, findBackendProjects, isBackendId, readProjectApi } from "@/features/project/api";
-import { parseImageUrls } from "@/features/project/media";
 import { recruitmentManagePath } from "@/features/project/paths";
 import { type ApplicantResponse, type DeveloperFeedbackResponse, toApplication, toFeedback } from "@/features/recruitment/backend-map";
 import { type FormState } from "@/features/project/types";
@@ -72,6 +71,7 @@ import {
 import { requireRole } from "@/features/session/guard";
 import type { Role } from "@/features/session/session";
 import { backendFetch, isBackendAuth, type BackendResult } from "@/lib/backend";
+import { parseImageUrls } from "@/lib/image-upload";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";

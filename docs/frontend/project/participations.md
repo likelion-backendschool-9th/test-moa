@@ -238,7 +238,7 @@ S476 제출 [테스트] (고침 #90: 필수 항목을 모두 적어야 하고 �
 - Then  목록에서 마감 임박 테스트가 3개로 줄고 "회의록 정리" 행이 "지급 대기"다 (시연용이라 이 브라우저에만 남는다)
 
 ## 12-1. 피드백 이미지 (#57-R1)
-(고침 #90: 칸마다 따로 5장까지) 피드백을 쓰면서 칸마다 이미지를 PNG·JPG·WEBP로 한 장에 5MB까지, 5장까지 고를 수 있다. 고르면 바로 미리 보고 뺄 수 있다. 한도를 넘는 파일이 섞이면 이번에 고른 파일은 넣지 않고 이유를 알린다. 시연용이라 파일은 서버로 보내지 않고 이름·크기·형식만 보내며, 제출한 피드백에는 내용 아래에 미리 보기와 같은 크기의 칸으로 아이콘과 파일 이름이 남는다. 실제 업로드와 이미지 다시 보기는 백엔드 저장소가 정해지면 붙인다.
+(고침 #90: 칸마다 따로 5장까지) 피드백을 쓰면서 칸마다 이미지를 PNG·JPG·WEBP로 한 장에 5MB까지, 5장까지 고를 수 있다. 고르면 바로 미리 보고 뺄 수 있다. 한도를 넘는 파일이 섞이면 이번에 고른 파일은 넣지 않고 이유를 알린다. 시연용이라 파일은 서버로 보내지 않고 이름·크기·형식만 보내며, 제출한 피드백에는 내용 아래에 미리 보기와 같은 크기의 칸으로 아이콘과 파일 이름이 남는다. 실제 업로드와 이미지 다시 보기는 백엔드 저장소가 정해지면 붙인다. (고침 #57: 목업 모드의 동작이다. `AUTH_MODE=backend`에서는 제출할 때 파일을 올리고, 제출한 피드백에는 실제 이미지를 보여 준다)
 
 #57-S1 미리 보기와 빼기 [직접] (고침 #90: 첫 칸에서 확인)
 - When  이미지 2장을 고른다
@@ -259,7 +259,7 @@ S476 제출 [테스트] (고침 #90: 필수 항목을 모두 적어야 하고 �
 - When  맞는 파일을 고른다
 - Then  안내가 사라지고 들어간다
 
-#57-S4 제출 [직접] (고침 #90: 이미지가 그 항목의 피드백 아래에 남음)
+#57-S4 제출 [직접] (고침 #90: 이미지가 그 항목의 피드백 아래에 남음) (고침 #57: 목업 모드에 한함)
 - When  한 항목에 이미지 2장을 넣고 제출한다
 - Then  요청에 파일 내용이 없다
 - Then  그 항목의 피드백에 "첨부 이미지 2"와 파일 이름이 있고, 새로고침해도 남는다
@@ -429,7 +429,7 @@ S482 제출한 피드백의 긴 문자열 [직접]
 - #189-R3 백엔드의 `cancelled`(참여 취소)를 "참여했던 테스트" 탭에 보여 준다.
 - #189-R4 보상은 참가에 고정된 금액이고 추가 보상은 보이지 않는다.
 - #189-R5 접속 링크는 응답에 있을 때만(확정된 참가) 상세에 보인다.
-- #189-R6 파일 저장소가 생기기 전(#119)에는 이미지를 저장할 수 없다. 조용히 버리지 않고 그 칸에 안내하고 제출을 막는다.
+- #189-R6 파일 저장소가 생기기 전(#119)에는 이미지를 저장할 수 없다. 조용히 버리지 않고 그 칸에 안내하고 제출을 막는다. (고침 #57: 저장소가 생겨 막음을 없앴다. `AUTH_MODE=backend`에서는 제출할 때 이미지를 저장한다)
 - #189-R7 취소된 모집은 공개 상세가 404라 "모집 글 보기"를 보여 주지 않고 볼 수 없다고 안내한다. 피드백을 낸 참가는 모집이 취소돼도 참가 상태가 유지되므로 참가 상태가 아니라 모집의 취소 여부로 판단한다.
 
 #189-S1 목록과 탭 [직접]
@@ -456,7 +456,7 @@ S482 제출한 피드백의 긴 문자열 [직접]
 - When  서버가 칸 없는 오류로 거절한다
 - Then  폼에 이유가 보인다
 
-#189-S6 이미지 [직접]
+#189-S6 이미지 [직접] (고침 #57: 막음을 없앴다. 백엔드 모드에서는 저장되고 #57-S8, #57-S16대로 다시 보인다)
 - When  이미지를 넣고 제출한다
 - Then  저장되지 않고 그 칸에 안내가 보인다 (#189-R6)
 
@@ -530,6 +530,159 @@ API는 그대로이고 상세의 구성만 바꾼다. "테스트 접속"이 작�
 - Given 선정 대기 참여(`p-booklog`)
 - Then  "테스트 열기"와 접속 링크 줄이 없고 "모집 글"만 있다
 
+## 18. 피드백 이미지 실제 연결 (#57)
+[#57](https://github.com/likelion-backendschool-9th/test-moa/issues/57). API, 주소, 권한은 [피드백 이미지 업로드 API](../../backend/project/feedback-images.md)를 따른다. 12-1장의 화면을 `AUTH_MODE=backend`에서 실제 저장소에 잇는다.
+
+`[직접]`은 `AUTH_MODE=backend`로 실제 백엔드에 붙여 확인한다. `[테스트: 파일 번호]`는 그 단위 테스트가 확인한다.
+
+### 한눈에
+- 끝나면: 테스터가 칸마다 고른 이미지가 제출할 때 실제로 저장되고, 테스터는 참여 상세에서, 개발자는 피드백 탭에서 이미지를 다시 본다.
+- 결정 필요: 없음
+- 규모: 5단계, 약 4시간
+
+### 정한 것
+- 파일은 제출할 때 올린다. #191과 같은 이유로, 고를 때 올리면 작성을 그만둘 때마다 안 쓰는 파일이 남는다.
+- 브라우저는 Next Route Handler에 파일을 보내고, 제출 서버 액션에는 주소만 넘긴다. 파일은 서버 액션을 거치지 않는다.
+- 올리기 전에 브라우저에서 `parseFeedbackForm`으로 글 입력을 먼저 검사한다. 입력 오류로 돌아올 제출이 파일을 남기지 않게 한다.
+- 제출한 이미지는 `<img>`로 그린다. 개발자 `FeedbackList`와 같고, 로그인 쿠키가 Route Handler에 그대로 간다.
+- 목업 모드는 지금처럼 파일을 보내지 않는다. 폼은 `uploadEnabled`(`isBackendAuth`)가 참일 때만 올린다.
+
+### 모듈 배치
+| 코드 | 위치 | 이유 |
+| --- | --- | --- |
+| `UploadImage`, `uploadImages`, `parseImageUrls` | `lib/image-upload.ts` (`features/project/media.ts`에서 옮김) | 프로젝트와 참여가 함께 쓴다 |
+| `uploadImages`의 주소 검사 | 네 번째 인자 `isValidUrl`(필수) | 기능마다 주소 모양이 다르다. 프로젝트 쪽은 `isUploadedImageUrl`을 넘긴다 |
+| `feedbackImageUploadPath(key)`, `isFeedbackImageUrl`, `isDeveloperFeedbackImageUrl` | `features/participation/feedback-images.ts` | 피드백 이미지 규칙 |
+| `imageUrlsFieldName(key)` = `imageUrls-${key}` | `features/participation/feedback-fields.ts` | 칸 이름 규칙 |
+
+### 제출에 연결 (#57-R2)
+제출하면 칸마다 고른 이미지가 저장되고 그 칸의 피드백에 연결된다. 실패하면 제출되지 않고 그 칸에 이유가 보이며 입력이 남는다.
+
+#57-S8 이미지를 넣어 제출 [직접]
+- Given 확정된 참가에서 필수 항목에 PNG 2장, 기타 의견에 JPG 1장을 골랐다
+- When  제출한다
+- Then  업로드 요청이 3번 가고, 제출 요청에는 파일 없이 주소만 있다
+- Then  `?notice=submitted`로 돌아오고 상세 응답의 그 항목 `imageUrls`가 고른 순서의 2개, 기타 의견은 1개다
+
+#57-S9 제출 값 읽기 [테스트: feedback-fields.test.ts #57-S9]
+- When  `imageUrls-required`에 주소 2개의 JSON을 넣어 `parseFeedbackForm`을 부른다
+- Then  그 칸의 `entries`에 `imageUrls`가 같은 순서로 있다
+- When  `imageUrls-required`가 `{`이다
+- Then  그 칸의 오류가 "이미지를 다시 올려 주세요"다
+- When  `imageUrls-*` 칸이 없다 (목업)
+- Then  `entries`에 `imageUrls`가 없다
+
+#57-S10 입력 오류면 올리지 않는다 [직접]
+- Given 이미지를 넣은 칸이 있고 필수 항목 하나가 비었다
+- When  제출한다
+- Then  업로드 요청이 0번이고 빈 칸에 "피드백을 적어 주세요"가 보이며 미리 보기가 남는다
+
+#57-S11 일부만 올라간 뒤 다시 제출 [직접] (재사용 규칙은 `image-upload.test.ts #191-S19`가 확인한다)
+- Given 2장을 넣은 칸에서 두 번째 업로드 요청만 실패하게 막았다
+- When  제출한다
+- Then  그 칸에 이유가 보이고 제출 요청은 가지 않으며 글과 미리 보기가 남는다
+- When  막은 것을 풀고 다시 제출한다
+- Then  두 번째 파일만 다시 올라가고 제출된다
+
+#57-S12 서버가 거절 [직접]
+- When  내용이 텍스트이고 이름만 `a.png`인 파일을 넣어 제출한다
+- Then  그 칸에 "PNG, JPG, WEBP 이미지만 올릴 수 있어요"가 보이고 제출되지 않는다
+- Given 화면을 연 뒤 제출 마감이 지났다
+- When  이미지를 넣어 제출한다
+- Then  그 칸에 서버가 준 이유가 보이고 입력이 남는다
+
+#57-S13 업로드 주소 모양 [테스트: image-upload.test.ts #57-S13]
+- Then  `uploadImages`에 `isFeedbackImageUrl`을 넘기면 `/api/v1/tester/participations/7/feedbacks/images/<uuid>.png`를 받는다
+- Then  `/api/v1/recruitments/images/<uuid>.png`를 돌려받으면 "이미지 주소를 받지 못했어요. 다시 시도해 주세요"로 실패한다
+- Then  `isFeedbackImageUrl`과 `isDeveloperFeedbackImageUrl`은 숫자가 아닌 id, `..`이 든 이름, `.svg`를 거절한다
+
+#57-S14 이미지 없이 제출 [직접]
+- When  이미지를 넣지 않고 제출한다
+- Then  업로드 요청이 0번이고 제출되며 제출한 피드백에 "첨부 이미지"가 없다
+
+#57-S15 올리는 중 [직접]
+- Given 업로드가 느린 네트워크다
+- When  제출한다
+- Then  버튼이 "제출하는 중…"으로 막히고, 끝날 때까지 칸을 고치거나 이미지를 뺄 수 없다
+
+### 다시 보기 (#57-R3)
+제출한 테스터와 그 프로젝트의 개발자가 실제 이미지를 다시 본다. 다른 회원은 볼 수 없다.
+
+#57-S16 테스터가 다시 본다 [직접]
+- Given 항목에 이미지 2장을 넣어 제출했다
+- Then  제출한 피드백의 그 항목에 "첨부 이미지 2"와 실제 이미지 2개가 고른 순서로 있다
+- Then  이미지 응답의 `Cache-Control`이 `no-store`다
+- When  이미지를 누른다
+- Then  새 탭에서 원본이 열린다
+- Then  새로고침해도 남고, 너비 375px에서 가로 스크롤이 없다
+
+#57-S17 개발자가 다시 본다 [직접]
+- Given 위 참가가 속한 프로젝트의 개발자
+- Then  모집 관리의 피드백 탭 그 카드에 이미지 2개가 보이고, 누르면 새 탭에서 원본이 열린다
+
+#57-S18 접근 차단 [직접]
+- Then  다른 테스터로 로그인해 테스터 이미지 주소를 열면 404다
+- Then  다른 프로젝트의 개발자로 개발자 이미지 주소를 열면 404다
+- Then  비로그인이면 두 주소 모두 401이다
+- Then  이름이 `x.svg`이거나 id가 숫자가 아니면 Route Handler가 백엔드에 보내지 않고 404다
+
+#57-S19 access 쿠키가 만료된 뒤 [직접]
+- Given 제출한 이미지가 있고 `access_token` 쿠키만 지웠다
+- When  이미지 주소를 새 탭에서 연다
+- Then  200이고 `access_token` 쿠키가 다시 생긴다
+
+### 구조 (#57-R4)
+참여 기능은 프로젝트 기능의 업로드 코드를 가져다 쓰지 않는다.
+
+#57-S20 의존 방향 [명령]
+- When  `grep -rn "features/project/media" frontend/features/participation "frontend/app/(site)/testers"`
+- Then  결과가 없다
+
+### 범위 밖
+- 업로드 진행률, 고를 때 미리 올리기, 페이지 안에서 크게 보기(새 탭으로 연다)
+- 안 쓰는 파일 삭제와 업로드 횟수 제한(#225)
+- 운영자 신고 화면의 피드백 이미지, AI 분석에 이미지 넘기기
+- `next/image`로 그리기
+
+### 작업 순서
+1. 업로드 공용 코드 옮기기 — #57-S13, S20
+   - 파일: `lib/image-upload.ts`(새 파일), `features/project/media.ts`, `features/project/api.ts`, `features/recruitment/api.ts`, `ProjectForm`, `RecruitmentForm`, `features/participation/feedback-images.ts`, `tests/unit/image-upload.test.ts`
+   - 확인: `cd frontend && npx tsc --noEmit && npm run lint && npm test`
+2. 제출 연결 — #57-S8~S12, S14, S15
+   - `app/api/v1/tester/participations/[registerId]/feedbacks/images/route.ts`의 `POST`: `registerId`가 숫자가 아니면 404, 맞으면 `proxyBackendFile(request, path, true)`
+   - `FeedbackForm`: `images`를 칸 키별 상태(`Record<string, PickedImage[]>`)로 올려 `FeedbackField`에 내려 준다. `uploaded`는 `useRef(new WeakMap<File, string>())`로 폼 수명 동안 둔다. `useActionState`에 넘기는 함수가 `uploadEnabled`일 때 `parseFeedbackForm` → 칸 순서대로 `uploadImages` → `data.set(imageUrlsFieldName(key), …)` → `submitFeedback` 순서로 부른다. 업로드 오류는 `{ status: "error", errors: { [칸 키]: 문구 } }`로 돌려준다. 폼에 `aria-busy`, `inert={pending}`을 둔다
+   - `FeedbackField`: `PickedImage`에 `file: File`을 더한다. 미리 보기와 빼기는 그대로다
+   - `ParticipationDetail`: `uploadEnabled={isBackendAuth}`를 넘긴다
+   - `feedback-fields.ts`: `imageUrls-<키>`가 있으면 `parseImageUrls`로 읽는다. `types.ts`: `FeedbackEntry`에 `imageUrls?: string[]`
+   - `saveBackendFeedback`: 이미지 막음을 지우고 `items[].imageUrls`, `etcImageUrls`를 보낸다
+   - 확인: 1단계 명령, `npx next typegen`, 실제 백엔드로 시나리오 확인
+3. 다시 보기 — #57-S16~S18
+   - `app/api/v1/tester/participations/[registerId]/feedbacks/images/[name]/route.ts`와 `app/api/v1/developer/feedbacks/[feedbackId]/images/[name]/route.ts`의 `GET`: 주소를 만들어 검사 함수로 확인하고 `proxyBackendFile(request, path, true)`
+   - `features/participation/api.ts`: 상세 타입의 `feedbacks[]`에 `imageUrls: string[]`, 매핑에 그대로 넘긴다
+   - `SubmittedFeedback`: `imageUrls`가 있으면 12-1장의 정사각형 칸에 `<img>`와 새 탭 링크(`FeedbackList`와 같은 모양, alt는 "<칸 제목> 첨부 이미지 n")를 그리고, 없으면 지금처럼 파일 이름을 그린다
+   - 확인: 1단계 명령, 실제 백엔드로 시나리오 확인
+4. 만료된 쿠키 — #57-S19
+   - 파일: `proxy.ts` matcher에 `/api/v1/:role(tester|developer)/:path*/images/:name`을 같은 `has`·`missing`으로 더한다
+   - 확인: 1단계 명령, 실제 백엔드로 시나리오 확인
+5. 문서 — 목업 유지와 막음 해제 반영
+   - 이 문서: 12-1장 설명, `#57-S4`(목업 모드에 한함), `#189-R6`, `#189-S6`에 `(고침 #57: …)`를 붙이고 `## 범위 밖`의 "이미지 실제 업로드와 다시 보기"를 지운다
+   - `feedback-images.ts`, `FeedbackField`의 "서버로 보내지 않는다" 주석을 고친다
+   - 확인: `git diff --check`
+
+### 가정
+- 업로드는 칸 순서대로, 칸 안에서는 고른 순서대로 한 장씩 보낸다. 칸마다 5장이라 동시에 보내지 않는다.
+- 마감이나 제재처럼 칸과 상관없는 업로드 거절도 실패한 칸에 보여 준다. 업로드에서만 쓰일 분기를 새로 만들지 않는다.
+- 업로드 중 세션이 끊기면 칸에 "로그인해 주세요"가 보이고 입력이 남는다. 로그인으로 보내면 적은 글이 사라진다.
+- 제출이 끝내 실패해 남은 파일은 #225가 치운다.
+- 개발자 화면의 이미지 이름과 표시는 지금 `FeedbackList`, `toFeedback` 그대로 쓴다.
+
+### 참고 (2026-11-10 확인)
+- `uploadImages`는 `isUploadedImageUrl`로 응답을 검사하는데 이 함수는 공개 이미지 주소만 받는다. 피드백 주소를 그대로 넘기면 실패한다.
+- `proxyBackendFile`은 `content-type`, `cache-control`, `x-content-type-options`를 그대로 전달해 `no-store`가 유지된다.
+- `proxy.ts`의 기본 matcher는 주소에 점이 있으면 건너뛰어 `….png` 주소에서 토큰을 갱신하지 않는다. 더하는 matcher가 점이 든 이름에 걸리는지는 #57-S19에서 확인한다.
+- 기존 E2E는 목업 모드를 확인하고, 숨은 칸 `imagesMeta-*`는 그대로 남아 `#57-S5`에 영향이 없다.
+- 서버 호스트의 nginx 업로드 한도는 저장소에 없어 배포 뒤 확인해야 한다.
+
 ## 구현
 - `src/app/testers/recruitments/page.tsx`: `searchParams`로 탭을 읽는다. 제목은 정적 셸, 요약·마감 일정·탭 개수·목록은 각각 Suspense로 스트리밍한다. 비로그인 리다이렉트는 `LoginGate`가 한다(스트리밍 중 리다이렉트라 HTTP 상태는 200이고 브라우저에서 이동한다).
 - `src/app/testers/recruitments/[participationKey]/page.tsx`: 상세. `requireMember`로 비로그인을 로그인으로 보내고, 없거나 내 참여가 아니면 `notFound()`. 제출 뒤 안내는 `?notice=submitted`(프로젝트의 `?notice=saved`와 같은 방식)
@@ -587,7 +740,7 @@ API는 그대로이고 상세의 구성만 바꾼다. "테스트 접속"이 작�
 - 채팅 진입: 구독 모집에 선정된 테스터에게 행에서 채팅방(`/my/chats/:roomKey`) 링크를 줄지
 
 ## 범위 밖
-- 피드백 수정·삭제, 이미지 실제 업로드와 다시 보기, 이미지 외 첨부 파일, 지원 취소
+- 피드백 수정·삭제, 이미지 외 첨부 파일, 지원 취소
 - 제출한 피드백을 개발자 프로젝트 피드백 탭과 잇는 것 (지금은 목업이 따로다)
 - 실제 로그인, API, 크레딧 지급 연동
 - 탭 안 검색·필터·정렬 바꾸기, 페이지 나누기

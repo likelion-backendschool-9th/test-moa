@@ -39,6 +39,23 @@ test("#90-S4 각 칸은 500자까지 받고 초과한 칸만 오류로 돌린다
   }
 });
 
+test("#57-S9 이미지 주소가 있으면 칸 순서대로 읽고 없거나 깨지면 구분한다", () => {
+  const urls = [
+    "/api/v1/tester/participations/7/feedbacks/images/00000000-0000-0000-0000-000000000001.png",
+    "/api/v1/tester/participations/7/feedbacks/images/00000000-0000-0000-0000-000000000002.png",
+  ];
+  const withUrls = parseFeedbackForm(items, form({ "content-required": "의견", "imageUrls-required": JSON.stringify(urls) }));
+  expect(withUrls.errors).toEqual({});
+  expect(withUrls.entries[0]?.imageUrls).toEqual(urls);
+
+  expect(parseFeedbackForm(items, form({ "content-required": "의견", "imageUrls-required": "{" })).errors)
+    .toEqual({ required: "이미지를 다시 올려 주세요" });
+
+  const mock = parseFeedbackForm(items, form({ "content-required": "의견", "imagesMeta-required": JSON.stringify([image]) }));
+  expect(mock.entries[0]).toEqual({ testItemId: "required", content: "의견", imageNames: ["화면.png"] });
+  expect(mock.entries[0]).not.toHaveProperty("imageUrls");
+});
+
 test("#57-S5 #90-S6 이미지 정보를 칸별로 검증하고 내용 없는 첨부를 거절한다", () => {
   const valid = form({ "content-required": "의견", "imagesMeta-required": JSON.stringify(Array(5).fill(image)) });
   expect(parseFeedbackForm(items, valid).errors).toEqual({});

@@ -1,5 +1,6 @@
 import { checkFeedbackImages, parseFileMeta } from "@/features/participation/feedback-images";
 import { FEEDBACK_MAX_LENGTH, type FeedbackEntry, type FeedbackTestItem } from "@/features/participation/types";
+import { parseImageUrls } from "@/lib/image-upload";
 
 /*
  * 항목별 피드백 칸의 이름과 제출 값 검사.
@@ -11,6 +12,7 @@ export const OTHER_FEEDBACK_KEY = "other";
 
 export const contentFieldName = (key: string) => `content-${key}`;
 export const imagesFieldName = (key: string) => `imagesMeta-${key}`;
+export const imageUrlsFieldName = (key: string) => `imageUrls-${key}`;
 
 /** 칸 키별 오류 문구. 오류가 있으면 저장하지 않는다 */
 export type FeedbackFieldErrors = Record<string, string>;
@@ -25,12 +27,22 @@ export function parseFeedbackForm(testItems: FeedbackTestItem[], formData: FormD
     const content = String(formData.get(contentFieldName(key)) ?? "").trim();
     const images = parseFileMeta(formData.get(imagesFieldName(key)));
     const problem = images ? checkFeedbackImages(images) : "이미지 정보를 읽지 못했어요. 이미지를 다시 골라 주세요";
+    const imageUrlsRaw = formData.get(imageUrlsFieldName(key));
+    const imageUrls = imageUrlsRaw === null ? undefined : parseImageUrls(imageUrlsRaw);
 
     if (content.length > FEEDBACK_MAX_LENGTH) errors[key] = `${FEEDBACK_MAX_LENGTH}자까지 적을 수 있어요`;
     else if (!content && required) errors[key] = "피드백을 적어 주세요";
     else if (problem) errors[key] = problem;
-    else if (!content && images?.length) errors[key] = "내용을 적어야 이미지를 넣을 수 있어요";
-    else if (content) entries.push({ testItemId, content, imageNames: (images ?? []).map((image) => image.name) });
+    else if (imageUrlsRaw !== null && !imageUrls) errors[key] = "이미지를 다시 올려 주세요";
+    else if (!content && (images?.length || imageUrls?.length)) errors[key] = "내용을 적어야 이미지를 넣을 수 있어요";
+    else if (content) {
+      entries.push({
+        testItemId,
+        content,
+        imageNames: (images ?? []).map((image) => image.name),
+        ...(imageUrls ? { imageUrls } : {}),
+      });
+    }
   }
 
   /* 모두 선택 항목이어도 빈 피드백은 제출하지 않는다 */

@@ -105,6 +105,8 @@ export type FeedbackEntry = {
   content: string;
   /** 첨부한 이미지 이름. 시연용이라 파일은 없다 */
   imageNames: string[];
+  /** 백엔드에 올린 이미지 주소. 목업 제출에는 없다 */
+  imageUrls?: string[];
 };
 
 /** 칸마다 적용하는 최대 글자 수. 기획에서 미정이다. 시연용 저장 한도는 칸을 모두 합쳐 따로 확인한다(demo/participation.ts) */

@@ -1,9 +1,10 @@
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
 import { buildProjectRecords } from "@/demo/project";
-import { parseFileMeta, parseImageUrls } from "@/features/project/media";
+import { parseFileMeta } from "@/features/project/media";
 import type { FormState, Project } from "@/features/project/types";
 import { requireRole } from "@/features/session/guard";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
+import { parseImageUrls } from "@/lib/image-upload";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import "server-only";

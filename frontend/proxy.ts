@@ -60,5 +60,15 @@ export const config = {
         { type: "header", key: "purpose", value: "prefetch" },
       ],
     },
+    {
+      /* 기본 matcher는 점이 든 주소를 건너뛴다. 피드백 이미지 이름은 uuid.png라 이 주소만 따로 갱신한다 */
+      source: "/api/v1/:role(tester|developer)/:path*/images/:name",
+      has: [{ type: "cookie", key: "refresh_token" }],
+      missing: [
+        { type: "cookie", key: "access_token" },
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };

@@ -80,7 +80,7 @@ export function PasswordForm({ hasPassword = true }: { hasPassword?: boolean }) 
           </div>
           <div className={styles.box3}>
             {/* 주 버튼은 기본 정보 "저장" 하나다 (DESIGN.md The One Green Rule) */}
-          <Button type="submit" disabled={pending} className={styles.button}>
+          <Button type="submit" variant="secondary" disabled={pending} className={styles.button}>
               {pending ? "저장하는 중…" : hasPassword ? "비밀번호 변경" : "비밀번호 만들기"}
             </Button>
           </div>

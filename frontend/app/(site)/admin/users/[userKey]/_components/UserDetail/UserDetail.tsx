@@ -11,7 +11,7 @@ import { SanctionPanel } from "@/app/(site)/admin/users/[userKey]/_components/Sa
 import styles from "./UserDetail.module.css";
 
 
-/** 회원 상세. 실명·이메일은 가려서 보여 준다. 제재는 이번에는 이력만 보여 준다(docs/frontend/admin/users.md) */
+/** 회원 상세. 실명·이메일은 가려서 보여 준다. 목업은 제재 이력만, 실제 로그인은 제재·해제 양식도 보여 준다(docs/frontend/admin/users.md) */
 export function UserDetailView({ user, notice }: { user: UserDetail; notice?: string }) {
   const backend = user.adminSanctions;
   return (

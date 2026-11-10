@@ -5,9 +5,11 @@
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[직접]`은 사람이 화면을 보고 확인한다.
 
 ## 한눈에
+- 화면 안에 하위 탭이 둘이다. "혜택"(`/admin/plans`)은 아래 플랜 혜택 편집이고, "회원 구독"(`/admin/plans?tab=subscriptions`)은 회원에게 구독을 주고 빼는 화면이다([subscriptions.md](subscriptions.md)의 #204-S11~S16을 그대로 옮겼다). 선택한 탭은 주소의 `tab`에 남고, 회원 검색은 `email`이 붙는다. 운영자 상단 탭에서는 "구독"을 없애고 "플랜" 하나로 합쳤다.
+- 예전 주소 `/admin/subscriptions`(검색 `?email=` 포함)는 "회원 구독" 탭으로 넘어간다.
 - 목적: 운영자가 API를 직접 부르지 않고 화면에서 무료 플랜의 이름·혜택과 구독 플랜의 혜택을 바꾼다.
 - 화면 구성: 운영자 하위 탭에 "플랜"을 더한다. 무료 플랜 패널 하나, 지금 파는 구독 플랜마다 패널 하나. 패널마다 혜택 입력칸(한 줄에 하나)과 저장 버튼이 있다.
-- 데이터: **백엔드 모드(`AUTH_MODE=backend`)에서만 동작한다.** 목업 모드에서는 "백엔드와 연결했을 때 쓸 수 있어요" 안내만 보인다(`/admin/subscriptions`와 같다).
+- 데이터: **백엔드 모드(`AUTH_MODE=backend`)에서만 동작한다.** 목업 모드에서는 "백엔드와 연결했을 때 쓸 수 있어요" 안내만 보인다(두 탭 모두).
 - 백엔드: 무료 `GET /api/v1/plans/free`·`PUT /api/v1/admin/plans/free`([free-plan.md](../../backend/payment/free-plan.md)), 구독 `GET /api/v1/plans`·`POST /api/v1/admin/plans`([subscription.md](../../backend/payment/subscription.md)). 백엔드 변경은 없다.
 - 구독 플랜은 혜택만 고치는 API가 없어 **새 버전 등록**(`POST`)으로 저장한다. 서버가 `version`을 올린 새 행을 만들고, 이미 구독한 회원은 산 당시의 플랜 행을 그대로 가리킨다. 가격·크레딧 가격·이용 기간은 저장 시점의 서버 값을 그대로 보낸다(편집 화면이 오래돼도 다른 값으로 덮어쓰지 않는다).
 - 범위 밖: 구독 플랜의 가격·기간 변경, 플랜 삭제·판매 중지, 이전 버전 목록, 혜택만 고치는 백엔드 API.
@@ -60,3 +62,12 @@
 - Given 저장하는 사이 운영자 세션이 만료되었거나 서버가 오류를 돌려준다
 - When  저장을 누른다
 - Then  서버의 이유가 패널 안에 보이고, 입력한 내용은 그대로 남는다
+
+## 6. 회원 구독 탭 (#257-R6)
+
+#257-S8 예전 `/admin/subscriptions` 주소는 회원 구독 탭으로 넘어간다 [테스트]
+- When  `/admin/subscriptions?email=a@example.com`에 접속한다
+- Then  `/admin/plans?tab=subscriptions&email=a%40example.com`으로 가고 "회원 구독" 탭이 현재 탭이다
+
+#257-S9 회원 구독 탭의 동작은 #204-S11~S16과 같다 [테스트: admin-plans-subscriptions.spec.ts #204-S12]
+- 접근 권한·목업 안내·이메일 검색·구독 주기/빼기는 [subscriptions.md](subscriptions.md)를 따른다. 로그인으로 보낼 때 보던 탭과 검색 주소를 그대로 돌려받는다

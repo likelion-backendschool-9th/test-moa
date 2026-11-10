@@ -7,7 +7,7 @@
 ## 한눈에
 - 끝나면: 운영자가 **회원의 이메일**로 그 회원의 구독 상태를 보고, **결제 없이** 구독을 주거나 빼서 시연·확인용 계정을 만든다. 주면 그 회원의 `/my/subscription`에 구독 중으로 나온다.
 - 선행: #69(구독 상태·플랜), #71(이용 기간 규칙).
-- 화면: `/admin/subscriptions` — [subscriptions.md](../../frontend/admin/subscriptions.md)
+- 화면: `/admin/plans?tab=subscriptions`(#257에서 옮김) — [subscriptions.md](../../frontend/admin/subscriptions.md)
 - 결제·환불은 이 이슈 범위 밖이다.
 
 ## 정한 것 (#204, 2026-11-09)

@@ -1,6 +1,6 @@
-# 프론트엔드 운영자 구독 관리 (`/admin/subscriptions`)
+# 프론트엔드 운영자 구독 관리 (`/admin/plans?tab=subscriptions`)
 
-운영자가 시연·확인용으로 회원에게 구독을 주고 빼는 페이지의 요구사항과 시나리오다. 이슈: [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204). 요구·시나리오는 `#204-R…`, `#204-S…`로 센다(`#204-S1`~`S10`은 백엔드 [admin-subscription.md](../../backend/payment/admin-subscription.md), 이 문서는 `#204-S11`부터, 구독 결제 연결은 [subscription.md](../payment/subscription.md)의 `#204-S17`부터다).
+운영자가 시연·확인용으로 회원에게 구독을 주고 빼는 화면의 요구사항과 시나리오다. (고침 #257: 별도 페이지 `/admin/subscriptions`에서 플랜 관리의 "회원 구독" 탭으로 옮겼다. 예전 주소는 새 탭으로 넘어간다. 화면 구성의 "운영자 하위 탭에 구독을 더한다"는 "플랜" 탭 안의 하위 탭으로 바뀌었다. 시나리오의 `/admin/subscriptions`는 `/admin/plans?tab=subscriptions`로 읽는다.) 이슈: [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204). 요구·시나리오는 `#204-R…`, `#204-S…`로 센다(`#204-S1`~`S10`은 백엔드 [admin-subscription.md](../../backend/payment/admin-subscription.md), 이 문서는 `#204-S11`부터, 구독 결제 연결은 [subscription.md](../payment/subscription.md)의 `#204-S17`부터다).
 
 시나리오 제목 끝의 태그가 확인 방법이다. `[테스트]`만 e2e 테스트와 1:1이고, `[테스트: 파일 번호]`는 그 테스트가 대신 확인한다. `[직접]`은 사람이 화면을 보고 확인한다.
 
@@ -65,7 +65,7 @@
 1. 문서(이 문서와 백엔드 문서)
 2. 백엔드 API(S1~S10)
 3. 구독 결제 연결(subscription.md `#204-S17`~)
-4. 운영자 화면: `features/subscription/admin.ts`(읽기·쓰기), `/admin/subscriptions` 페이지, `ADMIN_NAV`에 "구독", `e2e/pages.ts`에 `["/admin/subscriptions", "admin"]`, `page-urls.md`
+4. 운영자 화면: `features/subscription/admin.ts`(읽기·쓰기), `/admin/subscriptions` 페이지, `ADMIN_NAV`에 "구독"(#257에서 "플랜" 탭으로 합쳐 뺐다), `e2e/pages.ts`에 `["/admin/subscriptions", "admin"]`(#257에서 `/admin/plans?tab=subscriptions`로 바꿨다), `page-urls.md`
 
 ## 가정
 - 이메일 검색은 `?email=`이라 브라우저 기록에 이메일이 남는다. 운영자 전용 시연 도구라 감수한다.

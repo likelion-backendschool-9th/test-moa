@@ -93,12 +93,18 @@ class RecruitmentControllerTest {
         return saveRecruitment(LocalDateTime.now().plusDays(3), LocalDateTime.now().plusDays(9));
     }
 
-    private void subscribe(User user) {
+    private Subscription subscribe(User user) {
+        return subscribe(user, LocalDateTime.now().plusDays(1));
+    }
+
+    private Subscription subscribe(User user, LocalDateTime endAt) {
         Plan plan = Plan.builder().tier("구독").cashPrice(10000).creditPrice(9000)
                 .version((int) (System.nanoTime() % 1_000_000)).periodDays(30).build();
         em.persist(plan);
-        em.persist(Subscription.builder().user(user).plan(plan)
-                .startAt(LocalDateTime.now().minusDays(1)).endAt(LocalDateTime.now().plusDays(1)).build());
+        Subscription subscription = Subscription.builder().user(user).plan(plan)
+                .startAt(endAt.minusDays(2)).endAt(endAt).build();
+        em.persist(subscription);
+        return subscription;
     }
 
     // user가 null이면 토큰 없이 부른다
@@ -214,13 +220,27 @@ class RecruitmentControllerTest {
     }
 
     @Test
-    @DisplayName("#113-S6 구독 모집 여부 저장")
-    void 모집_작성_때의_구독_여부가_저장된다() throws Exception {
+    @DisplayName("#113-S6 구독 모집 여부는 작성자의 지금 구독으로 계산")
+    void 구독_모집_여부는_작성자의_지금_구독을_따른다() throws Exception {
         subscribe(developer);
         User free = saveUser();
+        Recruitment subscribedOne = create(developer);
+        Recruitment freeOne = create(free);
 
-        assertThat(detail(null, create(developer)).get("subscription").asBoolean()).isTrue();
-        assertThat(detail(null, create(free)).get("subscription").asBoolean()).isFalse();
+        assertThat(detail(null, subscribedOne).get("subscription").asBoolean()).isTrue();
+        assertThat(detail(null, freeOne).get("subscription").asBoolean()).isFalse();
+
+        /* 구독을 시작하면 이미 쓴 모집도 구독 모집이 된다 */
+        Subscription started = subscribe(free);
+        assertThat(detail(null, freeOne).get("subscription").asBoolean()).isTrue();
+
+        /* 환불로 취소하면 일반 모집으로 돌아온다 */
+        em.find(Subscription.class, started.getId()).cancel();
+        assertThat(detail(null, freeOne).get("subscription").asBoolean()).isFalse();
+
+        /* 기간이 끝난 구독은 상태가 ACTIVE여도 구독 모집이 아니다 */
+        subscribe(free, LocalDateTime.now().minusDays(1));
+        assertThat(detail(null, freeOne).get("subscription").asBoolean()).isFalse();
     }
 
     // 모집 작성 API로 프로젝트에 모집글을 만든다

@@ -100,7 +100,7 @@ export async function changeMemberSubscription(_prev: MemberSubscriptionFormStat
   const result = intent === "grant" ? await grantMemberSubscription(email) : await revokeMemberSubscription(email);
   if (!result.ok) return { status: "error", error: result.message };
   /* 같은 주소의 검색 결과(구독 상태)가 새 값으로 다시 그려지게 한다 */
-  revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/plans");
   return { status: "done", message: intent === "grant" ? "구독했어요" : "구독을 뺐어요" };
 }
 

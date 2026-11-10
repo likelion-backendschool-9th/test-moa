@@ -8,7 +8,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-
 /**
  * 이미 가입한 회원에게 가입 크레딧을 한 번 지급하는 일회성 실행기(#255).
  * credit.signup-bonus.backfill 이 true 일 때만 만들어져 서버 시작 때 돈다. 지급한 뒤에는 설정을 끈다.

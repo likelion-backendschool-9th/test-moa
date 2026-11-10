@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { Markdown } from "@/components/ui/Markdown/Markdown";
 import styles from "./ProjectDescription.module.css";
 
 /**
@@ -13,7 +14,7 @@ import styles from "./ProjectDescription.module.css";
 function fittingHeight(element: HTMLElement, height: number) {
   const top = element.getBoundingClientRect().top;
   let fit = 0;
-  for (const paragraph of element.children) {
+  for (const paragraph of element.firstElementChild?.children ?? element.children) {
     const start = paragraph.getBoundingClientRect().top - top;
     const lineHeight = parseFloat(getComputedStyle(paragraph).lineHeight);
     const lines = Math.floor((height - start) / lineHeight);
@@ -58,12 +59,7 @@ export function ProjectDescription({ text }: { text: string }) {
         style={clipped && limit !== undefined ? { maxHeight: limit } : undefined}
         className={cn(styles.box, clipped ? styles.boxClipped : undefined, clipped && limit === undefined ? styles.boxLimited : undefined)}
       >
-        {text
-          .split("\n")
-          .filter((paragraph) => paragraph.trim())
-          .map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
+        <Markdown>{text}</Markdown>
       </div>
       {typeof limit === "number" && (
         <button

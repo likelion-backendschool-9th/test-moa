@@ -6,10 +6,11 @@ const image = { name: "화면.png", size: 1024, type: "image/png" };
 function validForm() {
   const data = new FormData();
   for (const [key, value] of Object.entries({
-    title: "모집", request: "가입 흐름 확인", softwareType: "web", selectionMode: "firstCome",
+    title: "모집", request: "가입 흐름 확인", selectionMode: "firstCome",
     accessUrl: "https://example.com", recruitDeadline: "2026-11-09", submitDeadline: "2026-11-10",
     testItemTitle: "가입하기", testItemDescription: "", testItemImagesMeta: "[]",
   })) data.set(key, value);
+  data.set("softwareTypes", "web");
   return data;
 }
 

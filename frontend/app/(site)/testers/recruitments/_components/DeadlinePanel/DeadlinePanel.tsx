@@ -25,6 +25,7 @@ export function DeadlinePanel({ items, now }: { items: ParticipationItem[]; now:
         <h2 id="deadline-list-heading" className={styles.title2}>
           마감 임박 테스트 <span className={styles.length}>{items.length}</span>
         </h2>
+        {items.length === 0 && <p className={styles.text2}>제출이 임박한 테스트가 없어요</p>}
         <ul className={styles.list}>
           {items.map((item, index) => {
             const { recruitment } = item;

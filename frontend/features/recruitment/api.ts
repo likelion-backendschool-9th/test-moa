@@ -314,10 +314,11 @@ type PublicRecruitmentResponse = {
   conditions: string | null;
   selectionMode: SelectionMode;
   softwareType: SoftwareType | null;
+  softwareTypes?: SoftwareType[];
   subscription: boolean;
   recruitDeadline: string;
   submitDeadline: string;
-  project: { id: number; name: string; description: string | null; imageUrl: string | null };
+  project: { id: number; name: string; description: string | null; imageUrl: string | null; ownerNickname?: string };
   imageUrls: string[];
   testItems: Array<{ id: number; title: string; description: string | null; required: boolean; imageUrls: string[] }>;
   myRegisterStatus: ApplicationStatus | null;
@@ -344,7 +345,7 @@ async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentDat
       ...(data.project.imageUrl ? { projectImage: data.project.imageUrl } : {}),
       summary: projectDescription,
       request: data.description,
-      softwareTypes: data.softwareType ? [data.softwareType] : [],
+      softwareTypes: data.softwareTypes?.length ? data.softwareTypes : data.softwareType ? [data.softwareType] : [],
       isSubscription: data.subscription,
       /* 상세 응답에는 작성일이 없고, 화면은 마감일로만 상태를 계산한다 */
       createdAt: "",
@@ -370,6 +371,7 @@ async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentDat
     },
     project: {
       description: projectDescription,
+      ownerNickname: data.project.ownerNickname,
       image: data.project.imageUrl ? { url: data.project.imageUrl, name: `${data.project.name} 대표 이미지` } : null,
     },
     myRegisterStatus: data.myRegisterStatus,
@@ -1255,7 +1257,7 @@ export async function saveBackendRecruitment(projectKey: string, state: FormStat
       projectId: Number(projectKey),
       title: values.title,
       description: values.request,
-      softwareType: values.softwareType,
+      softwareTypes: formData.getAll("softwareTypes").map(String),
       selectionMode: values.selectionMode,
       accessUrl: values.accessUrl,
       conditions: values.conditions,

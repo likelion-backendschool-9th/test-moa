@@ -27,7 +27,7 @@ export function ProjectList({ projects }: { projects: ProjectSummary[] }) {
         <li key={project.key}>
           <Card className={styles.card}>
             <div className={styles.thumb}>
-              <RecruitmentThumb recruitment={{ projectName: project.name, projectImage: project.image?.url }} />
+              <RecruitmentThumb showImage recruitment={{ projectName: project.name, projectImage: project.image?.url }} />
             </div>
             <div className={styles.box}>
               <h3 className={styles.name}>{project.name}</h3>

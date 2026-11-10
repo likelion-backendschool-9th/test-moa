@@ -435,9 +435,19 @@
   background-color: var(--accent-tint);
 }
 
+/* 긴 리뷰도 읽기 쉽게 굵지 않은 글씨로 두고, 드래그해서 복사할 수 있게 한다 */
+.quote,
+.quote * {
+  user-select: text;
+}
+
 .quoteText {
+  font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* 회색·초록 상자 위에서도 버튼이 보이게 흰 면으로 띄운다 */

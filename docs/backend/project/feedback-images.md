@@ -143,13 +143,6 @@
    - 파일: `docs/backend/project/README.md`(이슈 표), `feedback-submit.md`(제출 본문·상세 응답·범위 밖), `feedback-management.md`(`imageUrls`)
    - 확인: `bootRun`에 6MB 파일 업로드
 
-## 브랜치·커밋
-- 브랜치: `feature/feedback-images-api` (`origin/develop`에서 만들고 upstream 해제)
-- 커밋: `Feat: 피드백 이미지 업로드 API` — 1단계
-- 커밋: `Feat: 피드백 제출에 이미지 주소를 연결한다` — 2단계
-- 커밋: `Feat: 피드백 이미지 조회와 접근 차단` — 3단계
-- 커밋: `Docs: 피드백 이미지 API를 문서에 반영한다` — 4단계
-
 ## 가정
 - 주소 검사는 모양과 이번 참가의 주소인지만 본다. 폴더가 참가별이라 DB에 업로드 기록 표를 더하지 않아도 다른 참가의 파일을 막을 수 있다.
 - 파일 존재와 같은 주소의 중복은 검사하지 않는다. #191과 같은 기준이고, 위조해도 자기 피드백의 이미지가 깨지거나 두 번 보일 뿐이다.

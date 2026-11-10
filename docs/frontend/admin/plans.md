@@ -62,6 +62,10 @@
 - Given 저장하는 사이 운영자 세션이 만료되었거나 서버가 오류를 돌려준다
 - When  저장을 누른다
 - Then  서버의 이유가 패널 안에 보이고, 입력한 내용은 그대로 남는다
+- Given 저장하는 사이 운영자 세션이 끝났다(로그아웃·갱신 실패)
+- Then  오류 화면 대신 패널에 "운영자 로그인을 확인하지 못했어요. 다시 로그인한 뒤 저장해 주세요"가 보이고 입력한 내용은 남는다
+- Given 구독 플랜을 저장하기 전 지금 플랜을 다시 읽는 조회(`GET /api/v1/plans`)가 실패한다
+- Then  오류 화면 대신 그 이유가 패널에 보이고 저장하지 않는다
 
 ## 6. 회원 구독 탭 (#257-R6)
 
@@ -69,5 +73,10 @@
 - When  `/admin/subscriptions?email=a@example.com`에 접속한다
 - Then  `/admin/plans?tab=subscriptions&email=a%40example.com`으로 가고 "회원 구독" 탭이 현재 탭이다
 
-#257-S9 회원 구독 탭의 동작은 #204-S11~S16과 같다 [테스트: admin-plans-subscriptions.spec.ts #204-S12]
-- 접근 권한·목업 안내·이메일 검색·구독 주기/빼기는 [subscriptions.md](subscriptions.md)를 따른다. 로그인으로 보낼 때 보던 탭과 검색 주소를 그대로 돌려받는다
+#257-S9 회원 구독 탭의 접근 권한과 목업 안내 [테스트: pages.spec.ts #56-S2, #56-S3 · admin-plans-subscriptions.spec.ts #204-S12]
+- 접근 권한([subscriptions.md](subscriptions.md) #204-S11): `PAGES`에 `/admin/plans?tab=subscriptions`가 있어서, 비로그인은 이 주소로 돌아오게 로그인으로 가고 일반 회원은 운영자 안내만 보는지를 `pages.spec.ts`가 확인한다
+- 목업 안내(#204-S12): 안내 문구가 보이고 검색창·"구독 주기" 버튼이 없으며 "회원 구독"·"플랜" 탭이 현재 탭인지만 확인한다
+
+#257-S10 회원 구독 탭의 이메일 검색과 구독 주기·빼기 [직접]
+- 이메일 검색·없는 이메일·운영자 계정·구독 주기/빼기는 #204-S13~S16과 같다. 자동 테스트는 없어 백엔드 모드에서 사람이 확인한다
+- 비로그인으로 `/admin/plans?tab=subscriptions&email=…`에 들어가 로그인하면 검색 주소까지 그대로 돌아온다(검색어가 붙은 주소는 #257-S9가 확인하지 않는다)

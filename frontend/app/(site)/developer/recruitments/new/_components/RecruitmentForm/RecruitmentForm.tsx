@@ -157,7 +157,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
                     type="checkbox"
                     name="softwareTypes"
                     value={type}
-                    defaultChecked={(values.softwareType || "web").split(",").includes(type)}
+                    defaultChecked={(values.softwareType ?? "web").split(",").includes(type)}
                     className={styles.input}
                   />
                   {SOFTWARE_TYPE_LABEL[type]}

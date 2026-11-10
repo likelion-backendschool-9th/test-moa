@@ -16,6 +16,9 @@
 .root h1 { font-size: var(--text-xl); }
 .root h2 { font-size: var(--text-lg); }
 
+/* 엔터 한 번도 줄바꿈으로 보인다(예전에 한 줄마다 문단으로 나누던 설명과 같은 모양) */
+.root p { white-space: pre-line; }
+
 .root ul,
 .root ol {
   padding-left: var(--space-5);

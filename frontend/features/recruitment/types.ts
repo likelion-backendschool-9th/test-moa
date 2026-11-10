@@ -689,15 +689,6 @@ export type ProjectSummary = Omit<Project, "recruitments"> & {
   openRecruitmentCount: number;
 };
 
-/** 내 프로젝트 화면 맨 위 "지금 확인할 일" 한 줄 */
-export type TodoItem = {
-  kind: "applicants" | "feedback";
-  projectName: string;
-  /** 이동할 모집 관리 탭 주소 */
-  href: string;
-  text: string;
-};
-
 /** 모든 프로젝트를 합친 숫자. 진행 중인 모집 건을 상태별로 센다(종료·취소는 세지 않는다) */
 export type ProjectOverview = Record<Exclude<RecruitmentStatus, "cancelled">, number>;
 

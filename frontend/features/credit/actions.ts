@@ -6,6 +6,7 @@ import {
   isWithdrawalKey,
   saveAdminWithdrawalReview,
   saveWithdrawalRequest,
+  submitServerWithdrawal,
 } from "@/features/credit/api";
 import { withdrawalsHref } from "@/features/credit/paths";
 import {
@@ -24,8 +25,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 /*
- * 출금 신청. 지금은 목업이라 입력을 검사한 뒤 시연용 쿠키(demo/credit.ts)에 남긴다.
- * 실제 API를 붙일 때는 addDemoWithdrawal 대신 요청을 저장한다.
+ * 출금 신청. 입력을 검사한 뒤 `AUTH_MODE=backend`에서는 서버에 신청하고(#206), 아니면 시연용 쿠키(demo/credit.ts)에 남긴다.
  */
 
 const PATH = "/my/credits/withdrawals";
@@ -39,13 +39,26 @@ export type WithdrawalFormState =
 
 const ACCOUNT_PATTERN = /^\d{10,14}$/;
 
+/** 서버 요청 필드 이름 → 화면 칸 */
+const SERVER_FIELD: Record<string, WithdrawalField> = {
+  amount: "amount",
+  bank: "bank",
+  accountNumber: "account",
+  accountHolder: "holder",
+};
+
+function serverErrors({ message, fields }: { message: string; fields?: Record<string, string> }) {
+  const errors: Partial<Record<WithdrawalField | "form", string>> = {};
+  for (const [name, text] of Object.entries(fields ?? {})) {
+    const field = SERVER_FIELD[name];
+    if (field) errors[field] = text;
+  }
+  if (Object.keys(errors).length === 0) errors.form = message;
+  return errors;
+}
+
 export async function requestWithdrawal(_prev: WithdrawalFormState, formData: FormData): Promise<WithdrawalFormState> {
   await requireMember(PATH);
-  /*
-   * 백엔드 모드에서는 출금을 서버에 남기는 연결이 아직 없다(#206). 목업 쿠키에 남기면 성공 문구가 나와도
-   * 서버 잔액과 운영자 목록에는 남지 않아서, 신청한 것으로 믿지 않게 막는다
-   */
-  if (isBackendAuth) return { status: "error", errors: { form: "출금 신청은 아직 준비 중이에요" } };
   const cashable = cashableCredits(await getCreditBalance(PATH));
   if (cashable <= 0) return { status: "error", errors: { form: "출금할 수 있는 크레딧이 없어요" } };
 
@@ -67,7 +80,13 @@ export async function requestWithdrawal(_prev: WithdrawalFormState, formData: Fo
   if (!holder) errors.holder = "예금주를 입력해 주세요";
 
   if (Object.keys(errors).length > 0) return { status: "error", errors };
-  await saveWithdrawalRequest({ amount, bank, account });
+  if (isBackendAuth) {
+    /* 화면의 검사를 지나도 서버가 거절할 수 있다(다른 창에서 잔액이 바뀐 경우 등). 칸별 문구가 있으면 그 칸에, 아니면 폼 위에 보인다 */
+    const result = await submitServerWithdrawal({ amount, bank, accountNumber: account, accountHolder: holder });
+    if (!result.ok) return { status: "error", errors: serverErrors(result) };
+  } else {
+    await saveWithdrawalRequest({ amount, bank, account });
+  }
   /* 출금 내역, 크레딧 잔액, 마이페이지 대시보드가 새 잠금 금액을 보여 주게 한다 */
   revalidatePath("/my", "layout");
   return {

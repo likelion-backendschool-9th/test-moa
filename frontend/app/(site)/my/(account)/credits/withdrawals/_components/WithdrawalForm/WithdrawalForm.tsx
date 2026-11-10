@@ -49,7 +49,12 @@ export function WithdrawalForm({ cashable }: { cashable: number }) {
         </p>
       </div>
       {disabled && <p className={styles.text2}>출금할 수 있는 크레딧이 없어요</p>}
-      {errors.form && <p className={styles.form}>{errors.form}</p>}
+      {/* 신청이 막힌 이유는 화면 낭독기가 바로 읽게 alert로 둔다. 칸별 오류는 각 칸의 aria-describedby가 읽는다 */}
+      {errors.form && (
+        <p role="alert" className={styles.form}>
+          {errors.form}
+        </p>
+      )}
       {state.status === "success" && (
         <p role="status" className={styles.message}>
           {state.message}

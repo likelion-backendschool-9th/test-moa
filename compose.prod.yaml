@@ -51,6 +51,9 @@ services:
       TOSSPAYMENTS_SECRET_KEY: ${TOSSPAYMENTS_SECRET_KEY:-}
       # 결제 뒤 돌아올 사이트 주소(서버 .env에 사이트 주소를 넣는다). 비어 있으면 현금 결제를 쓸 수 없다
       PAYMENT_RETURN_BASE_URL: ${PAYMENT_RETURN_BASE_URL:-}
+      # 가입 크레딧(#255). 지급액과, 이미 가입한 회원에게 한 번 지급하는 일회성 설정(지급한 뒤 끈다)
+      CREDIT_SIGNUP_BONUS_AMOUNT: ${CREDIT_SIGNUP_BONUS_AMOUNT:-3000}
+      CREDIT_SIGNUP_BONUS_BACKFILL: ${CREDIT_SIGNUP_BONUS_BACKFILL:-false}
       # 엔티티를 보고 테이블을 만들고 바뀐 컬럼을 더한다(지우지는 않음). 실제 서비스 전에 Flyway 같은 마이그레이션으로 바꾼다
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       # AI 분석 서버(analysis). 같은 compose 네트워크 안에서 서비스 이름으로 부른다

@@ -32,4 +32,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 탈퇴 신청이 cutoff보다 앞선 유예 회원 id(#84 파기 작업). 파기는 회원마다 잠근 뒤 상태를 다시 확인한다
     @Query("select u.id from users u where u.status = :status and u.withdrawnAt < :cutoff")
     List<Long> findIdsByStatusAndWithdrawnAtBefore(@Param("status") UserStatus status, @Param("cutoff") java.time.LocalDateTime cutoff);
+
+    /** 가입 크레딧 소급 지급 대상 후보. 상태는 호출하는 쪽이 정한다 */
+    @Query("select u.id from users u where u.role = :role and u.status in :statuses order by u.id")
+    List<Long> findIdsByRoleAndStatusIn(@Param("role") Role role, @Param("statuses") java.util.Collection<UserStatus> statuses);
 }

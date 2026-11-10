@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/Card/Card";
 import { FormMessage } from "@/components/ui/FormField/FormField";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { saveProject } from "@/features/project/actions";
-import { checkImages, formatBytes, uploadImages, type FileMeta } from "@/features/project/media";
+import { checkImages, formatBytes, isUploadedImageUrl, type FileMeta } from "@/features/project/media";
+import { uploadImages } from "@/lib/image-upload";
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, validateProjectForm, type FormState, type ProjectImage } from "@/features/project/types";
 import { FormSection } from "../FormSection/FormSection";
 import { ProjectBody } from "../ProjectDetail/ProjectDetail";
@@ -59,7 +60,7 @@ export function ProjectForm({
         const checked = validateProjectForm(data);
         if (Object.keys(checked.errors).length) return checked;
         try {
-          data.set("imageUrls", JSON.stringify(await uploadImages(image ? [image] : [], "/api/v1/developer/projects/images", uploaded.current)));
+          data.set("imageUrls", JSON.stringify(await uploadImages(image ? [image] : [], "/api/v1/developer/projects/images", uploaded.current, isUploadedImageUrl)));
         } catch (error) {
           return { values: checked.values, errors: { images: error instanceof Error ? error.message : "이미지를 다시 올려 주세요" } };
         }

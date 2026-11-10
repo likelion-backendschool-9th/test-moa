@@ -7,7 +7,8 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { SOFTWARE_TYPE_LABEL, SOFTWARE_TYPES } from "@/features/recruitment/types";
 import { formatCredits } from "@/lib/format";
 import { createRecruitment } from "@/features/recruitment/actions";
-import { checkImages, formatBytes, uploadImages, type FileMeta } from "@/features/project/media";
+import { checkImages, formatBytes, isUploadedImageUrl, type FileMeta } from "@/features/project/media";
+import { uploadImages } from "@/lib/image-upload";
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState } from "@/features/project/types";
 import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, validateRecruitmentForm, type SelectionMode } from "@/features/recruitment/types";
 import { FormSection } from "../../../../_components/FormSection/FormSection";
@@ -58,11 +59,11 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
         if (Object.keys(checked.errors).length) return checked;
         let field = "recruitmentImages";
         try {
-          data.set("imageUrls", JSON.stringify(await uploadImages(images, "/api/v1/developer/recruitments/images", uploaded.current)));
+          data.set("imageUrls", JSON.stringify(await uploadImages(images, "/api/v1/developer/recruitments/images", uploaded.current, isUploadedImageUrl)));
           data.delete("testItemImageUrls");
           for (let index = 0; index < items.length; index++) {
             field = `testItemImages-${index}`;
-            const urls = await uploadImages(items[index].images, "/api/v1/developer/recruitments/images", uploaded.current);
+            const urls = await uploadImages(items[index].images, "/api/v1/developer/recruitments/images", uploaded.current, isUploadedImageUrl);
             data.append("testItemImageUrls", JSON.stringify(urls));
           }
         } catch (error) {

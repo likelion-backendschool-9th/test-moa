@@ -93,3 +93,24 @@ export type SubscriptionPlan = PlanTerms & {
 export const EXPIRY_KEEPS = ["받은 피드백과 채팅 기록 보기", "이미 참여가 확정된 테스터의 보상", "모집 글 등록과 지원 현황 확인"];
 
 export const EXPIRY_STOPS = ["새 테스터 직접 선정", "채팅 메시지 보내기", "상단 구독 영역 노출", "분석"];
+
+/* ---------- 운영자 플랜 혜택 편집 (#257) ---------- */
+
+/** 서버(`PlanCreateRequest`·`FreePlanUpdateRequest`)의 상한과 맞춘다 */
+export const PLAN_NAME_MAX_LENGTH = 255;
+export const BENEFIT_MAX_COUNT = 10;
+export const BENEFIT_MAX_LENGTH = 100;
+
+export type BenefitsParse = { ok: true; benefits: string[] } | { ok: false; message: string };
+
+/**
+ * 한 줄에 혜택 하나인 입력을 목록으로 바꾼다. 앞뒤 공백을 지우고 빈 줄은 뺀다.
+ * 서버는 혜택을 쉼표로 이어 저장해서 쉼표가 든 문구는 거절한다
+ */
+export function parseBenefits(text: string): BenefitsParse {
+  const benefits = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (benefits.length > BENEFIT_MAX_COUNT) return { ok: false, message: `혜택은 ${BENEFIT_MAX_COUNT}개까지 쓸 수 있어요` };
+  if (benefits.some((benefit) => benefit.length > BENEFIT_MAX_LENGTH)) return { ok: false, message: `혜택 문구는 ${BENEFIT_MAX_LENGTH}자까지 쓸 수 있어요` };
+  if (benefits.some((benefit) => benefit.includes(",") || benefit.includes("，"))) return { ok: false, message: "혜택 문구에는 쉼표를 쓸 수 없어요" };
+  return { ok: true, benefits };
+}

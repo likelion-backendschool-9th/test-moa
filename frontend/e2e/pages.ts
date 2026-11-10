@@ -40,4 +40,5 @@ export const PAGES: [path: string, role: Role][] = [
   ["/admin/users", "admin"],
   ["/admin/users/user-1", "admin"],
   ["/admin/subscriptions", "admin"],
+  ["/admin/plans", "admin"],
 ];

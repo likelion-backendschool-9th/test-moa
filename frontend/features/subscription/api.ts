@@ -275,3 +275,38 @@ export async function revokeMemberSubscription(email: string): Promise<MemberSub
   });
   return result.ok ? { ok: true, member: toMemberSubscription(result.data) } : { ok: false, message: result.message };
 }
+
+/* ---------- 운영자 플랜 혜택 편집 (#257) ---------- */
+
+export type AdminPlans = { freePlan: FreePlan; plans: SubscriptionPlan[] };
+
+/** 편집 화면이 채울 현재 값. 무료 플랜과 지금 파는 구독 플랜이다 */
+export async function getAdminPlans(): Promise<AdminPlans> {
+  await assertAdmin();
+  await connection();
+  const [freePlan, plans] = await Promise.all([readFreePlan(), readPlans()]);
+  return { freePlan, plans };
+}
+
+export type PlanSave = { ok: true } | { ok: false; message: string };
+
+/** 무료 플랜의 이름과 혜택을 저장한다(서버가 없으면 만들고 있으면 고친다) */
+export async function saveFreePlan(name: string, benefits: string[]): Promise<PlanSave> {
+  await assertAdmin();
+  const result = await backendFetch<unknown>("/api/v1/admin/plans/free", { method: "PUT", body: { tier: name, benefits } });
+  return result.ok ? { ok: true } : { ok: false, message: result.message };
+}
+
+/**
+ * 혜택을 고친 구독 플랜을 새 버전으로 등록한다. 가격·기간은 지금 값을 그대로 보낸다.
+ * 서버가 version을 올린 새 행을 만들어서, 이미 구독한 회원의 조건은 그대로 남는다
+ */
+export async function registerPlanVersion(plan: SubscriptionPlan): Promise<PlanSave> {
+  await assertAdmin();
+  const { name, cashPrice, creditPrice, periodDays, benefits } = plan;
+  const result = await backendFetch<unknown>("/api/v1/admin/plans", {
+    method: "POST",
+    body: { tier: name, cashPrice, creditPrice, periodDays, benefits },
+  });
+  return result.ok ? { ok: true } : { ok: false, message: result.message };
+}

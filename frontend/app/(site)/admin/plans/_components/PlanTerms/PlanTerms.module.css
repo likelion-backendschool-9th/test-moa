@@ -1,0 +1,27 @@
+.panel {
+  max-width: 40rem;
+}
+
+.title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-leading);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hint {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  color: var(--text-muted);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 40rem;
+}
+
+.skeletonBlock {
+  height: var(--space-24);
+}

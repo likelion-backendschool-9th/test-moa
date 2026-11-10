@@ -6,6 +6,7 @@
 # 필요한 값: GITHUB_OWNER, IMAGE_TAG, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, COMPOSE_PROJECT_NAME, TEAM_PORT,
 #            JWT_SECRET, CASHOUT_ACCOUNT_CRYPTO_KEY, ANALYSIS_INTERNAL_TOKEN, ANALYSIS_ANTHROPIC_API_KEY
 # 값이 비었거나 없으면 :? 검사로 기동하지 않고 어떤 값이 빠졌는지 알려 준다
+# 선택 값: KAKAOPAY_SECRET_KEY, KAKAOPAY_CID, TOSSPAYMENTS_CLIENT_KEY, TOSSPAYMENTS_SECRET_KEY, PAYMENT_RETURN_BASE_URL (구독 현금 결제. 비우면 그 결제 수단만 막힌다)
 # NEXT_PUBLIC_SITE_URL은 프론트 이미지를 빌드할 때 들어가므로 여기서는 받지 않는다
 # 다른 팀과 같은 서버를 쓰므로 COMPOSE_PROJECT_NAME으로 네트워크·볼륨 이름을 팀별로 나눈다
 # container_name은 두지 않는다. 컨테이너 이름은 <COMPOSE_PROJECT_NAME>-<서비스>-<번호>로 붙고,
@@ -43,6 +44,13 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      # 구독 현금 결제(카카오페이·토스 테스트). 없으면 그 결제 수단만 쓸 수 없고 나머지는 그대로 돈다
+      KAKAOPAY_SECRET_KEY: ${KAKAOPAY_SECRET_KEY:-}
+      KAKAOPAY_CID: ${KAKAOPAY_CID:-}
+      TOSSPAYMENTS_CLIENT_KEY: ${TOSSPAYMENTS_CLIENT_KEY:-}
+      TOSSPAYMENTS_SECRET_KEY: ${TOSSPAYMENTS_SECRET_KEY:-}
+      # 결제 뒤 돌아올 사이트 주소(서버 .env에 사이트 주소를 넣는다). 비어 있으면 현금 결제를 쓸 수 없다
+      PAYMENT_RETURN_BASE_URL: ${PAYMENT_RETURN_BASE_URL:-}
       # 엔티티를 보고 테이블을 만들고 바뀐 컬럼을 더한다(지우지는 않음). 실제 서비스 전에 Flyway 같은 마이그레이션으로 바꾼다
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       # AI 분석 서버(analysis). 같은 compose 네트워크 안에서 서비스 이름으로 부른다

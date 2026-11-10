@@ -17,6 +17,7 @@
 | [#203](https://github.com/likelion-backendschool-9th/test-moa/issues/203) | 무료 플랜 조건 API(+ 구독 화면 프론트 연결) | [free-plan.md](free-plan.md) |
 | [#68](https://github.com/likelion-backendschool-9th/test-moa/issues/68) | 운영자 출금 목록·지급·반려 API | [admin-cashout.md](admin-cashout.md) |
 | [#204](https://github.com/likelion-backendschool-9th/test-moa/issues/204) | 운영자 구독 부여·해제 API(+ 구독 결제 화면 프론트 연결) | [admin-subscription.md](admin-subscription.md) |
+| [#249](https://github.com/likelion-backendschool-9th/test-moa/issues/249) | 구독 현금 결제 PG 연동(카카오페이·토스페이 테스트) | [pg-checkout.md](pg-checkout.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 

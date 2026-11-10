@@ -11,6 +11,7 @@ import { creditDataFor } from "@/features/credit/api";
 import { payableCredits } from "@/features/credit/types";
 import { assertAdmin, requireMember } from "@/features/session/guard";
 import { getSession, type Role } from "@/features/session/session";
+import { readProviders, receiptFromServer, type PaymentReceipt, type PgApproval, type PgProvider, type PgReady } from "@/features/subscription/pg";
 import type { CheckoutPeriod, FreePlan, MemberSubscription, MemberSubscriptionLookup, Subscription, SubscriptionIntro, SubscriptionOverview, SubscriptionPlan } from "@/features/subscription/types";
 import { backendFetch, isBackendAuth } from "@/lib/backend";
 import { connection } from "next/server";
@@ -88,22 +89,34 @@ async function readPayableCredits(): Promise<number> {
 }
 
 /**
- * 결제 화면의 이용 기간. 플랜마다 서버가 계산한 시작·끝이다(구독 중이면 지금 만료일부터 이어진다).
- * 목업에는 서버 값이 없어 null이고, 그때는 화면이 직접 계산한다
+ * 결제 화면의 이용 기간과 지금 쓸 수 있는 현금 결제 대행사. 플랜마다 서버가 계산한 시작·끝이다(구독 중이면 지금 만료일부터 이어진다).
+ * 목업에는 서버 값이 없어 null이고, 그때는 화면이 직접 계산하고 결제 대행사 칸을 보이지 않는다
  */
-export async function getCheckoutPeriods(plans: SubscriptionPlan[]): Promise<Record<string, CheckoutPeriod> | null> {
+export async function getCheckoutInfo(plans: SubscriptionPlan[]): Promise<CheckoutInfo | null> {
   if (!isBackendAuth) return null;
-  const entries = await Promise.all(
+  const results = await Promise.all(
     plans.map(async ({ id }) => {
-      const result = await backendFetch<{ period: CheckoutPeriod | null }>(`/api/v1/my/subscription/checkout?planId=${encodeURIComponent(id)}`);
+      const result = await backendFetch<{ period: CheckoutPeriod | null; providers?: unknown }>(`/api/v1/my/subscription/checkout?planId=${encodeURIComponent(id)}`);
       if (!result.ok) throw new Error(result.message);
-      return [id, result.data.period] as const;
+      return [id, result.data] as const;
     }),
   );
-  return Object.fromEntries(entries.filter((entry): entry is readonly [string, CheckoutPeriod] => entry[1] !== null));
+  const periods = Object.fromEntries(
+    results.flatMap(([id, data]) => (data.period ? [[id, data.period] as const] : [])),
+  ) as Record<string, CheckoutPeriod>;
+  /* 결제 대행사는 플랜과 상관없는 값이라 첫 응답에서 읽는다 */
+  return { periods, providers: readProviders(results[0]?.[1].providers) };
 }
 
-export type SubscriptionPaymentResult = { ok: true } | { ok: false; message: string };
+export type CheckoutInfo = { periods: Record<string, CheckoutPeriod>; providers: PgProvider[] };
+
+/** 결제 성공이면 서버가 만든 결제 id를 돌려준다(결제 완료 화면이 그 결제를 읽는다) */
+export type SubscriptionPaymentResult = { ok: true; paymentId: string | null } | { ok: false; message: string };
+
+function paymentIdOf(data: unknown): string | null {
+  const id = typeof data === "object" && data !== null && "paymentId" in data ? (data as { paymentId: unknown }).paymentId : null;
+  return typeof id === "number" && Number.isSafeInteger(id) ? String(id) : null;
+}
 
 /** 서버에 구독 결제를 요청한다. 5초 안의 중복·크레딧 부족·운영자 계정이면 서버가 거절하고, 그 이유 문구를 돌려준다 */
 export async function requestSubscriptionPayment(planId: string, method: "credit" | "cash"): Promise<SubscriptionPaymentResult> {
@@ -112,7 +125,50 @@ export async function requestSubscriptionPayment(planId: string, method: "credit
     method: "POST",
     body: { planId: Number(planId), method: method === "credit" ? "CREDIT" : "CASH" },
   });
-  return result.ok ? { ok: true } : { ok: false, message: result.message };
+  return result.ok ? { ok: true, paymentId: paymentIdOf(result.data) } : { ok: false, message: result.message };
+}
+
+export type CashReadyResult = { ok: true; ready: PgReady } | { ok: false; message: string };
+
+/** 현금 결제 준비. 서버가 금액을 정하고 시도를 저장해 결제창 정보를 준다. 키가 없는 대행사·5초 안의 중복·운영자 계정이면 서버가 거절한다 */
+export async function requestCashPaymentReady(planId: string, provider: PgProvider): Promise<CashReadyResult> {
+  await requireMember("/my/subscription/checkout");
+  const result = await backendFetch<PgReady>("/api/v1/my/subscription/checkout/ready", {
+    method: "POST",
+    body: { planId: Number(planId), provider },
+  });
+  return result.ok ? { ok: true, ready: result.data } : { ok: false, message: result.message };
+}
+
+/** 결제창에서 돌아온 값으로 서버에 승인을 요청한다. 거절하면 그 이유 문구를 돌려준다(이미 승인했거나 만료된 결제 등) */
+export async function approveCashPayment(approval: PgApproval): Promise<SubscriptionPaymentResult> {
+  await requireMember("/my/subscription/checkout");
+  const result = await backendFetch<unknown>("/api/v1/my/subscription/checkout/approve", { method: "POST", body: approval });
+  return result.ok ? { ok: true, paymentId: paymentIdOf(result.data) } : { ok: false, message: result.message };
+}
+
+/** 서버의 내 결제 이력(최신순). 내 결제만 나온다 */
+async function readPayments(): Promise<PaymentReceipt[]> {
+  const result = await backendFetch<Parameters<typeof receiptFromServer>[0][]>("/api/v1/my/subscription/payments");
+  if (!result.ok) throw new Error(result.message);
+  return result.data.map(receiptFromServer);
+}
+
+/**
+ * 결제 완료 화면이 보여 줄 결제 한 건. 내 결제 이력에서 id로 찾는다(남의 결제 id는 찾지 못한다).
+ * 목업이거나 이력에 없으면 null이다
+ */
+export async function getPaymentReceipt(paymentId: string): Promise<PaymentReceipt | null> {
+  if (!isBackendAuth) return null;
+  await requireMember("/my/subscription/checkout/complete");
+  return (await readPayments()).find((payment) => payment.id === paymentId) ?? null;
+}
+
+/** 구독 화면의 결제 내역. 최신 결제부터 limit건과 전체 건수다. 목업에는 서버 결제가 없어 null이다 */
+export async function getPaymentHistory(limit: number): Promise<{ items: PaymentReceipt[]; total: number } | null> {
+  if (!isBackendAuth) return null;
+  const payments = await readPayments();
+  return { items: payments.slice(0, limit), total: payments.length };
 }
 
 /** 내 구독 상태. 운영자는 구독 대상이 아니라 null */

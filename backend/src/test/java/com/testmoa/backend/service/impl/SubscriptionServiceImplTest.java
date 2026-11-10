@@ -8,6 +8,7 @@ import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Subscription;
 import com.testmoa.backend.entity.User;
 import com.testmoa.backend.entity.enums.UserStatus;
+import com.testmoa.backend.global.client.pg.PaymentGateways;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.security.Role;
@@ -51,6 +52,8 @@ class SubscriptionServiceImplTest {
     private CreditWalletRepository creditWalletRepository;
     @Mock
     private PlanRepository planRepository;
+    @Mock
+    private PaymentGateways paymentGateways;
 
     @InjectMocks
     private SubscriptionServiceImpl service;

@@ -53,6 +53,9 @@ public enum ErrorCode {
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "구독한 회원만 쓸 수 있어요"),
     DUPLICATE_PAYMENT(HttpStatus.CONFLICT, "방금 결제했어요. 잠시 후 다시 시도해 주세요"),
     INSUFFICIENT_CREDIT(HttpStatus.CONFLICT, "쓸 수 있는 크레딧이 부족해요"),
+    PAYMENT_NOT_APPROVABLE(HttpStatus.CONFLICT, "승인할 수 없는 결제예요. 처음부터 다시 결제해 주세요"),
+    PG_APPROVE_FAILED(HttpStatus.BAD_GATEWAY, "결제 승인에 실패했어요. 다시 시도해 주세요"),
+    PG_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 이 결제 수단을 쓸 수 없어요"),
 
     // 모집
     RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),

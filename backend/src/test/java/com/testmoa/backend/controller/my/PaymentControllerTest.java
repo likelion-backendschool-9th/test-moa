@@ -102,6 +102,14 @@ class PaymentControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content(body));
     }
 
+    /** 크레딧 결제로 구독을 만든다(지갑이 없으면 넉넉히 채운다). 현금은 PG 승인을 거쳐야 해서 결제 요청으로는 만들 수 없다 */
+    private ResultActions payWithCredit(User user, Long planId) throws Exception {
+        if (creditWalletRepository.findByUserId(user.getId()).isEmpty()) {
+            saveWallet(user, 100000, 0, 0);
+        }
+        return pay(user, planId, "CREDIT");
+    }
+
     private Subscription seedPeriod(User user, int startDays, int endDays, boolean cancelled) {
         LocalDateTime base = LocalDateTime.now();
         Subscription subscription = subscriptionRepository.save(Subscription.builder()
@@ -133,30 +141,30 @@ class PaymentControllerTest {
     }
 
     @Test
-    @DisplayName("#71-S1 구독하지 않은 회원의 현금 결제는 결제 한 건과 구독 한 건이 짝으로 저장된다")
-    void cashPaymentCreatesPair() throws Exception {
+    @DisplayName("#71-S1 구독하지 않은 회원의 크레딧 결제는 결제 한 건과 구독 한 건이 짝으로 저장된다")
+    void creditPaymentCreatesPair() throws Exception {
         User user = saveUser(Role.USER);
+        CreditWallet wallet = saveWallet(user, 0, 10000, 0);
         LocalDateTime before = LocalDateTime.now();
 
-        pay(user, plan.getId(), "CASH")
+        pay(user, plan.getId(), "CREDIT")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.method").value("CASH"))
-                .andExpect(jsonPath("$.data.amount").value(10000))
-                .andExpect(jsonPath("$.data.payableCredits").value(0));
+                .andExpect(jsonPath("$.data.method").value("CREDIT"))
+                .andExpect(jsonPath("$.data.amount").value(9000))
+                .andExpect(jsonPath("$.data.payableCredits").value(1000));
 
         List<Payment> payments = paymentRepository.findBySubscriptionUserIdOrderByPaidAtDescIdDesc(user.getId());
         assertEquals(1, payments.size());
         Payment payment = payments.get(0);
         assertEquals(Payment.Status.COMPLETED, payment.getStatus());
+        assertEquals(null, payment.getProvider());
         Subscription subscription = payment.getSubscription();
         assertEquals(Subscription.Status.ACTIVE, subscription.getStatus());
         assertEquals(plan.getId(), subscription.getPlan().getId());
         assertFalse(subscription.getStartAt().isBefore(before));
         assertEquals(subscription.getStartAt().plusDays(30), subscription.getEndAt());
-        CreditWallet wallet = creditWalletRepository.findByUserId(user.getId()).orElseThrow();
-        assertEquals(0, wallet.total());
-        assertTrue(ledgers(wallet).isEmpty());
+        assertEquals(1000, wallet.total());
     }
 
     @Test
@@ -164,7 +172,7 @@ class PaymentControllerTest {
     void startsAtLatestEnd() throws Exception {
         User single = saveUser(Role.USER);
         Subscription current = seedPeriod(single, -10, 20, false);
-        pay(single, plan.getId(), "CASH").andExpect(status().isCreated());
+        payWithCredit(single, plan.getId()).andExpect(status().isCreated());
         Subscription added = latestSubscription(single);
         assertEquals(current.getEndAt(), added.getStartAt());
         assertEquals(current.getEndAt().plusDays(30), added.getEndAt());
@@ -172,20 +180,20 @@ class PaymentControllerTest {
         User chained = saveUser(Role.USER);
         seedPeriod(chained, -10, 20, false);
         Subscription second = seedPeriod(chained, 20, 50, false);
-        pay(chained, plan.getId(), "CASH").andExpect(status().isCreated());
+        payWithCredit(chained, plan.getId()).andExpect(status().isCreated());
         assertEquals(second.getEndAt(), latestSubscription(chained).getStartAt());
 
         User cancelledTail = saveUser(Role.USER);
         Subscription alive = seedPeriod(cancelledTail, -10, 20, false);
         seedPeriod(cancelledTail, 20, 50, true);
-        pay(cancelledTail, plan.getId(), "CASH").andExpect(status().isCreated());
+        payWithCredit(cancelledTail, plan.getId()).andExpect(status().isCreated());
         assertEquals(alive.getEndAt(), latestSubscription(cancelledTail).getStartAt());
 
         User finished = saveUser(Role.USER);
         seedPeriod(finished, -40, -10, false);
         seedPeriod(finished, -10, 20, true);
         LocalDateTime before = LocalDateTime.now();
-        pay(finished, plan.getId(), "CASH").andExpect(status().isCreated());
+        payWithCredit(finished, plan.getId()).andExpect(status().isCreated());
         assertFalse(latestSubscription(finished).getStartAt().isBefore(before));
         assertTrue(Duration.between(before, latestSubscription(finished).getStartAt()).abs().getSeconds() < 60);
     }
@@ -250,7 +258,7 @@ class PaymentControllerTest {
     }
 
     @Test
-    @DisplayName("#71-S6 크레딧이 모자라면 크레딧 결제는 되지 않고 현금 결제는 된다")
+    @DisplayName("#71-S6 크레딧이 모자라면 크레딧 결제는 되지 않는다")
     void insufficientCredit() throws Exception {
         User user = saveUser(Role.USER);
         CreditWallet wallet = saveWallet(user, 4000, 4999, 0);
@@ -263,8 +271,21 @@ class PaymentControllerTest {
         assertTrue(subscriptionRepository.findAll().stream().noneMatch(s -> s.getUser().getId().equals(user.getId())));
         assertTrue(ledgers(wallet).isEmpty());
         assertEquals(8999, wallet.payable());
+    }
 
-        pay(user, plan.getId(), "CASH").andExpect(status().isCreated());
+    @Test
+    @DisplayName("#249-S9 현금 직접 결제는 400으로 거절하고 결제·구독이 생기지 않는다")
+    void directCashPaymentIsRejected() throws Exception {
+        User user = saveUser(Role.USER);
+        saveWallet(user, 20000, 0, 0);
+
+        pay(user, plan.getId(), "CASH")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
+                .andExpect(jsonPath("$.error.message").value("현금 결제는 카카오페이·토스페이로만 할 수 있어요"));
+
+        assertTrue(paymentRepository.findBySubscriptionUserIdOrderByPaidAtDescIdDesc(user.getId()).isEmpty());
+        assertTrue(subscriptionRepository.findAll().stream().noneMatch(s -> s.getUser().getId().equals(user.getId())));
     }
 
     @Test
@@ -303,20 +324,21 @@ class PaymentControllerTest {
 
         User old = saveUser(Role.USER);
         seedPayment(old, plan, LocalDateTime.now().minusSeconds(10), -5);
-        pay(old, plan.getId(), "CASH").andExpect(status().isCreated());
+        payWithCredit(old, plan.getId()).andExpect(status().isCreated());
         assertEquals(2, paymentRepository.findBySubscriptionUserIdOrderByPaidAtDescIdDesc(old.getId()).size());
     }
 
     @Test
-    @DisplayName("#71-S9 지갑이 없는 회원도 현금으로 결제할 수 있고 지갑이 잔액 0으로 만들어진다")
-    void walletCreatedOnFirstPayment() throws Exception {
+    @DisplayName("#71-S6 지갑이 없는 회원의 크레딧 결제는 409이고 지갑 행이 남지 않는다")
+    void creditWithoutWalletLeavesNoWallet() throws Exception {
         User user = saveUser(Role.USER);
         assertTrue(creditWalletRepository.findByUserId(user.getId()).isEmpty());
 
-        pay(user, plan.getId(), "CASH").andExpect(status().isCreated());
+        pay(user, plan.getId(), "CREDIT")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("INSUFFICIENT_CREDIT"));
 
-        CreditWallet wallet = creditWalletRepository.findByUserId(user.getId()).orElseThrow();
-        assertEquals(0, wallet.total());
+        assertTrue(paymentRepository.findBySubscriptionUserIdOrderByPaidAtDescIdDesc(user.getId()).isEmpty());
     }
 
     @Test
@@ -339,11 +361,11 @@ class PaymentControllerTest {
         mvc.perform(post(CHECKOUT).header("Authorization", auth).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
-        pay(user, 999_999_999L, "CASH").andExpect(status().isNotFound());
+        pay(user, 999_999_999L, "CREDIT").andExpect(status().isNotFound());
         Plan oldVersion = plan;
         planRepository.save(Plan.builder().tier(oldVersion.getTier())
                 .cashPrice(10000).creditPrice(9000).periodDays(30).version(2).build());
-        pay(user, oldVersion.getId(), "CASH").andExpect(status().isNotFound());
+        pay(user, oldVersion.getId(), "CREDIT").andExpect(status().isNotFound());
 
         assertTrue(paymentRepository.findBySubscriptionUserIdOrderByPaidAtDescIdDesc(user.getId()).isEmpty());
     }
@@ -353,7 +375,7 @@ class PaymentControllerTest {
     void adminCannotPay() throws Exception {
         User admin = saveUser(Role.ADMIN);
 
-        pay(admin, plan.getId(), "CASH")
+        pay(admin, plan.getId(), "CREDIT")
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
                 .andExpect(jsonPath("$.error.message").value("운영자 계정은 구독 대상이 아니에요"));

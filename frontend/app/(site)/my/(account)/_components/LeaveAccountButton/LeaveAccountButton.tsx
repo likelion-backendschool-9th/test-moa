@@ -49,7 +49,7 @@ export function LeaveAccountButton({ credits, pendingWithdrawal, hasPassword, tr
           {children}
         </button>
       ) : (
-        <Button type="button" variant="secondary" onClick={open}>
+        <Button type="button" onClick={open}>
           {children}
         </Button>
       )}
@@ -106,7 +106,7 @@ export function LeaveAccountButton({ credits, pendingWithdrawal, hasPassword, tr
               취소
             </Button>
             {!blocked && (
-              <Button type="submit" variant="strong" size="sm" disabled={pending}>
+              <Button type="submit" size="sm" disabled={pending}>
                 {pending ? "탈퇴하는 중…" : "탈퇴하기"}
               </Button>
             )}

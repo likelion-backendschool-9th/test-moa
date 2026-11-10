@@ -33,7 +33,7 @@ export function AccountMenu({ notice, email, providers = ["LOCAL"] }: AccountMen
         <p className={styles.note}>탈퇴해도 30일 안에는 되돌릴 수 있어요.</p>
         <div className={styles.actions}>
           <form action={logout}>
-            <Button type="submit" variant="secondary">
+            <Button type="submit">
               로그아웃
             </Button>
           </form>

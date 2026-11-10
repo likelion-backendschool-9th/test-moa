@@ -6,6 +6,7 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList/ProjectList";
 import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice/SavedNotice";
 import { OverviewStats } from "@/app/(site)/developer/projects/_components/ProjectDashboard/ProjectDashboard";
+import { readParticipationView } from "@/features/participation/view-preference";
 import { getMyDashboard } from "@/features/recruitment/api";
 import styles from "./page.module.css";
 
@@ -29,7 +30,7 @@ export default function MyProjectsPage({ searchParams }: PageProps<"/developer/p
 
 /* 위에서부터 전체 현황 → 프로젝트 카드. 프로젝트가 없으면 빈 상태만 보여 준다 */
 async function ProjectsSlot({ searchParams }: Pick<PageProps<"/developer/projects">, "searchParams">) {
-  const [{ projects, overview }, { notice }] = await Promise.all([getMyDashboard(PROJECTS_PATH), searchParams]);
+  const [{ projects, overview }, { notice }, view] = await Promise.all([getMyDashboard(PROJECTS_PATH), searchParams, readParticipationView()]);
   return (
     <div className={styles.projectsSlot}>
       <SavedNotice show={notice === "saved"} />
@@ -40,7 +41,7 @@ async function ProjectsSlot({ searchParams }: Pick<PageProps<"/developer/project
             프로젝트 {projects.length}개
           </h2>
         )}
-        <ProjectList projects={projects} />
+        <ProjectList projects={projects} view={view} />
       </section>
     </div>
   );

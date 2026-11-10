@@ -40,7 +40,7 @@ export function RecruitmentThumb({
       ) : (
         <h3 className={styles.projectName}>{recruitment.projectName}</h3>
       )}
-      {showImage && (
+      {showImage && !inset && (
         <h3 className={styles.projectName2}>
           {recruitment.projectName}
         </h3>

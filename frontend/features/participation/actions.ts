@@ -2,6 +2,7 @@
 
 import { requireMember } from "@/features/session/guard";
 import { participationPath, PARTICIPATIONS_PATH, participationsPath } from "@/features/participation/paths";
+import { PROJECTS_PATH } from "@/features/project/paths";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
@@ -48,7 +49,10 @@ export async function submitFeedback(
  */
 export async function setParticipationView(formData: FormData) {
   const tab = formData.get("tab");
-  const path = typeof tab === "string" ? participationsPath(parseParticipationTab(tab)) : PARTICIPATIONS_PATH;
+  /* 내 프로젝트 목록도 같은 보기 방식을 쓴다. 돌아갈 곳은 이 주소로만 받는다 */
+  const next = formData.get("next");
+  const path =
+    next === PROJECTS_PATH ? PROJECTS_PATH : typeof tab === "string" ? participationsPath(parseParticipationTab(tab)) : PARTICIPATIONS_PATH;
   await requireMember(path);
   await saveParticipationView(parseParticipationView(formData.get("view")));
   redirect(path, RedirectType.replace);

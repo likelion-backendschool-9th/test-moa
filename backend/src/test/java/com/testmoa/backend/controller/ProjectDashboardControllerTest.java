@@ -130,7 +130,7 @@ class ProjectDashboardControllerTest {
         applied(target);
         confirmed(target);
 
-        applied(recruiting(project, false));
+        // 구독은 모집이 아니라 작성자 기준이라, 같은 개발자의 모집은 모두 구독 모집이다. 구독하지 않은 개발자는 아래 테스트에서 본다
         applied(closed(project));
         recruiting(project, true);
         Recruitment cancelled = recruiting(project, true);
@@ -145,6 +145,17 @@ class ProjectDashboardControllerTest {
                 .andExpect(jsonPath("$.data.todos[0].projectName").value("북로그"))
                 .andExpect(jsonPath("$.data.todos[0].count").value(2))
                 .andExpect(jsonPath("$.data.todos[0].payoutAt").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("#122-S1 지원자 할 일")
+    void 구독하지_않은_개발자의_모집은_세지_않는다() throws Exception {
+        User free = saveUser();
+        applied(recruiting(saveProject(free, "무료"), false));
+
+        dashboard(free)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.todos", hasSize(0)));
     }
 
     @Test

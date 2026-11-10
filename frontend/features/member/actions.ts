@@ -54,11 +54,11 @@ export async function changePassword(_prev: FormState<PasswordField>, formData: 
   return { status: "success", message: "비밀번호를 바꿨어요", submittedAt: Date.now() };
 }
 
-/** 소셜 계정 연동 해제(#84). 결과는 개인정보 수정 화면 주소의 unlinked·accountError로 보인다. 목업에는 연동이 없다 */
+/** 소셜 계정 연동 해제(#84). 결과는 개인정보 수정 화면 주소의 unlinked·unlinkError로 보인다. 목업에는 연동이 없다 */
 export async function unlinkSocialAccount(formData: FormData): Promise<void> {
   await getProfile(PATH);
   const provider = String(formData.get("provider") ?? "");
   if (!isBackendAuth || (provider !== "google" && provider !== "github")) redirect(PATH);
   const result = await unlinkAccount(provider);
-  redirect(result.ok ? `${PATH}?unlinked=${provider}` : `${PATH}?accountError=${result.code}`);
+  redirect(result.ok ? `${PATH}?unlinked=${provider}` : `${PATH}?unlinkError=${result.code}`);
 }

@@ -162,6 +162,12 @@ export async function getLinkedAccounts(next: string): Promise<LinkedAccountsInf
   return { providers: me.data.providers, emails };
 }
 
+/** 지금 로그인한 회원의 id. 로그인하지 않았으면 null. 계정 연동이 시작한 회원과 같은지 볼 때 쓴다 */
+export async function getMyUserId(): Promise<number | null> {
+  const me = await backendFetch<{ id: number }>("/api/users/me");
+  return me.ok ? me.data.id : null;
+}
+
 /** 소셜 계정 연동 해제. 마지막 로그인 방법이면 백엔드가 409 LAST_LOGIN_METHOD */
 export async function unlinkAccount(provider: string): Promise<BackendResult<unknown>> {
   return backendFetch(`/api/users/me/accounts/${provider}`, { method: "DELETE" });

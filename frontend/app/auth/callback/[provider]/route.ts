@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import { callbackUrl, type OAuthLogin, oauthErrorKey, saveSignup, takeState } from "@/features/auth/oauth";
 import { withNext } from "@/features/auth/types";
+import { getMyUserId } from "@/features/member/api";
 import { backendFetch, isBackendAuth, saveTokens } from "@/lib/backend";
 
 /*
@@ -24,8 +25,10 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/auth/
     redirect(saved?.link ? `${next}?accountError=oauth` : withNext("/login", next, { error: "oauth" }));
   }
 
-  // 로그인한 회원의 계정 연동(#84): 쿠키의 access 토큰으로 연동 API를 부르고 개인정보 수정 화면으로 돌아간다
+  // 로그인한 회원의 계정 연동(#84): 쿠키의 access 토큰으로 연동 API를 부르고 개인정보 수정 화면으로 돌아간다.
+  // 연동을 시작한 회원과 지금 로그인한 회원이 다르면(그사이 로그아웃하고 다른 회원이 들어옴) 연동하지 않는다
   if (saved.link) {
+    if (saved.userId === undefined || (await getMyUserId()) !== saved.userId) redirect(`${next}?accountError=oauth`);
     const linked = await backendFetch(`/api/users/me/accounts/${saved.provider}`, {
       method: "POST",
       body: { code: query.get("code"), redirectUri: callbackUrl(saved.provider) },

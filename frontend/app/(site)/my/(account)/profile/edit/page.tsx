@@ -26,7 +26,7 @@ export default function ProfileEditPage({ searchParams }: PageProps<"/my/profile
 }
 
 async function ProfileEdit({ searchParams }: { searchParams: PageProps<"/my/profile/edit">["searchParams"] }) {
-  /* 연동된 계정(#84)은 실제 로그인에서만 있다. 결과 문구는 주소의 키(linked·unlinked·accountError)로 고른다 */
+  /* 연동된 계정(#84)은 실제 로그인에서만 있다. 결과 문구는 주소의 키(linked·unlinked·accountError·unlinkError)로 고른다 */
   const [profile, linked, params] = await Promise.all([getProfile(PATH), isBackendAuth ? getLinkedAccounts(PATH) : null, searchParams]);
   const text = (key: string) => (typeof params[key] === "string" ? params[key] : undefined);
   return (
@@ -37,7 +37,7 @@ async function ProfileEdit({ searchParams }: { searchParams: PageProps<"/my/prof
         <LinkedAccounts
           providers={linked.providers}
           emails={linked.emails}
-          notice={{ linked: text("linked"), unlinked: text("unlinked"), accountError: text("accountError") }}
+          notice={{ linked: text("linked"), unlinked: text("unlinked"), accountError: text("accountError"), unlinkError: text("unlinkError") }}
         />
       )}
     </SettingsCard>

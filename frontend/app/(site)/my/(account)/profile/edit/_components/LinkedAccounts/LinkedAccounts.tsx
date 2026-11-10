@@ -14,23 +14,28 @@ const ACCOUNTS = [
   { id: "github", provider: "GITHUB", label: "깃허브", Icon: GithubLogoIcon },
 ] as const;
 
-/* 주소에는 키만 두고 문구는 여기서 고른다. 모르는 키는 무시한다 */
-const ERRORS: Record<string, string> = {
+/* 주소에는 키만 두고 문구는 여기서 고른다. 모르는 키는 연동·해제 각각의 일반 문구로 보인다 */
+const LINK_ERRORS: Record<string, string> = {
   ACCOUNT_ALREADY_LINKED: "다른 회원에 이미 연동된 계정이에요",
   PROVIDER_ALREADY_LINKED: "같은 서비스의 다른 계정이 이미 연동돼 있어요",
-  LAST_LOGIN_METHOD: "마지막 로그인 방법은 해제할 수 없어요. 비밀번호를 먼저 만들어 주세요",
   oauth: "연동하지 못했어요. 다시 시도해 주세요",
 };
+/* 비밀번호 만들기는 아직 이 화면에서 저장되지 않아서, 마지막 로그인 방법은 백엔드 문장만 보인다 */
+const UNLINK_ERRORS: Record<string, string> = {
+  LAST_LOGIN_METHOD: "마지막 로그인 방법은 해제할 수 없어요",
+  unlink: "연동을 해제하지 못했어요. 다시 시도해 주세요",
+};
 
-type Notice = { linked?: string; unlinked?: string; accountError?: string };
+type Notice = { linked?: string; unlinked?: string; accountError?: string; unlinkError?: string };
+
+const pick = (table: Record<string, string>, key: string, fallback: string) => (Object.hasOwn(table, key) ? table[key] : table[fallback]);
 
 function message(notice: Notice): { status: "success" | "error"; text: string } | null {
   const label = (id?: string) => ACCOUNTS.find((account) => account.id === id)?.label;
   if (label(notice.linked)) return { status: "success", text: `${label(notice.linked)} 계정을 연동했어요` };
   if (label(notice.unlinked)) return { status: "success", text: `${label(notice.unlinked)} 연동을 해제했어요` };
-  if (notice.accountError) {
-    return { status: "error", text: Object.hasOwn(ERRORS, notice.accountError) ? ERRORS[notice.accountError] : ERRORS.oauth };
-  }
+  if (notice.accountError) return { status: "error", text: pick(LINK_ERRORS, notice.accountError, "oauth") };
+  if (notice.unlinkError) return { status: "error", text: pick(UNLINK_ERRORS, notice.unlinkError, "unlink") };
   return null;
 }
 

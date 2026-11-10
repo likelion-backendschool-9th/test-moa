@@ -1,7 +1,7 @@
 import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import { BACKEND_REPORT_STATUS_LABEL, BACKEND_REPORT_TARGET_LABEL, type MyReport } from "@/features/report/types";
 import { formatDate } from "@/lib/format";
-import { MyReportsDialog } from "./MyReportsDialog";
+import { MyReportsDialog } from "@/app/(site)/my/(account)/_components/MyReportsDialog/MyReportsDialog";
 import styles from "./MyReports.module.css";
 
 /** 카드에는 최근 몇 건만 두고, 나머지와 증거 파일은 "전체 보기" 창에서 본다 */

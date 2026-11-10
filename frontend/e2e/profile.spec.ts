@@ -90,7 +90,7 @@ test.describe("#84 회원 탈퇴", () => {
     const dialog = leaveDialog(page);
     await expect(dialog).toBeVisible();
     await expect(page).toHaveURL(PATH);
-    for (const text of ["30일 안에", "개인정보", "남은 크레딧 12,480"]) await expect(dialog).toContainText(text);
+    for (const text of ["30일 안에", "개인정보가 전부 사라지고", "남은 12,480 크레딧"]) await expect(dialog).toContainText(text);
 
     await dialog.getByRole("button", { name: "취소" }).click();
     await expect(dialog).toBeHidden();

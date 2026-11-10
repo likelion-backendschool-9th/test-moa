@@ -42,11 +42,17 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
   const tossError = opened?.state === state ? opened.message : null;
   /* 개발 모드의 효과 두 번 실행에도 같은 결제창을 두 번 열지 않는다(토스가 이미 열린 창이 있다고 거절한다) */
   const started = useRef<CheckoutFormState | null>(null);
+  const bannerRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (state.status !== "toss" || started.current === state) return;
     started.current = state;
     openTossWindow(state.window).then((message) => setOpened({ state, message }));
   }, [state]);
+  /* 안내가 새로 뜨면(결제창을 닫음) 화면을 많이 내려 둔 경우에도 보이게 한다 */
+  const bannerText = tossError ?? notice;
+  useEffect(() => {
+    if (bannerText) bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [bannerText]);
   /*
    * 서버 Action이 끝나면 React가 폼을 처음 상태로 되돌린다. 라디오는 처음 그릴 때의 선택(defaultChecked)으로 돌아가서,
    * 그 뒤 선택이 바뀌었거나 화면 값이 갱신됐으면 금액·버튼(현재 선택)과 라디오 모양이 어긋난다.
@@ -75,7 +81,9 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
   const startsAt = serverPeriod?.startAt ?? activeUntil ?? now;
   const endsAt = serverPeriod?.endAt ?? new Date(new Date(startsAt).getTime() + plan.periodDays * DAY_MS).toISOString();
   const price = method === "credit" ? formatCredits(plan.creditPrice) : formatWon(plan.cashPrice);
-  const error = (state.status === "error" ? state.error : undefined) ?? tossError ?? notice ?? undefined;
+  /* 결제를 취소했거나 결제창을 열지 못한 안내는 버튼 옆의 작은 글씨로는 놓치기 쉬워서 카드 위쪽에 눈에 띄게 보인다. 서버가 거절한 이유는 버튼 위에 그대로 둔다 */
+  const banner = tossError ?? notice ?? undefined;
+  const error = state.status === "error" ? state.error : undefined;
   const busy = pending || tossOpening;
 
   return (
@@ -83,6 +91,12 @@ export function CheckoutForm({ plans, periods, providers, notice, payableCredits
       <AccountCardTitle id="checkout-heading">
         {activeUntil ? "구독 연장" : "구독 시작"}
       </AccountCardTitle>
+      {banner && (
+        <p ref={bannerRef} role="alert" className={styles.notice}>
+          <WarningCircleIcon aria-hidden size={20} weight="bold" />
+          {banner}
+        </p>
+      )}
       {activeUntil && (
         <p className={styles.text}>지금 구독은 {formatDate(activeUntil)}에 끝나요. 결제하면 그날부터 이어져요.</p>
       )}

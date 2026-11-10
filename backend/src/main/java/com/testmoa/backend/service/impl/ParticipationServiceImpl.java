@@ -153,7 +153,7 @@ public class ParticipationServiceImpl implements ParticipationService {
     }
 
     // 이미지를 올릴 수 있는 참가. 제재는 참가를 찾기 전에 알린다. 제출은 행을 잠그므로 이 메서드를 쓰지 않는다
-    private Register openParticipation(Long userId, Long registerId) {
+    private void openParticipation(Long userId, Long registerId) {
         sanctionChecker.require(userId, Restriction.FEEDBACK);
         Register register = registerRepository.findMine(registerId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
@@ -162,7 +162,6 @@ public class ParticipationServiceImpl implements ParticipationService {
             throw new BusinessException(ErrorCode.FEEDBACK_DEADLINE_PASSED);
         }
         if (feedbackRepository.existsByRegisterId(registerId)) throw new BusinessException(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
-        return register;
     }
 
     private static String feedbackImageUrl(Long registerId, String name) {

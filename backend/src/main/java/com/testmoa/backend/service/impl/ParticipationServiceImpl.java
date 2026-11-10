@@ -17,6 +17,7 @@ import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.file.FileStorage;
+import com.testmoa.backend.repository.FeedbackImageRepository;
 import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.RecruitmentTypeRepository;
 import com.testmoa.backend.repository.RegisterRepository;
@@ -52,11 +53,16 @@ public class ParticipationServiceImpl implements ParticipationService {
     private static final Duration PAYOUT_WAIT = Duration.ofHours(72);
     private static final String EMPTY_MESSAGE = "피드백을 적어 주세요";
     private static final String IMAGE_TYPE_MESSAGE = "PNG, JPG, WEBP 이미지만 올릴 수 있어요";
+    private static final int MAX_IMAGES = 5;
+    private static final String TOO_MANY_IMAGES = "이미지는 5장까지 올릴 수 있어요";
+    private static final String IMAGE_NEEDS_CONTENT = "내용을 적어야 이미지를 넣을 수 있어요";
+    private static final String BAD_IMAGE = "이미지를 다시 올려 주세요";
 
     private final FileStorage fileStorage;
     private final RegisterRepository registerRepository;
     private final SanctionChecker sanctionChecker;
     private final FeedbackRepository feedbackRepository;
+    private final FeedbackImageRepository feedbackImageRepository;
     private final TestItemRepository testItemRepository;
     private final RecruitmentTypeRepository recruitmentTypeRepository;
 
@@ -82,13 +88,21 @@ public class ParticipationServiceImpl implements ParticipationService {
 
         List<TestItem> testItems = testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(register.getRecruitment().getId());
         Map<Long, String> contents = contentsOf(request, testItems);
+        Map<Long, List<String>> itemImages = imagesOf(request, testItems);
         String etc = trimToNull(request.etc());
+        List<String> etcImages = request.etcImageUrls() == null ? List.of() : request.etcImageUrls();
 
-        /* 필수 항목이 비었으면 칸마다, 아무것도 적지 않았으면 첫 칸에 알린다. 모집에는 항목이 늘 1개 이상 있다 */
+        /* 필수 항목이 비었으면 칸마다, 아무것도 적지 않았으면 첫 칸에 알린다. 모집에는 항목이 늘 1개 이상 있다.
+           이미지 장수·주소·내용 없는 칸은 같은 칸 이름으로 알린다 */
         Map<String, String> errors = new LinkedHashMap<>();
         for (TestItem item : testItems) {
-            if (item.isRequired() && contents.get(item.getId()) == null) errors.put(fieldOf(item.getId()), EMPTY_MESSAGE);
+            String field = fieldOf(item.getId());
+            rejectImages(errors, field, contents.get(item.getId()), itemImages.get(item.getId()), registerId);
+            if (!errors.containsKey(field) && item.isRequired() && contents.get(item.getId()) == null) {
+                errors.put(field, EMPTY_MESSAGE);
+            }
         }
+        rejectImages(errors, "etc", etc, etcImages, registerId);
         if (errors.isEmpty() && contents.values().stream().allMatch(Objects::isNull) && etc == null) {
             errors.put(fieldOf(testItems.get(0).getId()), EMPTY_MESSAGE);
         }
@@ -96,12 +110,25 @@ public class ParticipationServiceImpl implements ParticipationService {
 
         /* 모든 행에 같은 제출 시각을 넣는다(#89-S18). 비운 선택 항목은 저장하지 않는다 */
         List<Feedback> saved = new ArrayList<>();
+        List<List<String>> savedImages = new ArrayList<>();
         for (TestItem item : testItems) {
             String content = contents.get(item.getId());
-            if (content != null) saved.add(Feedback.builder().register(register).testItem(item).content(content).submittedAt(now).build());
+            if (content != null) {
+                saved.add(Feedback.builder().register(register).testItem(item).content(content).submittedAt(now).build());
+                savedImages.add(itemImages.get(item.getId()));
+            }
         }
-        if (etc != null) saved.add(Feedback.builder().register(register).content(etc).submittedAt(now).build());
+        if (etc != null) {
+            saved.add(Feedback.builder().register(register).content(etc).submittedAt(now).build());
+            savedImages.add(etcImages);
+        }
         feedbackRepository.saveAll(saved);
+        for (int index = 0; index < saved.size(); index++) {
+            Feedback feedback = saved.get(index);
+            for (String url : savedImages.get(index)) {
+                feedbackImageRepository.save(FeedbackImage.builder().feedback(feedback).url(url).build());
+            }
+        }
         return toResponse(register, testItems, saved, now);
     }
 
@@ -131,7 +158,49 @@ public class ParticipationServiceImpl implements ParticipationService {
     }
 
     private static String feedbackImageUrl(Long registerId, String name) {
-        return "/api/v1/tester/participations/" + registerId + "/feedbacks/images/" + name;
+        return feedbackImagePrefix(registerId) + name;
+    }
+
+    // 모양과 이번 참가의 주소인지만 본다. 파일이 있는지나 같은 주소의 중복은 보지 않는다
+    private static boolean isOwnFeedbackImage(Long registerId, String url) {
+        String prefix = feedbackImagePrefix(registerId);
+        return url != null && url.startsWith(prefix) && FileStorage.isImageName(url.substring(prefix.length()));
+    }
+
+    private static String feedbackImagePrefix(Long registerId) {
+        return "/api/v1/tester/participations/" + registerId + "/feedbacks/images/";
+    }
+
+    // 항목 id → 이미지 주소. 없으면 빈 목록. 이 모집이 아닌 항목은 contentsOf가 이미 거절한다
+    private Map<Long, List<String>> imagesOf(FeedbackSubmitRequest request, List<TestItem> testItems) {
+        Map<Long, List<String>> images = new HashMap<>();
+        testItems.forEach(item -> images.put(item.getId(), List.of()));
+        for (FeedbackSubmitRequest.Item item : request.items() == null ? List.<FeedbackSubmitRequest.Item>of() : request.items()) {
+            if (images.containsKey(item.testItemId())) {
+                images.put(item.testItemId(), item.imageUrls() == null ? List.of() : item.imageUrls());
+            }
+        }
+        return images;
+    }
+
+    // 한 칸의 이미지. 장수를 먼저 보고, 내용이 없는데 이미지가 있으면 그 칸을 거절한다
+    private static void rejectImages(Map<String, String> errors, String field, String content, List<String> urls, Long registerId) {
+        List<String> images = urls == null ? List.of() : urls;
+        if (images.size() > MAX_IMAGES) {
+            errors.put(field, TOO_MANY_IMAGES);
+            return;
+        }
+        if (content == null && !images.isEmpty()) {
+            errors.put(field, IMAGE_NEEDS_CONTENT);
+            return;
+        }
+        if (content == null) return;
+        for (String url : images) {
+            if (!isOwnFeedbackImage(registerId, url)) {
+                errors.put(field, BAD_IMAGE);
+                return;
+            }
+        }
     }
 
     private static BusinessException invalid(String field, String message) {
@@ -164,8 +233,21 @@ public class ParticipationServiceImpl implements ParticipationService {
                 register.getStatus() == RegisterStatus.CONFIRMED ? recruitment.getAccessUrl() : null,
                 testItems.stream().map(testItem -> new TestItemInfo(testItem.getId(), testItem.getTitle(), testItem.getDescription(),
                         testItem.isRequired())).toList(),
-                feedbacks.stream().map(feedback -> new FeedbackInfo(
-                        feedback.getTestItem() == null ? null : feedback.getTestItem().getId(), feedback.getContent())).toList());
+                feedbackInfos(feedbacks));
+    }
+
+    // 올린 순서. 이미지 행 id가 저장 순서다
+    private List<FeedbackInfo> feedbackInfos(List<Feedback> feedbacks) {
+        if (feedbacks.isEmpty()) return List.of();
+        Map<Long, List<String>> images = new HashMap<>();
+        for (FeedbackImage image : feedbackImageRepository.findByFeedbackIdInOrderByIdAsc(
+                feedbacks.stream().map(Feedback::getId).toList())) {
+            images.computeIfAbsent(image.getFeedback().getId(), id -> new ArrayList<>()).add(image.getUrl());
+        }
+        return feedbacks.stream().map(feedback -> new FeedbackInfo(
+                feedback.getTestItem() == null ? null : feedback.getTestItem().getId(),
+                feedback.getContent(),
+                images.getOrDefault(feedback.getId(), List.of()))).toList();
     }
 
     /**

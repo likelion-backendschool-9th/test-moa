@@ -435,6 +435,130 @@ class ParticipationControllerTest {
         }
     }
 
+    @Test
+    @DisplayName("#119-S6 항목과 기타 의견에 이미지 연결")
+    void 항목과_기타_의견에_올린_이미지를_순서대로_연결한다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        try {
+            String first = uploadedUrl(tester, register);
+            String second = uploadedUrl(tester, register);
+            String third = uploadedUrl(tester, register);
+            Map<String, Object> requiredItem = item(required, "밑줄이 보여요");
+            requiredItem.put("imageUrls", List.of(first, second));
+            Map<String, Object> request = body("기타도 있어요", requiredItem, item(optional, "  "));
+            request.put("etcImageUrls", List.of(third));
+
+            JsonNode data = data(submit(tester, register, request).andExpect(status().isCreated()));
+
+            assertThat(data.get("feedbacks")).hasSize(2);
+            assertThat(urls(data.at("/feedbacks/0/imageUrls"))).containsExactly(first, second);
+            assertThat(data.at("/feedbacks/0/testItemId").asLong()).isEqualTo(required.getId());
+            assertThat(urls(data.at("/feedbacks/1/imageUrls"))).containsExactly(third);
+            assertThat(data.at("/feedbacks/1/testItemId").isNull()).isTrue();
+
+            List<FeedbackImage> rows = em.createQuery(
+                            "select i from feedback_images i join fetch i.feedback f where f.register.id = :id order by i.id",
+                            FeedbackImage.class)
+                    .setParameter("id", register.getId()).getResultList();
+            assertThat(rows).extracting(FeedbackImage::getUrl).containsExactly(first, second, third);
+            assertThat(rows.get(0).getFeedback().getId()).isEqualTo(rows.get(1).getFeedback().getId());
+            assertThat(rows.get(0).getFeedback().getTestItem().getId()).isEqualTo(required.getId());
+            assertThat(rows.get(2).getFeedback().getId()).isNotEqualTo(rows.get(0).getFeedback().getId());
+            assertThat(rows.get(2).getFeedback().getTestItem()).isNull();
+        } finally {
+            deleteFeedbackFiles(register.getId());
+        }
+    }
+
+    @Test
+    @DisplayName("#119-S7 이미지 없는 제출")
+    void 이미지_주소_없이_제출하면_피드백마다_빈_배열이다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+
+        JsonNode data = data(submit(tester, register, body(" 앱이 가벼워요 ", item(required, "좋아요"), item(optional, "  ")))
+                .andExpect(status().isCreated()));
+
+        assertThat(data.get("feedbacks")).hasSize(2);
+        assertThat(data.get("feedbacks")).allSatisfy(feedback -> assertThat(urls(feedback.get("imageUrls"))).isEmpty());
+    }
+
+    @Test
+    @DisplayName("#119-S8 장수 초과")
+    void 한_칸에_이미지를_여섯_장_넣으면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        List<String> six = new ArrayList<>();
+        for (int index = 0; index < 6; index++) six.add(ownImageUrl(register.getId()));
+        Map<String, Object> tooMany = item(required, "좋아요");
+        tooMany.put("imageUrls", six);
+
+        submit(tester, register, body(null, tooMany))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields['testItems." + required.getId() + "']").value("이미지는 5장까지 올릴 수 있어요"));
+
+        Map<String, Object> request = body("기타", item(required, "좋아요"));
+        request.put("etcImageUrls", six);
+        submit(tester, register, request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields.etc").value("이미지는 5장까지 올릴 수 있어요"));
+        assertThat(feedbackCount(register)).isZero();
+        assertThat(imageCount(register)).isZero();
+    }
+
+    @Test
+    @DisplayName("#119-S9 내용 없는 칸의 이미지")
+    void 내용을_비운_선택_항목에_이미지를_넣으면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        Map<String, Object> optionalItem = item(optional, "  ");
+        optionalItem.put("imageUrls", List.of(ownImageUrl(register.getId())));
+
+        submit(tester, register, body(null, item(required, "좋아요"), optionalItem))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields['testItems." + optional.getId() + "']").value("내용을 적어야 이미지를 넣을 수 있어요"));
+        assertThat(feedbackCount(register)).isZero();
+    }
+
+    @Test
+    @DisplayName("#119-S10 쓸 수 없는 주소")
+    void 이번_참가의_주소가_아니면_저장하지_않는다() throws Exception {
+        Register register = confirmed(recruitment, tester);
+        Register other = confirmed(recruitment, saveUser());
+        String field = "testItems." + required.getId();
+        List<String> badUrls = List.of(
+                "https://evil.example/a.png",
+                "/api/v1/recruitments/images/" + UUID.randomUUID() + ".png",
+                "/api/v1/tester/participations/" + other.getId() + "/feedbacks/images/" + UUID.randomUUID() + ".png");
+        for (String url : badUrls) {
+            Map<String, Object> requiredItem = item(required, "좋아요");
+            requiredItem.put("imageUrls", List.of(url));
+            submit(tester, register, body(null, requiredItem))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.fields['" + field + "']").value("이미지를 다시 올려 주세요"));
+        }
+        assertThat(feedbackCount(register)).isZero();
+        assertThat(imageCount(register)).isZero();
+    }
+
+    private String uploadedUrl(User user, Register register) throws Exception {
+        JsonNode data = data(upload(user, register.getId(), file("a.png", PNG)).andExpect(status().isOk()));
+        return data.get("url").asText();
+    }
+
+    private static String ownImageUrl(long registerId) {
+        return "/api/v1/tester/participations/" + registerId + "/feedbacks/images/" + UUID.randomUUID() + ".png";
+    }
+
+    private static List<String> urls(JsonNode node) {
+        assertThat(node.isArray()).isTrue();
+        List<String> values = new ArrayList<>();
+        node.forEach(item -> values.add(item.asText()));
+        return values;
+    }
+
+    private long imageCount(Register register) {
+        return em.createQuery("select count(i) from feedback_images i where i.feedback.register.id = :id", Long.class)
+                .setParameter("id", register.getId()).getSingleResult();
+    }
+
     private MockMultipartFile file(String name, byte[] bytes) {
         return new MockMultipartFile("file", name, "application/octet-stream", bytes);
     }

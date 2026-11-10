@@ -61,7 +61,7 @@ export function SanctionPanel({ userKey, sanctions, notice }: { userKey: string;
                     <input type="hidden" name="userKey" value={userKey} />
                     <input type="hidden" name="sanctionKey" value={sanction.id} />
                     <input name="reason" required maxLength={1000} aria-label="해제 사유" placeholder="해제 사유" className={styles.input} />
-                    <PendingButton variant="secondary" size="sm" pendingText="해제하는 중…">
+                    <PendingButton size="sm" pendingText="해제하는 중…">
                       해제
                     </PendingButton>
                   </form>

@@ -162,4 +162,5 @@
 - `FeedbackImage`와 목록 조회(`findByFeedbackIdInOrderByIdAsc`)는 이미 있고, 행을 저장하는 코드는 없다. 운영 데이터를 옮길 일이 없다.
 - 업로드 한도는 Spring `max-file-size 5MB`, `max-request-size 30MB`, 저장소의 nginx 설정 `client_max_body_size 30m`이다. 이슈의 10MB는 지금 값이 아니다. 서버 호스트의 nginx 값은 저장소에 없어 배포 때 확인해야 한다.
 - #57 연결 때 볼 것: `frontend/proxy.ts`의 matcher는 주소에 점이 있으면 건너뛴다. access 쿠키가 만료된 채 `….png` 주소를 바로 열면 토큰 갱신 없이 401이 된다. 페이지 이동을 거치면 먼저 갱신된다.
+- #57 연결 때 볼 것: 5MB 초과(413)는 공용 처리라 `error.fields`의 이름이 `files`다. 형식 오류의 `file`과 다르다.
 - #57 연결 때 볼 것: 개발자 `FeedbackList`는 이미 `<img>`로 그린다. 참여 상세도 `<img>`로 그리면 브라우저 쿠키가 그대로 간다. `next/image`가 이 쿠키를 넘기는지는 확인하지 않았다.

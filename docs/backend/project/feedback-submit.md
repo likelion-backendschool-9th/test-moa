@@ -27,7 +27,7 @@
 - 다른 회원의 참가와 없는 참가는 404다. 비로그인은 401이다
 
 ### 상세 응답
-`id`, `status`, `appliedAt`, `confirmedAt`, `submittedAt`, `payoutAt`, `earnedCredits`, `reward`, `recruitment`(`id`, `title`, `description`, `projectName`, `projectImageUrl`, `status`, `selectionMode`, `softwareType`, `subscription`, `recruitDeadline`, `submitDeadline`), `accessUrl`, `testItems`(`id`, `title`, `description`, `required`, 배치 순서(`sortOrder`, #175)대로이고 같으면 저장 순서), `feedbacks`(`testItemId`, `content`, 기타 의견은 `testItemId`가 null)
+`id`, `status`, `appliedAt`, `confirmedAt`, `submittedAt`, `payoutAt`, `earnedCredits`, `reward`, `recruitment`(`id`, `title`, `description`, `projectName`, `projectImageUrl`, `status`, `selectionMode`, `softwareType`, `subscription`, `recruitDeadline`, `submitDeadline`), `accessUrl`, `testItems`(`id`, `title`, `description`, `required`, 배치 순서(`sortOrder`, #175)대로이고 같으면 저장 순서), `feedbacks`(`testItemId`, `content`, `imageUrls`(올린 순서, 없으면 빈 배열), 기타 의견은 `testItemId`가 null) (고침 #119: 제출한 이미지를 다시 본다)
 
 - `accessUrl`(테스트 접속 링크)은 확정된 참가에만 준다. 대기·미선정·참여 취소는 null이다
 - `reward`는 확정한 참가면 고정한 보상(기본 + 추가), 확정 전이면 지금 기준 금액([README 정한 것 14](README.md#정한-것))이다
@@ -49,11 +49,12 @@
 | `cancelled` 참여 취소 | 참여 취소(`CANCELLED`). **프론트 상태에 아직 없다.** 화면을 연결할 때 프론트에 더한다 |
 
 ### 제출
-본문: `{"items": [{"testItemId": 1, "content": "…"}], "etc": "…"}`
+본문: `{"items": [{"testItemId": 1, "content": "…", "imageUrls": ["…"]}], "etc": "…", "etcImageUrls": ["…"]}` (고침 #119: 칸마다 이미지를 붙인다)
 
 - 확정된 참가가 제출 마감 전에 한 번만 낸다. 모집 마감 전이어도 확정됐으면(선착순) 낼 수 있다
 - 필수 항목은 비울 수 없다. 선택 항목과 기타 의견은 비우면 저장하지 않는다. 앞뒤 공백은 지우고, 공백만 적은 칸은 빈 칸이다
 - 칸마다 500자까지다(요청 값 검사). 이 모집의 항목이 아니거나 같은 항목을 두 번 보내면 400이다
+- `imageUrls`, `etcImageUrls`는 없어도 되고 없으면 빈 목록이다. 값은 [업로드 API](feedback-images.md#api-구성)가 돌려준 이번 참가의 주소이고 칸마다 5장까지다. 내용을 비운 칸에는 넣을 수 없다 (고침 #119: 칸마다 이미지를 붙인다)
 - 모든 행에 같은 제출 시각을 넣는다([#89-S18](entities.md)). 제출하면 상태가 지급 대기가 된다
 - 참가 행을 잠가(`PESSIMISTIC_WRITE`) 두 번 눌러도 한 번만 저장된다
 - 모집 취소(#116)도 취소할 참가 행을 잠근다. 제출과 취소가 겹치면 먼저 잠근 쪽이 끝난 뒤에 다른 쪽이 판단한다. 제출이 먼저면 참가는 확정으로 남고, 취소가 먼저면 제출은 409 `PARTICIPATION_NOT_CONFIRMED`다
@@ -64,6 +65,9 @@
 | 필수 항목이 빔, 아무것도 적지 않음 | 400 | `INVALID_INPUT`, `error.fields`의 `testItems.{항목 id}`에 "피드백을 적어 주세요"(아무것도 없으면 첫 칸, 항목이 없으면 `etc`) |
 | 500자를 넘음 | 400 | `INVALID_INPUT`, `error.fields`의 `items[n].content` 또는 `etc` |
 | 이 모집의 항목이 아님, 같은 항목을 두 번 | 400 | `INVALID_INPUT`, `error.fields`의 `testItems.{항목 id}` |
+| 한 칸에 이미지 6장 이상 (#119) | 400 | `INVALID_INPUT`, 그 칸(`testItems.{항목 id}` 또는 `etc`)에 "이미지는 5장까지 올릴 수 있어요" |
+| 내용을 비운 칸에 이미지 (#119) | 400 | `INVALID_INPUT`, 그 칸에 "내용을 적어야 이미지를 넣을 수 있어요" |
+| 이번 참가의 업로드 주소가 아님 (#119) | 400 | `INVALID_INPUT`, 그 칸에 "이미지를 다시 올려 주세요" |
 | 확정된 참가가 아님 | 409 | `PARTICIPATION_NOT_CONFIRMED` ("참여가 확정된 테스트만 피드백을 낼 수 있어요") |
 | 제출 마감이 지남 | 409 | `FEEDBACK_DEADLINE_PASSED` ("피드백 제출 기한이 지났어요") |
 | 이미 제출함 | 409 | `FEEDBACK_ALREADY_SUBMITTED` ("이미 피드백을 제출했어요") |
@@ -114,7 +118,6 @@
 - 참고: 취소 쪽 참가 목록 잠금을 빼면 피드백을 냈는데 참가가 취소돼 이 테스트가 실패하는 것을 확인했다
 
 ## 범위 밖
-- 피드백 이미지(#119에서 붙인다)
 - 지급 완료일(`paidAt`)과 검토 완료일(`reviewedAt`). 피드백에 그 시각을 저장하는 컬럼이 없다. 72시간 자동 지급과 신고 처리를 만드는 쪽에서 정한다(README 아직 정하지 않은 것 1)
 - 프론트 연결(`getParticipation`, `saveFeedback` 본문 바꾸기)
 

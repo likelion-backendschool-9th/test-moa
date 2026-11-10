@@ -1,5 +1,6 @@
 import { CheckIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge/Badge";
+import { Markdown } from "@/components/ui/Markdown/Markdown";
 import { Card } from "@/components/ui/Card/Card";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
@@ -28,6 +29,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
     ...(recruitment.extraReward !== undefined ? [{ term: "추가 보상", value: `+${formatCredits(recruitment.extraReward)}`, accent: true }] : []),
   ];
   const scheduleFacts: Array<[string, string]> = [
+    ...(project?.ownerNickname ? ([["작성자", project.ownerNickname]] as Array<[string, string]>) : []),
     ["모집 마감", formatDate(recruitment.recruitDeadline)],
     ["피드백 제출 마감", formatDate(recruitment.submitDeadline)],
     ...(detail ? ([["선정 방식", SELECTION_MODE_LABEL[detail.selectionMode]]] as Array<[string, string]>) : []),
@@ -57,7 +59,7 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
           ))}
         </div>
         <h1 className={styles.title}>{detail?.title || recruitment.request}</h1>
-        {detail?.title && <p className={styles.request}>{recruitment.request}</p>}
+        {detail?.title && <Markdown className={styles.request}>{recruitment.request}</Markdown>}
       </header>
 
       <div data-project-body className={styles.layout}>

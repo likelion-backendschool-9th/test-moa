@@ -51,6 +51,7 @@ const toItemImage = (file: File): ItemImage => ({ name: file.name, size: file.si
 export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, baseReward, extraReward }: RecruitmentFormProps) {
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
   const [images, setImages] = useState<ItemImage[]>([]);
+  const [conditions, setConditions] = useState<string[]>(Array.from({ length: 5 }, () => ""));
   const uploaded = useRef(new WeakMap<File, string>());
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     async (previous, data) => {
@@ -142,27 +143,24 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
     <form aria-busy={pending} inert={pending} ref={formRef} action={formAction} noValidate className={styles.root}>
       <FormSection title="모집글">
         <TextField name="title" label="모집글 제목" defaultValue={values.title} error={errors.title} hint={`${RECRUITMENT_LIMIT.titleLength}자까지`} />
-        <TextField name="request" label="모집 설명" multiline defaultValue={values.request} error={errors.request} hint="테스터에게 해 달라고 할 일을 200자까지 적어 주세요" />
+        <TextField name="request" label="모집 설명" multiline defaultValue={values.request} error={errors.request} hint={`테스터에게 해 달라고 할 일을 ${RECRUITMENT_LIMIT.requestLength}자까지 적어 주세요. 마크다운을 쓸 수 있어요`} />
         <fieldset className={styles.fieldset} aria-describedby={errors.softwareType ? "field-softwareType-error" : undefined}>
-          <legend className={styles.legend}>유형</legend>
+          <legend className={styles.legend}>유형 (여러 개 고를 수 있어요)</legend>
           <div className={styles.box}>
             {SOFTWARE_TYPES.map((type) => {
-              const ready = type === "web";
               return (
                 <label
                   key={type}
                   className={styles.root2}
                 >
                   <input
-                    type="radio"
-                    name="softwareType"
+                    type="checkbox"
+                    name="softwareTypes"
                     value={type}
-                    defaultChecked={(values.softwareType || "web") === type}
-                    disabled={!ready}
+                    defaultChecked={(values.softwareType ?? "web").split(",").includes(type)}
                     className={styles.input}
                   />
                   {SOFTWARE_TYPE_LABEL[type]}
-                  {!ready && <span className={styles.label}>준비 중</span>}
                 </label>
               );
             })}
@@ -183,14 +181,26 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
           error={errors.accessUrl}
           hint="테스터가 이 주소로 접속해요"
         />
-        <TextField
-          name="conditions"
-          label="모집 조건 (선택)"
-          multiline
-          defaultValue={values.conditions}
-          error={errors.conditions}
-          hint={`필요한 경험, 관심사, 사용 환경을 적어 주세요. ${RECRUITMENT_LIMIT.conditionsLength}자까지`}
-        />
+        {/* 칸마다 조건 하나. 보낼 때는 줄바꿈으로 이어 한 값(conditions)으로 보낸다 */}
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>모집 조건 (선택)</legend>
+          {conditions.map((condition, index) => (
+            <TextField
+              key={index}
+              name="conditionItem"
+              id={`field-conditionItem-${index}`}
+              label={`조건 ${index + 1}`}
+              value={condition}
+              onChange={(event) => setConditions((prev) => prev.map((item, i) => (i === index ? event.target.value : item)))}
+              error={index === 0 ? errors.conditions : undefined}
+              hint={index === 0 ? `필요한 경험, 관심사, 사용 환경을 한 칸에 하나씩 적어 주세요. 전체 ${RECRUITMENT_LIMIT.conditionsLength}자까지` : undefined}
+            />
+          ))}
+          <input type="hidden" name="conditions" value={conditions.map((item) => item.trim()).filter(Boolean).join("\n")} />
+          <Button type="button" size="sm" variant="secondary" onClick={() => setConditions((prev) => [...prev, ""])}>
+            조건 추가
+          </Button>
+        </fieldset>
         <FileField
           name="recruitmentImages"
           label="모집글 이미지 (선택)"

@@ -1,0 +1,52 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.root h1,
+.root h2,
+.root h3,
+.root h4 {
+  font-weight: 700;
+  line-height: var(--leading-relaxed);
+}
+
+.root h1 { font-size: var(--text-xl); }
+.root h2 { font-size: var(--text-lg); }
+
+/* 엔터 한 번도 줄바꿈으로 보인다(예전에 한 줄마다 문단으로 나누던 설명과 같은 모양) */
+.root p { white-space: pre-line; }
+
+.root ul,
+.root ol {
+  padding-left: var(--space-5);
+}
+
+.root ul { list-style: disc; }
+.root ol { list-style: decimal; }
+
+.root a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.root code {
+  border-radius: var(--radius-md);
+  background-color: var(--surface-strong);
+  padding: 0 var(--space-1);
+}
+
+.root pre {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-strong);
+  padding: var(--space-3);
+}
+
+.root blockquote {
+  border-left: 3px solid var(--line);
+  padding-left: var(--space-3);
+  color: var(--text-muted);
+}

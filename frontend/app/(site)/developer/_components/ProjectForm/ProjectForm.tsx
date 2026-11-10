@@ -112,7 +112,7 @@ export function ProjectForm({
           multiline
           defaultValue={values.description}
           error={state.errors.description}
-          hint={`어떤 서비스인지, 이번에 무엇을 보고 싶은지 적어 주세요. ${PROJECT_MEDIA_LIMIT.descriptionLength}자까지`}
+          hint={`어떤 서비스인지, 이번에 무엇을 보고 싶은지 적어 주세요. ${PROJECT_MEDIA_LIMIT.descriptionLength}자까지. 마크다운을 쓸 수 있어요`}
         />
 
         <FileField

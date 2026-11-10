@@ -16,7 +16,7 @@ public record RecruitmentUpdateRequest(
         String title,
 
         @Pattern(regexp = "(?s).*\\S.*", message = "모집 설명을 적어 주세요")
-        @Size(max = 200, message = "모집 설명은 200자까지 적을 수 있어요")
+        @Size(max = 5000, message = "모집 설명은 5000자까지 적을 수 있어요")
         String description,
 
         @Pattern(regexp = "^https?://\\S+$", message = "http:// 또는 https://로 시작하는 주소를 적어 주세요")

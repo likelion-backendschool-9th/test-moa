@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { projectEditPath, recruitmentCreatePath, recruitmentManagePath } from "@/features/project/paths";
 import { Badge } from "@/components/ui/Badge/Badge";
-import { Button } from "@/components/ui/Button/Button";
 import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
@@ -147,12 +146,11 @@ export function ProjectRecruitmentList({ projectKey, recruitments }: { projectKe
                     <span className={`${styles.proMark} ${styles.proMarkSoft}`}>PRO</span>
                   </LinkButton>
                 ) : (
-                  /* 동작은 아직 정하지 않았다 (#64) */
-                  <Button size="sm">
+                  <LinkButton href={`${managePath}?tab=analytics`} size="sm">
                     <span className={styles.srOnly}>{title} </span>
                     분석하기
                     <span className={`${styles.proMark} ${styles.proMarkOnAccent}`}>PRO</span>
-                  </Button>
+                  </LinkButton>
                 )}
                 <Link href={`/recruitments/${item.slug}`} className={styles.recruitmentPublicLink}>
                   공개 페이지 보기

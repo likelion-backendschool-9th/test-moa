@@ -53,6 +53,7 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
       <div className={grid ? styles.boxGrid : styles.boxNotGrid}>
         <RecruitmentThumb
           recruitment={recruitment}
+          showImage
           stamp={status === "paid" ? "지급 완료" : undefined}
           /* 홈 모집 카드와 같은 배지(#138). 금액은 보상 줄에 있다 */
           badge={recruitment.extraReward !== undefined && <Badge tone="accentSolid">추가 보상</Badge>}

@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container/Container";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { ProjectList, ProjectListSkeleton } from "@/app/(site)/developer/projects/_components/ProjectList/ProjectList";
 import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice/SavedNotice";
-import { OverviewStats, TodoList } from "@/app/(site)/developer/projects/_components/ProjectDashboard/ProjectDashboard";
+import { OverviewStats } from "@/app/(site)/developer/projects/_components/ProjectDashboard/ProjectDashboard";
 import { getMyDashboard } from "@/features/recruitment/api";
 import styles from "./page.module.css";
 
@@ -27,13 +27,12 @@ export default function MyProjectsPage({ searchParams }: PageProps<"/developer/p
   );
 }
 
-/* 위에서부터 지금 확인할 일 → 전체 현황 → 프로젝트 카드. 프로젝트가 없으면 빈 상태만 보여 준다 */
+/* 위에서부터 전체 현황 → 프로젝트 카드. 프로젝트가 없으면 빈 상태만 보여 준다 */
 async function ProjectsSlot({ searchParams }: Pick<PageProps<"/developer/projects">, "searchParams">) {
-  const [{ projects, todos, overview }, { notice }] = await Promise.all([getMyDashboard(PROJECTS_PATH), searchParams]);
+  const [{ projects, overview }, { notice }] = await Promise.all([getMyDashboard(PROJECTS_PATH), searchParams]);
   return (
     <div className={styles.projectsSlot}>
       <SavedNotice show={notice === "saved"} />
-      {projects.length > 0 && <TodoList todos={todos} />}
       {projects.length > 0 && <OverviewStats overview={overview} />}
       <section aria-labelledby="projects-heading" className={styles.projectsSlotSection}>
         {projects.length > 0 && (

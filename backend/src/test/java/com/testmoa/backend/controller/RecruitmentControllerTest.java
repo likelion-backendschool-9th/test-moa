@@ -227,7 +227,7 @@ class RecruitmentControllerTest {
         em.persist(project);
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
         Map<String, Object> body = Map.of(
-                "projectId", project.getId(), "title", "북로그 1차", "description", "써 봐 주세요", "softwareType", "web",
+                "projectId", project.getId(), "title", "북로그 1차", "description", "써 봐 주세요", "softwareTypes", List.of("web"),
                 "selectionMode", "firstCome", "accessUrl", "https://booklog.example.com",
                 "recruitDeadline", today.plusDays(3).toString(), "submitDeadline", today.plusDays(9).toString(),
                 "testItems", List.of(Map.of("title", "책 검색하기", "required", true)));

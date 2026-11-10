@@ -136,7 +136,7 @@ class ProjectRecruitmentRollbackTest {
 
     private RecruitmentCreateRequest request(Project project, List<String> imageUrls) {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        return new RecruitmentCreateRequest(project.getId(), "모집", "설명", "web", "firstCome", "https://example.com", null,
+        return new RecruitmentCreateRequest(project.getId(), "모집", "설명", List.of("web"), "firstCome", "https://example.com", null,
                 today.plusDays(1), today.plusDays(2), List.of(new RecruitmentCreateRequest.TestItemRequest("항목", null, true, null)),
                 imageUrls);
     }

@@ -225,6 +225,8 @@ function PostSection({ recruitment, detail, readOnly }: { recruitment: Props["re
 function TermsSection({ recruitment, detail, locks, canCancel }: { recruitment: Props["recruitment"]; detail: RecruitmentDetail; locks: RecruitmentEditLocks; canCancel: boolean }) {
   const { state, formAction, pending, handleSubmit } = useSectionForm(recruitment.slug, "terms");
   const { errors } = state;
+  /* 조건은 칸마다 하나. 보낼 때는 줄바꿈으로 이어 한 값(conditions)으로 보낸다 */
+  const [conditions, setConditions] = useState<string[]>(() => detail.conditions.split("\n").filter((line) => line.trim()));
   const recruitDeadline = seoulDate(new Date(recruitment.recruitDeadline));
   const submitDeadline = seoulDate(new Date(recruitment.submitDeadline));
   const reward = `기본 ${formatCredits(recruitment.baseReward)}${recruitment.extraReward !== undefined ? ` · 추가 ${formatCredits(recruitment.extraReward)}` : ""}`;
@@ -253,7 +255,29 @@ function TermsSection({ recruitment, detail, locks, canCancel }: { recruitment: 
       <form action={formAction} onSubmit={handleSubmit} noValidate className={styles.form}>
         <fieldset disabled={locks.readOnly} className={styles.fields}>
           {!detail.unavailable && (
-            <Field name="conditions" label="모집 조건" multiline defaultValue={detail.conditions} max={RECRUITMENT_LIMIT.conditionsLength} error={errors.conditions} />
+            <fieldset className={styles.group}>
+              <legend className={styles.label}>모집 조건</legend>
+              {conditions.map((condition, index) => (
+                <div key={index} className={styles.conditionRow}>
+                  <Field
+                    name="conditionItem"
+                    id={`field-conditionItem-${index}`}
+                    label={`조건 ${index + 1}`}
+                    value={condition}
+                    onChange={(event) => setConditions((prev) => prev.map((item, i) => (i === index ? event.target.value : item)))}
+                    error={index === 0 ? errors.conditions : undefined}
+                  />
+                  <Button type="button" size="sm" variant="secondary" aria-label={`조건 ${index + 1} 삭제`} onClick={() => setConditions((prev) => prev.filter((_, i) => i !== index))}>
+                    삭제
+                  </Button>
+                </div>
+              ))}
+              <input type="hidden" name="conditions" value={conditions.map((item) => item.trim()).filter(Boolean).join("\n")} />
+              <Button type="button" size="sm" variant="secondary" onClick={() => setConditions((prev) => [...prev, ""])}>
+                조건 추가
+              </Button>
+              <p className={styles.hint}>전체 {RECRUITMENT_LIMIT.conditionsLength}자까지</p>
+            </fieldset>
           )}
           <fieldset className={styles.group} aria-describedby={errors.selectionMode ? "field-selectionMode-error" : undefined}>
             <legend className={styles.label}>

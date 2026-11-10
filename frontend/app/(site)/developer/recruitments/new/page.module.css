@@ -1,13 +1,13 @@
 .newRecruitmentPage {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-6);
   padding-block: var(--space-10);
 }
 
 .newRecruitmentPageTitle {
-  font-size: var(--text-4xl);
-  line-height: var(--text-4xl-leading);
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-leading);
   font-weight: 800;
   letter-spacing: -.035em;
 }

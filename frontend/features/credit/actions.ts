@@ -54,7 +54,9 @@ function serverErrors({ message, fields }: { message: string; fields?: Record<st
     const field = SERVER_FIELD[name];
     if (field) errors[field] = text;
   }
-  if (Object.keys(errors).length === 0) errors.form = message;
+  /* 화면 칸에 맞는 서버 칸이 없거나, 맞지 않는 칸이 섞여 있으면 그 문구가 어디에도 안 보이지 않게 폼 위쪽에도 보인다 */
+  const unmatched = Object.keys(fields ?? {}).some((name) => !SERVER_FIELD[name]);
+  if (Object.keys(errors).length === 0 || unmatched) errors.form = message;
   return errors;
 }
 

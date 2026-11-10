@@ -23,6 +23,7 @@
 - 주소 변수는 모집글 id다([README 정한 것 7](README.md#정한-것)). 프론트 `/recruitments/:slug`의 slug 자리에 같은 id를 넣는다
 - 로그인 없이 부를 수 있다. `SecurityConfig`에서 이 주소의 `GET`만 열고, 같은 주소 아래 지원(#114) 같은 쓰기 요청은 로그인이 필요하다
 - 토큰을 보내면 회원으로 본다. 토큰이 잘못됐거나 만료됐으면 다른 API처럼 401이다. 프론트 proxy가 만료 전에 갱신한다
+- 응답에 `softwareTypes`(유형 배열)와 `project.ownerNickname`(작성자 닉네임)이 있다. `softwareType`은 첫 번째 유형이라 예전 응답과 같다(고침 #251)
 - 접속 링크(`accessUrl`)는 참여가 확정된 테스터에게만 안내하므로 응답에 넣지 않는다
 - 상태는 마감일로 계산한다([README 정한 것 11](README.md#정한-것)). 계산은 엔티티 `Recruitment.phaseAt(now)`가 하고, `RecruitmentNames`는 그 결과를 프론트 이름으로 바꾸기만 한다(리뷰 반영: 처음에는 `RecruitmentNames.status`가 계산과 이름 바꾸기를 함께 했다). 저장 상태가 `RECRUITING`이 아니면 마감일과 상관없이 종료다. 상태와 선정 방식, 유형은 #92와 같은 프론트 이름이다(`recruiting`, `testing`, `closed` / `firstCome`, `selection` / `web`). 취소된 모집은 404라 `cancelled`는 오지 않는다
 - 이미지: 프로젝트 대표 이미지(`project.imageUrl`), 모집글 이미지(`imageUrls`, `sortOrder` 순), 테스트 항목 이미지(`testItems[].imageUrls`, `sortOrder` 순)를 따로 준다. 상세 이미지 띠는 프론트가 대표 이미지 다음에 모집글 이미지를 잇는다(#124)

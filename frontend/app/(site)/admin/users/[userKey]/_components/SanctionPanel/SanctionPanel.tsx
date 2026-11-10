@@ -5,7 +5,7 @@ import { releaseUserSanction, sanctionUser } from "@/features/member/actions";
 import type { AdminSanction } from "@/features/member/admin";
 import { RESTRICTION_LABEL, SANCTION_TYPE_LABEL, type Restriction, type SanctionType } from "@/features/member/types";
 import { AdminPanel } from "@/app/(site)/admin/_components/AdminPanel/AdminPanel";
-import { PendingButton } from "./PendingButton";
+import { PendingButton } from "@/app/(site)/admin/users/[userKey]/_components/PendingButton/PendingButton";
 import styles from "./SanctionPanel.module.css";
 
 /* 주소에는 키만 두고 문구는 여기서 고른다. 모르는 키는 무시한다 */

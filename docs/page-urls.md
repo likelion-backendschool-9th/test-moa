@@ -22,7 +22,6 @@
 | --- | --- | --- |
 | 모집 목록 | `/recruitments` | 확정 |
 | 모집 게시글 상세 | `/recruitments/:slug` | 확정 (`docs/frontend/project/recruitment-detail.md`) |
-| 테스트 지원 | `/recruitments/:slug/apply` | 우선 채택 |
 
 ## 참여 테스트(테스터) (고침 #101: 역할 경로로 이동)
 

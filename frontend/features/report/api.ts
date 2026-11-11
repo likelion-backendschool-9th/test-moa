@@ -94,7 +94,7 @@ async function getBackendReport(reportKey: string): Promise<{ now: Date; report:
 /** 내가 한 신고, 최신순(#85). 실제 로그인에서만 부른다 */
 export async function getMyReports(): Promise<MyReport[]> {
   const result = await backendFetch<MyReport[]>("/api/v1/reports/me");
-  /* 장애를 "신고한 적 없음"으로 보이지 않게 실패는 오류 화면으로 올린다 */
+  /* 장애를 "신고한 적 없음"으로 보이지 않게 실패는 예외로 던지고, 마이페이지는 그 카드에서 알린다(#86-R8) */
   if (!result.ok) throw new Error(`내 신고를 읽지 못했어요: ${result.code}`);
   return result.data;
 }

@@ -200,7 +200,7 @@ export async function saveProfile(name: string, nickname: string): Promise<Backe
 /** 내가 받은 경고·정지, 최근 순(#86). 실제 로그인에서만 부른다 */
 export async function getMySanctions(): Promise<MySanction[]> {
   const result = await backendFetch<MySanction[]>("/api/v1/sanctions/me");
-  /* 장애를 "받은 제재가 없어요"로 보이지 않게 실패는 오류 화면으로 올린다 */
+  /* 장애를 "받은 제재가 없어요"로 보이지 않게 실패는 예외로 던지고, 마이페이지는 그 카드에서 알린다(#86-R8) */
   if (!result.ok) throw new Error(`받은 제재를 읽지 못했어요: ${result.code}`);
   return result.data;
 }

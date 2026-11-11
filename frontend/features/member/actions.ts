@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  createSanction,
   getLeaveNotice,
   getProfile,
   isCurrentPassword,
   isNicknameTaken,
+  isUserKey,
+  releaseSanction,
   savePassword,
   saveProfile,
   unlinkAccount,
@@ -16,6 +19,8 @@ import {
 import { LEAVE_CONFIRM_TEXT, LEAVE_PENDING_WITHDRAWAL } from "@/features/member/types";
 import { DEMO_ROLE_COOKIE } from "@/features/session/session";
 import { clearTokens } from "@/lib/backend";
+import { RESTRICTION_LABEL, SANCTION_TYPE_LABEL, type Restriction, type SanctionType } from "@/features/member/types";
+import { assertAdmin } from "@/features/session/guard";
 import { isBackendAuth } from "@/lib/backend";
 import { validateName, validateNewPassword, validateNickname } from "@/features/member/validation";
 import type { FormState } from "@/lib/form";
@@ -102,6 +107,39 @@ export async function unlinkSocialAccount(formData: FormData): Promise<void> {
   if (!isBackendAuth || (provider !== "google" && provider !== "github")) redirect(PATH);
   const result = await unlinkAccount(provider);
   redirect(result.ok ? `${PATH}?unlinked=${provider}` : `${PATH}?unlinkError=${result.code}`);
+}
+
+/*
+ * 운영자 제재·해제(#86, 실제 로그인에서만). Server Action은 화면 밖에서도 불릴 수 있어서 권한을 다시 확인한다.
+ * 결과는 회원 상세 주소의 sanction(키)으로 보인다. 문구는 화면에서 고른다
+ */
+export async function sanctionUser(formData: FormData): Promise<void> {
+  await assertAdmin();
+  const userKey = String(formData.get("userKey") ?? "");
+  if (!isBackendAuth || !isUserKey(userKey)) redirect("/admin/users");
+  const back = `/admin/users/${userKey}`;
+  const type = String(formData.get("type") ?? "");
+  if (!Object.hasOwn(SANCTION_TYPE_LABEL, type)) redirect(`${back}?sanction=invalid`);
+  const restrictions = formData.getAll("restrictions").map(String).filter((r) => Object.hasOwn(RESTRICTION_LABEL, r));
+  const days = Number(formData.get("days"));
+  const result = await createSanction(userKey, {
+    type: type as SanctionType,
+    days: type === "SUSPENSION" && Number.isInteger(days) && days > 0 ? days : undefined,
+    restrictions: type === "WARNING" ? [] : (restrictions as Restriction[]),
+    reason: String(formData.get("reason") ?? "").trim(),
+  });
+  const failed = !result.ok && result.code === "SANCTION_DUPLICATE" ? "duplicate" : "invalid";
+  redirect(`${back}?sanction=${result.ok ? "created" : failed}`);
+}
+
+export async function releaseUserSanction(formData: FormData): Promise<void> {
+  await assertAdmin();
+  const userKey = String(formData.get("userKey") ?? "");
+  const sanctionKey = String(formData.get("sanctionKey") ?? "");
+  if (!isBackendAuth || !isUserKey(userKey) || !/^[1-9][0-9]{0,18}$/.test(sanctionKey)) redirect("/admin/users");
+  const result = await releaseSanction(sanctionKey, String(formData.get("reason") ?? "").trim());
+  const failed = !result.ok && result.code === "SANCTION_NOT_ACTIVE" ? "inactive" : "invalid";
+  redirect(`/admin/users/${userKey}?sanction=${result.ok ? "released" : failed}`);
 }
 
 /**

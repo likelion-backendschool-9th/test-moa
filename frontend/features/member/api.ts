@@ -2,11 +2,12 @@ import { buildMyPageSummary, buildUsers, DEMO_PASSWORD, DEMO_PROFILES } from "@/
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
 import { creditDataFor } from "@/features/credit/api";
 import type { UserDetail, UserFilter, UserSummary } from "@/features/member/admin";
-import type { LeaveNotice, LinkedAccountsInfo, LoginProvider, MyPageSummary, Profile, Todo } from "@/features/member/types";
+import type { LeaveNotice, LinkedAccountsInfo, LoginProvider, MyPageSummary, MySanction, Profile, Restriction, SanctionType, Todo } from "@/features/member/types";
 import { totalCredits } from "@/features/credit/types";
 import { loadReports as loadAll } from "@/features/report/api";
 import type { Report } from "@/features/report/types";
-import { requireMember } from "@/features/session/guard";
+import { assertAdmin, requireMember } from "@/features/session/guard";
+import { type AdminUserResponse, toUserDetail, toUserSummary } from "@/features/member/backend-map";
 import type { Role } from "@/features/session/session";
 import { subscriptionForGlance } from "@/features/subscription/api";
 import { type BackendResult, backendFetch, isBackendAuth } from "@/lib/backend";
@@ -60,8 +61,9 @@ export function getDemoAccounts(): { accounts: DemoAccount[]; password: string }
 /** 상세 주소의 회원 키 목록. 신고·출금 키와 같이 목업에서 뽑아 두어, 쿠키를 읽기 전에 없는 회원인지 안다 */
 const USER_KEYS = buildUsers(new Date(0)).map((user) => user.id);
 
+/** 실제 로그인은 회원 id(숫자) */
 export function isUserKey(userKey: string) {
-  return USER_KEYS.includes(userKey);
+  return isBackendAuth ? /^[1-9][0-9]{0,18}$/.test(userKey) : USER_KEYS.includes(userKey);
 }
 
 export function getUserKeys() {
@@ -79,6 +81,7 @@ const reportsFor = (reports: Report[], userKey: string) => reports.filter((repor
 
 /** 최근 가입 순서. 필터와 닉네임 검색(부분 일치)을 함께 쓸 수 있다 */
 export async function getUsers(filter: UserFilter, query: string): Promise<UserSummary[]> {
+  if (isBackendAuth) return getBackendUsers(filter, query);
   const { users, reports } = await loadUsersAndReports();
   return users
     .map((user) => {
@@ -96,6 +99,7 @@ export async function getUsers(filter: UserFilter, query: string): Promise<UserS
 }
 
 export async function getUser(userKey: string): Promise<{ now: Date; user: UserDetail | null }> {
+  if (isBackendAuth) return getBackendUser(userKey);
   const { now, users, reports } = await loadUsersAndReports();
   const user = users.find((item) => item.id === userKey);
   if (!user) return { now, user: null };
@@ -104,6 +108,42 @@ export async function getUser(userKey: string): Promise<{ now: Date; user: UserD
     .filter((report) => report.review?.decision === "upheld")
     .sort((a, b) => b.review!.processedAt.localeCompare(a.review!.processedAt));
   return { now, user: { ...user, sanctions, receivedReports } };
+}
+
+/* ---- 실제 로그인(AUTH_MODE=backend): 운영자 회원 관리·제재(#86) ---- */
+
+async function getBackendUsers(filter: UserFilter, query: string): Promise<UserSummary[]> {
+  await assertAdmin();
+  await connection();
+  const params = new URLSearchParams({ filter });
+  if (query) params.set("q", query);
+  const result = await backendFetch<AdminUserResponse[]>(`/api/v1/admin/users?${params}`);
+  /* 백엔드 장애를 "회원 없음"으로 보이지 않게 실패는 오류 화면으로 올린다 */
+  if (!result.ok) throw new Error(`회원 목록을 읽지 못했어요: ${result.code}`);
+  return result.data.map(toUserSummary);
+}
+
+async function getBackendUser(userKey: string): Promise<{ now: Date; user: UserDetail | null }> {
+  await assertAdmin();
+  await connection();
+  const result = await backendFetch<AdminUserResponse>(`/api/v1/admin/users/${userKey}`);
+  /* 없는 회원(404)만 "찾을 수 없어요"로 보이고, 그 밖의 실패는 오류 화면으로 올린다 */
+  if (!result.ok && result.status !== 404) throw new Error(`회원을 읽지 못했어요: ${result.code}`);
+  return { now: new Date(), user: result.ok ? toUserDetail(result.data) : null };
+}
+
+export type SanctionInput = { type: SanctionType; days?: number; restrictions: Restriction[]; reason: string };
+
+/** 제재. 종류·기간·막을 기능의 조합은 백엔드가 검사한다(400) */
+export async function createSanction(userKey: string, input: SanctionInput): Promise<BackendResult<unknown>> {
+  await assertAdmin();
+  return backendFetch(`/api/v1/admin/users/${userKey}/sanctions`, { method: "POST", body: input });
+}
+
+/** 제재 해제. 이미 풀렸거나 끝난 제재는 409 SANCTION_NOT_ACTIVE */
+export async function releaseSanction(sanctionKey: string, reason: string): Promise<BackendResult<unknown>> {
+  await assertAdmin();
+  return backendFetch(`/api/v1/admin/sanctions/${sanctionKey}/release`, { method: "POST", body: { reason } });
 }
 
 /*
@@ -155,6 +195,14 @@ async function getBackendProfile(): Promise<Profile> {
 /** 이름·닉네임 저장. 실패하면 백엔드의 칸별 문구(name, nickname)를 그대로 돌려준다 */
 export async function saveProfile(name: string, nickname: string): Promise<BackendResult<unknown>> {
   return backendFetch("/api/users/me", { method: "PATCH", body: { name, nickname } });
+}
+
+/** 내가 받은 경고·정지, 최근 순(#86). 실제 로그인에서만 부른다 */
+export async function getMySanctions(): Promise<MySanction[]> {
+  const result = await backendFetch<MySanction[]>("/api/v1/sanctions/me");
+  /* 장애를 "받은 제재가 없어요"로 보이지 않게 실패는 예외로 던지고, 마이페이지는 그 카드에서 알린다(#86-R8) */
+  if (!result.ok) throw new Error(`받은 제재를 읽지 못했어요: ${result.code}`);
+  return result.data;
 }
 
 /** 탈퇴 확인 창의 안내(#84). 비로그인이면 로그인으로 보낸다. 크레딧은 요청 시각 기준이라 미리 렌더링하지 않는다 */

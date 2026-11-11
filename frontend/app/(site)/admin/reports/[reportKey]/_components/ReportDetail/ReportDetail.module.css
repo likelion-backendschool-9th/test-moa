@@ -81,8 +81,67 @@
   white-space: pre-line;
 }
 
-.button {
-  align-self: flex-start;
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.count {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.evidences {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+}
+
+.thumb,
+.fileIcon {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  background-color: var(--surface-strong);
+  object-fit: cover;
+}
+
+.fileIcon {
+  display: grid;
+  place-items: center;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.evidenceName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.evidenceSize {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) {
+  .evidence:hover .evidenceName {
+    text-decoration: underline;
+  }
 }
 
 .infoLabel {

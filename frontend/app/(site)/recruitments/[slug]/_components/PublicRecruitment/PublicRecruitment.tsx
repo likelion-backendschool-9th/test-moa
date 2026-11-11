@@ -2,6 +2,7 @@ import { CheckIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { Markdown } from "@/components/ui/Markdown/Markdown";
 import { Card } from "@/components/ui/Card/Card";
+import { ReportRecruitmentButton } from "@/app/(site)/recruitments/[slug]/_components/ReportRecruitmentButton/ReportRecruitmentButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { getApplyBlockedMessage, SOFTWARE_TYPE_LABEL, type SelectionMode } from "@/features/recruitment/types";
 import { cn } from "@/lib/cn";
@@ -26,7 +27,7 @@ const SELECTION_HINT: Record<SelectionMode, string> = {
  * 요약은 보상을 크게, 일정과 선정 방식을 작게 두어 먼저 볼 숫자가 드러나게 한다.
  * 접속 링크는 참여가 확정된 테스터에게만 안내하므로 보여 주지 않는다.
  */
-export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
+export function PublicRecruitment({ post, canReport = false }: { post: PublicRecruitmentView; canReport?: boolean }) {
   const { recruitment, detail, project, status, now } = post;
   const blockedMessage = getApplyBlockedMessage(status, post.myRegisterStatus);
   const keyFacts: Array<{ term: string; value: string; accent?: boolean }> = [
@@ -94,7 +95,10 @@ export function PublicRecruitment({ post }: { post: PublicRecruitmentView }) {
               </div>
             ))}
           </dl>
-          <ApplyForm slug={recruitment.slug} hint={SELECTION_HINT[detail?.selectionMode ?? "firstCome"]} blockedMessage={blockedMessage} />
+          <div className={styles.applyBox}>
+            <ApplyForm slug={recruitment.slug} hint={SELECTION_HINT[detail?.selectionMode ?? "firstCome"]} blockedMessage={blockedMessage} />
+            {canReport && <ReportRecruitmentButton recruitmentKey={recruitment.slug} projectName={recruitment.projectName} />}
+          </div>
         </Card>
 
         <div className={styles.box3}>

@@ -379,7 +379,7 @@ async function readPublicRecruitment(slug: string): Promise<PublicRecruitmentDat
 
 /** 테스트에 지원한다. 마감·자기 모집·중복 지원은 서버가 거절한 이유를 그대로 보여 준다 */
 export async function submitApplication(slug: string): Promise<ApplyState> {
-  const path = `/recruitments/${slug}/apply`;
+  const path = `/recruitments/${slug}`;
   await requireRole(path);
   if (!isBackendAuth) return { status: "error", message: "지금은 지원할 수 없어요" };
   if (!isBackendId(slug)) notFound();

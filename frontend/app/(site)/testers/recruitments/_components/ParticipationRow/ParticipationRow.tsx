@@ -34,7 +34,7 @@ function actionOf(item: ParticipationItem) {
 }
 
 /**
- * 참여 행. 활자 썸네일 → 요청 문구 → 상태 → 날짜 → 보상 → 동작 순서로 고정한다.
+ * 참여 카드. 이미지 → 상태(라벨) → 요청 문구(제목) → 날짜·보상(설명) → 동작 순서로 고정한다.
  * 리스트는 lg 이상에서 썸네일 | 내용 | 동작 한 줄, 그보다 좁으면 위아래로 쌓인다.
  * 그리드는 항상 위아래로 쌓고, 내용이 남는 높이를 채워 같은 줄 카드의 동작 버튼 위치를 맞춘다.
  */
@@ -54,13 +54,13 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
         <RecruitmentThumb
           recruitment={recruitment}
           showImage
+          inset
           stamp={status === "paid" ? "지급 완료" : undefined}
           /* 홈 모집 카드와 같은 배지(#138). 금액은 보상 줄에 있다 */
           badge={recruitment.extraReward !== undefined && <Badge tone="accentSolid">추가 보상</Badge>}
         />
       </div>
       <div className={styles.box}>
-        <p className={styles.request}>{recruitment.request}</p>
         <p className={styles.text}>
           <Badge tone={ENDED.includes(status) ? "muted" : "neutral"}>{STATUS_LABEL[status]}</Badge>
           {status === "beforeSubmit" && (
@@ -70,6 +70,7 @@ export function ParticipationRow({ item, view = "list", now }: { item: Participa
           )}
           {status === "paid" && <span className={styles.label}>+{formatCredits(item.earnedCredits)}</span>}
         </p>
+        <p className={styles.request}>{recruitment.request}</p>
         <dl className={styles.list}>
           <div>
             <dt className={styles.label2}>{keyDate.label}</dt>

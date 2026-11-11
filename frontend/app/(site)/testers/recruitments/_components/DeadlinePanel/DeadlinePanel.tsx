@@ -11,8 +11,11 @@ import styles from "./DeadlinePanel.module.css";
  * 내가 피드백을 제출해야 하는 참여의 마감. 왼쪽은 마감 캘린더, 오른쪽은 마감이 가까운 순서의 목록이고 좁으면 위아래로 쌓인다.
  * 이 화면의 주 버튼(강조색)은 목록 맨 위 하나뿐이고 나머지는 보조 버튼이다.
  */
-export function DeadlinePanel({ items, now }: { items: ParticipationItem[]; now: Date }) {
-  const deadlines = items.map((item) => ({ day: seoulDayKey(item.recruitment.submitDeadline), name: item.recruitment.projectName }));
+export function DeadlinePanel({ items, calendarItems, now }: { items: ParticipationItem[]; calendarItems: ParticipationItem[]; now: Date }) {
+  /* 피드백을 낸 참여와 마감이 지난 참여는 회색, 아직 낼 수 있는 참여는 초록으로 달력에 표시한다. 그 밖의 상태(취소 등)는 마감 일정이 아니다 */
+  const deadlines = calendarItems
+    .filter((item) => item.submittedAt || item.status === "beforeSubmit" || item.status === "incomplete")
+    .map((item) => ({ day: seoulDayKey(item.recruitment.submitDeadline), name: item.recruitment.projectName, submitted: Boolean(item.submittedAt) }));
   return (
     <div className={styles.layout}>
       <Card as="section" aria-labelledby="deadline-calendar-heading" className={styles.section}>

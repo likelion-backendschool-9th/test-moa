@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { cn } from "@/lib/cn";
 import type { ParticipationView } from "@/features/participation/types";
-import { ParticipationListFrame } from "../ParticipationListFrame/ParticipationListFrame";
+import { ParticipationListFrame } from "@/features/participation/components/ParticipationListFrame/ParticipationListFrame";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./ParticipationSkeleton.module.css";
 

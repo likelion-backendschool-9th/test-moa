@@ -8,8 +8,8 @@ import {
   type ParticipationView,
 } from "@/features/participation/types";
 import { ParticipationRow } from "../ParticipationRow/ParticipationRow";
-import { ParticipationViewToggle } from "../ParticipationViewToggle/ParticipationViewToggle";
-import { ParticipationListFrame } from "../ParticipationListFrame/ParticipationListFrame";
+import { ParticipationViewToggle } from "@/features/participation/components/ParticipationViewToggle/ParticipationViewToggle";
+import { ParticipationListFrame } from "@/features/participation/components/ParticipationListFrame/ParticipationListFrame";
 import styles from "./ParticipationList.module.css";
 
 const EMPTY: Record<ParticipationTab, { title: string; description: string }> = {

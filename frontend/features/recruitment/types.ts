@@ -731,6 +731,11 @@ export function seoulDate(now: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(now);
 }
 
+/** "2026-10-30"의 다음 날. 제출 마감일은 모집 마감일 다음 날부터 고를 수 있다 */
+export function nextDate(date: string) {
+  return new Date(new Date(`${date}T00:00:00Z`).getTime() + 86_400_000).toISOString().slice(0, 10);
+}
+
 /** 모집 작성 폼 검증. 날짜는 "YYYY-MM-DD" 문자열로 비교한다 */
 export function validateRecruitmentForm(formData: FormData, isSubscription: boolean, now: Date): FormState {
   const values = {

@@ -2,10 +2,9 @@ import { CheckIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { Markdown } from "@/components/ui/Markdown/Markdown";
 import { Card } from "@/components/ui/Card/Card";
-import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { ReportRecruitmentButton } from "@/app/(site)/recruitments/[slug]/_components/ReportRecruitmentButton/ReportRecruitmentButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
-import { getApplyBlockedMessage, SOFTWARE_TYPE_LABEL } from "@/features/recruitment/types";
+import { getApplyBlockedMessage, SOFTWARE_TYPE_LABEL, type SelectionMode } from "@/features/recruitment/types";
 import { cn } from "@/lib/cn";
 import { formatCredits, formatDate, formatDday } from "@/lib/format";
 import type { PublicRecruitmentView } from "@/features/recruitment/types";
@@ -15,7 +14,13 @@ import { ProjectDescription } from "@/features/project/components/ProjectDescrip
 import { RecruitmentGallery, type GalleryImage } from "@/app/(site)/recruitments/[slug]/_components/RecruitmentGallery/RecruitmentGallery";
 import { RecruitmentStatusBadge } from "@/features/recruitment/components/RecruitmentStatusBadge/RecruitmentStatusBadge";
 import { TestItemImages } from "@/features/recruitment/components/TestItemImages/TestItemImages";
+import { ApplyForm } from "@/app/(site)/recruitments/[slug]/_components/ApplyForm/ApplyForm";
 import styles from "./PublicRecruitment.module.css";
+
+const SELECTION_HINT: Record<SelectionMode, string> = {
+  firstCome: "지원하면 바로 참여가 확정돼요.",
+  selection: "개발자가 지원자를 확정하면 참여가 시작돼요.",
+};
 
 /**
  * 공개 모집글. 테스터가 지원 전에 일정, 보상을 확인하는 화면이다 (PRODUCT: 보상과 일정은 숨기지 않는다).
@@ -91,15 +96,7 @@ export function PublicRecruitment({ post, canReport = false }: { post: PublicRec
             ))}
           </dl>
           <div className={styles.applyBox}>
-            {blockedMessage === null ? (
-              <LinkButton href={`/recruitments/${recruitment.slug}/apply`} className={styles.button}>
-                지원하기
-              </LinkButton>
-            ) : (
-              <p role="status" className={styles.text}>
-                {blockedMessage}
-              </p>
-            )}
+            <ApplyForm slug={recruitment.slug} hint={SELECTION_HINT[detail?.selectionMode ?? "firstCome"]} blockedMessage={blockedMessage} />
             {canReport && <ReportRecruitmentButton recruitmentKey={recruitment.slug} projectName={recruitment.projectName} />}
           </div>
         </Card>

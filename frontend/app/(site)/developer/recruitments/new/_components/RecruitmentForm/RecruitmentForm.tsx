@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useActionState, useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { projectPath } from "@/features/project/paths";
 import { Button } from "@/components/ui/Button/Button";
 import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
@@ -10,12 +10,11 @@ import { createRecruitment } from "@/features/recruitment/actions";
 import { checkImages, formatBytes, isUploadedImageUrl, type FileMeta } from "@/features/project/media";
 import { uploadImages } from "@/lib/image-upload";
 import { EMPTY_FORM_STATE, PROJECT_MEDIA_LIMIT, type FormState } from "@/features/project/types";
-import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, validateRecruitmentForm, type SelectionMode } from "@/features/recruitment/types";
-import { FormSection } from "../../../../_components/FormSection/FormSection";
+import { RECRUITMENT_LIMIT, SELECTION_MODE_LABEL, validateRecruitmentForm, type SelectionMode, nextDate } from "@/features/recruitment/types";
+import { SettingsBody, SettingsCard, SettingsSection } from "@/components/ui/SettingsCard/SettingsCard";
 import { FileField, revoke } from "@/app/(site)/developer/_components/FileField/FileField";
 import { useFocusFirstError } from "@/app/(site)/developer/_lib/focus-first-error";
 import { TextField } from "@/components/ui/TextField/TextField";
-import { Card } from "@/components/ui/Card/Card";
 import { FormMessage } from "@/components/ui/FormField/FormField";
 import styles from "./RecruitmentForm.module.css";
 
@@ -47,11 +46,26 @@ const emptyRow = (): ItemRow => ({ title: "", description: "", required: true, i
 
 const toItemImage = (file: File): ItemImage => ({ name: file.name, size: file.size, type: file.type, file, url: URL.createObjectURL(file) });
 
+/** 개인정보 수정처럼 왼쪽에 제목·설명, 오른쪽에 칸을 둔 구역 */
+function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <SettingsSection>
+      <div className={styles.head}>
+        <h2 className={styles.title}>{title}</h2>
+        <p className={styles.description}>{description}</p>
+      </div>
+      <SettingsBody>{children}</SettingsBody>
+    </SettingsSection>
+  );
+}
+
 /** 테스트 모집 작성 폼 */
 export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, baseReward, extraReward }: RecruitmentFormProps) {
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
   const [images, setImages] = useState<ItemImage[]>([]);
-  const [conditions, setConditions] = useState<string[]>(Array.from({ length: 5 }, () => ""));
+  const [conditions, setConditions] = useState<string[]>(Array.from({ length: 2 }, () => ""));
+  const [recruitDeadline, setRecruitDeadline] = useState("");
+  const [submitDeadline, setSubmitDeadline] = useState("");
   const uploaded = useRef(new WeakMap<File, string>());
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     async (previous, data) => {
@@ -140,12 +154,14 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
   }
 
   return (
-    <form aria-busy={pending} inert={pending} ref={formRef} action={formAction} noValidate className={styles.root}>
-      <FormSection title="모집글">
-        <TextField name="title" label="모집글 제목" defaultValue={values.title} error={errors.title} hint={`${RECRUITMENT_LIMIT.titleLength}자까지`} />
-        <TextField name="request" label="모집 설명" multiline defaultValue={values.request} error={errors.request} hint={`테스터에게 해 달라고 할 일을 ${RECRUITMENT_LIMIT.requestLength}자까지 적어 주세요. 마크다운을 쓸 수 있어요`} />
+    <SettingsCard as="form" aria-busy={pending} inert={pending} ref={formRef} action={formAction} noValidate>
+      <Section title="모집글" description="테스터에게 보이는 모집글 내용이에요.">
+        <TextField name="title" label="모집글 제목" required defaultValue={values.title} error={errors.title} hint={`${RECRUITMENT_LIMIT.titleLength}자까지`} />
+        <TextField name="request" label="모집 설명" required multiline defaultValue={values.request} error={errors.request} hint={`테스터에게 해 달라고 할 일을 ${RECRUITMENT_LIMIT.requestLength}자까지 적어 주세요. 마크다운을 쓸 수 있어요`} />
         <fieldset className={styles.fieldset} aria-describedby={errors.softwareType ? "field-softwareType-error" : undefined}>
-          <legend className={styles.legend}>유형 (여러 개 고를 수 있어요)</legend>
+          <legend className={styles.legend}>
+            유형 (여러 개 고를 수 있어요)<span aria-hidden className={styles.required}> *</span>
+          </legend>
           <div className={styles.box}>
             {SOFTWARE_TYPES.map((type) => {
               return (
@@ -174,6 +190,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
         <TextField
           name="accessUrl"
           label="접속 링크"
+          required
           type="url"
           inputMode="url"
           placeholder="https://"
@@ -185,17 +202,22 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>모집 조건 (선택)</legend>
           {conditions.map((condition, index) => (
-            <TextField
-              key={index}
-              name="conditionItem"
-              id={`field-conditionItem-${index}`}
-              label={`조건 ${index + 1}`}
-              value={condition}
-              onChange={(event) => setConditions((prev) => prev.map((item, i) => (i === index ? event.target.value : item)))}
-              error={index === 0 ? errors.conditions : undefined}
-              hint={index === 0 ? `필요한 경험, 관심사, 사용 환경을 한 칸에 하나씩 적어 주세요. 전체 ${RECRUITMENT_LIMIT.conditionsLength}자까지` : undefined}
-            />
+            <div key={index} className={styles.conditionRow}>
+              <TextField
+                name="conditionItem"
+                id={`field-conditionItem-${index}`}
+                label={`조건 ${index + 1}`}
+                value={condition}
+                onChange={(event) => setConditions((prev) => prev.map((item, i) => (i === index ? event.target.value : item)))}
+                error={index === 0 ? errors.conditions : undefined}
+                className={styles.conditionField}
+              />
+              <Button type="button" size="sm" variant="secondary" aria-label={`조건 ${index + 1} 삭제`} onClick={() => setConditions((prev) => prev.filter((_, i) => i !== index))}>
+                삭제
+              </Button>
+            </div>
           ))}
+          <p className={styles.text}>필요한 경험, 관심사, 사용 환경을 한 칸에 하나씩 적어 주세요. 전체 {RECRUITMENT_LIMIT.conditionsLength}자까지</p>
           <input type="hidden" name="conditions" value={conditions.map((item) => item.trim()).filter(Boolean).join("\n")} />
           <Button type="button" size="sm" variant="secondary" onClick={() => setConditions((prev) => [...prev, ""])}>
             조건 추가
@@ -231,10 +253,12 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
           )}
         </FileField>
         <input type="hidden" name="recruitmentImagesMeta" value={JSON.stringify(images.map(({ name, size, type }) => ({ name, size, type })))} />
-      </FormSection>
-      <FormSection title="선정 조건과 일정">
+      </Section>
+      <Section title="선정 조건과 일정" description="누구를 어떻게 뽑고, 언제까지 모집하고 피드백을 받을지 정해요.">
         <fieldset className={styles.fieldset2} aria-describedby={errors.selectionMode ? "field-selectionMode-error" : undefined}>
-          <legend className={styles.legend2}>모집 선정 조건</legend>
+          <legend className={styles.legend2}>
+            모집 선정 조건<span aria-hidden className={styles.required}> *</span>
+          </legend>
           <div className={styles.box2}>
             {(["firstCome", "selection"] as const).map((mode) => {
               const ready = mode === "firstCome" || isSubscription;
@@ -269,11 +293,34 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
           )}
         </fieldset>
         <div className={styles.box3}>
-          <TextField name="recruitDeadline" label="모집 마감일" type="date" defaultValue={values.recruitDeadline} error={errors.recruitDeadline} />
-          <TextField name="submitDeadline" label="피드백 제출 마감일" type="date" defaultValue={values.submitDeadline} error={errors.submitDeadline} />
+          <TextField
+            name="recruitDeadline"
+            label="모집 마감일"
+            required
+            type="date"
+            defaultValue={values.recruitDeadline}
+            onChange={(event) => {
+              const value = event.target.value;
+              setRecruitDeadline(value);
+              /* 모집 마감일을 늦추면 그보다 이르거나 같아진 제출 마감일은 비운다 */
+              if (value && submitDeadline && submitDeadline <= value) setSubmitDeadline("");
+            }}
+            error={errors.recruitDeadline}
+          />
+          <TextField
+            name="submitDeadline"
+            label="피드백 제출 마감일"
+            required
+            type="date"
+            value={submitDeadline}
+            min={recruitDeadline ? nextDate(recruitDeadline) : undefined}
+            onChange={(event) => setSubmitDeadline(event.target.value)}
+            hint="모집 마감일 다음 날부터 고를 수 있어요"
+            error={errors.submitDeadline}
+          />
         </div>
-      </FormSection>
-      <FormSection title="테스트 항목">
+      </Section>
+      <Section title="테스트 항목" description="테스터가 해 볼 작업을 적어 주세요.">
         <fieldset className={styles.fieldset3} aria-label="테스트 항목" aria-describedby="field-testItems-hint">
           <p id="field-testItems-hint" className={styles.text}>
             테스터가 해 볼 작업을 1~{max}개 적어 주세요. 테스터는 항목별로 피드백을 남겨요. 필수를 끄면 건너뛸 수 있는 항목이 돼요
@@ -284,6 +331,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
                 name="testItemTitle"
                 id={`field-testItemTitle-${index}`}
                 label={`항목 ${index + 1} 이름`}
+                required
                 value={item.title}
                 onChange={(event) => updateItem(index, { title: event.target.value })}
                 error={rowErrors[`testItemTitle-${index}`]}
@@ -378,8 +426,9 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
             항목 추가
           </Button>
         </fieldset>
-      </FormSection>
-      <Card as="div" className={styles.box5}>
+      </Section>
+      <Section title="보상과 등록" description="보상은 서비스가 정해요.">
+      <div className={styles.box5}>
         <p className={styles.text2}>기본 보상 {formatCredits(baseReward)}</p>
         <p className={styles.text3}>보상은 서비스가 정해요. 테스터가 피드백을 내면 지급돼요.</p>
         {extraReward > 0 && (
@@ -387,7 +436,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
             구독 모집이라 추가 보상 {formatCredits(extraReward)}이 붙어요.
           </p>
         )}
-      </Card>
+      </div>
       {errors.form && <FormMessage status="error" message={errors.form} />}
       <div className={styles.box6}>
         <Button type="submit" disabled={pending}>
@@ -397,6 +446,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
           취소
         </LinkButton>
       </div>
-    </form>
+      </Section>
+    </SettingsCard>
   );
 }

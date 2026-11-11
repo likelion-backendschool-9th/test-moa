@@ -56,8 +56,14 @@
   }
 }
 
-.root3On {
+/* 제출했거나 마감이 지난 날은 옅은 회색, 아직 낼 수 있는 건이 있는 날은 옅은 초록 */
+.root3Done {
   background-color: var(--surface-strong);
+  color: var(--text-muted);
+}
+
+.root3Pending {
+  background-color: var(--accent-soft);
 }
 
 .root3IsToday {
@@ -81,7 +87,7 @@
   width: 0.375rem;
   height: 0.375rem;
   border-radius: var(--radius-full);
-  background-color: var(--text);
+  background-color: currentColor;
 }
 
 @media (min-width: 48rem) {

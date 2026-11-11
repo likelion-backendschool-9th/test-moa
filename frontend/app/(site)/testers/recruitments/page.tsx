@@ -75,9 +75,10 @@ async function SummarySlot() {
 }
 
 async function DeadlineSlot() {
-  const items = await getUpcomingDeadlines();
+  /* 달력에는 지난 마감과 이미 낸 피드백도 보여 주려고 참여 중·참여했던 탭을 함께 읽는다 */
+  const [items, ongoing, history] = await Promise.all([getUpcomingDeadlines(), getParticipations("ongoing"), getParticipations("history")]);
   await connection();
-  return <DeadlinePanel items={items} now={new Date()} />;
+  return <DeadlinePanel items={items} calendarItems={[...ongoing, ...history]} now={new Date()} />;
 }
 
 async function TabsSlot({ searchParams }: { searchParams: SearchParams }) {

@@ -11,6 +11,8 @@ type TextFieldProps = {
   /** 입력란 아래 도움말 */
   hint?: string;
   multiline?: boolean;
+  /** 꼭 채워야 하는 칸. 레이블 옆에 붉은 *를 단다 */
+  required?: boolean;
 } & Omit<ComponentProps<"input">, "name">;
 
 /** 입력란만. TextField와, 레이블을 따로 그리는 폼이 함께 쓴다 */
@@ -23,7 +25,7 @@ export function TextArea({ className, ...props }: ComponentProps<"textarea">) {
 }
 
 /** 레이블과 오류 문구가 붙은 입력란. 오류가 있으면 aria-invalid와 aria-describedby를 단다 */
-export function TextField({ id: idProp, name, label, error, hint, multiline, className, ...props }: TextFieldProps) {
+export function TextField({ id: idProp, name, label, error, hint, multiline, required, className, ...props }: TextFieldProps) {
   /* 같은 name이 여러 줄이면(추가 링크) id를 따로 받는다 */
   const id = idProp ?? `field-${name}`;
   const errorId = `${id}-error`;
@@ -35,11 +37,12 @@ export function TextField({ id: idProp, name, label, error, hint, multiline, cla
     <div className={cn(styles.root, className)}>
       <label htmlFor={id} className={styles.label}>
         {label}
+        {required && <span aria-hidden className={styles.required}> *</span>}
       </label>
       {multiline ? (
-        <TextArea {...shared} rows={4} defaultValue={props.defaultValue} />
+        <TextArea {...shared} rows={4} required={required} defaultValue={props.defaultValue} />
       ) : (
-        <TextInput {...shared} {...props} />
+        <TextInput {...shared} {...props} required={required} />
       )}
       {hint && (
         <p id={hintId} className={styles.hint}>

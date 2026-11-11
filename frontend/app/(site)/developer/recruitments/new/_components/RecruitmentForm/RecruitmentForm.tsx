@@ -210,7 +210,6 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
                 value={condition}
                 onChange={(event) => setConditions((prev) => prev.map((item, i) => (i === index ? event.target.value : item)))}
                 error={index === 0 ? errors.conditions : undefined}
-                hint={index === 0 ? `필요한 경험, 관심사, 사용 환경을 한 칸에 하나씩 적어 주세요. 전체 ${RECRUITMENT_LIMIT.conditionsLength}자까지` : undefined}
                 className={styles.conditionField}
               />
               <Button type="button" size="sm" variant="secondary" aria-label={`조건 ${index + 1} 삭제`} onClick={() => setConditions((prev) => prev.filter((_, i) => i !== index))}>
@@ -218,6 +217,7 @@ export function RecruitmentForm({ projectKey, uploadEnabled, isSubscription, bas
               </Button>
             </div>
           ))}
+          <p className={styles.text}>필요한 경험, 관심사, 사용 환경을 한 칸에 하나씩 적어 주세요. 전체 {RECRUITMENT_LIMIT.conditionsLength}자까지</p>
           <input type="hidden" name="conditions" value={conditions.map((item) => item.trim()).filter(Boolean).join("\n")} />
           <Button type="button" size="sm" variant="secondary" onClick={() => setConditions((prev) => [...prev, ""])}>
             조건 추가

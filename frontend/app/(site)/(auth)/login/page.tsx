@@ -6,7 +6,8 @@ import { FormMessage } from "@/components/ui/FormField/FormField";
 import { AuthCard, AuthFormSkeleton, OrDivider } from "@/app/(site)/(auth)/_components/AuthCard/AuthCard";
 import { LoginForm } from "@/app/(site)/(auth)/login/_components/LoginForm/LoginForm";
 import { SocialButtons } from "@/app/(site)/(auth)/_components/SocialButtons/SocialButtons";
-import { OAUTH_ERRORS, type OAuthErrorKey, readRestore } from "@/features/auth/oauth";
+import { OAUTH_ERRORS, type OAuthErrorKey, readRestore, readRestriction } from "@/features/auth/oauth";
+import { restrictionNotice } from "@/features/auth/restriction";
 import { RestorePrompt } from "@/app/(site)/(auth)/login/_components/RestorePrompt/RestorePrompt";
 import { withNext } from "@/features/auth/types";
 import { getDemoAccounts } from "@/features/member/api";
@@ -43,8 +44,10 @@ async function LoginSlot({ searchParams }: { searchParams: SearchParams }) {
   const next = safeNextPath(params.next);
   if (session.role !== "guest") redirect(next);
   /* 소셜 로그인 실패(/auth/callback에서 돌아옴). 주소에는 키만 있고 문구는 여기서 고른다. constructor 같은 객체 기본 이름은 무시한다 */
-  const oauthError =
-    typeof params.error === "string" && Object.hasOwn(OAUTH_ERRORS, params.error) ? OAUTH_ERRORS[params.error as OAuthErrorKey] : undefined;
+  const errorKey = typeof params.error === "string" && Object.hasOwn(OAUTH_ERRORS, params.error) ? (params.error as OAuthErrorKey) : undefined;
+  /* 제재로 막힌 소셜 로그인은 쿠키의 사유·해제일을 붙인다(#86) */
+  const restriction = errorKey === "restricted" ? await readRestriction() : undefined;
+  const oauthError = restriction ? restrictionNotice(restriction) : errorKey && OAUTH_ERRORS[errorKey];
   /* 탈퇴 유예 계정의 로그인(#84). 되돌리기 토큰은 쿠키에 있고, 로그인 화면 위에 창을 바로 띄운다 */
   const restore = params.restore === "1" ? await readRestore() : undefined;
   return (

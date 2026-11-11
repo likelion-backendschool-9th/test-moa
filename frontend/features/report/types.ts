@@ -55,7 +55,19 @@ export type Report = {
   /** 72시간 지급 대기 중에 접수되어 크레딧 지급을 멈춘 신고 */
   holdsReward: boolean;
   review?: ReportReview;
+  /** 증거 파일. 실제 로그인(백엔드)에만 있다 */
+  evidences?: ReportEvidence[];
 };
+
+/** 증거 파일 주소. 공개 주소가 없어 Next가 로그인 토큰을 붙여 받아 온다(app/api/v1/reports/.../evidences) */
+export function evidenceHref(reportId: string | number, evidenceId: number) {
+  return `/api/v1/reports/${reportId}/evidences/${evidenceId}`;
+}
+
+/** "1.2MB", "830KB" */
+export function formatFileSize(bytes: number) {
+  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
 
 const OVERDUE_MS = 72 * 60 * 60 * 1000;
 
@@ -63,3 +75,60 @@ const OVERDUE_MS = 72 * 60 * 60 * 1000;
 export function isOverdue(report: Report, now: Date) {
   return now.getTime() - new Date(report.createdAt).getTime() > OVERDUE_MS;
 }
+
+/* ---- 실제 로그인(AUTH_MODE=backend): 백엔드 신고(#85) ---- */
+
+/** 백엔드 신고 대상 종류 */
+export type BackendReportTarget = "FEEDBACK" | "RECRUITMENT" | "USER" | "CHAT";
+
+export const BACKEND_REPORT_TARGET_LABEL: Record<BackendReportTarget, string> = {
+  FEEDBACK: "피드백",
+  RECRUITMENT: "모집 글",
+  USER: "회원",
+  CHAT: "채팅",
+};
+
+/** 백엔드 신고 처리 상태 */
+export type BackendReportStatus = "PENDING" | "REJECTED" | "ACCEPTED";
+
+export const BACKEND_REPORT_STATUS_LABEL: Record<BackendReportStatus, string> = {
+  PENDING: "검토 대기",
+  REJECTED: "기각",
+  ACCEPTED: "인정",
+};
+
+export type ReportEvidence = { id: number; originalName: string; contentType: string; size: number };
+
+/* ---- 신고 접수(POST /api/v1/reports): 모집 글·채팅방 ---- */
+
+/** 신고할 대상. 모집 글은 주소의 모집 키, 채팅은 방 키 */
+export type ReportSubject = { kind: "recruitment"; recruitmentKey: string } | { kind: "chat"; roomKey: string };
+
+export const REPORT_REASON_MAX = 1000;
+export const EVIDENCE_MAX_COUNT = 5;
+export const EVIDENCE_MAX_BYTES = 5 * 1024 * 1024;
+export const EVIDENCE_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+
+/** 고른 증거 파일을 보내기 전에 확인한다. 문구는 백엔드(#85-S5)와 같다. 문제가 없으면 null */
+export function checkEvidence(files: File[]): string | null {
+  if (files.length > EVIDENCE_MAX_COUNT) return `증거 파일은 ${EVIDENCE_MAX_COUNT}장까지 올릴 수 있어요`;
+  if (files.some((file) => !EVIDENCE_TYPES.includes(file.type))) return "PNG·JPG·WEBP·PDF 파일만 올릴 수 있어요";
+  if (files.some((file) => file.size > EVIDENCE_MAX_BYTES)) return "파일은 한 장 5MB까지 올릴 수 있어요";
+  return null;
+}
+
+export type ReportSubmitState =
+  | { status: "idle" }
+  | { status: "success" }
+  | { status: "error"; message: string; field?: "reason" | "files" };
+
+/** 내 신고 한 건(GET /api/v1/reports/me) */
+export type MyReport = {
+  id: number;
+  targetType: BackendReportTarget;
+  status: BackendReportStatus;
+  reason: string;
+  createdAt: string;
+  reviewedAt: string | null;
+  evidences: ReportEvidence[];
+};

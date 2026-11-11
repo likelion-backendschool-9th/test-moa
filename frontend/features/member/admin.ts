@@ -1,4 +1,5 @@
 import type { Report } from "@/features/report/types";
+import type { Restriction, SanctionType } from "@/features/member/types";
 
 /*
  * 회원 관리의 타입과 필터·이름 가리기 규칙.
@@ -34,8 +35,25 @@ export type AdminUser = {
 /** 목록 한 줄. 제재 이력 = 인정된 신고, 검토 대기 = 아직 처리하지 않은 신고 */
 export type UserSummary = AdminUser & { sanctionCount: number; pendingReportCount: number };
 
-/** 상세. 받은 신고는 접수가 최근인 순서, 제재 이력은 처리가 최근인 순서 */
-export type UserDetail = AdminUser & { sanctions: Report[]; receivedReports: Report[] };
+/** 운영자가 보는 제재 한 건(실제 로그인, #86). 목업은 인정된 신고를 제재 이력으로 본다 */
+export type AdminSanction = {
+  id: string;
+  type: SanctionType;
+  restrictions: Restriction[];
+  reason: string;
+  startedAt: string;
+  endsAt: string | null;
+  releasedAt: string | null;
+  releaseReason: string | null;
+  active: boolean;
+  sanctionedBy: string | null;
+};
+
+/**
+ * 상세. 받은 신고는 접수가 최근인 순서, 제재 이력은 처리가 최근인 순서.
+ * adminSanctions는 실제 로그인에서만 있고, 있으면 제재·해제 양식을 보여 준다
+ */
+export type UserDetail = AdminUser & { sanctions: Report[]; receivedReports: Report[]; adminSanctions?: AdminSanction[] };
 
 export type UserFilter = "all" | "sanctioned" | "reported";
 

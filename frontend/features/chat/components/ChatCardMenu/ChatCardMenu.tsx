@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { deleteChatRoomAction, renameChatRoomAction } from "@/features/chat/actions";
 import { CHAT_ROOM_NAME_MAX } from "@/features/chat/types";
 import { ChatRoomDialog } from "@/features/chat/components/ChatRoomDialog/ChatRoomDialog";
+import { ReportDialog } from "@/features/report/components/ReportDialog/ReportDialog";
 import { Card } from "@/components/ui/Card/Card";
 import styles from "./ChatCardMenu.module.css";
 
@@ -29,7 +30,7 @@ type ChatCardMenuProps = {
   className?: string;
 };
 
-type DialogKind = "rename" | "delete";
+type DialogKind = "rename" | "report" | "delete";
 
 function menuItems(root: HTMLElement | null) {
   return [...(root?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
@@ -45,7 +46,7 @@ function focusAfterRemoval(item: Element, target: HTMLElement, frames = 120) {
 }
 
 /**
- * 채팅 카드와 채팅방 머리의 더보기 메뉴. "대화방 이름 변경", 구분선, "대화방 삭제" 순서이고 삭제는 맨 아래다.
+ * 채팅 카드와 채팅방 머리의 더보기 메뉴. "대화방 이름 변경", "신고하기", 구분선, "대화방 삭제" 순서이고 삭제는 맨 아래다.
  * 열면 첫 항목으로 포커스가 가고, 위아래 화살표·Home·End로 옮기며, Esc는 닫고 버튼으로 돌아가고, Tab·바깥 클릭은 닫기만 한다.
  * 항목을 고르면 대화상자를 열고, 저장·삭제는 서버 액션으로 보낸다.
  */
@@ -168,6 +169,11 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
               대화방 이름 변경
             </button>
           </li>
+          <li role="none">
+            <button type="button" role="menuitem" onClick={() => openDialog("report")} className={styles.item}>
+              신고하기
+            </button>
+          </li>
           <li role="separator" className={styles.item2} />
           <li role="none">
             <button type="button" role="menuitem" onClick={() => openDialog("delete")} className={styles.item}>
@@ -203,6 +209,14 @@ export function ChatCardMenu({ roomKey, title, leaveOnDelete = false, className 
             </div>
           </form>
         </ChatRoomDialog>
+      )}
+      {dialog === "report" && (
+        <ReportDialog
+          subject={{ kind: "chat", roomKey }}
+          title="채팅 신고"
+          description={`"${title}" 대화방의 상대를 신고해요.`}
+          onClose={closeDialog}
+        />
       )}
       {dialog === "delete" && (
         <ChatRoomDialog

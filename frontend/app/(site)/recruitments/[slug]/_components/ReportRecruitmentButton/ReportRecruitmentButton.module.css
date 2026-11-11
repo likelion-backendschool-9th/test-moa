@@ -1,0 +1,20 @@
+.button {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: var(--space-1);
+  border: 0;
+  background: none;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .button:hover {
+    color: var(--text);
+  }
+}

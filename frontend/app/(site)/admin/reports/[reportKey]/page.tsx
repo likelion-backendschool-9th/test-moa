@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isBackendAuth } from "@/lib/backend";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AccessDenied } from "@/app/(site)/admin/_components/AccessDenied/AccessDenied";
@@ -44,7 +45,7 @@ async function Detail({ params, searchParams }: DetailProps) {
   if (!isReportKey(reportKey)) notFound();
   if (!(await requireAdmin(`/admin/reports/${reportKey}`))) return <AccessDenied pageName="신고·제재 관리" />;
   const { error: errorParam, tab, target } = await searchParams;
-  const error: ReviewFormError | null = errorParam === "decision" || errorParam === "memo" ? errorParam : null;
+  const error: ReviewFormError | null = errorParam === "decision" || errorParam === "memo" || errorParam === "failed" ? errorParam : null;
   /* 목록에서 보던 탭과 필터. 목록으로 돌아갈 때와 처리한 뒤에 되살린다 */
   const view: ReportListView = { tab: parseListTab(tab), target: parseReportTargetFilter(target) };
   return (
@@ -63,11 +64,19 @@ async function Detail({ params, searchParams }: DetailProps) {
 
 async function DetailSlot({ reportKey, error, view }: { reportKey: string; error: ReviewFormError | null; view: ReportListView }) {
   const { now, report } = await getReport(reportKey);
-  if (!report) return <EmptyState title="신고를 찾을 수 없어요" description="시연용 데이터에 이 신고가 없어요." />;
+  if (!report) {
+    return <EmptyState title="신고를 찾을 수 없어요" description={isBackendAuth ? "없는 신고예요. 목록에서 다시 골라 주세요." : "시연용 데이터에 이 신고가 없어요."} />;
+  }
+  /* 백엔드에는 처리 메모가 없어서 실제 로그인에서는 메모를 받지도 보이지도 않는다 */
+  const withMemo = !isBackendAuth;
   return (
     <>
       <ReportDetail report={report} now={now} view={view} />
-      {report.review ? <ReviewResult report={report} now={now} /> : <ReviewForm report={report} error={error} view={view} />}
+      {report.review ? (
+        <ReviewResult report={report} now={now} withMemo={withMemo} />
+      ) : (
+        <ReviewForm report={report} error={error} view={view} withMemo={withMemo} />
+      )}
     </>
   );
 }

@@ -27,6 +27,16 @@ FROM eclipse-temurin:21-jre AS runner
 WORKDIR /app
 
 RUN groupadd --system app && useradd --system --gid app app
+# eMudhra 인증기관 키 유출(CVE-2026-91403, CVE-2026-114820): emSign 루트를 신뢰 목록에서 지운다
+# Temurin 21.0.13+9 이미지에는 아직 남아 있다. 고친 Temurin으로 바뀌어 루트가 없으면 아무것도 지우지 않는다
+# 지운 뒤 emSign·eMudhra 인증서가 하나라도 남아 있으면 빌드를 멈춘다
+RUN set -e; \
+    keytool -J-Duser.language=en -list -v -cacerts -storepass changeit \
+      | sed -n 's/^Alias name: \(.*emsign.*\)$/\1/Ip' \
+      | while IFS= read -r alias; do keytool -delete -cacerts -storepass changeit -alias "$alias"; done; \
+    if keytool -J-Duser.language=en -list -v -cacerts -storepass changeit | grep -iE '^(Owner|Issuer):.*(emsign|emudhra)'; then \
+      echo "eMudhra 인증서가 남아 있습니다" >&2; exit 1; \
+    fi
 # 올린 파일 폴더(볼륨 upload-data)
 RUN mkdir -p /app/uploads && chown app:app /app/uploads
 # bootJar만 실행했으므로 build/libs에는 jar가 하나만 있다

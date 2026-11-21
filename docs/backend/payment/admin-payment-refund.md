@@ -89,6 +89,7 @@ alter table payments add constraint payments_status_check
 #275-S10 PG 테스트 환경에서 결제 뒤 환불이 실제로 된다 [직접]
 - Given 로컬 `docker compose`, 개발용 키, 각 PG로 결제한 구독, 운영자 토큰
 - Then  환불 API를 부르면 PG 테스트 결제 내역이 취소로 바뀌고 `payments`가 `REFUNDED`, 구독이 `CANCELLED`이며 `/my/subscription`에 구독 중이 아니라고 보인다
+- 결과(2026-11-21, 로컬 `docker compose`, 개발용 키): 카카오페이 결제와 토스 결제를 각각 환불 API로 부르니 둘 다 200 `REFUNDED`였고 구독은 `CANCELLED`, 지갑·장부는 바뀌지 않았다. 환불 API는 PG 응답이 취소 상태(카카오 `CANCEL_PAYMENT`, 토스 `CANCELED`)일 때만 성공하므로 PG 쪽 취소도 확인된다. 같은 결제를 다시 부르면 409 `PAYMENT_NOT_REFUNDABLE`이었다. 이미 PG에서 취소된 옛 카카오 결제를 환불하면 502 `PG_CANCEL_FAILED`가 나오고 결제는 `REFUND_FAILED`, 구독은 `ACTIVE`로 남았다. 테스트 회원에게 다른 활성 구독이 남아 있어 `/my/subscription` 화면은 보지 못했다.
 
 ## 범위 밖
 부분 환불, 크레딧 결제의 환불, 환불 화면(프론트), 회원의 환불 신청, 환불 수수료·정산.

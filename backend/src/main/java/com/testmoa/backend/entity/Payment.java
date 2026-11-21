@@ -21,8 +21,10 @@ public class Payment {
 
     // 결제 상태
     public enum Status {
-        COMPLETED,  // 완료
-        REFUNDED    // 환불
+        COMPLETED,      // 완료
+        REFUNDING,      // 환불 진행 중(PG 취소 호출 중)
+        REFUNDED,       // 환불
+        REFUND_FAILED   // 환불 실패(PG가 취소를 거절해 되돌림). 다시 환불할 수 있다
     }
 
     @Id
@@ -56,7 +58,7 @@ public class Payment {
     @Column(nullable = false)
     private LocalDateTime paidAt;
 
-    // 결제 상태(COMPLETED, REFUNDED)
+    // 결제 상태(COMPLETED, REFUNDING, REFUNDED, REFUND_FAILED)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
@@ -99,5 +101,33 @@ public class Payment {
         this.amount = amount;
         this.paidAt = paidAt;
         this.status = Status.COMPLETED;
+    }
+
+    /** 환불할 수 있는 상태인가. 완료됐거나 환불이 거절돼 되돌아온 결제다 */
+    public boolean isRefundable() {
+        return status == Status.COMPLETED || status == Status.REFUND_FAILED;
+    }
+
+    /** PG 현금 결제인가. 크레딧 결제와 PG 연동 전의 현금 결제는 PG 취소를 할 수 없다 */
+    public boolean isPgPayment() {
+        return method == Method.CASH && provider != null && pgTransactionId != null;
+    }
+
+    /** 환불을 시작한다. 이미 환불했거나 진행 중이면 예외 */
+    public void startRefund() {
+        if (!isRefundable()) {
+            throw new IllegalStateException("환불할 수 없는 상태: " + status);
+        }
+        this.status = Status.REFUNDING;
+    }
+
+    /** PG 취소가 끝나 환불을 마친다 */
+    public void refund() {
+        this.status = Status.REFUNDED;
+    }
+
+    /** PG가 취소를 거절해 환불을 되돌린다 */
+    public void failRefund() {
+        this.status = Status.REFUND_FAILED;
     }
 }

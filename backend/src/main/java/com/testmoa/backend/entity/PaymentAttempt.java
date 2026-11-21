@@ -31,7 +31,9 @@ public class PaymentAttempt {
         PENDING,    // 결제 준비를 마치고 결제창 결과를 기다림
         APPROVING,  // 승인 요청을 받아 PG 승인을 부르는 중(또는 PG 승인 뒤 저장이 실패해 멈춤)
         APPROVED,   // 승인하고 결제·구독까지 저장함
-        FAILED      // PG가 승인을 거절함
+        FAILED,     // PG가 승인을 거절함
+        CANCELED,   // PG가 승인했지만 저장이 실패해 PG 승인을 취소함(#274)
+        NEEDS_REVIEW // PG가 승인했고 저장도 취소도 실패해 운영자가 봐야 함(#274)
     }
 
     @Id
@@ -108,5 +110,17 @@ public class PaymentAttempt {
     /** PG가 승인을 거절했다 */
     public void fail() {
         this.status = Status.FAILED;
+    }
+
+    /** PG가 승인한 뒤 저장이 실패해서 PG 승인을 취소했다. 취소한 시도는 다시 승인할 수 없다 */
+    public void cancel(String pgTransactionId) {
+        this.status = Status.CANCELED;
+        this.pgTransactionId = pgTransactionId;
+    }
+
+    /** PG가 승인했는데 저장도 취소도 실패했다. 운영자가 PG 거래 식별자로 직접 처리하도록 식별자를 남긴다 */
+    public void needsReview(String pgTransactionId) {
+        this.status = Status.NEEDS_REVIEW;
+        this.pgTransactionId = pgTransactionId;
     }
 }

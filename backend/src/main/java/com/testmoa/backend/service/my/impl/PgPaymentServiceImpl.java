@@ -35,7 +35,8 @@ import java.util.UUID;
  * ① 회원 행을 잠그고 시도를 검증해 APPROVING으로 바꾼 뒤 커밋 ② 잠금 밖에서 PG 승인 호출
  * ③ 회원 행 → 지갑 행 순서로 다시 잠그고 결제·구독을 저장하며 APPROVED로 바꿈.
  * PG를 부르는 동안 회원 행을 잡고 있지 않고, APPROVING으로 바뀐 시도는 다른 요청이 다시 승인하지 못한다.
- * PG가 승인했는데 ③이 실패하면 시도는 APPROVING으로 남고 오류 로그를 남긴다(자동 취소는 하지 않는다).
+ * PG가 승인했는데 ③이 실패하면 PG 승인을 취소하고 시도를 CANCELED로 바꾼다(#274).
+ * 취소도 실패하면 시도를 NEEDS_REVIEW로 남기고 오류 로그를 남겨 운영자가 조회해 처리한다.
  */
 @Slf4j
 @Service
@@ -150,7 +151,7 @@ public class PgPaymentServiceImpl implements PgPaymentService {
             throw e;
         }
 
-        // ③ 결제·구독을 저장하고 APPROVED로 바꾼다. 실패하면 시도는 APPROVING으로 남는다
+        // ③ 결제·구독을 저장하고 APPROVED로 바꾼다. 실패하면 PG 승인을 취소한다
         try {
             return transaction.execute(status -> {
                 PaymentAttempt attempt = paymentAttemptRepository.findById(approving.attemptId())
@@ -163,7 +164,37 @@ public class PgPaymentServiceImpl implements PgPaymentService {
         } catch (RuntimeException e) {
             log.error("PG가 승인한 결제를 저장하지 못함 attemptId={} provider={} orderId={}",
                     approving.attemptId(), approving.provider(), request.orderId(), e);
+            compensate(approving, request.orderId(), approved.pgTransactionId());
             throw e;
+        }
+    }
+
+    /**
+     * 저장이 실패한 승인을 PG에서 취소하고 시도 상태를 남긴다. 잠금 밖에서 부른다.
+     * 이 안의 실패는 원래 예외를 가리지 않도록 로그만 남기고 삼킨다
+     */
+    private void compensate(Approving approving, String orderId, String pgTransactionId) {
+        boolean canceled = false;
+        try {
+            gateways.get(approving.provider()).cancel(new PaymentGateway.CancelCommand(
+                    orderId, approving.amount(), pgTransactionId, "결제 저장 실패로 자동 취소"));
+            canceled = true;
+        } catch (RuntimeException cancelFailure) {
+            log.error("PG 승인 취소 실패 attemptId={} provider={} orderId={} pgTransactionId={}",
+                    approving.attemptId(), approving.provider(), orderId, pgTransactionId, cancelFailure);
+        }
+        boolean wasCanceled = canceled;
+        try {
+            transaction.executeWithoutResult(status -> paymentAttemptRepository.findById(approving.attemptId())
+                    .ifPresent(attempt -> {
+                        if (wasCanceled) {
+                            attempt.cancel(pgTransactionId);
+                        } else {
+                            attempt.needsReview(pgTransactionId);
+                        }
+                    }));
+        } catch (RuntimeException statusFailure) {
+            log.error("취소 결과를 시도 상태에 남기지 못함 attemptId={} canceled={}", approving.attemptId(), wasCanceled, statusFailure);
         }
     }
 

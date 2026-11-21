@@ -56,6 +56,7 @@ public enum ErrorCode {
     PAYMENT_NOT_APPROVABLE(HttpStatus.CONFLICT, "승인할 수 없는 결제예요. 처음부터 다시 결제해 주세요"),
     PG_APPROVE_FAILED(HttpStatus.BAD_GATEWAY, "결제 승인에 실패했어요. 다시 시도해 주세요"),
     PG_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 이 결제 수단을 쓸 수 없어요"),
+    PG_CANCEL_FAILED(HttpStatus.BAD_GATEWAY, "결제 취소에 실패했어요"),
 
     // 모집
     RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),

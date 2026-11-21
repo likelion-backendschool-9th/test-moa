@@ -224,4 +224,94 @@ class PaymentGatewayTest {
                 new PaymentGateway.ApproveCommand("MOAorder1", 7L, 10000, null, null, "PK1")));
         assertEquals(ErrorCode.PG_APPROVE_FAILED, e2.getErrorCode());
     }
+
+    private static final PaymentGateway.CancelCommand CANCEL = new PaymentGateway.CancelCommand("MOAorder1", 10000, "T123", "결제 저장 실패로 자동 취소");
+
+    @Test
+    @DisplayName("#274-S7 카카오페이 취소 요청은 tid와 전액을 SECRET_KEY 인증으로 보낸다")
+    void kakaoCancel() {
+        Kakao kakao = kakao(PROPERTIES);
+        kakao.server().expect(requestTo("https://open-api.kakaopay.com/online/v1/payment/cancel"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", "SECRET_KEY dev-secret"))
+                .andExpect(jsonPath("$.cid").value("TC0ONETIME"))
+                .andExpect(jsonPath("$.tid").value("T123"))
+                .andExpect(jsonPath("$.cancel_amount").value(10000))
+                .andExpect(jsonPath("$.cancel_tax_free_amount").value(0))
+                .andRespond(withSuccess("{\"status\":\"CANCEL_PAYMENT\"}", MediaType.APPLICATION_JSON));
+
+        kakao.gateway().cancel(CANCEL);
+
+        kakao.server().verify();
+    }
+
+    @Test
+    @DisplayName("#274-S7 카카오페이 취소 응답이 CANCEL_PAYMENT가 아니거나 이미 취소돼 거절(-710)되면 502 PG_CANCEL_FAILED")
+    void kakaoCancelNotCanceled() {
+        Kakao partial = kakao(PROPERTIES);
+        partial.server().expect(requestTo("https://open-api.kakaopay.com/online/v1/payment/cancel"))
+                .andRespond(withSuccess("{\"status\":\"PART_CANCEL_PAYMENT\"}", MediaType.APPLICATION_JSON));
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, assertThrows(BusinessException.class, () -> partial.gateway().cancel(CANCEL)).getErrorCode());
+
+        Kakao already = kakao(PROPERTIES);
+        already.server().expect(requestTo("https://open-api.kakaopay.com/online/v1/payment/cancel"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error_code\":-710,\"error_message\":\"requested cancel amount is bigger than cancelable amount\"}"));
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, assertThrows(BusinessException.class, () -> already.gateway().cancel(CANCEL)).getErrorCode());
+    }
+
+    @Test
+    @DisplayName("#274-S7 카카오페이가 취소를 거절하면 502 PG_CANCEL_FAILED이고 키가 예외에 섞이지 않는다")
+    void kakaoCancelFailure() {
+        Kakao kakao = kakao(PROPERTIES);
+        kakao.server().expect(requestTo("https://open-api.kakaopay.com/online/v1/payment/cancel"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error_code\":-700,\"error_message\":\"취소 실패\"}"));
+
+        BusinessException e = assertThrows(BusinessException.class, () -> kakao.gateway().cancel(CANCEL));
+
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, e.getErrorCode());
+        assertTrue(!String.valueOf(e.getMessage()).contains("dev-secret"));
+    }
+
+    @Test
+    @DisplayName("#274-S7 토스 취소 요청은 paymentKey 경로로 Basic 인증·멱등 키·취소 사유를 보내고 CANCELED면 성공이다")
+    void tossCancel() {
+        Toss toss = toss(PROPERTIES);
+        String basic = "Basic " + Base64.getEncoder().encodeToString("test_sk_fake:".getBytes(StandardCharsets.UTF_8));
+        toss.server().expect(requestTo("https://api.tosspayments.com/v1/payments/T123/cancel"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", basic))
+                .andExpect(header("Idempotency-Key", "cancel-MOAorder1"))
+                .andExpect(jsonPath("$.cancelReason").value("결제 저장 실패로 자동 취소"))
+                .andExpect(jsonPath("$.cancelAmount").doesNotExist())
+                .andRespond(withSuccess("{\"status\":\"CANCELED\"}", MediaType.APPLICATION_JSON));
+
+        toss.gateway().cancel(CANCEL);
+
+        toss.server().verify();
+    }
+
+    @Test
+    @DisplayName("#274-S7 토스는 이미 취소된 결제를 성공으로 보고, 그 밖의 거절과 CANCELED가 아닌 응답은 502 PG_CANCEL_FAILED")
+    void tossCancelFailures() {
+        Toss already = toss(PROPERTIES);
+        already.server().expect(requestTo("https://api.tosspayments.com/v1/payments/T123/cancel"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"code\":\"ALREADY_CANCELED_PAYMENT\",\"message\":\"이미 취소된 결제 입니다.\"}"));
+        already.gateway().cancel(CANCEL);
+
+        Toss rejected = toss(PROPERTIES);
+        rejected.server().expect(requestTo("https://api.tosspayments.com/v1/payments/T123/cancel"))
+                .andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"code\":\"NOT_CANCELABLE_PAYMENT\",\"message\":\"취소 할 수 없는 결제 입니다.\"}"));
+        BusinessException e = assertThrows(BusinessException.class, () -> rejected.gateway().cancel(CANCEL));
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, e.getErrorCode());
+
+        Toss notCanceled = toss(PROPERTIES);
+        notCanceled.server().expect(requestTo("https://api.tosspayments.com/v1/payments/T123/cancel"))
+                .andRespond(withSuccess("{\"status\":\"DONE\"}", MediaType.APPLICATION_JSON));
+        BusinessException e2 = assertThrows(BusinessException.class, () -> notCanceled.gateway().cancel(CANCEL));
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, e2.getErrorCode());
+    }
 }

@@ -70,7 +70,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 구독 현금 결제의 준비·승인(#249-S1~S8, S10~S12). PG 서버는 부르지 않고 두 게이트웨이를 가짜로 바꿔 끼운다.
+ * 구독 현금 결제의 준비·승인(#249-S1~S8, S10~S12)과 승인 뒤 저장 실패 복구(#274-S1·S2·S4·S5). PG 서버는 부르지 않고 두 게이트웨이를 가짜로 바꿔 끼운다.
  * 승인이 여러 번 커밋하는 흐름이라 테스트 트랜잭션을 쓰지 않고, 만든 데이터는 끝나면 지운다.
  */
 @SpringBootTest
@@ -488,7 +488,7 @@ class PgPaymentTest {
     }
 
     @Test
-    @DisplayName("#249-S12 PG가 승인한 뒤 저장이 실패하면 구독·결제는 남지 않고 시도는 APPROVING으로 남는다")
+    @DisplayName("#249-S12 PG가 승인한 뒤 저장이 실패하면 구독·결제는 남지 않는다 (고침 #274: 시도는 PG 취소 뒤 CANCELED로 남는다)")
     void saveFailureAfterPgApproval() throws Exception {
         User user = saveUser(Role.USER);
         String orderId = readied(user, "KAKAO_PAY");
@@ -498,9 +498,111 @@ class PgPaymentTest {
                 () -> pgPaymentService.approve(user.getId(), new PgApproveRequest(orderId, "pg-token-1", null, null)));
 
         verify(kakaoPay).approve(any());
-        assertEquals("APPROVING", attemptStatus(orderId));
+        assertEquals("CANCELED", attemptStatus(orderId));
         assertEquals(0, count("subscriptions", "user_id = ?", user.getId()));
         assertEquals(0, count("payments", "subscription_id in (select id from subscriptions where user_id = ?)", user.getId()));
+    }
+
+    @Test
+    @DisplayName("#274-S1 승인 뒤 저장이 실패하면 PG 취소를 그 거래 식별자로 부르고 시도는 CANCELED이며 구독·결제·장부 변화가 없다")
+    void cancelsPgApprovalWhenSaveFails() throws Exception {
+        for (String provider : List.of("KAKAO_PAY", "TOSS_PAY")) {
+            User user = saveUser(Role.USER);
+            String orderId = readied(user, provider);
+            doThrow(new IllegalStateException("결제 저장 실패")).when(paymentRepository).save(any(Payment.class));
+            PgApproveRequest request = provider.equals("KAKAO_PAY")
+                    ? new PgApproveRequest(orderId, "pg-token-1", null, null)
+                    : new PgApproveRequest(orderId, null, "PK-1", 10000);
+
+            assertThrows(IllegalStateException.class, () -> pgPaymentService.approve(user.getId(), request));
+
+            PaymentGateway gateway = provider.equals("KAKAO_PAY") ? kakaoPay : tossPay;
+            ArgumentCaptor<PaymentGateway.CancelCommand> captor = ArgumentCaptor.forClass(PaymentGateway.CancelCommand.class);
+            verify(gateway).cancel(captor.capture());
+            assertEquals(provider.equals("KAKAO_PAY") ? "T-1" : "PK-1", captor.getValue().pgTransactionId());
+            assertEquals(10000, captor.getValue().amount());
+            assertEquals(orderId, captor.getValue().orderId());
+            assertEquals("CANCELED", attemptStatus(orderId));
+            assertEquals(0, count("subscriptions", "user_id = ?", user.getId()));
+            assertEquals(0, count("credit_ledgers", "credit_wallet_id in (select id from credit_wallets where user_id = ?)", user.getId()));
+            org.mockito.Mockito.reset(paymentRepository);
+        }
+    }
+
+    @Test
+    @DisplayName("#274-S2 취소도 실패하면 시도는 NEEDS_REVIEW로 남고 PG 거래 식별자를 보관한다")
+    void needsReviewWhenCancelFails() throws Exception {
+        User user = saveUser(Role.USER);
+        String orderId = readied(user, "KAKAO_PAY");
+        doThrow(new IllegalStateException("결제 저장 실패")).when(paymentRepository).save(any(Payment.class));
+        doThrow(new BusinessException(ErrorCode.PG_CANCEL_FAILED)).when(kakaoPay).cancel(any());
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)
+                org.slf4j.LoggerFactory.getLogger(com.testmoa.backend.service.my.impl.PgPaymentServiceImpl.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs = new ch.qos.logback.core.read.ListAppender<>();
+        logs.start();
+        logger.addAppender(logs);
+
+        IllegalStateException e;
+        try {
+            e = assertThrows(IllegalStateException.class,
+                    () -> pgPaymentService.approve(user.getId(), new PgApproveRequest(orderId, "pg-token-1", null, null)));
+        } finally {
+            logger.detachAppender(logs);
+        }
+
+        assertEquals("결제 저장 실패", e.getMessage());
+        // 오류 로그에 시도·주문번호·provider가 남아 운영자가 찾을 수 있다
+        assertTrue(logs.list.stream().anyMatch(event -> event.getLevel() == ch.qos.logback.classic.Level.ERROR
+                && event.getFormattedMessage().contains("PG 승인 취소 실패")
+                && event.getFormattedMessage().contains(orderId)
+                && event.getFormattedMessage().contains("KAKAO_PAY")
+                && event.getFormattedMessage().contains("attemptId=")));
+        assertEquals("NEEDS_REVIEW", attemptStatus(orderId));
+        assertEquals("T-1", jdbc.queryForObject("select pg_transaction_id from payment_attempts where order_id = ?", String.class, orderId));
+        assertEquals(0, count("subscriptions", "user_id = ?", user.getId()));
+    }
+
+    @Test
+    @DisplayName("#274-S3 정상 결제는 구독이 만들어지고 시도는 APPROVED이며 취소를 부르지 않는다")
+    void normalPaymentDoesNotCancel() throws Exception {
+        User user = saveUser(Role.USER);
+        String orderId = readied(user, "KAKAO_PAY");
+
+        approve(user, kakaoApproval(orderId)).andExpect(status().isCreated());
+
+        assertEquals("APPROVED", attemptStatus(orderId));
+        assertEquals(1, count("subscriptions", "user_id = ?", user.getId()));
+        verify(kakaoPay, never()).cancel(any());
+    }
+
+    @Test
+    @DisplayName("#274-S4 PG가 승인을 거절한 시도는 FAILED이고 취소를 부르지 않는다")
+    void doesNotCancelWhenPgRejects() throws Exception {
+        User user = saveUser(Role.USER);
+        String orderId = readied(user, "KAKAO_PAY");
+        when(kakaoPay.approve(any())).thenThrow(new BusinessException(ErrorCode.PG_APPROVE_FAILED));
+
+        approve(user, kakaoApproval(orderId)).andExpect(status().isBadGateway());
+
+        assertEquals("FAILED", attemptStatus(orderId));
+        verify(kakaoPay, never()).cancel(any());
+    }
+
+    @Test
+    @DisplayName("#274-S5 CANCELED가 된 시도는 다시 승인할 수 없고 PG를 부르지 않는다")
+    void canceledAttemptCannotBeApprovedAgain() throws Exception {
+        User user = saveUser(Role.USER);
+        String orderId = readied(user, "KAKAO_PAY");
+        doThrow(new IllegalStateException("결제 저장 실패")).when(paymentRepository).save(any(Payment.class));
+        assertThrows(IllegalStateException.class,
+                () -> pgPaymentService.approve(user.getId(), new PgApproveRequest(orderId, "pg-token-1", null, null)));
+
+        approve(user, kakaoApproval(orderId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("PAYMENT_NOT_APPROVABLE"));
+
+        verify(kakaoPay, times(1)).approve(any());
+        assertEquals("CANCELED", attemptStatus(orderId));
     }
 
     private void seedPayment(User user, LocalDateTime paidAt) {

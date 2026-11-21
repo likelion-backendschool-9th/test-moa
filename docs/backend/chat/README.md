@@ -14,10 +14,16 @@
 | [#50](https://github.com/likelion-backendschool-9th/test-moa/issues/50) | 대화방 이름 변경·삭제 | [rooms.md](rooms.md) |
 | [#52](https://github.com/likelion-backendschool-9th/test-moa/issues/52) | 읽음 처리·안 읽은 수·읽음 표시 | [read.md](read.md) |
 | [#51](https://github.com/likelion-backendschool-9th/test-moa/issues/51) | 실시간 전송(SSE) | [realtime.md](realtime.md) |
-| [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |
+| [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | [start.md](start.md) |
 | [#54](https://github.com/likelion-backendschool-9th/test-moa/issues/54) | 화면을 실제 API로 연결 | [채팅함](../../frontend/chat/chats.md), [채팅방](../../frontend/chat/chat-room.md) |
 | [#195](https://github.com/likelion-backendschool-9th/test-moa/issues/195) | 모집 관리 화면에서 채팅 걸기 | [start-chat.md](../../frontend/chat/start-chat.md) |
 | [#105](https://github.com/likelion-backendschool-9th/test-moa/issues/105) | 채팅방 메시지 검색 | search.md |
+| [#262](https://github.com/likelion-backendschool-9th/test-moa/issues/262) | 사진·파일 보내기 | attachments.md |
+| [#263](https://github.com/likelion-backendschool-9th/test-moa/issues/263) | 보낸 메시지 수정·삭제 | message-edit.md |
+| [#264](https://github.com/likelion-backendschool-9th/test-moa/issues/264) | 새 메시지 브라우저 알림 | notification.md |
+| [#265](https://github.com/likelion-backendschool-9th/test-moa/issues/265) | 상대 차단 | block.md |
+| [#266](https://github.com/likelion-backendschool-9th/test-moa/issues/266) | 메시지 전송 횟수 제한 | rate-limit.md |
+| [#267](https://github.com/likelion-backendschool-9th/test-moa/issues/267) | 백엔드 여러 대일 때 SSE 알림 전달 | scale-out.md |
 
 진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다. 진행 상태는 이슈와 PR에서 본다.
 
@@ -34,12 +40,14 @@
 - 같은 참여자 행을 두 요청이 동시에 고쳐도 다른 컬럼을 덮어쓰지 않도록 각 작업은 해당 컬럼만 update 쿼리로 갱신한다. 보내기의 삭제 해제는 `hidden`(#49), 이름 변경은 `custom_room_name`, 삭제는 `hidden`(#50), 읽음 처리는 `last_read_seq`(#52)만 바꾼다. HQL update는 `@UpdateTimestamp`를 적용하지 않으므로 쿼리에서 `updated_at`도 명시적으로 갱신한다. 읽음은 `hidden = false and last_read_seq < :seq`인 행만 갱신해 순번이 내려가지 않는다. 1행을 바꿨으면 받은 순번을 그대로 돌려주고, 0행이면 DB 값을 다시 조회한다. 그 사이 방이 삭제되었으면 같은 404로 거절한다 ([#52](read.md), 11-08)
 - 삭제는 읽음을 바꾸지 않는다. 지운 방은 채팅함과 헤더의 안 읽은 수에서 제외하지만 `last_read_seq`는 유지한다. 상대가 새 메시지를 보내 방이 다시 나타나면 삭제 전의 안 읽은 메시지도 함께 센다 (#50-S7, [#52-S9](read.md), 11-08)
 - 실시간 전송은 SSE로 한다. Spring `SseEmitter`의 스트림을 Next Route Handler가 중계하고, 브라우저는 `EventSource`로 받는다. 보내기는 서버 액션(POST)으로 한다. SSE는 "새 메시지가 왔다", "읽었다"는 알림으로만 쓰고, 다시 연결되면 화면이 보고 있는 방마다 REST로 `after={그 방의 마지막 순번}`을 조회하며 채팅함·헤더는 요약을 다시 받는다(#51) (11-05)
+- WebSocket은 쓰지 않는다. 보내기는 일반 POST로 충분하고 서버에서 브라우저로는 알림만 보내면 된다. 양방향 연결을 두고 메시지 프로토콜과 재연결 처리를 직접 만드는 WebSocket은 이 프로젝트에 과한 구성으로 봤다. SSE는 일반 HTTP라 nginx → Next(BFF) → 백엔드 경로에 그대로 태울 수 있다(#51) (11-05, 이유 기록 11-11)
 - SSE 연결은 방마다가 아니라 회원마다 하나 연다. 그 연결로 모든 방의 알림을 받아 채팅함과 헤더의 안 읽은 표시도 실시간으로 바꾼다(#51·#52) (11-05)
 - 상대가 내 메시지를 읽었는지 보여 주는 읽음 표시를 범위에 넣는다. 상대의 `last_read_seq`가 내 메시지의 `seq` 이상이면 읽음이다. (11-05)
 - 참여자의 바꾼 대화방 이름 컬럼 `custom_name`을 `custom_room_name`으로 바꾼다(엔티티 필드는 `customRoomName`). `custom_name`만으로는 무엇의 이름인지 알기 어렵다. 이 컬럼을 실제로 쓰는 #50에서 바꾸고, 배포 DB에 채팅 테이블이 생기기 전이라 옮길 데이터는 없다. ERD에는 먼저 `custom_room_name`으로 넣는다(#50) (11-06)
 
 - SSE 이벤트는 `ready`(`{}`), `message`(`roomKey`, `seq`), `read`(`roomKey`, `reader: me|partner`, `lastReadSeq`) 세 가지다. 메시지 저장·읽음 순번 증가가 커밋된 뒤 방의 두 참여자 모든 연결에 알린다. 삭제한 방도 대상이고, 읽은 순번이 그대로면 알리지 않는다. 이름 변경·삭제는 다른 탭에 알리지 않고 채팅함으로 돌아갈 때 맞춘다 ([#51](realtime.md), 11-08)
 - SSE 연결은 30분 뒤 정상 종료하며, 25초마다 주석 하트비트를 보내고 재연결 간격은 3초다. 회원당 최대 5개 연결을 두고 넘으면 가장 오래된 연결을 닫는다. Next는 쿠키 토큰을 붙여 스트림을 중계하며 nginx는 버퍼링하지 않는다. 다시 받은 `ready`를 계기로 `after` 조회로 빠진 메시지를 채운다 ([#51](realtime.md), 11-08)
+- 채팅 신고는 공통 신고(#85)를 쓴다. 채팅함·채팅방 더보기 메뉴의 "신고하기"로 상대를 신고하고, 신고 대상은 `CHAT`, 대상 지정은 `roomKey`다. 운영자가 채팅 정지(`Restriction.CHAT`, #86)를 걸면 채팅 걸기와 보내기를 HTTP 403 `RESTRICTED`로 막는다 (#85·#86, 11-10)
 
 ## 데이터 구조
 #47에서 만든 테이블. 자세한 시나리오와 가정은 [entities.md](entities.md)에 있다.
@@ -51,12 +59,12 @@
 | `chat_messages` | 메시지 하나 | `room_id`, `seq`, `sender_id`(참여자), `content`, `sent_at` | `(room_id, seq)` unique |
 
 ## 아직 정하지 않은 것
-- 백엔드를 여러 대로 늘릴 때 SSE 알림을 서버 사이에 전달하는 방식(Redis pub/sub, PostgreSQL LISTEN/NOTIFY 등). 지금 연결 목록은 백엔드 한 대의 메모리에 있다 ([#51](realtime.md), 11-08)
+- 백엔드를 여러 대로 늘릴 때 SSE 알림을 서버 사이에 전달하는 방식(Redis pub/sub, PostgreSQL LISTEN/NOTIFY 등). 지금 연결 목록은 백엔드 한 대의 메모리에 있다 ([#51](realtime.md), 11-08). 이슈는 #267
 - 스키마 관리 방식(Flyway 등) 도입: 팀 결정. 테스트 서버는 `ddl-auto: update`(11-05). `update`는 없는 테이블·컬럼을 더하고 있는 컬럼의 타입·길이를 엔티티에 맞추지만, 컬럼을 지우거나 이름을 바꾸지는 않는다. (#111, 11-07)
 - ERD(ERDCloud)에 세 테이블을 더하는 일
-- 메시지 전송 횟수 제한: 서버에는 없다. 지금은 프론트가 500자로 잘라 보내 영향이 적지만, #54에서 프론트 한도를 10,000자로 올리면 긴 메시지를 반복해 보낼 수 있다. 전송은 방 행을 잠근 트랜잭션 안에서 저장하므로 같은 방 상대의 전송도 그만큼 기다린다. 서비스 전체의 남용 방지 정책과 함께 정한다(#155 리뷰, 11-08)
-- 기획이 정하지 않은 것(#36): 채팅방 신고·차단, 사진·파일 보내기, 메시지 수정·삭제, 알림
+- 메시지 전송 횟수 제한: 서버에는 없다. 실제 연결(#54) 뒤 프론트도 10,000자까지 보내므로 긴 메시지를 반복해 보낼 수 있다. 전송은 방 행을 잠근 트랜잭션 안에서 저장하므로 같은 방 상대의 전송도 그만큼 기다린다. 신고·채팅 정지는 운영자가 처리한 뒤에야 막는다. 서비스 전체의 남용 방지 정책과 함께 정한다(#155 리뷰, 11-08). 이슈는 #266
+- 기획이 정하지 않은 것(#36): 사진·파일 보내기(#262), 메시지 수정·삭제(#263), 알림(#264), 상대 차단(#265). 채팅방 신고는 #85·#86에서 정했다(위 "정한 것")
 
 ## 참고
 - 외부 요청은 nginx 하나로만 받아 `frontend`로 넘긴다. 브라우저는 Spring에 직접 닿지 않고 Next 서버(BFF)가 백엔드를 부른다 (11-04)
-- 프론트의 채팅 데이터 접근은 `frontend/src/features/chat/api.ts`에 모여 있다. 실제 API를 붙일 때 함수 본문만 바꾸고 시그니처는 유지한다(#54) (11-04)
+- 프론트의 채팅 데이터 접근은 `frontend/features/chat/api.ts`에 모여 있다. 실제 API를 붙일 때 함수 본문만 바꾸고 시그니처는 유지한다(#54) (11-04)

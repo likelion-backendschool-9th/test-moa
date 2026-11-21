@@ -83,6 +83,7 @@ alter table payment_attempts add constraint payment_attempts_status_check
 - Given 로컬 `docker compose`(`AUTH_MODE=backend`), 개발용 키, 위 "DB 변경"의 SQL을 실행한 DB, 결제 저장이 실패하도록 일시적으로 조작한 서버(예: `payments`에 일시적으로 실패하는 제약)
 - Then  각 PG에서 결제창 승인 뒤 오류 응답이 오고, PG 테스트 결제 내역이 취소로 보이며, `payment_attempts`가 `CANCELED`이고 구독이 없다
 - 조작을 되돌린 뒤 정상 결제가 그대로 되는 것도 확인한다
+- 확인함(2026-11-21, 로컬 `docker compose`, 개발용 키): `payments`에 일시적으로 실패하는 제약을 걸고 카카오페이 두 번, 토스 한 번 결제했다. 세 시도 모두 승인 뒤 저장이 실패했고 `CANCELED`가 되었으며(PG 취소가 성공해야 이 값이 된다), 결제·구독 행은 생기지 않았다. 오류 로그에는 시도 id·provider·주문번호가 남았다. 조작은 되돌렸다
 
 ## 범위 밖
 환불(#275), 운영자 처리자 기록(#276), 운영자 화면, 멈춘 시도를 주기적으로 다시 처리하는 스케줄러, 부분 취소.

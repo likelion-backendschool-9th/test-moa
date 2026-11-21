@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 import { getPaymentHistory } from "@/features/subscription/api";
-import { receiptMethodLabel, receiptPath } from "@/features/subscription/pg";
+import { receiptMethodLabel, receiptPath, refundLabel } from "@/features/subscription/pg";
 import { formatCredits, formatDate, formatWon } from "@/lib/format";
 import { AccountCard, AccountCardTitle } from "@/app/(site)/my/(account)/_components/AccountCard/AccountCard";
 import styles from "./PaymentHistory.module.css";
@@ -30,7 +30,9 @@ export async function PaymentHistory() {
       ) : (
         <>
           <ul className={styles.list}>
-            {history.items.map((payment) => (
+            {history.items.map((payment) => {
+              const refund = refundLabel(payment.status);
+              return (
               <li key={payment.id}>
                 <Link href={receiptPath(payment.id)} className={styles.row}>
                   <span className={styles.main}>
@@ -39,12 +41,14 @@ export async function PaymentHistory() {
                       {formatDate(payment.paidAt)} · {receiptMethodLabel(payment)}
                     </span>
                   </span>
-                  <span className={styles.amount}>
+                  <span className={refund ? styles.refunded : styles.amount}>
+                    {refund && <span className={styles.refundBadge}>{refund}</span>}
                     {payment.method === "CREDIT" ? formatCredits(payment.amount) : formatWon(payment.amount)}
                   </span>
                 </Link>
               </li>
-            ))}
+              );
+            })}
           </ul>
           {history.total > history.items.length && (
             <p className={styles.more}>최근 {history.items.length}건만 보여요 (전체 {history.total}건)</p>

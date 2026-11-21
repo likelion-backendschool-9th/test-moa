@@ -6,7 +6,7 @@ import { LinkButton } from "@/components/ui/LinkButton/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { requireMember } from "@/features/session/guard";
 import { getPaymentReceipt } from "@/features/subscription/api";
-import { isJustPaid, parsePaymentId, receiptMethodLabel } from "@/features/subscription/pg";
+import { isJustPaid, parsePaymentId, receiptMethodLabel, refundLabel } from "@/features/subscription/pg";
 import { isBackendAuth } from "@/lib/backend";
 import { formatCredits, formatDate, formatDateTime, formatWon } from "@/lib/format";
 import { PopupReturn } from "@/app/(site)/my/(account)/subscription/checkout/_components/PopupReturn/PopupReturn";
@@ -21,6 +21,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
  * 구독 결제를 마친 뒤 보는 확인 화면(#249). 백엔드 모드에서 크레딧·카카오페이·토스 결제가 끝나면 이리로 온다(`?paid=1`).
  * 구독 화면의 결제 내역에서도 한 건을 누르면 이 화면이 열리고(`paid` 없음) 제목이 "결제 내역"이다.
  * `?payment=`의 결제를 서버의 내 결제 이력에서 읽어 보여 주고, 없으면 안내와 구독 화면 링크를 보인다.
+ * 환불했거나 환불 중인 결제는 구독 혜택 안내 대신 환불 문구와 "상태" 줄을 보인다(#275-S11).
  * 목업은 결제를 서버에 남기지 않아서 이 화면 없이 구독 화면의 안내로 끝난다
  */
 export default function CheckoutCompletePage({ searchParams }: { searchParams: SearchParams }) {
@@ -56,6 +57,7 @@ async function Complete({ searchParams }: { searchParams: SearchParams }) {
       </AccountCard>
     );
   }
+  const refund = refundLabel(receipt.status);
   const amount = receipt.method === "CREDIT" ? formatCredits(receipt.amount) : formatWon(receipt.amount);
   return (
     <AccountCard as="section" aria-labelledby="complete-heading" className={styles.complete}>
@@ -65,11 +67,16 @@ async function Complete({ searchParams }: { searchParams: SearchParams }) {
           {justPaid ? "결제가 완료됐어요" : "결제 내역"}
         </h1>
         <p role={justPaid ? "status" : undefined} className={styles.completeText}>
-          {formatDate(receipt.period.endAt)}까지 구독 혜택을 쓸 수 있어요.
+          {refund
+            ? receipt.status === "REFUNDED"
+              ? "환불된 결제예요."
+              : "환불을 처리하고 있어요."
+            : `${formatDate(receipt.period.endAt)}까지 구독 혜택을 쓸 수 있어요.`}
         </p>
       </div>
       <dl className={styles.list}>
         <Row term="상품" value={receipt.plan} />
+        {refund && <Row term="상태" value={refund} />}
         <Row term="결제 수단" value={receiptMethodLabel(receipt)} />
         <Row term="결제 시각" value={formatDateTime(receipt.paidAt)} />
         <Row term="이용 기간" value={`${formatDate(receipt.period.startAt)} ~ ${formatDate(receipt.period.endAt)}`} />

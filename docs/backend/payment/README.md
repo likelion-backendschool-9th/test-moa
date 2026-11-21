@@ -20,6 +20,7 @@
 | [#249](https://github.com/likelion-backendschool-9th/test-moa/issues/249) | 구독 현금 결제 PG 연동(카카오페이·토스페이 테스트) | [pg-checkout.md](pg-checkout.md) |
 | [#255](https://github.com/likelion-backendschool-9th/test-moa/issues/255) | 회원가입 때 가입 크레딧 지급(+ 기존 회원 일회성 지급) | [signup-credit.md](signup-credit.md) |
 | [#274](https://github.com/likelion-backendschool-9th/test-moa/issues/274) | PG 승인 뒤 저장이 실패한 결제 취소·점검 | [pg-approve-recovery.md](pg-approve-recovery.md) |
+| [#275](https://github.com/likelion-backendschool-9th/test-moa/issues/275) | 운영자 결제 환불 | [admin-payment-refund.md](admin-payment-refund.md) |
 
 진행 순서는 크레딧(#66·#67) → 구독(#69) → 결제(#70·#71)다. 운영자 출금(#68)은 크레딧 다음이면 언제 해도 된다. 진행 상태는 이슈와 PR에서 본다.
 

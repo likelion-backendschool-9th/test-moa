@@ -15,6 +15,7 @@ import {
   popupReturnHref,
   readProviders,
   receiptFromServer,
+  refundLabel,
   receiptPath,
   receiptMethodLabel,
   tossWindowFrom,
@@ -107,7 +108,7 @@ test("#249-S23 결제 완료 화면은 결제 수단을 크레딧·카카오페�
   const toss = receiptFromServer({ ...base, method: "CASH", provider: "TOSS_PAY" });
   const legacy = receiptFromServer({ ...base, method: "CASH" });
   expect([credit, kakao, toss, legacy].map(receiptMethodLabel)).toEqual(["크레딧", "카카오페이", "토스페이", "현금"]);
-  expect(kakao).toEqual({ id: "5", plan: "PRO", method: "CASH", provider: "KAKAO_PAY", amount: 10000, paidAt: base.paidAt, period: base.period });
+  expect(kakao).toEqual({ id: "5", plan: "PRO", method: "CASH", provider: "KAKAO_PAY", amount: 10000, status: "COMPLETED", paidAt: base.paidAt, period: base.period });
   /* 모르는 결제 대행사는 없는 것으로 본다 */
   expect(receiptFromServer({ ...base, method: "CASH", provider: "PAYCO" }).provider).toBeNull();
 });
@@ -205,4 +206,13 @@ test("#252-S13 결제 결과는 이 창이 연 팝업(창 이름이 같음)이 �
   /* 결제 화면 밖의 주소나 객체가 아닌 값 */
   expect(popupReturnHref("moa-pay-A", { ...message, href: "https://evil.example" }, "moa-pay-return")).toBeNull();
   for (const data of [null, undefined, "x", 1]) expect(popupReturnHref("moa-pay-A", data, "moa-pay-return")).toBeNull();
+});
+
+test("#275-S11 결제 내역은 환불했거나 환불 중인 결제만 표시하고 나머지는 정상 결제로 보인다", () => {
+  const base = { paymentId: 7, plan: "PRO", method: "CASH" as const, provider: "KAKAO_PAY", amount: 10000, paidAt: "2026-11-21T08:30:00Z", period: { startAt: "2026-11-21T08:30:00Z", endAt: "2026-12-21T08:30:00Z" } };
+  const label = (status?: string | null) => refundLabel(receiptFromServer({ ...base, status }).status);
+  expect(label("REFUNDED")).toBe("환불됨");
+  expect(label("REFUNDING")).toBe("환불 중");
+  /* 환불이 거절돼 결제가 그대로인 건, 상태가 없는 옛 응답, 모르는 값은 정상 결제다 */
+  for (const status of ["COMPLETED", "REFUND_FAILED", undefined, null, "OTHER"]) expect(label(status), String(status)).toBeNull();
 });

@@ -48,6 +48,28 @@
   font-variant-numeric: tabular-nums;
 }
 
+.refunded {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.refundBadge {
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-leading);
+  text-decoration: none;
+}
+
 .empty {
   font-size: var(--text-sm);
   line-height: var(--text-sm-leading);

@@ -11,7 +11,7 @@
 
 ## 정한 것 (#274)
 - **저장 실패 보상은 승인 ③의 `catch`에서 한다.** PG를 부르는 동안 회원 행을 잡지 않는 #249의 세 토막 설계는 바꾸지 않는다. 취소 호출도 잠금 밖에서 한다.
-- **시도 상태를 둘 더한다.** `CANCELED`(PG 취소까지 마침)와 `NEEDS_REVIEW`(취소도 실패해 사람이 봐야 함). 이미 `APPROVING`에 멈춘 옛 시도는 바꾸지 않고 조회 대상에 포함한다. 테스트 서버는 `ddl-auto: update`라 새 enum 값은 컬럼 문자열로 들어간다.
+- **시도 상태를 둘 더한다.** `CANCELED`(PG 취소까지 마침)와 `NEEDS_REVIEW`(취소도 실패해 사람이 봐야 함). 이미 `APPROVING`에 멈춘 옛 시도는 바꾸지 않고 조회 대상에 포함한다. 새 값은 컬럼에 문자열로 들어가지만, `ddl-auto: update`는 기존 허용 값 제약(`payment_attempts_status_check`)을 고치지 않는다. 그대로면 `CANCELED`·`NEEDS_REVIEW` 저장이 제약에 막혀 보상이 실패하므로 아래 "DB 변경"의 SQL을 배포 전에 한 번 실행한다.
 - **취소 호출은 `PaymentGateway`에 `cancel`을 더해 한다.** 카카오페이는 `tid`, 토스는 `paymentKey`(`Approved.pgTransactionId`)로 전액 취소한다. 구현은 `KakaoPayGateway`, `TossPaymentsGateway`이고 가짜 구현도 같이 고친다. 이 호출은 환불(#275)도 쓴다.
 - **토스 취소는 멱등 키를 보내고, 이미 취소된 결제는 성공으로 본다.** `Idempotency-Key: cancel-<주문번호>`를 보내 재시도가 두 번 취소하지 않게 하고, `ALREADY_CANCELED_PAYMENT` 응답은 보상이 목표한 상태이므로 성공으로 처리한다. 토스는 `cancelAmount`를 보내지 않으면 전액 취소다.
 - **취소가 실패해도 예외를 삼키지 않는다.** 시도를 `NEEDS_REVIEW`로 바꾸고 오류 로그에 시도 id·주문번호·provider를 남긴다. 사용자에게는 결제 실패 오류(500)를 그대로 돌려준다.
@@ -19,6 +19,17 @@
 - **보상 중 중복 승인은 막힌다.** 시도가 `APPROVING`인 동안 같은 시도의 둘째 승인은 이미 막혀 있다(#249). 보상이 끝나 `CANCELED`가 되면 그 시도는 다시 승인할 수 없다.
 
 (고침 #274: #249-S12의 "자동 취소는 하지 않는다"를 바꾼다. 저장 실패 때 PG 취소를 시도하고 결과를 시도 상태로 남긴다.)
+
+## DB 변경
+`payment_attempts.status`의 허용 값에 `CANCELED`, `NEEDS_REVIEW`를 더한다. 테이블이 이미 있는 DB(테스트 서버, 로컬 `docker compose`)에서 배포 전에 한 번 실행한다. 비어 있는 새 DB(CI)는 Hibernate가 새 값까지 넣어 만든다.
+
+```sql
+alter table payment_attempts drop constraint if exists payment_attempts_status_check;
+alter table payment_attempts add constraint payment_attempts_status_check
+  check (status in ('PENDING','APPROVING','APPROVED','FAILED','CANCELED','NEEDS_REVIEW'));
+```
+
+실행하지 않으면 PG 취소는 나가는데 시도 상태 저장이 제약에 막혀 시도가 `APPROVING`으로 남고, 15분 뒤 운영자 목록에 취소가 안 된 건처럼 보인다.
 
 ## API
 
@@ -64,11 +75,12 @@
 #274-S7 카카오페이·토스 취소 요청이 각 PG 규격으로 나간다 [테스트]
 - Given 각 PG의 HTTP 가짜 서버
 - Then  카카오페이는 `tid`와 취소 금액을, 토스는 `paymentKey`와 취소 사유를 보내고, 각 헤더(`Authorization`)가 맞다
+- Then  카카오페이는 응답 `status`가 `CANCEL_PAYMENT`일 때만, 토스는 `CANCELED`일 때만 성공이다. 토스는 이미 취소된 결제(`ALREADY_CANCELED_PAYMENT`)를 성공으로 보고, 카카오페이는 이미 취소된 결제를 다시 취소하면 400(-710)이라 실패로 본다
 - When  PG가 취소를 거절하거나 연결이 안 된다
 - Then  취소 호출이 오류로 끝나 보상 쪽이 `NEEDS_REVIEW`로 처리한다
 
 #274-S8 PG 테스트 환경에서 저장 실패 때 실제로 취소된다 [직접]
-- Given 로컬 `docker compose`(`AUTH_MODE=backend`), 개발용 키, 결제 저장이 실패하도록 일시적으로 조작한 서버(예: DB 제약 위반을 만든 테스트 데이터)
+- Given 로컬 `docker compose`(`AUTH_MODE=backend`), 개발용 키, 위 "DB 변경"의 SQL을 실행한 DB, 결제 저장이 실패하도록 일시적으로 조작한 서버(예: `payments`에 일시적으로 실패하는 제약)
 - Then  각 PG에서 결제창 승인 뒤 오류 응답이 오고, PG 테스트 결제 내역이 취소로 보이며, `payment_attempts`가 `CANCELED`이고 구독이 없다
 - 조작을 되돌린 뒤 정상 결제가 그대로 되는 것도 확인한다
 
@@ -87,7 +99,8 @@
 - 토스 취소는 `POST https://api.tosspayments.com/v1/payments/{paymentKey}/cancel`이고 본문은 `cancelReason`(필수, 200자 이하)이다. 성공 응답은 Payment 객체이며 전액 취소 뒤 `status`가 `CANCELED`다(공식 문서, 2026-11-21 확인). 테스트 키로 승인한 결제를 이 요청(멱등 키 포함)으로 취소해 HTTP 200, `status: CANCELED`를 확인했고, 같은 멱등 키로 다시 불러도 같은 결과가 돌아왔다(2026-11-21).
 - 카카오페이 취소는 `POST https://open-api.kakaopay.com/online/v1/payment/cancel`(`cid`, `tid`, `cancel_amount`, `cancel_tax_free_amount`)로 구현했다. 공식 문서 본문은 읽지 못했지만(페이지가 스크립트로 그려짐) 테스트 CID로 승인한 결제를 이 요청으로 취소해 HTTP 200, `status: CANCEL_PAYMENT`를 확인했다(2026-11-21).
 - 승인 직후 같은 거래의 전액 취소를 두 PG의 테스트 환경이 지원한다. 지원하지 않으면 S8의 확인 방법을 고친다.
+- 카카오페이는 이미 취소된 결제를 다시 취소하면 400(-710, "취소 금액이 취소 가능 금액보다 큼")을 돌려준다(테스트 결제로 확인, 2026-11-21). "이미 취소됨"만 따로 알려 주지 않아 성공으로 보지 않는다.
 - 보상 취소는 한 번만 시도한다. 일시 오류 재시도는 하지 않고 `NEEDS_REVIEW`로 남긴다(운영자가 조회해 처리).
 
 ## 참고
-- `PaymentAttempt`의 상태 값은 문자열로 저장한다. 테스트 서버(`compose.prod.yaml`)는 `ddl-auto: update`라 enum 값 추가에 SQL이 필요 없다. Flyway 도입은 별도 이슈(#162)다.
+- `PaymentAttempt`의 상태 값은 문자열로 저장하지만 Hibernate가 허용 값 제약도 같이 만들고, `ddl-auto: update`(테스트 서버 `compose.prod.yaml`, 로컬)는 그 제약을 고치지 않는다. enum 값을 더하면 SQL로 제약을 고쳐야 한다. 같은 경우가 #84의 `users_status_check`에서 있었다([auth/README.md](../auth/README.md)). CI는 빈 DB에 테이블을 새로 만들어(`create-drop`) 이 문제를 잡지 못한다. Flyway 도입은 별도 이슈(#162)다.

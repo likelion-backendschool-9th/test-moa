@@ -536,14 +536,43 @@ class PgPaymentTest {
         String orderId = readied(user, "KAKAO_PAY");
         doThrow(new IllegalStateException("결제 저장 실패")).when(paymentRepository).save(any(Payment.class));
         doThrow(new BusinessException(ErrorCode.PG_CANCEL_FAILED)).when(kakaoPay).cancel(any());
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)
+                org.slf4j.LoggerFactory.getLogger(com.testmoa.backend.service.my.impl.PgPaymentServiceImpl.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs = new ch.qos.logback.core.read.ListAppender<>();
+        logs.start();
+        logger.addAppender(logs);
 
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> pgPaymentService.approve(user.getId(), new PgApproveRequest(orderId, "pg-token-1", null, null)));
+        IllegalStateException e;
+        try {
+            e = assertThrows(IllegalStateException.class,
+                    () -> pgPaymentService.approve(user.getId(), new PgApproveRequest(orderId, "pg-token-1", null, null)));
+        } finally {
+            logger.detachAppender(logs);
+        }
 
         assertEquals("결제 저장 실패", e.getMessage());
+        // 오류 로그에 시도·주문번호·provider가 남아 운영자가 찾을 수 있다
+        assertTrue(logs.list.stream().anyMatch(event -> event.getLevel() == ch.qos.logback.classic.Level.ERROR
+                && event.getFormattedMessage().contains("PG 승인 취소 실패")
+                && event.getFormattedMessage().contains(orderId)
+                && event.getFormattedMessage().contains("KAKAO_PAY")
+                && event.getFormattedMessage().contains("attemptId=")));
         assertEquals("NEEDS_REVIEW", attemptStatus(orderId));
         assertEquals("T-1", jdbc.queryForObject("select pg_transaction_id from payment_attempts where order_id = ?", String.class, orderId));
         assertEquals(0, count("subscriptions", "user_id = ?", user.getId()));
+    }
+
+    @Test
+    @DisplayName("#274-S3 정상 결제는 구독이 만들어지고 시도는 APPROVED이며 취소를 부르지 않는다")
+    void normalPaymentDoesNotCancel() throws Exception {
+        User user = saveUser(Role.USER);
+        String orderId = readied(user, "KAKAO_PAY");
+
+        approve(user, kakaoApproval(orderId)).andExpect(status().isCreated());
+
+        assertEquals("APPROVED", attemptStatus(orderId));
+        assertEquals(1, count("subscriptions", "user_id = ?", user.getId()));
+        verify(kakaoPay, never()).cancel(any());
     }
 
     @Test

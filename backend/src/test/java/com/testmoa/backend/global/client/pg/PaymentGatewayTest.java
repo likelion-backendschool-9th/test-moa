@@ -246,6 +246,21 @@ class PaymentGatewayTest {
     }
 
     @Test
+    @DisplayName("#274-S7 카카오페이 취소 응답이 CANCEL_PAYMENT가 아니거나 이미 취소돼 거절(-710)되면 502 PG_CANCEL_FAILED")
+    void kakaoCancelNotCanceled() {
+        Kakao partial = kakao(PROPERTIES);
+        partial.server().expect(requestTo("https://open-api.kakaopay.com/online/v1/payment/cancel"))
+                .andRespond(withSuccess("{\"status\":\"PART_CANCEL_PAYMENT\"}", MediaType.APPLICATION_JSON));
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, assertThrows(BusinessException.class, () -> partial.gateway().cancel(CANCEL)).getErrorCode());
+
+        Kakao already = kakao(PROPERTIES);
+        already.server().expect(requestTo("https://open-api.kakaopay.com/online/v1/payment/cancel"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error_code\":-710,\"error_message\":\"requested cancel amount is bigger than cancelable amount\"}"));
+        assertEquals(ErrorCode.PG_CANCEL_FAILED, assertThrows(BusinessException.class, () -> already.gateway().cancel(CANCEL)).getErrorCode());
+    }
+
+    @Test
     @DisplayName("#274-S7 카카오페이가 취소를 거절하면 502 PG_CANCEL_FAILED이고 키가 예외에 섞이지 않는다")
     void kakaoCancelFailure() {
         Kakao kakao = kakao(PROPERTIES);

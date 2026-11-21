@@ -21,7 +21,8 @@ public interface PaymentGateway {
 
     /**
      * 승인한 결제를 전액 취소한다(#274). 거절되거나 연결하지 못하면 502 PG_CANCEL_FAILED.
-     * 이미 취소된 결제를 다시 취소해도 성공으로 본다(보상 취소를 다시 불러도 안전하게)
+     * 이미 취소된 결제를 다시 취소하면 토스는 성공으로 보고(ALREADY_CANCELED_PAYMENT), 카카오페이는 취소 가능 금액
+     * 초과(-710)로 거절하므로 실패로 본다. 보상 취소는 한 번만 부르고 재시도하지 않는다
      */
     void cancel(CancelCommand command);
 

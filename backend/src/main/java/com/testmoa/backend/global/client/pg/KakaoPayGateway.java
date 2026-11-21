@@ -102,13 +102,17 @@ public class KakaoPayGateway implements PaymentGateway {
     public void cancel(CancelCommand command) {
         CancelBody body = new CancelBody(properties.cid(), command.pgTransactionId(), command.amount(), 0);
         try {
-            restClient.post()
+            CancelResponse response = restClient.post()
                     .uri("/online/v1/payment/cancel")
                     .header("Authorization", "SECRET_KEY " + properties.secretKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
-                    .toBodilessEntity();
+                    .body(CancelResponse.class);
+            if (response == null || !"CANCEL_PAYMENT".equals(response.status())) {
+                log.error("카카오페이 취소 응답의 상태가 CANCEL_PAYMENT가 아님 status={}", response == null ? null : response.status());
+                throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+            }
         } catch (RestClientResponseException e) {
             log.error("카카오페이 결제 취소 거절 status={} body={}", e.getStatusCode().value(), e.getResponseBodyAsString());
             throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
@@ -116,6 +120,10 @@ public class KakaoPayGateway implements PaymentGateway {
             log.error("카카오페이 결제 취소 연결 실패: {}", e.getMessage());
             throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
         }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    record CancelResponse(String status) {
     }
 
     record CancelBody(

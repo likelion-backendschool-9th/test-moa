@@ -13,6 +13,7 @@
 - **저장 실패 보상은 승인 ③의 `catch`에서 한다.** PG를 부르는 동안 회원 행을 잡지 않는 #249의 세 토막 설계는 바꾸지 않는다. 취소 호출도 잠금 밖에서 한다.
 - **시도 상태를 둘 더한다.** `CANCELED`(PG 취소까지 마침)와 `NEEDS_REVIEW`(취소도 실패해 사람이 봐야 함). 이미 `APPROVING`에 멈춘 옛 시도는 바꾸지 않고 조회 대상에 포함한다. 테스트 서버는 `ddl-auto: update`라 새 enum 값은 컬럼 문자열로 들어간다.
 - **취소 호출은 `PaymentGateway`에 `cancel`을 더해 한다.** 카카오페이는 `tid`, 토스는 `paymentKey`(`Approved.pgTransactionId`)로 전액 취소한다. 구현은 `KakaoPayGateway`, `TossPaymentsGateway`이고 가짜 구현도 같이 고친다. 이 호출은 환불(#275)도 쓴다.
+- **토스 취소는 멱등 키를 보내고, 이미 취소된 결제는 성공으로 본다.** `Idempotency-Key: cancel-<주문번호>`를 보내 재시도가 두 번 취소하지 않게 하고, `ALREADY_CANCELED_PAYMENT` 응답은 보상이 목표한 상태이므로 성공으로 처리한다. 토스는 `cancelAmount`를 보내지 않으면 전액 취소다.
 - **취소가 실패해도 예외를 삼키지 않는다.** 시도를 `NEEDS_REVIEW`로 바꾸고 오류 로그에 시도 id·주문번호·provider를 남긴다. 사용자에게는 결제 실패 오류(500)를 그대로 돌려준다.
 - **멈춘 시도 조회 API를 운영자에게 준다.** `GET /api/v1/admin/payment-attempts/stuck`가 기준 시간보다 오래된 `APPROVING`과 모든 `NEEDS_REVIEW`를 최신순으로 돌려준다. 기준 시간은 설정 `payment.stuck-minutes`(기본 15분, 시도 유효 시간 10분보다 길게). `/api/v1/admin/**`은 SecurityConfig가 ADMIN만 허용한다.
 - **보상 중 중복 승인은 막힌다.** 시도가 `APPROVING`인 동안 같은 시도의 둘째 승인은 이미 막혀 있다(#249). 보상이 끝나 `CANCELED`가 되면 그 시도는 다시 승인할 수 없다.
@@ -25,7 +26,7 @@
 | --- | --- | --- |
 | `GET` | `/api/v1/admin/payment-attempts/stuck` | 오래 멈춘 `APPROVING`·`NEEDS_REVIEW` 시도 목록. 운영자만 |
 
-응답 항목: `attemptId`, `orderId`, `provider`, `amount`, `status`, `userEmail`(운영자가 회원을 찾는 용도), `createdAt`, `updatedAt`(오프셋 포함, [server-time.md](../../server-time.md)). 목록은 짧아서 페이지를 나누지 않는다.
+응답 항목: `attemptId`, `orderId`, `provider`, `amount`, `status`, `userEmail`(운영자가 회원을 찾는 용도), `pgTransactionId`(운영자가 PG에서 직접 취소할 때 쓰는 거래 식별자), `createdAt`, `updatedAt`(오프셋 포함, [server-time.md](../../server-time.md)). 목록은 짧아서 페이지를 나누지 않는다.
 
 ## 시나리오
 
@@ -83,7 +84,8 @@
 6. `[직접]` 확인(S8), 문서 정리
 
 ## 가정
-- 카카오페이 취소는 `POST https://open-api.kakaopay.com/online/v1/payment/cancel`(`cid`, `tid`, `cancel_amount`, `cancel_tax_free_amount`)이고, 토스 취소는 `POST https://api.tosspayments.com/v1/payments/{paymentKey}/cancel`(`cancelReason`)이다. 두 API의 필수 값은 구현할 때 공식 문서로 다시 확인한다.
+- 토스 취소는 `POST https://api.tosspayments.com/v1/payments/{paymentKey}/cancel`이고 본문은 `cancelReason`(필수, 200자 이하)이다. 성공 응답은 Payment 객체이며 전액 취소 뒤 `status`가 `CANCELED`다(공식 문서, 2026-11-21 확인).
+- 카카오페이 취소는 `POST https://open-api.kakaopay.com/online/v1/payment/cancel`(`cid`, `tid`, `cancel_amount`, `cancel_tax_free_amount`)로 구현했다. 공식 문서 본문을 읽지 못해(페이지가 스크립트로 그려짐) 필수 값을 확인하지 못했다. `[직접]` 확인(S8)에서 테스트 CID로 실제 호출해 맞는지 본다.
 - 승인 직후 같은 거래의 전액 취소를 두 PG의 테스트 환경이 지원한다. 지원하지 않으면 S8의 확인 방법을 고친다.
 - 보상 취소는 한 번만 시도한다. 일시 오류 재시도는 하지 않고 `NEEDS_REVIEW`로 남긴다(운영자가 조회해 처리).
 

@@ -7,7 +7,7 @@
 ## 한눈에
 - 끝나면: 운영자가 PG 현금 결제 하나를 환불하면 PG에서 취소되고, 결제는 `REFUNDED`, 그 결제로 생긴 구독은 해제된다. 같은 요청을 두 번 보내도 한 번만 처리된다.
 - 선행: #274(PG 취소 호출), #249(PG 연동), #204(회원 행 잠금).
-- 이 이슈 범위 밖: 부분 환불, 크레딧 결제의 환불, 환불 화면(프론트), 회원의 환불 신청, 환불 사유 기록(#276에서 처리자와 함께 다룬다).
+- 이 이슈 범위 밖: 부분 환불, 크레딧 결제의 환불, 운영자 환불 화면(프론트), 회원의 환불 신청, 환불 사유 기록(#276에서 처리자와 함께 다룬다).
 
 ## 정한 것 (#275)
 - **환불 대상은 PG 현금 결제만이다.** `provider`가 있는 `CASH` 결제다. 크레딧 결제(`provider` 없음)와 PG 연동 전의 현금 결제는 400 `INVALID_INPUT`이다(문구: "카카오페이·토스페이로 결제한 건만 환불할 수 있어요").
@@ -91,8 +91,13 @@ alter table payments add constraint payments_status_check
 - Then  환불 API를 부르면 PG 테스트 결제 내역이 취소로 바뀌고 `payments`가 `REFUNDED`, 구독이 `CANCELLED`이며 `/my/subscription`에 구독 중이 아니라고 보인다
 - 결과(2026-11-21, 로컬 `docker compose`, 개발용 키): 카카오페이 결제와 토스 결제를 각각 환불 API로 부르니 둘 다 200 `REFUNDED`였고 구독은 `CANCELLED`, 지갑·장부는 바뀌지 않았다. 환불 API는 PG 응답이 취소 상태(카카오 `CANCEL_PAYMENT`, 토스 `CANCELED`)일 때만 성공하므로 PG 쪽 취소도 확인된다. 같은 결제를 다시 부르면 409 `PAYMENT_NOT_REFUNDABLE`이었다. 이미 PG에서 취소된 옛 카카오 결제를 환불하면 502 `PG_CANCEL_FAILED`가 나오고 결제는 `REFUND_FAILED`, 구독은 `ACTIVE`로 남았다. 테스트 회원에게 다른 활성 구독이 남아 있어 `/my/subscription` 화면은 보지 못했다.
 
+#275-S11 회원의 결제 내역에 환불한 결제가 표시된다 [테스트: tests/unit/subscription-pg.test.ts #275-S11]
+- Given 환불해 `REFUNDED`가 되었거나 `REFUNDING`인 결제가 있는 회원
+- Then  구독 화면의 결제 내역 줄에 "환불됨"·"환불 중"이 붙고 금액에 취소선이 그어진다. `REFUND_FAILED`와 상태가 없는 옛 응답은 정상 결제로 보인다
+- 표시는 프론트 화면이며 서버는 이미 결제 이력 응답에 `status`를 준다. 화면은 [subscription.md](../../frontend/payment/subscription.md)에 적었다
+
 ## 범위 밖
-부분 환불, 크레딧 결제의 환불, 환불 화면(프론트), 회원의 환불 신청, 환불 수수료·정산.
+부분 환불, 크레딧 결제의 환불, 운영자 환불 화면(프론트), 회원의 환불 신청, 환불 수수료·정산.
 
 ## 작업 순서
 1. `Payment.Status`에 `REFUNDING`·`REFUND_FAILED`와 상태 전이 메서드(`startRefund`, `refund`, `failRefund`), `ErrorCode` 둘(`PAYMENT_NOT_REFUNDABLE`, `PG_CANCEL_FAILED`)

@@ -106,9 +106,13 @@ export type PaymentReceipt = {
   method: "CASH" | "CREDIT";
   provider: PgProvider | null;
   amount: number;
+  status: PaymentStatus;
   paidAt: string;
   period: { startAt: string; endAt: string };
 };
+
+/** 서버 결제 상태. REFUND_FAILED는 PG가 취소를 거절해 결제가 그대로라 완료처럼 보인다 */
+export type PaymentStatus = "COMPLETED" | "REFUNDING" | "REFUNDED" | "REFUND_FAILED";
 
 type ServerPayment = {
   paymentId: number;
@@ -116,9 +120,19 @@ type ServerPayment = {
   method: "CASH" | "CREDIT";
   provider?: string | null;
   amount: number;
+  status?: string | null;
   paidAt: string;
   period: { startAt: string; endAt: string };
 };
+
+const PAYMENT_STATUSES: readonly string[] = ["COMPLETED", "REFUNDING", "REFUNDED", "REFUND_FAILED"];
+
+/** 결제 내역에 붙는 환불 표시. 환불했거나 환불 중일 때만 있고, 정상 결제는 null이다 */
+export function refundLabel(status: PaymentStatus): string | null {
+  if (status === "REFUNDED") return "환불됨";
+  if (status === "REFUNDING") return "환불 중";
+  return null;
+}
 
 export function receiptFromServer(payment: ServerPayment): PaymentReceipt {
   return {
@@ -127,6 +141,7 @@ export function receiptFromServer(payment: ServerPayment): PaymentReceipt {
     method: payment.method,
     provider: isPgProvider(payment.provider) ? payment.provider : null,
     amount: payment.amount,
+    status: PAYMENT_STATUSES.includes(payment.status ?? "") ? (payment.status as PaymentStatus) : "COMPLETED",
     paidAt: payment.paidAt,
     period: payment.period,
   };

@@ -80,8 +80,8 @@ class CashoutConcurrencyTest {
         CountDownLatch done = new CountDownLatch(2);
         ExecutorService pool = Executors.newFixedThreadPool(2);
 
-        Runnable pay = () -> cashoutService.pay(cashoutId);
-        Runnable reject = () -> cashoutService.reject(
+        Runnable pay = () -> cashoutService.pay(1L, cashoutId);
+        Runnable reject = () -> cashoutService.reject(1L,
                 cashoutId, new CashoutRejectRequest(Cashout.RejectReason.ACCOUNT, null));
         for (Runnable action : new Runnable[]{pay, reject}) {
             pool.submit(() -> {

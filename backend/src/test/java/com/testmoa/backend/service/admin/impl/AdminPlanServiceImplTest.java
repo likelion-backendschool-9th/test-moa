@@ -43,7 +43,7 @@ class AdminPlanServiceImplTest {
         when(planRepository.findMaxVersionByTier("구독")).thenReturn(Optional.empty());
         when(planRepository.save(any(Plan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PlanResponse response = service.register(request("구독", List.of("a", "b")));
+        PlanResponse response = service.register(1L, request("구독", List.of("a", "b")));
 
         assertEquals(1, response.version());
         assertEquals(List.of("a", "b"), response.benefits());
@@ -60,7 +60,7 @@ class AdminPlanServiceImplTest {
         when(planRepository.findMaxVersionByTier("구독")).thenReturn(Optional.of(1));
         when(planRepository.save(any(Plan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PlanResponse response = service.register(new PlanCreateRequest("구독", 12000, 10000, 30, null));
+        PlanResponse response = service.register(1L, new PlanCreateRequest("구독", 12000, 10000, 30, null));
 
         assertEquals(2, response.version());
         assertEquals(12000, response.cashPrice());
@@ -73,18 +73,18 @@ class AdminPlanServiceImplTest {
         when(planRepository.findMaxVersionByTier("구독")).thenReturn(Optional.empty());
         when(planRepository.save(any(Plan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertEquals("구독", service.register(request("  구독 ", null)).tier());
+        assertEquals("구독", service.register(1L, request("  구독 ", null)).tier());
     }
 
     @Test
     @DisplayName("#69-S13 혜택 항목이 비었거나 쉼표를 담으면 400이고 저장하지 않는다")
     void invalidBenefitsAreRejected() {
         BusinessException blank = assertThrows(BusinessException.class,
-                () -> service.register(request("구독", List.of("a", "  "))));
+                () -> service.register(1L, request("구독", List.of("a", "  "))));
         BusinessException nullItem = assertThrows(BusinessException.class,
-                () -> service.register(request("구독", java.util.Arrays.asList("a", null))));
+                () -> service.register(1L, request("구독", java.util.Arrays.asList("a", null))));
         BusinessException comma = assertThrows(BusinessException.class,
-                () -> service.register(request("구독", List.of("a, b"))));
+                () -> service.register(1L, request("구독", List.of("a, b"))));
 
         assertEquals(ErrorCode.INVALID_INPUT, blank.getErrorCode());
         assertEquals(ErrorCode.INVALID_INPUT, nullItem.getErrorCode());

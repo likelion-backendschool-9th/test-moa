@@ -164,7 +164,7 @@ class SubscriptionLockConcurrencyTest {
         User user = subscribedUserWithWallet(plan);
 
         payWhileAdminRuns(user, plan,
-                () -> adminSubscriptionService.grant(new AdminSubscriptionGrantRequest(user.getEmail(), plan.getId())));
+                () -> adminSubscriptionService.grant(1L, new AdminSubscriptionGrantRequest(user.getEmail(), plan.getId(), null)));
 
         List<LocalDateTime[]> periods = jdbc.query(
                 "select start_at, end_at from subscriptions where user_id = ? order by start_at",
@@ -184,7 +184,7 @@ class SubscriptionLockConcurrencyTest {
         Plan plan = savePlan();
         User user = subscribedUserWithWallet(plan);
 
-        payWhileAdminRuns(user, plan, () -> adminSubscriptionService.revoke(user.getEmail()));
+        payWhileAdminRuns(user, plan, () -> adminSubscriptionService.revoke(1L, user.getEmail()));
 
         // 결제가 먼저 끝난 뒤 해제가 그 기간까지 취소한다. 해제 뒤에 미래에 시작하는 ACTIVE 기간만 남으면 안 된다
         Integer active = jdbc.queryForObject(

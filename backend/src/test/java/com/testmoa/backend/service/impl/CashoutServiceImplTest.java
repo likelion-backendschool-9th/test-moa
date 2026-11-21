@@ -178,7 +178,7 @@ class CashoutServiceImplTest {
                 .accountHolder("한서윤")
                 .build();
         ReflectionTestUtils.setField(paid, "id", 2L);
-        paid.pay(java.time.LocalDateTime.of(2026, 11, 5, 12, 0));
+        paid.pay(1L, java.time.LocalDateTime.of(2026, 11, 5, 12, 0));
         when(cashoutRepository.findByUserIdOrderByCreatedAtDesc(USER_ID))
                 .thenReturn(List.of(requested, paid));
 

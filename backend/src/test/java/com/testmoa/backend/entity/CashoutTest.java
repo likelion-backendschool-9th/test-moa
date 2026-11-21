@@ -40,7 +40,7 @@ class CashoutTest {
     void pay는_REQUESTED에서_PAID로_바꾼다() {
         Cashout request = newRequest();
 
-        request.pay(NOW);
+        request.pay(1L, NOW);
 
         assertEquals(Cashout.Status.PAID, request.getStatus());
         assertEquals(NOW, request.getProcessedAt());
@@ -50,9 +50,9 @@ class CashoutTest {
     @DisplayName("#45-S15 이미 처리한 요청은 지급 거절")
     void pay는_이미_처리한_요청이면_거절한다() {
         Cashout request = newRequest();
-        request.pay(NOW);
+        request.pay(1L, NOW);
 
-        assertThrows(IllegalStateException.class, () -> request.pay(NOW.plusMinutes(1)));
+        assertThrows(IllegalStateException.class, () -> request.pay(1L, NOW.plusMinutes(1)));
     }
 
     @Test
@@ -60,7 +60,7 @@ class CashoutTest {
     void reject는_REQUESTED에서_REJECTED로_바꾼다() {
         Cashout request = newRequest();
 
-        request.reject(Cashout.RejectReason.HOLDER, "확인 메모", NOW);
+        request.reject(Cashout.RejectReason.HOLDER, "확인 메모", 1L, NOW);
 
         assertEquals(Cashout.Status.REJECTED, request.getStatus());
         assertEquals(Cashout.RejectReason.HOLDER, request.getRejectReason());
@@ -75,7 +75,7 @@ class CashoutTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> request.reject(Cashout.RejectReason.OTHER, "  ", NOW)
+                () -> request.reject(Cashout.RejectReason.OTHER, "  ", 1L, NOW)
         );
     }
 
@@ -84,7 +84,7 @@ class CashoutTest {
     void reject는_OTHER가_아니면_빈_메모를_저장하지_않는다() {
         Cashout request = newRequest();
 
-        request.reject(Cashout.RejectReason.ACCOUNT, "   ", NOW);
+        request.reject(Cashout.RejectReason.ACCOUNT, "   ", 1L, NOW);
 
         assertNull(request.getRejectMemo());
     }
@@ -94,18 +94,18 @@ class CashoutTest {
     void reject는_사유가_없으면_거절한다() {
         Cashout request = newRequest();
 
-        assertThrows(IllegalArgumentException.class, () -> request.reject(null, "메모", NOW));
+        assertThrows(IllegalArgumentException.class, () -> request.reject(null, "메모", 1L, NOW));
     }
 
     @Test
     @DisplayName("#45-S20 이미 처리한 요청은 반려 거절")
     void reject는_이미_처리한_요청이면_거절한다() {
         Cashout request = newRequest();
-        request.reject(Cashout.RejectReason.HOLDER, null, NOW);
+        request.reject(Cashout.RejectReason.HOLDER, null, 1L, NOW);
 
         assertThrows(
                 IllegalStateException.class,
-                () -> request.reject(Cashout.RejectReason.ACCOUNT, null, NOW.plusMinutes(1))
+                () -> request.reject(Cashout.RejectReason.ACCOUNT, null, 1L, NOW.plusMinutes(1))
         );
     }
 }

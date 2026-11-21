@@ -34,6 +34,10 @@
 - When  "접속 주소"를 검색한다
 - Then  이전 메시지를 이어 불러온 뒤 순번 5 말풍선이 강조된 채 화면 가운데쯤에 있고, 위·아래로 스크롤하면 앞뒤 대화가 끊김 없이 보인다
 - Then  검색 띠를 닫고 아래로 스크롤해 맨 아래까지 내려가면 상대가 새로 보낸 메시지도 실시간으로 붙는다
+- When  결과가 이어 불러온 대화의 첫 메시지가 되는 검색어를 넣는다(예: 순번 6에만 있는 말. 이어 불러오면 대화가 6~65가 된다)
+- Then  가운데로 옮기며 맨 위 감시 요소가 보여 이전 메시지를 더 불러와도, 강조된 말풍선이 화면 밖으로 밀려나지 않는다
+- When  맨 아래에서 먼 오래된 결과를 보는 채로 상대가 메시지를 보낸다
+- Then  강조된 결과 자리에 머물고 맨 아래로 끌려가지 않는다 (맨 아래 근처에서만 따라 내려가는 지금 규칙 그대로)
 
 ## 2. 다른 결과로 옮기기 (#105-R5)
 위 화살표("이전 결과")는 더 오래된 결과로, 아래 화살표("다음 결과")는 더 최근 결과로 옮긴다. 결과 수 표시는 가장 최근 결과가 1이다.
@@ -44,6 +48,8 @@
 - Then  "2/3"이고 "확인해 보니 사진을 한 번에 여러 장 올릴 때 생기는 문제였어요." 말풍선이 강조된다. 앞 결과의 강조는 사라진다
 - When  "이전 결과"를 한 번 더 누른다
 - Then  "3/3"이고 "독서 기록에 사진을 여러 장 올리면 순서가 바뀌는 것 같아요."가 강조되며, "이전 결과"는 비활성이다
+- When  검색창에서 Enter를 누른다
+- Then  "3/3" 그대로다 (처음 결과로 돌아가지 않는다)
 - When  "다음 결과"를 두 번 누른다
 - Then  "1/3"이고 "다음 결과"는 비활성이다
 
@@ -84,16 +90,17 @@
 
 ## 작업 순서
 1. 데이터 경로 — #105-S7·#105-S11의 데이터
-   - 파일: `features/chat/api.ts`(`searchChatMessages(roomKey, q)`: 백엔드 모드는 `GET /api/v1/chats/{roomKey}/messages/search`, 목업은 방 대화 기록과 보낸 메시지 쿠키에서 대소문자 없이 부분 일치로 찾아 최신순 순번), `features/chat/types.ts`(`ChatSearchResult = { seqs: number[]; hasMore: boolean }`), `app/api/chats/[roomKey]/messages/search/route.ts`(`messages/route.ts`처럼 검색어를 확인하고 401·404를 그대로 넘긴다)
+   - 파일: `features/chat/api.ts`(`searchChatMessages(roomKey, q)`: 백엔드 모드는 `GET /api/v1/chats/{roomKey}/messages/search`, 목업은 방 대화 기록과 보낸 메시지 쿠키에서 대소문자 없이 부분 일치로 찾아 최신순 순번), `features/chat/types.ts`(`ChatSearchResult = { seqs: number[]; hasMore: boolean }`), `features/chat/actions.ts`(`searchChatMessagesAction(roomKey, q)`: `markChatReadAction`처럼 인자를 확인하고 `{ ok: true, result }` 또는 `{ ok: false, status }`를 돌려준다)
+   - Route Handler(`app/api/chats/[roomKey]/messages/…`)는 만들지 않는다. 이웃한 `messages/route.ts`는 목업 모드에서 404를 내는데(e2e는 목업 모드로 돈다), 서버 액션은 `api.ts`가 두 모드를 나눠 주어 목업에서도 그대로 쓴다
    - 확인: `npx tsc --noEmit`
 2. 결과까지 이어 불러오기 — #105-S8
    - 파일: `features/chat/message-window.ts`에 `loadChatMessagesUntil(messages, targetSeq, fetchBefore)`(가장 오래된 순번이 결과보다 크고 더 있을 때만 `before=`를 부르고 `mergeChatMessages`로 합친다), 테스트 `tests/unit/chat-search.test.ts`
    - 확인: `npm test -- chat-search`
 3. 검색 띠와 이동 — #105-S7, #105-S10, #105-S11
-   - 파일: `app/(conversation)/my/chats/[roomKey]/_components/ChatSearch/`(`"use client"`. 검색 띠: 검색창, 결과 수, 이전·다음 결과, 닫기), `ChatRoomView.tsx`(머리의 돋보기 버튼과 대화가 검색 상태를 함께 쓰도록 감싸는 클라이언트 컴포넌트), `ChatRoomHeader.tsx`(더보기 왼쪽에 "대화 내용 검색" 버튼), `ChatConversation/hook.ts`(이동할 순번을 받아 2단계 함수로 불러온 뒤 말풍선으로 스크롤. 이전 메시지 불러오기와 같은 `busy`를 써서 겹쳐 부르지 않는다), `ChatBubble.tsx`(`aria-current`와 강조 모양), 테스트 `e2e/chat-room.spec.ts`
+   - 파일: `app/(conversation)/my/chats/[roomKey]/_components/ChatSearch/`(`"use client"`. 검색 띠: 검색창, 결과 수, 이전·다음 결과, 닫기), `ChatRoomView.tsx`(머리의 돋보기 버튼과 대화가 검색 상태를 함께 쓰도록 감싸는 클라이언트 컴포넌트), `ChatRoomHeader.tsx`(더보기 왼쪽에 "대화 내용 검색" 버튼), `ChatConversation/hook.ts`(이동할 순번을 받아 2단계 함수로 불러온다. 이전 메시지 불러오기와 같은 `busy`를 써서 겹쳐 부르지 않는다. 스크롤은 `setStored` 직후가 아니라 새 말풍선이 그려진 뒤 `useLayoutEffect`에서 `[data-seq="N"]`을 찾아 한다), `ChatMessageList.tsx`(강조할 순번 `currentSeq`를 props로 받고, `ChatBubbleRow`에 `data-seq={message.seq}`와 그 순번이면 `aria-current="true"`를 붙인다), `ChatBubble.tsx`(강조 모양), 테스트 `e2e/chat-room.spec.ts`
    - 확인: `npx playwright test e2e/chat-room.spec.ts`
 4. 닫기 — #105-S12
-   - 파일: `ChatComposer.tsx`(검색하는 동안 숨기기만 하고 내리지 않아 쓰던 글을 지킨다), `ChatSearch/`, 같은 테스트
+   - 파일: `ChatComposer.tsx`(검색하는 동안 입력 띠 `box2` 안에서만 폼 대신 검색 띠를 그린다. 컴포넌트는 내리지 않아 `text` 상태가 남고, `box2` 바깥의 보내는 중 말풍선과 `endRef`도 그대로라 맨 아래까지의 거리 계산(`distanceFromBottom`)이 틀어지지 않는다. 읽기 전용 방도 안내 문구 대신 검색 띠를 그린다), `ChatSearch/`, 같은 테스트
    - 확인: 같은 명령
 5. 모양과 문서 — #105-S13
    - 파일: 각 `*.module.css`, `frontend/DESIGN.md`·`docs/design-tokens.html`·`frontend/.impeccable/design.json`(검색 띠, 강조된 말풍선)
@@ -101,7 +108,7 @@
 
 ## 가정
 - 검색 버튼은 대화방 머리의 더보기 왼쪽에 둔 돋보기 아이콘 버튼("대화 내용 검색")이다. 머리는 위에 붙지 않아서, 결과로 이동해도 계속 보이도록 검색 띠는 화면 아래에 붙은 입력창 자리에 띄운다
-- 검색은 Enter로 시작한다. 입력할 때마다 찾지 않는다. 검색 띠가 열린 채 검색어를 바꾸고 Enter를 누르면 새로 찾아 다시 "1/N"부터 간다. 같은 검색어로 Enter를 다시 누르면 "이전 결과"와 같다
+- 검색은 Enter로 시작한다. 입력할 때마다 찾지 않는다. 검색 띠가 열린 채 검색어를 바꾸고 Enter를 누르면 새로 찾아 다시 "1/N"부터 간다. 같은 검색어로 Enter를 다시 누르면 "이전 결과"와 같고, 가장 오래된 결과("N/N")에서는 그 자리에 머문다. 처음 결과로 돌아가지 않는다
 - 검색어는 앞뒤 공백을 뺀 1자 이상, 100자 이하다(입력창 `maxLength` 100). 비었으면 Enter를 눌러도 부르지 않는다
 - 결과는 검색한 순간의 목록이다. 검색 띠가 열린 동안 새로 온 메시지는 다시 검색해야 결과에 들어간다
 - 이동은 말풍선을 화면 가운데로 부드럽게 스크롤한다(`scrollIntoView({ block: "center" })`). 강조는 검색 띠를 닫거나 다른 결과로 옮길 때까지 남는다

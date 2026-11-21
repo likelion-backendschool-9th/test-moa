@@ -37,10 +37,10 @@
 - Then  `seqs`는 순번 101부터 2까지 100개이고 `hasMore`는 true다
 
 ## 2. 검색어 검증 (#105-R2)
-앞뒤 공백을 뺀 검색어가 비었거나 100자를 넘으면 400으로 거절한다.
+받은 검색어가 100자를 넘거나, 앞뒤 공백을 빼면 비면 400으로 거절한다. 길이는 공백을 빼기 전의 길이다. 화면의 입력창 `maxLength` 100과 같은 기준이다.
 
 #105-S5 실패: 빈 검색어와 긴 검색어 [테스트]
-- When  B가 `q` 없이, `q=`, `q=%20%20`, 101자 검색어로 부른다
+- When  B가 `q` 없이, `q=`, `q=%20%20`, 101자 검색어, 앞에 공백 하나를 붙인 100자 검색어(모두 101자)로 부른다
 - Then  모두 HTTP 400, `error.code` "INVALID_INPUT"이다
 - When  100자 검색어로 부른다
 - Then  HTTP 200이다
@@ -62,11 +62,12 @@
 
 ## 작업 순서
 1. 검색의 가장 얇은 경로 — #105-S1, #105-S6
-   - 파일: `controller/ChatController.java`(`GET /{roomKey}/messages/search`, `@RequestParam @NotBlank @Size(max = 100) String q`), `service/ChatService.java`·`service/impl/ChatServiceImpl.java`(`searchMessages(roomKey, userId, q)`: `requireParticipant`로 참여자를 찾고, 검색어를 `strip()`한 뒤 소문자로 바꿔 찾는다), `repository/ChatMessageRepository.java`(방과 패턴으로 순번만 순번 내림차순 101개 받는 쿼리), `dto/response/ChatMessageSearchResponse.java`(`seqs`, `hasMore`), 테스트 `controller/ChatSearchControllerTest.java`
+   - 파일: `controller/ChatController.java`(`GET /{roomKey}/messages/search`, `@RequestParam @NotBlank @Size(max = 100) String q`. `@Size`는 공백을 빼기 전 길이를 본다), `service/ChatService.java`·`service/impl/ChatServiceImpl.java`(`searchMessages(roomKey, userId, q)`: `requireParticipant`로 참여자를 찾고, 검색어를 `strip()`한 뒤 채팅함 검색처럼 `toLowerCase(Locale.ROOT)`로 바꿔 찾는다), `repository/ChatMessageRepository.java`, `dto/response/ChatMessageSearchResponse.java`(`seqs`, `hasMore`), 테스트 `controller/ChatSearchControllerTest.java`
+   - 쿼리: 이름으로 만드는 쿼리는 `lower(...) like ... escape`를 쓸 수 없어 `@Query`로 쓴다. `@Query("select m.seq from chat_messages m where m.room = :room and lower(m.content) like :pattern escape '\\' order by m.seq desc") List<Long> findSeqsByContent(ChatRoom room, String pattern, Limit limit)`. 엔티티 이름은 지금 쿼리들처럼 `chat_messages`다(#272에서 바뀌면 그때 같이 바꾼다)
    - 확인: `./gradlew test --tests '*ChatSearchControllerTest'`
 2. 공백·특수 문자·개수 — #105-S2, #105-S3, #105-S4
-   - 파일: `ChatServiceImpl.java`(`%`·`_`·`\` 이스케이프는 `RecruitmentSearchRepositoryImpl.escapeLike`와 같은 규칙. 101개를 받아 100개만 주고 `hasMore`를 정한다), 같은 테스트
-   - 확인: 같은 명령
+   - 파일: `global/util/LikePattern.java`(새로. `contains(keyword)`가 `\`·`%`·`_`를 이스케이프해 `%…%`를 만든다), `repository/RecruitmentSearchRepositoryImpl.java`(`private static escapeLike`를 지우고 `LikePattern.contains`를 쓴다. 동작은 같다), `ChatServiceImpl.java`(`Limit.of(101)`로 받아 100개만 주고, 101개면 `hasMore` true), 같은 테스트
+   - 확인: 같은 명령, `./gradlew test --tests '*RecruitmentListControllerTest'`(모집 검색이 그대로인지)
 3. 검증과 문서 — #105-S5
    - 파일: 같은 테스트, `docs/backend/chat/README.md`(정한 것에 검색 방식: 주소, 부분 일치, 최신순 100개)
    - 확인: 같은 명령, `git diff --check`

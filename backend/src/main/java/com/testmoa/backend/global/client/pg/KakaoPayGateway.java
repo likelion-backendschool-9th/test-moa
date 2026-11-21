@@ -97,6 +97,35 @@ public class KakaoPayGateway implements PaymentGateway {
         }
     }
 
+    /** 승인한 결제를 전액 취소한다. 카카오페이는 tid와 취소 금액으로 부른다 */
+    @Override
+    public void cancel(CancelCommand command) {
+        CancelBody body = new CancelBody(properties.cid(), command.pgTransactionId(), command.amount(), 0);
+        try {
+            restClient.post()
+                    .uri("/online/v1/payment/cancel")
+                    .header("Authorization", "SECRET_KEY " + properties.secretKey())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            log.error("카카오페이 결제 취소 거절 status={} body={}", e.getStatusCode().value(), e.getResponseBodyAsString());
+            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+        } catch (RestClientException e) {
+            log.error("카카오페이 결제 취소 연결 실패: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+        }
+    }
+
+    record CancelBody(
+            String cid,
+            String tid,
+            @JsonProperty("cancel_amount") int cancelAmount,
+            @JsonProperty("cancel_tax_free_amount") int cancelTaxFreeAmount
+    ) {
+    }
+
     record ReadyBody(
             String cid,
             @JsonProperty("partner_order_id") String partnerOrderId,

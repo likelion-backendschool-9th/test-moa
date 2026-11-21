@@ -20,6 +20,12 @@ public interface PaymentGateway {
     Approved approve(ApproveCommand command);
 
     /**
+     * 승인한 결제를 전액 취소한다(#274). 거절되거나 연결하지 못하면 502 PG_CANCEL_FAILED.
+     * 이미 취소된 결제를 다시 취소해도 성공으로 본다(보상 취소를 다시 불러도 안전하게)
+     */
+    void cancel(CancelCommand command);
+
+    /**
      * @param orderId     우리 주문번호
      * @param userId      회원 id(카카오페이 partner_user_id, 토스 customerKey 계산)
      * @param orderName   결제창에 보일 이름
@@ -42,6 +48,15 @@ public interface PaymentGateway {
      * @param paymentKey      토스가 돌려준 paymentKey
      */
     record ApproveCommand(String orderId, Long userId, int amount, String pgTransactionId, String pgToken, String paymentKey) {
+    }
+
+    /**
+     * @param orderId         우리 주문번호(멱등 키에 쓴다)
+     * @param amount          취소할 금액(전액)
+     * @param pgTransactionId 승인한 결제의 거래 식별자(카카오페이 tid, 토스 paymentKey)
+     * @param reason          취소 사유
+     */
+    record CancelCommand(String orderId, int amount, String pgTransactionId, String reason) {
     }
 
     /** @param pgTransactionId 결제 대행사의 거래 식별자(카카오페이 tid, 토스 paymentKey) */

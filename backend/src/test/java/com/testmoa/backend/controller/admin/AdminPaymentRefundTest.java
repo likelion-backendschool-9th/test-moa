@@ -178,6 +178,8 @@ class AdminPaymentRefundTest {
         assertEquals("REFUNDED", paymentStatus(payment.getId()));
         assertEquals("CANCELLED", subscriptionStatus(payment.getSubscription()));
         assertEquals(walletsBefore, walletCount());
+        // #276-S5 환불한 운영자가 남는다
+        assertEquals(admin.getId(), jdbc.queryForObject("select refunded_by from payments where id = ?", Long.class, payment.getId()));
     }
 
     @Test

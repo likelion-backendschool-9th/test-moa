@@ -46,7 +46,7 @@ class CashoutServiceImplTest {
         Cashout cashout = requested(5000);
         CreditWallet wallet = walletWithLocked(cashout, 5000);
 
-        AdminCashoutResponse response = service.process(
+        AdminCashoutResponse response = service.process(1L,
                 CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, null, null));
 
         assertEquals(Cashout.Status.PAID, response.getStatus());
@@ -60,7 +60,7 @@ class CashoutServiceImplTest {
         Cashout cashout = requested(5000);
         CreditWallet wallet = walletWithLocked(cashout, 5000);
 
-        AdminCashoutResponse response = service.process(
+        AdminCashoutResponse response = service.process(1L,
                 CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.REJECTED, Cashout.RejectReason.HOLDER, "이름이 달라요"));
 
         assertEquals(Cashout.Status.REJECTED, response.getStatus());
@@ -73,11 +73,11 @@ class CashoutServiceImplTest {
     @DisplayName("#68-S14 결정이 없거나 REQUESTED이거나 지급에 사유·메모가 붙으면 400이고 요청을 건드리지 않는다")
     void processRejectsInvalidDecision() {
         BusinessException requestedDecision = assertThrows(BusinessException.class,
-                () -> service.process(CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.REQUESTED, null, null)));
+                () -> service.process(1L, CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.REQUESTED, null, null)));
         BusinessException paidWithReason = assertThrows(BusinessException.class,
-                () -> service.process(CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, Cashout.RejectReason.OTHER, null)));
+                () -> service.process(1L, CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, Cashout.RejectReason.OTHER, null)));
         BusinessException paidWithMemo = assertThrows(BusinessException.class,
-                () -> service.process(CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, null, "메모")));
+                () -> service.process(1L, CASHOUT_ID, new CashoutProcessRequest(Cashout.Status.PAID, null, "메모")));
 
         assertEquals(ErrorCode.INVALID_INPUT, requestedDecision.getErrorCode());
         assertEquals(ErrorCode.INVALID_INPUT, paidWithReason.getErrorCode());
@@ -104,7 +104,7 @@ class CashoutServiceImplTest {
         Cashout cashout = requested(5000);
         CreditWallet wallet = walletWithLocked(cashout, 5000);
 
-        AdminCashoutResponse response = service.pay(CASHOUT_ID);
+        AdminCashoutResponse response = service.pay(1L, CASHOUT_ID);
 
         assertEquals(Cashout.Status.PAID, cashout.getStatus());
         assertEquals(Cashout.Status.PAID, response.getStatus());
@@ -124,7 +124,7 @@ class CashoutServiceImplTest {
         Cashout cashout = requested(5000);
         CreditWallet wallet = walletWithLocked(cashout, 5000);
 
-        AdminCashoutResponse response = service.reject(
+        AdminCashoutResponse response = service.reject(1L,
                 CASHOUT_ID, new CashoutRejectRequest(Cashout.RejectReason.ACCOUNT, null));
 
         assertEquals(Cashout.Status.REJECTED, cashout.getStatus());
@@ -138,19 +138,19 @@ class CashoutServiceImplTest {
     @DisplayName("#68-S3 이미 처리한 요청은 다시 처리할 수 없다")
     void alreadyProcessedIsConflict() {
         Cashout paid = requested(5000);
-        paid.pay(java.time.LocalDateTime.now());
+        paid.pay(1L, java.time.LocalDateTime.now());
         Cashout rejected = requested(3000);
-        rejected.reject(Cashout.RejectReason.HOLDER, null, java.time.LocalDateTime.now());
+        rejected.reject(Cashout.RejectReason.HOLDER, null, 1L, java.time.LocalDateTime.now());
 
         when(cashoutRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(paid));
         when(cashoutRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(rejected));
 
         for (BusinessException e : List.of(
-                assertThrows(BusinessException.class, () -> service.pay(1L)),
-                assertThrows(BusinessException.class, () -> service.reject(
+                assertThrows(BusinessException.class, () -> service.pay(1L, 1L)),
+                assertThrows(BusinessException.class, () -> service.reject(1L,
                         1L, new CashoutRejectRequest(Cashout.RejectReason.HOLDER, null))),
-                assertThrows(BusinessException.class, () -> service.pay(2L)),
-                assertThrows(BusinessException.class, () -> service.reject(
+                assertThrows(BusinessException.class, () -> service.pay(1L, 2L)),
+                assertThrows(BusinessException.class, () -> service.reject(1L,
                         2L, new CashoutRejectRequest(Cashout.RejectReason.OTHER, "메모"))))) {
             assertEquals(ErrorCode.CASHOUT_ALREADY_PROCESSED, e.getErrorCode());
         }
@@ -164,13 +164,13 @@ class CashoutServiceImplTest {
         Cashout other = requested(5000);
         CreditWallet wallet = walletWithLocked(other, 5000);
 
-        BusinessException blank = assertThrows(BusinessException.class, () -> service.reject(
+        BusinessException blank = assertThrows(BusinessException.class, () -> service.reject(1L,
                 CASHOUT_ID, new CashoutRejectRequest(Cashout.RejectReason.OTHER, "   ")));
         assertEquals(ErrorCode.INVALID_INPUT, blank.getErrorCode());
         assertEquals(Cashout.Status.REQUESTED, other.getStatus());
         assertEquals(5000, wallet.getLockedBalance());
 
-        AdminCashoutResponse holder = service.reject(
+        AdminCashoutResponse holder = service.reject(1L,
                 CASHOUT_ID, new CashoutRejectRequest(Cashout.RejectReason.HOLDER, "통장 사본의 이름과 달라요"));
 
         assertEquals("통장 사본의 이름과 달라요", holder.getRejectMemo());
@@ -203,7 +203,7 @@ class CashoutServiceImplTest {
     void masksAccountAfterProcessing() {
         Cashout pending = requested(5000);
         Cashout done = requested(5000);
-        done.pay(java.time.LocalDateTime.now());
+        done.pay(1L, java.time.LocalDateTime.now());
 
         when(cashoutRepository.findByStatusOrderByCreatedAtAsc(Cashout.Status.REQUESTED))
                 .thenReturn(List.of(pending));
@@ -229,8 +229,8 @@ class CashoutServiceImplTest {
         when(cashoutRepository.findWithUserById(99L)).thenReturn(Optional.empty());
 
         assertEquals(ErrorCode.NOT_FOUND, assertThrows(BusinessException.class, () -> service.getCashout(99L)).getErrorCode());
-        assertEquals(ErrorCode.NOT_FOUND, assertThrows(BusinessException.class, () -> service.pay(99L)).getErrorCode());
-        assertEquals(ErrorCode.NOT_FOUND, assertThrows(BusinessException.class, () -> service.reject(
+        assertEquals(ErrorCode.NOT_FOUND, assertThrows(BusinessException.class, () -> service.pay(1L, 99L)).getErrorCode());
+        assertEquals(ErrorCode.NOT_FOUND, assertThrows(BusinessException.class, () -> service.reject(1L,
                 99L, new CashoutRejectRequest(Cashout.RejectReason.ACCOUNT, null))).getErrorCode());
     }
 

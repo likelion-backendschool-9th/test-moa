@@ -63,16 +63,16 @@ public class CashoutServiceImpl implements CashoutService {
      */
     @Override
     @Transactional
-    public AdminCashoutResponse process(Long id, CashoutProcessRequest request) {
+    public AdminCashoutResponse process(Long adminId, Long id, CashoutProcessRequest request) {
         return switch (request.decision()) {
             case PAID -> {
                 boolean hasMemo = request.memo() != null && !request.memo().isBlank();
                 if (request.reason() != null || hasMemo) {
                     throw new BusinessException(ErrorCode.INVALID_INPUT, "지급 완료에는 반려 사유와 메모를 보낼 수 없어요");
                 }
-                yield pay(id);
+                yield pay(adminId, id);
             }
-            case REJECTED -> reject(id, new CashoutRejectRequest(request.reason(), request.memo()));
+            case REJECTED -> reject(adminId, id, new CashoutRejectRequest(request.reason(), request.memo()));
             case REQUESTED -> throw new BusinessException(ErrorCode.INVALID_INPUT, "지급 완료나 반려를 골라 주세요");
         };
     }
@@ -80,11 +80,11 @@ public class CashoutServiceImpl implements CashoutService {
     /** 지급 완료. 잠긴 금액을 줄이고 장부에 EARNED −amount "출금 지급" 한 줄을 남긴다 */
     @Override
     @Transactional
-    public AdminCashoutResponse pay(Long id) {
+    public AdminCashoutResponse pay(Long adminId, Long id) {
         Cashout cashout = lockRequested(id);
         CreditWallet wallet = lockWallet(cashout);
         wallet.confirmCashout(cashout.getAmount());
-        cashout.pay(LocalDateTime.now());
+        cashout.pay(adminId, LocalDateTime.now());
         creditLedgerRepository.save(CreditLedger.builder()
                 .creditWallet(wallet)
                 .delta(-cashout.getAmount())
@@ -97,11 +97,11 @@ public class CashoutServiceImpl implements CashoutService {
     /** 반려. 잠긴 금액을 적립으로 돌려주고 장부는 남기지 않는다. 메모는 회원에게 그대로 보인다 */
     @Override
     @Transactional
-    public AdminCashoutResponse reject(Long id, CashoutRejectRequest request) {
+    public AdminCashoutResponse reject(Long adminId, Long id, CashoutRejectRequest request) {
         Cashout cashout = lockRequested(id);
         CreditWallet wallet = lockWallet(cashout);
         try {
-            cashout.reject(request.reason(), request.memo(), LocalDateTime.now());
+            cashout.reject(request.reason(), request.memo(), adminId, LocalDateTime.now());
         } catch (IllegalArgumentException e) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, e.getMessage());
         }

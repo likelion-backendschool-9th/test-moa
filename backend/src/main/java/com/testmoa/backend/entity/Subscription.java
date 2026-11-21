@@ -47,6 +47,20 @@ public class Subscription {
     @Column(nullable = false)
     private Status status;
 
+    // 이 구독을 부여한 운영자의 회원 id. 결제로 생긴 구독과 옛 행은 null(#276). 연관 관계는 걸지 않는다
+    private Long grantedBy;
+
+    // 부여 사유(200자 이하). 운영자가 부여한 구독만 있다
+    @Column(length = 200)
+    private String grantReason;
+
+    // 이 구독을 해제한 운영자의 회원 id. 환불로 취소됐거나 해제하지 않았으면 null
+    private Long revokedBy;
+
+    // 해제 사유(200자 이하)
+    @Column(length = 200)
+    private String revokeReason;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -64,6 +78,8 @@ public class Subscription {
      * @param plan      이 기간을 산 당시의 플랜 행
      * @param startAt   이 이용 기간의 시작 일시. max(지금, CANCELLED가 아닌 행 중 가장 늦은 endAt)
      * @param endAt     이 이용 기간의 만료 일시(startAt + periodDays). 만들 때 정하고 고치지 않는다
+     * @param grantedBy   부여한 운영자의 회원 id. 결제로 만들면 null
+     * @param grantReason 부여 사유. 결제로 만들면 null
      *
      * 상태는 밖에서 받지 않고 항상 ACTIVE로 시작한다. 환불하면 CANCELLED로 바꾼다.
      */
@@ -72,12 +88,16 @@ public class Subscription {
             User user,
             Plan plan,
             LocalDateTime startAt,
-            LocalDateTime endAt
+            LocalDateTime endAt,
+            Long grantedBy,
+            String grantReason
     ){
         this.user = user;
         this.plan = plan;
         this.startAt = startAt;
         this.endAt = endAt;
+        this.grantedBy = grantedBy;
+        this.grantReason = grantReason;
         this.status = Status.ACTIVE;
     }
 
@@ -87,5 +107,17 @@ public class Subscription {
      */
     public void cancel() {
         this.status = Status.CANCELLED;
+    }
+
+    /**
+     * 운영자가 이 이용 기간을 해제한다(#276). 취소와 같고 해제한 운영자와 사유를 남긴다.
+     *
+     * @param adminId 해제한 운영자의 회원 id
+     * @param reason  해제 사유
+     */
+    public void revoke(Long adminId, String reason) {
+        this.status = Status.CANCELLED;
+        this.revokedBy = adminId;
+        this.revokeReason = reason;
     }
 }

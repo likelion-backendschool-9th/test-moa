@@ -63,6 +63,9 @@ public class Payment {
     @Column(nullable = false)
     private Status status;
 
+    // 환불한 운영자의 회원 id. 환불하지 않았거나 옛 행은 null(#276). 연관 관계는 걸지 않는다
+    private Long refundedBy;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -121,9 +124,10 @@ public class Payment {
         this.status = Status.REFUNDING;
     }
 
-    /** PG 취소가 끝나 환불을 마친다 */
-    public void refund() {
+    /** PG 취소가 끝나 환불을 마친다. 환불한 운영자의 회원 id를 남긴다 */
+    public void refund(Long adminId) {
         this.status = Status.REFUNDED;
+        this.refundedBy = adminId;
     }
 
     /** PG가 취소를 거절해 환불을 되돌린다 */

@@ -109,6 +109,9 @@ public class Cashout {
     // 처리 일시. 처리 전에는 null
     private LocalDateTime processedAt;
 
+    // 지급·반려한 운영자의 회원 id. 처리 전과 옛 행은 null(#276). 연관 관계는 걸지 않는다
+    private Long processedBy;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -149,14 +152,16 @@ public class Cashout {
     /**
      * 지급 완료 처리. 요청 중일 때만 할 수 있다.
      *
-     * @param now 처리 일시
+     * @param adminId 처리한 운영자의 회원 id
+     * @param now     처리 일시
      */
-    public void pay(LocalDateTime now) {
+    public void pay(Long adminId, LocalDateTime now) {
         if (status != Status.REQUESTED) {
             throw new IllegalStateException("이미 처리한 출금 요청입니다.");
         }
         this.status = Status.PAID;
         this.processedAt = now;
+        this.processedBy = adminId;
     }
 
     /**
@@ -164,9 +169,10 @@ public class Cashout {
      *
      * @param reason 반려 사유
      * @param memo   반려 메모. 회원에게 보이는 안내다. 기타면 필수, 그 외에는 선택. 비어 있으면 저장하지 않는다
+     * @param adminId 처리한 운영자의 회원 id
      * @param now    처리 일시
      */
-    public void reject(RejectReason reason, String memo, LocalDateTime now) {
+    public void reject(RejectReason reason, String memo, Long adminId, LocalDateTime now) {
         if (status != Status.REQUESTED) {
             throw new IllegalStateException("이미 처리한 출금 요청입니다.");
         }
@@ -181,6 +187,7 @@ public class Cashout {
         this.rejectReason = reason;
         this.rejectMemo = trimmed.isEmpty() ? null : trimmed;
         this.processedAt = now;
+        this.processedBy = adminId;
     }
 
     /**

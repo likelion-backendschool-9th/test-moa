@@ -17,7 +17,7 @@ class CashoutResponseTest {
     @DisplayName("#67-S6 HOLDER 반려도 메모가 있으면 회원에게 보인다")
     void keepsMemoForFixedReasons() {
         Cashout holder = baseRequest();
-        holder.reject(Cashout.RejectReason.HOLDER, "통장 사본의 이름과 달라요", NOW);
+        holder.reject(Cashout.RejectReason.HOLDER, "통장 사본의 이름과 달라요", 1L, NOW);
 
         CashoutResponse response = CashoutResponse.of(holder, holder.getAccountNumber(), holder.getAccountHolder());
 
@@ -29,7 +29,7 @@ class CashoutResponseTest {
     @DisplayName("#67-S6 메모 없는 ACCOUNT 반려는 rejectMemo가 null")
     void nullMemoWhenNotWritten() {
         Cashout account = baseRequest();
-        account.reject(Cashout.RejectReason.ACCOUNT, "  ", NOW);
+        account.reject(Cashout.RejectReason.ACCOUNT, "  ", 1L, NOW);
 
         assertNull(CashoutResponse.of(account, account.getAccountNumber(), account.getAccountHolder()).getRejectMemo());
     }
@@ -38,7 +38,7 @@ class CashoutResponseTest {
     @DisplayName("#67-S6 OTHER 반려는 rejectMemo를 회원에게 보인다")
     void keepsMemoForOther() {
         Cashout other = baseRequest();
-        other.reject(Cashout.RejectReason.OTHER, "서류가 부족해요", NOW);
+        other.reject(Cashout.RejectReason.OTHER, "서류가 부족해요", 1L, NOW);
 
         CashoutResponse response = CashoutResponse.of(other, other.getAccountNumber(), other.getAccountHolder());
 

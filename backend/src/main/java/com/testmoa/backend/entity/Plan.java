@@ -51,6 +51,9 @@ public class Plan {
     @Column(nullable = false)
     private Integer periodDays;
 
+    // 이 버전 행을 등록한 운영자의 회원 id. 옛 행은 null(#276). 연관 관계는 걸지 않는다
+    private Long updatedBy;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -71,6 +74,7 @@ public class Plan {
      * @param description           설명
      * @param imageUrl              플랜 이미지 URL
      * @param periodDays            구독 제공 기간 (일 단위)
+     * @param updatedBy             등록한 운영자의 회원 id. 없으면 null
      */
     @Builder
     public Plan(
@@ -80,7 +84,8 @@ public class Plan {
             Integer version,
             String description,
             String imageUrl,
-            Integer periodDays
+            Integer periodDays,
+            Long updatedBy
     ){
         this.tier = tier;
         this.cashPrice = cashPrice;
@@ -89,6 +94,7 @@ public class Plan {
         this.description = description;
         this.imageUrl = imageUrl;
         this.periodDays = periodDays;
+        this.updatedBy = updatedBy;
     }
 
     /**

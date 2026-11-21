@@ -7,8 +7,10 @@ import com.testmoa.backend.dto.response.PlanResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.admin.AdminPlanService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,13 +34,19 @@ public class AdminPlanController {
     @Operation(summary = "플랜 등록", description = "같은 등급이 있으면 version을 올린 새 행을 만든다")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<PlanResponse> register(@Valid @RequestBody PlanCreateRequest request) {
-        return ApiResponse.ok(planService.register(request));
+    public ApiResponse<PlanResponse> register(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long adminId,
+            @Valid @RequestBody PlanCreateRequest request
+    ) {
+        return ApiResponse.ok(planService.register(adminId, request));
     }
 
     @Operation(summary = "무료 플랜 저장", description = "무료 플랜의 이름과 혜택을 저장한다. 행이 없으면 만들고 있으면 고친다")
     @PutMapping("/free")
-    public ApiResponse<FreePlanResponse> saveFreePlan(@Valid @RequestBody FreePlanUpdateRequest request) {
-        return ApiResponse.ok(planService.saveFreePlan(request));
+    public ApiResponse<FreePlanResponse> saveFreePlan(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long adminId,
+            @Valid @RequestBody FreePlanUpdateRequest request
+    ) {
+        return ApiResponse.ok(planService.saveFreePlan(adminId, request));
     }
 }

@@ -40,6 +40,9 @@ public class FreePlan {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // 마지막으로 저장한 운영자의 회원 id. 옛 행은 null(#276). 연관 관계는 걸지 않는다
+    private Long updatedBy;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -55,9 +58,11 @@ public class FreePlan {
      *
      * @param tier     무료 플랜 이름
      * @param benefits 혜택 문구 목록. 문구에 쉼표가 없다고 가정한다
+     * @param adminId  저장한 운영자의 회원 id
      */
-    public FreePlan(String tier, List<String> benefits) {
+    public FreePlan(String tier, List<String> benefits, Long adminId) {
         this.id = SINGLE_ID;
+        this.updatedBy = adminId;
         this.tier = tier;
         this.description = Plan.joinBenefits(benefits);
     }
@@ -67,8 +72,10 @@ public class FreePlan {
      *
      * @param tier     무료 플랜 이름
      * @param benefits 혜택 문구 목록
+     * @param adminId  저장한 운영자의 회원 id
      */
-    public void update(String tier, List<String> benefits) {
+    public void update(String tier, List<String> benefits, Long adminId) {
+        this.updatedBy = adminId;
         this.tier = tier;
         this.description = Plan.joinBenefits(benefits);
     }

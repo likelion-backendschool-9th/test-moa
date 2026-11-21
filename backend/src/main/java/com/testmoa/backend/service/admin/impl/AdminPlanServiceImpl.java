@@ -36,7 +36,7 @@ public class AdminPlanServiceImpl implements AdminPlanService {
      * 혜택은 쉼표로 이어 description에 저장하므로, 비었거나 쉼표가 든 항목은 거절한다.
      */
     @Override
-    public PlanResponse register(PlanCreateRequest request) {
+    public PlanResponse register(Long adminId, PlanCreateRequest request) {
         validateBenefits(request.benefits());
         String tier = request.tier().trim();
         int version = planRepository.findMaxVersionByTier(tier).map(max -> max + 1).orElse(1);
@@ -48,6 +48,7 @@ public class AdminPlanServiceImpl implements AdminPlanService {
                 .periodDays(request.periodDays())
                 .version(version)
                 .description(Plan.joinBenefits(request.benefits()))
+                .updatedBy(adminId)
                 .build());
         return PlanResponse.of(saved);
     }
@@ -57,17 +58,17 @@ public class AdminPlanServiceImpl implements AdminPlanService {
      * 혜택은 구독 플랜 등록과 같은 규칙으로 검사한다.
      */
     @Override
-    public FreePlanResponse saveFreePlan(FreePlanUpdateRequest request) {
+    public FreePlanResponse saveFreePlan(Long adminId, FreePlanUpdateRequest request) {
         validateBenefits(request.benefits());
         String tier = request.tier().trim();
         List<String> benefits = request.benefits() == null ? List.of() : request.benefits();
 
         FreePlan saved = freePlanRepository.findById(FreePlan.SINGLE_ID)
                 .map(existing -> {
-                    existing.update(tier, benefits);
+                    existing.update(tier, benefits, adminId);
                     return existing;
                 })
-                .orElseGet(() -> new FreePlan(tier, benefits));
+                .orElseGet(() -> new FreePlan(tier, benefits, adminId));
         return FreePlanResponse.of(freePlanRepository.save(saved));
     }
 

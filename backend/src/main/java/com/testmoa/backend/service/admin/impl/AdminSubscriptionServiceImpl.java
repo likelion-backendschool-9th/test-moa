@@ -27,6 +27,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AdminSubscriptionServiceImpl implements AdminSubscriptionService {
 
+    static final String DEFAULT_GRANT_REASON = "시연용 부여";
+    static final String DEFAULT_REVOKE_REASON = "시연용 해제";
+
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -51,7 +54,7 @@ public class AdminSubscriptionServiceImpl implements AdminSubscriptionService {
 
     @Override
     @Transactional
-    public AdminSubscriptionResponse grant(AdminSubscriptionGrantRequest request) {
+    public AdminSubscriptionResponse grant(Long adminId, AdminSubscriptionGrantRequest request) {
         User user = requireByEmailForUpdate(request.email());
         if (user.getRole() == Role.ADMIN) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "운영자 계정은 구독 대상이 아니에요");
@@ -68,18 +71,23 @@ public class AdminSubscriptionServiceImpl implements AdminSubscriptionService {
                 .max(LocalDateTime::compareTo)
                 .orElse(now);
         subscriptionRepository.save(Subscription.builder()
-                .user(user).plan(plan).startAt(startAt).endAt(startAt.plusDays(plan.getPeriodDays())).build());
+                .user(user).plan(plan).startAt(startAt).endAt(startAt.plusDays(plan.getPeriodDays()))
+                .grantedBy(adminId).grantReason(reasonOr(request.reason(), DEFAULT_GRANT_REASON)).build());
         return responseOf(user);
     }
 
     @Override
     @Transactional
-    public AdminSubscriptionResponse revoke(String email) {
+    public AdminSubscriptionResponse revoke(Long adminId, String email) {
         User user = requireByEmailForUpdate(email);
         if (user.getRole() != Role.ADMIN) {
-            unfinished(user, LocalDateTime.now()).forEach(Subscription::cancel);
+            unfinished(user, LocalDateTime.now()).forEach(subscription -> subscription.revoke(adminId, DEFAULT_REVOKE_REASON));
         }
         return responseOf(user);
+    }
+
+    private static String reasonOr(String reason, String fallback) {
+        return reason == null || reason.isBlank() ? fallback : reason.trim();
     }
 
     private AdminSubscriptionResponse responseOf(User user) {

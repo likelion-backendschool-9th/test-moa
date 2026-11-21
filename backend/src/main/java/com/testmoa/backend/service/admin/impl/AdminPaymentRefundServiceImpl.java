@@ -48,7 +48,7 @@ public class AdminPaymentRefundServiceImpl implements AdminPaymentRefundService 
     }
 
     @Override
-    public AdminPaymentRefundResponse refund(Long paymentId) {
+    public AdminPaymentRefundResponse refund(Long adminId, Long paymentId) {
         Long userId = transaction.execute(status -> paymentRepository.findUserIdByPaymentId(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND)));
 
@@ -84,7 +84,7 @@ public class AdminPaymentRefundServiceImpl implements AdminPaymentRefundService 
                 userRepository.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
                 Payment payment = paymentRepository.findById(paymentId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR));
-                payment.refund();
+                payment.refund(adminId);
                 payment.getSubscription().cancel();
                 return new AdminPaymentRefundResponse(paymentId, payment.getStatus(), LocalDateTime.now());
             });

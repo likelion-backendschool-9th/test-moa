@@ -6,7 +6,9 @@ import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.entity.enums.CashoutTab;
 import com.testmoa.backend.service.admin.CashoutService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -46,9 +48,10 @@ public class CashoutController {
     @Operation(summary = "출금 요청 처리 (지급 완료·반려)")
     @PutMapping("/{withdrawalKey}")
     public ApiResponse<AdminCashoutResponse> process(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long adminId,
             @PathVariable Long withdrawalKey,
             @Valid @RequestBody CashoutProcessRequest request
     ) {
-        return ApiResponse.ok(cashoutService.process(withdrawalKey, request));
+        return ApiResponse.ok(cashoutService.process(adminId, withdrawalKey, request));
     }
 }

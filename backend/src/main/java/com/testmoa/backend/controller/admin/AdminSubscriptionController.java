@@ -5,8 +5,10 @@ import com.testmoa.backend.dto.response.AdminSubscriptionResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.admin.AdminSubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,13 +41,19 @@ public class AdminSubscriptionController {
     @Operation(summary = "구독 부여", description = "결제 없이 구독 기간을 만든다. 구독 중이면 끝난 시각부터 이어진다. 운영자 계정은 403")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<AdminSubscriptionResponse> grant(@Valid @RequestBody AdminSubscriptionGrantRequest request) {
-        return ApiResponse.ok(subscriptionService.grant(request));
+    public ApiResponse<AdminSubscriptionResponse> grant(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long adminId,
+            @Valid @RequestBody AdminSubscriptionGrantRequest request
+    ) {
+        return ApiResponse.ok(subscriptionService.grant(adminId, request));
     }
 
     @Operation(summary = "구독 해제", description = "끝나지 않은 구독 기간을 모두 취소한다(CANCELLED). 뺄 구독이 없어도 같은 결과다")
     @DeleteMapping
-    public ApiResponse<AdminSubscriptionResponse> revoke(@RequestParam String email) {
-        return ApiResponse.ok(subscriptionService.revoke(email));
+    public ApiResponse<AdminSubscriptionResponse> revoke(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long adminId,
+            @RequestParam String email
+    ) {
+        return ApiResponse.ok(subscriptionService.revoke(adminId, email));
     }
 }

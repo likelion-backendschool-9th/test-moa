@@ -8,9 +8,9 @@ public interface AdminSubscriptionService {
     /** 이메일로 회원의 구독 상태를 본다. 없는 이메일은 404 */
     AdminSubscriptionResponse find(String email);
 
-    /** 결제 없이 구독 기간을 만든다. 운영자 계정은 403, 지금 파는 플랜이 아니면 404 */
-    AdminSubscriptionResponse grant(AdminSubscriptionGrantRequest request);
+    /** 결제 없이 구독 기간을 만들고 부여한 운영자와 사유(없으면 "시연용 부여")를 남긴다. 운영자 계정은 403, 지금 파는 플랜이 아니면 404 */
+    AdminSubscriptionResponse grant(Long adminId, AdminSubscriptionGrantRequest request);
 
-    /** 끝나지 않은 구독 기간을 모두 취소한다. 뺄 구독이 없어도 같은 결과다 */
-    AdminSubscriptionResponse revoke(String email);
+    /** 끝나지 않은 구독 기간을 모두 취소하고 해제한 운영자와 사유("시연용 해제")를 남긴다. 뺄 구독이 없어도 같은 결과다 */
+    AdminSubscriptionResponse revoke(Long adminId, String email);
 }

@@ -305,6 +305,35 @@ class AdminPaymentRefundTest {
     }
 
     @Test
+    @DisplayName("#275-S8 환불과 같은 회원의 PG 결제 승인이 동시에 와도 교착 없이 끝나고 새 구독은 ACTIVE, 환불한 구독은 CANCELLED다")
+    void refundAndApproveInOrder() throws Exception {
+        Payment payment = kakaoPayment();
+        String ready = mvc.perform(post("/api/v1/my/subscription/checkout/ready").header("Authorization", bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"planId\":" + plan.getId() + ",\"provider\":\"KAKAO_PAY\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String orderId = JsonPath.read(ready, "$.data.orderId");
+        doAnswer(invocation -> {
+            Thread.sleep(300);
+            return null;
+        }).when(kakaoPay).cancel(any());
+
+        List<Integer> statuses = runConcurrently(
+                () -> refund(admin, payment.getId()).andReturn().getResponse().getStatus(),
+                () -> mvc.perform(post("/api/v1/my/subscription/checkout/approve").header("Authorization", bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":\"" + orderId + "\",\"pgToken\":\"pg-token-1\"}"))
+                        .andReturn().getResponse().getStatus());
+
+        assertEquals(List.of(200, 201), statuses);
+        assertEquals("REFUNDED", paymentStatus(payment.getId()));
+        assertEquals("CANCELLED", subscriptionStatus(payment.getSubscription()));
+        Integer active = jdbc.queryForObject(
+                "select count(*) from subscriptions where user_id = ? and status = 'ACTIVE'", Integer.class, member.getId());
+        assertEquals(1, active);
+    }
+
+    @Test
     @DisplayName("#275-S9 환불 뒤 다시 결제하면 새 결제와 구독이 만들어진다")
     void payAgainAfterRefund() throws Exception {
         Payment payment = kakaoPayment();

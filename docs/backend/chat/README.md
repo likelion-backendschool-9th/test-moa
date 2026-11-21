@@ -17,7 +17,7 @@
 | [#53](https://github.com/likelion-backendschool-9th/test-moa/issues/53) | 채팅 시작 | start.md |
 | [#54](https://github.com/likelion-backendschool-9th/test-moa/issues/54) | 화면을 실제 API로 연결 | [채팅함](../../frontend/chat/chats.md), [채팅방](../../frontend/chat/chat-room.md) |
 | [#195](https://github.com/likelion-backendschool-9th/test-moa/issues/195) | 모집 관리 화면에서 채팅 걸기 | [start-chat.md](../../frontend/chat/start-chat.md) |
-| [#105](https://github.com/likelion-backendschool-9th/test-moa/issues/105) | 채팅방 메시지 검색 | search.md |
+| [#105](https://github.com/likelion-backendschool-9th/test-moa/issues/105) | 채팅방 메시지 검색 | [search.md](search.md), [화면](../../frontend/chat/chat-search.md) |
 
 진행 순서는 표의 위에서 아래다. 문서는 그 이슈를 시작할 때 만든다. 진행 상태는 이슈와 PR에서 본다.
 
@@ -40,6 +40,7 @@
 
 - SSE 이벤트는 `ready`(`{}`), `message`(`roomKey`, `seq`), `read`(`roomKey`, `reader: me|partner`, `lastReadSeq`) 세 가지다. 메시지 저장·읽음 순번 증가가 커밋된 뒤 방의 두 참여자 모든 연결에 알린다. 삭제한 방도 대상이고, 읽은 순번이 그대로면 알리지 않는다. 이름 변경·삭제는 다른 탭에 알리지 않고 채팅함으로 돌아갈 때 맞춘다 ([#51](realtime.md), 11-08)
 - SSE 연결은 30분 뒤 정상 종료하며, 25초마다 주석 하트비트를 보내고 재연결 간격은 3초다. 회원당 최대 5개 연결을 두고 넘으면 가장 오래된 연결을 닫는다. Next는 쿠키 토큰을 붙여 스트림을 중계하며 nginx는 버퍼링하지 않는다. 다시 받은 `ready`를 계기로 `after` 조회로 빠진 메시지를 채운다 ([#51](realtime.md), 11-08)
+- 메시지 검색은 `GET /api/v1/chats/{roomKey}/messages/search?q=`로 한 방 안에서만 한다. 내용에 검색어가 들어간 메시지(대소문자 무시, `%`·`_`는 글자 그대로)의 순번만 최신부터 최대 100개 주고, 화면은 그 순번까지 `before=`로 이어 불러 이동한다 ([#105](search.md), 11-21)
 
 ## 데이터 구조
 #47에서 만든 테이블. 자세한 시나리오와 가정은 [entities.md](entities.md)에 있다.

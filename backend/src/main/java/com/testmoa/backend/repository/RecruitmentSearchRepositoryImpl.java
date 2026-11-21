@@ -2,6 +2,7 @@ package com.testmoa.backend.repository;
 
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.enums.RecruitmentStatus;
+import com.testmoa.backend.global.util.LikePattern;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -62,13 +63,8 @@ public class RecruitmentSearchRepositoryImpl implements RecruitmentSearchReposit
             where.append(" and (lower(p.title) like :pattern escape '\\'")
                     .append(" or lower(coalesce(p.description, '')) like :pattern escape '\\'")
                     .append(" or lower(r.title) like :pattern escape '\\')");
-            params.put("pattern", "%" + escapeLike(condition.keyword()) + "%");
+            params.put("pattern", LikePattern.contains(condition.keyword()));
         }
         return where.toString();
-    }
-
-    // %, _는 글자 그대로 찾는다
-    private static String escapeLike(String keyword) {
-        return keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }

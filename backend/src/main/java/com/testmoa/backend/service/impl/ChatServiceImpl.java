@@ -3,6 +3,7 @@ package com.testmoa.backend.service.impl;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
+import com.testmoa.backend.dto.response.ChatMessageSearchResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 import com.testmoa.backend.dto.response.ChatReadResponse;
 import com.testmoa.backend.dto.response.ChatRoomResponse;
@@ -17,6 +18,7 @@ import com.testmoa.backend.entity.enums.ChatRole;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
+import com.testmoa.backend.global.util.LikePattern;
 import com.testmoa.backend.repository.ChatMessageRepository;
 import com.testmoa.backend.repository.ChatParticipantRepository;
 import com.testmoa.backend.repository.ChatRoomRepository;
@@ -36,6 +38,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ChatServiceImpl implements ChatService {
     private static final int MESSAGE_SLICE_SIZE = 30;
+    private static final int SEARCH_RESULT_LIMIT = 100;
     private final ChatParticipantRepository participantRepository;
     private final SanctionChecker sanctionChecker;
     private final ChatRoomRepository roomRepository;
@@ -147,6 +151,17 @@ public class ChatServiceImpl implements ChatService {
         var messages = slice.getContent().stream().sorted(Comparator.comparingLong(ChatMessage::getSeq))
                 .map(message -> ChatMessageResponse.of(message, me.getId())).toList();
         return new ChatMessageSliceResponse(messages, slice.hasNext());
+    }
+
+    @Override
+    public ChatMessageSearchResponse searchMessages(String roomKey, Long userId, String q) {
+        var me = requireParticipant(roomKey, userId);
+        String keyword = q.strip().toLowerCase(Locale.ROOT);
+        if (keyword.isEmpty()) throw new BusinessException(ErrorCode.INVALID_INPUT);
+        var seqs = messageRepository.findSeqsByContent(me.getRoom(), LikePattern.contains(keyword),
+                Limit.of(SEARCH_RESULT_LIMIT + 1));
+        boolean hasMore = seqs.size() > SEARCH_RESULT_LIMIT;
+        return new ChatMessageSearchResponse(hasMore ? seqs.subList(0, SEARCH_RESULT_LIMIT) : seqs, hasMore);
     }
 
     @Override

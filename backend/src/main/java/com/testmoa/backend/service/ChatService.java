@@ -3,6 +3,7 @@ package com.testmoa.backend.service;
 import com.testmoa.backend.dto.request.ChatInboxQuery;
 import com.testmoa.backend.dto.response.ChatInboxResponse;
 import com.testmoa.backend.dto.response.ChatMessageResponse;
+import com.testmoa.backend.dto.response.ChatMessageSearchResponse;
 import com.testmoa.backend.dto.response.ChatMessageSliceResponse;
 import com.testmoa.backend.dto.response.ChatReadResponse;
 import com.testmoa.backend.dto.response.ChatRoomResponse;
@@ -20,5 +21,6 @@ public interface ChatService {
     void deleteRoom(String roomKey, Long userId);
     ChatRoomResponse getRoom(String roomKey, Long userId);
     ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after);
+    ChatMessageSearchResponse searchMessages(String roomKey, Long userId, String q);
     ChatMessageResponse sendMessage(String roomKey, Long userId, String text);
 }

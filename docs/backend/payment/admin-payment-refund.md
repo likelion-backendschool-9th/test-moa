@@ -22,7 +22,7 @@ alter table payments add constraint payments_status_check
 ```
 - **승인과 같이 세 토막으로 나눈다.** ① 회원 행을 잠근 안에서 결제를 `COMPLETED`인지 확인하고 `REFUNDING`으로 바꾼 뒤 커밋 ② 잠금 밖에서 PG 취소(#274의 `cancel`) ③ 회원 행을 다시 잠그고 결제를 `REFUNDED`로, 그 구독을 `CANCELLED`로 바꿈. 잠금 순서는 기존 규칙(회원 행 → 지갑 행)이며, 구독을 건드리므로 운영자 구독 해제와 같은 회원 행 잠금을 쓴다(#204).
 - **PG가 취소를 거절하면 결제·구독은 그대로다.** 결제를 `REFUND_FAILED`로 두고 오류 응답(502 `PG_CANCEL_FAILED`)을 준다. 운영자가 다시 환불을 시도할 수 있다(`REFUND_FAILED`는 `COMPLETED`처럼 환불 대상이다).
-- **PG가 취소했는데 ③이 실패하면** 결제는 `REFUNDING`으로 남고 오류 로그를 남긴다(#274와 같은 방식, 자동 복구는 범위 밖).
+- **PG가 취소했는데 ③이 실패하면** 결제는 `REFUNDING`으로 남고 오류 로그를 남긴다(#274와 같은 방식, 자동 복구는 범위 밖). 이렇게 남은 결제를 운영자가 찾는 조회는 이 이슈에 없고 후속 이슈로 남긴다(#274의 멈춘 결제 시도 조회와 같은 종류).
 - **구독 해제는 `CANCELLED`로 한다.** [README.md](README.md)에 적은 "환불 취소와 뜻이 겹친다"는 이 이슈에서 실제로 쓰이는 뜻이다. 새 구독 상태 값은 더하지 않는다.
 - **환불 뒤 다시 결제할 수 있다.** 5초 더블클릭 검사는 마지막 결제 시각(`paidAt`)을 보므로 환불 처리와 상관없이 그대로다.
 
@@ -93,7 +93,7 @@ alter table payments add constraint payments_status_check
 
 #275-S11 회원의 결제 내역에 환불한 결제가 표시된다 [테스트: tests/unit/subscription-pg.test.ts #275-S11]
 - Given 환불해 `REFUNDED`가 되었거나 `REFUNDING`인 결제가 있는 회원
-- Then  구독 화면의 결제 내역 줄에 "환불됨"·"환불 중"이 붙고 금액에 취소선이 그어진다. `REFUND_FAILED`와 상태가 없는 옛 응답은 정상 결제로 보인다
+- Then  구독 화면의 결제 내역 줄에 "환불됨"·"환불 중"이 붙고 금액에 취소선이 그어진다. 그 줄이 여는 결제 내용 화면에는 구독 혜택 안내 대신 "환불된 결제예요."("환불을 처리하고 있어요.")와 "상태" 줄이 보인다. `REFUND_FAILED`와 상태가 없는 옛 응답은 정상 결제로 보인다
 - 표시는 프론트 화면이며 서버는 이미 결제 이력 응답에 `status`를 준다. 화면은 [subscription.md](../../frontend/payment/subscription.md)에 적었다
 
 ## 범위 밖

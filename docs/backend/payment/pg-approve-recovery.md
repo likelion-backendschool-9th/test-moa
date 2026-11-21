@@ -85,7 +85,7 @@
 
 ## 가정
 - 토스 취소는 `POST https://api.tosspayments.com/v1/payments/{paymentKey}/cancel`이고 본문은 `cancelReason`(필수, 200자 이하)이다. 성공 응답은 Payment 객체이며 전액 취소 뒤 `status`가 `CANCELED`다(공식 문서, 2026-11-21 확인).
-- 카카오페이 취소는 `POST https://open-api.kakaopay.com/online/v1/payment/cancel`(`cid`, `tid`, `cancel_amount`, `cancel_tax_free_amount`)로 구현했다. 공식 문서 본문을 읽지 못해(페이지가 스크립트로 그려짐) 필수 값을 확인하지 못했다. `[직접]` 확인(S8)에서 테스트 CID로 실제 호출해 맞는지 본다.
+- 카카오페이 취소는 `POST https://open-api.kakaopay.com/online/v1/payment/cancel`(`cid`, `tid`, `cancel_amount`, `cancel_tax_free_amount`)로 구현했다. 공식 문서 본문은 읽지 못했지만(페이지가 스크립트로 그려짐) 테스트 CID로 승인한 결제를 이 요청으로 취소해 HTTP 200, `status: CANCEL_PAYMENT`를 확인했다(2026-11-21).
 - 승인 직후 같은 거래의 전액 취소를 두 PG의 테스트 환경이 지원한다. 지원하지 않으면 S8의 확인 방법을 고친다.
 - 보상 취소는 한 번만 시도한다. 일시 오류 재시도는 하지 않고 `NEEDS_REVIEW`로 남긴다(운영자가 조회해 처리).
 

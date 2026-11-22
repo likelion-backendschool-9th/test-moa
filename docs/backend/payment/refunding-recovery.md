@@ -70,6 +70,7 @@
 #281-S8 환불을 일부러 ③에서 실패시켜 만든 건을 조회하고 정리한다 [직접]
 - Given 로컬 `docker compose`, 환불 직전에 `payments` 갱신이 실패하도록 일시 제약, PG 테스트 결제
 - Then  환불 API가 500이고 PG 쪽은 취소, 결제는 `REFUNDING`으로 남는다. 기준 시간 뒤 조회에 나오고 `canceled=true`로 정리하면 `REFUNDED`가 된다. 조작한 제약은 되돌린다
+- 결과(2026-11-22, 로컬 `docker compose`, `payment.stuck-minutes=1`, 카카오페이 개발용 키): `subscriptions`를 `CANCELLED`로 바꾸는 갱신을 막는 임시 트리거를 걸고 결제를 환불하니 환불 API는 500이었고 결제는 `REFUNDING`, 구독은 `ACTIVE`로 남았으며 오류 로그에 결제 id·provider·PG 거래 식별자가 찍혔다. 그 직후에는 조회에 나오지 않았고 정리와 환불 재시도는 409였다. 1분이 지나자 조회에 나왔고, 트리거를 지운 뒤 `canceled=true`로 정리하니 200 `REFUNDED`, 구독 `CANCELLED`, `refunded_by`에 운영자가 남았다. 로컬에 남아 있던 `REFUND_FAILED`(PG에서는 이미 취소된 카카오 결제)도 조회에 나왔고 `canceled=true`로 같게 정리됐다. 임시 트리거와 임시 계정은 지웠다.
 
 ## 범위 밖
 자동 복구(스케줄러), 운영자 화면(프론트), PG 거래 조회로 상태를 서버가 직접 확인하는 것, 부분 환불.

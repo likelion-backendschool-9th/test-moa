@@ -129,6 +129,7 @@
 - 읽기 전용(모집·구독이 끝난 방)의 보내기 거절과 방 정보의 `readOnly`: [#53](start.md) (고침 #53: 끝난 기준 정함). `Recruitment.phaseAt(now)`가 `CLOSED`·`CANCELLED`이거나 개발자의 구독이 유효하지 않으면 읽기 전용이다. 모집 마감 뒤 `TESTING` 기간에는 대화할 수 있고, 피드백 마감·취소 뒤에는 보내기만 HTTP 403 `CHAT_READ_ONLY`로 거절한다.
 - 읽음 처리, 안 읽은 수, 상대의 읽음 표시(`partnerLastReadSeq`): #52. 방을 불러도 `last_read_seq`는 바꾸지 않는다
 - `after={seq}`로 새 메시지만 받기, 실시간 알림: #51
+- `before={seq}&from={seq}`로 범위를 한 번에 받기: #105([search.md](search.md) #105-R9)
 - 채팅함 목록(최근 메시지 미리보기 포함): #48
 - 이름 변경·삭제 API: #50. 테스트에서는 엔티티의 `rename`, `hide`로 상태를 만든다
 - 정지·탈퇴 회원의 조회·보내기 제한: 운영자 제재(#86)에서 회원 상태를 어디서 막을지 정할 때

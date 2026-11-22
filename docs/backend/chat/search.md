@@ -3,9 +3,9 @@
 참여자가 한 채팅방의 메시지 내용을 검색해, 찾은 메시지의 순번을 받는 API다. 채팅 전체에서 정한 것은 [README.md](README.md)에 있다. 메시지 조회(`before=`)는 [messages.md](messages.md)(#49), 화면은 [chat-search.md](../../frontend/chat/chat-search.md)에 있다.
 
 ## 한눈에
-- 끝나면: 참여자가 `GET /api/v1/chats/{roomKey}/messages/search?q=사진`을 부르면, 내용에 "사진"이 들어간 메시지의 순번이 최신 메시지부터 최대 100개 돌아온다. 대소문자를 가리지 않고, `%`·`_`도 글자 그대로 찾는다. 참여자가 아니거나 방을 지운 회원은 방 조회(#49)와 같은 404를 받는다
+- 끝나면: 참여자가 `GET /api/v1/chats/{roomKey}/messages/search?q=사진`을 부르면, 내용에 "사진"이 들어간 메시지의 순번이 최신 메시지부터 최대 100개 돌아온다. 대소문자를 가리지 않고, `%`·`_`도 글자 그대로 찾는다. 참여자가 아니거나 방을 지운 회원은 방 조회(#49)와 같은 404를 받는다. 화면이 오래된 결과까지 가는 데 쓰도록, 메시지 조회에 `before={seq}&from={seq}`를 붙이면 그 범위의 메시지를 최대 500개까지 한 번에 받는다
 - 결정 필요: 없음
-- 규모: 3단계
+- 규모: 5단계 (고침: #282 리뷰로 4·5단계를 더함)
 
 ## 1. 검색 (#105-R1)
 참여자가 검색어를 보내면, 그 방에서 내용에 검색어가 들어간 메시지의 순번을 최신 메시지부터 최대 100개 받는다. 100개가 넘으면 더 있다는 것(`hasMore`)도 함께 받는다.
@@ -54,11 +54,33 @@
 - When  방과 관계없는 회원 C, 운영자 D가 부르고, B가 없는 roomKey "aaaaaaaaaaaaaaaaaaaaaa"로 부르고, 방을 삭제한 B가 부른다
 - Then  모두 HTTP 404이고 본문은 #49-S14와 같다
 
+## 4. 결과까지 한 번에 받기 (#105-R9)
+참여자는 메시지 조회에 `before={X}&from={Y}`를 붙이면 순번이 Y 이상 X 미만인 메시지를 오래된 것부터 받는다. 범위가 500개를 넘으면 X 바로 앞의 500개만 받는다. 받은 것보다 오래된 메시지가 남았는지(`hasMore`)는 `before=`만 줄 때와 같은 뜻이다. 화면은 이미 불러온 가장 오래된 순번을 X로, 검색 결과 순번을 Y로 주어 결과까지 끊김 없이 한 번에 붙인다 (#282 리뷰: 30개씩 이어 부르면 요청 수가 결과 위치에 비례한다)
+
+#105-S14 정상 [테스트]
+- Given 테스터 B의 방에 순번 1~65 메시지가 있다
+- When  B가 `GET /api/v1/chats/{roomKey}/messages?before=36&from=3`을 부른다
+- Then  HTTP 200이고 `messages`는 순번 3~35(33개)가 오름차순이며 `hasMore`는 true다
+- When  `before=36&from=1`로 부른다
+- Then  `messages`는 순번 1~35이고 `hasMore`는 false다
+
+#105-S15 경계: 500개가 넘는 범위 [테스트]
+- Given 방에 순번 1~600 메시지가 있다
+- When  `before=601&from=1`로 부른다
+- Then  `messages`는 순번 101~600(500개)이고 `hasMore`는 true다
+- When  `before=101&from=1`로 부른다
+- Then  `messages`는 순번 1~100이고 `hasMore`는 false다
+
+#105-S16 실패: 잘못된 범위 [테스트]
+- When  B가 `before` 없이 `from=3`, `before=10&from=10`, `before=10&from=0`, `before=10&from=3&after=5`로 부른다
+- Then  모두 HTTP 400, `error.code` "INVALID_INPUT"이다
+
 ## 범위 밖
 - 화면(검색창, 결과로 이동, 강조): [chat-search.md](../../frontend/chat/chat-search.md)
 - 모든 채팅방에 걸친 통합 검색: 기획이 정하지 않았다
 - PostgreSQL 전문 검색(`pg_trgm` 등)과 검색용 인덱스: 검색 범위가 한 방이라 `(room_id, seq)` 인덱스로 방을 고른 뒤 그 방 메시지만 훑는다. 한 방의 메시지가 수만 개로 늘면 그때 정한다
 - 결과 100개 뒤의 결과 받기(페이지 나누기): 화면은 "100+"로 알린다
+- 결과 주변만 받는 조회(`around=`): 화면이 "최근 메시지부터 끊김 없이 이어진 목록"을 전제로 하므로 범위 조회(#105-R9)로 이어 붙인다
 
 ## 작업 순서
 1. 검색의 가장 얇은 경로 — #105-S1, #105-S6
@@ -71,11 +93,18 @@
 3. 검증과 문서 — #105-S5
    - 파일: 같은 테스트, `docs/backend/chat/README.md`(정한 것에 검색 방식: 주소, 부분 일치, 최신순 100개)
    - 확인: 같은 명령, `git diff --check`
+4. 소문자 변환을 DB 한 곳에서 — #105-S1, #105-S3 (#282 리뷰)
+   - 파일: `ChatServiceImpl.java`(`toLowerCase(Locale.ROOT)`를 지우고 `strip()`만 한다), `ChatMessageRepository.java`(`like lower(:pattern) escape '\\'`. 이스케이프 문자 `\`·`%`·`_`는 `lower`에 바뀌지 않는다). 모집 검색은 그대로 둔다
+   - 확인: `./gradlew test --tests '*ChatSearchControllerTest'`
+5. 범위 조회 — #105-S14, #105-S15, #105-S16
+   - 파일: `ChatController.java`(`getMessages`에 `@RequestParam(required = false) @Min(1) Long from`), `ChatService.java`·`ChatServiceImpl.java`(`from`이 있으면 `before`가 꼭 있고 `from < before`이며 `after`는 없어야 한다. `RANGE_SLICE_SIZE = 500`), `ChatMessageRepository.java`(`findByRoomAndSeqGreaterThanEqualAndSeqLessThanOrderBySeqDesc(room, from, before, Pageable)`. 500개를 넘으면 `hasNext`로 `hasMore` true, 아니면 `existsByRoomAndSeqLessThan(room, from)`), 테스트 `controller/ChatSearchControllerTest.java`, `docs/backend/chat/messages.md`(범위 밖에 범위 조회를 가리키는 줄)
+   - 확인: `./gradlew test --tests '*ChatSearchControllerTest' --tests '*ChatControllerTest'`(기존 `before=`·`after=`가 그대로인지)
 
 ## 가정
 - 주소는 메시지 조회 아래인 `GET /api/v1/chats/{roomKey}/messages/search`다. 새 컨트롤러를 만들지 않고 `ChatController`에 더한다. 채팅은 테스터·개발자가 함께 쓰는 기능이라 응답 DTO는 `dto/response`에 평평하게 둔다
 - 응답은 순번만 준다(`{seqs, hasMore}`). 화면은 순번으로 메시지 조회(`before=`)를 이어 불러 그 자리로 이동하고, 내용은 이미 받은 메시지에서 쓴다. 내용·보낸 사람을 다시 주지 않아 응답이 작다
-- 찾는 방법은 `lower(content) like :pattern escape '\'`(부분 일치)다. 모집 검색과 같은 방식이고, 한국어는 대소문자가 없어 영향이 없다
+- 찾는 방법은 `lower(content) like lower(:pattern) escape '\'`(부분 일치)다. 소문자 변환은 Java와 DB가 따로 하지 않고 DB `lower` 한 곳에서 한다. 한국어는 대소문자가 없어 영향이 없다 (고침: #282 리뷰. Java `toLowerCase`와 DB `lower`는 터키어 `İ` 같은 일부 문자를 다르게 바꾼다)
+- 범위 조회의 상한 500개는 서비스 상수(`RANGE_SLICE_SIZE`)다. 메시지 하나가 최대 10,000자라 응답이 커질 수 있지만, 검색 결과로 가는 한 번만 부른다. 500개로 모자라면 화면이 같은 조회를 이어 부른다
 - 검색어는 앞뒤 공백만 빼고 가운데 공백은 그대로 찾는다. "사진 순서"는 그 글자 그대로 이어진 메시지만 찾는다
 - 결과 수 100개는 서비스의 상수 하나(`SEARCH_RESULT_LIMIT`)로 둔다. 전체 개수는 세지 않는다
 - 채팅 정지(`Restriction.CHAT`, #86)는 채팅 걸기와 보내기만 막는다. 검색은 메시지 조회처럼 읽기라서 막지 않는다

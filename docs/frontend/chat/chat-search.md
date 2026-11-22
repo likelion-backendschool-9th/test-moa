@@ -9,7 +9,7 @@
 
 ## 정한 것
 - 결과 사이는 위·아래 화살표와 "2/5" 표시로 오간다. 결과 목록 화면은 두지 않는다 (11-21 사용자 결정, 이슈의 "정할 것" 1)
-- 대화보다 오래된 결과로 갈 때는 결과가 나올 때까지 `before=`로 30개씩 이어 불러 붙인다. 결과 주변만 받는 새 조회(`around=`)는 만들지 않는다. 화면이 "최근 메시지부터 끊김 없이 이어진 목록"이라는 전제(실시간 채우기, 읽음 처리, 맨 아래 스크롤)를 그대로 지키기 위해서다 (11-21 사용자 결정, 이슈 참고의 "이 순번 주변")
+- 대화보다 오래된 결과로 갈 때는 범위 조회(`before={지금 가장 오래된 순번}&from={결과 순번}`, [search.md](../../backend/chat/search.md) #105-R9)로 결과까지 한 번에 불러 붙인다. 500개가 넘으면 결과가 나올 때까지 같은 조회를 이어 부른다 (고침: #282 리뷰. 30개씩 이어 부르면 3,000개 방에서 요청이 약 100번 나간다). 결과 주변만 받는 새 조회(`around=`)는 만들지 않는다. 화면이 "최근 메시지부터 끊김 없이 이어진 목록"이라는 전제(실시간 채우기, 읽음 처리, 맨 아래 스크롤)를 그대로 지키기 위해서다 (11-21 사용자 결정, 이슈 참고의 "이 순번 주변")
 
 ## 1. 검색 열기와 결과로 이동 (#105-R4)
 참여자가 검색어를 넣으면 가장 최근 결과로 대화가 이동하고, 그 말풍선이 강조된다. 그 자리에서 위·아래로 스크롤해 앞뒤 대화를 이어서 볼 수 있다.
@@ -25,7 +25,7 @@
 #105-S8 정상: 오래된 결과 이어 불러오기 [테스트]
 - Given 불러온 대화가 순번 36~65이고, 찾은 결과가 순번 5다
 - When  결과 순번 5로 이동한다
-- Then  `before=36`, `before=6`을 차례로 부르고, 대화는 순번 1~65로 끊김 없이 이어진다
+- Then  `before=36&from=5`를 한 번 부르고, 대화는 순번 1~65로 끊김 없이 이어진다 (고침: #282 리뷰로 범위 조회)
 - When  결과 순번 40으로 이동한다
 - Then  이미 불러온 대화 안이라 아무것도 부르지 않는다
 
@@ -94,7 +94,7 @@
    - Route Handler(`app/api/chats/[roomKey]/messages/…`)는 만들지 않는다. 이웃한 `messages/route.ts`는 목업 모드에서 404를 내는데(e2e는 목업 모드로 돈다), 서버 액션은 `api.ts`가 두 모드를 나눠 주어 목업에서도 그대로 쓴다
    - 확인: `npx tsc --noEmit`
 2. 결과까지 이어 불러오기 — #105-S8
-   - 파일: `features/chat/message-window.ts`에 `loadChatMessagesUntil(messages, targetSeq, fetchBefore)`(가장 오래된 순번이 결과보다 크고 더 있을 때만 `before=`를 부르고 `mergeChatMessages`로 합친다), 테스트 `tests/unit/chat-search.test.ts`
+   - 파일: `features/chat/message-window.ts`에 `loadChatMessagesUntil(messages, targetSeq, fetchRange)`(가장 오래된 순번이 결과보다 크고 더 있을 때만 `before={가장 오래된 순번}&from={결과 순번}`을 부르고 `mergeChatMessages`로 합친다. 결과까지 닿지 않았으면 이어 부른다), `features/chat/api.ts`(메시지 조회에 `from`. 목업은 방의 대화를 모두 주므로 그대로) (고침: #282 리뷰로 범위 조회), 테스트 `tests/unit/chat-search.test.ts`
    - 확인: `npm test -- chat-search`
 3. 검색 띠와 이동 — #105-S7, #105-S10, #105-S11
    - 파일: `app/(conversation)/my/chats/[roomKey]/_components/ChatSearch/`(`"use client"`. 검색 띠: 검색창, 결과 수, 이전·다음 결과, 닫기), `ChatRoomView.tsx`(머리의 돋보기 버튼과 대화가 검색 상태를 함께 쓰도록 감싸는 클라이언트 컴포넌트), `ChatRoomHeader.tsx`(더보기 왼쪽에 "대화 내용 검색" 버튼), `ChatConversation/hook.ts`(이동할 순번을 받아 2단계 함수로 불러온다. 이전 메시지 불러오기와 같은 `busy`를 써서 겹쳐 부르지 않는다. 스크롤은 `setStored` 직후가 아니라 새 말풍선이 그려진 뒤 `useLayoutEffect`에서 `[data-seq="N"]`을 찾아 한다), `ChatMessageList.tsx`(강조할 순번 `currentSeq`를 props로 받고, `ChatBubbleRow`에 `data-seq={message.seq}`와 그 순번이면 `aria-current="true"`를 붙인다), `ChatBubble.tsx`(강조 모양), 테스트 `e2e/chat-room.spec.ts`

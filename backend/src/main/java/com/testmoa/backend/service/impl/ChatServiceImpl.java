@@ -156,7 +156,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public ChatMessageSearchResponse searchMessages(String roomKey, Long userId, String q) {
         var me = requireParticipant(roomKey, userId);
-        String keyword = q.strip().toLowerCase(Locale.ROOT);
+        String keyword = q.strip();
         if (keyword.isEmpty()) throw new BusinessException(ErrorCode.INVALID_INPUT);
         var seqs = messageRepository.findSeqsByContent(me.getRoom(), LikePattern.contains(keyword),
                 Limit.of(SEARCH_RESULT_LIMIT + 1));

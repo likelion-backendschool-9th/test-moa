@@ -19,7 +19,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     List<ChatMessage> findByRoomOrderBySeqAsc(ChatRoom room);
 
-    /** 내용(소문자)이 패턴과 맞는 메시지의 순번을 최신부터. 패턴은 LikePattern.contains로 만든 소문자 값이다 */
-    @Query("select m.seq from chat_messages m where m.room = :room and lower(m.content) like :pattern escape '\\' order by m.seq desc")
+    /** 내용이 패턴과 대소문자 없이 맞는 메시지의 순번을 최신부터. 패턴은 LikePattern.contains로 만들고, 소문자 변환은 DB lower 한 곳에서 한다 */
+    @Query("select m.seq from chat_messages m where m.room = :room and lower(m.content) like lower(:pattern) escape '\\' order by m.seq desc")
     List<Long> findSeqsByContent(@Param("room") ChatRoom room, @Param("pattern") String pattern, Limit limit);
 }

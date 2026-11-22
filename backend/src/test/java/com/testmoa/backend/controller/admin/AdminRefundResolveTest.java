@@ -146,10 +146,11 @@ class AdminRefundResolveTest {
     }
 
     @Test
-    @DisplayName("#281-S1 기준 시간보다 오래 멈춘 환불 중 결제만 조회된다")
+    @DisplayName("#281-S1 오래 멈춘 환불 중 결제와 환불 실패 결제만 조회된다")
     void listsOnlyStuckRefunding() throws Exception {
         Payment stuck = payment("REFUNDING", 30);
         Payment stuckNewer = payment("REFUNDING", 20);
+        Payment refundFailed = payment("REFUND_FAILED", 1);
         Payment justStarted = payment("REFUNDING", 1);
         Payment completed = payment("COMPLETED", 30);
         Payment refunded = payment("REFUNDED", 30);
@@ -160,9 +161,9 @@ class AdminRefundResolveTest {
 
         List<Integer> ids = com.jayway.jsonpath.JsonPath.read(body, "$.data[*].paymentId");
         List<Long> mine = ids.stream().map(Integer::longValue)
-                .filter(id -> List.of(stuck.getId(), stuckNewer.getId(), justStarted.getId(), completed.getId(), refunded.getId()).contains(id))
+                .filter(id -> List.of(stuck.getId(), stuckNewer.getId(), refundFailed.getId(), justStarted.getId(), completed.getId(), refunded.getId()).contains(id))
                 .toList();
-        assertEquals(List.of(stuckNewer.getId(), stuck.getId()), mine);
+        assertEquals(List.of(refundFailed.getId(), stuckNewer.getId(), stuck.getId()), mine);
         List<String> emails = com.jayway.jsonpath.JsonPath.read(body, "$.data[?(@.paymentId==" + stuck.getId() + ")].userEmail");
         assertEquals(List.of(member.getEmail()), emails);
     }
@@ -199,6 +200,18 @@ class AdminRefundResolveTest {
                 .andExpect(status().isOk());
         assertEquals("REFUNDED", paymentStatus(payment.getId()));
         assertEquals("CANCELLED", subscriptionStatus(payment));
+    }
+
+    @Test
+    @DisplayName("#281-S3 이미 REFUND_FAILED인 결제에 canceled=false를 보내도 바뀌지 않고 200이다")
+    void resolveNotCanceledOnRefundFailed() throws Exception {
+        Payment payment = payment("REFUND_FAILED", 30);
+
+        resolve(admin, payment.getId(), false)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("REFUND_FAILED"));
+        assertEquals("REFUND_FAILED", paymentStatus(payment.getId()));
+        assertEquals("ACTIVE", subscriptionStatus(payment));
     }
 
     @Test

@@ -22,9 +22,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("select s.user.id from payments p join p.subscription s where p.id = :paymentId")
     Optional<Long> findUserIdByPaymentId(@Param("paymentId") Long paymentId);
 
-    /** 기준 시각보다 오래 환불 중으로 남은 결제(#281). 최근 것부터. 회원 이메일을 함께 읽는다 */
+    /**
+     * 점검할 환불 결제(#281). 기준 시각보다 오래 환불 중으로 남은 결제와, 시간과 상관없이 환불 실패 결제다.
+     * 환불 실패는 PG에서는 취소됐는데 우리가 실패로 본 건(카카오 -710)일 수 있어 같이 보여 준다. 최근 것부터. 회원 이메일을 함께 읽는다
+     */
     @Query("select p from payments p join fetch p.subscription s join fetch s.user "
-            + "where p.status = com.testmoa.backend.entity.Payment.Status.REFUNDING and p.updatedAt < :threshold "
+            + "where (p.status = com.testmoa.backend.entity.Payment.Status.REFUNDING and p.updatedAt < :threshold) "
+            + "or p.status = com.testmoa.backend.entity.Payment.Status.REFUND_FAILED "
             + "order by p.updatedAt desc, p.id desc")
     List<Payment> findStuckRefunding(@Param("threshold") LocalDateTime threshold);
 }

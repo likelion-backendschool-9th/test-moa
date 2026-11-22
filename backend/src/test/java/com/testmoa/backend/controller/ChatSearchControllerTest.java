@@ -71,6 +71,20 @@ class ChatSearchControllerTest {
         return get("/api/v1/chats/" + target.getRoomKey() + "/messages/search").queryParam("q", q);
     }
 
+    MockHttpServletRequestBuilder range(String... params) {
+        var request = get("/api/v1/chats/" + room.getRoomKey() + "/messages");
+        for (int i = 0; i < params.length; i += 2) request.queryParam(params[i], params[i + 1]);
+        return request;
+    }
+
+    void writeNumbered(int count) {
+        write(room, testerSide, IntStream.rangeClosed(1, count).mapToObj(i -> "메시지 " + i).toArray(String[]::new));
+    }
+
+    static Object[] seqs(int from, int to) {
+        return IntStream.rangeClosed(from, to).boxed().toArray();
+    }
+
     ResultActions call(MockHttpServletRequestBuilder request, User user) throws Exception {
         return mvc.perform(request.header("Authorization", "Bearer " + jwt.createAccessToken(user.getId())));
     }
@@ -139,5 +153,38 @@ class ChatSearchControllerTest {
         call(search(room, "사진"), admin).andExpect(status().isNotFound()).andExpect(content().json(body, JsonCompareMode.STRICT));
         call(missing, developer).andExpect(status().isNotFound()).andExpect(content().json(body, JsonCompareMode.STRICT));
         call(search(room, "사진"), tester).andExpect(status().isNotFound()).andExpect(content().json(body, JsonCompareMode.STRICT));
+    }
+
+    @Test @DisplayName("#105-S14 before와 from으로 범위를 한 번에 받는다")
+    void range() throws Exception {
+        writeNumbered(65);
+        call(range("before", "36", "from", "3"), tester).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages[*].seq", contains(seqs(3, 35))))
+                .andExpect(jsonPath("$.data.hasMore").value(true));
+        call(range("before", "36", "from", "1"), tester)
+                .andExpect(jsonPath("$.data.messages[*].seq", contains(seqs(1, 35))))
+                .andExpect(jsonPath("$.data.hasMore").value(false));
+    }
+
+    @Test @DisplayName("#105-S15 500개가 넘는 범위는 before 바로 앞 500개")
+    void rangeLimit() throws Exception {
+        writeNumbered(600);
+        call(range("before", "601", "from", "1"), tester)
+                .andExpect(jsonPath("$.data.messages[*].seq", contains(seqs(101, 600))))
+                .andExpect(jsonPath("$.data.hasMore").value(true));
+        call(range("before", "101", "from", "1"), tester)
+                .andExpect(jsonPath("$.data.messages[*].seq", contains(seqs(1, 100))))
+                .andExpect(jsonPath("$.data.hasMore").value(false));
+    }
+
+    @Test @DisplayName("#105-S16 before 없는 from, 빈 범위, from=0, after와 함께는 400")
+    void invalidRange() throws Exception {
+        writeNumbered(10);
+        for (var request : new MockHttpServletRequestBuilder[]{
+                range("from", "3"), range("before", "10", "from", "10"), range("before", "10", "from", "0"),
+                range("before", "10", "from", "3", "after", "5")}) {
+            call(request, tester).andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+        }
     }
 }

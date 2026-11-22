@@ -84,6 +84,35 @@ public class TossPaymentsGateway implements PaymentGateway {
         }
     }
 
+    /** 승인한 결제를 전액 취소한다. 취소 금액을 보내지 않으면 전액 취소다. 같은 주문의 재시도가 두 번 취소되지 않게 멱등 키를 보낸다 */
+    @Override
+    public void cancel(CancelCommand command) {
+        try {
+            ConfirmResponse response = restClient.post()
+                    .uri("/v1/payments/{paymentKey}/cancel", command.pgTransactionId())
+                    .header("Authorization", basicAuth())
+                    .header("Idempotency-Key", "cancel-" + command.orderId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("cancelReason", command.reason()))
+                    .retrieve()
+                    .body(ConfirmResponse.class);
+            if (response == null || !"CANCELED".equals(response.status())) {
+                log.error("토스 취소 응답의 상태가 CANCELED가 아님 status={}", response == null ? null : response.status());
+                throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+            }
+        } catch (RestClientResponseException e) {
+            // 이미 취소된 결제는 보상이 목표한 상태이므로 성공으로 본다
+            if (e.getResponseBodyAsString().contains("ALREADY_CANCELED_PAYMENT")) {
+                return;
+            }
+            log.error("토스 결제 취소 거절 status={} body={}", e.getStatusCode().value(), e.getResponseBodyAsString());
+            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+        } catch (RestClientException e) {
+            log.error("토스 결제 취소 연결 실패: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+        }
+    }
+
     private String basicAuth() {
         return "Basic " + Base64.getEncoder().encodeToString((properties.secretKey() + ":").getBytes(StandardCharsets.UTF_8));
     }

@@ -97,6 +97,43 @@ public class KakaoPayGateway implements PaymentGateway {
         }
     }
 
+    /** 승인한 결제를 전액 취소한다. 카카오페이는 tid와 취소 금액으로 부른다 */
+    @Override
+    public void cancel(CancelCommand command) {
+        CancelBody body = new CancelBody(properties.cid(), command.pgTransactionId(), command.amount(), 0);
+        try {
+            CancelResponse response = restClient.post()
+                    .uri("/online/v1/payment/cancel")
+                    .header("Authorization", "SECRET_KEY " + properties.secretKey())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(CancelResponse.class);
+            if (response == null || !"CANCEL_PAYMENT".equals(response.status())) {
+                log.error("카카오페이 취소 응답의 상태가 CANCEL_PAYMENT가 아님 status={}", response == null ? null : response.status());
+                throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+            }
+        } catch (RestClientResponseException e) {
+            log.error("카카오페이 결제 취소 거절 status={} body={}", e.getStatusCode().value(), e.getResponseBodyAsString());
+            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+        } catch (RestClientException e) {
+            log.error("카카오페이 결제 취소 연결 실패: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.PG_CANCEL_FAILED);
+        }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    record CancelResponse(String status) {
+    }
+
+    record CancelBody(
+            String cid,
+            String tid,
+            @JsonProperty("cancel_amount") int cancelAmount,
+            @JsonProperty("cancel_tax_free_amount") int cancelTaxFreeAmount
+    ) {
+    }
+
     record ReadyBody(
             String cid,
             @JsonProperty("partner_order_id") String partnerOrderId,

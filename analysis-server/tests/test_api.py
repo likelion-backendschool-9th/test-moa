@@ -244,6 +244,21 @@ class TestComparisons:
         assert body["newGroupIds"] == [21]
         assert body["notReportedGroupIds"] == [11]
 
+    def test_fixed_pairs_are_kept(self, client: TestClient, llm: FakeLLM) -> None:
+        """#284-S6 고친 짝(fixedPreviousGroupIds)은 그대로 결과에 들어가고 AI 짝은 버린다."""
+        body = self._body()
+        body["current"]["groups"][0]["fixedPreviousGroupIds"] = [10, 11]
+        body["current"]["groups"][1]["fixedPreviousGroupIds"] = []
+        llm.proposed_matches = [GroupMatch(current_group_id=21, previous_group_id=10)]
+        res = client.post("/v1/comparisons", json=body)
+
+        assert res.status_code == 200
+        assert res.json()["matches"] == [
+            {"currentGroupId": 20, "previousGroupId": 10},
+            {"currentGroupId": 20, "previousGroupId": 11},
+        ]
+        assert res.json()["newGroupIds"] == [21]
+
     @pytest.mark.parametrize("prev_version", [3, 4])
     def test_version_order_is_enforced(self, client: TestClient, prev_version: int) -> None:
         res = client.post("/v1/comparisons", json=self._body(prev_version))

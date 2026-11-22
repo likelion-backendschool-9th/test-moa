@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         Cluster,
         Feedback,
         GroupLabel,
+        GroupSnapshot,
         ProjectContext,
         VersionSnapshot,
     )
@@ -141,6 +142,11 @@ MATCH_SYSTEM = f"""\
 규칙:
 - 반드시 입력에 있는 group_id만 사용한다. 새 ID를 만들지 않는다.
 - 이름이 달라도 같은 문제면 짝짓고, 이름이 비슷해도 다른 기능의 문제면 짝짓지 않는다.
+- 짝은 여러 개일 수 있다. 이전 그룹 하나가 현재 그룹 여러 개로 나뉘었거나, 이전 그룹 여러 개가
+  현재 그룹 하나로 합쳐졌으면 해당하는 짝을 모두 matches에 넣는다.
+- fixed 속성이 있는 현재 그룹은 개발자가 짝을 이미 정했다. fixed 값은 그 그룹과 이어진 이전 group_id
+  목록이고 비어 있으면 이어진 그룹이 없다. 이 그룹은 matches에 넣지 않고, summary에는 fixed 짝을
+  그대로 반영한다.
 - 확신이 없으면 짝짓지 않는다.
 - summary: 변화를 한국어 2~3문장으로 설명한다.
   현재 버전에 짝이 없는 이전 문제는 "해결됨"이라고 단정하지 말고
@@ -209,10 +215,14 @@ def render_merge_groups(groups: Iterable[Cluster], *, samples: int = 3) -> str:
 
 
 def render_versions(previous: VersionSnapshot, current: VersionSnapshot) -> str:
+    def fixed(g: GroupSnapshot) -> str:
+        ids = g.fixed_previous_group_ids
+        return "" if ids is None else f' fixed="{",".join(map(str, ids))}"'
+
     def block(label: str, snap: VersionSnapshot) -> str:
         rows = [
             f'<group group_id="{g.group_id}" category="{g.category}" '
-            f'severity="{g.severity.value if g.severity else "-"}">'
+            f'severity="{g.severity.value if g.severity else "-"}"{fixed(g)}>'
             f"{_tag(g.name)}" + (f" — 예시: {_tag(g.sample)}" if g.sample else "") + "</group>"
             for g in snap.groups
         ]

@@ -117,6 +117,9 @@ class GroupSnapshot:
     category: Category
     severity: Severity | None
     sample: str | None = None
+    # 개발자가 짝을 고친 현재 버전 그룹의 직전 그룹 id(빈 튜플은 짝 없음).
+    # None이면 AI가 짝짓는다 (#284)
+    fixed_previous_group_ids: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

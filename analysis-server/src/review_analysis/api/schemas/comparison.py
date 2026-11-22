@@ -17,14 +17,20 @@ class GroupSnapshotIn(ApiModel):
     category: Category
     improvement_rank: Severity | None = None
     sample: LongStr | None = Field(default=None, description="대표 리뷰 본문 (짝짓기 정확도 향상)")
+    fixed_previous_group_ids: Annotated[list[PositiveId], Field(max_length=200)] | None = Field(
+        default=None,
+        description="개발자가 고친 짝(현재 버전 그룹만). 빈 목록은 짝 없음, null이면 AI가 짝짓는다",
+    )
 
     def to_domain(self) -> GroupSnapshot:
+        fixed = self.fixed_previous_group_ids
         return GroupSnapshot(
             group_id=self.group_id,
             name=self.name,
             category=self.category,
             severity=self.improvement_rank,
             sample=self.sample,
+            fixed_previous_group_ids=None if fixed is None else tuple(fixed),
         )
 
 
@@ -56,7 +62,9 @@ class GroupMatchOut(ApiModel):
 
 
 class ComparisonResponse(ApiModel):
-    matches: list[GroupMatchOut] = Field(description="current 그룹 → 같은 문제인 previous 그룹")
+    matches: list[GroupMatchOut] = Field(
+        description="current 그룹 → 같은 문제인 previous 그룹. N:M이고 고정한 짝도 들어 있다"
+    )
     new_group_ids: list[int] = Field(description="이번 버전에 새로 나타난 그룹")
     not_reported_group_ids: list[int] = Field(
         description="이전 버전에 있었지만 이번 버전에서 보고되지 않은 그룹 ('해결됨'이 아님)"

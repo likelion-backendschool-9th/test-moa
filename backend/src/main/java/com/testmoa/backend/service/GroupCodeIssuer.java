@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 분석 그룹 코드 발급. 코드는 프로젝트 안에서 1부터 세는 숫자 문자열이고 백엔드만 발급함.
- * 리뷰 묶기(#107)와 버전 비교(#108)가 함께 씀
+ * 리뷰 묶기(#107)가 씀. 버전 비교의 짝은 코드가 아니라 group_links로 저장함(#284)
  */
 @Component
 @RequiredArgsConstructor

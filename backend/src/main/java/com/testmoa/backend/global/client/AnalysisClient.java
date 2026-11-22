@@ -52,12 +52,12 @@ public class AnalysisClient {
 
     /**
      * 직전 버전과 현재 버전의 분석 그룹을 비교받음(POST /v1/comparisons).
-     * 짝·새 그룹·요약이 없으면 계약과 다른 응답이라 500
+     * 짝·요약이 없으면 계약과 다른 응답이라 500
      */
     public ComparisonResponse compare(ComparisonRequest request) {
         ComparisonResponse response = post(restClient, "/v1/comparisons", request, ComparisonResponse.class);
-        if (response.matches() == null || response.newGroupIds() == null || response.summary() == null) {
-            log.error("분석 서버 응답에 matches, newGroupIds, summary 중 없는 값이 있음");
+        if (response.matches() == null || response.summary() == null) {
+            log.error("분석 서버 응답에 matches, summary 중 없는 값이 있음");
             throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }
         return response;
@@ -171,23 +171,25 @@ public class AnalysisClient {
      * @param category        BUG, UX, REQUEST, PRAISE, UNCLASSIFIED
      * @param improvementRank 심각도 1 = 치명 ~ 4 = 사소. 칭찬·미분류는 null
      * @param sample          대표 리뷰 내용. 대표 리뷰가 없으면 null
+     * @param fixedPreviousGroupIds 개발자가 짝을 고친 이번 버전 그룹의 직전 그룹 id(빈 목록은 짝 없음).
+     *                              고치지 않은 그룹과 직전 버전 그룹은 null이고, 분석 서버는 null인 그룹만 짝짓는다
      */
     public record GroupItem(
             Long groupId,
             String name,
             String category,
             Integer improvementRank,
-            String sample
+            String sample,
+            List<Long> fixedPreviousGroupIds
     ) {}
 
     /**
-     * 버전 비교 결과. 분석 서버가 주는 notReportedGroupIds는 저장하지 않고 그룹 코드로 계산하므로 읽지 않음
+     * 버전 비교 결과. 분석 서버가 주는 newGroupIds·notReportedGroupIds는 저장하지 않고 짝으로 계산하므로 읽지 않음
      *
-     * @param matches     같은 문제로 짝지은 그룹
-     * @param newGroupIds 이번 버전에 새로 나타난 현재 버전 그룹
-     * @param summary     변화 요약 문장
+     * @param matches 같은 문제로 짝지은 그룹. N:M이고 고정한 짝도 들어 있음
+     * @param summary 변화 요약 문장
      */
-    public record ComparisonResponse(List<GroupMatch> matches, List<Long> newGroupIds, String summary) {}
+    public record ComparisonResponse(List<GroupMatch> matches, String summary) {}
 
     public record GroupMatch(Long currentGroupId, Long previousGroupId) {}
 

@@ -15,17 +15,21 @@ import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.ClusterGroupRepository;
 import com.testmoa.backend.repository.FeedbackClusterRepository;
+import com.testmoa.backend.repository.GroupLinkRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.repository.VersionComparisonRepository;
+import com.testmoa.backend.repository.projection.LinkPair;
 import com.testmoa.backend.repository.projection.RepresentativeSample;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +45,7 @@ public class VersionComparisonReader {
     private final ClusterGroupRepository clusterGroupRepository;
     private final FeedbackClusterRepository feedbackClusterRepository;
     private final VersionComparisonRepository versionComparisonRepository;
+    private final GroupLinkRepository groupLinkRepository;
 
     /**
      * 비교할 두 버전과 분석 서버에 보낼 요청.
@@ -50,13 +55,17 @@ public class VersionComparisonReader {
         Recruitment current = findMine(userId, recruitmentId);
         Recruitment previous = findAnalyzedPrevious(current);
         requireNotAnalyzing(current, previous);
-        ComparisonRequest request = new ComparisonRequest(toVersionGroups(previous), toVersionGroups(current));
+        // 개발자가 짝을 고친 그룹은 그 짝(빈 짝 포함)을 고정해서 보냄. 분석 서버는 고치지 않은 그룹만 짝지음
+        Map<Long, List<Long>> links = linksOf(current.getId(), previous.getId());
+        ComparisonRequest request = new ComparisonRequest(
+                toVersionGroups(previous, group -> null),
+                toVersionGroups(current, group -> group.getLinksEditedAt() == null ? null : links.getOrDefault(group.getId(), List.of())));
         return new ComparisonTarget(current.getProject().getId(), current.getId(), previous.getId(), request);
     }
 
     /**
-     * 저장된 비교 결과. 현재 버전 그룹은 직전 버전에 같은 코드가 있으면 "이전에도 있음",
-     * 직전 버전 그룹 중 현재 버전에 같은 코드가 없는 것은 "이번 버전에서 보고되지 않음".
+     * 저장된 비교 결과. 현재 버전 그룹은 이어진 직전 그룹이 있으면 "이전에도 있음",
+     * 직전 버전 그룹 중 어느 현재 그룹과도 이어지지 않은 것은 "이번 버전에서 보고되지 않음". 짝은 N:M이다.
      * 비교 전이면 화면이 상태를 가르도록 직전 버전 없음 → 분석 전 → 비교 전 순으로 알림
      */
     public VersionComparisonResponse readResult(Long userId, Long recruitmentId) {
@@ -70,17 +79,24 @@ public class VersionComparisonReader {
 
         List<ClusterGroup> currentGroups = clusterGroupRepository.findByRecruitmentIdOrderByIdAsc(current.getId());
         List<ClusterGroup> previousGroups = clusterGroupRepository.findByRecruitmentIdOrderByIdAsc(previous.getId());
-        Set<String> currentCodes = codesOf(currentGroups);
-        Set<String> previousCodes = codesOf(previousGroups);
+        Map<Long, List<Long>> links = linksOf(current.getId(), previous.getId());
+        Set<Long> linkedPrevious = links.values().stream().flatMap(List::stream).collect(Collectors.toSet());
 
         List<CurrentGroup> groups = currentGroups.stream()
-                .map(group -> CurrentGroup.of(group, previousCodes.contains(group.getGroupCode())))
+                .map(group -> CurrentGroup.of(group, links.getOrDefault(group.getId(), List.of())))
                 .toList();
         List<NotReportedGroup> notReported = previousGroups.stream()
-                .filter(group -> !currentCodes.contains(group.getGroupCode()))
+                .filter(group -> !linkedPrevious.contains(group.getId()))
                 .map(NotReportedGroup::of)
                 .toList();
         return VersionComparisonResponse.of(comparison, current, previous, isStale(comparison, current, previous), groups, notReported);
+    }
+
+    // 이번 버전 그룹 id → 이어진 직전 버전 그룹 id(저장한 순서)
+    private Map<Long, List<Long>> linksOf(Long currentRecruitmentId, Long previousRecruitmentId) {
+        return groupLinkRepository.findPairs(currentRecruitmentId, previousRecruitmentId).stream()
+                .collect(Collectors.groupingBy(LinkPair::currentGroupId, LinkedHashMap::new,
+                        Collectors.mapping(LinkPair::previousGroupId, Collectors.toList())));
     }
 
     // 직전 버전은 같은 프로젝트에서 현재보다 버전이 작은 것 중 가장 큰 모집글.
@@ -108,8 +124,9 @@ public class VersionComparisonReader {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 
-    // 그룹 이름과 대표 리뷰는 분석 서버의 글자 수에 맞춰 자름. 칭찬·미분류는 심각도를 보내지 않음
-    private VersionGroups toVersionGroups(Recruitment recruitment) {
+    // 그룹 이름과 대표 리뷰는 분석 서버의 글자 수에 맞춰 자름. 칭찬·미분류는 심각도를 보내지 않음.
+    // fixed는 그룹의 고정 짝(고치지 않았으면 null)
+    private VersionGroups toVersionGroups(Recruitment recruitment, Function<ClusterGroup, List<Long>> fixed) {
         Map<Long, String> samples = feedbackClusterRepository.findRepresentativeSamples(recruitment.getId()).stream()
                 .collect(Collectors.toMap(RepresentativeSample::groupId, RepresentativeSample::content, (first, second) -> first));
         List<GroupItem> groups = clusterGroupRepository.findByRecruitmentIdOrderByIdAsc(recruitment.getId()).stream()
@@ -118,13 +135,10 @@ public class VersionComparisonReader {
                         AnalysisClient.cut(group.getName(), AnalysisClient.TITLE_MAX),
                         group.getCategory().name(),
                         group.getCategory().hasIssue() ? group.getImprovementRank() : null,
-                        AnalysisClient.cut(samples.get(group.getId()), AnalysisClient.CONTENT_MAX)))
+                        AnalysisClient.cut(samples.get(group.getId()), AnalysisClient.CONTENT_MAX),
+                        fixed.apply(group)))
                 .toList();
         return new VersionGroups(recruitment.getVersion(), groups);
-    }
-
-    private static Set<String> codesOf(List<ClusterGroup> groups) {
-        return groups.stream().map(ClusterGroup::getGroupCode).collect(Collectors.toSet());
     }
 
     // 비교한 뒤 두 버전 중 하나라도 다시 분석했으면 오래된 비교

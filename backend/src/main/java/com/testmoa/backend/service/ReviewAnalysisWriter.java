@@ -15,6 +15,7 @@ import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.ClusterGroupRepository;
 import com.testmoa.backend.repository.FeedbackClusterRepository;
 import com.testmoa.backend.repository.FeedbackRepository;
+import com.testmoa.backend.repository.GroupLinkRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.service.ReviewAnalysisReader.AnalysisTarget;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class ReviewAnalysisWriter {
     private final FeedbackRepository feedbackRepository;
     private final ClusterGroupRepository clusterGroupRepository;
     private final FeedbackClusterRepository feedbackClusterRepository;
+    private final GroupLinkRepository groupLinkRepository;
 
     /**
      * 분석 시작. 진행 중이 아닐 때만 PENDING으로 바꾸고, 이미 진행 중이면 409 ANALYSIS_IN_PROGRESS
@@ -73,6 +75,8 @@ public class ReviewAnalysisWriter {
         GroupCodeIssuer.Codes codes = groupCodeIssuer.open(target.projectId());
         // 등록한 그룹과 GitHub에 등록하는 중인 그룹은 남김. 지우면 만들어진 이슈의 링크를 저장할 그룹이 없어짐
         LocalDateTime staleBefore = LocalDateTime.now().minus(STALE_REGISTERING);
+        // 지우는 그룹을 가리키는 버전 비교 짝(이번·직전 어느 쪽이든)과 매핑을 먼저 지워야 그룹을 지울 수 있음
+        groupLinkRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
         feedbackClusterRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
         clusterGroupRepository.deleteUnregisteredByRecruitmentId(target.recruitmentId(), staleBefore);
 

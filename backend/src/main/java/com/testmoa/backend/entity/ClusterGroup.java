@@ -23,7 +23,7 @@ public class ClusterGroup {
     @JoinColumn(nullable = false)
     private Recruitment recruitment;
 
-    // 분류 코드. 버전이 달라도 같은 문제면 같은 코드를 쓴다
+    // 분류 코드. 분석할 때 프로젝트 안에서 겹치지 않게 받는다. 버전 사이의 짝은 group_links가 맡는다
     @Column(nullable = false)
     private String groupCode;
 
@@ -54,6 +54,9 @@ public class ClusterGroup {
 
     // GitHub에 이슈를 등록하는 중이면 시작한 일시. 같은 그룹을 두 번 등록하지 않도록 GitHub를 부르기 전에 먼저 차지한다
     private LocalDateTime gitIssueRegisteringAt;
+
+    // 개발자가 버전 비교의 짝을 고친 일시. 고친 적이 없으면 null. 다시 비교해도 이 그룹의 짝은 바꾸지 않는다
+    private LocalDateTime linksEditedAt;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -87,12 +90,12 @@ public class ClusterGroup {
     }
 
     /**
-     * 분류 코드 변경. 버전 비교에서 직전 버전의 같은 문제 코드를 이어받거나, 새 문제로 새 코드를 받을 때 쓴다.
+     * 개발자가 버전 비교의 짝을 고쳤다고 남긴다. 다시 비교해도 이 그룹의 짝은 AI가 바꾸지 않는다.
      *
-     * @param groupCode 바꿀 분류 코드. 발급은 백엔드가 한다
+     * @param now 고친 일시
      */
-    public void updateGroupCode(String groupCode) {
-        this.groupCode = groupCode;
+    public void markLinksEdited(LocalDateTime now) {
+        this.linksEditedAt = now;
     }
 
     /**

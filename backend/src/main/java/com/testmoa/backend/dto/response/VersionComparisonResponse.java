@@ -16,7 +16,7 @@ import java.util.List;
  * @param comparedAt        비교한 시각
  * @param stale             비교한 뒤 두 버전 중 하나를 다시 분석했으면 true(오래된 비교)
  * @param groups            현재 버전 그룹
- * @param notReportedGroups 직전 버전에는 있고 현재 버전에는 같은 코드가 없는 그룹
+ * @param notReportedGroups 직전 버전 그룹 중 어느 현재 버전 그룹과도 이어지지 않은 그룹
  */
 public record VersionComparisonResponse(
         Long currentRecruitmentId,
@@ -40,13 +40,14 @@ public record VersionComparisonResponse(
 
     /**
      * @param improvementRank    심각도 1 = 치명 ~ 4 = 사소. 칭찬·미분류는 null
-     * @param previouslyReported 직전 버전에 같은 코드가 있으면 true("이전에도 있음"), 없으면 false("신규")
+     * @param previouslyReported 이어진 직전 그룹이 있으면 true("이전에도 있음"), 없으면 false("신규")
+     * @param previousGroupIds   이어진 직전 버전 그룹 id. 여러 개일 수 있다(N:M)
      */
     public record CurrentGroup(Long groupId, String groupCode, String name, ClusterCategory category, Integer improvementRank,
-                               boolean previouslyReported) {
-        public static CurrentGroup of(ClusterGroup group, boolean previouslyReported) {
+                               boolean previouslyReported, List<Long> previousGroupIds) {
+        public static CurrentGroup of(ClusterGroup group, List<Long> previousGroupIds) {
             return new CurrentGroup(group.getId(), group.getGroupCode(), group.getName(), group.getCategory(),
-                    group.getImprovementRank(), previouslyReported);
+                    group.getImprovementRank(), !previousGroupIds.isEmpty(), previousGroupIds);
         }
     }
 

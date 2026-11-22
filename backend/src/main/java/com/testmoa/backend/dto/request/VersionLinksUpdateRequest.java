@@ -17,13 +17,14 @@ public record VersionLinksUpdateRequest(
     /**
      * 이번 버전 그룹 하나의 짝
      *
-     * @param groupId         이번 버전 그룹
-     * @param previousGroupId 이을 직전 버전 그룹. null이면 짝을 풀어 새로 생긴 그룹으로 둔다
+     * @param groupId          이번 버전 그룹
+     * @param previousGroupIds 이을 직전 버전 그룹. 여러 개일 수 있고(N:M), 빈 목록이면 짝을 풀어 새로 생긴 그룹으로 둔다
      */
     public record Link(
             @NotNull(message = "그룹을 골라 주세요")
             Long groupId,
 
-            Long previousGroupId
+            @NotNull(message = "이을 그룹을 보내 주세요")
+            List<@NotNull(message = "이을 그룹을 확인해 주세요") Long> previousGroupIds
     ) {}
 }

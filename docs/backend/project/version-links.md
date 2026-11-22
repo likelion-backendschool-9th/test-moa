@@ -5,7 +5,7 @@
 ## 한눈에
 - 끝나면: 직전 그룹 하나가 이번 그룹 여러 개로 나뉘거나 여러 직전 그룹이 이번 그룹 하나로 합쳐진 것을 잇고 고칠 수 있다. 고친 짝은 다시 비교해도 남는다
 - 결정 필요: 없음
-- 규모: 4단계(분석 서버, 백엔드, 화면, 기존 데이터)
+- 규모: 3단계(분석 서버, 백엔드, 화면)
 
 ## 정한 것 (11-22)
 
@@ -20,7 +20,7 @@
 | 7 | 비교 응답의 `groups[]`에 `previousGroupIds`(이어진 직전 그룹 id)를 더한다. `previouslyReported`는 그대로 둔다(목록이 비어 있지 않으면 true) | 화면이 코드를 맞대지 않고 응답의 연결로 짝을 그린다 |
 | 8 | 다시 분석하면 지우는 그룹(GitHub에 등록하지 않은 그룹)의 연결도 양쪽 모두 지운다. GitHub에 등록해 남는 그룹은 연결과 `links_edited_at`을 그대로 둔다 | 지운 그룹을 가리키는 연결이 남으면 외래 키에 걸려 저장이 실패한다 |
 | 9 | 화면은 결과가 있을 때 "AI 비교 분석 갱신하기"와 "AI 분석 갱신하기"를 누르면 확인 창을 띄운다. 처음 실행할 때는 띄우지 않는다 | 비교 갱신은 고치지 않은 짝과 요약이 바뀌고, 분석 갱신은 그 버전 그룹이 새로 만들어져 고친 짝·이름·이슈 초안이 사라진다 |
-| 10 | 이미 저장된 비교의 짝은 `backend/scripts/add_group_links.sql`로 한 번 옮긴다: 비교한 두 버전에서 코드가 같은 그룹 쌍을 연결로 넣는다 | Flyway가 없다. 옮기지 않으면 배포 뒤 모든 비교가 "짝 없음"으로 보인다 |
+| 10 | 예전 방식(코드 이어받기)으로 저장된 짝은 연결로 옮기지 않는다 | 배포 서버에 저장된 비교가 없다. 로컬 DB의 비교는 다시 비교하면 새로 이어진다 |
 | 11 | 비교 요약에는 group_id 번호와 "개발자가 정한 짝"이라는 내부 사정을 쓰지 않고 그룹 이름으로 말한다 | 고정 짝을 id 목록으로 보여 주자 요약이 "이전(7번)과 현재(1번)"처럼 화면에 없는 번호를 썼다 |
 | 12 | 짝 저장과 비교 저장은 지금처럼 프로젝트 행을 잠가 차례로 실행한다 | 예전에는 코드 발급이 잠갔다. 같은 짝을 동시에 넣으면 유니크 제약에 걸린다 |
 
@@ -94,12 +94,6 @@
 - When  처음 분석·비교한다
 - Then  확인 창 없이 바로 실행한다
 
-## 4. 기존 데이터 (#284-R4)
-
-#284-S10 기존 짝 옮기기 [명령]
-- When  배포 뒤 `backend/scripts/add_group_links.sql`을 실행한다
-- Then  저장된 비교마다 코드가 같은 두 버전 그룹 쌍이 연결로 들어가고, 다시 실행해도 늘지 않는다
-
 ## 범위 밖
 - 리뷰 분석을 다시 할 때 고친 그룹(이름·이슈 초안·짝)을 지키는 것. 그룹을 새로 만드는 구조라 큰 변경이다
 - 리뷰를 그룹 사이로 옮기거나 그룹을 합치는 편집
@@ -109,10 +103,9 @@
 1. 분석 서버 — 고정 짝 받기(`api/schemas/comparison.py`, `domain/models.py`), N:M·고정 짝 검증(`domain/comparison.py`), 프롬프트(`MATCH_SYSTEM`, `render_versions`)
 2. 백엔드 — `GroupLink` 엔티티·저장소, `ClusterGroup.linksEditedAt`, 비교 요청·저장·조회(`VersionComparisonReader`·`Writer`), 짝 저장 요청, 다시 분석할 때 연결 지우기(`ReviewAnalysisWriter`), 테스트
 3. 화면 — 연결로 짝 그리기·고치기(`features/recruitment/types.ts`·`api.ts`), 그룹 전체 목록·레포트·막대, 갱신 확인 창(`AnalysisToolbar`)
-4. 기존 데이터 옮기기 스크립트
 
 ## 참고
-- 운영 DB는 `ddl-auto: update`라 `group_links` 테이블과 `links_edited_at` 컬럼은 배포할 때 생긴다. 기존 짝 옮기기만 스크립트로 한다
+- 운영 DB는 `ddl-auto: update`라 `group_links` 테이블과 `links_edited_at` 컬럼은 배포할 때 생긴다
 - 백엔드 테스트는 JDK 21과 PostgreSQL이 필요하다(CI는 빈 Postgres에 `create-drop`, 연결 풀 5). backend 개발 컨테이너에는 로컬 개발 DB 주소와 `ddl-auto: update`가 환경 변수로 들어 있어 그대로 돌리면 테스트가 개발 DB에 붙고 연결이 모자라 실패한다. 같은 DB 서버에 테스트용 DB(`create database testmoa_ci`)를 따로 만들고 CI와 같은 값으로 돌린다
   ```sh
   docker compose exec backend sh -c "cd /app && SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/testmoa_ci SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5 JWT_SECRET=ci-test-secret-0123456789abcdef0123456789 CASHOUT_ACCOUNT_CRYPTO_KEY=dGVzdC1jYXNob3V0LWtleS0zMi1ieXRlcy1sb25nISE= ./gradlew test --no-daemon"

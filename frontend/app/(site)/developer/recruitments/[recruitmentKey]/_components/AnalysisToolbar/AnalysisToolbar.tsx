@@ -4,6 +4,7 @@ import { SparkleIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button/Button";
+import { ChatRoomDialog } from "@/features/chat/components/ChatRoomDialog/ChatRoomDialog";
 import { formatDateTime } from "@/lib/format";
 import styles from "./AnalysisToolbar.module.css";
 
@@ -13,9 +14,24 @@ import styles from "./AnalysisToolbar.module.css";
  * onRun을 주면 실행하고 화면을 다시 읽는다. 실패하면 백엔드 문구를 보이고 다시 누를 수 있다.
  * running(백엔드가 분석 중)이면 5초마다 화면을 다시 읽어 DONE·FAILED로 바뀌면 멈춘다.
  * onRun 없이 누르면(목업) "요청했어요"만 보여 준다.
+ * 결과가 있을 때(갱신) 누르면 먼저 확인 창을 띄운다. 직접 고친 그룹·짝이 바뀔 수 있어서다(#284). 처음 실행할 때는 바로 실행한다.
  */
 
 const POLL_MS = 5000;
+
+const RERUN_WARNING = "리뷰 그룹을 작업하신 내용이 있다면 분석 과정에서 일부 변경될 위험이 있습니다. 동의하십니까?";
+
+/** 갱신 확인 창의 제목과 무엇이 바뀌는지 */
+const CONFIRM = {
+  analysis: {
+    title: "AI 분석을 갱신할까요?",
+    detail: "이 버전의 리뷰 그룹을 새로 만들어서, 직접 고친 그룹 이름·이슈 초안과 버전 비교의 짝이 사라져요. GitHub에 등록한 그룹은 남아요.",
+  },
+  comparison: {
+    title: "AI 비교 분석을 갱신할까요?",
+    detail: "직접 고친 짝은 그대로 두고, 고치지 않은 그룹의 짝과 요약을 새로 만들어요.",
+  },
+};
 
 const TEXT = {
   analysis: {
@@ -53,7 +69,9 @@ export function AnalysisToolbar({ analyzedAt, kind = "analysis", onRun, running 
   const [isPending, startTransition] = useTransition();
   const [requested, setRequested] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const text = TEXT[kind];
+  const confirm = CONFIRM[kind];
   const busy = running || isPending || requested;
   const status = error ?? (busy ? text.requested : failed ? text.failed : analyzedAt ? `${formatDateTime(analyzedAt)} 기준` : text.none);
 
@@ -82,13 +100,32 @@ export function AnalysisToolbar({ analyzedAt, kind = "analysis", onRun, running 
 
   return (
     <div className={styles.toolbar}>
-      <Button size="sm" variant="secondary" disabled={busy} onClick={run} className={styles.button}>
+      <Button size="sm" variant="secondary" disabled={busy} onClick={() => (analyzedAt ? setConfirming(true) : run())} className={styles.button}>
         <SparkleIcon aria-hidden="true" weight="fill" />
         {busy ? text.pending : analyzedAt ? text.rerun : text.run}
       </Button>
       <p aria-live="polite" className={styles.status}>
         {status}
       </p>
+      {confirming && (
+        <ChatRoomDialog title={confirm.title} description={RERUN_WARNING} onClose={() => setConfirming(false)}>
+          <p className={styles.confirmDetail}>{confirm.detail}</p>
+          <div className={styles.confirmActions}>
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+              취소
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setConfirming(false);
+                run();
+              }}
+            >
+              동의하고 갱신하기
+            </Button>
+          </div>
+        </ChatRoomDialog>
+      )}
     </div>
   );
 }

@@ -33,7 +33,7 @@ import {
   type ApplyState,
   type AnalysisStatus,
   type GithubIssue,
-  compareVersions,
+  linksByCode,
   type BackendAnalysisGroup,
   type BackendGroupReview,
   fromBackendGroups,
@@ -937,13 +937,15 @@ export async function getVersionComparison(path: string, recruitmentKey: string)
     /* 비교한 뒤 어느 버전을 다시 분석했으면 오래된 비교다(백엔드 정한 것 8) */
     stale: sample.comparedAt < before.analyzedAt || sample.comparedAt < after.analyzedAt,
     unreflectedCount: before.unanalyzedCount + after.unanalyzedCount,
-    groups: compareVersions(before.groups, after.groups),
+    previousGroups: before.groups,
+    currentGroups: after.groups,
+    links: linksByCode(before.groups, after.groups),
   };
 }
 
 const DEVELOPER_RECRUITMENTS = "/api/v1/developer/recruitments";
 
-/** 백엔드 VersionComparisonResponse 중 화면이 쓰는 값. 그룹은 두 버전의 분석 조회에서 코드로 다시 잇는다 */
+/** 백엔드 VersionComparisonResponse 중 화면이 쓰는 값. 그룹 내용은 두 버전의 분석 조회에서, 짝은 여기 groups에서 읽는다 */
 type BackendVersionComparison = {
   currentVersion: number;
   currentTitle: string;
@@ -953,6 +955,8 @@ type BackendVersionComparison = {
   summary: string;
   comparedAt: string;
   stale: boolean;
+  /** 이번 버전 그룹과 이어진 직전 그룹 id(N:M) */
+  groups: Array<{ groupId: number; previousGroupIds: number[] }>;
 };
 
 /** 백엔드 ReviewAnalysisResponse 중 화면이 쓰는 값 */
@@ -1064,7 +1068,9 @@ async function getBackendVersionComparison(path: string, recruitmentId: string):
     currentTitle: comparison.currentTitle,
     stale: comparison.stale,
     unreflectedCount: before.analysis.unanalyzedFeedbackCount + after.analysis.unanalyzedFeedbackCount,
-    groups: compareVersions(before.groups, after.groups),
+    previousGroups: before.groups,
+    currentGroups: after.groups,
+    links: Object.fromEntries(comparison.groups.map((group) => [String(group.groupId), group.previousGroupIds.map(String)])),
   };
 }
 
@@ -1136,10 +1142,10 @@ export async function registerGithubIssue(recruitmentKey: string, groupId: strin
 /** 고친 짝을 저장한다. 목업에서는 화면에만 남는다 */
 export async function saveVersionLinks(
   recruitmentKey: string,
-  links: Array<{ groupId: string; previousGroupId: string | null }>,
+  links: Array<{ groupId: string; previousGroupIds: string[] }>,
 ): Promise<ActionResult> {
   if (!isBackendAuth) return { ok: true };
-  const body = { links: links.map((link) => ({ groupId: Number(link.groupId), previousGroupId: link.previousGroupId === null ? null : Number(link.previousGroupId) })) };
+  const body = { links: links.map((link) => ({ groupId: Number(link.groupId), previousGroupIds: link.previousGroupIds.map(Number) })) };
   return toActionResult(
     await backendFetch(`${DEVELOPER_RECRUITMENTS}/${encodeURIComponent(recruitmentKey)}/version-comparison/links`, { method: "PUT", body }),
   );

@@ -15,9 +15,9 @@
 | 1 | 직전 버전은 같은 프로젝트에서 현재보다 `version`이 작은 모집글 중 가장 큰 것이고, 같은 버전이 여럿이면 나중에 만든 모집글이다. 없으면 409 `NO_PREVIOUS_VERSION` | 비교는 항상 두 버전만 한다(이슈 #108) |
 | 2 | 두 버전 모두 분석 결과(`analyzed_at`)가 있어야 하고, 없으면 409 `ANALYSIS_NOT_DONE`이다. 어느 쪽이든 분석 중(`PENDING`)이면 409 `ANALYSIS_IN_PROGRESS`다. 다시 분석하다 실패해도(`FAILED`) 지난 결과가 남아 있어 비교할 수 있다. 분석을 대신 돌리지 않는다 (고침 #108: 처음에는 `DONE`만 받아, 재분석에 한 번 실패하면 다시 성공할 때까지 비교가 막혔다) | 이슈 본문은 "분석을 먼저 돌린 뒤 비교"지만, 리뷰 묶기(#107)는 비동기로 몇 분 걸려 한 요청에서 분석 두 번과 비교를 기다릴 수 없다. 프론트가 분석을 먼저 실행한다. 분석 중이면 곧 그룹이 바뀌어 끝난 뒤 비교한다 |
 | 3 | 구독(`SubscriptionChecker.require`)을 먼저 보고, 다른 회원 프로젝트의 모집글은 없는 모집글과 같이 404다. 실행과 조회 모두 같다 | #109와 같다 |
-| 4 | 그룹 코드는 프로젝트 안에서 1부터 세는 숫자 문자열이다. 새 코드는 그 프로젝트에서 숫자로 읽히는 코드의 최대 + 1이고, 저장하는 동안 프로젝트 행을 잠가(`select … for update`) 동시에 같은 코드를 내지 않는다 | 코드는 백엔드만 발급한다. `group_code`가 문자열 컬럼이라 DB의 `max`로는 "9"가 "10"보다 커진다. #107도 같은 방식으로 발급한다 |
-| 5 | 분석 서버의 짝은 그대로 믿지 않는다. `currentGroupId`가 현재 버전 그룹이 아니거나 `previousGroupId`가 직전 버전 그룹이 아니면 버린다. 한 그룹은 한 번만 짝짓고(앞의 짝을 씀), `newGroupIds`에 있어도 이미 짝지은 그룹은 건너뛴다. 어느 쪽에도 없는 현재 그룹은 코드를 그대로 둔다 | 한 버전 안에서 같은 코드가 두 번 나오면 "같은 문제"라는 뜻이 깨진다 |
-| 6 | `notReportedGroupIds`는 저장하지 않는다. 조회할 때 "직전 버전에는 있고 현재 버전에는 없는 코드"의 그룹으로 계산한다 | 이슈 #108. 코드가 바뀌면 저절로 맞는다 |
+| 4 | 그룹 코드는 프로젝트 안에서 1부터 세는 숫자 문자열이다. 새 코드는 그 프로젝트에서 숫자로 읽히는 코드의 최대 + 1이고, 저장하는 동안 프로젝트 행을 잠가(`select … for update`) 동시에 같은 코드를 내지 않는다 (고침 #284: 비교와 짝 저장은 코드를 바꾸지 않고, 짝은 `group_links`로 저장한다. 코드는 #107만 발급한다) | 코드는 백엔드만 발급한다. `group_code`가 문자열 컬럼이라 DB의 `max`로는 "9"가 "10"보다 커진다. #107도 같은 방식으로 발급한다 |
+| 5 | 분석 서버의 짝은 그대로 믿지 않는다. `currentGroupId`가 현재 버전 그룹이 아니거나 `previousGroupId`가 직전 버전 그룹이 아니면 버린다. 한 그룹은 한 번만 짝짓고(앞의 짝을 씀), `newGroupIds`에 있어도 이미 짝지은 그룹은 건너뛴다. 어느 쪽에도 없는 현재 그룹은 코드를 그대로 둔다 (고침 #284: 짝은 N:M이라 이미 짝지은 그룹도 받고 같은 짝만 한 번 저장한다. `newGroupIds`는 읽지 않는다. [version-links.md 결정 5](version-links.md#정한-것-11-22)) | 한 버전 안에서 같은 코드가 두 번 나오면 "같은 문제"라는 뜻이 깨진다 |
+| 6 | `notReportedGroupIds`는 저장하지 않는다. 조회할 때 "직전 버전에는 있고 현재 버전에는 없는 코드"의 그룹으로 계산한다 (고침 #284: 코드 대신 어느 현재 그룹과도 이어지지 않은 직전 그룹으로 계산) | 이슈 #108. 코드가 바뀌면 저절로 맞는다 |
 | 7 | `version_comparisons`는 모집글당 한 행이다. 다시 비교하면 요약과 직전 버전을 덮어쓰고 `updated_at`을 지금으로 바꾼다. 요약이 같아도 갱신되게 시각을 직접 넣는다 | `@UpdateTimestamp`는 바뀐 값이 없으면 UPDATE를 내지 않아, 같은 요약이 오면 비교가 오래된 것으로 남는다 |
 | 8 | 비교가 오래됐는지(`stale`)는 `version_comparisons.updated_at`이 두 모집글의 `analyzed_at` 중 하나보다 이르면 true다 | 비교한 뒤 어느 버전을 다시 분석하면 짝이 맞지 않을 수 있다 |
 | 9 | `recruitments.analyzed_at`(분석 완료 시각, 분석 전 null)을 더하고, `completeAnalysis(praiseSummary, now)`가 `DONE`과 함께 기록한다 (11-07 결정, 고침 #107: 칭찬 요약을 함께 받음) | 8에 필요하고 엔티티에 없었다. ERD에는 이미 있다. #107이 분석을 저장할 때 이 메서드를 부른다 |
@@ -56,17 +56,17 @@
   }
 }
 ```
-- `groups`는 현재 버전 그룹이다. `previouslyReported`는 직전 버전에 같은 `groupCode`가 있으면 true("이전에도 있음"), 아니면 false("신규")다
-- `notReportedGroups`는 직전 버전 그룹 중 현재 버전에 같은 코드가 없는 것이다
+- `groups`는 현재 버전 그룹이다. `previouslyReported`는 직전 버전에 같은 `groupCode`가 있으면 true("이전에도 있음"), 아니면 false("신규")다 (고침 #284: 이어진 직전 그룹이 있으면 true이고, 이어진 그룹 id를 `previousGroupIds`로 준다)
+- `notReportedGroups`는 직전 버전 그룹 중 현재 버전에 같은 코드가 없는 것이다 (고침 #284: 어느 현재 그룹과도 이어지지 않은 것)
 - 칭찬·미분류 그룹은 `improvementRank`가 null이다
 
 ### 분석 서버 `POST {analysis.base-url}/v1/comparisons`
-- 요청: `previous`·`current` 각각 `version`과 `groups`(`groupId`, `name`, `category`, `improvementRank`, `sample`). `sample`은 그 그룹의 대표 리뷰(`feedback_clusters.is_representative`) 내용이고 없으면 null, `improvementRank`는 칭찬·미분류에서 null이다
-- 응답: `matches`(`currentGroupId`, `previousGroupId`), `newGroupIds`, `notReportedGroupIds`, `summary`. `matches`·`newGroupIds`·`summary`가 없으면 계약 어긋남으로 500이다. `notReportedGroupIds`는 읽지 않는다(결정 6)
+- 요청: `previous`·`current` 각각 `version`과 `groups`(`groupId`, `name`, `category`, `improvementRank`, `sample`). `sample`은 그 그룹의 대표 리뷰(`feedback_clusters.is_representative`) 내용이고 없으면 null, `improvementRank`는 칭찬·미분류에서 null이다. 현재 버전 그룹 중 개발자가 짝을 고친 그룹은 `fixedPreviousGroupIds`를 보낸다 (고침 #284)
+- 응답: `matches`(`currentGroupId`, `previousGroupId`), `newGroupIds`, `notReportedGroupIds`, `summary`. `matches`·`summary`가 없으면 계약 어긋남으로 500이다 (고침 #284: `newGroupIds`는 읽지 않음). `notReportedGroupIds`는 읽지 않는다(결정 6)
 
 ## 1. 비교 실행 (#108-R1)
 
-#108-S1 코드 이어받기와 새 코드 발급 [테스트]
+#108-S1 코드 이어받기와 새 코드 발급 [테스트] (고침 #284: 코드 대신 짝을 저장한다. [#284-S1](version-links.md))
 - Given 구독한 개발자 A의 프로젝트에 분석을 마친 1버전(그룹 g11 코드 "1", g12 코드 "2")과 2버전(그룹 g21, g22, g23)이 있다
 - When  A가 2버전으로 비교를 실행하고, 분석 서버가 `matches` [g21↔g11], `newGroupIds` [g23], `summary`를 준다
 - Then  분석 서버에 두 버전의 그룹 이름·카테고리·심각도·대표 리뷰가 가고, 칭찬 그룹의 `improvementRank`는 null이다
@@ -77,7 +77,7 @@
 - When  같은 모집글로 다시 비교한다
 - Then  `version_comparisons` 행은 하나이고 요약과 `updated_at`이 바뀐다. 이번 응답에서 신규인 그룹은 새 코드를 다시 받는다
 
-#108-S3 잘못된 그룹 ID 무시 [테스트]
+#108-S3 잘못된 그룹 ID 무시 [테스트] (고침 #284: 이미 짝지은 그룹도 받고 같은 짝만 한 번 저장한다. [#284-S2](version-links.md))
 - When  분석 서버가 다른 버전의 그룹, 없는 ID, 이미 짝지은 그룹을 `matches`·`newGroupIds`에 넣는다
 - Then  그 짝은 버리고 나머지만 저장한다. 요청은 성공한다
 

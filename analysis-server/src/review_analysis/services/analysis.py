@@ -8,7 +8,12 @@ from typing import TYPE_CHECKING
 import structlog
 
 from review_analysis.core.errors import AnalysisError, LLMOutputError
-from review_analysis.domain.clustering import ClusteringOptions, build_clusters
+from review_analysis.domain.clustering import (
+    ClusteringOptions,
+    apply_moves,
+    build_clusters,
+    is_singleton,
+)
 from review_analysis.domain.enums import Category
 from review_analysis.domain.models import AnalysisResult, AnalyzedGroup, GroupLabel
 
@@ -37,8 +42,10 @@ class AnalysisService:
         self, context: ProjectContext, feedbacks: Sequence[Feedback]
     ) -> AnalysisResult:
         # 1) Claude가 의미로 묶고  2) 코드가 검증한다 (없는 ID 제거, 빠진 리뷰는 미분류로)
+        # 3) 남은 1건 그룹을 같은 기능의 그룹으로 옮긴다 (라벨 전이라 옮긴 만큼 라벨 호출이 준다)
         proposals = await self._llm.group_reviews(context, feedbacks)
         clusters = build_clusters(feedbacks, proposals, self._clustering)
+        clusters = await self._merge_singletons(context, clusters)
         labels = await self._label_all(context, clusters)
 
         groups = tuple(
@@ -62,6 +69,28 @@ class AnalysisService:
         return AnalysisResult(
             groups=groups, analytics_summary=analytics_summary, praise_summary=praise_summary
         )
+
+    async def _merge_singletons(
+        self, context: ProjectContext, clusters: list[Cluster]
+    ) -> list[Cluster]:
+        groups = [c for c in clusters if not c.is_leftover]
+        # 1건 그룹이 없거나 옮겨 갈 다른 그룹이 없으면 물을 것이 없다
+        if len(groups) <= 1 or not any(is_singleton(c) for c in groups):
+            return clusters
+        try:
+            moves = await self._llm.merge_singletons(context, groups)
+        except LLMOutputError:
+            # 합치기 응답만 이상하면 합치지 않은 결과로 계속한다. (API 장애는 그대로 올려 재시도)
+            logger.warning("merge_singletons_fallback")
+            return clusters
+        merged = apply_moves(clusters, moves, self._clustering.samples_per_group)
+        logger.info(
+            "singletons_merged",
+            proposed=len(moves),
+            applied=len(clusters) - len(merged),
+            moves=[f"{m.source_key}->{m.target_key}" for m in moves],
+        )
+        return merged
 
     async def _label_all(
         self, context: ProjectContext, clusters: Sequence[Cluster]

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testmoa.backend.entity.ClusterGroup;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.FeedbackCluster;
+import com.testmoa.backend.entity.GroupLink;
 import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
@@ -280,6 +281,37 @@ class ReviewAnalysisControllerTest {
         assertThat(em.find(ClusterGroup.class, unregistered.getId())).isNull();
         assertThat(mappingsOf(r.recruitment())).extracting(mapping -> mapping.getFeedback().getId())
                 .containsExactlyInAnyOrder(r.f1().getId(), r.f3().getId());
+    }
+
+    @Test
+    @DisplayName("#284-S7 다시 분석하면 지운 그룹의 버전 비교 짝(이번·직전 어느 쪽이든)도 지우고, GitHub에 등록해 남는 그룹의 짝은 남긴다")
+    void 다시_분석하면_지운_그룹의_짝도_지운다() throws Exception {
+        User developer = saveSubscriber();
+        Reviews r = saveReviews(developer);
+        ClusterGroup registered = saveGroup(r.recruitment(), "1", "https://github.com/likelion/booklog/issues/1", r.f1());
+        ClusterGroup unregistered = saveGroup(r.recruitment(), "2", null, r.f2());
+        // 같은 프로젝트의 앞 버전 그룹과 다음 버전 그룹
+        ClusterGroup before = ClusterGroup.builder().recruitment(saveRecruitment(r.project())).groupCode("3").name("앞 버전 그룹")
+                .category(ClusterCategory.BUG).improvementRank(1).build();
+        ClusterGroup after = ClusterGroup.builder().recruitment(saveRecruitment(r.project())).groupCode("4").name("다음 버전 그룹")
+                .category(ClusterCategory.BUG).improvementRank(1).build();
+        em.persist(before);
+        em.persist(after);
+        em.persist(GroupLink.builder().currentGroup(registered).previousGroup(before).build());
+        em.persist(GroupLink.builder().currentGroup(unregistered).previousGroup(before).build());
+        em.persist(GroupLink.builder().currentGroup(after).previousGroup(unregistered).build());
+        given(analysisClient.analyze(any())).willReturn(new AnalysisResponse(List.of(
+                group("결제 화면 느림", ClusterCategory.BUG, 3, r.f3(), List.of(r.f3().getId()))), null, null));
+
+        start(developer, r.recruitment().getId()).andExpect(status().isAccepted());
+
+        em.flush();
+        em.clear();
+        List<GroupLink> links = em.createQuery("select l from group_links l where l.previousGroup.id in :ids or l.currentGroup.id in :ids", GroupLink.class)
+                .setParameter("ids", List.of(registered.getId(), unregistered.getId(), before.getId(), after.getId()))
+                .getResultList();
+        assertThat(links).extracting(link -> link.getCurrentGroup().getId(), link -> link.getPreviousGroup().getId())
+                .containsExactly(tuple(registered.getId(), before.getId()));
     }
 
     @Test

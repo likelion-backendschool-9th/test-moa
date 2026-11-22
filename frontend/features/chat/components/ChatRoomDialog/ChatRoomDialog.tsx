@@ -11,8 +11,8 @@ type ChatRoomDialogProps = {
 };
 
 /**
- * 대화방 이름 변경·삭제 확인에 쓰는 대화상자. 화면에 그려지면 바로 모달로 열린다.
- * 브라우저 기본 <dialog>라 포커스가 안에 갇히고, 첫 조작 요소에 포커스가 가며, Esc로 닫힌다. ChatCardMenu 안에서만 쓴다.
+ * 대화방 이름 변경·삭제 확인, 분석 갱신 확인에 쓰는 대화상자. 화면에 그려지면 바로 모달로 열린다.
+ * 브라우저 기본 <dialog>라 포커스가 안에 갇히고, 첫 조작 요소에 포커스가 가며, Esc로 닫힌다. ChatCardMenu와 분석 갱신 확인(AnalysisToolbar)에서 쓴다.
  */
 export function ChatRoomDialog({ title, description, onClose, children }: ChatRoomDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);

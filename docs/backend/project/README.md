@@ -26,6 +26,8 @@
 | [#177](https://github.com/likelion-backendschool-9th/test-moa/issues/177) | 모집글 버전 매기기 | [recruitment-version.md](recruitment-version.md) |
 | [#227](https://github.com/likelion-backendschool-9th/test-moa/issues/227) | GitHub 레포 연결 | [repository-link.md](repository-link.md) |
 | [#191](https://github.com/likelion-backendschool-9th/test-moa/issues/191) | 프로젝트·모집글·테스트 항목 이미지 업로드 | [image-upload.md](image-upload.md) |
+| [#283](https://github.com/likelion-backendschool-9th/test-moa/issues/283) | AI 리뷰 묶기 기준 넓히기(기능·화면 단위, 1건 그룹 합치기) | [ai-review-grouping.md](ai-review-grouping.md) |
+| [#284](https://github.com/likelion-backendschool-9th/test-moa/issues/284) | 버전 비교 짝 지키기와 N:M 짝 | [version-links.md](version-links.md) |
 
 진행 상태는 이슈와 PR에서 본다.
 

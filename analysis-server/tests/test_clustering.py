@@ -6,8 +6,13 @@ Claude는 가끔 없는 ID를 지어내거나, 리뷰를 빠뜨리거나, 같은
 
 from __future__ import annotations
 
-from review_analysis.domain.clustering import LEFTOVER_KEY, ClusteringOptions, build_clusters
-from review_analysis.domain.models import Cluster, Feedback, ProposedGroup
+from review_analysis.domain.clustering import (
+    LEFTOVER_KEY,
+    ClusteringOptions,
+    apply_moves,
+    build_clusters,
+)
+from review_analysis.domain.models import Cluster, Feedback, ProposedGroup, ProposedMove
 
 
 def _feedbacks(*contents: str) -> list[Feedback]:
@@ -111,3 +116,70 @@ def test_prompt_samples_prefer_longer_reviews() -> None:
     proposals = [ProposedGroup(feedback_ids=(1, 2, 3), representative_feedback_id=1)]
     (cluster,) = build_clusters(feedbacks, proposals, ClusteringOptions(samples_per_group=2))
     assert [s.feedback_id for s in cluster.prompt_samples] == [1, 3]
+
+
+# ─────────────── 1건 그룹 합치기 (#283) ───────────────
+
+
+def _move(source: str, target: str) -> ProposedMove:
+    return ProposedMove(source_key=source, target_key=target)
+
+
+def test_singleton_moves_into_same_feature_group() -> None:
+    """#283-S4 1건 그룹을 같은 기능 그룹에 옮기기."""
+    clusters = _build((1, 2), (3,), (5,))  # g1=[1,2], g2=[3], g3=[5], 미분류=[4]
+
+    merged = apply_moves(clusters, [_move("g2", "g1")], samples_per_group=3)
+
+    assert [(c.key, _ids(c)) for c in merged] == [
+        ("g1", [1, 2, 3]),
+        ("g3", [5]),
+        (LEFTOVER_KEY, [4]),
+    ]
+    # 옮긴 리뷰는 라벨 예시에서 대표 리뷰 바로 다음
+    assert [s.feedback_id for s in merged[0].prompt_samples] == [1, 3, 2]
+
+
+def test_invalid_moves_are_ignored_and_no_review_is_lost() -> None:
+    """#283-S5 잘못된 합치기 제안."""
+    clusters = _build((1, 2), (3,), (5,))
+
+    merged = apply_moves(
+        clusters,
+        [
+            _move("g1", "g3"),  # 2건 그룹은 옮기지 않는다
+            _move("g2", "g9"),  # 없는 그룹
+            _move("g2", LEFTOVER_KEY),  # 미분류로는 옮기지 않는다
+            _move("g2", "g2"),  # 자기 자신
+            _move("g3", "g2"),  # 유효: 1건 그룹끼리 합치기
+            _move("g2", "g1"),  # g2는 이미 g3을 받아 옮기지 않는다
+        ],
+        samples_per_group=3,
+    )
+
+    assert [(c.key, _ids(c)) for c in merged] == [
+        ("g1", [1, 2]),
+        ("g2", [3, 5]),
+        (LEFTOVER_KEY, [4]),
+    ]
+
+
+def test_moved_group_cannot_receive() -> None:
+    clusters = _build((1, 2), (3,), (5,))
+
+    merged = apply_moves(clusters, [_move("g2", "g1"), _move("g3", "g2")], samples_per_group=3)
+
+    assert [(c.key, _ids(c)) for c in merged] == [
+        ("g1", [1, 2, 3]),
+        ("g3", [5]),
+        (LEFTOVER_KEY, [4]),
+    ]
+
+
+def test_singleton_already_in_target_is_just_removed() -> None:
+    # 문제가 두 개인 리뷰라 이미 받는 그룹에도 들어 있다
+    clusters = _build((1, 2), (2,), (3, 4, 5))
+
+    merged = apply_moves(clusters, [_move("g3", "g2")], samples_per_group=3)
+
+    assert [(c.key, _ids(c)) for c in merged] == [("g1", [3, 4, 5]), ("g2", [1, 2])]

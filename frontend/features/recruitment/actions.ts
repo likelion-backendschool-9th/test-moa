@@ -142,15 +142,18 @@ export async function compareVersionsAction(recruitmentKey: string): Promise<Act
   return runVersionComparison(recruitmentKey);
 }
 
-/** 버전 비교에서 고친 짝 저장. 그룹이 어느 버전 것인지는 백엔드가 다시 확인한다 */
+/** 버전 비교에서 고친 짝 저장. 이번 그룹마다 이을 직전 그룹 목록(빈 목록은 짝 없음). 그룹이 어느 버전 것인지는 백엔드가 다시 확인한다 */
 export async function saveVersionLinksAction(
   recruitmentKey: string,
-  links: Array<{ groupId: string; previousGroupId: string | null }>,
+  links: Array<{ groupId: string; previousGroupIds: string[] }>,
 ): Promise<ActionResult> {
   const valid =
     typeof recruitmentKey === "string" &&
     Array.isArray(links) &&
-    links.every((link) => typeof link?.groupId === "string" && (link.previousGroupId === null || typeof link.previousGroupId === "string"));
+    links.every(
+      (link) =>
+        typeof link?.groupId === "string" && Array.isArray(link.previousGroupIds) && link.previousGroupIds.every((id) => typeof id === "string"),
+    );
   if (!valid) return { ok: false, message: "잘못된 요청이에요" };
   return saveVersionLinks(recruitmentKey, links);
 }

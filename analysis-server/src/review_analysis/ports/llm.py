@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         GroupMatch,
         ProjectContext,
         ProposedGroup,
+        ProposedMove,
         VersionSnapshot,
     )
 
@@ -27,6 +28,12 @@ class ReviewLLM(Protocol):
         self, context: ProjectContext, feedbacks: Sequence[Feedback]
     ) -> list[ProposedGroup]:
         """같은 문제를 말하는 리뷰끼리 묶는다. 결과는 검증 전 '제안'이다."""
+        ...
+
+    async def merge_singletons(
+        self, context: ProjectContext, groups: Sequence[Cluster]
+    ) -> list[ProposedMove]:
+        """1건 그룹을 같은 기능·화면의 다른 그룹으로 옮길지 묻는다. 결과는 검증 전 '제안'이다."""
         ...
 
     async def label_group(self, context: ProjectContext, cluster: Cluster) -> GroupLabel:

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from review_analysis.domain.enums import Category, Severity
-from review_analysis.domain.models import GroupLabel, GroupMatch, ProposedGroup
+from review_analysis.domain.models import GroupLabel, GroupMatch, ProposedGroup, ProposedMove
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -33,6 +33,9 @@ class FakeLLM:
     # 지정하면 group_reviews가 이 값을 그대로 돌려준다 (잘못된 응답 흉내용)
     proposed_groups: list[ProposedGroup] | None = None
     group_fail_with: Exception | None = None
+    # merge_singletons가 돌려줄 옮기기 제안. 기본은 옮기지 않음
+    proposed_moves: list[ProposedMove] = field(default_factory=list)
+    merge_fail_with: Exception | None = None
     overall_fail_with: Exception | None = None
     praise_fail_with: Exception | None = None
     calls: list[str] = field(default_factory=list)
@@ -50,6 +53,14 @@ class FakeLLM:
             topic = next((t for t in TOPICS if t in f.content), f"single-{f.feedback_id}")
             by_topic.setdefault(topic, []).append(f.feedback_id)
         return [ProposedGroup(feedback_ids=tuple(ids)) for ids in by_topic.values()]
+
+    async def merge_singletons(
+        self, context: ProjectContext, groups: Sequence[Cluster]
+    ) -> list[ProposedMove]:
+        self.calls.append("merge")
+        if self.merge_fail_with:
+            raise self.merge_fail_with
+        return list(self.proposed_moves)
 
     async def label_group(self, context: ProjectContext, cluster: Cluster) -> GroupLabel:
         self.calls.append("label")

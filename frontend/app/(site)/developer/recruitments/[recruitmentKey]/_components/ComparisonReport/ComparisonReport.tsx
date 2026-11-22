@@ -42,11 +42,11 @@ const scrollBehavior = (): ScrollBehavior => (window.matchMedia("(prefers-reduce
 export function ComparisonReport({ groups, previousKey, currentKey, previousVersion, currentVersion }: ComparisonReportProps) {
   /* 받은 순서가 심각도·테스터 수 순이라 이번 버전 그룹의 순서가 곧 순위다 */
   const reported = groups.filter((group) => group.current);
-  const [selectedId, setSelectedId] = useState(reported[0]?.current?.id);
+  const [selectedKey, setSelectedKey] = useState(reported[0]?.key);
   const [asking, setAsking] = useState<Asking | null>(null);
   const [followups, setFollowups] = useState<Record<string, FollowupState>>({});
   const reportRef = useRef<HTMLDivElement>(null);
-  const selected = reported.find((group) => group.current?.id === selectedId) ?? reported[0];
+  const selected = reported.find((group) => group.key === selectedKey) ?? reported[0];
 
   if (!selected) {
     return (
@@ -62,8 +62,8 @@ export function ComparisonReport({ groups, previousKey, currentKey, previousVers
   }
 
   /** 그룹을 고른다. 좁은 화면에서는 레포트가 목록 아래에 있어서 그쪽으로 내려간다 */
-  function select(id: string) {
-    setSelectedId(id);
+  function select(key: string) {
+    setSelectedKey(key);
     if (!window.matchMedia("(min-width: 64rem)").matches) {
       requestAnimationFrame(() => reportRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }));
     }
@@ -98,11 +98,10 @@ export function ComparisonReport({ groups, previousKey, currentKey, previousVers
       <div className={styles.layout}>
         <Card as="ul" aria-label={`v${currentVersion} 그룹 목록`} className={styles.list}>
           {reported.map((group, index) => {
-            const id = group.current?.id ?? group.code;
             const isSelected = group === selected;
             return (
-              <li key={id} data-selected={isSelected} className={styles.item}>
-                <button type="button" aria-pressed={isSelected} onClick={() => select(id)} className={styles.itemSelect}>
+              <li key={group.key} data-selected={isSelected} className={styles.item}>
+                <button type="button" aria-pressed={isSelected} onClick={() => select(group.key)} className={styles.itemSelect}>
                   <span className={styles.rank}>{index + 1}</span>
                   <SeverityTag severity={group.severity} />
                   <span className={styles.itemName}>{group.name}</span>
@@ -117,7 +116,7 @@ export function ComparisonReport({ groups, previousKey, currentKey, previousVers
 
         <div ref={reportRef} className={styles.report}>
           <Report
-            key={selected.current?.id}
+            key={selected.key}
             group={selected}
             rank={reported.indexOf(selected) + 1}
             previousVersion={previousVersion}
@@ -171,14 +170,16 @@ function ReportSection({ index, id, title, aside, children }: { index: number; i
 
 /** 고른 그룹 보고서: 문서 머리(이름표·순위·제목·이어진 그룹) → 01 리뷰 수 변화 → 02 대표 리뷰(v1 → v2) → 03 리뷰 목록 */
 function Report({ group, rank, previousVersion, currentVersion, onAsk }: ReportProps) {
-  const previousReviews = group.previous?.reviews ?? [];
+  /* 직전 그룹이 여럿이면(N:M) 리뷰를 합친다. 두 그룹에 든 리뷰는 한 번만 */
+  const previousReviews = [...new Map(group.previous.flatMap((item) => item.reviews).map((review) => [review.id, review])).values()];
+  const previousTesters = new Set(previousReviews.map((review) => review.registerId ?? review.testerNickname)).size;
   const currentReviews = group.current?.reviews ?? [];
   const delta = currentReviews.length - previousReviews.length;
   const scale = Math.max(previousReviews.length, currentReviews.length, 1);
   const before = `v${previousVersion}`;
   const after = `v${currentVersion}`;
   const bars = [
-    { key: "previous", label: `${before} 이전`, count: previousReviews.length, testers: group.previous?.testerCount ?? 0 },
+    { key: "previous", label: `${before} 이전`, count: previousReviews.length, testers: previousTesters },
     { key: "current", label: `${after} 이번`, count: currentReviews.length, testers: group.current?.testerCount ?? 0 },
   ];
 
@@ -203,7 +204,9 @@ function Report({ group, rank, previousVersion, currentVersion, onAsk }: ReportP
         {/* 문서의 항목 줄: 이어진 직전 그룹. 짝은 그룹 전체 목록에서 고친다 */}
         <dl className={styles.link}>
           <dt className={styles.linkLabel}>{before}에서 이어진 그룹</dt>
-          <dd className={group.previous ? styles.linkValue : styles.linkNone}>{group.previous?.name ?? "없음 (새로 생긴 그룹)"}</dd>
+          <dd className={group.previous.length > 0 ? styles.linkValue : styles.linkNone}>
+            {group.previous.length > 0 ? group.previous.map((item) => item.name).join(", ") : "없음 (새로 생긴 그룹)"}
+          </dd>
         </dl>
       </header>
 
@@ -235,7 +238,7 @@ function Report({ group, rank, previousVersion, currentVersion, onAsk }: ReportP
         <ol className={styles.timeline}>
           <Representative
             version={`${before} 이전`}
-            review={representativeOf(group.previous?.reviews)}
+            review={representativeOf(group.previous[0]?.reviews)}
             empty="직전 버전에는 없던 그룹이에요"
             onAsk={(review) => onAsk(review, "previous")}
           />

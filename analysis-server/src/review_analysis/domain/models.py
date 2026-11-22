@@ -42,6 +42,14 @@ class ProposedGroup:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ProposedMove:
+    """LLM이 제안한 1건 그룹 옮기기. 검증 전이라 없는 key나 1건이 아닌 그룹이 섞여 있을 수 있다."""
+
+    source_key: str
+    target_key: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Cluster:
     """검증을 거친 리뷰 그룹 (아직 이름·카테고리 없음)."""
 
@@ -109,6 +117,9 @@ class GroupSnapshot:
     category: Category
     severity: Severity | None
     sample: str | None = None
+    # 개발자가 짝을 고친 현재 버전 그룹의 직전 그룹 id(빈 튜플은 짝 없음).
+    # None이면 AI가 짝짓는다 (#284)
+    fixed_previous_group_ids: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from review_analysis.adapters.llm import prompts
 from review_analysis.core.errors import LLMOutputError, UpstreamLLMError
 from review_analysis.domain.enums import Category, Severity
-from review_analysis.domain.models import GroupLabel, GroupMatch, ProposedGroup
+from review_analysis.domain.models import GroupLabel, GroupMatch, ProposedGroup, ProposedMove
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -30,6 +30,10 @@ if TYPE_CHECKING:
     )
 
 logger = structlog.get_logger(__name__)
+
+# 라벨용 모델은 답하기 전에 생각(thinking) 블록을 쓰고, 그 토큰도 max_tokens에 들어간다.
+# 그룹이 넓어져 이슈 초안이 길어지면 1500에서 잘렸다(#283). 상한일 뿐이라 쓴 만큼만 과금된다.
+_THINKING_MODEL_MAX_TOKENS = 4000
 
 
 # ───────────── LLM 응답 스키마 (어댑터 내부 전용, 외부 API 스키마와 분리) ─────────────
@@ -51,6 +55,15 @@ class _GroupOut(_LLMOut):
 
 class _GroupingOut(_LLMOut):
     groups: list[_GroupOut]
+
+
+class _MoveOut(_LLMOut):
+    source_key: str
+    target_key: str
+
+
+class _MergeOut(_LLMOut):
+    moves: list[_MoveOut]
 
 
 class _GroupLabelOut(_LLMOut):
@@ -121,6 +134,20 @@ class AnthropicReviewLLM:
             for g in out.groups
         ]
 
+    async def merge_singletons(
+        self, context: ProjectContext, groups: Sequence[Cluster]
+    ) -> list[ProposedMove]:
+        # 리뷰 몇 개씩만 보고 key를 고르는 가벼운 판단이라 라벨용 모델을 쓴다.
+        user = f"{prompts.render_context(context)}\n\n{prompts.render_merge_groups(groups)}"
+        out = await self._parse(
+            model=self._label_model,
+            system=prompts.MERGE_SYSTEM,
+            user=user,
+            schema=_MergeOut,
+            max_tokens=_THINKING_MODEL_MAX_TOKENS,
+        )
+        return [ProposedMove(source_key=m.source_key, target_key=m.target_key) for m in out.moves]
+
     async def label_group(self, context: ProjectContext, cluster: Cluster) -> GroupLabel:
         user = (
             f"{prompts.render_context(context)}\n\n"
@@ -133,7 +160,7 @@ class AnthropicReviewLLM:
             system=prompts.LABEL_SYSTEM,
             user=user,
             schema=_GroupLabelOut,
-            max_tokens=1500,
+            max_tokens=_THINKING_MODEL_MAX_TOKENS,
         )
         return _to_group_label(out)
 

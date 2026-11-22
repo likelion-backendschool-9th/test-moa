@@ -5,15 +5,18 @@ import {
   buildVersionBars,
   compareVersions,
   fromBackendGroups,
-  relinkGroup,
+  linkGroup,
+  linksByCode,
   sortReviewGroups,
   toGroupView,
   toVersionLinks,
+  unlinkGroup,
   validateIssueDraft,
   yTicks,
   type BackendAnalysisGroup,
   type Feedback,
   type ReviewGroupView,
+  type VersionLinks,
 } from "@/features/recruitment/types";
 
 /* 리뷰 분석 탭의 숫자 계산. 날짜 경계는 한국 시간 기준이다 */
@@ -88,20 +91,28 @@ test("이슈 초안은 제목이 있어야 하고 백엔드 한도를 넘을 수
   expect(validateIssueDraft("제목", "")).toBeNull();
 });
 
-test("버전 비교는 분류 코드로 잇고, 이번 버전에서 보고되지 않은 분류는 맨 뒤에 둔다", () => {
-  const group = (code: string, severity: ReviewGroupView["severity"], testerCount = 1): ReviewGroupView => ({
-    id: code, code, name: `분류 ${code}`, category: "bug", severity, issueTitle: "", issueContent: "", issue: null, reviews: [], testerCount,
+test("#284-S1 버전 비교는 짝으로 잇고(N:M), 어느 이번 그룹과도 이어지지 않은 직전 그룹은 맨 뒤에 둔다", () => {
+  const group = (id: string, severity: ReviewGroupView["severity"], testerCount = 1): ReviewGroupView => ({
+    id, code: id, name: `분류 ${id}`, category: "bug", severity, issueTitle: "", issueContent: "", issue: null, reviews: [], testerCount,
   });
-  const result = compareVersions([group("1", 1), group("2", 2), group("3", 4)], [group("4", 1, 3), group("1", 1, 2), group("5", 3)]);
-  expect(result.map((item) => [item.code, item.status])).toEqual([
-    ["4", "new"],
-    ["1", "continued"],
-    ["5", "new"],
-    ["2", "notReported"],
-    ["3", "notReported"],
+  /* c1은 p1·p2가 합쳐진 그룹, p1은 c1·c5로 나뉘었다 */
+  const result = compareVersions([group("p1", 1), group("p2", 2), group("p3", 4)], [group("c4", 1, 3), group("c1", 1, 2), group("c5", 3)], {
+    c1: ["p2", "p1"],
+    c5: ["p1"],
+  });
+  expect(result.map((item) => [item.key, item.status, item.previous.map((previous) => previous.id)])).toEqual([
+    ["cc4", "new", []],
+    ["cc1", "continued", ["p1", "p2"]],
+    ["cc5", "continued", ["p1"]],
+    ["pp3", "notReported", ["p3"]],
   ]);
-  expect(result[1].previous?.code).toBe("1");
   expect(result[3].current).toBeNull();
+});
+
+test("목업의 짝은 분류 코드가 같은 두 버전 그룹이다", () => {
+  const previous = [versionGroup("p1", "1", "bug", 1, 1), versionGroup("p2", "2", "bug", 2, 1)];
+  const current = [versionGroup("c1", "1", "bug", 1, 1), versionGroup("c2", "9", "ux", 3, 1)];
+  expect(linksByCode(previous, current)).toEqual({ c1: ["p1"], c2: [] });
 });
 
 test("리뷰 성향은 태그·그룹·심각도 별 리뷰 수이고 0건은 빼며, 그룹이 6개를 넘으면 나머지를 기타로 묶는다", () => {
@@ -129,49 +140,56 @@ const versionGroup = (id: string, code: string, category: ReviewGroupView["categ
   reviews: Array.from({ length: count }, (_, index) => ({ id: `${id}-${index}`, testerNickname: "", content: "", submittedAt: "", testItemTitle: null, representative: false })),
 });
 
-test("짝 고치기: 직전 코드를 주면 묶이고 그 코드를 쓰던 그룹은 풀리며, null이면 새로 생긴 그룹이 된다", () => {
+test("#284-S8 짝 고치기: 같은 직전 그룹을 여러 이번 그룹에 이을 수 있고, 하나씩 또는 모두 풀 수 있다", () => {
   const previous = [versionGroup("p1", "1", "bug", 1, 2), versionGroup("p2", "2", "bug", 2, 1)];
   const current = [versionGroup("c1", "1", "bug", 1, 3), versionGroup("c2", "9", "ux", 3, 1)];
-  const statusOf = (list: ReviewGroupView[]) => compareVersions(previous, list).map((item) => [item.current?.id ?? item.previous?.id, item.status]);
+  const statusOf = (links: VersionLinks) => compareVersions(previous, current, links).map((item) => [item.key, item.status]);
+  const saved: VersionLinks = { c1: ["p1"], c2: [] };
 
-  expect(statusOf(relinkGroup(current, "c2", "2"))).toEqual([["c1", "continued"], ["c2", "continued"]]);
-  /* c1의 짝(1)을 c2가 가져가면 c1은 새로 생긴 그룹, p2는 보고 안 됨 */
-  expect(statusOf(relinkGroup(current, "c2", "1"))).toEqual([["c1", "new"], ["c2", "continued"], ["p2", "notReported"]]);
-  expect(statusOf(relinkGroup(current, "c1", null))).toEqual([["c1", "new"], ["c2", "new"], ["p1", "notReported"], ["p2", "notReported"]]);
+  /* c1의 짝 p1을 c2에도 이으면 c1은 그대로 이어져 있다(N:M) */
+  const both = linkGroup(saved, "c2", "p1");
+  expect(statusOf(both)).toEqual([["cc1", "continued"], ["cc2", "continued"], ["pp2", "notReported"]]);
+  expect(linkGroup(both, "c2", "p1")).toBe(both);
+  expect(statusOf(linkGroup(saved, "c1", "p2"))).toEqual([["cc1", "continued"], ["cc2", "new"]]);
+  expect(unlinkGroup(linkGroup(saved, "c1", "p2"), "c1", "p1")).toEqual({ c1: ["p2"], c2: [] });
+  expect(statusOf(unlinkGroup(saved, "c1"))).toEqual([["cc1", "new"], ["cc2", "new"], ["pp1", "notReported"], ["pp2", "notReported"]]);
 });
 
-test("버전 막대는 심각도·태그를 버전마다 각자 세고, 그룹은 짝 지은 두 버전 수이며 두 버전 모두 0건인 칸은 뺀다", () => {
+test("#284-S8 버전 막대는 심각도·태그를 버전마다 각 그룹 한 번씩 세고, 그룹은 이어진 직전 그룹들의 합이며 두 버전 모두 0건인 칸은 뺀다", () => {
   const groups = compareVersions(
     [versionGroup("p1", "1", "bug", 1, 2), versionGroup("p2", "2", "ux", 3, 1)],
-    [versionGroup("c1", "1", "ux", 2, 4), versionGroup("c2", "5", "request", 1, 1)],
+    [versionGroup("c1", "1", "ux", 2, 4), versionGroup("c2", "5", "request", 1, 1), versionGroup("c3", "6", "bug", 4, 1)],
+    /* p1은 c1·c3 두 줄에 이어져 있다 */
+    { c1: ["p1", "p2"], c3: ["p1"] },
   );
   const bars = buildVersionBars(groups);
   expect(bars.severity.map(({ label, previous, current }) => [label, previous, current])).toEqual([
     ["치명", 2, 1],
     ["높음", 0, 4],
     ["보통", 1, 0],
+    ["사소", 0, 1],
   ]);
   expect(bars.tag.map(({ label, previous, current }) => [label, previous, current])).toEqual([
-    ["버그", 2, 0],
+    ["버그", 2, 1],
     ["UX", 1, 4],
     ["요청", 0, 1],
   ]);
   expect(bars.group.map(({ label, previous, current }) => [label, previous, current])).toEqual([
     ["c2", 0, 1],
-    ["c1", 2, 4],
-    ["p2", 1, 0],
+    ["c1", 3, 4],
+    ["c3", 2, 1],
   ]);
 });
 
-test("짝 저장 요청은 코드가 바뀐 이번 버전 그룹만 보내고, 직전 코드가 아니면 짝 없음(null)이다", () => {
-  const previous = [versionGroup("p1", "1", "bug", 1, 2), versionGroup("p2", "2", "bug", 2, 1)];
-  const saved = [versionGroup("c1", "1", "bug", 1, 3), versionGroup("c2", "9", "ux", 3, 1), versionGroup("c3", "8", "ux", 3, 1)];
-  /* c2를 p1과 이으면 c1은 짝이 풀린다. c3은 그대로 */
-  expect(toVersionLinks(previous, saved, relinkGroup(saved, "c2", "1"))).toEqual([
-    { groupId: "c1", previousGroupId: null },
-    { groupId: "c2", previousGroupId: "p1" },
+test("#284-S8 짝 저장 요청은 직전 그룹 목록이 바뀐 이번 버전 그룹만 보내고, 빈 목록은 짝 없음이다", () => {
+  const saved: VersionLinks = { c1: ["p1"], c2: [], c3: ["p2"] };
+  /* c2를 p1과 잇고 c1의 짝을 푼다. c3은 순서만 같은 그대로 */
+  const draft = unlinkGroup(linkGroup(saved, "c2", "p1"), "c1");
+  expect(toVersionLinks(saved, draft)).toEqual([
+    { groupId: "c1", previousGroupIds: [] },
+    { groupId: "c2", previousGroupIds: ["p1"] },
   ]);
-  expect(toVersionLinks(previous, saved, saved)).toEqual([]);
+  expect(toVersionLinks(saved, { ...saved, c3: ["p2"] })).toEqual([]);
 });
 
 test("백엔드 분석 그룹은 칭찬·미분류를 빼고, 이슈와 리뷰를 화면 값으로 바꾼다", () => {

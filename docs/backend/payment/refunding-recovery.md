@@ -17,7 +17,7 @@
   - `true`: ③만 실행한다(결제 `REFUNDED`, 구독 `CANCELLED`, 처리 운영자 기록).
   - `false`: 결제를 `REFUND_FAILED`로 돌려 다시 환불할 수 있게 한다.
   - 대상은 `REFUNDING`이거나 `REFUND_FAILED`인 PG 결제이다. 이 호출은 PG를 부르지 않는다.
-- **카카오 `REFUND_FAILED` 건도 같은 동작으로 정리한다.** PG에서는 취소됐는데 `REFUND_FAILED`로 남은 건(카카오 -710)은 환불 API로 정리되지 않으므로 `canceled=true`로 ③을 실행한다. (정할 것: 이 범위에 넣을지, 이슈 본문의 질문)
+- **카카오 `REFUND_FAILED` 건도 같은 동작으로 정리한다.** PG에서는 취소됐는데 `REFUND_FAILED`로 남은 건(카카오 -710)은 환불 API로 정리되지 않으므로 `canceled=true`로 ③을 실행한다.
 - **③은 환불 서비스와 같은 코드를 쓴다.** 회원 행 잠금 → 결제 `REFUNDED` → 구독 `CANCELLED` 순서와 `refundedBy` 기록을 중복해 만들지 않는다.
 
 ## API

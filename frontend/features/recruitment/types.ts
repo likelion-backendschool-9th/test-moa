@@ -338,10 +338,19 @@ export const COMPARISON_STATUS_LABEL: Record<ComparisonStatus, string> = {
   notReported: "리뷰가 들어오지 않은 그룹",
 };
 
-/** 두 버전에 걸친 분류 하나. 이름·심각도는 있으면 현재 버전 것을 쓴다 */
-export type ComparisonGroup = Pick<ReviewGroupView, "code" | "name" | "category" | "severity"> & {
+/** 버전 비교의 짝: 이번 버전 그룹 id → 이어진 직전 버전 그룹 id. 그룹 하나가 여러 그룹과 이어질 수 있다(N:M, #284) */
+export type VersionLinks = Record<string, string[]>;
+
+/**
+ * 그룹 전체 목록의 한 줄. 이번 버전 그룹 하나와 이어진 직전 그룹들이고, 보고되지 않은 줄은 직전 그룹 하나다.
+ * 이름·심각도는 있으면 현재 버전 것을 쓴다. 직전 그룹 하나가 여러 줄에 나올 수 있다
+ */
+export type ComparisonGroup = Pick<ReviewGroupView, "name" | "category" | "severity"> & {
+  /** 줄의 키. 이번 버전 그룹이 있으면 c+id, 보고되지 않은 줄은 p+id */
+  key: string;
   status: ComparisonStatus;
-  previous: ReviewGroupView | null;
+  /** 이어진 직전 그룹(심각도 순). 새로 생긴 그룹은 비어 있다 */
+  previous: ReviewGroupView[];
   current: ReviewGroupView | null;
 };
 
@@ -365,35 +374,47 @@ export type VersionComparison =
       stale: boolean;
       /** 두 버전에서 마지막 분석 뒤에 들어와 비교에 반영되지 않은 리뷰 수 */
       unreflectedCount: number;
-      groups: ComparisonGroup[];
+      /** 두 버전의 그룹과 저장된 짝. 화면은 compareVersions로 줄을 만든다 */
+      previousGroups: ReviewGroupView[];
+      currentGroups: ReviewGroupView[];
+      links: VersionLinks;
     });
 
 /**
- * 직전·현재 버전 그룹을 분류 코드로 잇는다(백엔드와 같은 규칙).
- * 현재 그룹을 심각도·테스터 수 순으로 먼저 두고, 그 뒤에 이번 버전에서 보고되지 않은 직전 그룹을 같은 순서로 둔다
+ * 직전·현재 버전 그룹을 짝으로 잇는다(백엔드 group_links와 같은 규칙). 짝이 있는 이번 그룹은 "이어짐", 없으면 "새로 생김",
+ * 어느 이번 그룹과도 이어지지 않은 직전 그룹은 "보고 안 됨"이다.
+ * 현재 그룹을 심각도·테스터 수 순으로 먼저 두고, 그 뒤에 보고되지 않은 직전 그룹을 같은 순서로 둔다
  */
-export function compareVersions(previous: ReviewGroupView[], current: ReviewGroupView[]): ComparisonGroup[] {
-  const pick = ({ code, name, category, severity }: ReviewGroupView) => ({ code, name, category, severity });
-  const currentCodes = new Set(current.map((group) => group.code));
+export function compareVersions(previous: ReviewGroupView[], current: ReviewGroupView[], links: VersionLinks): ComparisonGroup[] {
+  const pick = ({ name, category, severity }: ReviewGroupView) => ({ name, category, severity });
+  const sortedPrevious = sortReviewGroups(previous);
   const continuing = sortReviewGroups(current).map((group): ComparisonGroup => {
-    const before = previous.find((item) => item.code === group.code) ?? null;
-    return { ...pick(group), status: before ? "continued" : "new", previous: before, current: group };
+    const before = sortedPrevious.filter((item) => links[group.id]?.includes(item.id));
+    return { ...pick(group), key: `c${group.id}`, status: before.length > 0 ? "continued" : "new", previous: before, current: group };
   });
-  const dropped = sortReviewGroups(previous.filter((group) => !currentCodes.has(group.code))).map(
-    (group): ComparisonGroup => ({ ...pick(group), status: "notReported", previous: group, current: null }),
-  );
+  /* 화면에 없는 이번 그룹(칭찬·미분류)의 짝은 세지 않는다 */
+  const linked = new Set(current.flatMap((group) => links[group.id] ?? []));
+  const dropped = sortedPrevious
+    .filter((group) => !linked.has(group.id))
+    .map((group): ComparisonGroup => ({ ...pick(group), key: `p${group.id}`, status: "notReported", previous: [group], current: null }));
   return [...continuing, ...dropped];
 }
 
-/**
- * 짝 고치기. 이번 버전 그룹의 분류 코드를 바꿔 다시 잇는다(백엔드도 코드로 잇는다).
- * 직전 그룹 코드를 주면 그 그룹과 묶고, null이면 짝을 풀어 새로 생긴 그룹으로 둔다. 그 코드를 쓰던 다른 그룹은 짝이 풀린다(한 그룹은 한 번만 짝짓는다)
- */
-export function relinkGroup(current: ReviewGroupView[], currentId: string, previousCode: string | null): ReviewGroupView[] {
-  return current.map((group) => {
-    if (group.id === currentId) return { ...group, code: previousCode ?? group.id };
-    return previousCode !== null && group.code === previousCode ? { ...group, code: group.id } : group;
-  });
+/** 목업의 짝: 분류 코드가 같은 두 버전 그룹을 잇는다(예전 백엔드 규칙). 백엔드 모드는 비교 응답의 짝을 쓴다 */
+export function linksByCode(previous: ReviewGroupView[], current: ReviewGroupView[]): VersionLinks {
+  return Object.fromEntries(current.map((group) => [group.id, previous.filter((item) => item.code === group.code).map((item) => item.id)]));
+}
+
+/** 짝 고치기: 이번 그룹에 직전 그룹을 더한다. 이미 이어져 있으면 그대로다. 같은 직전 그룹을 여러 이번 그룹에 이어도 된다 */
+export function linkGroup(links: VersionLinks, currentId: string, previousId: string): VersionLinks {
+  const list = links[currentId] ?? [];
+  return list.includes(previousId) ? links : { ...links, [currentId]: [...list, previousId] };
+}
+
+/** 짝 풀기: previousId를 주면 그 짝만, 주지 않으면 이번 그룹의 짝을 모두 푼다 */
+export function unlinkGroup(links: VersionLinks, currentId: string, previousId?: string): VersionLinks {
+  const list = previousId === undefined ? [] : (links[currentId] ?? []).filter((id) => id !== previousId);
+  return { ...links, [currentId]: list };
 }
 
 /** 백엔드 ReviewAnalysisResponse.Group 중 화면이 쓰는 값 */
@@ -458,13 +479,14 @@ export function fromBackendGroups(groups: BackendAnalysisGroup[], reviews: Recor
 }
 
 /**
- * 짝 저장 요청(PUT .../version-comparison/links). 저장한 짝과 코드가 달라진 이번 버전 그룹만 보낸다.
- * 바뀐 코드가 직전 그룹 코드면 그 그룹과 잇고, 아니면(relinkGroup이 짝을 풀며 붙인 자기 id) 짝 없음(null)이다
+ * 짝 저장 요청(PUT .../version-comparison/links). 저장한 짝과 직전 그룹 목록이 달라진 이번 버전 그룹만 보낸다.
+ * 빈 목록은 짝 없음이다. 아무것도 바뀌지 않았으면 빈 배열이라 저장할 것이 없다
  */
-export function toVersionLinks(previous: ReviewGroupView[], saved: ReviewGroupView[], draft: ReviewGroupView[]) {
-  return draft
-    .filter((group, index) => group.code !== saved[index].code)
-    .map((group) => ({ groupId: group.id, previousGroupId: previous.find((item) => item.code === group.code)?.id ?? null }));
+export function toVersionLinks(saved: VersionLinks, draft: VersionLinks) {
+  const same = (a: string[] = [], b: string[] = []) => a.length === b.length && a.every((id) => b.includes(id));
+  return Object.keys(draft)
+    .filter((groupId) => !same(saved[groupId], draft[groupId]))
+    .map((groupId) => ({ groupId, previousGroupIds: draft[groupId] }));
 }
 
 /** 버전 비교 막대 기준: 심각도 별, 그룹 별, 태그 별 */
@@ -478,7 +500,8 @@ export type VersionBar = { key: string; label: string; previous: number; current
  * 심각도·태그는 각 버전 그룹의 값으로 세서 짝을 고쳐도 그대로이고, 그룹은 받은 순서대로다
  */
 export function buildVersionBars(groups: ComparisonGroup[]): Record<VersionBarView, VersionBar[]> {
-  const previous = groups.flatMap((group) => group.previous ?? []);
+  /* 직전 그룹 하나가 여러 줄에 나올 수 있어(N:M) 심각도·태그는 한 번씩만 센다 */
+  const previous = [...new Map(groups.flatMap((group) => group.previous).map((group) => [group.id, group])).values()];
   const current = groups.flatMap((group) => group.current ?? []);
   const sum = (items: ReviewGroupView[]) => items.reduce((total, group) => total + group.reviews.length, 0);
   const split = (match: (group: ReviewGroupView) => boolean) => ({ previous: sum(previous.filter(match)), current: sum(current.filter(match)) });
@@ -492,10 +515,11 @@ export function buildVersionBars(groups: ComparisonGroup[]): Record<VersionBarVi
     label: REVIEW_CATEGORY_LABEL[category],
     ...split((group) => group.category === category),
   }));
+  /* 그룹 별은 줄마다 이어진 직전 그룹들의 리뷰를 합친다 */
   const group = groups.map((item) => ({
-    key: item.code,
+    key: item.key,
     label: item.name,
-    previous: item.previous?.reviews.length ?? 0,
+    previous: sum(item.previous),
     current: item.current?.reviews.length ?? 0,
   }));
   const nonEmpty = (bars: VersionBar[]) => bars.filter((bar) => bar.previous + bar.current > 0);

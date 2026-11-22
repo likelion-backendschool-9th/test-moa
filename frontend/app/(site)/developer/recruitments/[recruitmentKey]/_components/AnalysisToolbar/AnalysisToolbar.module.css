@@ -22,3 +22,15 @@
   line-height: var(--text-sm-leading);
   color: var(--text-muted);
 }
+
+/* 갱신 확인 창: 무엇이 바뀌는지 한 줄, 오른쪽 아래 취소·동의 */
+.confirmDetail {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-leading);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

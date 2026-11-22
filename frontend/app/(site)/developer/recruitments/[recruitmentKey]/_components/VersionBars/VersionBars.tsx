@@ -18,7 +18,7 @@ const VIEW_COLUMN: Record<VersionBarView, string> = { severity: "심각도", gro
 const viewText = (view: VersionBarView, before: string, after: string) =>
   ({
     severity: "그룹에 묶인 리뷰를 그룹 심각도(치명·높음·보통·사소)로 나눠 두 버전을 견줘요.",
-    group: `같은 문제로 묶인 그룹마다 두 버전의 리뷰 수를 견줘요. 새로 생긴 그룹은 ${before}이, 리뷰가 들어오지 않은 그룹은 ${after}가 0건이에요.`,
+    group: `같은 문제로 묶인 그룹마다 두 버전의 리뷰 수를 견줘요. 이어진 ${before} 그룹이 여럿이면 합쳐요. 새로 생긴 그룹은 ${before}이, 리뷰가 들어오지 않은 그룹은 ${after}가 0건이에요.`,
     tag: "그룹에 묶인 리뷰를 버그·UX·요청으로 나눠 두 버전을 견줘요.",
   })[view];
 

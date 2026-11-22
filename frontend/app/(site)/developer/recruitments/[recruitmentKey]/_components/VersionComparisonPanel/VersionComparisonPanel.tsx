@@ -4,7 +4,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Card } from "@/components/ui/Card/Card";
 import { compareVersionsAction, saveVersionLinksAction } from "@/features/recruitment/actions";
-import { compareVersions, relinkGroup, toVersionLinks, type VersionComparison } from "@/features/recruitment/types";
+import { compareVersions, linkGroup, toVersionLinks, unlinkGroup, type VersionComparison } from "@/features/recruitment/types";
 import { AnalysisToolbar } from "../AnalysisToolbar/AnalysisToolbar";
 import { ComparisonReport } from "../ComparisonReport/ComparisonReport";
 import { GroupLinks } from "../GroupLinks/GroupLinks";
@@ -12,7 +12,7 @@ import { VersionBars } from "../VersionBars/VersionBars";
 import styles from "./VersionComparisonPanel.module.css";
 
 /*
- * 버전 별 분석 탭. 직전 버전과 이번 버전의 리뷰 그룹을 분류 코드로 이어, 어떤 문제가 이어지고 새로 생기고 보고되지 않았는지 보여 준다.
+ * 버전 별 분석 탭. 직전 버전과 이번 버전의 리뷰 그룹을 짝(N:M)으로 이어, 어떤 문제가 이어지고 새로 생기고 보고되지 않았는지 보여 준다.
  * 위에서부터 비교 실행 버튼 → 핵심 분석(요약과 치명·새로 생김·보고 안 됨 수) → 미반영 안내 → 버전 별 리뷰 수 막대
  * → 그룹 전체 목록(v1 ↔ v2 짝) → 레포트(이번 버전 그룹 목록과 고른 그룹 레포트).
  * 짝은 그룹 전체 목록에서만 고치고, 저장해야 위의 수·막대와 아래 레포트에 반영된다.
@@ -59,14 +59,12 @@ type ReadyComparisonProps = {
 };
 
 function ReadyComparison({ comparison, recruitmentKey }: ReadyComparisonProps) {
-  const { previousVersion, currentVersion } = comparison;
-  const previous = comparison.groups.flatMap((group) => group.previous ?? []);
-  const initial = comparison.groups.flatMap((group) => group.current ?? []);
+  const { previousVersion, currentVersion, previousGroups: previous, currentGroups: current } = comparison;
   /* 저장한 짝(화면 전체가 쓴다)과 그룹 전체 목록에서 고치는 중인 짝. 저장하면 고친 짝이 저장한 짝이 된다 */
-  const [saved, setSaved] = useState(initial);
-  const [draft, setDraft] = useState(initial);
-  const groups = compareVersions(previous, saved);
-  const dirty = draft.some((group, index) => group.code !== saved[index].code);
+  const [saved, setSaved] = useState(comparison.links);
+  const [draft, setDraft] = useState(comparison.links);
+  const groups = compareVersions(previous, current, saved);
+  const changes = toVersionLinks(saved, draft);
 
   const countOf = (status: (typeof groups)[number]["status"]) => groups.filter((group) => group.status === status).length;
   const notReported = countOf("notReported");
@@ -119,13 +117,14 @@ function ReadyComparison({ comparison, recruitmentKey }: ReadyComparisonProps) {
       <VersionBars groups={groups} previousVersion={previousVersion} currentVersion={currentVersion} />
 
       <GroupLinks
-        groups={compareVersions(previous, draft)}
+        groups={compareVersions(previous, current, draft)}
         previousVersion={previousVersion}
         currentVersion={currentVersion}
-        dirty={dirty}
-        onRelink={(currentId, previousCode) => setDraft((list) => relinkGroup(list, currentId, previousCode))}
+        dirty={changes.length > 0}
+        onLink={(currentId, previousId) => setDraft((links) => linkGroup(links, currentId, previousId))}
+        onUnlink={(currentId, previousId) => setDraft((links) => unlinkGroup(links, currentId, previousId))}
         onSave={async () => {
-          const result = await saveVersionLinksAction(recruitmentKey, toVersionLinks(previous, saved, draft));
+          const result = await saveVersionLinksAction(recruitmentKey, changes);
           if (result.ok) setSaved(draft);
           return result;
         }}

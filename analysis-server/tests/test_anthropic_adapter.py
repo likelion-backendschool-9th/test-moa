@@ -95,6 +95,14 @@ async def test_api_error_maps_to_upstream_error() -> None:
 
 
 @pytest.mark.anyio
+async def test_parses_merge_response() -> None:
+    llm = _llm({"moves": [{"source_key": "g2", "target_key": "g1"}]})
+    moves = await llm.merge_singletons(CTX, [CLUSTER])
+
+    assert [(m.source_key, m.target_key) for m in moves] == [("g2", "g1")]
+
+
+@pytest.mark.anyio
 async def test_parses_grouping_response() -> None:
     llm = _llm(
         {

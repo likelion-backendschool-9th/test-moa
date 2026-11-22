@@ -6,7 +6,7 @@ import pytest
 
 from review_analysis.core.errors import LLMOutputError, UpstreamLLMError
 from review_analysis.core.security import INTERNAL_TOKEN_HEADER
-from review_analysis.domain.models import GroupMatch, ProposedGroup
+from review_analysis.domain.models import GroupMatch, ProposedGroup, ProposedMove
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -158,6 +158,66 @@ class TestAnalyses:
         assert sorted(groups[0]["feedbackIds"]) == [1, 2]
         unclassified = next(g for g in groups if g["category"] == "UNCLASSIFIED")
         assert unclassified["feedbackIds"] == [3]
+
+
+class TestMergeSingletons:
+    """1건 그룹 합치기 (#283). 처음 묶기: g1=[1,2,3], g2=[4], g3=[5]."""
+
+    BODY = _analysis_body(
+        "로그인 오류", "로그인 실패", "로그인 안됨", "자동 로그인 풀림", "결제 오류"
+    )
+
+    @pytest.fixture(autouse=True)
+    def _groups(self, llm: FakeLLM) -> None:
+        llm.proposed_groups = [
+            ProposedGroup(feedback_ids=(1, 2, 3)),
+            ProposedGroup(feedback_ids=(4,)),
+            ProposedGroup(feedback_ids=(5,)),
+        ]
+
+    def test_singleton_is_moved_before_labeling(self, client: TestClient, llm: FakeLLM) -> None:
+        """#283-S4 1건 그룹을 같은 기능 그룹에 옮기기."""
+        llm.proposed_moves = [ProposedMove(source_key="g2", target_key="g1")]
+        res = client.post("/v1/analyses", json=self.BODY)
+
+        assert res.status_code == 200
+        ids = sorted(sorted(g["feedbackIds"]) for g in res.json()["groups"])
+        assert ids == [[1, 2, 3, 4], [5]]
+        assert llm.calls.index("merge") < llm.calls.index("label")
+        assert llm.calls.count("label") == 2  # 옮긴 그룹은 라벨을 따로 붙이지 않는다
+
+    def test_bad_merge_output_keeps_groups(self, client: TestClient, llm: FakeLLM) -> None:
+        """#283-S6 합치기 응답만 이상하면 합치지 않고 마친다."""
+        llm.merge_fail_with = LLMOutputError("broken")
+        res = client.post("/v1/analyses", json=self.BODY)
+
+        assert res.status_code == 200
+        assert len(res.json()["groups"]) == 3
+
+    def test_merge_outage_fails_whole_analysis(self, client: TestClient, llm: FakeLLM) -> None:
+        """#283-S6 합치기 중 API 장애는 분석 전체 실패."""
+        llm.merge_fail_with = UpstreamLLMError("down")
+        res = client.post("/v1/analyses", json=self.BODY)
+
+        assert res.status_code == 502
+        assert res.json()["type"] == "llm-upstream-error"
+
+    @pytest.mark.parametrize(
+        "groups",
+        [
+            [(1, 2, 3), (4, 5)],  # 1건 그룹이 없다
+            [(1,)],  # 미분류 말고 그룹이 하나뿐이다
+        ],
+    )
+    def test_merge_is_skipped_when_nothing_to_merge(
+        self, client: TestClient, llm: FakeLLM, groups: list[tuple[int, ...]]
+    ) -> None:
+        """#283-S7 합칠 것이 없으면 합치기를 부르지 않는다."""
+        llm.proposed_groups = [ProposedGroup(feedback_ids=g) for g in groups]
+        res = client.post("/v1/analyses", json=self.BODY)
+
+        assert res.status_code == 200
+        assert "merge" not in llm.calls
 
 
 class TestComparisons:

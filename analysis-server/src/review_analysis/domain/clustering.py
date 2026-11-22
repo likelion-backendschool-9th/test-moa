@@ -18,7 +18,7 @@ from review_analysis.domain.models import Cluster
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from review_analysis.domain.models import Feedback, ProposedGroup
+    from review_analysis.domain.models import Feedback, ProposedGroup, ProposedMove
 
 LEFTOVER_KEY = "g_unclassified"
 
@@ -68,20 +68,73 @@ def build_clusters(
     return clusters
 
 
+def is_singleton(cluster: Cluster) -> bool:
+    return not cluster.is_leftover and len(cluster.members) == 1
+
+
+def apply_moves(
+    clusters: Sequence[Cluster], moves: Sequence[ProposedMove], samples_per_group: int
+) -> list[Cluster]:
+    """LLM이 제안한 1건 그룹 옮기기를 검증해 적용한다 (#283).
+
+    - 옮길 수 있는 것은 1건 그룹뿐이고, 받는 쪽은 미분류가 아닌 다른 그룹이다
+    - 이미 옮긴 그룹은 받지 못하고, 이미 다른 그룹을 받은 그룹은 옮기지 못한다
+      → 옮기기가 꼬리를 물지 않아 결과가 제안 순서에만 달려 있다
+    - 옮긴 리뷰는 라벨 예시에서 대표 리뷰 다음에 둔다 (따로 남았던 다른 증상이라 이슈 초안에 남긴다)
+    """
+    by_key = {c.key: c for c in clusters}
+    moved: set[str] = set()
+    received: dict[str, list[Feedback]] = {}
+    for move in moves:
+        source, target = by_key.get(move.source_key), by_key.get(move.target_key)
+        if (
+            source is None
+            or target is None
+            or source is target
+            or not is_singleton(source)
+            or target.is_leftover
+            or source.key in moved
+            or source.key in received
+            or target.key in moved
+        ):
+            continue
+        moved.add(source.key)
+        received.setdefault(target.key, []).append(source.members[0])
+
+    result: list[Cluster] = []
+    for c in clusters:
+        if c.key in moved:
+            continue
+        # 여러 그룹에 든 리뷰라 받는 그룹에 이미 있으면 1건 그룹만 없앤다
+        extra = [f for f in received.get(c.key, []) if f not in c.members]
+        if not extra:
+            result.append(c)
+            continue
+        members = (*c.members, *extra)
+        samples = select_prompt_samples(members, c.representative, samples_per_group, extra)
+        result.append(replace(c, members=members, prompt_samples=tuple(samples)))
+    return result
+
+
 def select_prompt_samples(
-    members: Sequence[Feedback], representative: Feedback, limit: int
+    members: Sequence[Feedback],
+    representative: Feedback,
+    limit: int,
+    first: Sequence[Feedback] = (),
 ) -> list[Feedback]:
     """그룹에서 LLM 라벨링 프롬프트에 넣을 리뷰를 최대 ``limit``개 고른다.
 
-    대표 리뷰를 먼저 넣고, 나머지는 긴 리뷰부터 넣는다.
+    대표 리뷰를 먼저 넣고, ``first``(합치기로 옮겨 온 리뷰)를 그다음에, 나머지는 긴 리뷰부터 넣는다.
     긴 리뷰일수록 재현 단서(어떤 화면, 어떤 순서, 어떤 기기)가 담겨 있을 가능성이 높아
     GitHub 이슈 초안의 품질이 좋아진다.
     """
+    head = [representative, *(f for f in first if f.feedback_id != representative.feedback_id)]
+    seen = {f.feedback_id for f in head}
     others = sorted(
-        (m for m in members if m.feedback_id != representative.feedback_id),
+        (m for m in members if m.feedback_id not in seen),
         key=lambda m: (-len(m.content), m.feedback_id),
     )
-    return [representative, *others][:limit]
+    return [*head, *others][:limit]
 
 
 def _to_cluster(

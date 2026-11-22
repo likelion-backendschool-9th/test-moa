@@ -42,6 +42,14 @@ class ProposedGroup:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ProposedMove:
+    """LLM이 제안한 1건 그룹 옮기기. 검증 전이라 없는 key나 1건이 아닌 그룹이 섞여 있을 수 있다."""
+
+    source_key: str
+    target_key: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Cluster:
     """검증을 거친 리뷰 그룹 (아직 이름·카테고리 없음)."""
 

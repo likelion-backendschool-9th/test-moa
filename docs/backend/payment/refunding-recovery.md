@@ -16,7 +16,7 @@
 - **정리는 운영자가 PG 취소 여부를 확인한 결과를 넘기는 방식이다.** 지금 `PaymentGateway`에는 거래 조회가 없어 서버가 PG 상태를 직접 확인할 수 없다. 그래서 `POST /api/v1/admin/payments/{paymentId}/refund/resolve`에 `canceled`(PG에서 취소됨 여부)를 받는다.
   - `true`: ③만 실행한다(결제 `REFUNDED`, 구독 `CANCELLED`, 처리 운영자 기록).
   - `false`: 결제를 `REFUND_FAILED`로 돌려 다시 환불할 수 있게 한다.
-  - 대상은 `REFUNDING`이거나 `REFUND_FAILED`인 PG 결제이다. 이 호출은 PG를 부르지 않는다.
+  - 대상은 기준 시간보다 오래 `REFUNDING`으로 남은 결제와 `REFUND_FAILED`인 PG 결제이다. 방금 시작해 PG를 부르는 중일 수 있는 `REFUNDING`은 409로 막는다(환불 ③과 겹쳐 두 번 처리되지 않게). 이 호출은 PG를 부르지 않는다.
 - **카카오 `REFUND_FAILED` 건도 같은 동작으로 정리한다.** PG에서는 취소됐는데 `REFUND_FAILED`로 남은 건(카카오 -710)은 환불 API로 정리되지 않으므로 `canceled=true`로 ③을 실행한다.
 - **③은 환불 서비스와 같은 코드를 쓴다.** 회원 행 잠금 → 결제 `REFUNDED` → 구독 `CANCELLED` 순서와 `refundedBy` 기록을 중복해 만들지 않는다.
 
@@ -27,7 +27,7 @@
 | `GET` | `/api/v1/admin/payments/stuck-refunds` | 오래 멈춘 `REFUNDING` 결제 목록. 운영자만 |
 | `POST` | `/api/v1/admin/payments/{paymentId}/refund/resolve` | 멈춘 환불을 정리. 본문 `{ "canceled": true\|false }`. 운영자만 |
 
-목록 항목: `paymentId`, `provider`, `amount`, `status`, `updatedAt`(오프셋 포함, [server-time.md](../../server-time.md)). 정리 응답은 환불 응답과 같다(`paymentId`, `status`, `refundedAt`). 대상이 아닌 결제는 409 `PAYMENT_NOT_REFUNDABLE`, 없는 결제는 404.
+목록 항목: `paymentId`, `provider`, `amount`, `status`, `userEmail`, `pgTransactionId`, `updatedAt`(오프셋 포함, [server-time.md](../../server-time.md)). 이메일은 회원을 찾는 용도이고 PG 거래 식별자는 PG 가맹점 화면에서 취소 여부를 확인할 때 쓴다(#274의 `stuck`과 같다). 정리 응답은 환불 응답과 같고(`paymentId`, `status`, `refundedAt`), `canceled=false`면 환불되지 않았으므로 `refundedAt`이 null이다. 대상이 아닌 결제는 409 `PAYMENT_NOT_REFUNDABLE`, 없는 결제는 404.
 
 ## 시나리오
 
@@ -52,8 +52,8 @@
 - Then  결제 `REFUNDED`, 구독 `CANCELLED`
 
 #281-S5 정리할 수 없는 결제는 거절한다 [테스트]
-- When  `COMPLETED`·`REFUNDED` 결제, 크레딧 결제를 정리한다
-- Then  409 `PAYMENT_NOT_REFUNDABLE`(크레딧 결제는 400 `INVALID_INPUT`)
+- When  `COMPLETED`·`REFUNDED` 결제, 방금 시작한 `REFUNDING` 결제, 크레딧 결제를 정리한다
+- Then  409 `PAYMENT_NOT_REFUNDABLE`(크레딧 결제는 400 `INVALID_INPUT`). 방금 `REFUNDING`이 된 결제도 409다
 - When  없는 결제 id
 - Then  404
 

@@ -216,7 +216,7 @@ class ChatEventControllerTest {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
         while (hub.connectionCount(tester.getId()) != 0 && System.nanoTime() < deadline) Thread.sleep(50);
         assertThat(hub.connectionCount(tester.getId())).isZero();
-        assertThat(service.getMessages(roomKey, developer.getId(), null, 0L).messages()).hasSize(1);
+        assertThat(service.getMessages(roomKey, developer.getId(), null, 0L, null).messages()).hasSize(1);
     }
 
     @Test @DisplayName("#51-S16 여섯 번째 연결은 가장 오래된 연결을 종료")

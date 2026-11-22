@@ -20,7 +20,8 @@ public interface ChatService {
     ChatRoomResponse renameRoom(String roomKey, Long userId, String name);
     void deleteRoom(String roomKey, Long userId);
     ChatRoomResponse getRoom(String roomKey, Long userId);
-    ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after);
+    /** from이 있으면 before와 함께 순번 from 이상 before 미만을 최대 500개(before 바로 앞부터) 준다 */
+    ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after, Long from);
     ChatMessageSearchResponse searchMessages(String roomKey, Long userId, String q);
     ChatMessageResponse sendMessage(String roomKey, Long userId, String text);
 }

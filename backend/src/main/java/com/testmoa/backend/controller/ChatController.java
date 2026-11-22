@@ -59,8 +59,9 @@ public class ChatController {
     @GetMapping("/{roomKey}/messages")
     public ApiResponse<ChatMessageSliceResponse> getMessages(@PathVariable String roomKey,
                                                              @AuthenticationPrincipal Long userId, @RequestParam(required = false) @Min(1) Long before,
-                                                             @RequestParam(required = false) @Min(0) Long after) {
-        return ApiResponse.ok(chatService.getMessages(roomKey, userId, before, after));
+                                                             @RequestParam(required = false) @Min(0) Long after,
+                                                             @RequestParam(required = false) @Min(1) Long from) {
+        return ApiResponse.ok(chatService.getMessages(roomKey, userId, before, after, from));
     }
 
     /** 검색어(100자 이하, 앞뒤 공백 제외 1자 이상)가 들어간 메시지의 순번을 최신부터 최대 100개 */

@@ -17,6 +17,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     Slice<ChatMessage> findByRoomAndSeqGreaterThanOrderBySeqAsc(ChatRoom room, long after, Pageable pageable);
 
+    Slice<ChatMessage> findByRoomAndSeqGreaterThanEqualAndSeqLessThanOrderBySeqDesc(ChatRoom room, long from, long before, Pageable pageable);
+
+    boolean existsByRoomAndSeqLessThan(ChatRoom room, long seq);
+
     List<ChatMessage> findByRoomOrderBySeqAsc(ChatRoom room);
 
     /** 내용이 패턴과 대소문자 없이 맞는 메시지의 순번을 최신부터. 패턴은 LikePattern.contains로 만들고, 소문자 변환은 DB lower 한 곳에서 한다 */

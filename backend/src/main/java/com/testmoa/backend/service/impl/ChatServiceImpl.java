@@ -34,6 +34,7 @@ import com.testmoa.backend.entity.enums.Restriction;
 import com.testmoa.backend.service.SubscriptionChecker;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ChatServiceImpl implements ChatService {
     private static final int MESSAGE_SLICE_SIZE = 30;
+    private static final int RANGE_SLICE_SIZE = 500;
     private static final int SEARCH_RESULT_LIMIT = 100;
     private final ChatParticipantRepository participantRepository;
     private final SanctionChecker sanctionChecker;
@@ -139,18 +141,29 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after) {
+    public ChatMessageSliceResponse getMessages(String roomKey, Long userId, Long before, Long after, Long from) {
         if (before != null && after != null) throw new BusinessException(ErrorCode.INVALID_INPUT);
+        if (from != null && (before == null || from >= before)) throw new BusinessException(ErrorCode.INVALID_INPUT);
         var me = requireParticipant(roomKey, userId);
+        if (from != null) {
+            var range = messageRepository.findByRoomAndSeqGreaterThanEqualAndSeqLessThanOrderBySeqDesc(
+                    me.getRoom(), from, before, PageRequest.of(0, RANGE_SLICE_SIZE));
+            boolean hasMore = range.hasNext() || messageRepository.existsByRoomAndSeqLessThan(me.getRoom(), from);
+            return toSlice(range.getContent(), hasMore, me.getId());
+        }
         var page = PageRequest.of(0, MESSAGE_SLICE_SIZE);
         var slice = after != null
                 ? messageRepository.findByRoomAndSeqGreaterThanOrderBySeqAsc(me.getRoom(), after, page)
                 : before == null
                 ? messageRepository.findByRoomOrderBySeqDesc(me.getRoom(), page)
                 : messageRepository.findByRoomAndSeqLessThanOrderBySeqDesc(me.getRoom(), before, page);
-        var messages = slice.getContent().stream().sorted(Comparator.comparingLong(ChatMessage::getSeq))
-                .map(message -> ChatMessageResponse.of(message, me.getId())).toList();
-        return new ChatMessageSliceResponse(messages, slice.hasNext());
+        return toSlice(slice.getContent(), slice.hasNext(), me.getId());
+    }
+
+    private static ChatMessageSliceResponse toSlice(List<ChatMessage> found, boolean hasMore, Long participantId) {
+        var messages = found.stream().sorted(Comparator.comparingLong(ChatMessage::getSeq))
+                .map(message -> ChatMessageResponse.of(message, participantId)).toList();
+        return new ChatMessageSliceResponse(messages, hasMore);
     }
 
     @Override

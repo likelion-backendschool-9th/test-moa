@@ -3,6 +3,7 @@ package com.testmoa.backend.controller.analysis;
 import com.testmoa.backend.entity.ClusterGroup;
 import com.testmoa.backend.entity.Feedback;
 import com.testmoa.backend.entity.FeedbackCluster;
+import com.testmoa.backend.entity.GroupLink;
 import com.testmoa.backend.entity.Plan;
 import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
@@ -36,12 +37,15 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -53,7 +57,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * AI 버전 비교 API. 분석 서버 호출(AnalysisClient)은 가짜로 바꾸고, 보낼 요청과 저장된 그룹 코드를 확인함.
+ * AI 버전 비교 API. 분석 서버 호출(AnalysisClient)은 가짜로 바꾸고, 보낼 요청과 저장된 짝(group_links)을 확인함.
  * 주 한도는 서버 메모리라 테스트끼리 남지만 테스트마다 새 회원을 씀
  */
 @SpringBootTest
@@ -127,7 +131,7 @@ class VersionComparisonControllerTest {
     }
 
     /**
-     * 1버전 g11("1"), g12("2")와 2버전 g21("3"), g22("4", 칭찬), g23("5"). 2버전 코드는 #107이 새로 발급한 값이다
+     * 1버전 g11("1"), g12("2")와 2버전 g21("3"), g22("4", 칭찬), g23("5"). 코드는 #107이 발급한 값이고 비교가 바꾸지 않는다
      */
     private record Versions(Recruitment previous, Recruitment current,
                             ClusterGroup g11, ClusterGroup g12, ClusterGroup g21, ClusterGroup g22, ClusterGroup g23) {}
@@ -155,17 +159,34 @@ class VersionComparisonControllerTest {
                 .header("Authorization", "Bearer " + jwtProvider.createAccessToken(user.getId())));
     }
 
-    private String codeOf(ClusterGroup group) {
-        return em.find(ClusterGroup.class, group.getId()).getGroupCode();
+    private void saveLink(ClusterGroup current, ClusterGroup previous) {
+        em.persist(GroupLink.builder().currentGroup(current).previousGroup(previous).build());
+    }
+
+    // 이번 버전 그룹과 이어진 직전 그룹 id(작은 순)
+    private List<Long> linksOf(ClusterGroup group) {
+        return em.createQuery("select l.previousGroup.id from group_links l where l.currentGroup.id = :id order by l.previousGroup.id", Long.class)
+                .setParameter("id", group.getId()).getResultList();
+    }
+
+    private ClusterGroup reload(ClusterGroup group) {
+        return em.find(ClusterGroup.class, group.getId());
+    }
+
+    private static int id(ClusterGroup group) {
+        return group.getId().intValue();
     }
 
     @Test
-    @DisplayName("#108-S1 짝지은 그룹은 이전 코드를 이어받고 새 그룹은 새 코드를 받는다. 요약을 저장하고 화면 값을 돌려준다(#108-S10, #168-S2)")
-    void 코드를_이어받고_새_코드를_발급한다() throws Exception {
+    @DisplayName("#108-S1 #284-S1 짝은 N:M으로 저장하고 그룹 코드는 바꾸지 않는다. 요약을 저장하고 화면 값을 돌려준다(#108-S10, #168-S2)")
+    void 짝을_N대M으로_저장한다() throws Exception {
         User developer = saveSubscriber();
         Versions v = saveVersions(developer);
-        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(
-                List.of(new GroupMatch(v.g21().getId(), v.g11().getId())), List.of(v.g23().getId()), SUMMARY));
+        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(List.of(
+                new GroupMatch(v.g21().getId(), v.g11().getId()),
+                new GroupMatch(v.g21().getId(), v.g12().getId()), // 두 직전 그룹이 하나로 합쳐짐
+                new GroupMatch(v.g23().getId(), v.g11().getId())  // 직전 그룹 하나가 둘로 나뉨
+        ), SUMMARY));
 
         compare(developer, v.current().getId())
                 .andExpect(status().isOk())
@@ -175,12 +196,14 @@ class VersionComparisonControllerTest {
                 .andExpect(jsonPath("$.data.currentTitle").value("2차 베타 테스트"))
                 .andExpect(jsonPath("$.data.previousTitle").value("1차 베타 테스트"))
                 .andExpect(jsonPath("$.data.stale").value(false))
-                .andExpect(jsonPath("$.data.groups[*].groupId").value(contains(
-                        v.g21().getId().intValue(), v.g22().getId().intValue(), v.g23().getId().intValue())))
-                .andExpect(jsonPath("$.data.groups[*].previouslyReported").value(contains(true, false, false)))
-                .andExpect(jsonPath("$.data.notReportedGroups[*].groupId").value(contains(v.g12().getId().intValue())));
+                .andExpect(jsonPath("$.data.groups[*].groupId").value(contains(id(v.g21()), id(v.g22()), id(v.g23()))))
+                .andExpect(jsonPath("$.data.groups[*].previouslyReported").value(contains(true, false, true)))
+                .andExpect(jsonPath("$.data.groups[0].previousGroupIds").value(contains(id(v.g11()), id(v.g12()))))
+                .andExpect(jsonPath("$.data.groups[1].previousGroupIds").value(empty()))
+                .andExpect(jsonPath("$.data.groups[2].previousGroupIds").value(contains(id(v.g11()))))
+                .andExpect(jsonPath("$.data.notReportedGroups").value(empty()));
 
-        // 분석 서버에는 두 버전의 그룹과 대표 리뷰가 가고, 칭찬 그룹은 심각도가 없다
+        // 분석 서버에는 두 버전의 그룹과 대표 리뷰가 가고, 칭찬 그룹은 심각도가 없다. 고친 짝이 없어 고정 짝은 모두 null이다
         ArgumentCaptor<ComparisonRequest> captor = ArgumentCaptor.forClass(ComparisonRequest.class);
         verify(analysisClient).compare(captor.capture());
         ComparisonRequest sent = captor.getValue();
@@ -193,12 +216,16 @@ class VersionComparisonControllerTest {
                     assertThat(item.category()).isEqualTo("PRAISE");
                     assertThat(item.improvementRank()).isNull();
                 });
+        assertThat(sent.previous().groups()).extracting(GroupItem::fixedPreviousGroupIds).containsOnlyNulls();
+        assertThat(sent.current().groups()).extracting(GroupItem::fixedPreviousGroupIds).containsOnlyNulls();
 
         em.flush();
         em.clear();
-        assertThat(codeOf(v.g21())).isEqualTo("1");
-        assertThat(codeOf(v.g22())).isEqualTo("4");
-        assertThat(codeOf(v.g23())).isEqualTo("6"); // 프로젝트 최대 코드 5 + 1
+        assertThat(linksOf(v.g21())).containsExactly(v.g11().getId(), v.g12().getId());
+        assertThat(linksOf(v.g22())).isEmpty();
+        assertThat(linksOf(v.g23())).containsExactly(v.g11().getId());
+        assertThat(reload(v.g21()).getGroupCode()).isEqualTo("3");
+        assertThat(reload(v.g23()).getGroupCode()).isEqualTo("5");
         VersionComparison saved = em.createQuery(
                         "select vc from version_comparisons vc where vc.recruitment.id = :id", VersionComparison.class)
                 .setParameter("id", v.current().getId()).getSingleResult();
@@ -208,32 +235,29 @@ class VersionComparisonControllerTest {
         find(developer, v.current().getId())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.summary").value(SUMMARY))
-                .andExpect(jsonPath("$.data.notReportedGroups[*].groupId").value(contains(v.g12().getId().intValue())));
+                .andExpect(jsonPath("$.data.groups[0].previousGroupIds").value(contains(id(v.g11()), id(v.g12()))));
     }
 
     @Test
-    @DisplayName("#108-S3 다른 버전의 그룹, 없는 ID, 이미 짝지은 그룹은 버리고 나머지만 저장한다")
+    @DisplayName("#108-S3 #284-S2 다른 버전의 그룹, 없는 ID는 버리고 같은 짝은 한 번만 저장한다")
     void 잘못된_그룹_ID는_무시한다() throws Exception {
         User developer = saveSubscriber();
         Versions v = saveVersions(developer);
-        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(
-                List.of(
-                        new GroupMatch(v.g11().getId(), v.g12().getId()), // 현재 자리에 직전 버전 그룹
-                        new GroupMatch(999_999L, v.g12().getId()),        // 없는 그룹
-                        new GroupMatch(v.g21().getId(), v.g11().getId()), // 맞는 짝
-                        new GroupMatch(v.g22().getId(), v.g11().getId())  // 이미 짝지은 이전 그룹
-                ),
-                List.of(v.g21().getId(), v.g12().getId()), // 이미 짝지은 그룹, 직전 버전 그룹
-                SUMMARY));
+        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(List.of(
+                new GroupMatch(v.g11().getId(), v.g12().getId()), // 현재 자리에 직전 버전 그룹
+                new GroupMatch(999_999L, v.g12().getId()),        // 없는 그룹
+                new GroupMatch(v.g22().getId(), v.g23().getId()), // 직전 자리에 현재 버전 그룹
+                new GroupMatch(v.g21().getId(), v.g11().getId()), // 맞는 짝
+                new GroupMatch(v.g21().getId(), v.g11().getId())  // 같은 짝 두 번
+        ), SUMMARY));
 
         compare(developer, v.current().getId()).andExpect(status().isOk());
 
         em.flush();
         em.clear();
-        assertThat(codeOf(v.g21())).isEqualTo("1");
-        assertThat(codeOf(v.g22())).isEqualTo("4");
-        assertThat(codeOf(v.g11())).isEqualTo("1");
-        assertThat(codeOf(v.g12())).isEqualTo("2");
+        assertThat(linksOf(v.g21())).containsExactly(v.g11().getId());
+        assertThat(linksOf(v.g22())).isEmpty();
+        assertThat(linksOf(v.g11())).isEmpty();
     }
 
     @Test
@@ -276,7 +300,7 @@ class VersionComparisonControllerTest {
 
         // 다시 분석하다 실패해도 analyzed_at과 지난 그룹은 그대로다
         ReflectionTestUtils.setField(v.current(), "analysisStatus", AnalysisStatus.FAILED);
-        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(List.of(), List.of(), SUMMARY));
+        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(List.of(), SUMMARY));
 
         compare(developer, v.current().getId())
                 .andExpect(status().isOk())
@@ -317,10 +341,10 @@ class VersionComparisonControllerTest {
                 .andExpect(jsonPath("$.error.code").value("COMPARISON_NOT_FOUND"));
     }
 
-    // #108-S1처럼 비교를 마친 상태: g21이 g11의 코드 "1"을 이어받았다. 프로젝트 최대 코드는 5다
+    // 비교를 마친 상태: AI가 g21을 g11과 이었다. 아무도 짝을 고치지 않았다
     private Versions saveCompared(User developer) {
         Versions v = saveVersions(developer);
-        v.g21().updateGroupCode("1");
+        saveLink(v.g21(), v.g11());
         em.persist(VersionComparison.builder().recruitment(v.current()).previousRecruitment(v.previous()).summary(SUMMARY).build());
         return v;
     }
@@ -332,8 +356,9 @@ class VersionComparisonControllerTest {
                 .content(body));
     }
 
-    private static String link(ClusterGroup group, ClusterGroup previous) {
-        return "{\"groupId\":" + group.getId() + ",\"previousGroupId\":" + (previous == null ? "null" : previous.getId()) + "}";
+    private static String link(ClusterGroup group, ClusterGroup... previous) {
+        String ids = Arrays.stream(previous).map(item -> String.valueOf(item.getId())).collect(Collectors.joining(","));
+        return "{\"groupId\":" + group.getId() + ",\"previousGroupIds\":[" + ids + "]}";
     }
 
     private static String links(String... items) {
@@ -341,42 +366,48 @@ class VersionComparisonControllerTest {
     }
 
     @Test
-    @DisplayName("#168-S5 짝을 바꾸면 직전 그룹의 코드를 이어받고, 짝을 풀면 새 코드를 받는다. 요약은 그대로다")
+    @DisplayName("#168-S5 #284-S3 짝을 여러 직전 그룹과 잇거나 풀면 고친 그룹에 표시가 남고, 요약과 보내지 않은 그룹의 짝은 그대로다")
     void 짝을_바꾸고_푼다() throws Exception {
         User developer = saveSubscriber();
         Versions v = saveCompared(developer);
 
-        relink(developer, v.current().getId(), links(link(v.g23(), v.g11()), link(v.g21(), null)))
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g11(), v.g12()), link(v.g21())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.summary").value(SUMMARY))
-                .andExpect(jsonPath("$.data.groups[*].groupId").value(contains(
-                        v.g21().getId().intValue(), v.g22().getId().intValue(), v.g23().getId().intValue())))
-                .andExpect(jsonPath("$.data.groups[*].previouslyReported").value(contains(false, false, true)));
+                .andExpect(jsonPath("$.data.groups[*].groupId").value(contains(id(v.g21()), id(v.g22()), id(v.g23()))))
+                .andExpect(jsonPath("$.data.groups[*].previouslyReported").value(contains(false, false, true)))
+                .andExpect(jsonPath("$.data.groups[2].previousGroupIds").value(contains(id(v.g11()), id(v.g12()))))
+                .andExpect(jsonPath("$.data.notReportedGroups").value(empty()));
 
         em.flush();
         em.clear();
-        assertThat(codeOf(v.g23())).isEqualTo("1");
-        assertThat(codeOf(v.g21())).isEqualTo("6");
-        assertThat(codeOf(v.g22())).isEqualTo("4");
+        assertThat(linksOf(v.g23())).containsExactly(v.g11().getId(), v.g12().getId());
+        assertThat(linksOf(v.g21())).isEmpty();
+        assertThat(reload(v.g21()).getLinksEditedAt()).isNotNull();
+        assertThat(reload(v.g23()).getLinksEditedAt()).isNotNull();
+        assertThat(reload(v.g22()).getLinksEditedAt()).isNull();
         verifyNoInteractions(analysisClient);
     }
 
     @Test
-    @DisplayName("#168-S6 보내지 않은 그룹이 이어받은 코드를 쓰고 있으면 그 그룹도 새 코드를 받는다")
-    void 겹친_코드는_새_코드를_받는다() throws Exception {
+    @DisplayName("#168-S6 #284-S3 같은 직전 그룹을 여러 이번 그룹에 이을 수 있고, 보내지 않은 그룹의 짝은 그대로다")
+    void 같은_직전_그룹을_여러_그룹에_잇는다() throws Exception {
         User developer = saveSubscriber();
         Versions v = saveCompared(developer);
 
-        relink(developer, v.current().getId(), links(link(v.g23(), v.g11()))).andExpect(status().isOk());
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g11())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.notReportedGroups[*].groupId").value(contains(id(v.g12()))));
 
         em.flush();
         em.clear();
-        assertThat(codeOf(v.g23())).isEqualTo("1");
-        assertThat(codeOf(v.g21())).isEqualTo("6");
+        assertThat(linksOf(v.g21())).containsExactly(v.g11().getId());
+        assertThat(linksOf(v.g23())).containsExactly(v.g11().getId());
+        assertThat(reload(v.g21()).getLinksEditedAt()).isNull();
     }
 
     @Test
-    @DisplayName("#168-S7 다른 버전의 그룹이나 같은 직전 그룹을 두 번 넣으면 INVALID_INPUT이고 코드는 그대로다")
+    @DisplayName("#168-S7 #284-S4 다른 버전의 그룹, 한 목록에 같은 직전 그룹 두 번, 같은 이번 그룹 두 번은 INVALID_INPUT이고 짝은 그대로다")
     void 잘못된_짝은_거절한다() throws Exception {
         User developer = saveSubscriber();
         Versions v = saveCompared(developer);
@@ -386,14 +417,19 @@ class VersionComparisonControllerTest {
                 .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
         relink(developer, v.current().getId(), links(link(v.g23(), v.g21())))
                 .andExpect(status().isBadRequest());
-        relink(developer, v.current().getId(), links(link(v.g22(), v.g11()), link(v.g23(), v.g11())))
+        relink(developer, v.current().getId(), links(link(v.g23(), v.g11(), v.g11())))
+                .andExpect(status().isBadRequest());
+        relink(developer, v.current().getId(), links(link(v.g22(), v.g11()), link(v.g22(), v.g12())))
+                .andExpect(status().isBadRequest());
+        relink(developer, v.current().getId(), "{\"links\":[{\"groupId\":" + v.g23().getId() + "}]}")
                 .andExpect(status().isBadRequest());
 
         em.flush();
         em.clear();
-        assertThat(codeOf(v.g21())).isEqualTo("1");
-        assertThat(codeOf(v.g22())).isEqualTo("4");
-        assertThat(codeOf(v.g23())).isEqualTo("5");
+        assertThat(linksOf(v.g21())).containsExactly(v.g11().getId());
+        assertThat(linksOf(v.g22())).isEmpty();
+        assertThat(linksOf(v.g23())).isEmpty();
+        assertThat(reload(v.g23()).getLinksEditedAt()).isNull();
     }
 
     @Test
@@ -410,5 +446,39 @@ class VersionComparisonControllerTest {
         relink(developer, v.current().getId(), links(link(v.g23(), v.g11())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("ANALYSIS_IN_PROGRESS"));
+    }
+
+    @Test
+    @DisplayName("#284-S5 다시 비교하면 고친 그룹의 짝(풀어 둔 것 포함)은 고정해 보내고 그대로 두며, 고치지 않은 그룹만 새로 잇는다")
+    void 다시_비교해도_고친_짝은_남는다() throws Exception {
+        User developer = saveSubscriber();
+        Versions v = saveCompared(developer);
+        relink(developer, v.current().getId(), links(link(v.g21()), link(v.g23(), v.g11()))).andExpect(status().isOk());
+        String newSummary = "결제 버튼 문제가 로그인 종료와 이어졌어요";
+        given(analysisClient.compare(any())).willReturn(new ComparisonResponse(List.of(
+                new GroupMatch(v.g21().getId(), v.g11().getId()), // 풀어 둔 그룹은 잇지 않는다
+                new GroupMatch(v.g22().getId(), v.g12().getId()),
+                new GroupMatch(v.g23().getId(), v.g12().getId())  // 고친 그룹은 바꾸지 않는다
+        ), newSummary));
+
+        compare(developer, v.current().getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary").value(newSummary));
+
+        ArgumentCaptor<ComparisonRequest> captor = ArgumentCaptor.forClass(ComparisonRequest.class);
+        verify(analysisClient).compare(captor.capture());
+        assertThat(captor.getValue().current().groups())
+                .extracting(GroupItem::groupId, GroupItem::fixedPreviousGroupIds)
+                .containsExactly(
+                        tuple(v.g21().getId(), List.of()),
+                        tuple(v.g22().getId(), null),
+                        tuple(v.g23().getId(), List.of(v.g11().getId())));
+        assertThat(captor.getValue().previous().groups()).extracting(GroupItem::fixedPreviousGroupIds).containsOnlyNulls();
+
+        em.flush();
+        em.clear();
+        assertThat(linksOf(v.g21())).isEmpty();
+        assertThat(linksOf(v.g22())).containsExactly(v.g12().getId());
+        assertThat(linksOf(v.g23())).containsExactly(v.g11().getId());
     }
 }

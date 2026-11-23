@@ -15,7 +15,7 @@ import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.service.ApplicationService;
 import com.testmoa.backend.service.ChatService;
 import com.testmoa.backend.service.ParticipationService;
-import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.RecruitmentSaveService;
 import com.testmoa.backend.service.SanctionChecker;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -62,7 +62,7 @@ class SanctionControllerTest {
     @Autowired ApplicationService applicationService;
     @Autowired ChatService chatService;
     @Autowired ParticipationService participationService;
-    @Autowired ProjectService projectService;
+    @Autowired RecruitmentSaveService recruitmentSaveService;
 
     String suffix;
     User admin, member, other;
@@ -338,7 +338,7 @@ class SanctionControllerTest {
                 .andExpect(status().isCreated());
 
         restricted(() -> applicationService.apply(id, -1L), Restriction.APPLY);
-        restricted(() -> projectService.createRecruitment(id, null), Restriction.RECRUIT);
+        restricted(() -> recruitmentSaveService.createRecruitment(id, null), Restriction.RECRUIT);
         restricted(() -> participationService.submitFeedback(id, -1L, null), Restriction.FEEDBACK);
         restricted(() -> chatService.startChat(id, -1L), Restriction.CHAT);
         restricted(() -> chatService.sendMessage("none", id, "안녕"), Restriction.CHAT);

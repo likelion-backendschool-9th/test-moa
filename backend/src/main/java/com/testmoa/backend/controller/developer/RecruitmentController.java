@@ -13,6 +13,7 @@ import com.testmoa.backend.dto.response.RecruitmentCancelResponse;
 import com.testmoa.backend.dto.response.RecruitmentCreateResponse;
 import com.testmoa.backend.global.util.ApiResponse;
 import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.RecruitmentSaveService;
 import com.testmoa.backend.service.RecruitmentCancelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RecruitmentController {
     private final ProjectService projectService;
+    private final RecruitmentSaveService recruitmentSaveService;
     private final RecruitmentCancelService recruitmentCancelService;
 
     @Operation(summary = "모집글·테스트 항목 이미지 업로드")
@@ -51,7 +53,7 @@ public class RecruitmentController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<RecruitmentCreateResponse> create(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
                                                          @Valid @RequestBody RecruitmentCreateRequest request) {
-        return ApiResponse.ok(projectService.createRecruitment(userId, request));
+        return ApiResponse.ok(recruitmentSaveService.createRecruitment(userId, request));
     }
 
     @Operation(summary = "모집 정보 수정", description = "보낸 값만 바꾼다. 종료·취소한 모집은 409. "
@@ -60,7 +62,7 @@ public class RecruitmentController {
     public ApiResponse<Void> update(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
                                     @PathVariable Long recruitmentId,
                                     @Valid @RequestBody RecruitmentUpdateRequest request) {
-        projectService.updateRecruitment(userId, recruitmentId, request);
+        recruitmentSaveService.updateRecruitment(userId, recruitmentId, request);
         return ApiResponse.ok();
     }
 
@@ -70,7 +72,7 @@ public class RecruitmentController {
     public ApiResponse<Void> updateTestItems(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
                                              @PathVariable Long recruitmentId,
                                              @Valid @RequestBody TestItemsUpdateRequest request) {
-        projectService.updateTestItems(userId, recruitmentId, request);
+        recruitmentSaveService.updateTestItems(userId, recruitmentId, request);
         return ApiResponse.ok();
     }
 

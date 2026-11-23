@@ -12,6 +12,7 @@ import { SELECTION_MODE_LABEL, SOFTWARE_TYPE_LABEL, type SelectionMode } from "@
 import { cn } from "@/lib/cn";
 import { daysUntil, formatCredits, formatDate, formatDateTime, formatDday } from "@/lib/format";
 import {
+  cancelAvailability,
   payoutAt,
   STATUS_LABEL,
   tabOf,
@@ -19,6 +20,7 @@ import {
   type FeedbackEntry,
   type ParticipationItem,
 } from "@/features/participation/types";
+import { CancelParticipationButton } from "../CancelParticipationButton/CancelParticipationButton";
 import { CollapsibleText } from "../CollapsibleText/CollapsibleText";
 import { FeedbackForm } from "../FeedbackForm/FeedbackForm";
 import { FeedbackMarker } from "../FeedbackMarker/FeedbackMarker";
@@ -36,6 +38,8 @@ type ParticipationDetailProps = {
   now: Date;
   /** 피드백을 막 제출하고 돌아왔다 */
   justSubmitted: boolean;
+  /** 지원을 막 취소하고 돌아왔다 */
+  justCancelled?: boolean;
   /** 프로젝트 소개. 제목 줄 아래에 한 줄로 보인다. 없으면 그 줄을 그리지 않는다 */
   projectDescription: string;
   /** 모집 설명. 3줄이 넘으면 접어 둔다. 없으면 칸을 그리지 않는다 */
@@ -211,7 +215,7 @@ function SubmittedFeedback({ item, feedback }: { item: ParticipationItem; feedba
 }
 
 /** 내 참여 상세. 지금 단계와 다음 일, 모집 조건, 피드백 작성 또는 제출한 내용을 한 화면에 둔다 */
-export function ParticipationDetail({ item, now, justSubmitted, projectDescription, recruitmentDescription, selectionMode }: ParticipationDetailProps) {
+export function ParticipationDetail({ item, now, justSubmitted, justCancelled = false, projectDescription, recruitmentDescription, selectionMode }: ParticipationDetailProps) {
   const { recruitment, status } = item;
   const tab = tabOf(status);
   const message = statusMessage(item, now);
@@ -220,6 +224,7 @@ export function ParticipationDetail({ item, now, justSubmitted, projectDescripti
   /* 제출 전이면 마감까지 남은 날을 제목 옆에 보이고, 사흘 이하는 색 대신 굵기로 알린다(Weight-Not-Paint) */
   const dday = beforeSubmit ? formatDday(recruitment.submitDeadline, now) : null;
   const urgent = beforeSubmit && daysUntil(recruitment.submitDeadline, now) <= 3;
+  const cancel = cancelAvailability(item, now);
 
   return (
     <div className={styles.root}>
@@ -231,6 +236,12 @@ export function ParticipationDetail({ item, now, justSubmitted, projectDescripti
       {justSubmitted && status === "payoutPending" && (
         <p role="status" className={styles.text}>
           {isBackendAuth ? "피드백을 제출했어요." : "피드백을 제출했어요. 시연용이라 이 브라우저에만 남아요."}
+        </p>
+      )}
+
+      {justCancelled && status === "cancelled" && (
+        <p role="status" className={styles.text}>
+          {isBackendAuth ? "지원을 취소했어요." : "지원을 취소했어요. 시연용이라 이 브라우저에만 남아요."}
         </p>
       )}
 
@@ -343,6 +354,27 @@ export function ParticipationDetail({ item, now, justSubmitted, projectDescripti
               ))}
             </ol>
           </Card>
+        </section>
+      )}
+
+      {/* 모집 마감 전이면 선정 대기·제출 전 참가를 취소할 수 있다. 테스트가 시작된 제출 전 참가는 버튼 대신 이유를 보인다 */}
+      {(cancel.cancellable || cancel.reason) && (
+        <section aria-labelledby="cancel-heading" className={styles.section}>
+          <h2 id="cancel-heading" className={styles.sectionTitle}>
+            지원 취소
+          </h2>
+          {cancel.cancellable ? (
+            <>
+              <p className={styles.body}>
+                모집 마감({formatDate(recruitment.recruitDeadline)}) 전까지 취소할 수 있어요. 피드백을 내면 취소할 수 없어요.
+              </p>
+              <div className={styles.button2}>
+                <CancelParticipationButton participationKey={item.key} confirmed={beforeSubmit} />
+              </div>
+            </>
+          ) : (
+            <p className={styles.body}>{cancel.reason}</p>
+          )}
         </section>
       )}
     </div>

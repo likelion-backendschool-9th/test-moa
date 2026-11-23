@@ -1,5 +1,5 @@
 import { getDemoDataMode } from "@/demo/mode";
-import { buildParticipations, readDemoFeedback } from "@/demo/participation";
+import { buildParticipations, readDemoCancellations, readDemoFeedback, saveDemoCancellation } from "@/demo/participation";
 import { isBackendId } from "@/features/project/api";
 import { getRecruitmentsBySlugs } from "@/features/recruitment/api";
 import type { Recruitment, SelectionMode, SoftwareType } from "@/features/recruitment/types";
@@ -129,12 +129,19 @@ const loadAll = cache(async (): Promise<ParticipationItem[]> => {
   await connection();
   /* 샘플 참여 내역은 데모 테스터에게만 있다 */
   if (session.role !== "tester" || mode === "empty") return [];
-  const submitted = await readDemoFeedback();
+  const [submitted, cancellations] = await Promise.all([readDemoFeedback(), readDemoCancellations()]);
   const participations = buildParticipations(new Date());
   const recruitments = await getRecruitmentsBySlugs(participations.map((item) => item.recruitmentSlug));
   return participations.flatMap((participation) => {
     const recruitment = recruitments.find((item) => item.slug === participation.recruitmentSlug);
     if (!recruitment) return [];
+    /* 이 브라우저에서 지원을 취소했으면 참여 취소로 넘기고 접속 링크를 뺀다 */
+    const cancelledAt = cancellations[participation.key];
+    if (cancelledAt) {
+      const cancelled: ParticipationItem = { ...participation, recruitment, status: "cancelled", cancelledAt };
+      delete cancelled.accessUrl;
+      return [cancelled];
+    }
     /* 이 브라우저에서 제출한 피드백이 있으면 제출 전 → 지급 대기로 넘긴다 */
     const feedback = participation.status === "beforeSubmit" ? submitted[participation.key] : undefined;
     return feedback
@@ -244,4 +251,21 @@ export async function saveBackendFeedback(participationKey: string, entries: Fee
 export async function saveFeedback(participationKey: string, entries: Parameters<typeof saveDemoFeedback>[1]) {
   await requireMember(participationPath(participationKey));
   return saveDemoFeedback(participationKey, entries);
+}
+
+/**
+ * 지원을 취소한다. 성공하면 null, 실패하면 보여 줄 오류 문구를 돌려준다.
+ * 백엔드가 취소할 수 있는지 다시 확인한다(모집 기간, 피드백 전)
+ */
+export async function cancelParticipationRequest(participationKey: string): Promise<string | null> {
+  const path = participationPath(participationKey);
+  await requireMember(path);
+  if (!isBackendAuth) {
+    await saveDemoCancellation(participationKey);
+    return null;
+  }
+  const result = await backendFetch(`${PARTICIPATIONS_API}/${participationKey}/cancel`, { method: "POST" });
+  if (result.ok) return null;
+  if (result.status === 401) redirect(`/login?next=${encodeURIComponent(path)}`);
+  return result.message;
 }

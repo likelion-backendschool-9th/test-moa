@@ -136,7 +136,7 @@ erDiagram
 | 메서드 | 동작 | 호출하는 코드 |
 | --- | --- | --- |
 | `grantEvent` | `wallet.grantEvent` + 장부 EVENT | 가입 크레딧 `SignupCreditServiceImpl`(#255, 이메일·소셜 가입과 기존 회원 일회성 지급) |
-| `grantEarned` | `wallet.grantEarned` + 장부 EARNED | 아직 없음(보상 지급 이슈에서 만든다) |
+| `grantEarned` | `wallet.grantEarned` + 장부 EARNED | 피드백 보상 자동 지급 `FeedbackPayoutService`(#288, "피드백 보상 · {모집글 제목}") |
 | `spendForSubscription` | `wallet.spendForSubscription` 후 `SpendResult`로 장부 행 | 구독 결제 `PaymentServiceImpl`(#71) |
 
 ### #67 출금 신청·내역
@@ -177,7 +177,7 @@ erDiagram
 - 구독 해지·환불 처리, 공개 요금제 페이지
 - 프론트 목업 제거·API 연동 완료(계약 안정 후)
 - 인증 본구현
-- 피드백 72시간 자동 지급 스케줄러, 이번 달 모집 사용량 집계(프로젝트 도메인)
+- 이번 달 모집 사용량 집계(프로젝트 도메인). 피드백 72시간 자동 지급은 프로젝트 도메인에서 한다([feedback-payout.md](../project/feedback-payout.md)) (고침 #288)
 
 ## 가정
 - API 필드: `eventCredit`, `earnedBalance`, `lockedBalance`. 인증 전 `userId` 경로.

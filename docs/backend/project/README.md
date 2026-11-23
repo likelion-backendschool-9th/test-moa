@@ -18,6 +18,7 @@
 | [#117](https://github.com/likelion-backendschool-9th/test-moa/issues/117) | 내 참여 목록·요약·마감 일정 API | [participation-list.md](participation-list.md) |
 | [#118](https://github.com/likelion-backendschool-9th/test-moa/issues/118) | 내 참여 상세와 항목별 피드백 제출 API | [feedback-submit.md](feedback-submit.md) |
 | [#119](https://github.com/likelion-backendschool-9th/test-moa/issues/119) | 피드백 이미지 업로드·제출 연결·조회 API | [feedback-images.md](feedback-images.md) |
+| #288 | 피드백 보상 72시간 자동 지급 | [feedback-payout.md](feedback-payout.md) |
 | [#122](https://github.com/likelion-backendschool-9th/test-moa/issues/122) | 내 프로젝트 할 일·전체 현황 API | [project-dashboard.md](project-dashboard.md) |
 | [#168](https://github.com/likelion-backendschool-9th/test-moa/issues/168) | 버전 별 분석 탭 API(비교 전 상태, 그룹 리뷰, 짝 저장) | [version-tab-api.md](version-tab-api.md) |
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 모집 정보 수정 API | [recruitment-edit.md](recruitment-edit.md) |
@@ -58,6 +59,7 @@
 | 15 | 역할별 기능은 역할 패키지(`controller.developer`, `controller.admin` 등)에 두고, 클래스 이름은 모집글 자체를 기준으로 붙인다(`RecruitmentController`, `RecruitmentService`, `RecruitmentResponse`). `Public` 같은 접두사를 붙이지 않고, 같은 이름이 겹치면 빈 이름을 `developerRecruitmentController`처럼 준다 (#113 리뷰, 11-08) | `controller.admin.CashoutController`(`adminCashoutController`)와 같은 방식이다. 지금은 개발자 모집 컨트롤러만 옮겼고, 다른 개발자 컨트롤러(`ProjectController` 등)는 옮기지 않았다 |
 | 16 | 모집글 버전은 같은 프로젝트에 모집을 새로 올릴 때마다 1, 2, 3으로 올라가고, 글을 수정해도 그대로다. 취소한 모집도 번호를 차지한다 (#177, 11-08 팀 결정) | 분석할 콘텐츠의 순서를 버전으로 관리해 AI 버전 비교(#108)가 직전 버전을 찾는다. 작성할 때 프로젝트 행을 잠그고 가장 큰 버전 + 1을 준다 |
 | 17 | 프로젝트의 GitHub 레포는 개발자가 입력한 레포 주소와 토큰(PAT)으로 연결한다. 토큰은 `EncryptedStringConverter`로 암호화해 `projects.github_token`에 저장하고 응답·로그에 내보내지 않는다. 저장하기 전에 GitHub에서 레포를 읽어 확인한다 (#227, 11-09) | GitHub App·OAuth 연결은 하지 않는다. 입력한 토큰의 권한 범위는 검사하지 않고, 이슈를 만들 수 있는지는 등록 때 GitHub가 정한다. 자세한 규칙은 [repository-link.md](repository-link.md) |
+| 18 | 피드백 보상은 제출 후 72시간 동안 신고가 없으면 참가 단위로 한 번 자동 지급한다. 10분마다 돌고, 참가 행을 잠가 두 번 지급하지 않는다 (#288) | 화면이 72시간 자동 지급을 안내하지만 지급하는 코드가 없었다. 신고도 같은 참가 행을 잠가 72시간 경계에서 신고와 지급이 겹치지 않는다 |
 
 ### AI 분석 서버 연동 (#107~#109)
 리뷰 묶기·버전 비교·후속 질문은 파이썬 분석 서버(`analysis-server`, 별도 EC2)가 만들고, 메인 백엔드는 데이터를 모아 보내고 결과를 받는다. 분석 서버는 DB에 연결하지 않는다.
@@ -101,7 +103,7 @@ erDiagram
 | 담당 | 맞출 것 |
 | --- | --- |
 | 크레딧(#66) | 승인 대기 보상을 `Feedback(SUBMITTED)` 행의 합이 아니라 제출된 참가 건의 `Register` 스냅샷 합으로 계산한다. 피드백 행마다 더하면 중복된다. [결제·구독·크레딧](../payment/README.md#정한-것)의 관련 문장도 고친다 |
-| 신고 | 신고가 접수되면 `report()`, 처리되면 `reward()` 또는 `exclude()`를 부른다 |
+| 신고 | 신고가 접수되면 `report()`, 기각하면 `dismissReport()`로 제출에 돌려 자동 지급을 기다리고, 인정하면 `exclude()`를 부른다. `reward()`는 자동 지급(#288)만 부른다 (고침 #288: 처리하면 `reward()`를 부른다고 적었지만 기각은 제출로 되돌린다) |
 | 보상액 | `confirm`에 넘길 기본·추가 보상액을 정한다. 정할 때까지는 정한 것 14의 임시 금액(기본 1,000, 추가 0)을 쓴다 |
 | AI 분석 | 분석 테이블은 `recruitments`를 가리키고, `analysis_status`와 `version`은 #89에서 컬럼만 만들었다. `version`은 모집을 작성할 때 프로젝트의 가장 큰 버전 + 1로 매긴다(고침 #175: 늘 1이라 직전 버전을 찾지 못함). 분석을 마치면 `completeAnalysis(praiseSummary, now)`로 `DONE`·`praise_summary`·`analyzed_at`을 함께 기록하고, 시작·실패는 조건부 UPDATE로 바꾼다([ai-review-analysis.md](ai-review-analysis.md) 결정 1·3). 그룹 코드는 프로젝트 안 숫자 문자열이고 최대 + 1로 발급한다([ai-version-comparison.md](ai-version-comparison.md) 결정 4) |
 
@@ -109,7 +111,7 @@ erDiagram
 
 | # | 무엇을 | 추천 |
 | --- | --- | --- |
-| 1 | 72시간 자동 지급 담당 | 크레딧 계획 문서는 프로젝트 도메인으로 적었다. 팀에서 확정한다 |
+| 1 | 72시간 자동 지급 담당 | **정함(#288):** 프로젝트 도메인의 `FeedbackPayoutService`가 10분마다 지급한다. 크레딧은 결제 도메인의 지갑·장부 규칙(`grantEarned` + `EARNED`)대로 남긴다([feedback-payout.md](feedback-payout.md)) |
 | 2 | 항목별 피드백 중 한 건만 신고되면 보상을 어떻게 할지 | **정함(#66):** 참가 전체 지급을 보류한다. 승인 대기는 `EXISTS SUBMITTED`이고 `NOT EXISTS REPORTED`일 때만 합산한다. 보상 제외(`EXCLUDED`)된 칸이 있어도 같다(고침 #85: 신고를 인정한 뒤에도 같이 낸 다른 칸 때문에 승인 대기에 남았다). 72시간 자동 지급도 같은 조건을 쓴다 |
 | 3 | `RecruitmentStatus.CLOSED` | 화면 상태는 날짜로 계산하므로 지금은 저장하지 않고 남겨 둔다. API를 만들 때 지울지 정한다 |
 | 4 | 보상 상한 | 모집 인원이 없어 선착순 지급에 상한이 없다. 팀에서 정한다 |

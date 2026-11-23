@@ -46,8 +46,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         List<Feedback> feedbacks = feedbackRepository.findWithUserByRecruitmentId(recruitmentId);
         Map<Long, List<String>> images = feedbackImageRepository.findByFeedbackIdInOrderByIdAsc(feedbacks.stream().map(Feedback::getId).toList())
                 .stream().collect(Collectors.groupingBy(image -> image.getFeedback().getId(),
-                        Collectors.mapping(image -> feedbackImageUrl(image.getFeedback().getId(),
-                                image.getUrl().substring(image.getUrl().lastIndexOf('/') + 1)), Collectors.toList())));
+                        Collectors.mapping(image -> feedbackImageUrl(image.getFeedback().getId(), image.fileName()), Collectors.toList())));
         return feedbacks.stream().map(feedback -> new FeedbackResponse(
                 feedback.getId(),
                 feedback.getRegister().getId(),

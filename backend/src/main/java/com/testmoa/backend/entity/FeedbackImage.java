@@ -53,4 +53,12 @@ public class FeedbackImage {
         this.feedback = feedback;
         this.url = url;
     }
+
+    /**
+     * 저장한 파일 이름. 주소는 테스터 주소(/api/v1/tester/participations/{참가 id}/feedbacks/images/{파일 이름})라
+     * 마지막 조각이 업로드 폴더(FOLDER/{참가 id}) 안의 파일 이름이다. 개발자 주소를 만들 때 쓴다
+     */
+    public String fileName() {
+        return url.substring(url.lastIndexOf('/') + 1);
+    }
 }

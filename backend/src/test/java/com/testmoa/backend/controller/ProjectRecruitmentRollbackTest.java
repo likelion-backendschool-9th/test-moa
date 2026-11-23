@@ -13,7 +13,7 @@ import com.testmoa.backend.repository.UserRepository;
 import com.testmoa.backend.global.security.Role;
 import com.testmoa.backend.entity.enums.TypeCode;
 import com.testmoa.backend.entity.enums.UserStatus;
-import com.testmoa.backend.service.ProjectService;
+import com.testmoa.backend.service.RecruitmentSaveService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.doThrow;
 @SpringBootTest
 class ProjectRecruitmentRollbackTest {
 
-    @Autowired ProjectService projectService;
+    @Autowired RecruitmentSaveService recruitmentSaveService;
     @Autowired UserRepository userRepository;
     @Autowired ProjectRepository projectRepository;
     @Autowired RecruitmentRepository recruitmentRepository;
@@ -69,7 +69,7 @@ class ProjectRecruitmentRollbackTest {
         doThrow(new IllegalStateException("저장 실패")).when(testItemRepository).save(any(TestItem.class));
 
         try {
-            assertThatThrownBy(() -> projectService.createRecruitment(user.getId(), request))
+            assertThatThrownBy(() -> recruitmentSaveService.createRecruitment(user.getId(), request))
                     .isInstanceOf(IllegalStateException.class);
 
             assertThat(recruitmentRepository.count()).isEqualTo(before);
@@ -114,7 +114,7 @@ class ProjectRecruitmentRollbackTest {
             for (int index = 0; index < 2; index++) {
                 User user = users.get(index);
                 RecruitmentCreateRequest request = request(projects.get(index), null);
-                results.add(pool.submit(() -> projectService.createRecruitment(user.getId(), request).id()));
+                results.add(pool.submit(() -> recruitmentSaveService.createRecruitment(user.getId(), request).id()));
             }
             for (Future<Long> result : results) created.add(result.get(30, TimeUnit.SECONDS));
 

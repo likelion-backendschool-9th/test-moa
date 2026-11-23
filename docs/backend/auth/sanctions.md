@@ -8,7 +8,7 @@
 - 종류: 경고 `WARNING`(아무것도 막지 않는 기록), 기간 정지 `SUSPENSION`(일수를 받아 종료 일시를 정함), 영구 정지 `PERMANENT`(종료 없음)
 - 막을 기능: 로그인 `LOGIN`, 테스트 지원 `APPLY`, 모집 글 작성 `RECRUIT`, 피드백 작성 `FEEDBACK`, 채팅 `CHAT`. 정지(기간·영구)는 하나 이상 골라야 하고, 경고는 고르지 않는다. `restriction` 칸에 쉼표로 이어 저장한다(예: `LOGIN,CHAT`)
 - 지금 걸린 제재: 해제하지 않았고, 시작했고, 종료 일시가 없거나 아직 오지 않은 정지. 기간이 끝나면 따로 처리하지 않아도 풀린다
-- 기능 확인: 각 기능 서비스의 맨 앞에서 `sanctionChecker.require(userId, Restriction.X)`를 부른다. 지원(`ApplicationServiceImpl.apply`), 모집 글 작성(`ProjectServiceImpl.createRecruitment`), 피드백 작성(`ParticipationServiceImpl.submitFeedback`), 채팅 시작·보내기(`ChatServiceImpl.startChat`·`sendMessage`). 막혀 있으면 403 `RESTRICTED`이고, `error.fields`에 막힌 기능(`restriction`), 사유(`reason`), 해제 일시(`endsAt`, 영구 정지는 없음)를 준다
+- 기능 확인: 각 기능 서비스의 맨 앞에서 `sanctionChecker.require(userId, Restriction.X)`를 부른다. 지원(`ApplicationServiceImpl.apply`), 모집 글 작성(`RecruitmentSaveServiceImpl.createRecruitment`, 고침 #289: ProjectServiceImpl에서 옮김), 피드백 작성(`ParticipationServiceImpl.submitFeedback`), 채팅 시작·보내기(`ChatServiceImpl.startChat`·`sendMessage`). 막혀 있으면 403 `RESTRICTED`이고, `error.fields`에 막힌 기능(`restriction`), 사유(`reason`), 해제 일시(`endsAt`, 영구 정지는 없음)를 준다
 - 로그인 막기: 이메일·소셜 로그인과 소셜 가입이 `LOGIN` 제재를 확인한다. `LOGIN`을 막는 제재를 주면 그 회원의 refresh 토큰을 모두 지워, 이미 로그인한 기기도 바로 끊긴다(access 토큰은 요청마다 세션을 확인한다)
 - `users.status`의 `SUSPENDED`는 제재가 대신한다(#86 이슈). 이번에는 기존 `SUSPENDED` 처리를 그대로 두고 새 제재는 `sanctions`로만 한다
 - 운영자 화면의 이름·이메일은 가린다: 이름 `Masking.name`(서준호 → 서*호), 이메일 `Masking.email`(member04@example.com → me***@example.com)

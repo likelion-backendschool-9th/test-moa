@@ -25,6 +25,10 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             """)
     Optional<Feedback> findWithRecruitmentById(@Param("id") Long id);
 
+    // 피드백 상태를 DB에서 바로 읽는다. 이미 읽은 엔티티가 있어도 그 값을 쓰지 않는다(#288 신고와 지급)
+    @Query("select f.status from feedbacks f where f.id = :id")
+    FeedbackStatus findStatusById(@Param("id") Long id);
+
     // 모집글의 피드백과 쓴 회원. 최근 제출 순
     @Query("""
             select f from feedbacks f

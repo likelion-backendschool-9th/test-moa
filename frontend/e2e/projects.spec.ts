@@ -328,3 +328,38 @@ test.describe("#134-R2 유료 기능 버튼", () => {
     await expect(open).toBeFocused();
   });
 });
+
+test.describe("#287-R2 프로젝트 삭제", () => {
+  test.beforeEach(async ({ context }) => {
+    await setDemo(context, { role: "developer" });
+  });
+
+  test("#287-S5 모집글이 없는 프로젝트는 확인 대화상자를 거쳐 삭제하고 목록에서 사라진다", async ({ page }) => {
+    await page.goto("/developer/projects/todo-memo");
+    const region = page.getByRole("region", { name: "프로젝트 삭제" });
+    const dialog = page.getByRole("dialog", { name: "프로젝트를 삭제할까요?" });
+    await region.getByRole("button", { name: "프로젝트 삭제" }).click();
+    await expect(dialog).toContainText("“할 일 메모”을 지우면 되돌릴 수 없어요");
+    await dialog.getByRole("button", { name: "닫기" }).click();
+    await expect(dialog).toBeHidden();
+
+    await region.getByRole("button", { name: "프로젝트 삭제" }).click();
+    await dialog.getByRole("button", { name: "삭제하기" }).click();
+    await expect(page).toHaveURL(/\/developer\/projects\?notice=deleted$/);
+    await expect(page.getByRole("status")).toHaveText("프로젝트를 삭제했어요. 시연용이라 이 브라우저에만 남아요.");
+    await expect(page.getByRole("heading", { name: "할 일 메모" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "북로그" }).first()).toBeVisible();
+
+    await page.goto("/developer/projects/todo-memo");
+    await expect(page.getByRole("heading", { level: 1, name: "찾는 페이지가 없어요" })).toBeVisible();
+  });
+
+  test("#287-S6 모집글이 있는 프로젝트는 삭제 버튼 대신 이유를 보인다", async ({ page }) => {
+    for (const path of [BOOKLOG, "/developer/projects/folio-builder"]) {
+      await page.goto(path);
+      const region = page.getByRole("region", { name: "프로젝트 삭제" });
+      await expect(region).toContainText("모집글이 있는 프로젝트는 삭제할 수 없어요.");
+      await expect(region.getByRole("button")).toHaveCount(0);
+    }
+  });
+});

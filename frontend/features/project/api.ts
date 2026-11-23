@@ -1,5 +1,5 @@
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
-import { buildProjectRecords } from "@/demo/project";
+import { buildProjectRecords, readDeletedProjects, saveProjectDeletion } from "@/demo/project";
 import { parseFileMeta } from "@/features/project/media";
 import type { FormState, Project } from "@/features/project/types";
 import { requireRole } from "@/features/session/guard";
@@ -75,7 +75,7 @@ export async function getOwnedProject(path: string, projectKey: string) {
   await connection();
   if (role !== "developer" || (await getDemoDataMode()) === "empty") notFound();
   const project = buildProjectRecords(new Date()).find(item => item.key === projectKey);
-  if (!project) notFound();
+  if (!project || (await readDeletedProjects()).has(projectKey)) notFound();
   return project;
 }
 
@@ -107,4 +107,17 @@ export async function saveBackendProject(
 function toFormErrors(message: string, fields?: Record<string, string>): Record<string, string> {
   if (!fields || Object.keys(fields).length === 0) return { form: message };
   return Object.fromEntries(Object.entries(fields).map(([key, error]) => [key === "imageUrl" ? "images" : key, error]));
+}
+
+/**
+ * 프로젝트를 삭제한다. 성공하면 null, 실패하면 보여 줄 오류 문구를 돌려준다.
+ * 모집글이 있으면 백엔드가 409로 거절한다(취소한 모집글도 센다)
+ */
+export async function deleteProjectRequest(projectKey: string): Promise<string | null> {
+  if (!isBackendAuth) {
+    await saveProjectDeletion(projectKey);
+    return null;
+  }
+  const result = await backendFetch(`${PROJECTS_API}/${projectKey}`, { method: "DELETE" });
+  return result.ok ? null : result.message;
 }

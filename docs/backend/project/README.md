@@ -19,6 +19,7 @@
 | [#118](https://github.com/likelion-backendschool-9th/test-moa/issues/118) | 내 참여 상세와 항목별 피드백 제출 API | [feedback-submit.md](feedback-submit.md) |
 | [#119](https://github.com/likelion-backendschool-9th/test-moa/issues/119) | 피드백 이미지 업로드·제출 연결·조회 API | [feedback-images.md](feedback-images.md) |
 | [#122](https://github.com/likelion-backendschool-9th/test-moa/issues/122) | 내 프로젝트 할 일·전체 현황 API | [project-dashboard.md](project-dashboard.md) |
+| #287 | 프로젝트 삭제 API | [project-delete.md](project-delete.md) |
 | [#168](https://github.com/likelion-backendschool-9th/test-moa/issues/168) | 버전 별 분석 탭 API(비교 전 상태, 그룹 리뷰, 짝 저장) | [version-tab-api.md](version-tab-api.md) |
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 모집 정보 수정 API | [recruitment-edit.md](recruitment-edit.md) |
 | [#175](https://github.com/likelion-backendschool-9th/test-moa/issues/175) | 테스터 관리 API(지원 목록, 확정·거절) | [tester-management.md](tester-management.md) |

@@ -11,6 +11,7 @@ import type {
   RecruitmentDetail,
   VersionComparisonSample,
 } from "@/features/recruitment/types";
+import { cookies } from "next/headers";
 import "server-only";
 
 /*
@@ -510,4 +511,21 @@ key: "todo-memo",
     image: null,
     createdAt: daysAgo(now, 1)
 }];
+}
+
+/*
+ * 시연용 프로젝트 삭제 기록. 쿠키 demo-project-delete-{프로젝트 키}에 남기고, 목록·상세에서 그 프로젝트를 뺀다.
+ * 같은 브라우저 안에서만 유지되고, 병렬 E2E도 서로의 삭제를 보지 않는다. 실제 API를 붙이면 이 부분을 지운다.
+ */
+const DELETE_COOKIE_PREFIX = "demo-project-delete-";
+
+/** 이 브라우저에서 삭제한 프로젝트 키 */
+export async function readDeletedProjects(): Promise<Set<string>> {
+  const names = (await cookies()).getAll().map(({ name }) => name).filter((name) => name.startsWith(DELETE_COOKIE_PREFIX));
+  return new Set(names.map((name) => name.slice(DELETE_COOKIE_PREFIX.length)));
+}
+
+/** Server Action에서만 부른다 */
+export async function saveProjectDeletion(projectKey: string) {
+  (await cookies()).set(`${DELETE_COOKIE_PREFIX}${projectKey}`, "1", { path: "/", maxAge: 30 * 24 * 60 * 60, sameSite: "lax", httpOnly: true });
 }

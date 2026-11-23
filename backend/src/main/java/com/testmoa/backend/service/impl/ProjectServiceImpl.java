@@ -219,6 +219,20 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
+     * 프로젝트 삭제(#287). 모집글이 하나도 없을 때만 지운다. 취소한 모집글도 버전과 참여 기록을 가리켜서 남아 있으면 409다.
+     * 모집 작성과 같은 프로젝트 행 잠금을 먼저 잡아, 작성과 겹쳐도 "작성 뒤 삭제 거절"이나 "삭제 뒤 작성 404" 중 하나가 된다.
+     * 대표 이미지 파일은 지우지 않는다. 안 쓰는 파일 정리는 #225가 한다
+     */
+    @Override
+    @Transactional
+    public void delete(Long userId, Long projectId) {
+        Project project = findOwned(userId, projectId);
+        projectRepository.findByIdForUpdate(projectId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (recruitmentRepository.existsByProjectId(projectId)) throw new BusinessException(ErrorCode.PROJECT_NOT_DELETABLE);
+        projectRepository.delete(project);
+    }
+
+    /**
      * 모집 작성. 모집글, 모집글 이미지, 유형, 테스트 항목, 항목 이미지를 함께 저장한다. 하나라도 실패하면 모두 저장되지 않는다
      */
     @Override
@@ -357,7 +371,8 @@ public class ProjectServiceImpl implements ProjectService {
     // 다음 모집글 버전. 프로젝트의 가장 큰 버전 + 1이고 첫 모집은 1이다. 취소한 모집도 번호를 차지한다.
     // 같은 프로젝트에 동시에 작성해도 번호가 겹치지 않게 프로젝트 행을 잠근 뒤 센다(#177)
     private int nextVersion(Project project) {
-        projectRepository.findByIdForUpdate(project.getId());
+        /* 읽은 뒤 프로젝트가 삭제됐으면(#287) 없는 프로젝트를 가리키는 모집글을 저장하지 않고 404로 끝낸다 */
+        projectRepository.findByIdForUpdate(project.getId()).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         return recruitmentRepository.findMaxVersionByProjectId(project.getId()).map(max -> max + 1).orElse(1);
     }
 

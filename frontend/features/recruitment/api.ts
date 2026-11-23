@@ -1,5 +1,5 @@
 import { getDemoDataMode, waitIfSlow } from "@/demo/mode";
-import { buildDeveloperProjects, buildFollowupQuestions, type ProjectSeedData } from "@/demo/project";
+import { buildDeveloperProjects, buildFollowupQuestions, readDeletedProjects, type ProjectSeedData } from "@/demo/project";
 import {
   buildGeneralRecruitments,
   buildPastRecruitments,
@@ -232,7 +232,10 @@ const load = cache(async (role: Role): Promise<ProjectSeedData> => {
   if (mode === "empty" || role !== "developer") return EMPTY;
   const now = new Date();
   const seed = buildDeveloperProjects(now, [...buildPromotedRecruitments(now), ...buildGeneralRecruitments(now)]);
-  return applyCancellations(applyDecisions(seed, await readDecisions()), await readCancellations());
+  /* 이 브라우저에서 삭제한 프로젝트는 목록·상세에서 뺀다 */
+  const deleted = await readDeletedProjects();
+  const kept = { ...seed, projects: seed.projects.filter((project) => !deleted.has(project.key)) };
+  return applyCancellations(applyDecisions(kept, await readDecisions()), await readCancellations());
 });
 
 /** 시연 중 확정·거절한 결과를 덮어쓰고, 모집 건의 확정 인원을 지원 목록에서 다시 센다 */

@@ -87,6 +87,14 @@ public class ProjectController {
         return ApiResponse.ok(projectService.update(userId, projectId, request));
     }
 
+    @Operation(summary = "프로젝트 삭제", description = "모집글이 하나도 없을 때만 지운다. 취소한 모집글도 센다. 모집글이 있으면 409, 다른 회원의 프로젝트는 404")
+    @DeleteMapping("/{projectId}")
+    public ApiResponse<Void> delete(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                    @PathVariable Long projectId) {
+        projectService.delete(userId, projectId);
+        return ApiResponse.ok();
+    }
+
     @Operation(summary = "GitHub 레포 연결", description = "owner/repo나 GitHub 주소와 그 레포에 이슈를 만들 수 있는 토큰을 받아, GitHub에서 확인한 뒤 저장한다. "
             + "토큰은 암호화해 저장하고 응답에 나오지 않는다. 레포를 찾을 수 없거나 토큰이 틀리거나 이슈가 꺼져 있으면 424")
     @PutMapping("/{projectId}/repository")

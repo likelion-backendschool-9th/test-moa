@@ -58,6 +58,7 @@ public enum ErrorCode {
     PG_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 이 결제 수단을 쓸 수 없어요"),
 
     // 모집
+    PROJECT_NOT_DELETABLE(HttpStatus.CONFLICT, "모집글이 있는 프로젝트는 삭제할 수 없어요"),
     RECRUITMENT_NOT_CANCELLABLE(HttpStatus.CONFLICT, "지금은 모집을 취소할 수 없어요"),
     RECRUITMENT_NOT_EDITABLE(HttpStatus.CONFLICT, "종료되거나 취소된 모집은 바꿀 수 없어요"),
     FEEDBACK_NOT_REPORTABLE(HttpStatus.CONFLICT, "신고는 제출 후 72시간 안에만 할 수 있어요"),

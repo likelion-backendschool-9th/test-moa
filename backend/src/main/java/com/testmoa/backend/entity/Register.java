@@ -48,6 +48,9 @@ public class Register {
     // 추가 보상액. 참여 확정 시 안내한 금액으로 고정. 확정 전에는 null
     private Integer extraRewardSnapshot;
 
+    // 참여 취소 일시. 테스터가 지원을 취소했거나 모집이 취소됐을 때 기록. 취소 전에는 null
+    private LocalDateTime cancelledAt;
+
     // 생성 일시. 저장 시 자동 기록
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -108,12 +111,15 @@ public class Register {
 
     /**
      * 참여 취소. 지원이나 확정 상태일 때만 할 수 있다.
-     * 피드백을 낸 테스터를 모집 취소에서 제외하는 판단은 서비스가 한다.
+     * 피드백을 낸 테스터를 모집 취소에서 제외하는 판단, 테스터가 직접 취소할 수 있는 시기는 서비스가 정한다.
+     *
+     * @param now   취소 일시
      */
-    public void cancel() {
+    public void cancel(LocalDateTime now) {
         if (status != RegisterStatus.APPLIED && status != RegisterStatus.CONFIRMED) {
             throw new IllegalStateException("지원이나 확정 상태일 때만 취소할 수 있습니다.");
         }
         this.status = RegisterStatus.CANCELLED;
+        this.cancelledAt = now;
     }
 }

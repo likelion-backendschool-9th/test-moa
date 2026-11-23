@@ -69,6 +69,7 @@ public enum ErrorCode {
     PARTICIPATION_NOT_CONFIRMED(HttpStatus.CONFLICT, "참여가 확정된 테스트만 피드백을 낼 수 있어요"),
     FEEDBACK_DEADLINE_PASSED(HttpStatus.CONFLICT, "피드백 제출 기한이 지났어요"),
     FEEDBACK_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 피드백을 제출했어요"),
+    PARTICIPATION_NOT_CANCELLABLE(HttpStatus.CONFLICT, "모집 기간에 피드백을 내기 전에만 지원을 취소할 수 있어요"),
 
     // 출금
     CASHOUT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리한 출금 요청이에요"),

@@ -104,7 +104,7 @@ class ChatStartControllerTest {
         assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
         expire();
         assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
-        register.cancel();
+        register.cancel(LocalDateTime.now());
         assertThat(key(start(developer, register.getId()).andExpect(status().isOk()))).isEqualTo(key);
         assertThat(count("chat_rooms")).isEqualTo(1);
         assertThat(count("chat_participants")).isEqualTo(2);

@@ -329,7 +329,7 @@ class ParticipationControllerTest {
         excludedFeedback.exclude();
         cases.put("excluded", excluded);
         Register cancelled = applied(recruitment, saveUser());
-        cancelled.cancel();
+        cancelled.cancel(LocalDateTime.now());
         cases.put("cancelled", cancelled);
 
         List<String> mismatches = new ArrayList<>();

@@ -145,7 +145,7 @@ class ApplicationControllerTest {
         User other = saveUser();
         Register cancelled = Register.builder().recruitment(em.find(Recruitment.class, recruitment.getId())).user(other).build();
         em.persist(cancelled);
-        cancelled.cancel();
+        cancelled.cancel(LocalDateTime.now());
         apply(other, recruitment.getId()).andExpect(status().isCreated());
         assertThat(registersOf(other, recruitment)).extracting(Register::getStatus)
                 .containsExactly(RegisterStatus.CANCELLED, RegisterStatus.APPLIED);

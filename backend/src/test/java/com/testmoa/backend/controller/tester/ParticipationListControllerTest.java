@@ -84,7 +84,7 @@ class ParticipationListControllerTest {
         cancelled = applied(cancelledRecruitment);
         cancelledAt = now.minusDays(1).withNano(0);
         cancelledRecruitment.cancel("일정이 바뀌었어요", cancelledAt);
-        cancelled.cancel();
+        cancelled.cancel(cancelledAt);
 
         /* 다른 테스터의 참가는 보이지 않는다 */
         confirmed(saveRecruitment("남의 참가", -1, 5), saveUser());

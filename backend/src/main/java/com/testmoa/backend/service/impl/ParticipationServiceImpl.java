@@ -13,12 +13,14 @@ import com.testmoa.backend.entity.Project;
 import com.testmoa.backend.entity.Recruitment;
 import com.testmoa.backend.entity.Register;
 import com.testmoa.backend.entity.TestItem;
+import com.testmoa.backend.entity.enums.RecruitmentPhase;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import com.testmoa.backend.global.exception.BusinessException;
 import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.repository.FeedbackImageRepository;
 import com.testmoa.backend.repository.FeedbackRepository;
+import com.testmoa.backend.repository.RecruitmentRepository;
 import com.testmoa.backend.repository.RecruitmentTypeRepository;
 import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.TestItemRepository;
@@ -60,6 +62,7 @@ public class ParticipationServiceImpl implements ParticipationService {
 
     private final FileStorage fileStorage;
     private final RegisterRepository registerRepository;
+    private final RecruitmentRepository recruitmentRepository;
     private final SanctionChecker sanctionChecker;
     private final FeedbackRepository feedbackRepository;
     private final FeedbackImageRepository feedbackImageRepository;
@@ -130,6 +133,28 @@ public class ParticipationServiceImpl implements ParticipationService {
             }
         }
         return toResponse(register, testItems, saved, now);
+    }
+
+    /*
+     * 지원·확정·모집 취소와 같은 순서(모집글 행 → 참가 행)로 잠근다. 모집글을 잠가 확정·모집 취소와 겹치지 않고,
+     * 참가를 잠가 피드백 제출과 겹쳐도 둘 중 하나만 된다
+     */
+    @Override
+    @Transactional
+    public ParticipationResponse cancel(Long userId, Long registerId) {
+        Long recruitmentId = registerRepository.findMine(registerId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND)).getRecruitment().getId();
+        recruitmentRepository.findForApplyById(recruitmentId);
+        Register register = registerRepository.findMineForUpdate(registerId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        LocalDateTime now = LocalDateTime.now();
+        boolean active = register.getStatus() == RegisterStatus.APPLIED || register.getStatus() == RegisterStatus.CONFIRMED;
+        if (!active || register.getRecruitment().phaseAt(now) != RecruitmentPhase.RECRUITING
+                || feedbackRepository.existsByRegisterId(registerId)) {
+            throw new BusinessException(ErrorCode.PARTICIPATION_NOT_CANCELLABLE);
+        }
+        register.cancel(now);
+        return toResponse(register, testItemRepository.findByRecruitmentIdOrderBySortOrderAscIdAsc(recruitmentId), List.of(), now);
     }
 
     // 제출과 겹쳐도 잠그지 않는다. 그 파일은 제출에 안 쓰인 채로 남고, 정리는 #225가 한다
@@ -289,7 +314,9 @@ public class ParticipationServiceImpl implements ParticipationService {
             case "beforeSubmit", "incomplete" -> recruitment.getFeedbackDeadline();
             case "payoutPending", "paid" -> submittedAt.plus(PAYOUT_WAIT);
             case "underReview", "excluded" -> submittedAt;
-            default -> Objects.requireNonNullElse(recruitment.getCancelledAt(), register.getAppliedAt());
+            // 참여 취소. 예전 취소 행에는 취소 일시가 없어 모집 취소일, 그것도 없으면 지원일을 쓴다
+            default -> Objects.requireNonNullElse(register.getCancelledAt(),
+                    Objects.requireNonNullElse(recruitment.getCancelledAt(), register.getAppliedAt()));
         };
     }
 

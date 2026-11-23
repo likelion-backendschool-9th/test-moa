@@ -4,11 +4,13 @@ import com.testmoa.backend.entity.Register;
 import com.testmoa.backend.entity.enums.FeedbackStatus;
 import com.testmoa.backend.entity.enums.RegisterStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -92,4 +94,30 @@ public interface RegisterRepository extends JpaRepository<Register, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from registers r join fetch r.recruitment rc join fetch rc.project where r.id = :id and r.user.id = :userId")
     Optional<Register> findMineForUpdate(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * 보상을 지급할 참가(#288). 승인 대기 보상 합(sumPendingRewardByUserId)과 같은 조건이고, 제출한 지 72시간이 지났다.
+     * 확정 참가이고 보상 스냅샷이 있으며, 제출(SUBMITTED) 피드백이 있고 신고됨·보상 제외 피드백이 없다. 모집이 취소돼도 피드백을 냈으면 지급한다
+     *
+     * @param submittedBefore 이 시각 이전(같으면 포함)에 제출한 참가만
+     */
+    @Query("""
+            select r.id from registers r
+            where r.status = com.testmoa.backend.entity.enums.RegisterStatus.CONFIRMED
+              and r.baseRewardSnapshot is not null
+              and r.extraRewardSnapshot is not null
+              and exists (
+                  select 1 from feedbacks f
+                  where f.register = r and f.status = com.testmoa.backend.entity.enums.FeedbackStatus.SUBMITTED
+              )
+              and not exists (
+                  select 1 from feedbacks blocked
+                  where blocked.register = r
+                    and blocked.status in (com.testmoa.backend.entity.enums.FeedbackStatus.REPORTED,
+                                           com.testmoa.backend.entity.enums.FeedbackStatus.EXCLUDED)
+              )
+              and (select min(earliest.submittedAt) from feedbacks earliest where earliest.register = r) <= :submittedBefore
+            order by r.id
+            """)
+    List<Long> findPayableIds(@Param("submittedBefore") LocalDateTime submittedBefore, Limit limit);
 }

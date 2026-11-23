@@ -16,6 +16,6 @@ public interface AdminReportService {
     // 상세: 대상 내용(피드백 원문 포함)과 증거
     AdminReportResponse get(Long reportId);
 
-    // 판정. 검토 대기일 때 한 번만. 피드백 신고는 기각하면 reward(), 인정하면 exclude()
+    // 판정. 검토 대기일 때 한 번만. 피드백 신고는 기각하면 제출(SUBMITTED)로 되돌려 자동 지급(#288)을 기다리고, 인정하면 exclude()
     AdminReportResponse review(Long adminId, Long reportId, ReportStatus result);
 }

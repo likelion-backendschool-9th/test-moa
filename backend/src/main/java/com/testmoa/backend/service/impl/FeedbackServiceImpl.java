@@ -11,6 +11,7 @@ import com.testmoa.backend.global.exception.ErrorCode;
 import com.testmoa.backend.repository.FeedbackImageRepository;
 import com.testmoa.backend.repository.FeedbackRepository;
 import com.testmoa.backend.repository.RecruitmentRepository;
+import com.testmoa.backend.repository.RegisterRepository;
 import com.testmoa.backend.repository.ReportRepository;
 import com.testmoa.backend.global.file.FileStorage;
 import com.testmoa.backend.service.FeedbackService;
@@ -35,6 +36,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     private final FileStorage fileStorage;
     private final RecruitmentRepository recruitmentRepository;
     private final FeedbackRepository feedbackRepository;
+    private final RegisterRepository registerRepository;
     private final FeedbackImageRepository feedbackImageRepository;
     private final ReportService reportService;
     private final ReportRepository reportRepository;
@@ -70,7 +72,9 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Transactional
     public void report(Long userId, Long feedbackId, String reason) {
         Feedback feedback = findMine(userId, feedbackId);
-        if (feedback.getStatus() != FeedbackStatus.SUBMITTED
+        /* 자동 지급(FeedbackPayoutService)과 같은 참가 행을 잠근 뒤 상태를 DB에서 다시 읽는다. 72시간 경계에서 지급과 겹쳐도 둘 중 하나만 된다 */
+        registerRepository.findLockedById(feedback.getRegister().getId());
+        if (feedbackRepository.findStatusById(feedbackId) != FeedbackStatus.SUBMITTED
                 || !LocalDateTime.now().isBefore(feedback.getSubmittedAt().plus(REPORT_WINDOW))) {
             throw new BusinessException(ErrorCode.FEEDBACK_NOT_REPORTABLE);
         }
@@ -79,7 +83,7 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new BusinessException(ErrorCode.FEEDBACK_REPORT_DISMISSED);
         }
         feedback.report(reason.trim());
-        // 운영자 신고 화면(#85)에서 판정할 수 있게 신고 행도 남긴다. 판정하면 reward()·exclude()를 부른다
+        // 운영자 신고 화면(#85)에서 판정할 수 있게 신고 행도 남긴다. 기각하면 제출로 되돌아가 자동 지급(#288)을 기다리고, 인정하면 exclude()
         reportService.recordFeedbackReport(userId, feedback, reason.trim());
     }
 

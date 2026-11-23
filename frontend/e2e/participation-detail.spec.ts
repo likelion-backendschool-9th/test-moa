@@ -93,3 +93,49 @@ test.describe("#57-R1 피드백 이미지", () => {
     await expect(previews(page)).toHaveCount(1);
   });
 });
+
+test.describe("#286-R2 지원 취소", () => {
+  const cancelRegion = (page: Page) => page.getByRole("region", { name: "지원 취소" });
+  const dialog = (page: Page) => page.getByRole("dialog", { name: "지원을 취소할까요?" });
+
+  test("#286-S9 선정 대기인 지원을 확인 대화상자를 거쳐 취소하면 참여했던 테스트로 옮겨진다", async ({ page }) => {
+    await page.goto("/testers/recruitments/p-booklog");
+    await cancelRegion(page).getByRole("button", { name: "지원 취소" }).click();
+    await expect(dialog(page)).toContainText("선정 대상에서 빠져요");
+    await dialog(page).getByRole("button", { name: "닫기" }).click();
+    await expect(dialog(page)).toBeHidden();
+
+    await cancelRegion(page).getByRole("button", { name: "지원 취소" }).click();
+    await dialog(page).getByRole("button", { name: "지원 취소하기" }).click();
+    await expect(page).toHaveURL(/\?notice=cancelled$/);
+    await expect(page.getByRole("status")).toHaveText("지원을 취소했어요. 시연용이라 이 브라우저에만 남아요.");
+    await expect(page.getByRole("heading", { level: 1 }).locator("..").getByText("참여 취소")).toBeVisible();
+    await expect(status(page)).toContainText("참여가 취소됐어요");
+    await expect(cancelRegion(page)).toHaveCount(0);
+
+    await page.goto("/testers/recruitments?tab=history");
+    await expect(page.getByRole("link", { name: /북로그/ })).toBeVisible();
+    await page.goto("/testers/recruitments?tab=applied");
+    await expect(page.getByRole("link", { name: /북로그/ })).toHaveCount(0);
+  });
+
+  test("#286-S10 확정된 참가를 취소하면 접속 링크와 피드백 칸이 사라진다", async ({ page }) => {
+    await page.goto("/testers/recruitments/p-moaplan");
+    await expect(page.getByRole("link", { name: /테스트 열기/ })).toBeVisible();
+    await cancelRegion(page).getByRole("button", { name: "지원 취소" }).click();
+    await expect(dialog(page)).toContainText("접속 링크와 보상이 사라져요");
+    await dialog(page).getByRole("button", { name: "지원 취소하기" }).click();
+
+    await expect(page).toHaveURL(/\?notice=cancelled$/);
+    await expect(page.getByRole("link", { name: /테스트 열기/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "피드백 제출" })).toHaveCount(0);
+  });
+
+  test("#286-S11 피드백을 냈거나 끝난 참가에는 지원 취소가 없다", async ({ page }) => {
+    for (const key of ["p-study-match", "p-memo-garden", "p-recipefit"]) {
+      await page.goto(`/testers/recruitments/${key}`);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(cancelRegion(page)).toHaveCount(0);
+    }
+  });
+});

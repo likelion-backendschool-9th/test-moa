@@ -115,6 +115,7 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `confirmedAt` | `confirmed_at` | LocalDateTime | 가능 | 확정 전에는 null |
 | `baseRewardSnapshot` | `base_reward_snapshot` | Integer | 가능 | 확정할 때 고정한 기본 보상. 확정 전에는 null |
 | `extraRewardSnapshot` | `extra_reward_snapshot` | Integer | 가능 | 확정할 때 고정한 추가 보상. 확정 전에는 null |
+| `cancelledAt` | `cancelled_at` | LocalDateTime | 가능 | 참여 취소 시각. 취소 전과 이 컬럼이 생기기 전에 취소된 행은 null (#286) |
 
 | 지금 상태 | `confirm` | `reject` | `cancel` |
 | --- | --- | --- | --- |
@@ -123,7 +124,7 @@ ERD `프로젝트`는 `projects`, ERD `테스트 모집글`은 `recruitments`다
 | `REJECTED` | 불가 | 불가 | 불가 |
 | `CANCELLED` | 불가 | 불가 | 불가 |
 
-선착순 모집은 서비스가 지원을 저장한 뒤 바로 `confirm`을 부른다. 피드백을 낸 테스터를 모집 취소에서 제외하는 판단도 서비스가 한다.
+선착순 모집은 서비스가 지원을 저장한 뒤 바로 `confirm`을 부른다. 피드백을 낸 테스터를 모집 취소에서 제외하는 판단도 서비스가 한다. `cancel(now)`은 취소 시각을 함께 남기고, 테스터가 직접 취소할 수 있는 시기는 서비스가 정한다(#286).
 
 #89-S11 지원 [테스트]
 - Given 새 `Register`

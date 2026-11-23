@@ -26,6 +26,13 @@ public interface ParticipationService {
     ParticipationResponse submitFeedback(Long userId, Long registerId, FeedbackSubmitRequest request);
 
     /**
+     * 테스터가 지원을 취소한다(#286). 대기·확정 참가를 모집 기간(테스트 시작 전)에 피드백을 내기 전에만 취소한다.
+     * 선착순·선발형 모두 같고, 취소한 뒤 모집 중이면 다시 지원할 수 있다.
+     * 없거나 다른 회원의 참가는 NOT_FOUND, 그 밖에 취소할 수 없으면 PARTICIPATION_NOT_CANCELLABLE
+     */
+    ParticipationResponse cancel(Long userId, Long registerId);
+
+    /**
      * 피드백 이미지를 한 장 올린다(#119). 제출과 같이 확정·마감·이미 제출·피드백 제재를 확인한다.
      * 잠그지 않는다. 파일이 한 장이 아니거나 PNG·JPG·WEBP가 아니면 INVALID_INPUT이고 저장하지 않는다
      */

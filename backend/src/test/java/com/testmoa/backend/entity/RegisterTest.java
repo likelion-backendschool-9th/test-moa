@@ -31,7 +31,7 @@ class RegisterTest {
 
     private Register cancelled() {
         Register register = applied();
-        register.cancel();
+        register.cancel(LocalDateTime.now());
         return register;
     }
 
@@ -106,7 +106,7 @@ class RegisterTest {
     @DisplayName("#89-S16 지원과 확정은 취소할 수 있음")
     void cancel은_지원과_확정에서_된다() {
         for (Register register : List.of(applied(), confirmed())) {
-            register.cancel();
+            register.cancel(LocalDateTime.now());
             assertEquals(RegisterStatus.CANCELLED, register.getStatus());
         }
     }
@@ -116,7 +116,7 @@ class RegisterTest {
     void cancel은_거절과_취소에서_거절한다() {
         for (Register register : List.of(rejected(), cancelled())) {
             RegisterStatus before = register.getStatus();
-            assertThrows(IllegalStateException.class, register::cancel);
+            assertThrows(IllegalStateException.class, () -> register.cancel(LocalDateTime.now()));
             assertEquals(before, register.getStatus());
         }
     }

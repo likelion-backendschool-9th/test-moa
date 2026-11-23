@@ -74,6 +74,14 @@ public class ParticipationController {
         return ApiResponse.ok(participationService.find(userId, registerId));
     }
 
+    @Operation(summary = "지원 취소", description = "대기·확정 참가를 모집 기간에 피드백을 내기 전에만 취소한다. 선착순·선발형 모두 같다. "
+            + "취소한 뒤 모집 중이면 다시 지원할 수 있다. 취소할 수 없으면 409, 다른 회원의 참가는 404")
+    @PostMapping("/{registerId}/cancel")
+    public ApiResponse<ParticipationResponse> cancel(@Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+                                                     @PathVariable Long registerId) {
+        return ApiResponse.ok(participationService.cancel(userId, registerId));
+    }
+
     @Operation(summary = "피드백 이미지 업로드", description = "확정된 참가가 제출 전에 PNG·JPG·WEBP를 한 장씩 올린다. 한 장 5MB. "
             + "응답 url을 제출 본문의 imageUrls에 넣는다")
     @PostMapping(value = "/{registerId}/feedbacks/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

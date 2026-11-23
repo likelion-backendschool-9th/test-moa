@@ -14,6 +14,7 @@
 | [#112](https://github.com/likelion-backendschool-9th/test-moa/issues/112) | 공개 모집 목록·검색 API | [public-recruitment-list.md](public-recruitment-list.md) |
 | [#113](https://github.com/likelion-backendschool-9th/test-moa/issues/113) | 공개 모집글 상세 API | [public-recruitment-detail.md](public-recruitment-detail.md) |
 | [#114](https://github.com/likelion-backendschool-9th/test-moa/issues/114) | 테스트 지원 API | [test-apply.md](test-apply.md) |
+| #286 | 지원 취소 API | [application-cancel.md](application-cancel.md) |
 | [#116](https://github.com/likelion-backendschool-9th/test-moa/issues/116) | 모집 취소 API | [recruitment-cancel.md](recruitment-cancel.md) |
 | [#117](https://github.com/likelion-backendschool-9th/test-moa/issues/117) | 내 참여 목록·요약·마감 일정 API | [participation-list.md](participation-list.md) |
 | [#118](https://github.com/likelion-backendschool-9th/test-moa/issues/118) | 내 참여 상세와 항목별 피드백 제출 API | [feedback-submit.md](feedback-submit.md) |

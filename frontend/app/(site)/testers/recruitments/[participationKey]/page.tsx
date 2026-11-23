@@ -48,6 +48,7 @@ async function DetailSlot({ params, searchParams }: Props) {
       item={item}
       now={new Date()}
       justSubmitted={notice === "submitted"}
+      justCancelled={notice === "cancelled"}
       projectDescription={projectDescription}
       recruitmentDescription={recruitmentDescription}
       selectionMode={post?.detail?.selectionMode}

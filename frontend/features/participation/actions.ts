@@ -6,9 +6,9 @@ import { PROJECTS_PATH } from "@/features/project/paths";
 import { isBackendAuth } from "@/lib/backend";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
-import { getParticipation, saveBackendFeedback, saveFeedback } from "@/features/participation/api";
+import { cancelParticipationRequest, getParticipation, saveBackendFeedback, saveFeedback } from "@/features/participation/api";
 import { parseFeedbackForm, type FeedbackFieldErrors } from "@/features/participation/feedback-fields";
-import { parseParticipationTab, parseParticipationView } from "@/features/participation/types";
+import { cancelAvailability, parseParticipationTab, parseParticipationView } from "@/features/participation/types";
 import { saveParticipationView } from "@/features/participation/view-preference";
 
 /*
@@ -41,6 +41,25 @@ export async function submitFeedback(
   /* 목록의 탭 개수·마감 일정·요약 줄도 제출을 반영하게 한다 */
   revalidatePath(PARTICIPATIONS_PATH, "layout");
   redirect(`${path}?notice=submitted`);
+}
+
+export type CancelParticipationState = { error?: string };
+
+/**
+ * 지원 취소. 화면에서 막아도 요청은 조작될 수 있어서 여기서 다시 확인하고, 백엔드도 다시 확인한다.
+ * 취소하면 상세로 돌아가 "참여 취소" 상태와 안내를 보여 준다
+ */
+export async function cancelParticipation(_prev: CancelParticipationState, formData: FormData): Promise<CancelParticipationState> {
+  const key = formData.get("participationKey");
+  const participationKey = typeof key === "string" ? key : "";
+  const path = participationPath(participationKey);
+  await requireMember(path);
+  const item = await getParticipation(participationKey);
+  if (!item || !cancelAvailability(item, new Date()).cancellable) return { error: "지금은 지원을 취소할 수 없어요. 새로고침한 뒤 다시 확인해 주세요" };
+  const error = await cancelParticipationRequest(participationKey);
+  if (error) return { error };
+  revalidatePath(PARTICIPATIONS_PATH, "layout");
+  redirect(`${path}?notice=cancelled`);
 }
 
 /**

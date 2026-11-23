@@ -239,3 +239,31 @@ export async function saveDemoFeedback(participationKey: string, entries: Feedba
   (await cookies()).set(name, value, { path: "/", httpOnly: true, sameSite: "lax", maxAge: MAX_AGE_SECONDS });
   return true;
 }
+
+/*
+ * 시연용 지원 취소 기록. 참여마다 쿠키 demo-participation-cancel-<참여 키>에 취소 시각(ms)을 남긴다.
+ * 같은 브라우저 안에서만 유지되고, 병렬 E2E도 서로의 취소를 보지 않는다. 실제 API를 붙이면 이 부분을 지운다.
+ */
+
+const CANCEL_COOKIE_PREFIX = "demo-participation-cancel-";
+
+/** 이 브라우저에서 취소한 참여, { 참여 키: 취소 시각 }. 깨진 값은 버린다 */
+export async function readDemoCancellations(): Promise<Record<string, string>> {
+  const entries = (await cookies())
+    .getAll()
+    .filter((cookie) => cookie.name.startsWith(CANCEL_COOKIE_PREFIX))
+    .map((cookie) => [cookie.name.slice(CANCEL_COOKIE_PREFIX.length), Number(cookie.value)] as const)
+    .filter(([, millis]) => Number.isFinite(millis) && millis > 0)
+    .map(([key, millis]) => [key, new Date(millis).toISOString()] as const);
+  return Object.fromEntries(entries);
+}
+
+/** Server Action에서만 부른다 */
+export async function saveDemoCancellation(participationKey: string) {
+  (await cookies()).set(`${CANCEL_COOKIE_PREFIX}${participationKey}`, String(Date.now()), {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: MAX_AGE_SECONDS,
+  });
+}

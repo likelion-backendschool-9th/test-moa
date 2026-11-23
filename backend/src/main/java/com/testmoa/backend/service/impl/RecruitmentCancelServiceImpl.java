@@ -68,7 +68,7 @@ public class RecruitmentCancelServiceImpl implements RecruitmentCancelService {
             if (register.getStatus() == RegisterStatus.CONFIRMED && submitted.contains(register.getId())) {
                 kept++;
             } else {
-                register.cancel();
+                register.cancel(now);
                 cancelled++;
             }
         }

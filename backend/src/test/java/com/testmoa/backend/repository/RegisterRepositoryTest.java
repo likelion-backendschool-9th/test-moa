@@ -94,7 +94,7 @@ class RegisterRepositoryTest {
         User tester = persistTester("pending-cancelled@example.com");
         Register register = persistConfirmedRegister(tester, 1000, 350);
         persistSubmittedFeedback(register, "제출 후 취소");
-        register.cancel();
+        register.cancel(LocalDateTime.now());
         entityManager.flush();
         entityManager.clear();
 

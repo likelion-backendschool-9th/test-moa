@@ -209,7 +209,7 @@ class RecruitmentControllerTest {
         /* 취소한 참가 뒤에 다시 지원했으면 최근 참가를 본다 */
         User again = saveUser();
         Register cancelled = Register.builder().recruitment(recruitment).user(again).build();
-        cancelled.cancel();
+        cancelled.cancel(LocalDateTime.now());
         em.persist(cancelled);
         em.persist(Register.builder().recruitment(recruitment).user(again).build());
         assertThat(detail(again, recruitment).get("myRegisterStatus").asText()).isEqualTo("applied");

@@ -124,6 +124,16 @@ export type ParticipationSummary = {
   payoutPendingCredits: number;
 };
 
+/**
+ * 지원 취소 가능 여부(백엔드 ParticipationService.cancel과 같은 규칙). 선정 대기·제출 전 참가를 모집 마감 전에만 취소한다.
+ * 제출 전인데 모집이 끝나 테스트가 시작됐으면 버튼 대신 보여 줄 이유를 돌려준다. 그 밖의 상태는 안내 없이 숨긴다
+ */
+export function cancelAvailability(item: ParticipationItem, now: Date): { cancellable: boolean; reason?: string } {
+  if (item.recruitmentCancelled || (item.status !== "selectionPending" && item.status !== "beforeSubmit")) return { cancellable: false };
+  if (new Date(item.recruitment.recruitDeadline) > now) return { cancellable: true };
+  return item.status === "beforeSubmit" ? { cancellable: false, reason: "테스트가 시작돼 지원을 취소할 수 없어요" } : { cancellable: false };
+}
+
 const PAYOUT_WAIT_MS = 72 * 60 * 60 * 1000;
 
 /** 제출 뒤 72시간 동안 신고가 없으면 지급한다 */

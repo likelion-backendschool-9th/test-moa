@@ -32,6 +32,12 @@ public interface ProjectService {
 
     ProjectResponse disconnectRepository(Long userId, Long projectId);
 
+    /**
+     * 프로젝트 삭제(#287). 모집글이 하나도 없을 때만 지운다(취소한 모집글도 센다).
+     * 없거나 다른 회원의 프로젝트는 NOT_FOUND, 모집글이 있으면 PROJECT_NOT_DELETABLE
+     */
+    void delete(Long userId, Long projectId);
+
     RecruitmentCreateResponse createRecruitment(Long userId, RecruitmentCreateRequest request);
 
     void updateRecruitment(Long userId, Long recruitmentId, RecruitmentUpdateRequest request);

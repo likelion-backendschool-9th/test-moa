@@ -6,6 +6,7 @@ import { PROJECTS_PATH, projectPath } from "@/features/project/paths";
 import { Container } from "@/components/ui/Container/Container";
 import { DetailSkeleton, ProjectInfo, ProjectRecruitmentList } from "@/app/(site)/developer/_components/ProjectDetail/ProjectDetail";
 import { SavedNotice } from "@/app/(site)/developer/projects/_components/SavedNotice/SavedNotice";
+import { DeleteProjectButton } from "./_components/DeleteProjectButton/DeleteProjectButton";
 import { getProjectDetail } from "@/features/recruitment/api";
 import styles from "./page.module.css";
 
@@ -47,6 +48,22 @@ async function ProjectSlot({ params, searchParams }: Props) {
           {recruitments.length > 0 && <p className={styles.projectSlotCount}>모집글 {recruitments.length}개</p>}
         </div>
         <ProjectRecruitmentList projectKey={project.key} recruitments={recruitments} />
+      </section>
+      {/* 모집글이 하나도 없을 때만 지울 수 있다. 취소한 모집글도 버전과 참여 기록이 있어 센다 */}
+      <section aria-labelledby="delete-heading" className={styles.projectSlotDelete}>
+        <h2 id="delete-heading" className={styles.projectSlotDeleteTitle}>
+          프로젝트 삭제
+        </h2>
+        {recruitments.length === 0 ? (
+          <>
+            <p className={styles.projectSlotDeleteText}>모집글을 올리기 전에만 삭제할 수 있어요. 삭제하면 되돌릴 수 없어요.</p>
+            <div className={styles.projectSlotDeleteAction}>
+              <DeleteProjectButton projectKey={project.key} projectName={project.name} />
+            </div>
+          </>
+        ) : (
+          <p className={styles.projectSlotDeleteText}>모집글이 있는 프로젝트는 삭제할 수 없어요.</p>
+        )}
       </section>
     </div>
   );

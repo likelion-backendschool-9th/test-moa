@@ -33,7 +33,7 @@ async function ProjectsSlot({ searchParams }: Pick<PageProps<"/developer/project
   const [{ projects, overview }, { notice }, view] = await Promise.all([getMyDashboard(PROJECTS_PATH), searchParams, readParticipationView()]);
   return (
     <div className={styles.projectsSlot}>
-      <SavedNotice show={notice === "saved"} />
+      <SavedNotice show={notice === "saved"} deleted={notice === "deleted"} />
       {projects.length > 0 && <OverviewStats overview={overview} />}
       <section aria-labelledby="projects-heading" className={styles.projectsSlotSection}>
         {projects.length > 0 && (

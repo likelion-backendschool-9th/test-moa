@@ -1,6 +1,7 @@
 "use server";
 
-import { getOwnedProject, saveBackendProject } from "@/features/project/api";
+import { deleteProjectRequest, getOwnedProject, saveBackendProject } from "@/features/project/api";
+import { getProjectDetail } from "@/features/recruitment/api";
 import { PROJECTS_PATH, PROJECT_NEW_PATH, projectEditPath, projectPath } from "@/features/project/paths";
 import type { FormState } from "@/features/project/types";
 import { validateProjectForm } from "@/features/project/types";
@@ -28,4 +29,21 @@ export async function saveProject(projectKey: string | null, _prev: FormState, f
     revalidatePath(PROJECTS_PATH, "layout");
   }
   redirect(projectKey ? `${projectPath(projectKey)}?notice=saved` : `${PROJECTS_PATH}?notice=saved`);
+}
+
+export type DeleteProjectState = { error?: string };
+
+/**
+ * 프로젝트 삭제. 모집글이 하나도 없을 때만 지운다(취소한 모집글도 센다). 화면에서 막아도 요청은 조작될 수 있어서
+ * 여기서 모집글을 다시 확인하고, 백엔드도 다시 확인한다. 지우면 내 프로젝트 목록으로 가서 안내를 보인다
+ */
+export async function deleteProject(_prev: DeleteProjectState, formData: FormData): Promise<DeleteProjectState> {
+  const key = formData.get("projectKey");
+  const projectKey = typeof key === "string" ? key : "";
+  const { recruitments } = await getProjectDetail(projectPath(projectKey), projectKey);
+  if (recruitments.length > 0) return { error: "모집글이 있는 프로젝트는 삭제할 수 없어요" };
+  const error = await deleteProjectRequest(projectKey);
+  if (error) return { error };
+  revalidatePath(PROJECTS_PATH, "layout");
+  redirect(`${PROJECTS_PATH}?notice=deleted`);
 }
